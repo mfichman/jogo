@@ -1,24 +1,30 @@
 class Geom::Rectangle;
 
-private int x = 191991;
-private int y = 0;
-private int width = 0;
-private int height = 0;
+import Bob::Jim;
 
-public @init() {
+int x;
+int y;
+int width;
+int height;
+
+@init() {
 }
 
-public @destroy() {
+@destroy() {
 }
 
-public int width!() {
+width!() public static native int {
 }
 
-public int height!() {
+height!() Jim::Mike {
 }
 
-public int width() {
+width() int {
 }
 
-public int height() {
+height() int {
+}
+
+diffuse_color() Color {
+
 }

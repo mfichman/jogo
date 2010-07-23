@@ -22,17 +22,18 @@ enum Token {
     TOK_DOT,
     TOK_COMMA,
     TOK_EOF,
-    TOK_OPBEGIN = TOK_LPAREN,
-    TOK_OPEND = TOK_EOF,
 
     /* Reserved words */
     TOK_CLASS,
     TOK_STRUCT,
     TOK_INTERFACE,
+    TOK_MODULE,
     TOK_PUBLIC,
     TOK_PRIVATE,
     TOK_PROTECTED,
     TOK_STATIC,
+    TOK_NATIVE,
+    TOK_DEF,
     TOK_IF,
     TOK_THEN,
     TOK_ELSE,
@@ -53,16 +54,12 @@ enum Token {
     TOK_SELF,
     TOK_INIT,
     TOK_DESTROY,
-    TOK_RWORDBEGIN = TOK_CLASS,
-    TOK_RWORDEND = TOK_DESTROY,
 
     /* Literals */
     TOK_NIL,
     TOK_TRUE,
     TOK_FALSE,
     TOK_COMMENT,
-    TOK_LITBEGIN = TOK_NIL,
-    TOK_LITEND = TOK_FALSE,
 
     /* Primitives */
     TOK_INT,
@@ -73,8 +70,6 @@ enum Token {
     TOK_USHORT,
     TOK_BYTE,
     TOK_UBYTE,    
-    TOK_PRIMEND = TOK_UBYTE,
-    TOK_PRIMBEGIN = TOK_INT,
 
     /* Other */
     TOK_NUMBER,
@@ -82,36 +77,28 @@ enum Token {
     TOK_TYPE,
     TOK_STRING,
     TOK_INVALID,
-    
-    TOK_BEGIN = TOK_LPAREN,
-    TOK_END = TOK_INVALID,
 
     SYM_POP,
-    SYM_FILE,
-    SYM_IMPORTS,
+    SYM_TRANSLATION_UNIT,
+    SYM_CLASS_MEMBER_LIST,
+    SYM_INTERFACE_MEMBER_LIST,
+    SYM_STRUCT_MEMBER_LIST,
+    SYM_MODULE_MEMBER_LIST,
     SYM_IMPORT,
-    SYM_DEFS,
     SYM_DEF,
-    SYM_TYPENAME,
-    SYM_TYPETOKEN,
-    SYM_TYPE,
-    SYM_INIT,
+    SYM_VARIABLE,
+    SYM_CONSTRUCTOR,
+    SYM_DESTRUCTOR,
     SYM_FUNCTION,
-    SYM_EXPR
+    SYM_PROTOTYPE,
+    SYM_ACCESS,
+    SYM_STORAGE,
+    SYM_NATIVE,
+    SYM_TYPE,
+    SYM_INITIALIZER,
+    SYM_QUALIFIED_NAME,
+    SYM_QUALIFIED_NAME_TAIL,
+    SYM_COMPOUND_STATEMENT,
+    SYM_EXPRESSION
 };
 
-inline bool isoperator(Token token) {
-    return token >= TOK_OPBEGIN && token <= TOK_OPEND;
-}
-
-inline bool isrword(Token token) {
-    return token >= TOK_RWORDBEGIN && token <= TOK_RWORDEND;
-}
-
-inline bool isliteral(Token token) {
-    return token >= TOK_LITBEGIN && token <= TOK_LITEND;
-}
-
-inline bool isprimitive(Token token) {
-    return token >= TOK_PRIMBEGIN && token <= TOK_PRIMEND;
-}

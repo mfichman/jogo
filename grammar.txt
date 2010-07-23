@@ -1,77 +1,133 @@
-
-
 translation_unit
-    : TOK_CLASS typename TOK_SEMI imports defs
-    | TOK_STRUCT typename TOK_SEMI imports defs
-    | TOK_MODULE typename TOK_SEMI imports defs
+    : TOK_CLASS qualified_name TOK_SEMI class_member_list 
+    | TOK_INTERFACE qualified_name TOK_SEMI interface_member_list
+    | TOK_STRUCT qualified_name TOK_SEMI struct_member_list
+    | TOK_MODULE qualified_name TOK_SEMI module_member_list
+    ;
+
+class_member_list
+    : import class_member_list
+    | def class_member_list
+    | variable class_member_list
+    | constructor class_member_list
+    | destructor class_member_list
+    | function class_member_list
+    | <empty>
+    ;
+
+interface_member_list
+    : import interface_member_list
+    | def interface_member_list
+    | prototype interface_member_list
+    | <empty>
+    ;
+
+struct_member_list
+    : import struct_member_list
+    | def struct_member_list
+    | variable struct_member_list
+    | constructor struct_member_list
+    | function struct_member_list
+    | <empty>
+    ;
+
+module_member_list
+    : import module_member_list
+    | def module_member_list
+    | function module_member_list
+    | <empty>
     ;
     
-import_statement_list    
-    : import_statement import_statement_list
-    | <empty>
+import 
+    : TOK_IMPORT qualified_name TOK_SEMI
     ;
 
-import_statement     
-    : TOK_IMPORT typename TOK_SEMI
-    ;
-      
-member_definition_list
-    : member_definition member_definition_list
-    | <empty>
+def
+    : TOK_DEF type TOK_TYPE TOK_SEMI
     ;
 
-member_definition
-    : access_specifier native_specifier member_definition_tail
+variable
+    : access storage type TOK_IDENT initializer 
     ;
 
-member_definition_tail
-    : static_specifier type_specifier TOK_IDENT initializer 
-    | TOK_INIT function_definition
-    | TOK_DESTROY function_definition
+constructor
+    : TOK_INIT argument_list access native compound_statement
     ;
 
-access_specifier     
+destructor
+    : TOK_DESTROY argument_list native compound_statement
+    ;
+
+function
+    : TOK_IDENT argument_list access storage native type compound_statment
+    ;
+
+prototype
+    : TOK_IDENT argument_list type TOK_SEMI
+    ;
+
+access 
     : TOK_PUBLIC
     | TOK_PRIVATE
     | TOK_PROTECTED
     | <empty>
     ;
 
-static_specifier
+storage
     : TOK_STATIC
     | <empty>
     ;
     
-native_specifier
+native
     : TOK_NATIVE
     | <empty>
     ;
 
-initializer     
-    : TOK_EQUALS primary_expression TOK_SEMI
-    | TOK_SEMI
-    | function_definition
-    ;
-
-type_specifier       
+type 
     : uint
     | int
     | ushort
     | short
     | ubyte
     | byte 
-    | typename_list
+    | qualified_name
     ;
 
-typename_list
-    : TOK_TYPE typename_list_tail
+initializer     
+    : TOK_EQUALS expression TOK_SEMI
+    | TOK_SEMI
     ;
 
-typename_list_tail
-    : TOK_SCOPE TOK_TYPE
+qualified_name
+    : TOK_TYPE qualified_name_tail
+    ;
+
+qualified_name_tail
+    : TOK_SCOPE TOK_TYPE qualified_name_tail
     | <empty>
     ;
     
+compound_statement
+    : TOK_LBRACE statement_list TOK_RBRACE
+    ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 argument_list
     : argument argument_list_tail
     ;
@@ -81,13 +137,6 @@ argument_list_tail
     | <empty>
     ;
 
-function_definition   
-    : TOK_LPAREN argument_list TOK_RPAREN compound_statement
-    ;
-
-compound_statement
-    : TOK_LBRACE statement_list TOK_RBRACE
-    ;
 
 statement_list
     : statement statement_list
@@ -95,7 +144,12 @@ statement_list
     ;
 
 statement
-    : compound_statement
+    : TOK_SEMI
+    ;
+
+
+
+
     | expression TOK_SEMI
     | selection_statement
     | TOK_IF TOK_LPAREN expression TOK_RPAREN compound_statement conditional_tail
@@ -111,8 +165,15 @@ conditional_tail:
     | <empty>
     ;
 
-expression: 
-    : 
-    | assignment_expression
-    | 
 
+expression: 
+    : assignment_expression
+    ; 
+
+assignment_expression
+    : conditional_expression
+    | unary_expression assignment_operator assignment_expression
+    ;
+
+conditional_expression
+    :

@@ -28,7 +28,6 @@ char Input::top() {
 
     in_.get(c);
 
-
     return c;
 }
 

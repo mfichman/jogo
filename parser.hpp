@@ -15,42 +15,57 @@ public:
     Parser(Lexer::Ptr lexer);
 
     /* File structure and layout */
-    void rule_translation_unit_class();
-    void rule_translation_unit_struct();
-    void rule_translation_unit_module();
-    void rule_import_statement_list();
-    void rule_import_statement();
-    void rule_member_definition_list();
-    void rule_member_definition();
-    void rule_member_definition_tail();
-    void rule_access_specifier_public();
+    void translation_unit_class();
+    void translation_unit_interface();
+    void translation_unit_struct();
+    void translation_unit_module();
 
-    void rule_empty();
-    void rule_file_class();
-    void rule_file_struct();
-    void rule_imports();
-    void rule_import();
-    void rule_defs_public();
-    void rule_defs_private();
-    void rule_def_member();
-    void rule_def_ctor();
-    void rule_def_dtor();
+    void class_member_list_import();
+    void class_member_list_def();
+    void class_member_list_variable();
+    void class_member_list_constructor();
+    void class_member_list_destructor();
+    void class_member_list_function();
 
-    /* Type names and structure */
-    void rule_typename();
-    void rule_typetoken();
-    void rule_type_uint();
-    void rule_type_int();
+    void interface_member_list_import();
+    void interface_member_list_def();
+    void interface_member_list_prototype();
+    
+    void struct_member_list_import();
+    void struct_member_list_def();
+    void struct_member_list_variable();
+    void struct_member_list_constructor();
+    void struct_member_list_function();
 
-    /* Statements */
-    void rule_init_assign();
-    void rule_init_zero();
-    void rule_init_function();
+    void module_member_list_import();
+    void module_member_list_def();
+    void module_member_list_function();
 
-    /* Source code body */
-    void rule_function();
-    void rule_expr();
+    void import();
+    void def();
+    void variable();
+    void constructor();
+    void destructor();
+    void function();
+    void prototype();
 
+    void access_public();
+    void access_private();
+    void access_protected();
+    void storage();
+    void native();
+    void type_uint();
+    void type_int();
+    void type_qualified_name();
+
+    void initializer_expression();
+    void initializer_zero();
+    void qualified_name();
+    void qualified_name_tail();
+    void compound_statement();
+
+    void empty();
+    
     void print_ast(Node::Ptr node, int level);
     void push(Node::Ptr node);
 

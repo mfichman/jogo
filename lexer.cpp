@@ -129,6 +129,8 @@ Token Lexer::token_word() {
         }
     }
 
+    cout << "WORD: " << word << endl;
+
     /* 
      * This should never happen, because this function only gets called when
      * there is at least one character on the input queue.
@@ -162,6 +164,7 @@ Token Lexer::token_type() {
             break;
         }
     }
+    cout << "TYPE: " << word << endl;
 
     /* Type token or package*/
     value_ = word;
@@ -231,10 +234,13 @@ std::map<std::string, Token> table_word() {
     word["class"] = TOK_CLASS;
     word["struct"] = TOK_STRUCT;
     word["interface"] = TOK_INTERFACE;
+    word["module"] = TOK_MODULE;
     word["public"] = TOK_PUBLIC;
     word["private"] = TOK_PRIVATE;
     word["protected"] = TOK_PROTECTED;
     word["static"] = TOK_STATIC;
+    word["native"] = TOK_NATIVE;
+    word["def"] = TOK_DEF;
     word["if"] = TOK_IF;
     word["then"] = TOK_THEN;
     word["else"] = TOK_ELSE;

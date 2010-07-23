@@ -15,7 +15,7 @@ static const std::map<TokenPair, Parser::Rule> rule_ = table_rule();
 
 Parser::Parser(Lexer::Ptr lexer) {
     sstack_.push(TOK_EOF);
-    sstack_.push(SYM_FILE);
+    sstack_.push(SYM_TRANSLATION_UNIT);
     node_ = Node::Ptr(new Node);
 
     Token token = lexer->token();
@@ -80,156 +80,359 @@ void Parser::print_ast(Node::Ptr node, int level) {
     }
 }
 
-void Parser::rule_empty() {
-}
-
-void Parser::rule_file_class() {
-    push(Node::Ptr(new Node("rule_file_class")));
-    sstack_.push(SYM_DEFS);
-    sstack_.push(SYM_IMPORTS);
+void Parser::translation_unit_class() {
+    cout << "class" << endl;
+    sstack_.push(SYM_CLASS_MEMBER_LIST);
     sstack_.push(TOK_SEMI);
-    sstack_.push(SYM_TYPENAME);
+    sstack_.push(SYM_QUALIFIED_NAME);
     sstack_.push(TOK_CLASS);
 }
 
-void Parser::rule_file_struct() {
-    sstack_.push(SYM_DEFS);
-    sstack_.push(SYM_IMPORTS);
+void Parser::translation_unit_interface() {
+    sstack_.push(SYM_INTERFACE_MEMBER_LIST);
     sstack_.push(TOK_SEMI);
-    sstack_.push(SYM_TYPENAME);
+    sstack_.push(SYM_QUALIFIED_NAME);
+    sstack_.push(TOK_INTERFACE);
+}
+
+void Parser::translation_unit_struct() {
+    sstack_.push(SYM_STRUCT_MEMBER_LIST);
+    sstack_.push(TOK_SEMI);
+    sstack_.push(SYM_QUALIFIED_NAME);
     sstack_.push(TOK_STRUCT);
 }
 
-void Parser::rule_imports() {
-    sstack_.push(SYM_IMPORTS);
+void Parser::translation_unit_module() {
+    sstack_.push(SYM_MODULE_MEMBER_LIST);
+    sstack_.push(TOK_SEMI);
+    sstack_.push(SYM_QUALIFIED_NAME);
+    sstack_.push(TOK_MODULE);
+}
+
+
+void Parser::class_member_list_import() {
+    sstack_.push(SYM_CLASS_MEMBER_LIST);
     sstack_.push(SYM_IMPORT);
 }
 
-void Parser::rule_import() {
-    push(Node::Ptr(new Node("rule_import")));
+void Parser::class_member_list_def() {
+    sstack_.push(SYM_CLASS_MEMBER_LIST);
+    sstack_.push(SYM_DEF);
+}
+
+void Parser::class_member_list_variable() {
+    sstack_.push(SYM_CLASS_MEMBER_LIST);
+    sstack_.push(SYM_VARIABLE);
+}
+
+void Parser::class_member_list_constructor() {
+    sstack_.push(SYM_CLASS_MEMBER_LIST);
+    sstack_.push(SYM_CONSTRUCTOR);
+}
+
+void Parser::class_member_list_destructor() {
+    sstack_.push(SYM_CLASS_MEMBER_LIST);
+    sstack_.push(SYM_DESTRUCTOR);
+}
+
+void Parser::class_member_list_function() {
+    sstack_.push(SYM_CLASS_MEMBER_LIST);
+    sstack_.push(SYM_FUNCTION);
+}
+
+
+void Parser::interface_member_list_import() {
+    sstack_.push(SYM_INTERFACE_MEMBER_LIST);
+    sstack_.push(SYM_IMPORT);
+}
+
+void Parser::interface_member_list_def() {
+    sstack_.push(SYM_INTERFACE_MEMBER_LIST);
+    sstack_.push(SYM_DEF);
+}
+
+void Parser::interface_member_list_prototype() {
+    sstack_.push(SYM_INTERFACE_MEMBER_LIST);
+    sstack_.push(SYM_PROTOTYPE);
+}
+
+    
+void Parser::struct_member_list_import() {
+    sstack_.push(SYM_STRUCT_MEMBER_LIST);
+    sstack_.push(SYM_IMPORT);
+}
+
+void Parser::struct_member_list_def() {
+    sstack_.push(SYM_STRUCT_MEMBER_LIST);
+    sstack_.push(SYM_IMPORT);
+}
+
+void Parser::struct_member_list_variable() {
+    sstack_.push(SYM_STRUCT_MEMBER_LIST);
+    sstack_.push(SYM_VARIABLE);
+}
+
+void Parser::struct_member_list_constructor() {
+    sstack_.push(SYM_STRUCT_MEMBER_LIST);
+    sstack_.push(SYM_CONSTRUCTOR);
+}
+
+void Parser::struct_member_list_function() {
+    sstack_.push(SYM_STRUCT_MEMBER_LIST);
+    sstack_.push(SYM_FUNCTION);
+}
+
+
+void Parser::module_member_list_import() {
+    sstack_.push(SYM_MODULE_MEMBER_LIST);
+    sstack_.push(SYM_IMPORT);
+}
+
+void Parser::module_member_list_def() {
+    sstack_.push(SYM_MODULE_MEMBER_LIST);
+    sstack_.push(SYM_DEF);
+}
+
+void Parser::module_member_list_function() {
+    sstack_.push(SYM_MODULE_MEMBER_LIST);
+    sstack_.push(SYM_FUNCTION);
+}
+
+
+void Parser::import() {
     sstack_.push(TOK_SEMI);
-    sstack_.push(SYM_TYPENAME);
+    sstack_.push(SYM_QUALIFIED_NAME);
     sstack_.push(TOK_IMPORT);
 }
 
-void Parser::rule_defs_public() {
-    //push(Node::Ptr(new Node("rule_defs_public")));
-    sstack_.push(SYM_DEFS);
-    sstack_.push(SYM_DEF);
-    sstack_.push(TOK_PUBLIC);
+void Parser::def() {
+    sstack_.push(TOK_SEMI);
+    sstack_.push(TOK_TYPE);
+    sstack_.push(SYM_TYPE);
+    sstack_.push(TOK_DEF);
 }
 
-void Parser::rule_defs_private() {
-    //push(Node::Ptr(new Node("rule_defs_private")));
-    sstack_.push(SYM_DEFS);
-    sstack_.push(SYM_DEF);
-    sstack_.push(TOK_PRIVATE);
-}
-
-void Parser::rule_def_member() {
-    push(Node::Ptr(new Node("rule_def_member")));
-    sstack_.push(SYM_INIT);
+void Parser::variable() {
+    sstack_.push(SYM_INITIALIZER);
     sstack_.push(TOK_IDENT);
     sstack_.push(SYM_TYPE);
+    sstack_.push(SYM_STORAGE);
+    sstack_.push(SYM_ACCESS);
 }
 
-void Parser::rule_def_ctor() {
-    push(Node::Ptr(new Node("rule_def_ctor")));
-    sstack_.push(SYM_FUNCTION);
+void Parser::constructor() {
+    sstack_.push(SYM_COMPOUND_STATEMENT);
+    sstack_.push(SYM_NATIVE);
+    sstack_.push(SYM_ACCESS);
+
+    // TODO: ADD ARGUMENT LIST
+    sstack_.push(TOK_RPAREN);
+    sstack_.push(TOK_LPAREN);
+
     sstack_.push(TOK_INIT);
 }
 
-void Parser::rule_def_dtor() {
-    push(Node::Ptr(new Node("rule_def_dtor")));
-    sstack_.push(SYM_FUNCTION);
+void Parser::destructor() {
+    sstack_.push(SYM_COMPOUND_STATEMENT);
+    sstack_.push(SYM_NATIVE);
+
+    // TODO: ADD ARGUMENT LIST
+    sstack_.push(TOK_RPAREN);
+    sstack_.push(TOK_LPAREN);
+
     sstack_.push(TOK_DESTROY);
 }
 
-void Parser::rule_typename() {
-    push(Node::Ptr(new Node("rule_typename")));
-    sstack_.push(SYM_TYPETOKEN);
+void Parser::function() {
+    sstack_.push(SYM_COMPOUND_STATEMENT);
+    sstack_.push(SYM_TYPE);
+    sstack_.push(SYM_NATIVE);
+    sstack_.push(SYM_STORAGE);
+    sstack_.push(SYM_ACCESS);
+
+    // TODO: ADD ARGUMENT LIST
+    sstack_.push(TOK_RPAREN);
+    sstack_.push(TOK_LPAREN);
+
+    sstack_.push(TOK_IDENT);
+}
+
+void Parser::prototype() {
+    sstack_.push(TOK_SEMI);
+    sstack_.push(SYM_TYPE);
+
+    // TODO: ADD ARGUMENT LIST
+    sstack_.push(TOK_RPAREN);
+    sstack_.push(TOK_LPAREN);
+
+    sstack_.push(TOK_IDENT);
+}
+
+
+void Parser::access_public() {
+    sstack_.push(TOK_PUBLIC);
+}
+
+void Parser::access_private() {
+    sstack_.push(TOK_PRIVATE);
+}
+
+void Parser::access_protected() {
+    sstack_.push(TOK_PROTECTED);
+}
+
+void Parser::storage() {
+    sstack_.push(TOK_STATIC);
+}
+
+void Parser::native() {
+    sstack_.push(TOK_NATIVE);
+}
+
+void Parser::type_uint() {
+    sstack_.push(TOK_UINT);
+}
+
+void Parser::type_int() {
+    sstack_.push(TOK_INT);
+}
+
+void Parser::type_qualified_name() {
+    sstack_.push(SYM_QUALIFIED_NAME);
+}
+
+void Parser::initializer_expression() {
+    sstack_.push(TOK_SEMI);
+    sstack_.push(SYM_EXPRESSION); 
+    sstack_.push(TOK_EQUAL);
+}
+
+void Parser::initializer_zero() {
+    sstack_.push(TOK_SEMI);
+}
+
+
+void Parser::qualified_name() {
+    sstack_.push(SYM_QUALIFIED_NAME_TAIL);
     sstack_.push(TOK_TYPE);
 }
 
-void Parser::rule_typetoken() {
-    //push(Node::Ptr(new Node("rule_typetoken")));
-    sstack_.push(SYM_TYPETOKEN);
+void Parser::qualified_name_tail() {
+    sstack_.push(SYM_QUALIFIED_NAME_TAIL);
     sstack_.push(TOK_TYPE);
     sstack_.push(TOK_SCOPE);
 }
 
-void Parser::rule_type_uint() {
-    sstack_.push(TOK_UINT);
-}
-
-void Parser::rule_type_int() {
-    push(Node::Ptr(new Node("rule_type_int")));
-    sstack_.push(TOK_INT);
-}
-
-void Parser::rule_init_assign() {
-    push(Node::Ptr(new Node("rule_init_assign")));
-    sstack_.push(TOK_SEMI);
-    sstack_.push(SYM_EXPR);
-    sstack_.push(TOK_EQUAL);
-}
-
-void Parser::rule_init_zero() {
-    push(Node::Ptr(new Node("rule_init_zero")));
-    sstack_.push(TOK_SEMI);
-}
-
-void Parser::rule_init_function() {
-    push(Node::Ptr(new Node("rule_init_function")));
-    sstack_.push(SYM_FUNCTION);
-}
-
-void Parser::rule_function() {
-    push(Node::Ptr(new Node("rule_function")));
+void Parser::compound_statement() {
     sstack_.push(TOK_RBRACE);
-    // sstack_.push(SYM_FUNC);
+
+    // TODO: STATEMENTLIST
     sstack_.push(TOK_LBRACE);
-    sstack_.push(TOK_RPAREN);
-    // sstack_.push(SYM_ARGS);
-    sstack_.push(TOK_LPAREN);
 }
 
-void Parser::rule_expr() {
-    push(Node::Ptr(new Node("rule_expr")));
-    sstack_.push(TOK_NUMBER);
+void Parser::empty() {
 }
-
 
 std::map<TokenPair, Parser::Rule> table_rule() {
     std::map<TokenPair, Parser::Rule> rule;
 
-    rule[make_pair(SYM_FILE, TOK_CLASS)] = &Parser::rule_file_class;
-    rule[make_pair(SYM_FILE, TOK_STRUCT)] = &Parser::rule_file_struct;
-    rule[make_pair(SYM_IMPORTS, TOK_IMPORT)] = &Parser::rule_imports; 
-    rule[make_pair(SYM_IMPORTS, TOK_PUBLIC)] = &Parser::rule_empty;
-    rule[make_pair(SYM_IMPORTS, TOK_PRIVATE)] = &Parser::rule_empty;
-    rule[make_pair(SYM_IMPORT, TOK_IMPORT)] = &Parser::rule_import;
-    rule[make_pair(SYM_DEFS, TOK_PUBLIC)] = &Parser::rule_defs_public;
-    rule[make_pair(SYM_DEFS, TOK_PRIVATE)] = &Parser::rule_defs_private;
-    rule[make_pair(SYM_DEFS, TOK_EOF)] = &Parser::rule_empty;
-    rule[make_pair(SYM_DEF, TOK_TYPE)] = &Parser::rule_def_member;
-    rule[make_pair(SYM_DEF, TOK_UINT)] = &Parser::rule_def_member;
-    rule[make_pair(SYM_DEF, TOK_INT)] = &Parser::rule_def_member;
-    rule[make_pair(SYM_DEF, TOK_INIT)] = &Parser::rule_def_ctor;
-    rule[make_pair(SYM_DEF, TOK_DESTROY)] = &Parser::rule_def_dtor;
-    rule[make_pair(SYM_INIT, TOK_EQUAL)] = &Parser::rule_init_assign;
-    rule[make_pair(SYM_INIT, TOK_SEMI)] = &Parser::rule_init_zero;
-    rule[make_pair(SYM_INIT, TOK_LPAREN)] = &Parser::rule_init_function;
-    rule[make_pair(SYM_TYPE, TOK_UINT)] = &Parser::rule_type_uint;
-    rule[make_pair(SYM_TYPE, TOK_INT)] = &Parser::rule_type_int;
-    rule[make_pair(SYM_TYPE, TOK_TYPE)] = &Parser::rule_typename;
-    rule[make_pair(SYM_TYPENAME, TOK_TYPE)] = &Parser::rule_typename;
-    rule[make_pair(SYM_TYPETOKEN, TOK_SCOPE)] = &Parser::rule_typetoken;
-    rule[make_pair(SYM_TYPETOKEN, TOK_SEMI)] = &Parser::rule_empty;
-    rule[make_pair(SYM_TYPETOKEN, TOK_IDENT)] = &Parser::rule_empty;
-    rule[make_pair(SYM_FUNCTION, TOK_LPAREN)] = &Parser::rule_function;
-    rule[make_pair(SYM_EXPR, TOK_NUMBER)] = &Parser::rule_expr;
+    rule[make_pair(SYM_TRANSLATION_UNIT, TOK_CLASS)] = &Parser::translation_unit_class; 
+    rule[make_pair(SYM_TRANSLATION_UNIT, TOK_INTERFACE)] = &Parser::translation_unit_interface;
+    rule[make_pair(SYM_TRANSLATION_UNIT, TOK_STRUCT)] = &Parser::translation_unit_struct;
+    rule[make_pair(SYM_TRANSLATION_UNIT, TOK_MODULE)] = &Parser::translation_unit_module;
+
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_IMPORT)] = &Parser::class_member_list_import;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_DEF)] = &Parser::class_member_list_def;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_PUBLIC)] = &Parser::class_member_list_variable;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_PRIVATE)] = &Parser::class_member_list_variable;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_PROTECTED)] = &Parser::class_member_list_variable;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_STATIC)] = &Parser::class_member_list_variable;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_TYPE)] = &Parser::class_member_list_variable;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_INT)] = &Parser::class_member_list_variable;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_UINT)] = &Parser::class_member_list_variable;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_INIT)] = &Parser::class_member_list_constructor;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_DESTROY)] = &Parser::class_member_list_destructor;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_IDENT)] = &Parser::class_member_list_function;
+    rule[make_pair(SYM_CLASS_MEMBER_LIST, TOK_EOF)] = &Parser::empty;
+
+    rule[make_pair(SYM_INTERFACE_MEMBER_LIST, TOK_IMPORT)] = &Parser::interface_member_list_import;
+    rule[make_pair(SYM_INTERFACE_MEMBER_LIST, TOK_DEF)] = &Parser::interface_member_list_def;
+    rule[make_pair(SYM_INTERFACE_MEMBER_LIST, TOK_IDENT)] = &Parser::interface_member_list_prototype;
+    rule[make_pair(SYM_INTERFACE_MEMBER_LIST, TOK_EOF)] = &Parser::empty;
+
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_IMPORT)] = &Parser::struct_member_list_import;
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_DEF)] = &Parser::struct_member_list_def;
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_PUBLIC)] = &Parser::struct_member_list_variable;
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_PRIVATE)] = &Parser::struct_member_list_variable;
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_PROTECTED)] = &Parser::struct_member_list_variable;
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_STATIC)] = &Parser::struct_member_list_variable;
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_INT)] = &Parser::struct_member_list_variable;
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_UINT)] = &Parser::struct_member_list_variable;
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_TYPE)] = &Parser::struct_member_list_variable;
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_INIT)] = &Parser::struct_member_list_constructor;
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_IDENT)] = &Parser::struct_member_list_function;
+    rule[make_pair(SYM_STRUCT_MEMBER_LIST, TOK_EOF)] = &Parser::empty;
+
+    rule[make_pair(SYM_MODULE_MEMBER_LIST, TOK_IMPORT)] = &Parser::module_member_list_import;
+    rule[make_pair(SYM_MODULE_MEMBER_LIST, TOK_DEF)] = &Parser::module_member_list_def;
+    rule[make_pair(SYM_MODULE_MEMBER_LIST, TOK_IDENT)] = &Parser::module_member_list_function;
+    rule[make_pair(SYM_MODULE_MEMBER_LIST, TOK_EOF)] = &Parser::empty;
+
+    rule[make_pair(SYM_IMPORT, TOK_IMPORT)] = &Parser::import;
+
+    rule[make_pair(SYM_DEF, TOK_DEF)] = &Parser::def;
+    rule[make_pair(SYM_VARIABLE, TOK_PUBLIC)] = &Parser::variable;
+    rule[make_pair(SYM_VARIABLE, TOK_PRIVATE)] = &Parser::variable;
+    rule[make_pair(SYM_VARIABLE, TOK_PROTECTED)] = &Parser::variable;
+    rule[make_pair(SYM_VARIABLE, TOK_STATIC)] = &Parser::variable;
+    rule[make_pair(SYM_VARIABLE, TOK_INT)] = &Parser::variable;
+    rule[make_pair(SYM_VARIABLE, TOK_UINT)] = &Parser::variable;
+    rule[make_pair(SYM_VARIABLE, TOK_TYPE)] = &Parser::variable;
+
+    rule[make_pair(SYM_CONSTRUCTOR, TOK_INIT)] = &Parser::constructor;
+    rule[make_pair(SYM_DESTRUCTOR, TOK_DESTROY)] = &Parser::destructor;
+    rule[make_pair(SYM_FUNCTION, TOK_IDENT)] = &Parser::function;
+    rule[make_pair(SYM_PROTOTYPE, TOK_IDENT)] = &Parser::prototype;
+
+    rule[make_pair(SYM_ACCESS, TOK_PUBLIC)] = &Parser::access_public;
+    rule[make_pair(SYM_ACCESS, TOK_PRIVATE)] = &Parser::access_private;
+    rule[make_pair(SYM_ACCESS, TOK_PROTECTED)] = &Parser::access_protected;
+    rule[make_pair(SYM_ACCESS, TOK_STATIC)] = &Parser::empty;
+    rule[make_pair(SYM_ACCESS, TOK_NATIVE)] = &Parser::empty;
+    rule[make_pair(SYM_ACCESS, TOK_INT)] = &Parser::empty;
+    rule[make_pair(SYM_ACCESS, TOK_UINT)] = &Parser::empty;
+    rule[make_pair(SYM_ACCESS, TOK_TYPE)] = &Parser::empty;
+    rule[make_pair(SYM_ACCESS, TOK_LBRACE)] = &Parser::empty;
+
+    rule[make_pair(SYM_STORAGE, TOK_STATIC)] = &Parser::storage;
+    rule[make_pair(SYM_STORAGE, TOK_NATIVE)] = &Parser::empty;
+    rule[make_pair(SYM_STORAGE, TOK_INT)] = &Parser::empty;
+    rule[make_pair(SYM_STORAGE, TOK_UINT)] = &Parser::empty;
+    rule[make_pair(SYM_STORAGE, TOK_TYPE)] = &Parser::empty;
+    rule[make_pair(SYM_STORAGE, TOK_LBRACE)] = &Parser::empty;
+
+    rule[make_pair(SYM_NATIVE, TOK_NATIVE)] = &Parser::native;
+    rule[make_pair(SYM_NATIVE, TOK_INT)] = &Parser::empty;
+    rule[make_pair(SYM_NATIVE, TOK_UINT)] = &Parser::empty;
+    rule[make_pair(SYM_NATIVE, TOK_TYPE)] = &Parser::empty;
+    rule[make_pair(SYM_NATIVE, TOK_LBRACE)] = &Parser::empty;
+
+    rule[make_pair(SYM_TYPE, TOK_INT)] = &Parser::type_int;
+    rule[make_pair(SYM_TYPE, TOK_UINT)] = &Parser::type_uint;
+    rule[make_pair(SYM_TYPE, TOK_TYPE)] = &Parser::type_qualified_name; 
+
+    rule[make_pair(SYM_INITIALIZER, TOK_EQUAL)] = &Parser::initializer_expression;
+    rule[make_pair(SYM_INITIALIZER, TOK_SEMI)] = &Parser::initializer_zero;
     
+    rule[make_pair(SYM_QUALIFIED_NAME, TOK_TYPE)] = &Parser::qualified_name;
+    rule[make_pair(SYM_QUALIFIED_NAME_TAIL, TOK_SCOPE)] = &Parser::qualified_name_tail;
+    rule[make_pair(SYM_QUALIFIED_NAME_TAIL, TOK_SEMI)] = &Parser::empty;
+    rule[make_pair(SYM_QUALIFIED_NAME_TAIL, TOK_TYPE)] = &Parser::empty;  
+    rule[make_pair(SYM_QUALIFIED_NAME_TAIL, TOK_IDENT)] = &Parser::empty;
+    rule[make_pair(SYM_QUALIFIED_NAME_TAIL, TOK_LBRACE)] = &Parser::empty;
+    
+    rule[make_pair(SYM_COMPOUND_STATEMENT, TOK_LBRACE)] = &Parser::compound_statement;
+
     return rule;
 }
 
