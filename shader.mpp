@@ -1,0 +1,27 @@
+class Jet::OpenGLShader;
+
+private CoreEngine engine;
+private ResourceState state = RenderState::UNLOADED;
+private String name;
+private bool enabled;
+
+public @init(CoreEngine engine, String name) {
+    self.engine = engine;
+    self.name = name;
+}
+
+public @destroy() {
+    state(RenderState::UNLOADED);
+}
+
+public String name() {
+    return name;
+}
+
+public ResourceState state() {
+    return state;
+}
+
+public bool enabled?() {
+    return enabled;
+}

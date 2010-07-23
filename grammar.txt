@@ -1,0 +1,118 @@
+
+
+translation_unit
+    : TOK_CLASS typename TOK_SEMI imports defs
+    | TOK_STRUCT typename TOK_SEMI imports defs
+    | TOK_MODULE typename TOK_SEMI imports defs
+    ;
+    
+import_statement_list    
+    : import_statement import_statement_list
+    | <empty>
+    ;
+
+import_statement     
+    : TOK_IMPORT typename TOK_SEMI
+    ;
+      
+member_definition_list
+    : member_definition member_definition_list
+    | <empty>
+    ;
+
+member_definition
+    : access_specifier native_specifier member_definition_tail
+    ;
+
+member_definition_tail
+    : static_specifier type_specifier TOK_IDENT initializer 
+    | TOK_INIT function_definition
+    | TOK_DESTROY function_definition
+    ;
+
+access_specifier     
+    : TOK_PUBLIC
+    | TOK_PRIVATE
+    | TOK_PROTECTED
+    | <empty>
+    ;
+
+static_specifier
+    : TOK_STATIC
+    | <empty>
+    ;
+    
+native_specifier
+    : TOK_NATIVE
+    | <empty>
+    ;
+
+initializer     
+    : TOK_EQUALS primary_expression TOK_SEMI
+    | TOK_SEMI
+    | function_definition
+    ;
+
+type_specifier       
+    : uint
+    | int
+    | ushort
+    | short
+    | ubyte
+    | byte 
+    | typename_list
+    ;
+
+typename_list
+    : TOK_TYPE typename_list_tail
+    ;
+
+typename_list_tail
+    : TOK_SCOPE TOK_TYPE
+    | <empty>
+    ;
+    
+argument_list
+    : argument argument_list_tail
+    ;
+
+argument_list_tail
+    : TOK_COMMA argument argument_list_tail
+    | <empty>
+    ;
+
+function_definition   
+    : TOK_LPAREN argument_list TOK_RPAREN compound_statement
+    ;
+
+compound_statement
+    : TOK_LBRACE statement_list TOK_RBRACE
+    ;
+
+statement_list
+    : statement statement_list
+    | <empty>
+    ;
+
+statement
+    : compound_statement
+    | expression TOK_SEMI
+    | selection_statement
+    | TOK_IF TOK_LPAREN expression TOK_RPAREN compound_statement conditional_tail
+    | TOK_WHILE TOK_LPAREN expression TOK_RPAREN compound_statement
+    | TOK_UNTIL TOK_LPAREN expression TOK_RPAREN compound_statement
+    | TOK_DO compound_statement TOK_WHILE TOK_LPAREN expression TOK_RPAREN TOK_SEMI
+    | TOK_FOR TOK_LPAREN expression_statement expression_statement expression TOK_RPAREN compound_statement
+    | TOK_EACH TOK_LPAREN ---- TODO
+    ;
+
+conditional_tail:
+    : TOK_ELSE compound_statement
+    | <empty>
+    ;
+
+expression: 
+    : 
+    | assignment_expression
+    | 
+
