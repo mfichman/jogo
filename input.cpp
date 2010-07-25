@@ -27,6 +27,7 @@ char Input::top() {
     }
 
     in_.get(c);
+    std::cout << c;
 
     return c;
 }

@@ -2,12 +2,16 @@ class Geom::Rectangle;
 
 import Bob::Jim;
 
-int x = 10 + 10;
+int x = bob;
 int y;
 int width;
 int height;
 
 @init() {
+    hello.bob = 10;
+    jim = jim + 1;
+    mike++;
+    int whatever = 888;
 }
 
 @destroy() {

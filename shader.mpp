@@ -3,7 +3,6 @@ class Jet::OpenGLShader;
 CoreEngine engine;
 ResourceState state = RenderState::UNLOADED;
 String name;
-bool enabled;
 
 @init(CoreEngine engine, String name) {
     self.engine = engine;

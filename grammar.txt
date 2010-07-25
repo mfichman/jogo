@@ -111,6 +111,15 @@ compound_statement
     : TOK_LBRACE statement_list TOK_RBRACE
     ;
 
+statement_list
+    : statement statement_list
+    | <empty>
+    ;
+
+statement
+    : assignment TOK_SEMI
+    | type TOK_IDENT initializer; 
+    ;
 
 assignment
     : logical_or assignment_list
@@ -248,5 +257,6 @@ primary:
     : TOK_STRING
     | TOK_NUMBER
     | TOK_IDENT
+    | qualified_name
     | TOK_LPAREN assignment TOK_RPAREN
     ;

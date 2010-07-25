@@ -63,6 +63,9 @@ public:
     void qualified_name();
     void qualified_name_tail();
     void compound_statement();
+    void statement_list();
+    void statement_expression();
+    void statement_definition();
 
     void assignment();
     void assignment_list_assign();
@@ -131,6 +134,7 @@ public:
     void primary_number();
     void primary_ident();
     void primary_group();    
+    void primary_qualified_name();
 
     void empty();
     
