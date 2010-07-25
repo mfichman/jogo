@@ -64,6 +64,74 @@ public:
     void qualified_name_tail();
     void compound_statement();
 
+    void assignment();
+    void assignment_list_assign();
+    void assignment_list_mulassign();   
+    void assignment_list_divassign();
+    void assignment_list_modassign();
+    void assignment_list_subassign();
+    void assignment_list_addassign();
+    void assignment_list_lshiftassign();    
+    void assignment_list_rshiftassign();
+    void assignment_list_bitandassign();
+    void assignment_list_bitxorassign();
+    void assignment_list_bitorassign();
+
+    void logical_or();
+    void logical_or_list();
+    void logical_and();
+    void logical_and_list();
+
+    void bitwise_or();  
+    void bitwise_or_list_or();
+    void bitwise_or_list_xor();
+    void bitwise_and();
+    void bitwise_and_list();
+
+    void equality();
+    void equality_list_equal();
+    void equality_list_nequal();
+
+    void relation();
+    void relation_list_gt();
+    void relation_list_lt();    
+    void relation_list_gteq();
+    void relation_list_lteq();
+
+    void shift();
+    void shift_list_lshift();
+    void shift_list_rshift();
+
+    void addition();
+    void addition_list_plus();
+    void addition_list_minus();
+
+    void multiplication();
+    void multiplication_list_mul();
+    void multiplication_list_div();
+    void multiplication_list_mod();
+
+    void unary_postfix();
+    void unary_inc();
+    void unary_dec();
+    void unary_plus();
+    void unary_minus();
+    void unary_bang();
+    void unary_tilde();
+    void unary_star();
+
+    void postfix();
+    void postfix_list_index();
+    void postfix_list_call();
+    void postfix_list_dot();
+    void postfix_list_inc();
+    void postfix_list_dec();
+    
+    void primary_string();
+    void primary_number();
+    void primary_ident();
+    void primary_group();    
+
     void empty();
     
     void print_ast(Node::Ptr node, int level);

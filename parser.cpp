@@ -46,7 +46,8 @@ Parser::Parser(Lexer::Ptr lexer) {
                  */
                 cerr << "Syntax error: line " << lexer->line_number();
                 cerr << ":" << lexer->char_number() << endl;
-                throw std::runtime_error("Syntax error");
+                //throw std::runtime_error("Syntax error");
+                sstack_.pop();
             } else {
 
                 /* Rule found; call the rule */
@@ -222,7 +223,6 @@ void Parser::variable() {
 
 void Parser::constructor() {
     sstack_.push(SYM_COMPOUND_STATEMENT);
-    sstack_.push(SYM_NATIVE);
     sstack_.push(SYM_ACCESS);
 
     // TODO: ADD ARGUMENT LIST
@@ -234,7 +234,6 @@ void Parser::constructor() {
 
 void Parser::destructor() {
     sstack_.push(SYM_COMPOUND_STATEMENT);
-    sstack_.push(SYM_NATIVE);
 
     // TODO: ADD ARGUMENT LIST
     sstack_.push(TOK_RPAREN);
@@ -303,8 +302,8 @@ void Parser::type_qualified_name() {
 
 void Parser::initializer_expression() {
     sstack_.push(TOK_SEMI);
-    sstack_.push(SYM_EXPRESSION); 
-    sstack_.push(TOK_EQUAL);
+    sstack_.push(SYM_ASSIGNMENT); 
+    sstack_.push(TOK_ASSIGN);
 }
 
 void Parser::initializer_zero() {
@@ -321,6 +320,300 @@ void Parser::qualified_name_tail() {
     sstack_.push(SYM_QUALIFIED_NAME_TAIL);
     sstack_.push(TOK_TYPE);
     sstack_.push(TOK_SCOPE);
+}
+
+void Parser::assignment() {
+    sstack_.push(SYM_ASSIGNMENT_LIST);
+    sstack_.push(SYM_LOGICAL_OR);
+}
+
+void Parser::assignment_list_assign() {
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_ASSIGN);
+}
+
+void Parser::assignment_list_mulassign() {
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_MULASSIGN);
+}
+   
+void Parser::assignment_list_divassign() {
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_DIVASSIGN);
+}
+
+void Parser::assignment_list_modassign() {
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_MODASSIGN);
+}
+
+void Parser::assignment_list_subassign() {
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_SUBASSIGN);
+}
+
+void Parser::assignment_list_addassign() {
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_ADDASSIGN);
+}
+
+void Parser::assignment_list_lshiftassign() {
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_LSHIFTASSIGN);
+}
+    
+void Parser::assignment_list_rshiftassign() {
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_RSHIFTASSIGN);
+}
+
+void Parser::assignment_list_bitandassign() {
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_BITANDASSIGN);
+}
+
+void Parser::assignment_list_bitxorassign() {
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_BITXORASSIGN);
+}
+
+void Parser::assignment_list_bitorassign() {
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_BITORASSIGN);
+}
+
+void Parser::logical_or() {
+    sstack_.push(SYM_LOGICAL_OR_LIST);
+    sstack_.push(SYM_LOGICAL_AND);
+}
+
+void Parser::logical_or_list() {
+    sstack_.push(SYM_LOGICAL_OR);
+    sstack_.push(TOK_OR);
+}
+
+void Parser::logical_and() {
+    sstack_.push(SYM_LOGICAL_AND_LIST);
+    sstack_.push(SYM_BITWISE_OR);
+}
+
+void Parser::logical_and_list() {
+    sstack_.push(SYM_LOGICAL_AND);
+    sstack_.push(TOK_AND);
+}
+
+void Parser::bitwise_or() {
+    sstack_.push(SYM_BITWISE_OR_LIST);  
+    sstack_.push(SYM_BITWISE_AND);
+}
+  
+void Parser::bitwise_or_list_or() {
+    sstack_.push(SYM_BITWISE_OR);
+    sstack_.push(TOK_BITOR);
+}
+
+void Parser::bitwise_or_list_xor() {
+    sstack_.push(SYM_BITWISE_OR);
+    sstack_.push(TOK_BITXOR);
+}
+
+void Parser::bitwise_and() {
+    sstack_.push(SYM_BITWISE_AND_LIST);
+    sstack_.push(SYM_EQUALITY);
+}
+
+void Parser::bitwise_and_list() {
+    sstack_.push(SYM_BITWISE_AND);
+    sstack_.push(TOK_BITAND);
+}
+
+void Parser::equality() {
+    sstack_.push(SYM_EQUALITY_LIST);
+    sstack_.push(SYM_RELATION);
+}
+
+void Parser::equality_list_equal() {
+    sstack_.push(SYM_EQUALITY);
+    sstack_.push(TOK_EQUAL);
+}
+
+void Parser::equality_list_nequal() {
+    sstack_.push(SYM_EQUALITY);
+    sstack_.push(TOK_NEQUAL);
+}
+
+
+void Parser::relation() {
+    sstack_.push(SYM_RELATION_LIST);
+    sstack_.push(SYM_SHIFT);
+}
+
+void Parser::relation_list_gt() {
+    sstack_.push(SYM_RELATION);
+    sstack_.push(TOK_GT);
+}
+
+void Parser::relation_list_lt() {
+    sstack_.push(SYM_RELATION);
+    sstack_.push(TOK_LT);
+}
+    
+void Parser::relation_list_gteq() {
+    sstack_.push(SYM_RELATION);
+    sstack_.push(TOK_GTEQ);
+}
+
+void Parser::relation_list_lteq() {
+    sstack_.push(SYM_RELATION);
+    sstack_.push(TOK_LTEQ);
+}
+
+
+void Parser::shift() {
+    sstack_.push(SYM_SHIFT_LIST);
+    sstack_.push(SYM_ADDITION);
+}
+
+void Parser::shift_list_lshift() {
+    sstack_.push(SYM_SHIFT);
+    sstack_.push(TOK_LSHIFT);
+}
+
+void Parser::shift_list_rshift() {
+    sstack_.push(SYM_SHIFT);
+    sstack_.push(TOK_RSHIFT);
+}
+
+
+void Parser::addition() {
+    sstack_.push(SYM_ADDITION_LIST);
+    sstack_.push(SYM_MULTIPLICATION);
+}
+
+void Parser::addition_list_plus() {
+    sstack_.push(SYM_ADDITION);
+    sstack_.push(TOK_PLUS);
+}
+
+void Parser::addition_list_minus() {
+    sstack_.push(SYM_ADDITION);
+    sstack_.push(TOK_MINUS);
+}
+
+
+void Parser::multiplication() {
+    sstack_.push(SYM_MULTIPLICATION_LIST);
+    sstack_.push(SYM_UNARY);
+}
+
+void Parser::multiplication_list_mul() {
+    sstack_.push(SYM_MULTIPLICATION);
+    sstack_.push(TOK_STAR);
+}
+
+void Parser::multiplication_list_div() {
+    sstack_.push(SYM_MULTIPLICATION);
+    sstack_.push(TOK_SLASH);
+}
+
+void Parser::multiplication_list_mod() {
+    sstack_.push(SYM_MULTIPLICATION);
+    sstack_.push(TOK_MOD);
+}
+
+
+void Parser::unary_postfix() {
+    sstack_.push(SYM_POSTFIX);
+}
+
+void Parser::unary_inc() {
+    sstack_.push(SYM_UNARY);
+    sstack_.push(TOK_INC);
+}
+
+void Parser::unary_dec() {
+    sstack_.push(SYM_UNARY);
+    sstack_.push(TOK_DEC);
+}
+
+void Parser::unary_plus() {
+    sstack_.push(SYM_UNARY);
+    sstack_.push(TOK_PLUS);
+}
+
+void Parser::unary_minus() {
+    sstack_.push(SYM_UNARY);
+    sstack_.push(TOK_MINUS);
+}
+
+void Parser::unary_bang() {
+    sstack_.push(SYM_UNARY);
+    sstack_.push(TOK_BANG);
+}
+
+void Parser::unary_tilde() {
+    sstack_.push(SYM_UNARY);
+    sstack_.push(TOK_TILDE);
+}
+
+void Parser::unary_star() {
+    sstack_.push(SYM_UNARY);
+    sstack_.push(TOK_STAR);
+}
+
+
+void Parser::postfix() {
+    sstack_.push(SYM_POSTFIX_LIST);
+    sstack_.push(SYM_PRIMARY);
+}
+
+void Parser::postfix_list_call() {
+    sstack_.push(SYM_POSTFIX_LIST);
+    sstack_.push(TOK_RPAREN);
+    //sstack_.push(SYM_ARGUMENT_LIST);
+    sstack_.push(TOK_LPAREN);
+}
+
+void Parser::postfix_list_index() {
+    sstack_.push(SYM_POSTFIX_LIST);
+    sstack_.push(TOK_RBRACKET);
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_LBRACKET);
+}
+
+void Parser::postfix_list_dot() {
+    sstack_.push(SYM_POSTFIX_LIST);
+    sstack_.push(TOK_IDENT);
+    sstack_.push(TOK_DOT);
+}
+
+void Parser::postfix_list_inc() {
+    sstack_.push(SYM_POSTFIX_LIST);
+    sstack_.push(TOK_INC);
+}
+
+void Parser::postfix_list_dec() {
+    sstack_.push(SYM_POSTFIX_LIST);
+    sstack_.push(TOK_DEC);
+}
+
+    
+void Parser::primary_string() {
+    sstack_.push(TOK_STRING);
+}
+
+void Parser::primary_number() {
+    sstack_.push(TOK_NUMBER);
+}
+
+void Parser::primary_ident() {
+    sstack_.push(TOK_IDENT);
+}
+
+void Parser::primary_group() {
+    sstack_.push(TOK_RPAREN);
+    sstack_.push(SYM_ASSIGNMENT);
+    sstack_.push(TOK_LPAREN);
 }
 
 void Parser::compound_statement() {
@@ -421,7 +714,7 @@ std::map<TokenPair, Parser::Rule> table_rule() {
     rule[make_pair(SYM_TYPE, TOK_UINT)] = &Parser::type_uint;
     rule[make_pair(SYM_TYPE, TOK_TYPE)] = &Parser::type_qualified_name; 
 
-    rule[make_pair(SYM_INITIALIZER, TOK_EQUAL)] = &Parser::initializer_expression;
+    rule[make_pair(SYM_INITIALIZER, TOK_ASSIGN)] = &Parser::initializer_expression;
     rule[make_pair(SYM_INITIALIZER, TOK_SEMI)] = &Parser::initializer_zero;
     
     rule[make_pair(SYM_QUALIFIED_NAME, TOK_TYPE)] = &Parser::qualified_name;
@@ -432,6 +725,182 @@ std::map<TokenPair, Parser::Rule> table_rule() {
     rule[make_pair(SYM_QUALIFIED_NAME_TAIL, TOK_LBRACE)] = &Parser::empty;
     
     rule[make_pair(SYM_COMPOUND_STATEMENT, TOK_LBRACE)] = &Parser::compound_statement;
+
+
+    rule[make_pair(SYM_ASSIGNMENT, TOK_STRING)] = &Parser::assignment;
+    rule[make_pair(SYM_ASSIGNMENT, TOK_NUMBER)] = &Parser::assignment;
+    rule[make_pair(SYM_ASSIGNMENT, TOK_IDENT)] = &Parser::assignment;
+    rule[make_pair(SYM_ASSIGNMENT, TOK_LPAREN)] = &Parser::assignment; 
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_ASSIGN)] = &Parser::assignment_list_assign;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_MULASSIGN)] = &Parser::assignment_list_mulassign;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_DIVASSIGN)] = &Parser::assignment_list_divassign;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_MODASSIGN)] = &Parser::assignment_list_modassign;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_SUBASSIGN)] = &Parser::assignment_list_subassign;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_ADDASSIGN)] = &Parser::assignment_list_addassign;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_LSHIFTASSIGN)] = &Parser::assignment_list_lshiftassign;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_RSHIFTASSIGN)] = &Parser::assignment_list_rshiftassign;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_BITANDASSIGN)] = &Parser::assignment_list_bitandassign;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_BITXORASSIGN)] = &Parser::assignment_list_bitxorassign;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_BITORASSIGN)] = &Parser::assignment_list_bitorassign;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_RPAREN)] = &Parser::empty;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_RBRACKET)] = &Parser::empty;
+    rule[make_pair(SYM_ASSIGNMENT_LIST, TOK_SEMI)] = &Parser::empty;
+    
+    rule[make_pair(SYM_LOGICAL_OR, TOK_STRING)] = &Parser::logical_or;
+    rule[make_pair(SYM_LOGICAL_OR, TOK_NUMBER)] = &Parser::logical_or;
+    rule[make_pair(SYM_LOGICAL_OR, TOK_IDENT)] = &Parser::logical_or;
+    rule[make_pair(SYM_LOGICAL_OR, TOK_LPAREN)] = &Parser::logical_or; 
+    rule[make_pair(SYM_LOGICAL_OR_LIST, TOK_OR)] = &Parser::logical_or_list;
+    rule[make_pair(SYM_LOGICAL_OR_LIST, TOK_RPAREN)] = &Parser::empty;
+    rule[make_pair(SYM_LOGICAL_OR_LIST, TOK_RBRACKET)] = &Parser::empty;
+    rule[make_pair(SYM_LOGICAL_OR_LIST, TOK_SEMI)] = &Parser::empty;
+    
+    rule[make_pair(SYM_LOGICAL_AND, TOK_STRING)] = &Parser::logical_and;
+    rule[make_pair(SYM_LOGICAL_AND, TOK_NUMBER)] = &Parser::logical_and;
+    rule[make_pair(SYM_LOGICAL_AND, TOK_IDENT)] = &Parser::logical_and;
+    rule[make_pair(SYM_LOGICAL_AND, TOK_LPAREN)] = &Parser::logical_and; 
+    rule[make_pair(SYM_LOGICAL_AND_LIST, TOK_AND)] = &Parser::logical_and_list;
+    rule[make_pair(SYM_LOGICAL_AND_LIST, TOK_RPAREN)] = &Parser::empty;
+    rule[make_pair(SYM_LOGICAL_AND_LIST, TOK_RBRACKET)] = &Parser::empty;
+    rule[make_pair(SYM_LOGICAL_AND_LIST, TOK_SEMI)] = &Parser::empty;
+    
+    rule[make_pair(SYM_BITWISE_OR, TOK_STRING)] = &Parser::bitwise_or;
+    rule[make_pair(SYM_BITWISE_OR, TOK_NUMBER)] = &Parser::bitwise_or;
+    rule[make_pair(SYM_BITWISE_OR, TOK_IDENT)] = &Parser::bitwise_or;
+    rule[make_pair(SYM_BITWISE_OR, TOK_LPAREN)] = &Parser::bitwise_or; 
+    rule[make_pair(SYM_BITWISE_OR_LIST, TOK_BITOR)] = &Parser::bitwise_or_list_or;
+    rule[make_pair(SYM_BITWISE_OR_LIST, TOK_BITXOR)] = &Parser::bitwise_or_list_xor;
+    rule[make_pair(SYM_BITWISE_OR_LIST, TOK_RPAREN)] = &Parser::empty;
+    rule[make_pair(SYM_BITWISE_OR_LIST, TOK_RBRACKET)] = &Parser::empty;
+    rule[make_pair(SYM_BITWISE_OR_LIST, TOK_SEMI)] = &Parser::empty;
+    
+    rule[make_pair(SYM_BITWISE_AND, TOK_STRING)] = &Parser::bitwise_and;
+    rule[make_pair(SYM_BITWISE_AND, TOK_NUMBER)] = &Parser::bitwise_and;
+    rule[make_pair(SYM_BITWISE_AND, TOK_IDENT)] = &Parser::bitwise_and;
+    rule[make_pair(SYM_BITWISE_AND, TOK_LPAREN)] = &Parser::bitwise_and; 
+    rule[make_pair(SYM_BITWISE_AND_LIST, TOK_BITAND)] = &Parser::bitwise_and_list;
+    rule[make_pair(SYM_BITWISE_AND_LIST, TOK_RPAREN)] = &Parser::empty;
+    rule[make_pair(SYM_BITWISE_AND_LIST, TOK_RBRACKET)] = &Parser::empty;
+    rule[make_pair(SYM_BITWISE_AND_LIST, TOK_SEMI)] = &Parser::empty;
+
+    rule[make_pair(SYM_EQUALITY, TOK_STRING)] = &Parser::equality;
+    rule[make_pair(SYM_EQUALITY, TOK_NUMBER)] = &Parser::equality;
+    rule[make_pair(SYM_EQUALITY, TOK_IDENT)] = &Parser::equality;
+    rule[make_pair(SYM_EQUALITY, TOK_LPAREN)] = &Parser::equality; 
+    rule[make_pair(SYM_EQUALITY_LIST, TOK_EQUAL)] = &Parser::equality_list_equal;
+    rule[make_pair(SYM_EQUALITY_LIST, TOK_NEQUAL)] = &Parser::equality_list_nequal;
+    rule[make_pair(SYM_EQUALITY_LIST, TOK_RPAREN)] = &Parser::empty;
+    rule[make_pair(SYM_EQUALITY_LIST, TOK_RBRACKET)] = &Parser::empty;
+    rule[make_pair(SYM_EQUALITY_LIST, TOK_SEMI)] = &Parser::empty;
+
+    rule[make_pair(SYM_RELATION, TOK_STRING)] = &Parser::relation;
+    rule[make_pair(SYM_RELATION, TOK_NUMBER)] = &Parser::relation;
+    rule[make_pair(SYM_RELATION, TOK_IDENT)] = &Parser::relation;
+    rule[make_pair(SYM_RELATION, TOK_LPAREN)] = &Parser::relation; 
+    rule[make_pair(SYM_RELATION_LIST, TOK_GT)] = &Parser::relation_list_gt;
+    rule[make_pair(SYM_RELATION_LIST, TOK_LT)] = &Parser::relation_list_lt;
+    rule[make_pair(SYM_RELATION_LIST, TOK_GTEQ)] = &Parser::relation_list_gteq;
+    rule[make_pair(SYM_RELATION_LIST, TOK_LTEQ)] = &Parser::relation_list_lteq;
+    rule[make_pair(SYM_RELATION_LIST, TOK_RPAREN)] = &Parser::empty;
+    rule[make_pair(SYM_RELATION_LIST, TOK_RBRACKET)] = &Parser::empty;
+    rule[make_pair(SYM_RELATION_LIST, TOK_SEMI)] = &Parser::empty;
+
+    rule[make_pair(SYM_SHIFT, TOK_STRING)] = &Parser::shift;
+    rule[make_pair(SYM_SHIFT, TOK_NUMBER)] = &Parser::shift;
+    rule[make_pair(SYM_SHIFT, TOK_IDENT)] = &Parser::shift;
+    rule[make_pair(SYM_SHIFT, TOK_LPAREN)] = &Parser::shift; 
+    rule[make_pair(SYM_SHIFT_LIST, TOK_LSHIFT)] = &Parser::shift_list_lshift;
+    rule[make_pair(SYM_SHIFT_LIST, TOK_RSHIFT)] = &Parser::shift_list_rshift;
+    rule[make_pair(SYM_SHIFT_LIST, TOK_RPAREN)] = &Parser::empty;
+    rule[make_pair(SYM_SHIFT_LIST, TOK_RBRACKET)] = &Parser::empty;
+    rule[make_pair(SYM_SHIFT_LIST, TOK_SEMI)] = &Parser::empty;
+
+    rule[make_pair(SYM_ADDITION, TOK_STRING)] = &Parser::addition;
+    rule[make_pair(SYM_ADDITION, TOK_NUMBER)] = &Parser::addition;
+    rule[make_pair(SYM_ADDITION, TOK_IDENT)] = &Parser::addition;
+    rule[make_pair(SYM_ADDITION, TOK_LPAREN)] = &Parser::addition; 
+    rule[make_pair(SYM_ADDITION_LIST, TOK_PLUS)] = &Parser::addition_list_plus;
+    rule[make_pair(SYM_ADDITION_LIST, TOK_MINUS)] = &Parser::addition_list_plus;
+    rule[make_pair(SYM_ADDITION_LIST, TOK_RPAREN)] = &Parser::empty;
+    rule[make_pair(SYM_ADDITION_LIST, TOK_RBRACKET)] = &Parser::empty;
+    rule[make_pair(SYM_ADDITION_LIST, TOK_SEMI)] = &Parser::empty;
+
+    rule[make_pair(SYM_MULTIPLICATION, TOK_STRING)] = &Parser::multiplication;
+    rule[make_pair(SYM_MULTIPLICATION, TOK_NUMBER)] = &Parser::multiplication;
+    rule[make_pair(SYM_MULTIPLICATION, TOK_IDENT)] = &Parser::multiplication;
+    rule[make_pair(SYM_MULTIPLICATION, TOK_LPAREN)] = &Parser::multiplication; 
+    rule[make_pair(SYM_MULTIPLICATION_LIST, TOK_STAR)] = &Parser::multiplication_list_mul;
+    rule[make_pair(SYM_MULTIPLICATION_LIST, TOK_SLASH)] = &Parser::multiplication_list_div;
+    rule[make_pair(SYM_MULTIPLICATION_LIST, TOK_MOD)] = &Parser::multiplication_list_mod;
+    rule[make_pair(SYM_MULTIPLICATION_LIST, TOK_RPAREN)] = &Parser::empty;
+    rule[make_pair(SYM_MULTIPLICATION_LIST, TOK_RBRACKET)] = &Parser::empty;
+    rule[make_pair(SYM_MULTIPLICATION_LIST, TOK_SEMI)] = &Parser::empty;
+
+    rule[make_pair(SYM_UNARY, TOK_STRING)] = &Parser::unary_postfix;
+    rule[make_pair(SYM_UNARY, TOK_NUMBER)] = &Parser::unary_postfix;
+    rule[make_pair(SYM_UNARY, TOK_IDENT)] = &Parser::unary_postfix;
+    rule[make_pair(SYM_UNARY, TOK_LPAREN)] = &Parser::unary_postfix; 
+    rule[make_pair(SYM_UNARY, TOK_INC)] = &Parser::unary_inc;
+    rule[make_pair(SYM_UNARY, TOK_DEC)] = &Parser::unary_dec;
+    rule[make_pair(SYM_UNARY, TOK_PLUS)] = &Parser::unary_plus;
+    rule[make_pair(SYM_UNARY, TOK_MINUS)] = &Parser::unary_minus;
+    rule[make_pair(SYM_UNARY, TOK_BANG)] = &Parser::unary_bang;
+    rule[make_pair(SYM_UNARY, TOK_TILDE)] = &Parser::unary_tilde;
+    rule[make_pair(SYM_UNARY, TOK_STAR)] = &Parser::unary_star;
+    
+    rule[make_pair(SYM_POSTFIX, TOK_STRING)] = &Parser::postfix;
+    rule[make_pair(SYM_POSTFIX, TOK_NUMBER)] = &Parser::postfix;
+    rule[make_pair(SYM_POSTFIX, TOK_IDENT)] = &Parser::postfix;
+    rule[make_pair(SYM_POSTFIX, TOK_LPAREN)] = &Parser::postfix; 
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_LPAREN)] = &Parser::postfix_list_call;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_LBRACKET)] = &Parser::postfix_list_index;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_DOT)] = &Parser::postfix_list_dot;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_INC)] = &Parser::postfix_list_inc;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_DEC)] = &Parser::postfix_list_dec;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_RPAREN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_RBRACKET)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_SEMI)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_ASSIGN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_MULASSIGN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_DIVASSIGN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_MODASSIGN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_SUBASSIGN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_ADDASSIGN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_LSHIFTASSIGN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_RSHIFTASSIGN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_BITANDASSIGN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_BITXORASSIGN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_BITORASSIGN)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_OR)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_AND)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_BITAND)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_BITOR)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_BITXOR)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_EQUAL)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_NEQUAL)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_GT)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_LT)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_GTEQ)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_LTEQ)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_LSHIFT)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_RSHIFT)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_PLUS)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_MINUS)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_STAR)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_SLASH)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_MOD)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_INC)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_DEC)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_PLUS)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_MINUS)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_BANG)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_TILDE)] = &Parser::empty;
+    rule[make_pair(SYM_POSTFIX_LIST, TOK_STAR)] = &Parser::empty;
+
+    rule[make_pair(SYM_PRIMARY, TOK_STRING)] = &Parser::primary_string;
+    rule[make_pair(SYM_PRIMARY, TOK_NUMBER)] = &Parser::primary_number;
+    rule[make_pair(SYM_PRIMARY, TOK_IDENT)] = &Parser::primary_ident;
+    rule[make_pair(SYM_PRIMARY, TOK_LPAREN)] = &Parser::primary_group; 
 
     return rule;
 }

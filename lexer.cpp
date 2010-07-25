@@ -7,9 +7,9 @@
 
 using namespace std;
 
-static std::map<char, Token> table_op();
+static std::map<std::string, Token> table_op();
 static std::map<std::string, Token> table_word();
-static const std::map<char, Token> op_ = table_op();
+static const std::map<std::string, Token> op_ = table_op();
 static const std::map<std::string, Token> word_ = table_word();
 
 Lexer::Lexer(Input::Ptr input) :
@@ -36,30 +36,12 @@ Token Lexer::token() {
             char_number_++;
         }
     }
+    input_->top(c);
 
     /* Check for EOF character */
     if (input_->eof()) {
         return TOK_EOF;
     }
-
-    /* Check for the :: token, special case */
-    if (c == ':') {
-        char d = input_->top();
-        if (c == ':') {
-            char_number_++;
-            return TOK_SCOPE;
-        } else {
-            input_->top(d);
-        }
-    }
-
-    /* Check for single operatators */
-    std::map<char, Token>::const_iterator i = op_.find(c);
-    if (i != op_.end()) {
-        char_number_++;
-        return i->second;
-    }
-    input_->top(c);
 
     /* Check for literal strings */
     if (c == '"' || c == '\'') {
@@ -80,8 +62,45 @@ Token Lexer::token() {
     if (isdigit(c)) {
         return token_number();
     }
+
+    /* Check for operators */
+    if (ispunct(c)) {
+        return token_operator();
+    }
     
     return TOK_INVALID;
+}
+
+Token Lexer::token_operator() {
+    std::string op;
+    
+    /* Scan for the end of the operator */
+    while (true) {
+        char c = input_->top();
+        if (ispunct(c)) {
+            op += c;
+            char_number_++;
+        } else {
+            input_->top(c);
+            break;
+        }
+    }
+
+    /* Try shorter operators until we find a match */
+    size_t length = op.length();
+    while (!op.empty()) {
+
+        std::map<std::string, Token>::const_iterator i = op_.find(op); 
+        if (i != op_.end()) {
+            return i->second;
+        }   
+        length--;
+        input_->top(op[length]);
+        op.resize(length);
+    }
+    
+    
+    throw std::runtime_error("Illegal operator");
 }
 
 Token Lexer::token_string() {
@@ -108,7 +127,8 @@ Token Lexer::token_string() {
      * there is at least one character in the input queue.
      */
     assert(!string.empty());
-    
+    value_ = string;
+
     return TOK_STRING;
 }
 
@@ -129,13 +149,12 @@ Token Lexer::token_word() {
         }
     }
 
-    cout << "WORD: " << word << endl;
-
     /* 
      * This should never happen, because this function only gets called when
      * there is at least one character on the input queue.
      */
     assert(!word.empty());
+    value_ = word;
     
     /* Search for reserved words */
     std::map<std::string, Token>::const_iterator i = word_.find(word); 
@@ -144,7 +163,6 @@ Token Lexer::token_word() {
     }
 
     /* Return as an identifier */
-    value_ = word;
     return TOK_IDENT;
 }
 
@@ -164,7 +182,6 @@ Token Lexer::token_type() {
             break;
         }
     }
-    cout << "TYPE: " << word << endl;
 
     /* Type token or package*/
     value_ = word;
@@ -205,25 +222,53 @@ size_t Lexer::char_number() const {
     return char_number_;
 }
 
-std::map<char, Token> table_op() {
-    std::map<char, Token> op;
+std::map<std::string, Token> table_op() {
+    std::map<std::string, Token> op;
 
-    op['('] = TOK_LPAREN;
-    op[')'] = TOK_RPAREN;
-    op['{'] = TOK_LBRACE;
-    op['}'] = TOK_RBRACE;
-    op['['] = TOK_LBRACKET;
-    op[']'] = TOK_RBRACKET;
-    op['='] = TOK_EQUAL;
-    op['^'] = TOK_CARET;
-    op['*'] = TOK_ASTERISK;
-    op['+'] = TOK_PLUS;
-    op['-'] = TOK_MINUS;
-    op['!'] = TOK_BANG;
-    op['?'] = TOK_QUESTION;
-    op[';'] = TOK_SEMI;
-    //op[':'] = TOK_COLON;
-    op['.'] = TOK_DOT;
+    op["("] = TOK_LPAREN;
+    op[")"] = TOK_RPAREN;
+    op["{"] = TOK_LBRACE;
+    op["}"] = TOK_RBRACE;
+    op["["] = TOK_LBRACKET;
+    op["]"] = TOK_RBRACKET;
+    op["=="] = TOK_EQUAL;
+    op["!="] = TOK_NEQUAL;
+    op[">"] = TOK_GT;
+    op["<"] = TOK_LT;
+    op[">="] = TOK_GTEQ;
+    op["<="] = TOK_LTEQ;
+    op["&&"] = TOK_AND;
+    op["||"] = TOK_OR;
+    op["&"] = TOK_BITAND;
+    op["|"] = TOK_BITOR;
+    op["^"] = TOK_BITXOR;
+    op["+"] = TOK_PLUS;
+    op["-"] = TOK_MINUS;
+    op["*"] = TOK_STAR;
+    op["/"] = TOK_SLASH;
+    op["\\"] = TOK_BACKSLASH;
+    op["%"] = TOK_MOD;
+    op["<<"] = TOK_LSHIFT;
+    op[">>"] = TOK_RSHIFT;
+    op["~"] = TOK_TILDE;
+    op["++"] = TOK_INC;
+    op["--"] = TOK_DEC;
+    op["="] = TOK_ASSIGN;
+    op["*="] = TOK_MULASSIGN;
+    op["/="] = TOK_DIVASSIGN;
+    op["%="] = TOK_MODASSIGN;
+    op["<<="] = TOK_LSHIFTASSIGN;
+    op[">>="] = TOK_RSHIFTASSIGN;
+    op["&="] = TOK_BITANDASSIGN;
+    op["|="] = TOK_BITORASSIGN;
+    op["^="] = TOK_BITXORASSIGN;
+    op["!"] = TOK_BANG;
+    op["?"] = TOK_QUESTION;
+    op[";"] = TOK_SEMI;
+    op[":"] = TOK_COLON;
+    op["::"] = TOK_SCOPE;
+    op["."] = TOK_DOT;
+    op[","] = TOK_COMMA;
 
     return op;
 }

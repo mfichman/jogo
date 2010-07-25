@@ -2,7 +2,7 @@ class Geom::Rectangle;
 
 import Bob::Jim;
 
-int x;
+int x = 10 + 10;
 int y;
 int width;
 int height;

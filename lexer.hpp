@@ -28,6 +28,7 @@ public:
     size_t char_number() const;
 
 private:
+    Token token_operator(); 
     Token token_string();
     Token token_word();
     Token token_type();
