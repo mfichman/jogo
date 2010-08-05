@@ -1,0 +1,94 @@
+/* 
+ * Prints formatted strings to a text output stream.
+ */
+class IO::Writer;
+
+public static uint TEXT=0;
+public static uint BINARY=1;
+
+IO::Handle handle;  /* Underlying file descriptor */
+uint mode;          /* Binary or text mode */
+String delimiter;   /* Delimiter for writing values */ 
+
+/* 
+ * Creates a new writer.  Type is one of IO::Writer::TEXT or 
+ * IO::Writer::BINARY.  In text mode, the writer outputs ASCII text, and
+ * in binary mode, the writer outputs raw bits
+ */
+@init(IO::Handle handle, uint mode) {
+    self.handle = handle;
+    self.mode = mode;
+    self.delimiter = "";
+}
+
+/* Returns the delimiter */
+delimiter() String;
+
+/* Sets the delimiter */
+delimiter!(String delimiter);
+
+/* Returns the file mode */
+mode() uint;
+
+/* Returns the file handle associated with this writer */
+handle() Handle;
+
+/* Prints a boolean value ('true' or 'false') */
+write!(bool b);
+
+/* Prints a byte value */
+write!(byte b);  
+
+/* Prints an unsigned byte value */
+write!(ubyte b);
+
+/* Prints a short value */
+write!(short s);
+
+/* Prints an unsigned short value */
+write!(ushort s);
+
+/* Prints an int value */
+write!(int i);
+
+/* Prints an unsigned int value */
+write!(uint i);
+
+/* Prints an long value */
+write!(long l);
+
+/* Prints an unsigned long value */
+write!(ulong l);
+
+/* Writes a string */
+write!(String s);
+
+/* Prints a boolean value ('true' or 'false') */
+writeln!(bool b);
+
+/* Prints a byte value */
+writeln!(byte b);  
+
+/* Prints an unsigned byte value */
+writeln!(ubyte b);
+
+/* Prints a short value */
+writeln!(short s);
+
+/* Prints an unsigned short value */
+writeln!(ushort s);
+
+/* Prints an int value */
+writeln!(int i);
+
+/* Prints an unsigned int value */
+writeln!(uint i);
+
+/* Prints an long value */
+writeln!(long l);
+
+/* Prints an unsigned long value */
+writeln!(ulong l);
+
+/* Prints a string */
+writeln!(String s);

@@ -1,0 +1,42 @@
+/* 
+ * An abstract representation of file and directory pathnames.  The conversion
+ * of a pathname string to or from an abstract pathname is inherently system-
+ * dependent. 
+ */
+class IO::File;
+
+public static uint READ=1;       /* Open the file for reading */
+public static uint WRITE=2;      /* Open the file for writing */
+public static uint CREATE=3;     /* Create the file if it doesn't exist */
+public static uint APPEND=4;     /* Append bytes written to end of file */
+
+String path;
+
+/* Creates a new abstract file path */
+@init(String path);
+
+/* Returns the file pathname */
+path() String;
+
+/* 
+ * Converts a pathname into a file descriptor for use in subsequent I/O.
+ * The parameter 'flags' is can the the bitwise-or of zero or more of the 
+ * following: File::READ, File::WRITE, File::CREATE, File::APPEND.
+ */ 
+open(uint flags) native Handle;
+
+/* Returns information about the named file at 'path' */
+stat() native Stat;
+
+/* 
+ * Removes a link to file.  When the file's link count becomes 0 and no
+ * process has the file open, the space occupied by the file will be freed
+ * and the file will no longer be accessible.
+ */
+unlink() native int;
+
+/* Returns true if the file is a directory */
+directory?() native bool;
+
+/* Returns true if the file exists */
+exists?() native bool;
