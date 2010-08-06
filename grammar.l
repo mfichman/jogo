@@ -1,10 +1,5 @@
 %{
-#include <algorithm>
-#include <sstream>
-#include <stdexcept>
 #include "parser.hpp"
-#include "regex.y.hpp"
-using namespace std;
 
 #define YY_INPUT(buffer, result, max_size) \
     yyinput(yyget_extra(yyscanner), buffer, result, max_size);
@@ -18,21 +13,47 @@ using namespace std;
 
 /* Lexer rules */
 %%
-\?:                         return GROUP;
-\?!                         return NLOOKAHEAD;
-\?=                         return PLOOKAHEAD;
-\?<!                        return NLOOKBEHIND;
-\?<=                        return PLOOKBEHIND;
-[\n\r]                      return NEWLINE;
-^#.*?$                      return COMMENT;
-\\[0-9]+                    *yylval = Node::backref(yytext+1); return BACKREF; 
-\\.                         *yylval = Node::escape(yytext); return CHAR;
-[^[\\\^$|?*+(){}]           *yylval = Node::literal(yytext); return CHAR;
-\{[0-9]*,[0-9]+\}           return RANGE;
-\{[0-9]+,[0-9]*\}           return RANGE;  
-\[[^]]*?[^\\]\]             *yylval = Node::cclass(yytext); return CCLASS;
-\\x[0-9a-fA-F]{2}           *yylval = Node::hex(yytext); return CHAR;
-.                           return yytext[0];
+class TOK_CLASS
+interface TOK_INTERFACE
+struct TOK_STRUCT
+module TOK_MODULE
+import TOK_IMPORT
+def	TOK_DEF
+[a-z]|[a-z][0-9a-z_]*[0-9a-z] TOK_IDENT
+\@init TOK_INIT
+\@destroy TOK_DESTROY
+public TOK_PUBLIC
+private TOK_PRIVATE
+protected TOK_PROTECTED
+static TOK_STATIC
+native TOK_NATIVE
+int TOK_INT
+uint TOK_UINT
+short TOK_SHORT
+ushort TOK_USHORT
+byte TOK_BYTE
+ubyte TOK_UBYTE
+long TOK_LONG
+ulong TOK_ULONG
+[A-Z][A-Za-z0-9] TOK_TYPE
+== TOK_EQUAL
+!= TOK_NOTEQUAL
+:: TOK_SCOPE
+\|\| TOK_OR
+\&\& TOK_AND
+>= TOK_GE
+<= TOK_LE
+<< TOK_LSHIFT
+>> TOK_RSHIFT
+*= TOK_MUL_ASSIGN
+/= TOK_DIV_ASSIGN
+-= TOK_SUB_ASSIGN
++= TOK_ADD_ASSIGN
+%= TOK_MOD_ASSIGN
+|= TOK_BITOR_ASSIGN
+&= TOK_BITAND_ASSIGN
+++ TOK_INC
+-- TOK_DEC
 %%
 
 
@@ -47,4 +68,3 @@ void yyerror(Parser* parser, void* yyscanner, const char* s) {
     throw runtime_error(ss.str());
 }
 
-/*\\[[\\\^$|?*+(){}]          *yylval = Node::escape(yytext); return CHAR; */

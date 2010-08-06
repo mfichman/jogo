@@ -61,15 +61,12 @@ translation_unit
     : TOK_CLASS qualified_name ';' class_member_list {
         parser_class(parser);
     }
-
     | TOK_INTERFACE qualified_name ';' interface_member_list {
         parser_interface(parser);
     }
-
     | TOK_STRUCT qualified_name ';' struct_member_list {
         parser_struct(parser);
     }
-
     | TOK_MODULE qualified_name ';' module_member_list {
         parser_module(parser);
     }
@@ -124,7 +121,6 @@ variable
     : access storage type TOK_IDENT '=' assignment ';' {
         parser_varinit(parser, $1, $2, $3);
     }
-    
     | access storage type TOK_IDENT ';' {
         parser_vardecl(parser, $1, $2, $3);
     }
@@ -159,36 +155,36 @@ argument_list
     ;
 
 access 
-    : TOK_PUBLIC { $$ = node_string("public"); }
-    | TOK_PRIVATE { $$ = node_string("private"); }
-    | TOK_PROTECTED { $$ = node_string("protected"); }
+    : TOK_PUBLIC { $$ = expr_string("public"); }
+    | TOK_PRIVATE { $$ = expr_string("private"); }
+    | TOK_PROTECTED { $$ = expr_string("protected"); }
     | /* empty */ { $$ = 0; }
     ;
 
 storage
-    : TOK_STATIC { $$ = node_string("static"); }
+    : TOK_STATIC { $$ = expr_string("static"); }
     | /* empty */ { $$ = 0; }
     ;
     
 native
-    : TOK_NATIVE { $$ = node_string("native"); }
+    : TOK_NATIVE { $$ = expr_string("native"); }
     | /* empty */ { $$ = 0; }
     ;
 
 type 
-    : TOK_UINT { $$ = node_string("uint"); }
-    | TOK_INT { $$ = node_string("int"); }
-    | TOK_USHORT { $$ = node_string("ushort"); }
-    | TOK_SHORT { $$ = node_string("short"); }
-    | TOK_UBYTE { $$ = node_string("ubyte"); }
-    | TOK_BYTE  { $$ = node_string("byte"); }
-    | TOK_ULONG { $$ = node_string("ulong"); }
-    | TOK_LONG { $$ = node_string("long"); }
+    : TOK_UINT { $$ = expr_string("uint"); }
+    | TOK_INT { $$ = expr_string("int"); }
+    | TOK_USHORT { $$ = expr_string("ushort"); }
+    | TOK_SHORT { $$ = expr_string("short"); }
+    | TOK_UBYTE { $$ = expr_string("ubyte"); }
+    | TOK_BYTE  { $$ = expr_string("byte"); }
+    | TOK_ULONG { $$ = expr_string("ulong"); }
+    | TOK_LONG { $$ = expr_string("long"); }
     | qualified_name { $$ = $1; }
     ;
 
 qualified_name
-    : TOK_TYPE TOK_SCOPE qualified_name { $$ = node_strcat2($$, "::", $3); }
+    : TOK_TYPE TOK_SCOPE qualified_name { $$ = expr_strcat2($$, "::", $3); }
     | TOK_TYPE { $$ = $1; } 
     ;
     
@@ -197,101 +193,117 @@ compound_statement
     ;
 
 statement_list
-    : statement statement_list { $$ = node_prepend($2, $1); }
-    | /* empty */ { $$ = node_list(); }
+    : statement statement_list { $$ = expr_prepend($2, $1); }
+    | /* empty */ { $$ = expr_list(); }
     ;
 
 statement
     : assignment ';' { $$ = $1; }
-    | type TOK_IDENT ';' { $$ = node_pair($1, $2); }
+    | type TOK_IDENT ';' { $$ = expr_pair($1, $2); }
     | type TOK_IDENT '=' assignment ';' { 
-		$$ = node_trinary(node_pair($1, $2), $3, $4); 
+		$$ = expr_binary(expr_pair($1, $2), $3, $4); 
 	}  
     ;
 
 assignment
-    : unary '=' assignment { $$ = node_binary($2, $1, $3); }
-    | unary TOK_MUL_ASSIGN assignment { $$ = node_binary($2, $1, $3); }
-    | unary TOK_DIV_ASSIGN assignment { $$ = node_binary($2, $1, $3); }
-    | unary TOK_MOD_ASSIGN assignment { $$ = node_binary($2, $1, $3); }
-    | unary TOK_SUB_ASSIGN assignment { $$ = node_binary($2, $1, $3); }
-    | unary TOK_ADD_ASSIGN assignment { $$ = node_binary($2, $1, $3); }
-    | unary TOK_BITAND_ASSIGN assignment { $$ = node_binary($2, $1, $3); }
-    | unary TOK_BITOR_ASSIGN assignment { $$ = node_binary($2, $1, $3); }
+    : unary '=' assignment { $$ = expr_binary(op_assign, $1, $3); }
+    | unary TOK_MUL_ASSIGN assignment { 
+		$$ = expr_binary(op_mul_assign, $1, $3); 
+	}
+    | unary TOK_DIV_ASSIGN assignment { 
+		$$ = expr_binary(op_div_assign, $1, $3); 
+	}
+    | unary TOK_MOD_ASSIGN assignment { 
+		$$ = expr_binary(op_mod_assign, $1, $3); 
+	}
+    | unary TOK_SUB_ASSIGN assignment { 
+		$$ = expr_binary(op_sub_assign, $1, $3); 
+	}
+    | unary TOK_ADD_ASSIGN assignment { 
+		$$ = expr_binary(op_add_assign, $1, $3); 
+	}
+    | unary TOK_BITAND_ASSIGN assignment { 
+		$$ = expr_binary(op_bitand_assign, $1, $3); 
+	}
+    | unary TOK_BITOR_ASSIGN assignment { 
+		$$ = expr_binary(op_bitor_assign, $1, $3); 
+	}
     | logical_or { $$ = $1; }
     ;
 
 logical_or
-    : logical_or TOK_OR logical_and { $$ = node_binary($2, $1, $3); }
+    : logical_or TOK_OR logical_and { $$ = expr_binary(op_or, $1, $3); }
     | logical_and { $$ = $1; }
     ;
 
 logical_and
-    : logical_and TOK_OR bitwise_or { $$ = node_binary($2, $1, $3); }
+    : logical_and TOK_AND bitwise_or { $$ = expr_binary(op_and, $1, $3); }
     | bitwise_or { $$ = $1; }
     ;
 
 bitwise_or
-    : bitwise_or '|' bitwise_and { $$ = node_binary($2, $1, $3); }
-    | bitwise_or '^' bitwise_and { $$ = node_binary($2, $1, $3); }
+    : bitwise_or '|' bitwise_and { $$ = expr_binary(op_bitor, $1, $3); }
+    | bitwise_or '^' bitwise_and { $$ = expr_binary(op_bitxor, $1, $3); }
     | bitwise_and { $$ = $1; }
     ;
 
 bitwise_and
-    : bitwise_and '&' equality { $$ = node_binary($2, $1, $3); }
+    : bitwise_and '&' equality { $$ = expr_binary(op_bitand, $1, $3); }
     | equality { $$ = $1; }
     ;
 
 equality
-    : equality TOK_EQUAL relation { $$ = node_binary($2, $1, $3); }
-    | equality TOK_NOTEQUAL relation { $$ = node_binary($2, $1, $3); }
+    : equality TOK_EQUAL relation { $$ = expr_binary(op_equal, $1, $3); }
+    | equality TOK_NOTEQUAL relation { 
+		$$ = expr_binary(op_notequal, $1, $3); 
+	}
     | relation { $$ = $1; }
     ;
 
 relation
-    : relation '>' shift { $$ = node_binary($2, $1, $3); }
-    | relation '<' shift { $$ = node_binary($2, $1, $3); }
-    | relation TOK_GE shift { $$ = node_binary($2, $1, $3); }
-    | relation TOK_LE shift { $$ = node_binary($2, $1, $3); }
+    : relation '>' shift { $$ = expr_binary(op_greater, $1, $3); }
+    | relation '<' shift { $$ = expr_binary(op_less, $1, $3); }
+    | relation TOK_GE shift { $$ = expr_binary(op_ge, $1, $3); }
+    | relation TOK_LE shift { $$ = expr_binary(op_le, $1, $3); }
     | shift { $$ = $1; }
     ;
 
 shift
-    : shift TOK_LSHIFT addition { $$ = node_binary($2, $1, $3); }
-    | shift TOK_RSHIFT addition { $$ = node_binary($2, $1, $3); }
+    : shift TOK_LSHIFT addition { $$ = expr_binary(op_lshift, $1, $3); }
+    | shift TOK_RSHIFT addition { $$ = expr_binary(op_rshift, $1, $3); }
     | addition { $$ = $1; }
     ;
 
 addition
-    : addition '+' multiplication { $$ = node_binary($2, $1, $3); }
-    | addition '-' multiplication { $$ = node_binary($2, $1, $3); }
+    : addition '+' multiplication { $$ = expr_binary(op_plus, $1, $3); }
+    | addition '-' multiplication { $$ = expr_binary(op_minus, $1, $3); }
     | multiplication { $$ = $1; }
     ;
 
 multiplication
-    : multiplication '*' unary { $$ = node_binary($2, $1, $3); }
-    | multiplication '/' unary { $$ = node_binary($2, $1, $3); }
-    | multiplication '%' unary { $$ = node_binary($2, $1, $3); }
+    : multiplication '*' unary { $$ = expr_binary(op_mul, $1, $3); }
+    | multiplication '/' unary { $$ = expr_binary(op_div, $1, $3); }
+    | multiplication '%' unary { $$ = expr_binary(op_mod, $1, $3); }
     | unary { $$ = $1; }
     ;
 
 unary
-    : TOK_INC unary { $$ = node_unary($1, $2); }
-    | TOK_DEC unary { $$ = node_unary($1, $2); }
-    | '+' unary { $$ = node_unary($1, $2); }
-    | '-' unary { $$ = node_unary($1, $2); }
-    | '!' unary { $$ = node_unary($1, $2); }
-    | '~' unary { $$ = node_unary($1, $2); }
-    | '*' unary { $$ = node_unary($1, $2); }
+    : TOK_INC unary { $$ = expr_unary(op_inc, $2); }
+    | TOK_DEC unary { $$ = expr_unary(op_dec, $2); }
+    | '+' unary { $$ = expr_unary(op_plus, $2); }
+    | '-' unary { $$ = expr_unary(op_minus, $2); }
+    | '!' unary { $$ = expr_unary(op_bang, $2); }
+    | '~' unary { $$ = expr_unary(op_tilde, $2); }
+    | '*' unary { $$ = expr_unary(op_star, $2); }
     | postfix { $$ = $1; }
     ;
 
 postfix
-    : postfix argument_list { $$ = node_call($1, $2); }
-    | postfix '[' assignment ']' { $$ = node_index($1, $3); }
-    | postfix '.' TOK_IDENT { $$ = node_member($1, $3); }
-    | postfix TOK_INC { $$ = node_postfix($2, $1); }
-    | postfix TOK_DEC { $$ = node_postfix($2, $1); }
+    : postfix argument_list { $$ = expr_call($1, $2); }
+    | postfix '[' assignment ']' { $$ = expr_index($1, $3); }
+    | postfix '.' TOK_IDENT { $$ = expr_member($1, $3); }
+    | postfix TOK_INC { $$ = expr_unary(op_postinc, $1); }
+    | postfix TOK_DEC { $$ = expr_unary(op_preinc, $1); }
     | primary { $$ = $1; }
     ;
 
