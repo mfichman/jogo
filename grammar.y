@@ -1,5 +1,6 @@
 %{
-#include "parser.hpp"
+#include <parser.h>
+#include <expr.h>
 %}
 
 %pure_parser
@@ -7,16 +8,28 @@
 %parse-param { void *scanner }
 %lex-param { scanner *scanner }
 
-%expect 2
+%destructor { expr_free($$); } <expr_t *>
+%destructor { statement_free($$); } <statement_t *>
+%destructor { type_free($$); } <type_t *>
+%destructor { free($$); } <const char *>
+%union { expr_t *expr; }
+%union { statement_t *statement; }
+%union { type_t *type; }
+%union { const char *string; }
+
 
 /* BISON declarations */
+%token <type_t *> TOK_TYPE
+%token <type_t *> TOK_PRIMITIVE
+%token <const char *> TOK_IDENT
+%token <const char *> TOK_STRING
+%token <const char *> TOK_NUMBER 
 %token TOK_CLASS
 %token TOK_INTERFACE
 %token TOK_STRUCT
 %token TOK_MODULE
 %token TOK_IMPORT
 %token TOK_DEF
-%token TOK_IDENT
 %token TOK_INIT
 %token TOK_DESTROY
 %token TOK_PUBLIC
@@ -24,15 +37,13 @@
 %token TOK_PROTECTED
 %token TOK_STATIC
 %token TOK_NATIVE
-%token TOK_INT
-%token TOK_UINT
-%token TOK_SHORT
-%token TOK_USHORT
-%token TOK_BYTE
-%token TOK_UBYTE
-%token TOK_LONG
-%token TOK_ULONG
-%token TOK_TYPE
+%token TOK_WHILE
+%token TOK_ELSE
+%token TOK_UNTIL
+%token TOK_IF
+%token TOK_FOREACH
+%token TOK_DO
+%token TOK_FOR
 %token TOK_EQUAL
 %token TOK_NOTEQUAL
 %token TOK_SCOPE
@@ -42,8 +53,6 @@
 %token TOK_LE
 %token TOK_LSHIFT
 %token TOK_RSHIFT
-%token TOK_STRING
-%token TOK_NUMBER 
 %token TOK_MUL_ASSIGN
 %token TOK_DIV_ASSIGN
 %token TOK_SUB_ASSIGN
@@ -54,21 +63,58 @@
 %token TOK_INC
 %token TOK_DEC
 
+%type <void> translation_unit
+%type <void> import
+%type <void> def
+%type <void> variable
+%type <void> constructor
+%type <void> destructor
+%type <void> function
+%type <void> prototype
+%type <void> argument_list
+%type <void> access
+%type <void> storage
+%type <void> native
+%type <type_t *> type
+%type <type_t *> qualified_name 
+%type <statement_t *> block
+%type <statement_t *> statement_list
+%type <statement_t *> statement
+%type <statement_t *> conditional
+%type <expr_t *> expression
+%type <expr_t *> assignment
+%type <expr_t *> logical_or
+%type <expr_t *> logical_and
+%type <expr_t *> bitwise_or
+%type <expr_t *> bitwise_and
+%type <expr_t *> equality
+%type <expr_t *> relation
+%type <expr_t *> shift
+%type <expr_t *> addition
+%type <expr_t *> multiplication
+%type <expr_t *> unary
+%type <expr_t *> postfix
+%type <expr_t *> primary
 
-/* Grammar */
+
+/* Standard M++ grammar */
 %%
 translation_unit
     : TOK_CLASS qualified_name ';' class_member_list {
-        parser_class(parser);
+		$$ = 0;
+        parser_class(parser, $2);
     }
     | TOK_INTERFACE qualified_name ';' interface_member_list {
-        parser_interface(parser);
+		$$ = 0;
+        parser_interface(parser, $2);
     }
     | TOK_STRUCT qualified_name ';' struct_member_list {
-        parser_struct(parser);
+		$$ = 0;
+        parser_struct(parser, $2);
     }
     | TOK_MODULE qualified_name ';' module_member_list {
-        parser_module(parser);
+		$$ = 0;
+        parser_module(parser, $2);
     }
     ;
 
@@ -108,45 +154,53 @@ module_member_list
 import 
     : TOK_IMPORT qualified_name ';' {
         parser_import(parser, $2);
+		$$ = 0;
     }
     ;
 
 def
     : TOK_DEF type TOK_TYPE ';' {
         parser_def(parser, $2, $3);
+		$$ = 0;
     }
     ;
 
 variable
-    : access storage type TOK_IDENT '=' assignment ';' {
-        parser_varinit(parser, $1, $2, $3);
+    : access storage type TOK_IDENT '=' expression ';' {
+        parser_varinit(parser, $1, $2, $3, $4, $6);
+		$$ = 0;
     }
     | access storage type TOK_IDENT ';' {
-        parser_vardecl(parser, $1, $2, $3);
+        parser_vardecl(parser, $1, $2, $3, $4);
+		$$ = 0;
     }
     ;
 
 constructor
-    : TOK_INIT argument_list access compound_statement {
-        parser_ctor(parser, $1, $2, $3);
+    : TOK_INIT argument_list access block {
+        parser_ctor(parser, $2, $3, $4);
+		$$ = 0;
     }
     ;
 
 destructor
-    : TOK_DESTROY argument_list compound_statement {
-        parser_dtor(parser, $1, $2);
+    : TOK_DESTROY argument_list block {
+        parser_dtor(parser, $2, $3);
+		$$ = 0;
     }
     ;
 
 function
-    : TOK_IDENT argument_list access storage native type compound_statement {
+    : TOK_IDENT argument_list access storage native type block {
         parser_func(parser, $1, $2, $3, $4, $5, $6, $7);
+		$$ = 0;
     }
     ;
 
 prototype
     : TOK_IDENT argument_list type ';' {
         parser_proto(parser, $1, $2, $3);
+		$$ = 0;
     }
     ;
 
@@ -172,38 +226,62 @@ native
     ;
 
 type 
-    : TOK_UINT { $$ = expr_string("uint"); }
-    | TOK_INT { $$ = expr_string("int"); }
-    | TOK_USHORT { $$ = expr_string("ushort"); }
-    | TOK_SHORT { $$ = expr_string("short"); }
-    | TOK_UBYTE { $$ = expr_string("ubyte"); }
-    | TOK_BYTE  { $$ = expr_string("byte"); }
-    | TOK_ULONG { $$ = expr_string("ulong"); }
-    | TOK_LONG { $$ = expr_string("long"); }
+    : TOK_PRIMITIVE { $$ = $1; } 
     | qualified_name { $$ = $1; }
     ;
 
 qualified_name
-    : TOK_TYPE TOK_SCOPE qualified_name { $$ = expr_strcat2($$, "::", $3); }
+    : TOK_TYPE TOK_SCOPE qualified_name { $$ = type_concat($1, $3); }
     | TOK_TYPE { $$ = $1; } 
     ;
     
-compound_statement
-    : '{' statement_list '}' { $$ = $1; }
+block
+    : '{' statement_list '}' { $$ = $2; }
     ;
 
 statement_list
-    : statement statement_list { $$ = expr_prepend($2, $1); }
-    | /* empty */ { $$ = expr_list(); }
+    : statement statement_list { $$ = statement_append($2, $1); }
+    | /* empty */ { $$ = statement_list(); }
     ;
 
 statement
-    : assignment ';' { $$ = $1; }
-    | type TOK_IDENT ';' { $$ = expr_pair($1, $2); }
-    | type TOK_IDENT '=' assignment ';' { 
-		$$ = expr_binary(expr_pair($1, $2), $3, $4); 
+	: TOK_FOR '(' expression ';' expression ';' expression ')' block {
+		$$ = statement_for($3, $5, $7, $9);
+	}
+	| TOK_FOREACH '(' type TOK_IDENT ':' expression ')' block {
+		$$ = statement_foreach($3, $4, $6, $8);
+	}
+	| TOK_UNTIL '(' expression ')' block {
+		$$ = statement_until($3, $5);
+	}
+	| TOK_WHILE '(' expression ')' block {
+		$$ = statement_while($3, $5);
+	}
+	| TOK_DO block TOK_UNTIL '(' expression ')' ';' {
+		$$ = statement_dountil($5, $2);
+	}
+	| TOK_DO block TOK_WHILE '(' expression ')' ';' {
+		$$ = statement_dowhile($5, $2);
+	}
+    | type TOK_IDENT '=' expression ';' { 
+		$$ = statement_decl($1, $2, $4); 
 	}  
-    ;
+    | type TOK_IDENT ';' { $$ = expr_decl($1, $2); }
+	| conditional { $$ = $1; }
+    | expression ';' { $$ = $1; }
+	;
+
+conditional
+	: TOK_IF '(' expression ')' block {
+		$$ = statement_conditional($3, $5, 0);
+	}
+	| TOK_IF '(' expression ')' block TOK_ELSE conditional {
+		$$ = statement_conditional($3, $5, $7);
+	}
+	| block { $$ = $1; }
+	;
+
+expression : assignment { $$ = $1; }
 
 assignment
     : unary '=' assignment { $$ = expr_binary(op_assign, $1, $3); }
@@ -300,7 +378,7 @@ unary
 
 postfix
     : postfix argument_list { $$ = expr_call($1, $2); }
-    | postfix '[' assignment ']' { $$ = expr_index($1, $3); }
+    | postfix '[' expression ']' { $$ = expr_index($1, $3); }
     | postfix '.' TOK_IDENT { $$ = expr_member($1, $3); }
     | postfix TOK_INC { $$ = expr_unary(op_postinc, $1); }
     | postfix TOK_DEC { $$ = expr_unary(op_preinc, $1); }
@@ -311,5 +389,5 @@ primary
     : TOK_STRING { $$ = $1; }
     | TOK_NUMBER { $$ = $1; }
     | TOK_IDENT { $$ = $1; }
-    | '(' assignment ')' { $2; } 
+    | '(' expression ')' { $$ = $2; } 
     ;
