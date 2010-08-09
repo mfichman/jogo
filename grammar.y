@@ -1,29 +1,44 @@
 %{
 #include <parser.h>
 #include <expr.h>
+#include <type.h>
+#include <stmt.h>
+#include <var.h>
+#include <func.h>
+#include <unit.h>
+#include <op.h>
 %}
+
+%union { expr_t *expr; }
+%union { stmt_t *stmt; }
+%union { type_t *type; }
+%union { unit_t *unit; }
+%union { var_t *var; }
+%union { func_t *func; }
+%union { char *string; }
+%union { int null; }
+%union { int flag; }
 
 %pure_parser
 %parse-param { parser_t *parser }
 %parse-param { void *scanner }
-%lex-param { scanner *scanner }
+%lex-param { yyscan_t *scanner }
 
-%destructor { expr_free($$); } <expr_t *>
-%destructor { statement_free($$); } <statement_t *>
-%destructor { type_free($$); } <type_t *>
-%destructor { free($$); } <const char *>
-%union { expr_t *expr; }
-%union { statement_t *statement; }
-%union { type_t *type; }
-%union { const char *string; }
+%destructor { expr_free($$); $$ = 0; } <expr>
+%destructor { stmt_free($$); $$ = 0; } <stmt>
+%destructor { type_free($$); $$ = 0; } <type>
+%destructor { unit_free($$); $$ = 0; } <unit>
+%destructor { var_free($$); $$ = 0; } <var>
+%destructor { func_free($$); $$ = 0; } <func>
+%destructor { free($$); } <string>
 
 
 /* BISON declarations */
-%token <type_t *> TOK_TYPE
-%token <type_t *> TOK_PRIMITIVE
-%token <const char *> TOK_IDENT
-%token <const char *> TOK_STRING
-%token <const char *> TOK_NUMBER 
+%token <type> TOK_TYPE
+%token <type> TOK_PRIMITIVE
+%token <string> TOK_IDENT
+%token <string> TOK_STRING
+%token <string> TOK_NUMBER 
 %token TOK_CLASS
 %token TOK_INTERFACE
 %token TOK_STRUCT
@@ -32,11 +47,11 @@
 %token TOK_DEF
 %token TOK_INIT
 %token TOK_DESTROY
-%token TOK_PUBLIC
-%token TOK_PRIVATE
-%token TOK_PROTECTED
-%token TOK_STATIC
-%token TOK_NATIVE
+%token <flag> TOK_PUBLIC
+%token <flag> TOK_PRIVATE
+%token <flag> TOK_PROTECTED
+%token <flag> TOK_STATIC
+%token <flag> TOK_NATIVE
 %token TOK_WHILE
 %token TOK_ELSE
 %token TOK_UNTIL
@@ -63,144 +78,146 @@
 %token TOK_INC
 %token TOK_DEC
 
-%type <void> translation_unit
-%type <void> import
-%type <void> def
-%type <void> variable
-%type <void> constructor
-%type <void> destructor
-%type <void> function
-%type <void> prototype
-%type <void> argument_list
-%type <void> access
-%type <void> storage
-%type <void> native
-%type <type_t *> type
-%type <type_t *> qualified_name 
-%type <statement_t *> block
-%type <statement_t *> statement_list
-%type <statement_t *> statement
-%type <statement_t *> conditional
-%type <expr_t *> expression
-%type <expr_t *> assignment
-%type <expr_t *> logical_or
-%type <expr_t *> logical_and
-%type <expr_t *> bitwise_or
-%type <expr_t *> bitwise_and
-%type <expr_t *> equality
-%type <expr_t *> relation
-%type <expr_t *> shift
-%type <expr_t *> addition
-%type <expr_t *> multiplication
-%type <expr_t *> unary
-%type <expr_t *> postfix
-%type <expr_t *> primary
+%type <unit> class
+%type <unit> interface
+%type <unit> module
+%type <unit> struct
+%type <var> variable
+%type <func> constructor
+%type <func> destructor
+%type <func> function
+%type <func> prototype
+%type <flag> access
+%type <flag> storage
+%type <flag> native
+%type <type> argument_list
+%type <type> type
+%type <type> qualified_name 
+%type <stmt> block
+%type <stmt> statement_list
+%type <stmt> statement
+%type <stmt> clause
+%type <stmt> conditional
+%type <expr> expression
+%type <expr> assignment
+%type <expr> logical_or
+%type <expr> logical_and
+%type <expr> bitwise_or
+%type <expr> bitwise_and
+%type <expr> equality
+%type <expr> relation
+%type <expr> shift
+%type <expr> addition
+%type <expr> multiplication
+%type <expr> unary
+%type <expr> postfix
+%type <expr> primary
 
 
 /* Standard M++ grammar */
 %%
 translation_unit
-    : TOK_CLASS qualified_name ';' class_member_list {
-		$$ = 0;
-        parser_class(parser, $2);
+    : TOK_CLASS qualified_name ';' class {
+        unit_name($4, $2); 
+		parser_class(parser, $4);
     }
-    | TOK_INTERFACE qualified_name ';' interface_member_list {
-		$$ = 0;
-        parser_interface(parser, $2);
+    | TOK_INTERFACE qualified_name ';' interface {
+        unit_name($4, $2); 
+		parser_interface(parser, $4);
     }
-    | TOK_STRUCT qualified_name ';' struct_member_list {
-		$$ = 0;
-        parser_struct(parser, $2);
+    | TOK_STRUCT qualified_name ';' struct {
+        unit_name($4, $2); 
+		parser_struct(parser, $4);
     }
-    | TOK_MODULE qualified_name ';' module_member_list {
-		$$ = 0;
-        parser_module(parser, $2);
+    | TOK_MODULE qualified_name ';' module {
+        unit_name($4, $2);
+		parser_module(parser, $4);
     }
     ;
 
-class_member_list
-    : import class_member_list
-    | def class_member_list    
-    | variable class_member_list
-    | constructor class_member_list
-    | destructor class_member_list
-    | function class_member_list
-    | /* empty */
+class
+    : import class { $$ = $2; }
+    | def class { $$ = $2; }
+    | variable class { $$ = $2; unit_var($$, $1); }
+    | constructor class { $$ = $2; unit_ctor($$, $1); }
+    | destructor class { $$ = $2; unit_dtor($$, $1); }
+    | function class { $$ = $2; unit_func($$, $1); }
+	| error class { $$ = $2; }
+    | /* empty */ { $$ = unit_alloc(UNIT_TYPE_CLASS); }
     ;
 
-interface_member_list
-    : import interface_member_list 
-    | def interface_member_list
-    | prototype interface_member_list
-    | /* empty */
+interface
+    : import interface { $$ = $2; }
+    | def interface { $$ = $2; }
+    | prototype interface { $$ = $2; unit_func($$, $1); }
+	| error interface { $$ = $2; }
+    | /* empty */ { $$ = unit_alloc(UNIT_TYPE_INTERFACE); }
     ;
 
-struct_member_list
-    : import struct_member_list
-    | def struct_member_list
-    | variable struct_member_list
-    | constructor struct_member_list
-    | function struct_member_list
-    | /* empty */
+struct
+    : import struct { $$ = $2; }
+    | def struct { $$ = $2; }
+    | variable struct { $$ = $2; unit_var($$, $1); }
+    | constructor struct { $$ = $2; unit_ctor($$, $1); }
+    | function struct { $$ = $2; unit_func($$, $1); }
+	| error struct { $$ = $2; }
+    | /* empty */ { $$ = unit_alloc(UNIT_TYPE_STRUCT); }
     ;
 
-module_member_list
-    : import module_member_list
-    | def module_member_list
-    | function module_member_list
-    | /* empty */
+module
+    : import module { $$ = $2; }
+    | def module { $$ = $2; }
+    | function module { $$ = $2; unit_func($$, $1); }
+	| error module { $$ = $2; }
+    | /* empty */ { $$ = unit_alloc(UNIT_TYPE_MODULE); }
     ;
     
 import 
     : TOK_IMPORT qualified_name ';' {
-        parser_import(parser, $2);
-		$$ = 0;
+        //parser_import(parser, $2);
+		//$$ = 0;
     }
     ;
 
 def
     : TOK_DEF type TOK_TYPE ';' {
-        parser_def(parser, $2, $3);
-		$$ = 0;
+        //parser_def(parser, $2, $3);
+		//$$ = 0;
     }
     ;
 
 variable
     : access storage type TOK_IDENT '=' expression ';' {
-        parser_varinit(parser, $1, $2, $3, $4, $6);
-		$$ = 0;
+		$$ = var_alloc($4, $1|$2, $3, $6);
     }
     | access storage type TOK_IDENT ';' {
-        parser_vardecl(parser, $1, $2, $3, $4);
-		$$ = 0;
+		$$ = var_alloc($4, $1|$2, $3, 0);
     }
     ;
 
 constructor
-    : TOK_INIT argument_list access block {
-        parser_ctor(parser, $2, $3, $4);
-		$$ = 0;
-    }
+    : TOK_INIT argument_list access block { 
+		$$ = func_alloc("@init", $2, 0, $4);
+		$$->flags = $3;
+	}
     ;
 
 destructor
-    : TOK_DESTROY argument_list block {
-        parser_dtor(parser, $2, $3);
-		$$ = 0;
-    }
+    : TOK_DESTROY '(' ')' block { 
+		$$ = func_alloc("@destroy", 0, 0, $4); 
+	}
     ;
 
 function
     : TOK_IDENT argument_list access storage native type block {
-        parser_func(parser, $1, $2, $3, $4, $5, $6, $7);
-		$$ = 0;
+		$$ = func_alloc($1, $2, $6, $7);
+		$$->flags = $3|$4|$5;
     }
     ;
 
 prototype
     : TOK_IDENT argument_list type ';' {
-        parser_proto(parser, $1, $2, $3);
-		$$ = 0;
+		$$ = func_alloc($1, $2, $3, 0);
     }
     ;
 
@@ -209,19 +226,19 @@ argument_list
     ;
 
 access 
-    : TOK_PUBLIC { $$ = expr_string("public"); }
-    | TOK_PRIVATE { $$ = expr_string("private"); }
-    | TOK_PROTECTED { $$ = expr_string("protected"); }
+    : TOK_PUBLIC { $$ = UNIT_FLAG_PUBLIC; }
+    | TOK_PRIVATE { $$ = UNIT_FLAG_PRIVATE; }
+    | TOK_PROTECTED { $$ = UNIT_FLAG_PROTECTED; }
     | /* empty */ { $$ = 0; }
     ;
 
 storage
-    : TOK_STATIC { $$ = expr_string("static"); }
+    : TOK_STATIC { $$ = UNIT_FLAG_STATIC; }
     | /* empty */ { $$ = 0; }
     ;
     
 native
-    : TOK_NATIVE { $$ = expr_string("native"); }
+    : TOK_NATIVE { $$ = UNIT_FLAG_NATIVE; }
     | /* empty */ { $$ = 0; }
     ;
 
@@ -240,43 +257,53 @@ block
     ;
 
 statement_list
-    : statement statement_list { $$ = statement_append($2, $1); }
-    | /* empty */ { $$ = statement_list(); }
+    : statement statement_list { $$ = stmt_append($2, $1); }
+    | /* empty */ { $$ = stmt_block(); }
     ;
 
 statement
-	: TOK_FOR '(' expression ';' expression ';' expression ')' block {
-		$$ = statement_for($3, $5, $7, $9);
+	: TOK_FOR '(' clause ';' clause ';' clause ')' block {
+		$$ = stmt_for($3, $5, $7, $9);
 	}
 	| TOK_FOREACH '(' type TOK_IDENT ':' expression ')' block {
-		$$ = statement_foreach($3, $4, $6, $8);
+		$$ = stmt_foreach(var_alloc($4, 0, $3, $6), $8);
 	}
-	| TOK_UNTIL '(' expression ')' block {
-		$$ = statement_until($3, $5);
+	| TOK_UNTIL '(' clause ')' block {
+		$$ = stmt_until($3, $5);
 	}
-	| TOK_WHILE '(' expression ')' block {
-		$$ = statement_while($3, $5);
+	| TOK_WHILE '(' clause ')' block {
+		$$ = stmt_while($3, $5);
 	}
-	| TOK_DO block TOK_UNTIL '(' expression ')' ';' {
-		$$ = statement_dountil($5, $2);
+	| TOK_DO block TOK_UNTIL '(' clause ')' ';' {
+		$$ = stmt_dountil($2, $5);
 	}
-	| TOK_DO block TOK_WHILE '(' expression ')' ';' {
-		$$ = statement_dowhile($5, $2);
+	| TOK_DO block TOK_WHILE '(' clause ')' ';' {
+		$$ = stmt_dowhile($2, $5);
 	}
-    | type TOK_IDENT '=' expression ';' { 
-		$$ = statement_decl($1, $2, $4); 
-	}  
-    | type TOK_IDENT ';' { $$ = expr_decl($1, $2); }
+    | type TOK_IDENT ';' { 
+		$$ = stmt_decl(var_alloc($2, 0, $1, 0)); 
+	}
 	| conditional { $$ = $1; }
-    | expression ';' { $$ = $1; }
+	| clause ';' { $$ = $1; }
+	| error ';' { $$ = 0; }
+	;
+
+clause
+    : type TOK_IDENT '=' expression { 
+		$$ = stmt_decl(var_alloc($2, 0, $1, $4)); 
+	}  
+    | expression { 
+		$$ = stmt_expr($1); 
+	}
+	| /* empty */ { $$ = 0; } 
 	;
 
 conditional
-	: TOK_IF '(' expression ')' block {
-		$$ = statement_conditional($3, $5, 0);
+	: TOK_IF '(' clause ')' block {
+		$$ = stmt_conditional($3, $5, 0);
 	}
-	| TOK_IF '(' expression ')' block TOK_ELSE conditional {
-		$$ = statement_conditional($3, $5, $7);
+	| TOK_IF '(' clause ')' block TOK_ELSE conditional {
+		$$ = stmt_conditional($3, $5, $7);
 	}
 	| block { $$ = $1; }
 	;
@@ -284,7 +311,9 @@ conditional
 expression : assignment { $$ = $1; }
 
 assignment
-    : unary '=' assignment { $$ = expr_binary(op_assign, $1, $3); }
+    : unary '=' assignment { 
+		$$ = expr_binary(op_assign, $1, $3); 
+	}
     | unary TOK_MUL_ASSIGN assignment { 
 		$$ = expr_binary(op_mul_assign, $1, $3); 
 	}
@@ -377,17 +406,17 @@ unary
     ;
 
 postfix
-    : postfix argument_list { $$ = expr_call($1, $2); }
+    : postfix argument_list { $$ = expr_call($1, 0); }
     | postfix '[' expression ']' { $$ = expr_index($1, $3); }
     | postfix '.' TOK_IDENT { $$ = expr_member($1, $3); }
     | postfix TOK_INC { $$ = expr_unary(op_postinc, $1); }
-    | postfix TOK_DEC { $$ = expr_unary(op_preinc, $1); }
+    | postfix TOK_DEC { $$ = expr_unary(op_postdec, $1); }
     | primary { $$ = $1; }
     ;
 
 primary
-    : TOK_STRING { $$ = $1; }
-    | TOK_NUMBER { $$ = $1; }
-    | TOK_IDENT { $$ = $1; }
+    : TOK_STRING { $$ = expr_string($1); }
+    | TOK_NUMBER { $$ = expr_string($1); }
+    | TOK_IDENT { $$ = expr_string($1); }
     | '(' expression ')' { $$ = $2; } 
     ;

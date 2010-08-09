@@ -1,0 +1,35 @@
+#include <op.h>
+
+const char *op_assign = "=";
+const char *op_mul_assign = "*=";
+const char *op_div_assign = "/=";
+const char *op_mod_assign = "%=";
+const char *op_sub_assign = "-=";
+const char *op_add_assign = "+=";
+const char *op_bitand_assign = "&=";
+const char *op_bitor_assign = "|=";
+const char *op_or = "||";
+const char *op_and = "&&";
+const char *op_bitor = "|"; 
+const char *op_bitand = "&";
+const char *op_bitxor = "^";
+const char *op_equal = "==";
+const char *op_notequal = "!=";
+const char *op_greater = ">";
+const char *op_less = "<";
+const char *op_ge = ">=";
+const char *op_le = "<=";
+const char *op_lshift = "<<";
+const char *op_rshift = ">>";
+const char *op_plus = "+";
+const char *op_minus = "-";
+const char *op_mul = "*";
+const char *op_div = "/";
+const char *op_mod = "%";
+const char *op_inc = "++";
+const char *op_dec = "--";
+const char *op_bang = "!";
+const char *op_tilde = "~";
+const char *op_star = "*";
+const char *op_postinc = "++";
+const char *op_postdec = "--";

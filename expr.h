@@ -1,6 +1,9 @@
 #ifndef EXPR_H
 #define EXPR_H
 
+#include <type.h>
+#include <stdlib.h>
+
 #define EXPR_TYPE_STRING 1
 #define EXPR_TYPE_UNARY 2 
 #define EXPR_TYPE_BINARY 3 
@@ -12,11 +15,10 @@
 /* Structure for holding expression syntax tree */
 typedef struct expr expr_t;
 struct expr {
-	int type				/* Expression type type */
-	const char *string;		/* Possible string value of the expression */
+	int type;				/* Expression type type */
+	char *string;			/* Possible string value of the expression */
 	size_t nchild;			/* Number of children */
 	expr_t *child[2];      	/* Child expressions */
-	expr_t *next;
 };
 
 
@@ -24,8 +26,8 @@ expr_t *expr_string(const char *string);
 expr_t *expr_binary(const char *op, expr_t *lhs, expr_t *rhs);
 expr_t *expr_unary(const char *op, expr_t *expr);
 expr_t *expr_call(expr_t *func, expr_t *args);
-expr_t *expr_index(expr_t *tuple, expr_t *expr);
-expr_t *expr_member(expr_t *expr, expr_t *ident);
+expr_t *expr_index(expr_t *obj, expr_t *index);
+expr_t *expr_member(expr_t *expr, const char *ident);
 expr_t *expr_postfix(const char *op, expr_t *expr);
 void expr_free(expr_t *self);
 

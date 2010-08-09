@@ -1,0 +1,8 @@
+module HelloWorld;
+
+main() int {
+
+	print("Hello, world!\n");
+
+
+}

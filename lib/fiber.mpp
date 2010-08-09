@@ -1,5 +1,0 @@
-/* 
- * Class for starting coroutines, which are cooperative threads.  Cooperative 
- * threads need no locking.
- */
-class Fiber;
