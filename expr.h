@@ -19,6 +19,7 @@ struct expr {
 	char *string;			/* Possible string value of the expression */
 	size_t nchild;			/* Number of children */
 	expr_t *child[2];      	/* Child expressions */
+	expr_t *next;
 };
 
 

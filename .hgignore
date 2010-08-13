@@ -1,4 +1,4 @@
 syntax:glob
 *.o
 *.swp
-mc
+apollo

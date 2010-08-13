@@ -10,6 +10,14 @@
 #define UNIT_TYPE_MODULE 3 /* Module compilation unit */
 #define UNIT_TYPE_INTERFACE 4 /* Interface compilation unit */
 
+#define UNIT_FLAG_PUBLIC 0x1
+#define UNIT_FLAG_PRIVATE 0x2
+#define UNIT_FLAG_PROTECTED 0x3
+#define UNIT_FLAG_NATIVE 0x4
+#define UNIT_FLAG_STATIC 0x5
+#define UNIT_FLAG_CONST 0x6
+
+
 /* Compilation unit struct for classes, structs, and enums */
 typedef struct unit unit_t;
 struct unit {

@@ -152,6 +152,19 @@ stmt_t *stmt_conditional(stmt_t *guard, stmt_t *br1, stmt_t *br2) {
 	return self;
 }
 
+stmt_t *stmt_return(expr_t *expr) {
+	stmt_t *self = malloc(sizeof(stmt_t));
+
+	self->type = STMT_TYPE_RETURN;
+	self->expr = expr;
+	self->var = 0;
+	self->nchild = 0;
+	self->next = 0;
+
+	return self;
+}
+
+
 void stmt_free(stmt_t *self) {
  	if (self) {
 		expr_free(self->expr);

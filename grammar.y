@@ -37,6 +37,7 @@
 %token <type> TOK_TYPE
 %token <type> TOK_PRIMITIVE
 %token <string> TOK_IDENT
+%token <string> TOK_CONST
 %token <string> TOK_STRING
 %token <string> TOK_NUMBER 
 %token TOK_CLASS
@@ -59,6 +60,7 @@
 %token TOK_FOREACH
 %token TOK_DO
 %token TOK_FOR
+%token TOK_RETURN
 %token TOK_EQUAL
 %token TOK_NOTEQUAL
 %token TOK_SCOPE
@@ -86,11 +88,12 @@
 %type <func> constructor
 %type <func> destructor
 %type <func> function
+%type <func> native
 %type <func> prototype
 %type <flag> access
-%type <flag> storage
-%type <flag> native
-%type <type> argument_list
+%type <flag> static
+%type <var> parameter_signature
+%type <var> parameter_list
 %type <type> type
 %type <type> qualified_name 
 %type <stmt> block
@@ -98,6 +101,7 @@
 %type <stmt> statement
 %type <stmt> clause
 %type <stmt> conditional
+%type <expr> argument_list
 %type <expr> expression
 %type <expr> assignment
 %type <expr> logical_or
@@ -142,6 +146,7 @@ class
     | constructor class { $$ = $2; unit_ctor($$, $1); }
     | destructor class { $$ = $2; unit_dtor($$, $1); }
     | function class { $$ = $2; unit_func($$, $1); }
+	| native class { $$ = $2; unit_func($$, $1); }
 	| error class { $$ = $2; }
     | /* empty */ { $$ = unit_alloc(UNIT_TYPE_CLASS); }
     ;
@@ -187,16 +192,19 @@ def
     ;
 
 variable
-    : access storage type TOK_IDENT '=' expression ';' {
+    : access static type TOK_IDENT '=' expression ';' {
 		$$ = var_alloc($4, $1|$2, $3, $6);
     }
-    | access storage type TOK_IDENT ';' {
+    | access static type TOK_IDENT ';' {
 		$$ = var_alloc($4, $1|$2, $3, 0);
     }
+	| access static type TOK_CONST '=' expression ';' {
+		$$ = var_alloc($4, $1|$2|UNIT_FLAG_CONST, $3, $6);
+	}
     ;
 
 constructor
-    : TOK_INIT argument_list access block { 
+    : TOK_INIT parameter_signature access block { 
 		$$ = func_alloc("@init", $2, 0, $4);
 		$$->flags = $3;
 	}
@@ -209,20 +217,47 @@ destructor
     ;
 
 function
-    : TOK_IDENT argument_list access storage native type block {
-		$$ = func_alloc($1, $2, $6, $7);
-		$$->flags = $3|$4|$5;
+    : TOK_IDENT parameter_signature access static type block {
+		$$ = func_alloc($1, $2, $5, $6);
+		$$->flags = $3|$4;
     }
+	| TOK_IDENT parameter_signature access static block {
+		$$ = func_alloc($1, $2, 0, $5);
+		$$->flags = $3|$4;
+	}
     ;
+
+native
+	: TOK_IDENT parameter_signature access static TOK_NATIVE type ';' {
+		$$ = func_alloc($1, $2, $6, 0); 
+		$$->flags = $3|$4|UNIT_FLAG_NATIVE;
+	}
+	| TOK_IDENT parameter_signature access static TOK_NATIVE ';' {
+		$$ = func_alloc($1, $2, 0, 0);
+		$$->flags = $3|$4|UNIT_FLAG_NATIVE;
+	}
+	;
 
 prototype
-    : TOK_IDENT argument_list type ';' {
+    : TOK_IDENT parameter_signature type ';' {
 		$$ = func_alloc($1, $2, $3, 0);
     }
+	| TOK_IDENT parameter_signature ';' {
+		$$ = func_alloc($1, $2, 0, 0);
+	}
     ;
 
-argument_list
-    : '(' ')' { $$ = 0; }
+parameter_signature
+	: '(' parameter_list ')' { $$ = $2; }
+	| '(' ')' { $$ = 0; }
+	;
+
+parameter_list
+	: type TOK_IDENT ',' parameter_list { 
+		$$ = $4;
+		$$->next = var_alloc($2, 0, $1, 0); 
+	}
+	| type TOK_IDENT { $$ = var_alloc($2, 0, $1, 0); }
     ;
 
 access 
@@ -232,24 +267,29 @@ access
     | /* empty */ { $$ = 0; }
     ;
 
-storage
+static
     : TOK_STATIC { $$ = UNIT_FLAG_STATIC; }
     | /* empty */ { $$ = 0; }
     ;
     
-native
-    : TOK_NATIVE { $$ = UNIT_FLAG_NATIVE; }
-    | /* empty */ { $$ = 0; }
-    ;
-
 type 
     : TOK_PRIMITIVE { $$ = $1; } 
+	| TOK_PRIMITIVE '*' { $$ = $1; /* TODO: Array */ }
     | qualified_name { $$ = $1; }
+	| qualified_name '*' { $$ = $1; /* TODO: Array */ }
     ;
 
 qualified_name
     : TOK_TYPE TOK_SCOPE qualified_name { $$ = type_concat($1, $3); }
     | TOK_TYPE { $$ = $1; } 
+	| TOK_CONST TOK_SCOPE qualified_name { 
+		$$ = type_concat(type_name($1), $3); 
+		free($1);
+	}
+	| TOK_CONST { 
+		$$ = type_name($1); 
+		free($1);
+	}
     ;
     
 block
@@ -286,6 +326,8 @@ statement
 	| conditional { $$ = $1; }
 	| clause ';' { $$ = $1; }
 	| error ';' { $$ = 0; }
+	| TOK_RETURN expression ';' { $$ = stmt_return($2); }
+	| TOK_RETURN ';' { $$ = stmt_return(0); }
 	;
 
 clause
@@ -406,7 +448,8 @@ unary
     ;
 
 postfix
-    : postfix argument_list { $$ = expr_call($1, 0); }
+    : postfix '(' argument_list ')' { $$ = expr_call($1, $3); }
+	| postfix '(' ')' { $$ = expr_call($1, 0); }
     | postfix '[' expression ']' { $$ = expr_index($1, $3); }
     | postfix '.' TOK_IDENT { $$ = expr_member($1, $3); }
     | postfix TOK_INC { $$ = expr_unary(op_postinc, $1); }
@@ -418,5 +461,17 @@ primary
     : TOK_STRING { $$ = expr_string($1); }
     | TOK_NUMBER { $$ = expr_string($1); }
     | TOK_IDENT { $$ = expr_string($1); }
+	| type '.' TOK_CONST { $$ = expr_string("FIXME"); }
+	| type '.' TOK_IDENT { $$ = expr_string("FIXME"); }
+	| type '(' argument_list ')' { $$ = expr_call(0, $3); }
+	| type '(' ')' { $$ = expr_call(0, 0); }
     | '(' expression ')' { $$ = $2; } 
     ;
+
+argument_list
+	: expression ',' argument_list { 
+		$$ = $3;
+		$$->next = $1;
+	}
+	| expression { $$ = $1; } 
+	;

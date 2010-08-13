@@ -15,6 +15,7 @@ struct var {
 };	
 
 var_t *var_alloc(const char *name, int flags, type_t *type, expr_t *expr);
+var_t *var_concat(var_t *var);
 void var_free(var_t *self);
 
 

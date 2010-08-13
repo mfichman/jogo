@@ -14,6 +14,7 @@
 #define STMT_TYPE_FOREACH 8
 #define STMT_TYPE_CONDITIONAL 9
 #define STMT_TYPE_DECL 10
+#define STMT_TYPE_RETURN 11
 
 /* Structure for holding stmt lists */
 typedef struct stmt stmt_t;
@@ -37,6 +38,7 @@ stmt_t *stmt_dountil(stmt_t *block, stmt_t *guard);
 stmt_t *stmt_dowhile(stmt_t *block, stmt_t *guard);
 stmt_t *stmt_decl(var_t *var);
 stmt_t *stmt_conditional(stmt_t *guard, stmt_t *br1, stmt_t *br2);
+stmt_t *stmt_return(expr_t *expr);
 void stmt_free(stmt_t *self);
 
 #endif

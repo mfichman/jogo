@@ -46,6 +46,7 @@ if return TOK_IF;
 foreach return TOK_FOREACH;
 do return TOK_DO;
 for return TOK_FOR;
+return return TOK_RETURN;
 == return TOK_EQUAL; 
 != return TOK_NOTEQUAL; 
 :: return TOK_SCOPE; 
@@ -72,15 +73,20 @@ byte yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
 ubyte yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
 long yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
 ulong yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
-[A-Z][A-Za-z0-9]* yylval->type = type_name(yytext); return TOK_TYPE; 
+bool yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
 [0-9]+ yylval->string = strdup(yytext); return TOK_NUMBER;
 \"[^"]*\" yylval->string = strdup(yytext); return TOK_STRING;
 \'[^']*\' yylval->string = strdup(yytext); return TOK_STRING;
-[a-z]|[a-z][0-9a-z_]*[0-9a-z] {
+[A-Z][A-Z0-9]* {
+	yylval->string = strdup(yytext);
+	return TOK_CONST;
+}
+[A-Z][A-Za-z0-9]* yylval->type = type_name(yytext); return TOK_TYPE; 
+([a-z]|[a-z][0-9a-z_]*[0-9a-z])(\?|\!)? {
 	yylval->string = strdup(yytext); 
 	return TOK_IDENT;
 }
-\/\/.*
+#.*
 [\t\n\r ]
 . return yytext[0];
 %%

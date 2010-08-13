@@ -3,15 +3,15 @@ OBJS=main.o type.o var.o expr.o func.o stmt.o \
 CFLAGS=-std=c99 -c -g -I. -Wall -Werror -pedantic
 
 
-apc: $(OBJS)
+apollo: $(OBJS)
 	$(CC) -g -o $@ $^ 
 
 clean:
-	rm -rf *.o mc grammar.y.c grammar.l.c
+	rm -rf *.o apollo grammar.y.c grammar.l.c
 
 
 grammar.y.c: grammar.y
-	bison --defines=grammar.h --output=$@ $^
+	bison -v --defines=grammar.h --output=$@ $^
 
 grammar.l.c: grammar.l
 	flex --outfile=$@ $^

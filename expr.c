@@ -9,6 +9,7 @@ expr_t *expr_string(const char *string) {
 	self->type = EXPR_TYPE_STRING;
 	self->string = malloc(strlen(string) + 1);
 	self->nchild = 0;
+	self->next = 0;
 
 	strcpy(self->string, string);
 
@@ -23,6 +24,7 @@ expr_t *expr_binary(const char *op, expr_t *lhs, expr_t *rhs) {
 	self->nchild = 2;
 	self->child[0] = lhs;
 	self->child[1] = rhs;
+	self->next = 0;
 		
 	strcpy(self->string, op);
 
@@ -36,6 +38,7 @@ expr_t *expr_unary(const char *op, expr_t *expr) {
 	self->string = malloc(strlen(op) + 1);
 	self->nchild = 1;
 	self->child[0] = expr;
+	self->next = 0;
 	
 	strcpy(self->string, op);
 
@@ -50,6 +53,7 @@ expr_t *expr_call(expr_t *func, expr_t *args) {
 	self->nchild = 2;
 	self->child[0] = func;
 	self->child[1] = args;
+	self->next = 0;
 		
 	return self;
 }
@@ -62,6 +66,7 @@ expr_t *expr_index(expr_t *tuple, expr_t *expr) {
 	self->nchild = 2;
 	self->child[0] = tuple;
 	self->child[1] = expr;
+	self->next = 0;
 		
 	return self;
 }
@@ -73,6 +78,7 @@ expr_t *expr_member(expr_t *expr, const char *ident) {
 	self->string = malloc(strlen(ident) + 1);
 	self->nchild = 1;
 	self->child[0] = expr;
+	self->next = 0;
 
 	strcpy(self->string, ident);
 	
@@ -86,6 +92,7 @@ expr_t *expr_postfix(const char *op, expr_t *expr) {
 	self->string = malloc(strlen(op) + 1);
 	self->nchild = 1;
 	self->child[0] = expr;
+	self->next = 0;
 
 	strcpy(self->string, op);
 
@@ -98,6 +105,7 @@ void expr_free(expr_t *self) {
 		for (size_t i = 0; i < self->nchild; i++) {
 			expr_free(self->child[i]);	
 		}
+		expr_free(self->next);
 		free(self->string);
 		free(self);
 	}
