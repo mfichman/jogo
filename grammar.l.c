@@ -1270,23 +1270,32 @@ yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
 case 49:
 YY_RULE_SETUP
 #line 77 "grammar.l"
-yylval->string = strdup(yytext); return TOK_NUMBER;
+{
+	yylval->expr = expr_literal(type_primitive("int"), yytext); 
+	return TOK_NUMBER;
+}
 	YY_BREAK
 case 50:
 /* rule 50 can match eol */
 YY_RULE_SETUP
-#line 78 "grammar.l"
-yylval->string = strdup(yytext); return TOK_STRING;
+#line 81 "grammar.l"
+{
+	yylval->expr = expr_literal(type_object("String"), yytext);
+	return TOK_STRING;
+}
 	YY_BREAK
 case 51:
 /* rule 51 can match eol */
 YY_RULE_SETUP
-#line 79 "grammar.l"
-yylval->string = strdup(yytext); return TOK_STRING;
+#line 85 "grammar.l"
+{
+	yylval->expr = expr_literal(type_object("String"), yytext); 
+	return TOK_STRING;
+}
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 80 "grammar.l"
+#line 89 "grammar.l"
 {
 	yylval->string = strdup(yytext);
 	return TOK_CONST;
@@ -1294,12 +1303,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 84 "grammar.l"
-yylval->type = type_name(yytext); return TOK_TYPE; 
+#line 93 "grammar.l"
+yylval->type = type_object(yytext); return TOK_TYPE; 
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 85 "grammar.l"
+#line 94 "grammar.l"
 {
 	yylval->string = strdup(yytext); 
 	return TOK_IDENT;
@@ -1307,26 +1316,26 @@ YY_RULE_SETUP
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 89 "grammar.l"
+#line 98 "grammar.l"
 
 	YY_BREAK
 case 56:
 /* rule 56 can match eol */
 YY_RULE_SETUP
-#line 90 "grammar.l"
+#line 99 "grammar.l"
 
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 91 "grammar.l"
+#line 100 "grammar.l"
 return yytext[0];
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 92 "grammar.l"
+#line 101 "grammar.l"
 ECHO;
 	YY_BREAK
-#line 1330 "grammar.l.c"
+#line 1339 "grammar.l.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2459,7 +2468,7 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 92 "grammar.l"
+#line 101 "grammar.l"
 
 
 
@@ -2468,7 +2477,7 @@ void yyerror(parser_t *self, void* scanner, const char *message) {
 	struct yyguts_t *yyg = (struct yyguts_t*)scanner;
 	
 
-	fprintf(stderr, "%c", toupper(message[0]));
-	fprintf(stderr, "%s (line %d)\n", message + 1, yylineno);
+	fprintf(stderr, "%s:%d: %c%s\n", self->filename, yylineno, 
+		toupper(message[0]), message + 1);
 }
 

@@ -6,6 +6,8 @@
 #include <var.h>
 #include <func.h>
 #include <unit.h>
+#include <import.h>
+#include <def.h>
 #include <op.h>
 %}
 
@@ -15,6 +17,8 @@
 %union { unit_t *unit; }
 %union { var_t *var; }
 %union { func_t *func; }
+%union { import_t *import; }
+%union { def_t *def; }
 %union { char *string; }
 %union { int null; }
 %union { int flag; }
@@ -38,8 +42,8 @@
 %token <type> TOK_PRIMITIVE
 %token <string> TOK_IDENT
 %token <string> TOK_CONST
-%token <string> TOK_STRING
-%token <string> TOK_NUMBER 
+%token <expr> TOK_STRING
+%token <expr> TOK_NUMBER 
 %token TOK_CLASS
 %token TOK_INTERFACE
 %token TOK_STRUCT
@@ -85,6 +89,8 @@
 %type <unit> module
 %type <unit> struct
 %type <var> variable
+%type <import> import
+%type <def> def
 %type <func> constructor
 %type <func> destructor
 %type <func> function
@@ -118,7 +124,7 @@
 %type <expr> primary
 
 
-/* Standard M++ grammar */
+/* The Standard Apollo Grammar, 2010 */
 %%
 translation_unit
     : TOK_CLASS qualified_name ';' class {
@@ -140,8 +146,8 @@ translation_unit
     ;
 
 class
-    : import class { $$ = $2; }
-    | def class { $$ = $2; }
+    : import class { $$ = $2; unit_import($$, $1); }
+    | def class { $$ = $2; unit_def($$, $1); }
     | variable class { $$ = $2; unit_var($$, $1); }
     | constructor class { $$ = $2; unit_ctor($$, $1); }
     | destructor class { $$ = $2; unit_dtor($$, $1); }
@@ -152,16 +158,16 @@ class
     ;
 
 interface
-    : import interface { $$ = $2; }
-    | def interface { $$ = $2; }
+    : import interface { $$ = $2; unit_import($$, $1); }
+    | def interface { $$ = $2; unit_def($$, $1); }
     | prototype interface { $$ = $2; unit_func($$, $1); }
 	| error interface { $$ = $2; }
     | /* empty */ { $$ = unit_alloc(UNIT_TYPE_INTERFACE); }
     ;
 
 struct
-    : import struct { $$ = $2; }
-    | def struct { $$ = $2; }
+    : import struct { $$ = $2; unit_import($$, $1); }
+    | def struct { $$ = $2; unit_def($$, $1); }
     | variable struct { $$ = $2; unit_var($$, $1); }
     | constructor struct { $$ = $2; unit_ctor($$, $1); }
     | function struct { $$ = $2; unit_func($$, $1); }
@@ -170,36 +176,33 @@ struct
     ;
 
 module
-    : import module { $$ = $2; }
-    | def module { $$ = $2; }
+    : import module { $$ = $2; unit_import($$, $1); }
+    | def module { $$ = $2; unit_def($$, $1); }
     | function module { $$ = $2; unit_func($$, $1); }
 	| error module { $$ = $2; }
     | /* empty */ { $$ = unit_alloc(UNIT_TYPE_MODULE); }
     ;
     
 import 
-    : TOK_IMPORT qualified_name ';' {
-        //parser_import(parser, $2);
-		//$$ = 0;
-    }
+    : TOK_IMPORT qualified_name ';' { $$ = import_alloc($2); }
     ;
 
 def
-    : TOK_DEF type TOK_TYPE ';' {
-        //parser_def(parser, $2, $3);
-		//$$ = 0;
-    }
+    : TOK_DEF type TOK_TYPE ';' { $$ = def_alloc($2, $3); }
     ;
 
 variable
     : access static type TOK_IDENT '=' expression ';' {
 		$$ = var_alloc($4, $1|$2, $3, $6);
+		free($4);
     }
     | access static type TOK_IDENT ';' {
 		$$ = var_alloc($4, $1|$2, $3, 0);
+		free($4);
     }
 	| access static type TOK_CONST '=' expression ';' {
 		$$ = var_alloc($4, $1|$2|UNIT_FLAG_CONST, $3, $6);
+		free($4);
 	}
     ;
 
@@ -220,10 +223,12 @@ function
     : TOK_IDENT parameter_signature access static type block {
 		$$ = func_alloc($1, $2, $5, $6);
 		$$->flags = $3|$4;
+		free($1);
     }
 	| TOK_IDENT parameter_signature access static block {
 		$$ = func_alloc($1, $2, 0, $5);
 		$$->flags = $3|$4;
+		free($1);
 	}
     ;
 
@@ -231,19 +236,23 @@ native
 	: TOK_IDENT parameter_signature access static TOK_NATIVE type ';' {
 		$$ = func_alloc($1, $2, $6, 0); 
 		$$->flags = $3|$4|UNIT_FLAG_NATIVE;
+		free($1);
 	}
 	| TOK_IDENT parameter_signature access static TOK_NATIVE ';' {
 		$$ = func_alloc($1, $2, 0, 0);
 		$$->flags = $3|$4|UNIT_FLAG_NATIVE;
+		free($1);
 	}
 	;
 
 prototype
     : TOK_IDENT parameter_signature type ';' {
 		$$ = func_alloc($1, $2, $3, 0);
+		free($1);
     }
 	| TOK_IDENT parameter_signature ';' {
 		$$ = func_alloc($1, $2, 0, 0);
+		free($1);
 	}
     ;
 
@@ -256,8 +265,12 @@ parameter_list
 	: type TOK_IDENT ',' parameter_list { 
 		$$ = $4;
 		$$->next = var_alloc($2, 0, $1, 0); 
+		free($2);
 	}
-	| type TOK_IDENT { $$ = var_alloc($2, 0, $1, 0); }
+	| type TOK_IDENT { 
+		$$ = var_alloc($2, 0, $1, 0);
+		free($2);
+	}
     ;
 
 access 
@@ -274,20 +287,20 @@ static
     
 type 
     : TOK_PRIMITIVE { $$ = $1; } 
-	| TOK_PRIMITIVE '*' { $$ = $1; /* TODO: Array */ }
+	| TOK_PRIMITIVE '*' { $$ = $1; $$->pointer = 1; }
     | qualified_name { $$ = $1; }
-	| qualified_name '*' { $$ = $1; /* TODO: Array */ }
+	| qualified_name '*' { $$ = $1; $$->pointer = 1; }
     ;
 
 qualified_name
     : TOK_TYPE TOK_SCOPE qualified_name { $$ = type_concat($1, $3); }
     | TOK_TYPE { $$ = $1; } 
 	| TOK_CONST TOK_SCOPE qualified_name { 
-		$$ = type_concat(type_name($1), $3); 
+		$$ = type_concat(type_object($1), $3); 
 		free($1);
 	}
 	| TOK_CONST { 
-		$$ = type_name($1); 
+		$$ = type_object($1); 
 		free($1);
 	}
     ;
@@ -297,7 +310,7 @@ block
     ;
 
 statement_list
-    : statement statement_list { $$ = stmt_append($2, $1); }
+    : statement_list statement { $$ = stmt_append($1, $2); }
     | /* empty */ { $$ = stmt_block(); }
     ;
 
@@ -307,6 +320,7 @@ statement
 	}
 	| TOK_FOREACH '(' type TOK_IDENT ':' expression ')' block {
 		$$ = stmt_foreach(var_alloc($4, 0, $3, $6), $8);
+		free($4);
 	}
 	| TOK_UNTIL '(' clause ')' block {
 		$$ = stmt_until($3, $5);
@@ -322,6 +336,7 @@ statement
 	}
     | type TOK_IDENT ';' { 
 		$$ = stmt_decl(var_alloc($2, 0, $1, 0)); 
+		free($2);
 	}
 	| conditional { $$ = $1; }
 	| clause ';' { $$ = $1; }
@@ -333,6 +348,7 @@ statement
 clause
     : type TOK_IDENT '=' expression { 
 		$$ = stmt_decl(var_alloc($2, 0, $1, $4)); 
+		free($2);
 	}  
     | expression { 
 		$$ = stmt_expr($1); 
@@ -451,20 +467,20 @@ postfix
     : postfix '(' argument_list ')' { $$ = expr_call($1, $3); }
 	| postfix '(' ')' { $$ = expr_call($1, 0); }
     | postfix '[' expression ']' { $$ = expr_index($1, $3); }
-    | postfix '.' TOK_IDENT { $$ = expr_member($1, $3); }
+    | postfix '.' TOK_IDENT { $$ = expr_member($1, $3); free($3); }
     | postfix TOK_INC { $$ = expr_unary(op_postinc, $1); }
     | postfix TOK_DEC { $$ = expr_unary(op_postdec, $1); }
     | primary { $$ = $1; }
     ;
 
 primary
-    : TOK_STRING { $$ = expr_string($1); }
-    | TOK_NUMBER { $$ = expr_string($1); }
-    | TOK_IDENT { $$ = expr_string($1); }
-	| type '.' TOK_CONST { $$ = expr_string("FIXME"); }
-	| type '.' TOK_IDENT { $$ = expr_string("FIXME"); }
-	| type '(' argument_list ')' { $$ = expr_call(0, $3); }
-	| type '(' ')' { $$ = expr_call(0, 0); }
+    : TOK_STRING { $$ = $1; }
+    | TOK_NUMBER { $$ = $1; }
+    | TOK_IDENT { $$ = expr_var($1); free($1); }
+	| type '.' TOK_CONST { $$ = expr_static($1, $3); free($3); }
+	| type '.' TOK_IDENT { $$ = expr_static($1, $3); free($3); }
+	| type '(' argument_list ')' { $$ = expr_ctor($1, $3); }
+	| type '(' ')' { $$ = expr_ctor($1, 0); }
     | '(' expression ')' { $$ = $2; } 
     ;
 

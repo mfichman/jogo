@@ -1,28 +1,45 @@
+/*
+ * Copyright (c) 2010 Matt Fichman
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a 
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation 
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+ * and/or sell copies of the Software, and to permit persons to whom the 
+ * Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in 
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */  
+
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <type.h>
-#include <func.h>
-#include <unit.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <apollo.h>
 
 /* Parser structure */
-typedef struct parser parser_t;
 struct parser {
 	unit_t *units;
 	int fd;
+	char *filename;
 	void *scanner;
 };
 
 parser_t *parser_alloc();
-void parser_parse(parser_t *self, int fd);
+void parser_parse(parser_t *self, const char* filename, int fd);
 void parser_class(parser_t *self, unit_t *unit);
 void parser_interface(parser_t *self, unit_t *unit);
 void parser_struct(parser_t *self, unit_t *unit);
 void parser_module(parser_t *self, unit_t *unit);
-int parser_read(parser_t *self, char *buffer, size_t length);
+int parser_read(parser_t *self, char *buffer, int length);
 void parser_free(parser_t *self);
 
 
@@ -34,6 +51,8 @@ union node {
 	unit_t *unit;
 	var_t *var;
 	func_t *func;
+	import_t *import;
+	def_t *def;
 	char *string;	
 	int null;
 	int flag;

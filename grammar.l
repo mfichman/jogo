@@ -74,14 +74,23 @@ ubyte yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
 long yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
 ulong yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
 bool yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
-[0-9]+ yylval->string = strdup(yytext); return TOK_NUMBER;
-\"[^"]*\" yylval->string = strdup(yytext); return TOK_STRING;
-\'[^']*\' yylval->string = strdup(yytext); return TOK_STRING;
+[0-9]+ {
+	yylval->expr = expr_literal(type_primitive("int"), yytext); 
+	return TOK_NUMBER;
+}
+\"[^"]*\" {
+	yylval->expr = expr_literal(type_object("String"), yytext);
+	return TOK_STRING;
+}
+\'[^']*\' {
+	yylval->expr = expr_literal(type_object("String"), yytext); 
+	return TOK_STRING;
+}
 [A-Z][A-Z0-9]* {
 	yylval->string = strdup(yytext);
 	return TOK_CONST;
 }
-[A-Z][A-Za-z0-9]* yylval->type = type_name(yytext); return TOK_TYPE; 
+[A-Z][A-Za-z0-9]* yylval->type = type_object(yytext); return TOK_TYPE; 
 ([a-z]|[a-z][0-9a-z_]*[0-9a-z])(\?|\!)? {
 	yylval->string = strdup(yytext); 
 	return TOK_IDENT;
@@ -96,6 +105,6 @@ void yyerror(parser_t *self, void* scanner, const char *message) {
 	struct yyguts_t *yyg = (struct yyguts_t*)scanner;
 	
 
-	fprintf(stderr, "%c", toupper(message[0]));
-	fprintf(stderr, "%s (line %d)\n", message + 1, yylineno);
+	fprintf(stderr, "%s:%d: %c%s\n", self->filename, yylineno, 
+		toupper(message[0]), message + 1);
 }

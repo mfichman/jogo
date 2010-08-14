@@ -20,42 +20,51 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef OP_H
-#define OP_H
+#include <symtab.h>
+#include <var.h>
+#include <hash.h>
+#include <assert.h>
+#include <string.h>
+#include <stdlib.h>
 
-extern const char *op_assign;
-extern const char *op_mul_assign;
-extern const char *op_div_assign;
-extern const char *op_mod_assign;
-extern const char *op_sub_assign;
-extern const char *op_add_assign;
-extern const char *op_bitand_assign;
-extern const char *op_bitor_assign;
-extern const char *op_or;
-extern const char *op_and;
-extern const char *op_bitor;
-extern const char *op_bitand;
-extern const char *op_bitxor;
-extern const char *op_equal;
-extern const char *op_notequal;
-extern const char *op_greater;
-extern const char *op_less;
-extern const char *op_ge;
-extern const char *op_le;
-extern const char *op_lshift;
-extern const char *op_rshift;
-extern const char *op_plus;
-extern const char *op_minus;
-extern const char *op_mul;
-extern const char *op_div;
-extern const char *op_mod;
-extern const char *op_inc;
-extern const char *op_dec;
-extern const char *op_bang;
-extern const char *op_tilde;
-extern const char *op_star;
-extern const char *op_postinc;
-extern const char *op_postdec;
+struct symtab {
+	symtab_t *parent;
+	hash_t *vars;
+	hash_t *funcs;
+};
 
+symtab_t *symtab_alloc(symtab_t *parent) {
+	symtab_t *self = malloc(sizeof(symtab_t));
 
-#endif
+	self->parent = parent;
+	self->vars = hash_alloc((hash_compfn_t)&strcmp, &hash_string);
+	self->funcs = hash_alloc((hash_compfn_t)&strcmp, &hash_string);
+
+	return self;
+}
+
+void symtab_var(symtab_t *self, const char *name, var_t *var) {
+	hash_put(self->vars, name, var);
+}
+
+void symtab_func(symtab_t *self, const char *name, func_t *func) {
+	hash_put(self->funcs, name, func);
+}
+
+var_t *symtab_get_var(symtab_t *self, const char *name) {
+	var_t *var = hash_get(self->vars, name);
+	if (!var && self->parent) {
+		return hash_get(self->vars, name);
+	} else {
+		return var;
+	}
+}
+
+func_t *symtab_get_func(symtab_t *self, const char *name) {
+	func_t *func = hash_get(self->funcs, name);
+	if (!func && self->parent) {
+		return hash_get(self->funcs, name);
+	} else {
+		return func;
+	}
+}
