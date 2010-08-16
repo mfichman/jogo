@@ -23,8 +23,14 @@
 #include <parser.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <unit.h>
+#include <stmt.h>
+#include <type.h>
+#include <var.h>
+#include <expr.h>
+#include <assert.h>
 
 parser_t *parser_alloc() {
 	parser_t *self = malloc(sizeof(parser_t));
@@ -44,6 +50,11 @@ void parser_parse(parser_t *self, const char *filename, int fd) {
 	strcpy(self->filename, filename);
 
 	yyparse(self, self->scanner);
+}
+
+void parser_error(parser_t *self) {
+	yyerror(self, self->scanner, 0);
+
 }
 
 int parser_read(parser_t *self, char *buffer, int length) {
@@ -69,6 +80,24 @@ void parser_module(parser_t *self, unit_t *unit) {
 	unit->next = self->units;
 	self->units = unit;
 }
+
+int parser_check_stmt(parser_t *self, stmt_t *stmt) {
+	return 1;
+}
+
+int parser_check_expr(parser_t *self, expr_t *expr) {
+	return 1;
+}
+
+int parser_check_var(parser_t *self, var_t *var) {
+	return 1;
+} 
+
+int parser_resolve_type(type_t *type) {
+
+	return 1;
+}
+
 
 void parser_free(parser_t *self) {
 	if (self) {

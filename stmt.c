@@ -23,12 +23,15 @@
 #include <stmt.h>
 #include <var.h>
 #include <expr.h>
+#include <symtab.h>
+#include <parser.h>
 #include <stdlib.h>
 
 stmt_t *stmt_expr(expr_t *expr) {
 	stmt_t *self = malloc(sizeof(stmt_t));
 
 	self->type = STMT_TYPE_EXPR;
+	self->symbols = 0;
 	self->expr = expr;
 	self->var = 0;
 	self->nchild = 0;
@@ -37,10 +40,11 @@ stmt_t *stmt_expr(expr_t *expr) {
 	return self;
 }
 
-stmt_t *stmt_block() {
+stmt_t *stmt_block(symtab_t *symbols) {
 	stmt_t *self = malloc(sizeof(stmt_t));
 
 	self->type = STMT_TYPE_BLOCK;
+	self->symbols = symtab_alloc(symbols);
 	self->expr = 0;
 	self->var = 0;
 	self->nchild = 2;
@@ -68,6 +72,7 @@ stmt_t *stmt_for(stmt_t *c1, stmt_t *c2, stmt_t *c3, stmt_t *block) {
 	stmt_t *self = malloc(sizeof(stmt_t));
 
 	self->type = STMT_TYPE_FOR;
+	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
 	self->nchild = 4;
@@ -84,6 +89,7 @@ stmt_t *stmt_foreach(var_t *var, stmt_t *block) {
 	stmt_t *self = malloc(sizeof(stmt_t));
 	
 	self->type = STMT_TYPE_FOREACH;	
+	self->symbols = 0;
 	self->expr = 0;
 	self->var = var;
 	self->nchild = 1;
@@ -97,6 +103,7 @@ stmt_t *stmt_until(stmt_t *guard, stmt_t *block) {
 	stmt_t *self = malloc(sizeof(stmt_t));
 
 	self->type = STMT_TYPE_UNTIL;
+	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
 	self->nchild = 2;
@@ -111,6 +118,7 @@ stmt_t *stmt_while(stmt_t *guard, stmt_t *block) {
 	stmt_t *self = malloc(sizeof(stmt_t));
 
 	self->type = STMT_TYPE_WHILE;
+	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
 	self->nchild = 2;
@@ -125,6 +133,7 @@ stmt_t *stmt_dountil(stmt_t *block, stmt_t *guard) {
 	stmt_t *self = malloc(sizeof(stmt_t));
 
 	self->type = STMT_TYPE_DOUNTIL;
+	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
 	self->nchild = 2;
@@ -139,6 +148,7 @@ stmt_t *stmt_dowhile(stmt_t *block, stmt_t *guard) {
 	stmt_t *self = malloc(sizeof(stmt_t));
 
 	self->type = STMT_TYPE_DOWHILE;
+	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
 	self->nchild = 2;
@@ -149,14 +159,17 @@ stmt_t *stmt_dowhile(stmt_t *block, stmt_t *guard) {
 	return self;
 }
 
-stmt_t *stmt_decl(var_t *var) {
+stmt_t *stmt_decl(parser_t *parser, var_t *var) {
 	stmt_t *self = malloc(sizeof(stmt_t));
 
 	self->type = STMT_TYPE_DECL;
+	self->symbols = 0;
 	self->expr = 0;
 	self->var = var;
 	self->nchild = 0;
 	self->next = 0;
+
+	symtab_var(parser->symbols, var->name, var);
 
 	return self;
 }
@@ -165,12 +178,19 @@ stmt_t *stmt_conditional(stmt_t *guard, stmt_t *br1, stmt_t *br2) {
 	stmt_t *self = malloc(sizeof(stmt_t));
 
 	self->type = STMT_TYPE_CONDITIONAL;
+	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
-	self->nchild = 3;
-	self->child[0] = guard;
-	self->child[1] = br1;
-	self->child[2] = br2;
+	if (br2) {
+		self->nchild = 3;
+		self->child[0] = guard;
+		self->child[1] = br1;
+		self->child[2] = br2;
+	} else {
+		self->nchild = 2;
+		self->child[0] = guard;
+		self->child[1] = br1;
+	}
 	self->next = 0;
 	
 	return self;
@@ -180,6 +200,7 @@ stmt_t *stmt_return(expr_t *expr) {
 	stmt_t *self = malloc(sizeof(stmt_t));
 
 	self->type = STMT_TYPE_RETURN;
+	self->symbols = 0;
 	self->expr = expr;
 	self->var = 0;
 	self->nchild = 0;
@@ -200,6 +221,7 @@ void stmt_free(stmt_t *self) {
 				stmt_free(self->child[i]);
 			}
 		}
+		symtab_free(self->symbols);
 		stmt_free(self->next);
 		free(self);
 	}

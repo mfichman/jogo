@@ -39,7 +39,10 @@ struct type {
 type_t *type_object(const char *name);
 type_t *type_primitive(const char *name);
 type_t *type_concat(type_t *self, type_t *type);
+type_t *type_clone(type_t *self);
 int type_comp(type_t *self, type_t *type);
+int type_bool_compat(type_t *self);
+int type_integer_compat(type_t *self);
 void type_free(type_t *self);
 
 #endif

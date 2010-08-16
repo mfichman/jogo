@@ -31,5 +31,7 @@ void symtab_func(symtab_t *self, const char *name, func_t *func);
 void symtab_var(symtab_t *self, const char *name, var_t *var);
 func_t *symtab_get_func(symtab_t *self, const char *name);
 var_t *symtab_get_var(symtab_t *self, const char *name);
+symtab_t *symtab_get_parent(symtab_t *self);
+void symtab_free(symtab_t *self);
 
 #endif

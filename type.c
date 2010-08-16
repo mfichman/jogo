@@ -22,7 +22,9 @@
 
 #include <type.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 
 type_t *type_object(const char *name) {
@@ -63,21 +65,39 @@ type_t *type_concat(type_t *self, type_t *type) {
 	return self;
 }
 
+type_t *type_clone(type_t *other) {
+	assert("Can't clone an argument list" && !other->next);
+
+	type_t *self = malloc(sizeof(type_t));
+	self->name = malloc(strlen(other->name) + 1);
+	self->type = other->type;
+	self->pointer = other->pointer;
+	self->next = 0;
+
+	strcpy(self->name, other->name);
+	
+	return self;
+}
+
 int type_comp(type_t *self, type_t *other) {
 
 	while (self && other) {
 		if (strcmp(self->name, other->name)) {
-			return 0;
+			return 1;
 		}
 		self = self->next;
 		other = other->next;
 	}
 
-	if (self && other) {
-		return 1;
-	} else {
+	if (!self && !other) {
 		return 0;
+	} else {
+		return 1;
 	}
+}
+
+int type_bool_compat(type_t *self) {
+	return TYPE_TYPE_PRIMITIVE == self->type || self->pointer;
 }
 
 void type_free(type_t *self) {

@@ -23,6 +23,7 @@
 #ifndef OP_H
 #define OP_H
 
+extern const char *op_null_check;
 extern const char *op_assign;
 extern const char *op_mul_assign;
 extern const char *op_div_assign;

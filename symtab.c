@@ -68,3 +68,16 @@ func_t *symtab_get_func(symtab_t *self, const char *name) {
 		return func;
 	}
 }
+
+symtab_t *symtab_get_parent(symtab_t *self) {
+	return self->parent;
+}
+
+void symtab_free(symtab_t *self) {
+	if (self) {
+		hash_free(self->vars);
+		hash_free(self->funcs);
+		free(self);
+	}
+
+}

@@ -94,47 +94,47 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 14 "grammar.y"
+#line 18 "grammar.y"
  expr_t *expr; 
 
 /* Line 1676 of yacc.c  */
-#line 15 "grammar.y"
+#line 19 "grammar.y"
  stmt_t *stmt; 
 
 /* Line 1676 of yacc.c  */
-#line 16 "grammar.y"
+#line 20 "grammar.y"
  type_t *type; 
 
 /* Line 1676 of yacc.c  */
-#line 17 "grammar.y"
+#line 21 "grammar.y"
  unit_t *unit; 
 
 /* Line 1676 of yacc.c  */
-#line 18 "grammar.y"
+#line 22 "grammar.y"
  var_t *var; 
 
 /* Line 1676 of yacc.c  */
-#line 19 "grammar.y"
+#line 23 "grammar.y"
  func_t *func; 
 
 /* Line 1676 of yacc.c  */
-#line 20 "grammar.y"
+#line 24 "grammar.y"
  import_t *import; 
 
 /* Line 1676 of yacc.c  */
-#line 21 "grammar.y"
+#line 25 "grammar.y"
  def_t *def; 
 
 /* Line 1676 of yacc.c  */
-#line 22 "grammar.y"
+#line 26 "grammar.y"
  char *string; 
 
 /* Line 1676 of yacc.c  */
-#line 23 "grammar.y"
+#line 27 "grammar.y"
  int null; 
 
 /* Line 1676 of yacc.c  */
-#line 24 "grammar.y"
+#line 28 "grammar.y"
  int flag; 
 
 

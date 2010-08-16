@@ -2477,7 +2477,11 @@ void yyerror(parser_t *self, void* scanner, const char *message) {
 	struct yyguts_t *yyg = (struct yyguts_t*)scanner;
 	
 
-	fprintf(stderr, "%s:%d: %c%s\n", self->filename, yylineno, 
-		toupper(message[0]), message + 1);
+	if (message) {
+		fprintf(stderr, "%s:%d: %c%s\n", self->filename, yylineno, 
+			toupper(message[0]), message + 1);
+	} else {
+		fprintf(stderr, "%s:%d: ", self->filename, yylineno); 
+	}
 }
 

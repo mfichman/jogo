@@ -41,21 +41,22 @@ struct expr {
 	int type;				/* Expression type type */
 	char *string;			/* Possible string value of the expression */
 	int nchild;				/* Number of children */
-	type_t *object;			/* Optional type */
+	type_t *chktype;		/* Type evaluation for expression */
+	type_t *object;			/* Optional object type name */
 	expr_t *child[2];      	/* Child expressions */
 	expr_t *next;
 };
 
 
 expr_t *expr_literal(type_t *type, const char *string);
-expr_t *expr_binary(const char *op, expr_t *lhs, expr_t *rhs);
-expr_t *expr_unary(const char *op, expr_t *expr);
-expr_t *expr_call(expr_t *func, expr_t *args);
-expr_t *expr_ctor(type_t *type, expr_t *args);
-expr_t *expr_index(expr_t *obj, expr_t *index);
-expr_t *expr_member(expr_t *expr, const char *ident);
-expr_t *expr_static(type_t *type, const char *ident);
-expr_t *expr_var(const char *name);
+expr_t *expr_binary(parser_t *parser, const char *op, expr_t *lh, expr_t *rh);
+expr_t *expr_unary(parser_t *parser, const char *op, expr_t *expr);
+expr_t *expr_call(parser_t *parser, expr_t *func, expr_t *args);
+expr_t *expr_ctor(parser_t *parser, type_t *type, expr_t *args);
+expr_t *expr_index(parser_t *parser, expr_t *obj, expr_t *index);
+expr_t *expr_member(parser_t *parser, expr_t *expr, const char *ident);
+expr_t *expr_static(parser_t *parser, type_t *type, const char *ident);
+expr_t *expr_var(parser_t *parser, const char *name);
 void expr_free(expr_t *self);
 
 

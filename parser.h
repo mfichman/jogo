@@ -28,8 +28,10 @@
 /* Parser structure */
 struct parser {
 	unit_t *units;
+	symtab_t *symbols;
 	int fd;
 	char *filename;
+	char *error;
 	void *scanner;
 };
 
@@ -39,7 +41,12 @@ void parser_class(parser_t *self, unit_t *unit);
 void parser_interface(parser_t *self, unit_t *unit);
 void parser_struct(parser_t *self, unit_t *unit);
 void parser_module(parser_t *self, unit_t *unit);
+void parser_error(parser_t *self);
 int parser_read(parser_t *self, char *buffer, int length);
+int parser_check_stmt(parser_t *self, stmt_t *stmt);
+int parser_check_expr(parser_t *self, expr_t *expr);
+int parser_check_var(parser_t *self, var_t *var);
+int parser_resolve_type(type_t *type);
 void parser_free(parser_t *self);
 
 

@@ -1,6 +1,7 @@
 OBJS=main.o type.o var.o expr.o func.o stmt.o parser.o unit.o op.o \
 	 import.o def.o hash.o symtab.o grammar.y.o grammar.l.o
 CFLAGS=-std=c99 -c -g -I. -Wall -Werror -pedantic
+CC=clang
 
 
 apollo: $(OBJS)

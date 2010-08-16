@@ -22,6 +22,7 @@
 
 #include <op.h>
 
+const char *op_null_check = "?";
 const char *op_assign = "=";
 const char *op_mul_assign = "*=";
 const char *op_div_assign = "/=";

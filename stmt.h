@@ -39,8 +39,8 @@
 
 /* Structure for holding stmt lists */
 struct stmt {
-	symtab_t *symbols;		/* Symbol lookup table */
 	int type;				/* Statement type */
+	symtab_t *symbols;		/* Symbol lookup table */
 	expr_t *expr;			/* Possible expression */
 	var_t *var;				/* Possible variable object */
 	int nchild;				/* Number of child stmts */
@@ -49,7 +49,7 @@ struct stmt {
 };
 
 stmt_t *stmt_expr(expr_t *expr);
-stmt_t *stmt_block();
+stmt_t *stmt_block(symtab_t *symbols);
 stmt_t *stmt_append(stmt_t *self, stmt_t *stmt);
 stmt_t *stmt_for(stmt_t *c1, stmt_t *c2, stmt_t *c3, stmt_t *block);
 stmt_t *stmt_foreach(var_t *var, stmt_t *block);
@@ -57,7 +57,7 @@ stmt_t *stmt_until(stmt_t *guard, stmt_t *block);
 stmt_t *stmt_while(stmt_t *guard, stmt_t *block);
 stmt_t *stmt_dountil(stmt_t *block, stmt_t *guard);
 stmt_t *stmt_dowhile(stmt_t *block, stmt_t *guard);
-stmt_t *stmt_decl(var_t *var);
+stmt_t *stmt_decl(parser_t *parser, var_t *var);
 stmt_t *stmt_conditional(stmt_t *guard, stmt_t *br1, stmt_t *br2);
 stmt_t *stmt_return(expr_t *expr);
 void stmt_free(stmt_t *self);
