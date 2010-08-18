@@ -1271,31 +1271,34 @@ case 49:
 YY_RULE_SETUP
 #line 77 "grammar.l"
 {
-	yylval->expr = expr_literal(type_primitive("int"), yytext); 
+	parser_t *parser = yyget_extra(yyscanner);
+	yylval->expr = expr_literal(parser, type_primitive("int"), yytext); 
 	return TOK_NUMBER;
 }
 	YY_BREAK
 case 50:
 /* rule 50 can match eol */
 YY_RULE_SETUP
-#line 81 "grammar.l"
+#line 82 "grammar.l"
 {
-	yylval->expr = expr_literal(type_object("String"), yytext);
+	parser_t *parser = yyget_extra(yyscanner);
+	yylval->expr = expr_literal(parser, type_object("String"), yytext);
 	return TOK_STRING;
 }
 	YY_BREAK
 case 51:
 /* rule 51 can match eol */
 YY_RULE_SETUP
-#line 85 "grammar.l"
+#line 87 "grammar.l"
 {
-	yylval->expr = expr_literal(type_object("String"), yytext); 
+	parser_t *parser = yyget_extra(yyscanner);
+	yylval->expr = expr_literal(parser, type_object("String"), yytext); 
 	return TOK_STRING;
 }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 89 "grammar.l"
+#line 92 "grammar.l"
 {
 	yylval->string = strdup(yytext);
 	return TOK_CONST;
@@ -1303,12 +1306,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 93 "grammar.l"
+#line 96 "grammar.l"
 yylval->type = type_object(yytext); return TOK_TYPE; 
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 94 "grammar.l"
+#line 97 "grammar.l"
 {
 	yylval->string = strdup(yytext); 
 	return TOK_IDENT;
@@ -1316,26 +1319,26 @@ YY_RULE_SETUP
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 98 "grammar.l"
+#line 101 "grammar.l"
 
 	YY_BREAK
 case 56:
 /* rule 56 can match eol */
 YY_RULE_SETUP
-#line 99 "grammar.l"
+#line 102 "grammar.l"
 
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 100 "grammar.l"
+#line 103 "grammar.l"
 return yytext[0];
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 101 "grammar.l"
+#line 104 "grammar.l"
 ECHO;
 	YY_BREAK
-#line 1339 "grammar.l.c"
+#line 1342 "grammar.l.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2468,7 +2471,7 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 101 "grammar.l"
+#line 104 "grammar.l"
 
 
 
@@ -2483,5 +2486,10 @@ void yyerror(parser_t *self, void* scanner, const char *message) {
 	} else {
 		fprintf(stderr, "%s:%d: ", self->filename, yylineno); 
 	}
+}
+
+int parser_line_number(parser_t *self) {
+	struct yyguts_t *yyg = (struct yyguts_t*)self->scanner;
+	return yylineno;
 }
 

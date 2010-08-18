@@ -25,7 +25,7 @@
 
 #include <apollo.h>
 
-/* Parser structure */
+/* Primary parser structure; contains symbol table and compilation units */
 struct parser {
 	unit_t *units;
 	symtab_t *symbols;
@@ -47,6 +47,7 @@ int parser_check_stmt(parser_t *self, stmt_t *stmt);
 int parser_check_expr(parser_t *self, expr_t *expr);
 int parser_check_var(parser_t *self, var_t *var);
 int parser_resolve_type(type_t *type);
+int parser_line_number(parser_t *self);
 void parser_free(parser_t *self);
 
 

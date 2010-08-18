@@ -30,10 +30,11 @@
 #include <var.h>
 #include <assert.h>
 
-expr_t *expr_literal(type_t *type, const char *string) {
+expr_t *expr_literal(parser_t *parser, type_t *type, const char *string) {
 	expr_t *self = malloc(sizeof(expr_t));
 
 	self->type = EXPR_TYPE_STRING;
+	self->line = parser_line_number(parser);
 	self->string = malloc(strlen(string) + 1);
 	self->nchild = 0;
 	self->chktype = type;
@@ -58,6 +59,7 @@ expr_t *expr_binary(parser_t *parser, const char *op, expr_t *lhs, expr_t *rhs) 
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_BINARY;
+	self->line = parser_line_number(parser);
 	self->string = malloc(strlen(op) + 1);
 	self->nchild = 2;
 	self->child[0] = lhs;
@@ -75,6 +77,7 @@ expr_t *expr_unary(parser_t *parser, const char *op, expr_t *expr) {
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_UNARY;
+	self->line = parser_line_number(parser);
 	self->string = malloc(strlen(op) + 1);
 	self->nchild = 1;
 	self->child[0] = expr;
@@ -94,6 +97,7 @@ expr_t *expr_call(parser_t *parser, expr_t *func, expr_t *args) {
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_CALL;
+	self->line = parser_line_number(parser);
 	self->string = 0; 
 	self->nchild = 2;
 	self->child[0] = func;
@@ -110,6 +114,7 @@ expr_t *expr_ctor(parser_t *parser, type_t *type, expr_t *args) {
 	expr_t *self = malloc(sizeof(expr_t));
 
 	self->type = EXPR_TYPE_CTOR;
+	self->line = parser_line_number(parser);
 	self->string = 0;
 	self->nchild = 1;
 	self->child[0] = args;
@@ -125,6 +130,7 @@ expr_t *expr_index(parser_t *parser, expr_t *expr, expr_t *index) {
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_INDEX;
+	self->line = parser_line_number(parser);
 	self->string = 0; 
 	self->nchild = 2;
 	self->child[0] = expr;
@@ -142,6 +148,7 @@ expr_t *expr_member(parser_t *parser, expr_t *expr, const char *ident) {
 	expr_t *self = malloc(sizeof(expr_t));
 
 	self->type = EXPR_TYPE_MEMBER;
+	self->line = parser_line_number(parser);
 	self->string = malloc(strlen(ident) + 1);
 	self->nchild = 1;
 	self->child[0] = expr;
@@ -159,6 +166,7 @@ expr_t *expr_static(parser_t *parser, type_t *type, const char *ident) {
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_STATIC;
+	self->line = parser_line_number(parser);
 	self->string = malloc(strlen(ident) + 1);	
 	self->nchild = 0;
 	self->object = type;
@@ -182,6 +190,7 @@ expr_t *expr_var(parser_t *parser, const char *name) {
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_VAR;
+	self->line = parser_line_number(parser);
 	self->string = malloc(strlen(name) + 1);
 	self->nchild = 0;
 	self->chktype = type_clone(var->type);

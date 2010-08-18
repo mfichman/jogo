@@ -39,6 +39,7 @@
 /* Structure for holding expression syntax tree */
 struct expr {
 	int type;				/* Expression type type */
+	int line;				/* Line number for this expression */
 	char *string;			/* Possible string value of the expression */
 	int nchild;				/* Number of children */
 	type_t *chktype;		/* Type evaluation for expression */
@@ -48,7 +49,7 @@ struct expr {
 };
 
 
-expr_t *expr_literal(type_t *type, const char *string);
+expr_t *expr_literal(parser_t *parser, type_t *type, const char *string);
 expr_t *expr_binary(parser_t *parser, const char *op, expr_t *lh, expr_t *rh);
 expr_t *expr_unary(parser_t *parser, const char *op, expr_t *expr);
 expr_t *expr_call(parser_t *parser, expr_t *func, expr_t *args);

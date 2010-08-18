@@ -75,15 +75,18 @@ long yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
 ulong yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
 bool yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
 [0-9]+ {
-	yylval->expr = expr_literal(type_primitive("int"), yytext); 
+	parser_t *parser = yyget_extra(yyscanner);
+	yylval->expr = expr_literal(parser, type_primitive("int"), yytext); 
 	return TOK_NUMBER;
 }
 \"[^"]*\" {
-	yylval->expr = expr_literal(type_object("String"), yytext);
+	parser_t *parser = yyget_extra(yyscanner);
+	yylval->expr = expr_literal(parser, type_object("String"), yytext);
 	return TOK_STRING;
 }
 \'[^']*\' {
-	yylval->expr = expr_literal(type_object("String"), yytext); 
+	parser_t *parser = yyget_extra(yyscanner);
+	yylval->expr = expr_literal(parser, type_object("String"), yytext); 
 	return TOK_STRING;
 }
 [A-Z][A-Z0-9]* {
@@ -111,4 +114,9 @@ void yyerror(parser_t *self, void* scanner, const char *message) {
 	} else {
 		fprintf(stderr, "%s:%d: ", self->filename, yylineno); 
 	}
+}
+
+int parser_line_number(parser_t *self) {
+	struct yyguts_t *yyg = (struct yyguts_t*)self->scanner;
+	return yylineno;
 }
