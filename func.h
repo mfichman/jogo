@@ -35,7 +35,7 @@ struct func {
 	func_t *next;         
 };
 
-func_t *func_alloc(const char *name, var_t *arg, type_t *ret, stmt_t *body);
+func_t *func_alloc(char *name, var_t *arg, type_t *ret, stmt_t *body);
 void func_free(func_t *self);
 
 #endif

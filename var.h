@@ -34,7 +34,7 @@ struct var {
 	var_t *next;
 };	
 
-var_t *var_alloc(const char *name, int flags, type_t *type, expr_t *expr);
+var_t *var_alloc(char *name, int flags, type_t *type, expr_t *expr);
 int var_comp(var_t *self, var_t *var);
 void var_free(var_t *self);
 

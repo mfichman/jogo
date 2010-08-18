@@ -24,6 +24,8 @@
 #define PARSER_H
 
 #include <apollo.h>
+#include <string.h>
+#include <stdlib.h>
 
 /* Primary parser structure; contains symbol table and compilation units */
 struct parser {
@@ -83,5 +85,11 @@ int yylex(YYSTYPE *, void *);
 int yyparse(parser_t *, void *);
 int yyerror(parser_t *, void *, const char *error);
 */
+static inline char *strdup(const char* str) {
+	char *copy = malloc(strlen(str) + 1);
+	strcpy(copy, str);
+	return copy;
+}
+
 
 #endif

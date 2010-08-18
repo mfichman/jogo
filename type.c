@@ -27,28 +27,24 @@
 #include <assert.h>
 
 
-type_t *type_object(const char *name) {
+type_t *type_object(char *name) {
 	type_t *self = malloc(sizeof(type_t));
 
-	self->name = malloc(strlen(name) + 1);
+	self->name = name;
 	self->type = TYPE_TYPE_OBJECT;
 	self->next = 0;
 	self->pointer = 0;
 
-	strcpy(self->name, name);
-	
 	return self;
 }
 
-type_t *type_primitive(const char *name) {
+type_t *type_primitive(char *name) {
 	type_t *self = malloc(sizeof(type_t));
 
-	self->name = malloc(strlen(name) + 1);
+	self->name = name;
 	self->type = TYPE_TYPE_PRIMITIVE;
 	self->next = 0;
 	self->pointer = 0;
-
-	strcpy(self->name, name);
 	
 	return self;
 }

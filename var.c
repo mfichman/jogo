@@ -26,16 +26,14 @@
 #include <string.h>
 #include <stdio.h>
 
-var_t *var_alloc(const char *name, int flags, type_t *type, expr_t *expr) {
+var_t *var_alloc(char *name, int flags, type_t *type, expr_t *expr) {
 	var_t *self = malloc(sizeof(var_t));
 
-	self->name = malloc(strlen(name) + 1);
+	self->name = name;
 	self->flags = flags;
 	self->type = type;
 	self->expr = expr;
 	self->next = 0;
-	
-	strcpy(self->name, name);
 	
 	return self;
 }

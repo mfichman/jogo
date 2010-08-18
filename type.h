@@ -36,8 +36,8 @@ struct type {
 	type_t *next;
 };
 
-type_t *type_object(const char *name);
-type_t *type_primitive(const char *name);
+type_t *type_object(char *name);
+type_t *type_primitive(char *name);
 type_t *type_concat(type_t *self, type_t *type);
 type_t *type_clone(type_t *self);
 int type_comp(type_t *self, type_t *type);

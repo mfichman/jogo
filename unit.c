@@ -26,6 +26,7 @@
 #include <func.h>
 #include <var.h>
 #include <assert.h>
+#include <symtab.h>
 #include <stdlib.h>
 
 unit_t *unit_alloc(int type) {
@@ -39,6 +40,7 @@ unit_t *unit_alloc(int type) {
 	self->ctors = 0;
 	self->dtors = 0;
 	self->funcs = 0;
+	self->symtab = symtab_alloc(0); 
 	self->next = 0;
 
 	return self;
@@ -62,11 +64,13 @@ void unit_def(unit_t *self, def_t *def) {
 void unit_var(unit_t *self, var_t *var) {
 	var->next = self->vars;
 	self->vars = var;
+	symtab_var(self->symtab, var->name, var);
 }
 
 void unit_ctor(unit_t *self, func_t *ctor) {
 	ctor->next = self->ctors;
 	self->ctors = ctor;
+	symtab_func(self->symtab, ctor->name, ctor);
 }
 
 void unit_dtor(unit_t *self, func_t *dtor) {
@@ -77,6 +81,7 @@ void unit_dtor(unit_t *self, func_t *dtor) {
 void unit_func(unit_t *self, func_t *func) {
 	func->next = self->funcs;
 	self->funcs = func;
+	symtab_func(self->symtab, func->name, func);
 }
 
 void unit_free(unit_t *self) {
@@ -89,6 +94,7 @@ void unit_free(unit_t *self) {
 		func_free(self->dtors);
 		func_free(self->funcs);
 		unit_free(self->next);
+		symtab_free(self->symtab);
 		free(self);
 	}
 }

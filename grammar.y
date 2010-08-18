@@ -11,6 +11,8 @@
 #include <def.h>
 #include <op.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define PARSER_CHECK(x) if (!((x))) YYERROR;
 %}
@@ -65,7 +67,6 @@
 %token TOK_ELSE
 %token TOK_UNTIL
 %token TOK_IF
-%token TOK_FOREACH
 %token TOK_DO
 %token TOK_FOR
 %token TOK_RETURN
@@ -200,28 +201,25 @@ variable
     : access static type TOK_IDENT '=' expression ';' {
 		// TODO: Set symbol table for class-level
 		$$ = var_alloc($4, $1|$2, $3, $6);
-		free($4);
     }
     | access static type TOK_IDENT ';' {
 		$$ = var_alloc($4, $1|$2, $3, 0);
-		free($4);
     }
 	| access static type TOK_CONST '=' expression ';' {
 		$$ = var_alloc($4, $1|$2|UNIT_FLAG_CONST, $3, $6);
-		free($4);
 	}
     ;
 
 constructor
     : TOK_INIT parameter_signature access block { 
-		$$ = func_alloc("@init", $2, 0, $4);
+		$$ = func_alloc(strdup("@init"), $2, 0, $4);
 		$$->flags = $3;
 	}
     ;
 
 destructor
     : TOK_DESTROY '(' ')' block { 
-		$$ = func_alloc("@destroy", 0, 0, $4); 
+		$$ = func_alloc(strdup("@destroy"), 0, 0, $4); 
 	}
     ;
 
@@ -229,12 +227,10 @@ function
     : TOK_IDENT parameter_signature access static type block {
 		$$ = func_alloc($1, $2, $5, $6);
 		$$->flags = $3|$4;
-		free($1);
     }
 	| TOK_IDENT parameter_signature access static block {
 		$$ = func_alloc($1, $2, 0, $5);
 		$$->flags = $3|$4;
-		free($1);
 	}
     ;
 
@@ -242,23 +238,19 @@ native
 	: TOK_IDENT parameter_signature access static TOK_NATIVE type ';' {
 		$$ = func_alloc($1, $2, $6, 0); 
 		$$->flags = $3|$4|UNIT_FLAG_NATIVE;
-		free($1);
 	}
 	| TOK_IDENT parameter_signature access static TOK_NATIVE ';' {
 		$$ = func_alloc($1, $2, 0, 0);
 		$$->flags = $3|$4|UNIT_FLAG_NATIVE;
-		free($1);
 	}
 	;
 
 prototype
     : TOK_IDENT parameter_signature type ';' {
 		$$ = func_alloc($1, $2, $3, 0);
-		free($1);
     }
 	| TOK_IDENT parameter_signature ';' {
 		$$ = func_alloc($1, $2, 0, 0);
-		free($1);
 	}
     ;
 
@@ -271,11 +263,9 @@ parameter_list
 	: type TOK_IDENT ',' parameter_list { 
 		$$ = $4;
 		$$->next = var_alloc($2, 0, $1, 0); 
-		free($2);
 	}
 	| type TOK_IDENT { 
 		$$ = var_alloc($2, 0, $1, 0);
-		free($2);
 	}
     ;
 
@@ -296,14 +286,14 @@ type
 	| TOK_PRIMITIVE '*' { $$ = $1; /* TODO: Range */ $$->pointer = 1; }
 	| TOK_PRIMITIVE '?' { $$ = $1; /* TODO: Nullable */ }
     | qualified_name { 
-		PARSER_CHECK(parser_resolve_type($$ = $1));
+		parser_resolve_type($$ = $1);
 	}
 	| qualified_name '*' { 
-		PARSER_CHECK(parser_resolve_type($$ = $1));
+		parser_resolve_type($$ = $1);
 		$$->pointer = 1;
 	}
 	| qualified_name '?' { 
-		PARSER_CHECK(parser_resolve_type($$ = $1));
+		parser_resolve_type($$ = $1);
 		$$->pointer = 1; /* TODO: Nullable */
 	}
     ;
@@ -313,11 +303,9 @@ qualified_name
     | TOK_TYPE { $$ = $1; } 
 	| TOK_CONST TOK_SCOPE qualified_name { 
 		$$ = type_concat(type_object($1), $3); 
-		free($1);
 	}
 	| TOK_CONST { 
 		$$ = type_object($1); 
-		free($1);
 	}
     ;
     
@@ -341,9 +329,8 @@ statement
 	: TOK_FOR '(' clause ';' clause ';' clause ')' block {
 		$$ = stmt_for($3, $5, $7, $9);
 	}
-	| TOK_FOREACH '(' type TOK_IDENT ':' expression ')' block {
+	| TOK_FOR '(' type TOK_IDENT ':' expression ')' block {
 		$$ = stmt_foreach(var_alloc($4, 0, $3, $6), $8);
-		free($4);
 	}
 	| TOK_UNTIL '(' clause ')' block {
 		$$ = stmt_until($3, $5);
@@ -359,7 +346,6 @@ statement
 	}
     | type TOK_IDENT ';' { 
 		$$ = stmt_decl(parser, var_alloc($2, 0, $1, 0)); 
-		free($2);
 	}
 	| conditional { $$ = $1; }
 	| clause ';' { $$ = $1; }
@@ -370,7 +356,6 @@ statement
 clause
     : type TOK_IDENT '=' expression { 
 		$$ = stmt_decl(parser, var_alloc($2, 0, $1, $4)); 
-		free($2);
 	}  
     | expression { 
 		$$ = stmt_expr($1); 
@@ -392,181 +377,201 @@ expression : nullable { $$ = $1; }
 
 nullable
 	: nullable '?' assignment { 
-		PARSER_CHECK($$ = expr_binary(parser, op_null_check, $1, $3));
+		$$ = expr_binary(parser, strdup("?"), $1, $3);
 	}
 	| assignment
 	;	
 
 assignment
     : unary '=' assignment { 
-		PARSER_CHECK($$ = expr_binary(parser, op_assign, $1, $3)); 
+		$$ = expr_binary(parser, strdup("="), $1, $3); 
 	}
     | unary TOK_MUL_ASSIGN assignment { 
-		PARSER_CHECK($$ = expr_binary(parser, op_mul_assign, $1, $3)); 
+		$$ = expr_binary(parser, strdup("*="), $1, $3); 
 	}
     | unary TOK_DIV_ASSIGN assignment { 
-		PARSER_CHECK($$ = expr_binary(parser, op_div_assign, $1, $3)); 
+		$$ = expr_binary(parser, strdup("/="), $1, $3); 
 	}
     | unary TOK_MOD_ASSIGN assignment { 
-		PARSER_CHECK($$ = expr_binary(parser, op_mod_assign, $1, $3)); 
+		$$ = expr_binary(parser, strdup("%="), $1, $3); 
 	}
     | unary TOK_SUB_ASSIGN assignment { 
-		PARSER_CHECK($$ = expr_binary(parser, op_sub_assign, $1, $3)); 
+		$$ = expr_binary(parser, strdup("-="), $1, $3); 
 	}
     | unary TOK_ADD_ASSIGN assignment { 
-		PARSER_CHECK($$ = expr_binary(parser, op_add_assign, $1, $3)); 
+		$$ = expr_binary(parser, strdup("+="), $1, $3); 
 	}
     | unary TOK_BITAND_ASSIGN assignment { 
-		PARSER_CHECK($$ = expr_binary(parser, op_bitand_assign, $1, $3)); 
+		$$ = expr_binary(parser, strdup("&="), $1, $3); 
 	}
     | unary TOK_BITOR_ASSIGN assignment { 
-		PARSER_CHECK($$ = expr_binary(parser, op_bitor_assign, $1, $3)); 
+		$$ = expr_binary(parser, strdup("|="), $1, $3); 
 	}
     | logical_or { $$ = $1; }
     ;
 
 logical_or
     : logical_or TOK_OR logical_and { 
-		PARSER_CHECK($$ = expr_binary(parser, op_or, $1, $3)); 
+		$$ = expr_binary(parser, strdup("||"), $1, $3); 
 	}
     | logical_and { $$ = $1; }
     ;
 
 logical_and
     : logical_and TOK_AND bitwise_or { 
-		PARSER_CHECK($$ = expr_binary(parser, op_and, $1, $3)); 
+		$$ = expr_binary(parser, strdup("&&"), $1, $3); 
 	}
     | bitwise_or { $$ = $1; }
     ;
 
 bitwise_or
     : bitwise_or '|' bitwise_and { 
-		PARSER_CHECK($$ = expr_binary(parser, op_bitor, $1, $3)); 
+		$$ = expr_binary(parser, strdup("|"), $1, $3); 
 	}
     | bitwise_or '^' bitwise_and { 
-		PARSER_CHECK($$ = expr_binary(parser, op_bitxor, $1, $3)); 
+		$$ = expr_binary(parser, strdup("^"), $1, $3); 
 	}
     | bitwise_and { $$ = $1; }
     ;
 
 bitwise_and
     : bitwise_and '&' equality { 
-		PARSER_CHECK($$ = expr_binary(parser, op_bitand, $1, $3)); 
+		$$ = expr_binary(parser, strdup("&"), $1, $3); 
 	}
     | equality { $$ = $1; }
     ;
 
 equality
     : equality TOK_EQUAL relation { 
-		PARSER_CHECK($$ = expr_binary(parser, op_equal, $1, $3)); 
+		$$ = expr_binary(parser, strdup("=="), $1, $3); 
 	}
     | equality TOK_NOTEQUAL relation { 
-		PARSER_CHECK($$ = expr_binary(parser, op_notequal, $1, $3)); 
+		$$ = expr_binary(parser, strdup("!="), $1, $3); 
 	}
     | relation { $$ = $1; }
     ;
 
 relation
     : relation '>' shift { 
-		PARSER_CHECK($$ = expr_binary(parser, op_greater, $1, $3)); 
+		$$ = expr_binary(parser, strdup(">"), $1, $3); 
 	}
     | relation '<' shift { 
-		PARSER_CHECK($$ = expr_binary(parser, op_less, $1, $3)); 
+		$$ = expr_binary(parser, strdup("<"), $1, $3); 
 	}
     | relation TOK_GE shift { 
-		PARSER_CHECK($$ = expr_binary(parser, op_ge, $1, $3)); 
+		$$ = expr_binary(parser, strdup(">="), $1, $3); 
 	}
     | relation TOK_LE shift { 
-		PARSER_CHECK($$ = expr_binary(parser, op_le, $1, $3)); 
+		$$ = expr_binary(parser, strdup("<="), $1, $3); 
 	}
     | shift { $$ = $1; }
     ;
 
 shift
     : shift TOK_LSHIFT addition { 
-		PARSER_CHECK($$ = expr_binary(parser, op_lshift, $1, $3)); 
+		$$ = expr_binary(parser, strdup("<<"), $1, $3); 
 	}
     | shift TOK_RSHIFT addition { 
-		PARSER_CHECK($$ = expr_binary(parser, op_rshift, $1, $3)); 
+		$$ = expr_binary(parser, strdup(">>"), $1, $3); 
 	}
     | addition { $$ = $1; }
     ;
 
 addition
     : addition '+' multiplication { 
-		PARSER_CHECK($$ = expr_binary(parser, op_plus, $1, $3)); 
+		$$ = expr_binary(parser, strdup("+"), $1, $3); 
 	}
     | addition '-' multiplication { 
-		PARSER_CHECK($$ = expr_binary(parser, op_minus, $1, $3)); 
+		$$ = expr_binary(parser, strdup("-"), $1, $3); 
 	}
     | multiplication { $$ = $1; }
     ;
 
 multiplication
     : multiplication '*' unary { 
-		PARSER_CHECK($$ = expr_binary(parser, op_mul, $1, $3)); 
+		$$ = expr_binary(parser, strdup("*"), $1, $3); 
 	}
     | multiplication '/' unary { 
-		PARSER_CHECK($$ = expr_binary(parser, op_div, $1, $3)); 
+		$$ = expr_binary(parser, strdup("/"), $1, $3); 
 	}
     | multiplication '%' unary { 
-		PARSER_CHECK($$ = expr_binary(parser, op_mod, $1, $3)); 
+		$$ = expr_binary(parser, strdup("%"), $1, $3); 
 	}
     | unary { $$ = $1; }
     ;
 
 unary
-    : TOK_INC unary { PARSER_CHECK($$ = expr_unary(parser, op_inc, $2)); }
-    | TOK_DEC unary { PARSER_CHECK($$ = expr_unary(parser, op_dec, $2)); }
-    | '+' unary { PARSER_CHECK($$ = expr_unary(parser, op_plus, $2)); }
-    | '-' unary { PARSER_CHECK($$ = expr_unary(parser, op_minus, $2)); }
-    | '!' unary { PARSER_CHECK($$ = expr_unary(parser, op_bang, $2)); }
-    | '~' unary { PARSER_CHECK($$ = expr_unary(parser, op_tilde, $2)); }
-    | '*' unary { PARSER_CHECK($$ = expr_unary(parser, op_star, $2)); }
+    : TOK_INC unary { $$ = expr_unary(parser, strdup("++"), $2); }
+    | TOK_DEC unary { $$ = expr_unary(parser, strdup("--"), $2); }
+    | '+' unary { $$ = expr_unary(parser, strdup("+"), $2); }
+    | '-' unary { $$ = expr_unary(parser, strdup("-"), $2); }
+    | '!' unary { $$ = expr_unary(parser, strdup("!"), $2); }
+    | '~' unary { $$ = expr_unary(parser, strdup("~"), $2); }
+    | '*' unary { $$ = expr_unary(parser, strdup("*"), $2); }
     | postfix { $$ = $1; }
     ;
 
 postfix
-    : postfix '(' argument_list ')' { 
-		PARSER_CHECK($$ = expr_call(parser, $1, $3)); 
+	: postfix '.' TOK_IDENT '(' argument_list ')' {
+		/* Call on an object expression */
+		$$ = expr_mcall(parser, $1, $3, $5);
 	}
-	| postfix '(' ')' { 
-		PARSER_CHECK($$ = expr_call(parser, $1, 0)); 
-	}
-    | postfix '[' expression ']' { 
-		PARSER_CHECK($$ = expr_index(parser, $1, $3)); 
+	| postfix '.' TOK_IDENT '(' ')' {
+		/* Call on an object expression */
+		$$ = expr_mcall(parser, $1, $3, 0);
 	}
     | postfix '.' TOK_IDENT { 
-		PARSER_CHECK($$ = expr_member(parser, $1, $3)); 
-		free($3); 
+		/* Member variable access */
+		$$ = expr_member(parser, $1, $3); 
+	}
+    | postfix '[' expression ']' { 
+		$$ = expr_index(parser, $1, $3); 
 	}
     | postfix TOK_INC { 
-		PARSER_CHECK($$ = expr_unary(parser, op_postinc, $1)); 
+		$$ = expr_unary(parser, strdup("++"), $1); 
 	}
     | postfix TOK_DEC { 
-		PARSER_CHECK($$ = expr_unary(parser, op_postdec, $1)); 
+		$$ = expr_unary(parser, strdup("--"), $1); 
 	}
     | primary { $$ = $1; }
     ;
 
 primary
-    : TOK_IDENT { 
-		PARSER_CHECK($$ = expr_var(parser, $1)); 
-		free($1); 
+    : TOK_IDENT '(' argument_list ')' { 
+		/* Free call, maybe with implicit "self" */
+		$$ = expr_call(parser, $1, $3); 
 	}
-	| type '.' TOK_CONST { 
-		PARSER_CHECK($$ = expr_static(parser, $1, $3)); 
-		free($3); 
+	| TOK_IDENT '(' ')' { 
+		/* Free call, maybe with implicit "self" */
+		$$ = expr_call(parser, $1, 0); 
+	}
+	| TOK_IDENT { 
+		/* Free variable access, maybe with implicit "self" */
+		$$ = expr_var(parser, $1); 
+	}
+	| type '.' TOK_IDENT '(' argument_list ')' {
+		/* Static function call */
+		$$ = expr_scall(parser, $1, $3, $5); 
+	}
+	| type '.' TOK_IDENT '(' ')' {
+		/* Static function call */
+		$$ = expr_scall(parser, $1, $3, 0);
 	}
 	| type '.' TOK_IDENT { 
-		PARSER_CHECK($$ = expr_static(parser, $1, $3)); 
-		free($3); 
+		/* Static varable access */
+		$$ = expr_static(parser, $1, $3); 
+	}
+	| type '.' TOK_CONST { 
+		/* Static constant access */
+		$$ = expr_static(parser, $1, $3); 
 	}
 	| type '(' argument_list ')' { 
-		PARSER_CHECK($$ = expr_ctor(parser, $1, $3)); 
+		/* Constructor with arguments */
+		$$ = expr_ctor(parser, $1, $3); 
 	}
 	| type '(' ')' { 
-		PARSER_CHECK($$ = expr_ctor(parser, $1, 0)); 
+		/* Constructor without arguments */
+		$$ = expr_ctor(parser, $1, 0); 
 	}
     | '(' expression ')' { $$ = $2; } 
     | TOK_STRING { $$ = $1; }

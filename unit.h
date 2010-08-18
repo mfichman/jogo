@@ -48,6 +48,7 @@ struct unit {
 	func_t *ctors;      	/* List of constructors */
 	func_t *dtors;      	/* List of destructors */
 	func_t *funcs;      	/* List of functions */
+	symtab_t *symtab;		/* Hash table of functions and variables */
 	unit_t *next;
 };
 

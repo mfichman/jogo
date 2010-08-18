@@ -62,28 +62,27 @@
      TOK_ELSE = 278,
      TOK_UNTIL = 279,
      TOK_IF = 280,
-     TOK_FOREACH = 281,
-     TOK_DO = 282,
-     TOK_FOR = 283,
-     TOK_RETURN = 284,
-     TOK_EQUAL = 285,
-     TOK_NOTEQUAL = 286,
-     TOK_SCOPE = 287,
-     TOK_OR = 288,
-     TOK_AND = 289,
-     TOK_GE = 290,
-     TOK_LE = 291,
-     TOK_LSHIFT = 292,
-     TOK_RSHIFT = 293,
-     TOK_MUL_ASSIGN = 294,
-     TOK_DIV_ASSIGN = 295,
-     TOK_SUB_ASSIGN = 296,
-     TOK_ADD_ASSIGN = 297,
-     TOK_MOD_ASSIGN = 298,
-     TOK_BITOR_ASSIGN = 299,
-     TOK_BITAND_ASSIGN = 300,
-     TOK_INC = 301,
-     TOK_DEC = 302
+     TOK_DO = 281,
+     TOK_FOR = 282,
+     TOK_RETURN = 283,
+     TOK_EQUAL = 284,
+     TOK_NOTEQUAL = 285,
+     TOK_SCOPE = 286,
+     TOK_OR = 287,
+     TOK_AND = 288,
+     TOK_GE = 289,
+     TOK_LE = 290,
+     TOK_LSHIFT = 291,
+     TOK_RSHIFT = 292,
+     TOK_MUL_ASSIGN = 293,
+     TOK_DIV_ASSIGN = 294,
+     TOK_SUB_ASSIGN = 295,
+     TOK_ADD_ASSIGN = 296,
+     TOK_MOD_ASSIGN = 297,
+     TOK_BITOR_ASSIGN = 298,
+     TOK_BITAND_ASSIGN = 299,
+     TOK_INC = 300,
+     TOK_DEC = 301
    };
 #endif
 
@@ -94,52 +93,52 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 18 "grammar.y"
+#line 20 "grammar.y"
  expr_t *expr; 
 
 /* Line 1676 of yacc.c  */
-#line 19 "grammar.y"
+#line 21 "grammar.y"
  stmt_t *stmt; 
 
 /* Line 1676 of yacc.c  */
-#line 20 "grammar.y"
+#line 22 "grammar.y"
  type_t *type; 
 
 /* Line 1676 of yacc.c  */
-#line 21 "grammar.y"
+#line 23 "grammar.y"
  unit_t *unit; 
 
 /* Line 1676 of yacc.c  */
-#line 22 "grammar.y"
+#line 24 "grammar.y"
  var_t *var; 
 
 /* Line 1676 of yacc.c  */
-#line 23 "grammar.y"
+#line 25 "grammar.y"
  func_t *func; 
 
 /* Line 1676 of yacc.c  */
-#line 24 "grammar.y"
+#line 26 "grammar.y"
  import_t *import; 
 
 /* Line 1676 of yacc.c  */
-#line 25 "grammar.y"
+#line 27 "grammar.y"
  def_t *def; 
 
 /* Line 1676 of yacc.c  */
-#line 26 "grammar.y"
+#line 28 "grammar.y"
  char *string; 
 
 /* Line 1676 of yacc.c  */
-#line 27 "grammar.y"
+#line 29 "grammar.y"
  int null; 
 
 /* Line 1676 of yacc.c  */
-#line 28 "grammar.y"
+#line 30 "grammar.y"
  int flag; 
 
 
 /* Line 1676 of yacc.c  */
-#line 143 "grammar.h"
+#line 142 "grammar.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

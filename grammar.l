@@ -9,12 +9,6 @@
 	res = parser_read(yyget_extra(yyscanner), buf, len);\
 }
 
-inline char *strdup(const char* str) {
-	char *copy = malloc(strlen(str) + 1);
-	strcpy(copy, str);
-	return copy;
-}
-
 %}
 
 %option reentrant 
@@ -43,7 +37,6 @@ while return TOK_WHILE;
 else return TOK_ELSE;
 until return TOK_UNTIL;
 if return TOK_IF;
-foreach return TOK_FOREACH;
 do return TOK_DO;
 for return TOK_FOR;
 return return TOK_RETURN;
@@ -65,35 +58,41 @@ return return TOK_RETURN;
 \&\= return TOK_BITAND_ASSIGN;
 \+\+ return TOK_INC;
 \-\- return TOK_DEC;
-int yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
-uint yylval->type = type_primitive(yytext); return TOK_PRIMITIVE; 
-short yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
-ushort yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
-byte yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
-ubyte yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
-long yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
-ulong yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
-bool yylval->type = type_primitive(yytext); return TOK_PRIMITIVE;
+int yylval->type = type_primitive(strdup(yytext)); return TOK_PRIMITIVE;
+uint yylval->type = type_primitive(strdup(yytext)); return TOK_PRIMITIVE; 
+short yylval->type = type_primitive(strdup(yytext)); return TOK_PRIMITIVE;
+ushort yylval->type = type_primitive(strdup(yytext)); return TOK_PRIMITIVE;
+byte yylval->type = type_primitive(strdup(yytext)); return TOK_PRIMITIVE;
+ubyte yylval->type = type_primitive(strdup(yytext)); return TOK_PRIMITIVE;
+long yylval->type = type_primitive(strdup(yytext)); return TOK_PRIMITIVE;
+ulong yylval->type = type_primitive(strdup(yytext)); return TOK_PRIMITIVE;
+bool yylval->type = type_primitive(strdup(yytext)); return TOK_PRIMITIVE;
 [0-9]+ {
 	parser_t *parser = yyget_extra(yyscanner);
-	yylval->expr = expr_literal(parser, type_primitive("int"), yytext); 
+	yylval->expr = expr_literal(parser, type_primitive(strdup("int")), 
+		strdup(yytext)); 
 	return TOK_NUMBER;
 }
 \"[^"]*\" {
 	parser_t *parser = yyget_extra(yyscanner);
-	yylval->expr = expr_literal(parser, type_object("String"), yytext);
+	yylval->expr = expr_literal(parser, type_object(strdup("String")), 
+		strdup(yytext));
 	return TOK_STRING;
 }
 \'[^']*\' {
 	parser_t *parser = yyget_extra(yyscanner);
-	yylval->expr = expr_literal(parser, type_object("String"), yytext); 
+	yylval->expr = expr_literal(parser, type_object(strdup("String")), 
+		strdup(yytext)); 
 	return TOK_STRING;
 }
 [A-Z][A-Z0-9]* {
 	yylval->string = strdup(yytext);
 	return TOK_CONST;
 }
-[A-Z][A-Za-z0-9]* yylval->type = type_object(yytext); return TOK_TYPE; 
+[A-Z][A-Za-z0-9]* {
+	yylval->type = type_object(strdup(yytext)); 
+	return TOK_TYPE; 
+}
 ([a-z]|[a-z][0-9a-z_]*[0-9a-z])(\?|\!)? {
 	yylval->string = strdup(yytext); 
 	return TOK_IDENT;

@@ -30,87 +30,98 @@
 #include <var.h>
 #include <assert.h>
 
-expr_t *expr_literal(parser_t *parser, type_t *type, const char *string) {
+expr_t *expr_literal(parser_t *parser, type_t *type, char *string) {
 	expr_t *self = malloc(sizeof(expr_t));
 
 	self->type = EXPR_TYPE_STRING;
 	self->line = parser_line_number(parser);
-	self->string = malloc(strlen(string) + 1);
+	self->string = string; 
 	self->nchild = 0;
 	self->chktype = type;
-	self->object = 0;
+	self->clstype = 0;
 	self->next = 0;
-
-	strcpy(self->string, string);
 
 	return self;
 }
 
-expr_t *expr_binary(parser_t *parser, const char *op, expr_t *lhs, expr_t *rhs) {
-	if (type_comp(lhs->chktype, rhs->chktype)) {
-		parser_error(parser);
-		fprintf(stderr, "Invalid operands for '%s': %s, %s\n", op, 
-			lhs->chktype->name, rhs->chktype->name);
-		expr_free(lhs);
-		expr_free(rhs);
-		return 0;
-	}
-
+expr_t *expr_binary(parser_t *parser, char *op, expr_t *lhs, expr_t *rhs) {
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_BINARY;
 	self->line = parser_line_number(parser);
-	self->string = malloc(strlen(op) + 1);
+	self->string = op;
 	self->nchild = 2;
 	self->child[0] = lhs;
 	self->child[1] = rhs;
-	self->chktype = type_clone(lhs->chktype);
-	self->object = 0;
+	self->chktype = 0;
+	self->clstype = 0;
 	self->next = 0;
 		
-	strcpy(self->string, op);
-
 	return self;
 }
 
-expr_t *expr_unary(parser_t *parser, const char *op, expr_t *expr) {
+expr_t *expr_unary(parser_t *parser, char *op, expr_t *expr) {
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_UNARY;
 	self->line = parser_line_number(parser);
-	self->string = malloc(strlen(op) + 1);
+	self->string = op; 
 	self->nchild = 1;
 	self->child[0] = expr;
-	self->chktype = type_clone(expr->chktype);
-	self->object = 0;
+	self->chktype = 0;
+	self->clstype = 0;
 	self->next = 0;
 	
-	strcpy(self->string, op);
-
 	return self;
 }
 
-expr_t *expr_call(parser_t *parser, expr_t *func, expr_t *args) {
-	/* TODO: Look up function in symbol table */
-
-
+expr_t *expr_call(parser_t *parser, char *fn, expr_t *args) {
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_CALL;
 	self->line = parser_line_number(parser);
-	self->string = 0; 
-	self->nchild = 2;
-	self->child[0] = func;
-	self->child[1] = args;
-	self->chktype = 0; /* Assign the return value of the lookup function */
-	self->object = 0;
+	self->string = fn; 
+	self->nchild = 1;
+	self->child[0] = args;
+	self->chktype = 0; 
+	self->clstype = 0;
 	self->next = 0;
 		
 	return self;
 }
 
+expr_t *expr_mcall(parser_t *parser, expr_t *obj, char *fn, expr_t *args) {
+	expr_t *self = malloc(sizeof(expr_t));
+	
+	self->type = EXPR_TYPE_MCALL;
+	self->line = parser_line_number(parser);
+	self->string = fn;
+	self->nchild = 2;
+	self->child[0] = obj;
+	self->child[1] = args;
+	self->chktype = 0;
+	self->clstype = 0;
+	self->next = 0;
+	
+	return self;
+}
+
+expr_t *expr_scall(parser_t *parser, type_t *obj, char *fn, expr_t *args) {
+	expr_t *self = malloc(sizeof(expr_t));
+
+	self->type = EXPR_TYPE_MCALL;
+	self->line = parser_line_number(parser);
+	self->string = fn;
+	self->nchild = 1;
+	self->child[0] = args;
+	self->chktype = 0;
+	self->clstype = obj;
+	self->next = 0;
+
+	return self;
+}
+
 expr_t *expr_ctor(parser_t *parser, type_t *type, expr_t *args) {
-	/* TODO: Ditto expr_call */
 	expr_t *self = malloc(sizeof(expr_t));
 
 	self->type = EXPR_TYPE_CTOR;
@@ -118,15 +129,14 @@ expr_t *expr_ctor(parser_t *parser, type_t *type, expr_t *args) {
 	self->string = 0;
 	self->nchild = 1;
 	self->child[0] = args;
-	self->chktype = type_clone(type);
-	self->object = type;
+	self->chktype = 0;
+	self->clstype = type;
 	self->next = 0;
 
 	return self;
 }
 	
 expr_t *expr_index(parser_t *parser, expr_t *expr, expr_t *index) {
-	/* TODO: expr must be an array type, index must be an int */
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_INDEX;
@@ -136,69 +146,52 @@ expr_t *expr_index(parser_t *parser, expr_t *expr, expr_t *index) {
 	self->child[0] = expr;
 	self->child[1] = index;
 	self->chktype = 0;
-	self->object = 0;
+	self->clstype = 0;
 	self->next = 0;
 		
 	return self;
 }
 
-expr_t *expr_member(parser_t *parser, expr_t *expr, const char *ident) {
-	/* TODO: look up the type of ident based on the type of expr */
-	/* Members must be listed by the fully-qualifed name */
+expr_t *expr_member(parser_t *parser, expr_t *expr, char *ident) {
 	expr_t *self = malloc(sizeof(expr_t));
 
 	self->type = EXPR_TYPE_MEMBER;
 	self->line = parser_line_number(parser);
-	self->string = malloc(strlen(ident) + 1);
+	self->string = ident; 
 	self->nchild = 1;
 	self->child[0] = expr;
 	self->chktype = 0;
-	self->object = 0;
+	self->clstype = 0;
 	self->next = 0;
 
-	strcpy(self->string, ident);
-	
 	return self;
 }
 
-expr_t *expr_static(parser_t *parser, type_t *type, const char *ident) {
-	/* Ditto 136 */
+expr_t *expr_static(parser_t *parser, type_t *type, char *ident) {
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_STATIC;
 	self->line = parser_line_number(parser);
-	self->string = malloc(strlen(ident) + 1);	
+	self->string = ident;	
 	self->nchild = 0;
-	self->object = type;
+	self->clstype = type;
 	self->chktype = 0;
 	self->next = 0;
-	
-	strcpy(self->string, ident);
 	
 	return self;
 }
 
-expr_t *expr_var(parser_t *parser, const char *name) {
-	var_t *var = symtab_get_var(parser->symbols, name);
-	if (!var) {
-		parser_error(parser);
-		fprintf(stderr, "Undeclared identifier: %s\n", name);
-		free((void*)name);
-		return 0;
-	}
-
+expr_t *expr_var(parser_t *parser, char *name) {
 	expr_t *self = malloc(sizeof(expr_t));
 	
 	self->type = EXPR_TYPE_VAR;
 	self->line = parser_line_number(parser);
-	self->string = malloc(strlen(name) + 1);
+	self->string = name; 
 	self->nchild = 0;
-	self->chktype = type_clone(var->type);
-	self->object = 0;
+	self->chktype = 0;
+	self->clstype = 0;
 	self->next = 0;
 
-	strcpy(self->string, name);
-	
 	return self;
 }
 	
@@ -208,7 +201,7 @@ void expr_free(expr_t *self) {
 			expr_free(self->child[i]);	
 		}
 		expr_free(self->next);
-		type_free(self->object);
+		type_free(self->clstype);
 		type_free(self->chktype);
 		free(self->string);
 		free(self);

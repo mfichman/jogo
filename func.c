@@ -27,17 +27,15 @@
 #include <string.h>
 #include <stdlib.h>
 
-func_t *func_alloc(const char *name, var_t *arg, type_t *ret, stmt_t *body) {
+func_t *func_alloc(char *name, var_t *arg, type_t *ret, stmt_t *body) {
 	func_t *self = malloc(sizeof(func_t));
 
-	self->name = malloc(strlen(name) + 1);
+	self->name = name;
 	self->flags = 0;
 	self->block = body;
 	self->rets = ret;
 	self->args = arg;
 	self->next = 0;
-
-	strcpy(self->name, name);
 
 	return self;
 }
