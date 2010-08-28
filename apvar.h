@@ -20,22 +20,24 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef FUNC_H
-#define FUNC_H
+#ifndef APVAR_H
+#define APVAR_H
 
-#include <apollo.h>
+#include <aptype.h>
 
-/* Descriptor struct for functions and methods */
-struct func {
-	char *name;       		/* Qualified function name */
-	int flags;				/* Function flags */
-	stmt_t *block;       	/* Function body */
-	type_t *rets;	     	/* List of return types (in reverse order) */
-	var_t *args;			/* List of argument types (in reverse_order) */
-	func_t *next;         
-};
+/* Local apvariable/symbol in the current scope */
+struct apvar {
+	char *name;
+	int flags;
+	aptype_t *type;
+	apexpr_t *expr;
+	apvar_t *next;
+};	
 
-func_t *func_alloc(char *name, var_t *arg, type_t *ret, stmt_t *body);
-void func_free(func_t *self);
+apvar_t *apvar_alloc(char *name, int flags, aptype_t *type, apexpr_t *expr);
+int apvar_comp(apvar_t *self, apvar_t *apvar);
+void apvar_free(apvar_t *self);
+
+
 
 #endif

@@ -23,16 +23,27 @@
 #ifndef APOLLO_H
 #define APOLLO_H
 
-typedef struct def def_t;
-typedef struct expr expr_t;
-typedef struct hash hash_t;
-typedef struct import import_t;
-typedef struct parser parser_t;
-typedef struct stmt stmt_t;
-typedef struct symtab symtab_t;
-typedef struct type type_t;
-typedef struct unit unit_t;
-typedef struct var var_t;
-typedef struct func func_t;
+#include <stdint.h>
+
+typedef struct apdef apdef_t;
+typedef struct apexpr apexpr_t;
+typedef struct aphash aphash_t;
+typedef struct apimport apimport_t;
+typedef struct apparser apparser_t;
+typedef struct apstmt apstmt_t;
+typedef struct apsymtab apsymtab_t;
+typedef struct aptype aptype_t;
+typedef struct apunit apunit_t;
+typedef struct apvar apvar_t;
+typedef struct apfunc apfunc_t;
+
+typedef uint32_t apuint_t;
+typedef int32_t apint_t;
+typedef uint16_t apushort_t;
+typedef int16_t apshort_t;
+typedef uint8_t apubyte_t;
+typedef int8_t apbyte_t;
+typedef uint64_t apulong_t;
+typedef int64_t aplong_t; 
 
 #endif

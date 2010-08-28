@@ -20,27 +20,22 @@
  * IN THE SOFTWARE.
  */  
 
-#include <def.h>
-#include <type.h>
-#include <stdlib.h>
+#ifndef APFUNC_H
+#define APFUNC_H
 
-def_t *def_alloc(type_t *type, type_t *def) {
+#include <apollo.h>
 
-	def_t *self = malloc(sizeof(def_t));
-	
-	self->type = type;
-	self->def = def;
-	self->next = 0;
+/* Descriptor struct for functions and methods */
+struct apfunc {
+	char *name;       		/* Qualified function name */
+	int flags;				/* Function flags */
+	apstmt_t *block;       	/* Function body */
+	aptype_t *rets;	     	/* List of return types (in reverse order) */
+	apvar_t *args;			/* List of argument types (in reverse_order) */
+	apfunc_t *next;         
+};
 
-	return self;
-}
+apfunc_t *apfunc_alloc(char *name, apvar_t *arg, aptype_t *ret, apstmt_t *body);
+void apfunc_free(apfunc_t *self);
 
-void def_free(def_t *self) {
-
-	if (self) {
-		type_free(self->type);
-		type_free(self->def);
-		def_free(self->next);
-		free(self);
-	}
-}
+#endif

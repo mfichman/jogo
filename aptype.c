@@ -20,51 +20,51 @@
  * IN THE SOFTWARE.
  */  
 
-#include <type.h>
+#include <aptype.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
 
-type_t *type_object(char *name) {
-	type_t *self = malloc(sizeof(type_t));
+aptype_t *aptype_object(char *name) {
+	aptype_t *self = malloc(sizeof(aptype_t));
 
 	self->name = name;
-	self->type = TYPE_TYPE_OBJECT;
+	self->type = APTYPE_TYPE_OBJECT;
 	self->next = 0;
 	self->pointer = 0;
 
 	return self;
 }
 
-type_t *type_primitive(char *name) {
-	type_t *self = malloc(sizeof(type_t));
+aptype_t *aptype_primitive(char *name) {
+	aptype_t *self = malloc(sizeof(aptype_t));
 
 	self->name = name;
-	self->type = TYPE_TYPE_PRIMITIVE;
+	self->type = APTYPE_TYPE_PRIMITIVE;
 	self->next = 0;
 	self->pointer = 0;
 	
 	return self;
 }
 
-type_t *type_concat(type_t *self, type_t *type) {
+aptype_t *aptype_concat(aptype_t *self, aptype_t *type) {
 
 	size_t length = strlen(self->name) + strlen(type->name) + 3;
 	self->name = realloc(self->name, length); 
 	strcat(self->name, "::");
 	strcat(self->name, type->name);
 	
-	type_free(type);
+	aptype_free(type);
 	
 	return self;
 }
 
-type_t *type_clone(type_t *other) {
+aptype_t *aptype_clone(aptype_t *other) {
 	assert("Can't clone an argument list" && !other->next);
 
-	type_t *self = malloc(sizeof(type_t));
+	aptype_t *self = malloc(sizeof(aptype_t));
 	self->name = malloc(strlen(other->name) + 1);
 	self->type = other->type;
 	self->pointer = other->pointer;
@@ -75,7 +75,7 @@ type_t *type_clone(type_t *other) {
 	return self;
 }
 
-int type_comp(type_t *self, type_t *other) {
+int aptype_comp(aptype_t *self, aptype_t *other) {
 
 	while (self && other) {
 		if (strcmp(self->name, other->name)) {
@@ -92,14 +92,14 @@ int type_comp(type_t *self, type_t *other) {
 	}
 }
 
-int type_bool_compat(type_t *self) {
-	return TYPE_TYPE_PRIMITIVE == self->type || self->pointer;
+int aptype_bool_compat(aptype_t *self) {
+	return APTYPE_TYPE_PRIMITIVE == self->type || self->pointer;
 }
 
-void type_free(type_t *self) {
+void aptype_free(aptype_t *self) {
 	if (self) {
 		free(self->name);
-		type_free(self->next);
+		aptype_free(self->next);
 		free(self);
 	}
 }

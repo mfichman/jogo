@@ -28,63 +28,54 @@
 #include <stdlib.h>
 
 /* Primary parser structure; contains symbol table and compilation units */
-struct parser {
-	unit_t *units;
-	symtab_t *symbols;
+struct apparser {
+	apunit_t *units;
+	apsymtab_t *symbols;
 	int fd;
 	char *filename;
 	char *error;
 	void *scanner;
 };
 
-parser_t *parser_alloc();
-void parser_parse(parser_t *self, const char* filename, int fd);
-void parser_class(parser_t *self, unit_t *unit);
-void parser_interface(parser_t *self, unit_t *unit);
-void parser_struct(parser_t *self, unit_t *unit);
-void parser_module(parser_t *self, unit_t *unit);
-void parser_error(parser_t *self);
-int parser_read(parser_t *self, char *buffer, int length);
-int parser_check_stmt(parser_t *self, stmt_t *stmt);
-int parser_check_expr(parser_t *self, expr_t *expr);
-int parser_check_var(parser_t *self, var_t *var);
-int parser_resolve_type(type_t *type);
-int parser_line_number(parser_t *self);
-void parser_free(parser_t *self);
-
-
-typedef union node node_t;
-union node {
-	expr_t *expr; 
-	stmt_t *stmt;
-	type_t *type;
-	unit_t *unit;
-	var_t *var;
-	func_t *func;
-	import_t *import;
-	def_t *def;
+/* Union of the different types possible for a Bison production */
+typedef union apnode apnode_t;
+union apnode {
+	apexpr_t *expr; 
+	apstmt_t *stmt;
+	aptype_t *type;
+	apunit_t *unit;
+	apvar_t *var;
+	apfunc_t *func;
+	apimport_t *import;
+	apdef_t *def;
 	char *string;	
 	int null;
 	int flag;
 };
 
-#define YYSTYPE node_t
-#define YY_EXTRA_TYPE parser_t *
-#define YY_NO_INPUT
-#define YYERROR_VERBOSE
+/* Source code location range */
+typedef struct aploc aploc_t;
+struct aploc {
+	int first_line;
+	int first_column;
+	int last_line;
+	int last_column;
+};
 
-int yylex(node_t *node, void *scanner);
-int yyparse(parser_t *parser, void *scanner);
-void yyerror(parser_t *parser, void *scanner, const char *message);
-int yylex_init(void **);
-int yylex_destroy(void *);
-void yyset_extra(parser_t *, void *);
-/*
+apparser_t *apparser_alloc();
+void apparser_parse(apparser_t *self, const char* filename, int fd);
+void apparser_class(apparser_t *self, apunit_t *unit);
+void apparser_interface(apparser_t *self, apunit_t *unit);
+void apparser_struct(apparser_t *self, apunit_t *unit);
+void apparser_module(apparser_t *self, apunit_t *unit);
+int apparser_read(apparser_t *self, char *buffer, int length);
+int apparser_check_stmt(apparser_t *self, apstmt_t *stmt);
+int apparser_check_expr(apparser_t *self, apexpr_t *expr);
+int apparser_check_var(apparser_t *self, apvar_t *var);
+int apparser_resolve_type(aptype_t *type);
+int apparser_line_number(apparser_t *self);
+void apparser_free(apparser_t *self);
 
-int yylex(YYSTYPE *, void *);
-int yyparse(parser_t *, void *);
-int yyerror(parser_t *, void *, const char *error);
-*/
 static inline char *strdup(const char* str) {
 	char *copy = malloc(strlen(str) + 1);
 	strcpy(copy, str);

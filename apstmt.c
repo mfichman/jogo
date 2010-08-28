@@ -20,17 +20,17 @@
  * IN THE SOFTWARE.
  */  
 
-#include <stmt.h>
-#include <var.h>
-#include <expr.h>
-#include <symtab.h>
-#include <parser.h>
+#include <apstmt.h>
+#include <apvar.h>
+#include <apexpr.h>
+#include <apsymtab.h>
+#include <apparser.h>
 #include <stdlib.h>
 
-stmt_t *stmt_expr(expr_t *expr) {
-	stmt_t *self = malloc(sizeof(stmt_t));
+apstmt_t *apstmt_expr(apexpr_t *expr) {
+	apstmt_t *self = malloc(sizeof(apstmt_t));
 
-	self->type = STMT_TYPE_EXPR;
+	self->type = APSTMT_TYPE_EXPR;
 	self->symbols = 0;
 	self->expr = expr;
 	self->var = 0;
@@ -40,11 +40,11 @@ stmt_t *stmt_expr(expr_t *expr) {
 	return self;
 }
 
-stmt_t *stmt_block(symtab_t *symbols) {
-	stmt_t *self = malloc(sizeof(stmt_t));
+apstmt_t *apstmt_block(apsymtab_t *symbols) {
+	apstmt_t *self = malloc(sizeof(apstmt_t));
 
-	self->type = STMT_TYPE_BLOCK;
-	self->symbols = symtab_alloc(symbols);
+	self->type = APSTMT_TYPE_BLOCK;
+	self->symbols = apsymtab_alloc(symbols);
 	self->expr = 0;
 	self->var = 0;
 	self->nchild = 2;
@@ -55,7 +55,7 @@ stmt_t *stmt_block(symtab_t *symbols) {
 	return self;
 }
 
-stmt_t *stmt_append(stmt_t *self, stmt_t *stmt) {
+apstmt_t *apstmt_append(apstmt_t *self, apstmt_t *stmt) {
 
 	if (!self->child[0]) {
 		self->child[0] = stmt;
@@ -68,10 +68,10 @@ stmt_t *stmt_append(stmt_t *self, stmt_t *stmt) {
 	return self;
 }
 
-stmt_t *stmt_for(stmt_t *c1, stmt_t *c2, stmt_t *c3, stmt_t *block) {
-	stmt_t *self = malloc(sizeof(stmt_t));
+apstmt_t *apstmt_for(apstmt_t *c1, apstmt_t *c2, apstmt_t *c3, apstmt_t *block) {
+	apstmt_t *self = malloc(sizeof(apstmt_t));
 
-	self->type = STMT_TYPE_FOR;
+	self->type = APSTMT_TYPE_FOR;
 	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
@@ -85,10 +85,10 @@ stmt_t *stmt_for(stmt_t *c1, stmt_t *c2, stmt_t *c3, stmt_t *block) {
 	return self;
 }
 
-stmt_t *stmt_foreach(var_t *var, stmt_t *block) {
-	stmt_t *self = malloc(sizeof(stmt_t));
+apstmt_t *apstmt_foreach(apvar_t *var, apstmt_t *block) {
+	apstmt_t *self = malloc(sizeof(apstmt_t));
 	
-	self->type = STMT_TYPE_FOREACH;	
+	self->type = APSTMT_TYPE_FOREACH;	
 	self->symbols = 0;
 	self->expr = 0;
 	self->var = var;
@@ -99,10 +99,10 @@ stmt_t *stmt_foreach(var_t *var, stmt_t *block) {
 	return self;
 }
 
-stmt_t *stmt_until(stmt_t *guard, stmt_t *block) {
-	stmt_t *self = malloc(sizeof(stmt_t));
+apstmt_t *apstmt_until(apstmt_t *guard, apstmt_t *block) {
+	apstmt_t *self = malloc(sizeof(apstmt_t));
 
-	self->type = STMT_TYPE_UNTIL;
+	self->type = APSTMT_TYPE_UNTIL;
 	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
@@ -114,10 +114,10 @@ stmt_t *stmt_until(stmt_t *guard, stmt_t *block) {
 	return self;
 }
 
-stmt_t *stmt_while(stmt_t *guard, stmt_t *block) {
-	stmt_t *self = malloc(sizeof(stmt_t));
+apstmt_t *apstmt_while(apstmt_t *guard, apstmt_t *block) {
+	apstmt_t *self = malloc(sizeof(apstmt_t));
 
-	self->type = STMT_TYPE_WHILE;
+	self->type = APSTMT_TYPE_WHILE;
 	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
@@ -129,10 +129,10 @@ stmt_t *stmt_while(stmt_t *guard, stmt_t *block) {
 	return self;
 }
 
-stmt_t *stmt_dountil(stmt_t *block, stmt_t *guard) {
-	stmt_t *self = malloc(sizeof(stmt_t));
+apstmt_t *apstmt_dountil(apstmt_t *block, apstmt_t *guard) {
+	apstmt_t *self = malloc(sizeof(apstmt_t));
 
-	self->type = STMT_TYPE_DOUNTIL;
+	self->type = APSTMT_TYPE_DOUNTIL;
 	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
@@ -144,10 +144,10 @@ stmt_t *stmt_dountil(stmt_t *block, stmt_t *guard) {
 	return self;
 }
 
-stmt_t *stmt_dowhile(stmt_t *block, stmt_t *guard) {
-	stmt_t *self = malloc(sizeof(stmt_t));
+apstmt_t *apstmt_dowhile(apstmt_t *block, apstmt_t *guard) {
+	apstmt_t *self = malloc(sizeof(apstmt_t));
 
-	self->type = STMT_TYPE_DOWHILE;
+	self->type = APSTMT_TYPE_DOWHILE;
 	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
@@ -159,25 +159,25 @@ stmt_t *stmt_dowhile(stmt_t *block, stmt_t *guard) {
 	return self;
 }
 
-stmt_t *stmt_decl(parser_t *parser, var_t *var) {
-	stmt_t *self = malloc(sizeof(stmt_t));
+apstmt_t *apstmt_decl(apparser_t *parser, apvar_t *var) {
+	apstmt_t *self = malloc(sizeof(apstmt_t));
 
-	self->type = STMT_TYPE_DECL;
+	self->type = APSTMT_TYPE_DECL;
 	self->symbols = 0;
 	self->expr = 0;
 	self->var = var;
 	self->nchild = 0;
 	self->next = 0;
 
-	symtab_var(parser->symbols, var->name, var);
+	apsymtab_var(parser->symbols, var->name, var);
 
 	return self;
 }
 
-stmt_t *stmt_conditional(stmt_t *guard, stmt_t *br1, stmt_t *br2) {
-	stmt_t *self = malloc(sizeof(stmt_t));
+apstmt_t *apstmt_conditional(apstmt_t *guard, apstmt_t *br1, apstmt_t *br2) {
+	apstmt_t *self = malloc(sizeof(apstmt_t));
 
-	self->type = STMT_TYPE_CONDITIONAL;
+	self->type = APSTMT_TYPE_CONDITIONAL;
 	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
@@ -196,10 +196,10 @@ stmt_t *stmt_conditional(stmt_t *guard, stmt_t *br1, stmt_t *br2) {
 	return self;
 }
 
-stmt_t *stmt_return(expr_t *expr) {
-	stmt_t *self = malloc(sizeof(stmt_t));
+apstmt_t *apstmt_return(apexpr_t *expr) {
+	apstmt_t *self = malloc(sizeof(apstmt_t));
 
-	self->type = STMT_TYPE_RETURN;
+	self->type = APSTMT_TYPE_RETURN;
 	self->symbols = 0;
 	self->expr = expr;
 	self->var = 0;
@@ -210,19 +210,19 @@ stmt_t *stmt_return(expr_t *expr) {
 }
 
 
-void stmt_free(stmt_t *self) {
+void apstmt_free(apstmt_t *self) {
  	if (self) {
-		expr_free(self->expr);
-		var_free(self->var);
-		if (STMT_TYPE_BLOCK == self->type) {
-			stmt_free(self->child[0]);
+		apexpr_free(self->expr);
+		apvar_free(self->var);
+		if (APSTMT_TYPE_BLOCK == self->type) {
+			apstmt_free(self->child[0]);
 		} else {
 			for (size_t i = 0; i < self->nchild; i++) {
-				stmt_free(self->child[i]);
+				apstmt_free(self->child[i]);
 			}
 		}
-		symtab_free(self->symbols);
-		stmt_free(self->next);
+		apsymtab_free(self->symbols);
+		apstmt_free(self->next);
 		free(self);
 	}
 }

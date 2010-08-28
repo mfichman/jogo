@@ -20,37 +20,20 @@
  * IN THE SOFTWARE.
  */  
 
-#include <var.h>
-#include <expr.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#ifndef APDEF_H
+#define APDEF_H
 
-var_t *var_alloc(char *name, int flags, type_t *type, expr_t *expr) {
-	var_t *self = malloc(sizeof(var_t));
+#include <apollo.h>
 
-	self->name = name;
-	self->flags = flags;
-	self->type = type;
-	self->expr = expr;
-	self->next = 0;
-	
-	return self;
-}
+/* User type definitions, a la C */
+struct apdef {
+	aptype_t *type;
+	aptype_t *def;
+	apdef_t *next;
+};
 
-void var_free(var_t *self) {
+apdef_t *apdef_alloc(aptype_t *type, aptype_t *def);
+void apdef_free(apdef_t *self);
 
-	if (self) {
+#endif
 
-		free(self->name);
-		type_free(self->type);
-		expr_free(self->expr);
-		var_free(self->next);
-		free(self);
-
-	}
-}
-
-int var_comp(var_t *self, var_t *var) {
-	return self - var;
-}

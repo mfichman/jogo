@@ -20,44 +20,44 @@
  * IN THE SOFTWARE.
  */  
 
-#include <hash.h>
+#include <aphash.h>
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct hash_entry hash_entry_t;
-struct hash_entry {
+typedef struct aphash_entry aphash_entry_t;
+struct aphash_entry {
 	const void *key;
 	void *value;
 	int present;
 };
 
-struct hash {
-	hash_entry_t *entries;
+struct aphash {
+	aphash_entry_t *entries;
 	int capacity;
 	int count;
-	hash_compfn_t compare;
-	hash_hashfn_t hash;
+	aphash_compfn_t compare;
+	aphash_hashfn_t hash;
 };
 	
-hash_t *hash_alloc(hash_compfn_t comp, hash_hashfn_t hash) {
-	hash_t *self = malloc(sizeof(hash_t));
+aphash_t *aphash_alloc(aphash_compfn_t comp, aphash_hashfn_t hash) {
+	aphash_t *self = malloc(sizeof(aphash_t));
 	
 	self->capacity = 17;
 	self->count = 0;
 	self->compare = comp;
 	self->hash = hash; 
-	self->entries = calloc(self->capacity, sizeof(hash_entry_t));
+	self->entries = calloc(self->capacity, sizeof(aphash_entry_t));
 	
 	return self;
 }
 
-void hash_rehash(hash_t *self, int capacity) {
-	hash_entry_t *old = self->entries;
-	self->entries = calloc(capacity, sizeof(hash_entry_t));
+void aphash_rehash(aphash_t *self, int capacity) {
+	aphash_entry_t *old = self->entries;
+	self->entries = calloc(capacity, sizeof(aphash_entry_t));
 	
 	for (int i = 0; i < self->capacity; i++) {
 		if (self->entries[i].present) {
-			hash_put(self, self->entries[i].key, self->entries[i].value);
+			aphash_put(self, self->entries[i].key, self->entries[i].value);
 		}
 	}
 
@@ -65,14 +65,14 @@ void hash_rehash(hash_t *self, int capacity) {
 	self->capacity = capacity;
 }
 
-void *hash_put(hash_t *self, const void *key, void *value) {
+void *aphash_put(aphash_t *self, const void *key, void *value) {
 
 	if (10 * (self->count + 1) > 8 * (self->capacity)) {
-		hash_rehash(self, self->capacity * 2);	
+		aphash_rehash(self, self->capacity * 2);	
 	}
 
 	int index = self->hash(key) % self->capacity;
-	hash_entry_t *entry = &self->entries[index];
+	aphash_entry_t *entry = &self->entries[index];
 	while (entry->present) {
 		if (!self->compare(entry->key, key)) {
 			entry->key = key;
@@ -92,10 +92,10 @@ void *hash_put(hash_t *self, const void *key, void *value) {
 	return value;
 }
 
-void *hash_get(hash_t *self, const void *key) {
+void *aphash_get(aphash_t *self, const void *key) {
 
 	int index = self->hash(key) % self->capacity;
-	hash_entry_t *entry = &self->entries[index];
+	aphash_entry_t *entry = &self->entries[index];
 	while (entry->present) {
 		if (!self->compare(entry->key, key)) {
 			return entry->value;
@@ -107,10 +107,10 @@ void *hash_get(hash_t *self, const void *key) {
 	return 0;
 }
 
-void *hash_remove(hash_t *self, const void *key) {
+void *aphash_remove(aphash_t *self, const void *key) {
 
 	int index = self->hash(key) % self->capacity;
-	hash_entry_t *entry = &self->entries[index];
+	aphash_entry_t *entry = &self->entries[index];
 	while (entry->present) {
 		if (!self->compare(entry->key, key)) {
 			self->count--;
@@ -124,7 +124,7 @@ void *hash_remove(hash_t *self, const void *key) {
 	return 0;
 }
 
-unsigned int hash_string(const void *key) {
+unsigned int aphash_string(const void *key) {
 	const char *string = (const char *)key;
 
 	/* FNV-1 hash function */
@@ -141,7 +141,7 @@ unsigned int hash_string(const void *key) {
 	return hash;
 }
 
-unsigned int hash_pointer(const void *key) {
+unsigned int aphash_pointer(const void *key) {
 	unsigned int a = (unsigned int)key;
 
     a = (a + 0x7ed55d16) + (a << 12);
@@ -155,7 +155,7 @@ unsigned int hash_pointer(const void *key) {
 }
 
 
-void hash_free(hash_t *self) {
+void aphash_free(aphash_t *self) {
 	free(self->entries);
 	free(self);
 }

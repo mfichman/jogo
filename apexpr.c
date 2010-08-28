@@ -11,7 +11,7 @@
  * The above copyright notice and this permission notice shall be included in 
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR 
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
@@ -20,21 +20,21 @@
  * IN THE SOFTWARE.
  */  
 
-#include <expr.h>
-#include <parser.h>
-#include <type.h>
+#include <apexpr.h>
+#include <apparser.h>
+#include <aptype.h>
+#include <apsymtab.h>
+#include <apvar.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <symtab.h>
-#include <var.h>
 #include <assert.h>
 
-expr_t *expr_literal(parser_t *parser, type_t *type, char *string) {
-	expr_t *self = malloc(sizeof(expr_t));
+apexpr_t *apexpr_literal(apparser_t *parser, aptype_t *type, char *string) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
 
-	self->type = EXPR_TYPE_STRING;
-	self->line = parser_line_number(parser);
+	self->type = APEXPR_TYPE_STRING;
+	self->line = apparser_line_number(parser);
 	self->string = string; 
 	self->nchild = 0;
 	self->chktype = type;
@@ -44,11 +44,11 @@ expr_t *expr_literal(parser_t *parser, type_t *type, char *string) {
 	return self;
 }
 
-expr_t *expr_binary(parser_t *parser, char *op, expr_t *lhs, expr_t *rhs) {
-	expr_t *self = malloc(sizeof(expr_t));
+apexpr_t *apexpr_binary(apparser_t *parser, char *op, apexpr_t *lhs, apexpr_t *rhs) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
-	self->type = EXPR_TYPE_BINARY;
-	self->line = parser_line_number(parser);
+	self->type = APEXPR_TYPE_BINARY;
+	self->line = apparser_line_number(parser);
 	self->string = op;
 	self->nchild = 2;
 	self->child[0] = lhs;
@@ -60,11 +60,11 @@ expr_t *expr_binary(parser_t *parser, char *op, expr_t *lhs, expr_t *rhs) {
 	return self;
 }
 
-expr_t *expr_unary(parser_t *parser, char *op, expr_t *expr) {
-	expr_t *self = malloc(sizeof(expr_t));
+apexpr_t *apexpr_unary(apparser_t *parser, char *op, apexpr_t *expr) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
-	self->type = EXPR_TYPE_UNARY;
-	self->line = parser_line_number(parser);
+	self->type = APEXPR_TYPE_UNARY;
+	self->line =apparser_line_number(parser);
 	self->string = op; 
 	self->nchild = 1;
 	self->child[0] = expr;
@@ -75,11 +75,11 @@ expr_t *expr_unary(parser_t *parser, char *op, expr_t *expr) {
 	return self;
 }
 
-expr_t *expr_call(parser_t *parser, char *fn, expr_t *args) {
-	expr_t *self = malloc(sizeof(expr_t));
+apexpr_t *apexpr_call(apparser_t *parser, char *fn, apexpr_t *args) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
-	self->type = EXPR_TYPE_CALL;
-	self->line = parser_line_number(parser);
+	self->type = APEXPR_TYPE_CALL;
+	self->line =apparser_line_number(parser);
 	self->string = fn; 
 	self->nchild = 1;
 	self->child[0] = args;
@@ -90,11 +90,11 @@ expr_t *expr_call(parser_t *parser, char *fn, expr_t *args) {
 	return self;
 }
 
-expr_t *expr_mcall(parser_t *parser, expr_t *obj, char *fn, expr_t *args) {
-	expr_t *self = malloc(sizeof(expr_t));
+apexpr_t *apexpr_mcall(apparser_t *parser, apexpr_t *obj, char *fn, apexpr_t *args) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
-	self->type = EXPR_TYPE_MCALL;
-	self->line = parser_line_number(parser);
+	self->type = APEXPR_TYPE_MCALL;
+	self->line =apparser_line_number(parser);
 	self->string = fn;
 	self->nchild = 2;
 	self->child[0] = obj;
@@ -106,11 +106,11 @@ expr_t *expr_mcall(parser_t *parser, expr_t *obj, char *fn, expr_t *args) {
 	return self;
 }
 
-expr_t *expr_scall(parser_t *parser, type_t *obj, char *fn, expr_t *args) {
-	expr_t *self = malloc(sizeof(expr_t));
+apexpr_t *apexpr_scall(apparser_t *parser, aptype_t *obj, char *fn, apexpr_t *args) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
 
-	self->type = EXPR_TYPE_MCALL;
-	self->line = parser_line_number(parser);
+	self->type = APEXPR_TYPE_MCALL;
+	self->line =apparser_line_number(parser);
 	self->string = fn;
 	self->nchild = 1;
 	self->child[0] = args;
@@ -121,11 +121,11 @@ expr_t *expr_scall(parser_t *parser, type_t *obj, char *fn, expr_t *args) {
 	return self;
 }
 
-expr_t *expr_ctor(parser_t *parser, type_t *type, expr_t *args) {
-	expr_t *self = malloc(sizeof(expr_t));
+apexpr_t *apexpr_ctor(apparser_t *parser, aptype_t *type, apexpr_t *args) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
 
-	self->type = EXPR_TYPE_CTOR;
-	self->line = parser_line_number(parser);
+	self->type = APEXPR_TYPE_CTOR;
+	self->line =apparser_line_number(parser);
 	self->string = 0;
 	self->nchild = 1;
 	self->child[0] = args;
@@ -136,11 +136,11 @@ expr_t *expr_ctor(parser_t *parser, type_t *type, expr_t *args) {
 	return self;
 }
 	
-expr_t *expr_index(parser_t *parser, expr_t *expr, expr_t *index) {
-	expr_t *self = malloc(sizeof(expr_t));
+apexpr_t *apexpr_index(apparser_t *parser, apexpr_t *expr, apexpr_t *index) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
-	self->type = EXPR_TYPE_INDEX;
-	self->line = parser_line_number(parser);
+	self->type = APEXPR_TYPE_INDEX;
+	self->line =apparser_line_number(parser);
 	self->string = 0; 
 	self->nchild = 2;
 	self->child[0] = expr;
@@ -152,11 +152,11 @@ expr_t *expr_index(parser_t *parser, expr_t *expr, expr_t *index) {
 	return self;
 }
 
-expr_t *expr_member(parser_t *parser, expr_t *expr, char *ident) {
-	expr_t *self = malloc(sizeof(expr_t));
+apexpr_t *apexpr_member(apparser_t *parser, apexpr_t *expr, char *ident) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
 
-	self->type = EXPR_TYPE_MEMBER;
-	self->line = parser_line_number(parser);
+	self->type = APEXPR_TYPE_MEMBER;
+	self->line =apparser_line_number(parser);
 	self->string = ident; 
 	self->nchild = 1;
 	self->child[0] = expr;
@@ -167,11 +167,11 @@ expr_t *expr_member(parser_t *parser, expr_t *expr, char *ident) {
 	return self;
 }
 
-expr_t *expr_static(parser_t *parser, type_t *type, char *ident) {
-	expr_t *self = malloc(sizeof(expr_t));
+apexpr_t *apexpr_static(apparser_t *parser, aptype_t *type, char *ident) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
-	self->type = EXPR_TYPE_STATIC;
-	self->line = parser_line_number(parser);
+	self->type = APEXPR_TYPE_STATIC;
+	self->line =apparser_line_number(parser);
 	self->string = ident;	
 	self->nchild = 0;
 	self->clstype = type;
@@ -181,11 +181,11 @@ expr_t *expr_static(parser_t *parser, type_t *type, char *ident) {
 	return self;
 }
 
-expr_t *expr_var(parser_t *parser, char *name) {
-	expr_t *self = malloc(sizeof(expr_t));
+apexpr_t *apexpr_var(apparser_t *parser, char *name) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
-	self->type = EXPR_TYPE_VAR;
-	self->line = parser_line_number(parser);
+	self->type = APEXPR_TYPE_VAR;
+	self->line =apparser_line_number(parser);
 	self->string = name; 
 	self->nchild = 0;
 	self->chktype = 0;
@@ -195,14 +195,14 @@ expr_t *expr_var(parser_t *parser, char *name) {
 	return self;
 }
 	
-void expr_free(expr_t *self) {
+void apexpr_free(apexpr_t *self) {
 	if (self) {
 		for (size_t i = 0; i < self->nchild; i++) {
-			expr_free(self->child[i]);	
+			apexpr_free(self->child[i]);	
 		}
-		expr_free(self->next);
-		type_free(self->clstype);
-		type_free(self->chktype);
+		apexpr_free(self->next);
+		aptype_free(self->clstype);
+		aptype_free(self->chktype);
 		free(self->string);
 		free(self);
 	}

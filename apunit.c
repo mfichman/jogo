@@ -20,17 +20,17 @@
  * IN THE SOFTWARE.
  */  
 
-#include <unit.h>
-#include <import.h>
-#include <def.h>
-#include <func.h>
-#include <var.h>
+#include <apunit.h>
+#include <apimport.h>
+#include <apdef.h>
+#include <apfunc.h>
+#include <apvar.h>
+#include <apsymtab.h>
 #include <assert.h>
-#include <symtab.h>
 #include <stdlib.h>
 
-unit_t *unit_alloc(int type) {
-	unit_t *self = malloc(sizeof(unit_t));
+apunit_t *apunit_alloc(int type) {
+	apunit_t *self = malloc(sizeof(apunit_t));
 
 	self->name = 0;
 	self->type = type;
@@ -40,61 +40,61 @@ unit_t *unit_alloc(int type) {
 	self->ctors = 0;
 	self->dtors = 0;
 	self->funcs = 0;
-	self->symtab = symtab_alloc(0); 
+	self->symtab = apsymtab_alloc(0); 
 	self->next = 0;
 
 	return self;
 }
 
-void unit_name(unit_t *self, type_t *name) {
+void apunit_name(apunit_t *self, aptype_t *name) {
 	assert(!self->name);
 	self->name = name;
 }
 
-void unit_import(unit_t *self, import_t *import) {
+void apunit_import(apunit_t *self, apimport_t *import) {
 	import->next = self->imports;
 	self->imports = import;
 }
 
-void unit_def(unit_t *self, def_t *def) {
+void apunit_def(apunit_t *self, apdef_t *def) {
 	def->next = self->defs;
 	self->defs = def;
 }
 
-void unit_var(unit_t *self, var_t *var) {
+void apunit_var(apunit_t *self, apvar_t *var) {
 	var->next = self->vars;
 	self->vars = var;
-	symtab_var(self->symtab, var->name, var);
+	apsymtab_var(self->symtab, var->name, var);
 }
 
-void unit_ctor(unit_t *self, func_t *ctor) {
+void apunit_ctor(apunit_t *self, apfunc_t *ctor) {
 	ctor->next = self->ctors;
 	self->ctors = ctor;
-	symtab_func(self->symtab, ctor->name, ctor);
+	apsymtab_func(self->symtab, ctor->name, ctor);
 }
 
-void unit_dtor(unit_t *self, func_t *dtor) {
+void apunit_dtor(apunit_t *self, apfunc_t *dtor) {
 	dtor->next = self->dtors;
 	self->dtors = dtor;
 }
 
-void unit_func(unit_t *self, func_t *func) {
+void apunit_func(apunit_t *self, apfunc_t *func) {
 	func->next = self->funcs;
 	self->funcs = func;
-	symtab_func(self->symtab, func->name, func);
+	apsymtab_func(self->symtab, func->name, func);
 }
 
-void unit_free(unit_t *self) {
+void apunit_free(apunit_t *self) {
 	if (self) {
-		type_free(self->name);
-		import_free(self->imports);
-		def_free(self->defs);
-		var_free(self->vars);
-		func_free(self->ctors);
-		func_free(self->dtors);
-		func_free(self->funcs);
-		unit_free(self->next);
-		symtab_free(self->symtab);
+		aptype_free(self->name);
+		apimport_free(self->imports);
+		apdef_free(self->defs);
+		apvar_free(self->vars);
+		apfunc_free(self->ctors);
+		apfunc_free(self->dtors);
+		apfunc_free(self->funcs);
+		apunit_free(self->next);
+		apsymtab_free(self->symtab);
 		free(self);
 	}
 }

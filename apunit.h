@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2010 Matt Fichman
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a 
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation 
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+ * and/or sell copies of the Software, and to permit persons to whom the 
+ * Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in 
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */  
+
+#ifndef APUNIT_H
+#define APUNIT_H
+
+#include <apollo.h>
+
+#define APUNIT_TYPE_CLASS 1 /* Class compilation apunit */
+#define APUNIT_TYPE_STRUCT 2 /* Structure compilation apunit */
+#define APUNIT_TYPE_MODULE 3 /* Module compilation apunit */
+#define APUNIT_TYPE_INTERFACE 4 /* Interface compilation apunit */
+
+#define APUNIT_FLAG_PUBLIC 0x1
+#define APUNIT_FLAG_PRIVATE 0x2
+#define APUNIT_FLAG_PROTECTED 0x3
+#define APUNIT_FLAG_NATIVE 0x4
+#define APUNIT_FLAG_STATIC 0x5
+#define APUNIT_FLAG_CONST 0x6
+
+
+/* Compilation apunit struct for classes, structs, and enums */
+struct apunit {
+	aptype_t *name; /* Name of the compilation apunit */
+	int type; /* Type of apunit: struct, class, or enum */
+	apimport_t *imports; /* List of imports */
+	apdef_t *defs; /* List of defines */
+	apvar_t *vars; /* List of variables */
+	apfunc_t *ctors; /* List of constructors */
+	apfunc_t *dtors; /* List of destructors */
+	apfunc_t *funcs; /* List of functions */
+	apsymtab_t *symtab; /* Hash table of functions and variables */
+	apunit_t *next;
+};
+
+apunit_t *apunit_alloc(int type);
+void apunit_name(apunit_t *self, aptype_t *name);
+void apunit_import(apunit_t *self, apimport_t *import);
+void apunit_def(apunit_t *self, apdef_t *def);
+void apunit_var(apunit_t *self, apvar_t *var);
+void apunit_ctor(apunit_t *self, apfunc_t *ctor);
+void apunit_dtor(apunit_t *self, apfunc_t *dtor);
+void apunit_func(apunit_t *self, apfunc_t *func);
+void apunit_free(apunit_t *self);
+
+#endif

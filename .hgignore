@@ -1,4 +1,10 @@
 syntax:glob
 *.o
 *.swp
+*.orig
+*.ap
+apgrammar.h
+apgrammar.l.c
+apgrammar.y.c
+lib/*
 apollo

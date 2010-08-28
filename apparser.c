@@ -20,20 +20,25 @@
  * IN THE SOFTWARE.
  */  
 
-#include <parser.h>
+#include <apparser.h>
+#include <apunit.h>
+#include <apstmt.h>
+#include <aptype.h>
+#include <apvar.h>
+#include <apexpr.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <unit.h>
-#include <stmt.h>
-#include <type.h>
-#include <var.h>
-#include <expr.h>
 #include <assert.h>
 
-parser_t *parser_alloc() {
-	parser_t *self = malloc(sizeof(parser_t));
+int yyparse(apparser_t *parser, void *scanner);
+int yylex_init(void **);
+int yylex_destroy(void *);
+void yyset_extra(apparser_t *, void *);
+
+apparser_t *apparser_alloc() {
+	apparser_t *self = malloc(sizeof(apparser_t));
 
 	self->units = 0;
 	self->filename = 0;
@@ -44,7 +49,7 @@ parser_t *parser_alloc() {
 	return self;
 }
 
-void parser_parse(parser_t *self, const char *filename, int fd) {
+void apparser_parse(apparser_t *self, const char *filename, int fd) {
 	self->fd = fd;
 	self->filename = realloc(self->filename, strlen(filename) + 1);
 	strcpy(self->filename, filename);
@@ -52,57 +57,52 @@ void parser_parse(parser_t *self, const char *filename, int fd) {
 	yyparse(self, self->scanner);
 }
 
-void parser_error(parser_t *self) {
-	yyerror(self, self->scanner, 0);
-
-}
-
-int parser_read(parser_t *self, char *buffer, int length) {
+int apparser_read(apparser_t *self, char *buffer, int length) {
 	return read(self->fd, buffer, length);
 }
 
-void parser_class(parser_t *self, unit_t *unit) {
+void apparser_class(apparser_t *self, apunit_t *unit) {
 	unit->next = self->units;
 	self->units = unit;
 }
 
-void parser_interface(parser_t *self, unit_t *unit) {
+void apparser_interface(apparser_t *self, apunit_t *unit) {
 	unit->next = self->units;
 	self->units = unit;
 }
 
-void parser_struct(parser_t *self, unit_t *unit) {
+void apparser_struct(apparser_t *self, apunit_t *unit) {
 	unit->next = self->units;
 	self->units = unit;
 }
 
-void parser_module(parser_t *self, unit_t *unit) {
+void apparser_module(apparser_t *self, apunit_t *unit) {
 	unit->next = self->units;
 	self->units = unit;
 }
 
-int parser_check_stmt(parser_t *self, stmt_t *stmt) {
+int apparser_check_stmt(apparser_t *self, apstmt_t *stmt) {
 	return 1;
 }
 
-int parser_check_expr(parser_t *self, expr_t *expr) {
+int apparser_check_expr(apparser_t *self, apexpr_t *expr) {
 	return 1;
 }
 
-int parser_check_var(parser_t *self, var_t *var) {
+int apparser_check_var(apparser_t *self, apvar_t *var) {
 	return 1;
 } 
 
-int parser_resolve_type(type_t *type) {
+int apparser_resolve_type(aptype_t *type) {
 
 	return 1;
 }
 
 
-void parser_free(parser_t *self) {
+void apparser_free(apparser_t *self) {
 	if (self) {
 		yylex_destroy(self->scanner);
-		unit_free(self->units);
+		apunit_free(self->units);
 		free(self->filename);
 		free(self);
 	}

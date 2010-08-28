@@ -19,19 +19,24 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */  
-#ifndef SYMTAB_H
-#define SYMTAB_H
 
-#include <apollo.h>
+#include <apimport.h>
+#include <aptype.h>
+#include <stdlib.h>
 
-/* Symbol table for variable and type names */
+apimport_t *apimport_alloc(aptype_t *type) {
+	apimport_t *self = malloc(sizeof(apimport_t));
 
-symtab_t *symtab_alloc(symtab_t *parent);
-void symtab_func(symtab_t *self, const char *name, func_t *func);
-void symtab_var(symtab_t *self, const char *name, var_t *var);
-func_t *symtab_get_func(symtab_t *self, const char *name);
-var_t *symtab_get_var(symtab_t *self, const char *name);
-symtab_t *symtab_get_parent(symtab_t *self);
-void symtab_free(symtab_t *self);
+	self->type = type;
+	self->next = 0;
+	
+	return self;
+}
 
-#endif
+void apimport_free(apimport_t *self) {
+	if (self) {
+		aptype_free(self->type);
+		apimport_free(self->next);
+		free(self);
+	}
+}

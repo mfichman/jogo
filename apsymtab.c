@@ -20,63 +20,63 @@
  * IN THE SOFTWARE.
  */  
 
-#include <symtab.h>
-#include <var.h>
-#include <hash.h>
+#include <apsymtab.h>
+#include <apvar.h>
+#include <aphash.h>
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 
-struct symtab {
-	symtab_t *parent;
-	hash_t *vars;
-	hash_t *funcs;
+struct apsymtab {
+	apsymtab_t *parent;
+	aphash_t *vars;
+	aphash_t *funcs;
 };
 
-symtab_t *symtab_alloc(symtab_t *parent) {
-	symtab_t *self = malloc(sizeof(symtab_t));
+apsymtab_t *apsymtab_alloc(apsymtab_t *parent) {
+	apsymtab_t *self = malloc(sizeof(apsymtab_t));
 
 	self->parent = parent;
-	self->vars = hash_alloc((hash_compfn_t)&strcmp, &hash_string);
-	self->funcs = hash_alloc((hash_compfn_t)&strcmp, &hash_string);
+	self->vars = aphash_alloc((aphash_compfn_t)&strcmp, &aphash_string);
+	self->funcs = aphash_alloc((aphash_compfn_t)&strcmp, &aphash_string);
 
 	return self;
 }
 
-void symtab_var(symtab_t *self, const char *name, var_t *var) {
-	hash_put(self->vars, name, var);
+void apsymtab_var(apsymtab_t *self, const char *name, apvar_t *var) {
+	aphash_put(self->vars, name, var);
 }
 
-void symtab_func(symtab_t *self, const char *name, func_t *func) {
-	hash_put(self->funcs, name, func);
+void apsymtab_func(apsymtab_t *self, const char *name, apfunc_t *func) {
+	aphash_put(self->funcs, name, func);
 }
 
-var_t *symtab_get_var(symtab_t *self, const char *name) {
-	var_t *var = hash_get(self->vars, name);
+apvar_t *apsymtab_get_var(apsymtab_t *self, const char *name) {
+	apvar_t *var = aphash_get(self->vars, name);
 	if (!var && self->parent) {
-		return hash_get(self->vars, name);
+		return aphash_get(self->vars, name);
 	} else {
 		return var;
 	}
 }
 
-func_t *symtab_get_func(symtab_t *self, const char *name) {
-	func_t *func = hash_get(self->funcs, name);
+apfunc_t *apsymtab_get_func(apsymtab_t *self, const char *name) {
+	apfunc_t *func = aphash_get(self->funcs, name);
 	if (!func && self->parent) {
-		return hash_get(self->funcs, name);
+		return aphash_get(self->funcs, name);
 	} else {
 		return func;
 	}
 }
 
-symtab_t *symtab_get_parent(symtab_t *self) {
+apsymtab_t *apsymtab_get_parent(apsymtab_t *self) {
 	return self->parent;
 }
 
-void symtab_free(symtab_t *self) {
+void apsymtab_free(apsymtab_t *self) {
 	if (self) {
-		hash_free(self->vars);
-		hash_free(self->funcs);
+		aphash_free(self->vars);
+		aphash_free(self->funcs);
 		free(self);
 	}
 

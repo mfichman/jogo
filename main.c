@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <parser.h>
+#include <apparser.h>
 
 
 
@@ -36,9 +36,9 @@ int main(int argc, char **argv) {
 	}
 
 	int fd = open(argv[1], O_RDONLY);
-	parser_t *parser = parser_alloc();
-	parser_parse(parser, argv[1], fd);
-	parser_free(parser);
+	apparser_t *parser = apparser_alloc();
+	apparser_parse(parser, argv[1], fd);
+	apparser_free(parser);
 
 	printf("File parsed.\n");
 }

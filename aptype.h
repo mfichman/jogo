@@ -20,43 +20,29 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef OP_H
-#define OP_H
+#ifndef APTYPE_H
+#define APTYPE_H
 
-extern const char *op_null_check;
-extern const char *op_assign;
-extern const char *op_mul_assign;
-extern const char *op_div_assign;
-extern const char *op_mod_assign;
-extern const char *op_sub_assign;
-extern const char *op_add_assign;
-extern const char *op_bitand_assign;
-extern const char *op_bitor_assign;
-extern const char *op_or;
-extern const char *op_and;
-extern const char *op_bitor;
-extern const char *op_bitand;
-extern const char *op_bitxor;
-extern const char *op_equal;
-extern const char *op_notequal;
-extern const char *op_greater;
-extern const char *op_less;
-extern const char *op_ge;
-extern const char *op_le;
-extern const char *op_lshift;
-extern const char *op_rshift;
-extern const char *op_plus;
-extern const char *op_minus;
-extern const char *op_mul;
-extern const char *op_div;
-extern const char *op_mod;
-extern const char *op_inc;
-extern const char *op_dec;
-extern const char *op_bang;
-extern const char *op_tilde;
-extern const char *op_star;
-extern const char *op_postinc;
-extern const char *op_postdec;
+#define APTYPE_TYPE_PRIMITIVE 1
+#define APTYPE_TYPE_OBJECT 2
 
+#include <apollo.h>
+
+/* A fully-qualified a aptype name */ 
+struct aptype {
+	char *name;             /* Fully qualified aptype name */
+	int type;				/* Primitive or not? */
+	int pointer;			/* True if this is a pointer */
+	aptype_t *next;
+};
+
+aptype_t *aptype_object(char *name);
+aptype_t *aptype_primitive(char *name);
+aptype_t *aptype_concat(aptype_t *self, aptype_t *type);
+aptype_t *aptype_clone(aptype_t *self);
+int aptype_comp(aptype_t *self, aptype_t *type);
+int aptype_bool_compat(aptype_t *self);
+int aptype_integer_compat(aptype_t *self);
+void aptype_free(aptype_t *self);
 
 #endif

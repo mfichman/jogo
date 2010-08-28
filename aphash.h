@@ -20,24 +20,20 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef VAR_H
-#define VAR_H
+#ifndef APHASH_H
+#define APHASH_H
 
-#include <type.h>
+#include <apollo.h>
 
-/* Local variable/symbol in the current scope */
-struct var {
-	char *name;
-	int flags;
-	type_t *type;
-	expr_t *expr;
-	var_t *next;
-};	
+typedef int (*aphash_compfn_t)(const void *, const void *);
+typedef unsigned int (*aphash_hashfn_t)(const void *);
 
-var_t *var_alloc(char *name, int flags, type_t *type, expr_t *expr);
-int var_comp(var_t *self, var_t *var);
-void var_free(var_t *self);
-
-
+aphash_t *aphash_alloc(aphash_compfn_t comp, aphash_hashfn_t hash);
+void *aphash_put(aphash_t *self, const void *key, void *value);
+void *aphash_get(aphash_t *self, const void *key);
+void *aphash_remove(aphash_t *self, const void *key);
+unsigned int aphash_string(const void *key);
+unsigned int aphash_pointer(const void *key);
+void aphash_free(aphash_t *self);
 
 #endif

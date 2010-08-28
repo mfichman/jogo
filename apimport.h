@@ -20,20 +20,19 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef HASH_H
-#define HASH_H
+#ifndef APIMPORT_H
+#define APIMPORT_H
 
 #include <apollo.h>
 
-typedef int (*hash_compfn_t)(const void *, const void *);
-typedef unsigned int (*hash_hashfn_t)(const void *);
+/* File apimport header */
+struct apimport {
+	aptype_t *type;
+	apimport_t *next;
+};
 
-hash_t *hash_alloc(hash_compfn_t comp, hash_hashfn_t hash);
-void *hash_put(hash_t *self, const void *key, void *value);
-void *hash_get(hash_t *self, const void *key);
-void *hash_remove(hash_t *self, const void *key);
-unsigned int hash_string(const void *key);
-unsigned int hash_pointer(const void *key);
-void hash_free(hash_t *self);
+apimport_t *apimport_alloc(aptype_t *type);
+void apimport_free(apimport_t *self);
+
 
 #endif

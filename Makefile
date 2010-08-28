@@ -1,5 +1,5 @@
-OBJS=main.o type.o var.o expr.o func.o stmt.o parser.o unit.o op.o \
-	 import.o def.o hash.o symtab.o grammar.y.o grammar.l.o
+OBJS=main.o aptype.o apvar.o apexpr.o apfunc.o apstmt.o apparser.o apunit.o \
+	 apimport.o apdef.o aphash.o apsymtab.o apgrammar.y.o apgrammar.l.o
 CFLAGS=-std=c99 -c -g -I. -Wall -Werror -pedantic
 CC=clang
 
@@ -8,13 +8,13 @@ apollo: $(OBJS)
 	$(CC) -g -o $@ $^ 
 
 clean:
-	rm -rf *.o apollo grammar.y.c grammar.l.c
+	rm -rf *.o apollo apgrammar.h apgrammar.y.c apgrammar.l.c
 
 
-grammar.y.c: grammar.y
-	bison --defines=grammar.h --output=$@ $^
+apgrammar.y.c: grammar.y
+	bison --defines=apgrammar.h --output=$@ $^
 
-grammar.l.c: grammar.l
+apgrammar.l.c: grammar.l
 	flex --outfile=$@ $^
 
 

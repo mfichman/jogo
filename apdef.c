@@ -20,34 +20,27 @@
  * IN THE SOFTWARE.
  */  
 
-#include <func.h>
-#include <stmt.h>
-#include <type.h>
-#include <var.h>
-#include <string.h>
+#include <apdef.h>
+#include <aptype.h>
 #include <stdlib.h>
 
-func_t *func_alloc(char *name, var_t *arg, type_t *ret, stmt_t *body) {
-	func_t *self = malloc(sizeof(func_t));
+apdef_t *apdef_alloc(aptype_t *type, aptype_t *def) {
 
-	self->name = name;
-	self->flags = 0;
-	self->block = body;
-	self->rets = ret;
-	self->args = arg;
+	apdef_t *self = malloc(sizeof(apdef_t));
+	
+	self->type = type;
+	self->def = def;
 	self->next = 0;
 
 	return self;
 }
 
-void func_free(func_t *self) {
+void apdef_free(apdef_t *self) {
+
 	if (self) {
-		free(self->name);
-		stmt_free(self->block);
-		type_free(self->rets);
-		var_free(self->args);
-		func_free(self->next);
+		aptype_free(self->type);
+		aptype_free(self->def);
+		apdef_free(self->next);
 		free(self);
 	}
 }
-

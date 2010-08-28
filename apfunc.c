@@ -20,19 +20,34 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef IMPORT_H
-#define IMPORT_H
+#include <apfunc.h>
+#include <apstmt.h>
+#include <aptype.h>
+#include <apvar.h>
+#include <string.h>
+#include <stdlib.h>
 
-#include <apollo.h>
+apfunc_t *apfunc_alloc(char *name, apvar_t *arg, aptype_t *ret, apstmt_t *body) {
+	apfunc_t *self = malloc(sizeof(apfunc_t));
 
-/* File import header */
-struct import {
-	type_t *type;
-	import_t *next;
-};
+	self->name = name;
+	self->flags = 0;
+	self->block = body;
+	self->rets = ret;
+	self->args = arg;
+	self->next = 0;
 
-import_t *import_alloc(type_t *type);
-void import_free(import_t *self);
+	return self;
+}
 
+void apfunc_free(apfunc_t *self) {
+	if (self) {
+		free(self->name);
+		apstmt_free(self->block);
+		aptype_free(self->rets);
+		apvar_free(self->args);
+		apfunc_free(self->next);
+		free(self);
+	}
+}
 
-#endif

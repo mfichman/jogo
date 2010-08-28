@@ -19,30 +19,19 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */  
-
-#ifndef TYPE_H
-#define TYPE_H
-
-#define TYPE_TYPE_PRIMITIVE 1
-#define TYPE_TYPE_OBJECT 2
+#ifndef APSYMTAB_H
+#define APSYMTAB_H
 
 #include <apollo.h>
 
-/* A fully-qualified a type name */ 
-struct type {
-	char *name;             /* Fully qualified type name */
-	int type;				/* Primitive or not? */
-	int pointer;			/* True if this is a pointer */
-	type_t *next;
-};
+/* Symbol table for variable and type names */
 
-type_t *type_object(char *name);
-type_t *type_primitive(char *name);
-type_t *type_concat(type_t *self, type_t *type);
-type_t *type_clone(type_t *self);
-int type_comp(type_t *self, type_t *type);
-int type_bool_compat(type_t *self);
-int type_integer_compat(type_t *self);
-void type_free(type_t *self);
+apsymtab_t *apsymtab_alloc(apsymtab_t *parent);
+void apsymtab_func(apsymtab_t *self, const char *name, apfunc_t *func);
+void apsymtab_var(apsymtab_t *self, const char *name, apvar_t *var);
+apfunc_t *apsymtab_get_func(apsymtab_t *self, const char *name);
+apvar_t *apsymtab_get_var(apsymtab_t *self, const char *name);
+apsymtab_t *apsymtab_get_parent(apsymtab_t *self);
+void apsymtab_free(apsymtab_t *self);
 
 #endif
