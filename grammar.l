@@ -14,6 +14,14 @@
 	res = apparser_read(yyget_extra(yyscanner), buf, len);\
 	res = (res == -1) ? 0 : res;\
 }
+#define YY_USER_ACTION {\
+	apparser_t *parser = yyget_extra(yyscanner);\
+	yylloc->first_line = yylineno;\
+	yylloc->first_column = parser->column;\
+	parser->column += yyleng;\
+	yylloc->last_column = parser->column - 1;\
+	yylloc->last_line = yylineno;\
+}
 
 %}
 
@@ -23,6 +31,7 @@
 %option noyywrap
 %option nounput
 %option yylineno
+%option bison-locations
 
 /* Lexer rules */
 %%
@@ -74,20 +83,17 @@ long yylval->type = aptype_primitive(strdup(yytext)); return TOK_PRIMITIVE;
 ulong yylval->type = aptype_primitive(strdup(yytext)); return TOK_PRIMITIVE;
 bool yylval->type = aptype_primitive(strdup(yytext)); return TOK_PRIMITIVE;
 [0-9]+ {
-	apparser_t *parser = yyget_extra(yyscanner);
-	yylval->expr = apexpr_literal(parser, aptype_primitive(strdup("int")), 
+	yylval->expr = apexpr_literal(yylloc, aptype_primitive(strdup("int")), 
 		strdup(yytext)); 
 	return TOK_NUMBER;
 }
 \"[^"]*\" {
-	apparser_t *parser = yyget_extra(yyscanner);
-	yylval->expr = apexpr_literal(parser, aptype_object(strdup("String")), 
+	yylval->expr = apexpr_literal(yylloc, aptype_object(strdup("String")), 
 		strdup(yytext));
 	return TOK_STRING;
 }
 \'[^']*\' {
-	apparser_t *parser = yyget_extra(yyscanner);
-	yylval->expr = apexpr_literal(parser, aptype_object(strdup("String")), 
+	yylval->expr = apexpr_literal(yylloc, aptype_object(strdup("String")), 
 		strdup(yytext)); 
 	return TOK_STRING;
 }
@@ -104,21 +110,18 @@ bool yylval->type = aptype_primitive(strdup(yytext)); return TOK_PRIMITIVE;
 	return TOK_IDENT;
 }
 #.*
-[\t\n\r ]
+[\n\r] yyget_extra(yyscanner)->column = 1;
+[\t ]
 . return yytext[0];
 %%
 
 
-void yyerror(apparser_t *self, void* scanner, const char *message) {
-	struct yyguts_t *yyg = (struct yyguts_t*)scanner;
+void yyerror(aploc_t *loc, apparser_t *self, void* scanner, const char *message) {
+	//struct yyguts_t *yyg = (struct yyguts_t*)scanner;
 	
 
-	if (message) {
-		fprintf(stderr, "%s:%d: %c%s\n", self->filename, yylineno, 
-			toupper(message[0]), message + 1);
-	} else {
-		fprintf(stderr, "%s:%d: ", self->filename, yylineno); 
-	}
+	fprintf(stderr, "%s:%d:%d: %c%s\n", self->filename, loc->first_line, 
+			loc->first_column, toupper(message[0]), message + 1);
 }
 
 int apparser_line_number(apparser_t *self) {

@@ -43,6 +43,7 @@ apparser_t *apparser_alloc() {
 	self->units = 0;
 	self->filename = 0;
 	self->fd = 0;
+	self->column = 1;
 	yylex_init(&self->scanner);
 	yyset_extra(self, self->scanner);
 
@@ -51,6 +52,7 @@ apparser_t *apparser_alloc() {
 
 void apparser_parse(apparser_t *self, const char *filename, int fd) {
 	self->fd = fd;
+	self->column = 1;
 	self->filename = realloc(self->filename, strlen(filename) + 1);
 	strcpy(self->filename, filename);
 

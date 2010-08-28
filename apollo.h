@@ -36,6 +36,7 @@ typedef struct aptype aptype_t;
 typedef struct apunit apunit_t;
 typedef struct apvar apvar_t;
 typedef struct apfunc apfunc_t;
+typedef struct aploc aploc_t;
 
 typedef uint32_t apuint_t;
 typedef int32_t apint_t;

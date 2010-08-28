@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef APPARSER_H
+#define APPARSER_H
 
 #include <apollo.h>
 #include <string.h>
@@ -32,6 +32,7 @@ struct apparser {
 	apunit_t *units;
 	apsymtab_t *symbols;
 	int fd;
+	int column;
 	char *filename;
 	char *error;
 	void *scanner;
@@ -54,7 +55,6 @@ union apnode {
 };
 
 /* Source code location range */
-typedef struct aploc aploc_t;
 struct aploc {
 	int first_line;
 	int first_column;
@@ -73,7 +73,6 @@ int apparser_check_stmt(apparser_t *self, apstmt_t *stmt);
 int apparser_check_expr(apparser_t *self, apexpr_t *expr);
 int apparser_check_var(apparser_t *self, apvar_t *var);
 int apparser_resolve_type(aptype_t *type);
-int apparser_line_number(apparser_t *self);
 void apparser_free(apparser_t *self);
 
 static inline char *strdup(const char* str) {

@@ -41,7 +41,6 @@
 /* Structure for holding expression syntax tree */
 struct apexpr {
 	int type;				/* Expression type type */
-	int line;				/* Line number for this expression */
 	char *string;			/* Possible string value of the expression */
 	int nchild;				/* Number of children */
 	aptype_t *chktype;		/* Type evaluation for expression */
@@ -51,17 +50,17 @@ struct apexpr {
 };
 
 
-apexpr_t *apexpr_literal(apparser_t *parser, aptype_t *type, char *string);
-apexpr_t *apexpr_binary(apparser_t *parser, char *op, apexpr_t *lh, apexpr_t *rh);
-apexpr_t *apexpr_unary(apparser_t *parser, char *op, apexpr_t *expr);
-apexpr_t *apexpr_call(apparser_t *parser, char *fn, apexpr_t *args);
-apexpr_t *apexpr_mcall(apparser_t *parser, apexpr_t *obj, char *fn, apexpr_t *args);
-apexpr_t *apexpr_scall(apparser_t *parser, aptype_t *obj, char *fn, apexpr_t *args);
-apexpr_t *apexpr_ctor(apparser_t *parser, aptype_t *obj, apexpr_t *args);
-apexpr_t *apexpr_index(apparser_t *parser, apexpr_t *obj, apexpr_t *index);
-apexpr_t *apexpr_member(apparser_t *parser, apexpr_t *expr, char *ident);
-apexpr_t *apexpr_static(apparser_t *parser, aptype_t *type, char *ident);
-apexpr_t *apexpr_var(apparser_t *parser, char *name);
+apexpr_t *apexpr_literal(aploc_t *loc, aptype_t *type, char *string);
+apexpr_t *apexpr_binary(aploc_t *loc, char *op, apexpr_t *lh, apexpr_t *rh);
+apexpr_t *apexpr_unary(aploc_t *loc, char *op, apexpr_t *expr);
+apexpr_t *apexpr_call(aploc_t *loc, char *fn, apexpr_t *args);
+apexpr_t *apexpr_mcall(aploc_t *loc, apexpr_t *obj, char *fn, apexpr_t *args);
+apexpr_t *apexpr_scall(aploc_t *loc, aptype_t *obj, char *fn, apexpr_t *args);
+apexpr_t *apexpr_ctor(aploc_t *loc, aptype_t *obj, apexpr_t *args);
+apexpr_t *apexpr_index(aploc_t *loc, apexpr_t *obj, apexpr_t *index);
+apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident);
+apexpr_t *apexpr_static(aploc_t *loc, aptype_t *type, char *ident);
+apexpr_t *apexpr_var(aploc_t *loc, char *name);
 void apexpr_free(apexpr_t *self);
 
 

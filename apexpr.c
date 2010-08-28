@@ -30,11 +30,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
-apexpr_t *apexpr_literal(apparser_t *parser, aptype_t *type, char *string) {
+apexpr_t *apexpr_literal(aploc_t *loc, aptype_t *type, char *string) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 
 	self->type = APEXPR_TYPE_STRING;
-	self->line = apparser_line_number(parser);
 	self->string = string; 
 	self->nchild = 0;
 	self->chktype = type;
@@ -44,11 +43,10 @@ apexpr_t *apexpr_literal(apparser_t *parser, aptype_t *type, char *string) {
 	return self;
 }
 
-apexpr_t *apexpr_binary(apparser_t *parser, char *op, apexpr_t *lhs, apexpr_t *rhs) {
+apexpr_t *apexpr_binary(aploc_t *loc, char *op, apexpr_t *lhs, apexpr_t *rhs) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
 	self->type = APEXPR_TYPE_BINARY;
-	self->line = apparser_line_number(parser);
 	self->string = op;
 	self->nchild = 2;
 	self->child[0] = lhs;
@@ -60,11 +58,10 @@ apexpr_t *apexpr_binary(apparser_t *parser, char *op, apexpr_t *lhs, apexpr_t *r
 	return self;
 }
 
-apexpr_t *apexpr_unary(apparser_t *parser, char *op, apexpr_t *expr) {
+apexpr_t *apexpr_unary(aploc_t *loc, char *op, apexpr_t *expr) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
 	self->type = APEXPR_TYPE_UNARY;
-	self->line =apparser_line_number(parser);
 	self->string = op; 
 	self->nchild = 1;
 	self->child[0] = expr;
@@ -75,11 +72,10 @@ apexpr_t *apexpr_unary(apparser_t *parser, char *op, apexpr_t *expr) {
 	return self;
 }
 
-apexpr_t *apexpr_call(apparser_t *parser, char *fn, apexpr_t *args) {
+apexpr_t *apexpr_call(aploc_t *loc, char *fn, apexpr_t *args) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
 	self->type = APEXPR_TYPE_CALL;
-	self->line =apparser_line_number(parser);
 	self->string = fn; 
 	self->nchild = 1;
 	self->child[0] = args;
@@ -90,11 +86,10 @@ apexpr_t *apexpr_call(apparser_t *parser, char *fn, apexpr_t *args) {
 	return self;
 }
 
-apexpr_t *apexpr_mcall(apparser_t *parser, apexpr_t *obj, char *fn, apexpr_t *args) {
+apexpr_t *apexpr_mcall(aploc_t *loc, apexpr_t *obj, char *fn, apexpr_t *args) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
 	self->type = APEXPR_TYPE_MCALL;
-	self->line =apparser_line_number(parser);
 	self->string = fn;
 	self->nchild = 2;
 	self->child[0] = obj;
@@ -106,11 +101,10 @@ apexpr_t *apexpr_mcall(apparser_t *parser, apexpr_t *obj, char *fn, apexpr_t *ar
 	return self;
 }
 
-apexpr_t *apexpr_scall(apparser_t *parser, aptype_t *obj, char *fn, apexpr_t *args) {
+apexpr_t *apexpr_scall(aploc_t *loc, aptype_t *obj, char *fn, apexpr_t *args) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 
 	self->type = APEXPR_TYPE_MCALL;
-	self->line =apparser_line_number(parser);
 	self->string = fn;
 	self->nchild = 1;
 	self->child[0] = args;
@@ -121,11 +115,10 @@ apexpr_t *apexpr_scall(apparser_t *parser, aptype_t *obj, char *fn, apexpr_t *ar
 	return self;
 }
 
-apexpr_t *apexpr_ctor(apparser_t *parser, aptype_t *type, apexpr_t *args) {
+apexpr_t *apexpr_ctor(aploc_t *loc, aptype_t *type, apexpr_t *args) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 
 	self->type = APEXPR_TYPE_CTOR;
-	self->line =apparser_line_number(parser);
 	self->string = 0;
 	self->nchild = 1;
 	self->child[0] = args;
@@ -136,11 +129,10 @@ apexpr_t *apexpr_ctor(apparser_t *parser, aptype_t *type, apexpr_t *args) {
 	return self;
 }
 	
-apexpr_t *apexpr_index(apparser_t *parser, apexpr_t *expr, apexpr_t *index) {
+apexpr_t *apexpr_index(aploc_t *loc, apexpr_t *expr, apexpr_t *index) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
 	self->type = APEXPR_TYPE_INDEX;
-	self->line =apparser_line_number(parser);
 	self->string = 0; 
 	self->nchild = 2;
 	self->child[0] = expr;
@@ -152,11 +144,10 @@ apexpr_t *apexpr_index(apparser_t *parser, apexpr_t *expr, apexpr_t *index) {
 	return self;
 }
 
-apexpr_t *apexpr_member(apparser_t *parser, apexpr_t *expr, char *ident) {
+apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 
 	self->type = APEXPR_TYPE_MEMBER;
-	self->line =apparser_line_number(parser);
 	self->string = ident; 
 	self->nchild = 1;
 	self->child[0] = expr;
@@ -167,11 +158,10 @@ apexpr_t *apexpr_member(apparser_t *parser, apexpr_t *expr, char *ident) {
 	return self;
 }
 
-apexpr_t *apexpr_static(apparser_t *parser, aptype_t *type, char *ident) {
+apexpr_t *apexpr_static(aploc_t *loc, aptype_t *type, char *ident) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
 	self->type = APEXPR_TYPE_STATIC;
-	self->line =apparser_line_number(parser);
 	self->string = ident;	
 	self->nchild = 0;
 	self->clstype = type;
@@ -181,11 +171,10 @@ apexpr_t *apexpr_static(apparser_t *parser, aptype_t *type, char *ident) {
 	return self;
 }
 
-apexpr_t *apexpr_var(apparser_t *parser, char *name) {
+apexpr_t *apexpr_var(aploc_t *loc, char *name) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
 	self->type = APEXPR_TYPE_VAR;
-	self->line =apparser_line_number(parser);
 	self->string = name; 
 	self->nchild = 0;
 	self->chktype = 0;
