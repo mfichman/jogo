@@ -54,7 +54,7 @@ void apsymtab_func(apsymtab_t *self, const char *name, apfunc_t *func) {
 apvar_t *apsymtab_get_var(apsymtab_t *self, const char *name) {
 	apvar_t *var = aphash_get(self->vars, name);
 	if (!var && self->parent) {
-		return aphash_get(self->vars, name);
+		return apsymtab_get_var(self->parent, name);
 	} else {
 		return var;
 	}
@@ -63,7 +63,7 @@ apvar_t *apsymtab_get_var(apsymtab_t *self, const char *name) {
 apfunc_t *apsymtab_get_func(apsymtab_t *self, const char *name) {
 	apfunc_t *func = aphash_get(self->funcs, name);
 	if (!func && self->parent) {
-		return aphash_get(self->funcs, name);
+		return apsymtab_get_func(self->parent, name);
 	} else {
 		return func;
 	}

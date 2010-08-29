@@ -41,6 +41,7 @@ aptype_t *aptype_primitive(char *name);
 aptype_t *aptype_concat(aptype_t *self, aptype_t *type);
 aptype_t *aptype_clone(aptype_t *self);
 int aptype_comp(aptype_t *self, aptype_t *type);
+int aptype_hash(aptype_t *self);
 int aptype_bool_compat(aptype_t *self);
 int aptype_integer_compat(aptype_t *self);
 void aptype_free(aptype_t *self);

@@ -24,28 +24,29 @@
 #define APEXPR_H
 
 #include <apollo.h>
+#include <apparser.h>
 
 #define APEXPR_TYPE_STRING 1
 #define APEXPR_TYPE_UNARY 2 
 #define APEXPR_TYPE_BINARY 3 
 #define APEXPR_TYPE_CALL 4
 #define APEXPR_TYPE_INDEX 5
-#define APEXPR_TYPE_POSTFIX 6
+#define APEXPR_TYPE_SCALL 6
 #define APEXPR_TYPE_MEMBER 7
 #define APEXPR_TYPE_STATIC 8
 #define APEXPR_TYPE_CTOR 9
 #define APEXPR_TYPE_VAR 10 
 #define APEXPR_TYPE_MCALL 11
-#define APEXPR_TYPE_SCALL 12
 
 /* Structure for holding expression syntax tree */
 struct apexpr {
 	int type;				/* Expression type type */
 	char *string;			/* Possible string value of the expression */
-	int nchild;				/* Number of children */
+	aploc_t loc;			/* Location of the expression */
 	aptype_t *chktype;		/* Type evaluation for expression */
 	aptype_t *clstype;		/* Optional class type name */
-	apexpr_t *child[2];      	/* Child expressions */
+	int nchild;				/* Number of children */
+	apexpr_t *child[2];     /* Child expressions */
 	apexpr_t *next;
 };
 

@@ -21,6 +21,7 @@
  */  
 
 #include <aptype.h>
+#include <aphash.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,6 +63,10 @@ aptype_t *aptype_concat(aptype_t *self, aptype_t *type) {
 }
 
 aptype_t *aptype_clone(aptype_t *other) {
+	if (!other) {
+		return 0;
+	}
+
 	assert("Can't clone an argument list" && !other->next);
 
 	aptype_t *self = malloc(sizeof(aptype_t));
@@ -90,6 +95,10 @@ int aptype_comp(aptype_t *self, aptype_t *other) {
 	} else {
 		return 1;
 	}
+}
+
+int aptype_hash(aptype_t *self) {
+	return aphash_string(self->name);
 }
 
 int aptype_bool_compat(aptype_t *self) {

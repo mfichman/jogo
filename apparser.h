@@ -29,12 +29,13 @@
 
 /* Primary parser structure; contains symbol table and compilation units */
 struct apparser {
-	apunit_t *units;
-	apsymtab_t *symbols;
-	int fd;
-	int column;
-	char *filename;
-	char *error;
+	apunit_t *units; /* List of compilation units (classes) */
+	apsymtab_t *symbols; /* Temporary symbol table variable */
+	aphash_t *types; /* Hash for looking up units by name */
+	int fd; /* Current file descriptor */
+	int column; /* Current column number */
+	int error; /* Error number */
+	char *filename; /* Current filename */
 	void *scanner;
 };
 
@@ -69,10 +70,18 @@ void apparser_interface(apparser_t *self, apunit_t *unit);
 void apparser_struct(apparser_t *self, apunit_t *unit);
 void apparser_module(apparser_t *self, apunit_t *unit);
 int apparser_read(apparser_t *self, char *buffer, int length);
-int apparser_check_stmt(apparser_t *self, apstmt_t *stmt);
-int apparser_check_expr(apparser_t *self, apexpr_t *expr);
-int apparser_check_var(apparser_t *self, apvar_t *var);
-int apparser_resolve_type(aptype_t *type);
+void apparser_check_unit(apparser_t *self, apunit_t *unit);
+void apparser_check_func(apparser_t *self, apfunc_t *func);
+void apparser_check_stmt(apparser_t *self, apstmt_t *stmt);
+void apparser_check_expr(apparser_t *self, apexpr_t *expr);
+void apparser_check_expr_binary(apparser_t *self, apexpr_t *expr);
+void apparser_check_expr_var(apparser_t *self, apexpr_t *expr);
+void apparser_check_expr_scall(apparser_t *self, apexpr_t *expr);
+void apparser_check_expr_mcall(apparser_t *self, apexpr_t *expr);
+void apparser_check_var(apparser_t *self, apvar_t *var);
+int apparser_resolve_type(apparser_t *self, aptype_t *type);
+void apparser_print_loc(apparser_t *self, aploc_t *loc);
+void apparser_error(apparser_t *self, const char* fmt, ...);
 void apparser_free(apparser_t *self);
 
 static inline char *strdup(const char* str) {

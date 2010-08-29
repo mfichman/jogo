@@ -39,6 +39,7 @@ apexpr_t *apexpr_literal(aploc_t *loc, aptype_t *type, char *string) {
 	self->chktype = type;
 	self->clstype = 0;
 	self->next = 0;
+	self->loc = *loc;
 
 	return self;
 }
@@ -54,6 +55,7 @@ apexpr_t *apexpr_binary(aploc_t *loc, char *op, apexpr_t *lhs, apexpr_t *rhs) {
 	self->chktype = 0;
 	self->clstype = 0;
 	self->next = 0;
+	self->loc = *loc;
 		
 	return self;
 }
@@ -68,6 +70,7 @@ apexpr_t *apexpr_unary(aploc_t *loc, char *op, apexpr_t *expr) {
 	self->chktype = 0;
 	self->clstype = 0;
 	self->next = 0;
+	self->loc = *loc;
 	
 	return self;
 }
@@ -82,6 +85,7 @@ apexpr_t *apexpr_call(aploc_t *loc, char *fn, apexpr_t *args) {
 	self->chktype = 0; 
 	self->clstype = 0;
 	self->next = 0;
+	self->loc = *loc;
 		
 	return self;
 }
@@ -92,11 +96,12 @@ apexpr_t *apexpr_mcall(aploc_t *loc, apexpr_t *obj, char *fn, apexpr_t *args) {
 	self->type = APEXPR_TYPE_MCALL;
 	self->string = fn;
 	self->nchild = 2;
-	self->child[0] = obj;
-	self->child[1] = args;
+	self->child[0] = args;
+	self->child[1] = obj;
 	self->chktype = 0;
 	self->clstype = 0;
 	self->next = 0;
+	self->loc = *loc;
 	
 	return self;
 }
@@ -104,13 +109,14 @@ apexpr_t *apexpr_mcall(aploc_t *loc, apexpr_t *obj, char *fn, apexpr_t *args) {
 apexpr_t *apexpr_scall(aploc_t *loc, aptype_t *obj, char *fn, apexpr_t *args) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 
-	self->type = APEXPR_TYPE_MCALL;
+	self->type = APEXPR_TYPE_SCALL;
 	self->string = fn;
 	self->nchild = 1;
 	self->child[0] = args;
 	self->chktype = 0;
 	self->clstype = obj;
 	self->next = 0;
+	self->loc = *loc;
 
 	return self;
 }
@@ -125,6 +131,7 @@ apexpr_t *apexpr_ctor(aploc_t *loc, aptype_t *type, apexpr_t *args) {
 	self->chktype = 0;
 	self->clstype = type;
 	self->next = 0;
+	self->loc = *loc;
 
 	return self;
 }
@@ -140,6 +147,7 @@ apexpr_t *apexpr_index(aploc_t *loc, apexpr_t *expr, apexpr_t *index) {
 	self->chktype = 0;
 	self->clstype = 0;
 	self->next = 0;
+	self->loc = *loc;
 		
 	return self;
 }
@@ -154,6 +162,7 @@ apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident) {
 	self->chktype = 0;
 	self->clstype = 0;
 	self->next = 0;
+	self->loc = *loc;
 
 	return self;
 }
@@ -167,6 +176,7 @@ apexpr_t *apexpr_static(aploc_t *loc, aptype_t *type, char *ident) {
 	self->clstype = type;
 	self->chktype = 0;
 	self->next = 0;
+	self->loc = *loc;
 	
 	return self;
 }
@@ -180,6 +190,7 @@ apexpr_t *apexpr_var(aploc_t *loc, char *name) {
 	self->chktype = 0;
 	self->clstype = 0;
 	self->next = 0;
+	self->loc = *loc;
 
 	return self;
 }

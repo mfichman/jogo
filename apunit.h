@@ -48,7 +48,7 @@ struct apunit {
 	apfunc_t *ctors; /* List of constructors */
 	apfunc_t *dtors; /* List of destructors */
 	apfunc_t *funcs; /* List of functions */
-	apsymtab_t *symtab; /* Hash table of functions and variables */
+	apsymtab_t *symbols; /* Hash table of functions and variables */
 	apunit_t *next;
 };
 

@@ -40,7 +40,7 @@ apunit_t *apunit_alloc(int type) {
 	self->ctors = 0;
 	self->dtors = 0;
 	self->funcs = 0;
-	self->symtab = apsymtab_alloc(0); 
+	self->symbols = apsymtab_alloc(0);
 	self->next = 0;
 
 	return self;
@@ -64,13 +64,13 @@ void apunit_def(apunit_t *self, apdef_t *def) {
 void apunit_var(apunit_t *self, apvar_t *var) {
 	var->next = self->vars;
 	self->vars = var;
-	apsymtab_var(self->symtab, var->name, var);
+	apsymtab_var(self->symbols, var->name, var);
 }
 
 void apunit_ctor(apunit_t *self, apfunc_t *ctor) {
 	ctor->next = self->ctors;
 	self->ctors = ctor;
-	apsymtab_func(self->symtab, ctor->name, ctor);
+	apsymtab_func(self->symbols, ctor->name, ctor);
 }
 
 void apunit_dtor(apunit_t *self, apfunc_t *dtor) {
@@ -81,7 +81,7 @@ void apunit_dtor(apunit_t *self, apfunc_t *dtor) {
 void apunit_func(apunit_t *self, apfunc_t *func) {
 	func->next = self->funcs;
 	self->funcs = func;
-	apsymtab_func(self->symtab, func->name, func);
+	apsymtab_func(self->symbols, func->name, func);
 }
 
 void apunit_free(apunit_t *self) {
@@ -94,7 +94,7 @@ void apunit_free(apunit_t *self) {
 		apfunc_free(self->dtors);
 		apfunc_free(self->funcs);
 		apunit_free(self->next);
-		apsymtab_free(self->symtab);
+		apsymtab_free(self->symbols);
 		free(self);
 	}
 }

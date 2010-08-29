@@ -143,6 +143,7 @@ translation_unit
     : TOK_CLASS qualified_name ';' class {
         apunit_name($4, $2); 
 		apparser_class(parser, $4);
+		
     }
     | TOK_INTERFACE qualified_name ';' interface {
         apunit_name($4, $2); 
@@ -171,7 +172,10 @@ class
     | function class { $$ = $2; apunit_func($$, $1); }
 	| native class { $$ = $2; apunit_func($$, $1); }
 	| error class { $$ = $2; }
-    | /* empty */ { $$ = apunit_alloc(APUNIT_TYPE_CLASS); }
+    | /* empty */ { 
+		$$ = apunit_alloc(APUNIT_TYPE_CLASS); 
+		parser->symbols = $$->symbols;
+	}
     ;
 
 interface
@@ -179,7 +183,10 @@ interface
     | def interface { $$ = $2; apunit_def($$, $1); }
     | prototype interface { $$ = $2; apunit_func($$, $1); }
 	| error interface { $$ = $2; }
-    | /* empty */ { $$ = apunit_alloc(APUNIT_TYPE_INTERFACE); }
+    | /* empty */ { 
+		$$ = apunit_alloc(APUNIT_TYPE_INTERFACE);
+		parser->symbols = $$->symbols;
+	}
     ;
 
 struct
@@ -189,7 +196,10 @@ struct
     | constructor struct { $$ = $2; apunit_ctor($$, $1); }
     | function struct { $$ = $2; apunit_func($$, $1); }
 	| error struct { $$ = $2; }
-    | /* empty */ { $$ = apunit_alloc(APUNIT_TYPE_STRUCT); }
+    | /* empty */ { 
+		$$ = apunit_alloc(APUNIT_TYPE_STRUCT); 
+		parser->symbols = $$->symbols;
+	}
     ;
 
 module
@@ -197,7 +207,10 @@ module
     | def module { $$ = $2; apunit_def($$, $1); }
     | function module { $$ = $2; apunit_func($$, $1); }
 	| error module { $$ = $2; }
-    | /* empty */ { $$ = apunit_alloc(APUNIT_TYPE_MODULE); }
+    | /* empty */ { 
+		$$ = apunit_alloc(APUNIT_TYPE_MODULE); 
+		parser->symbols = $$->symbols;
+	}
     ;
     
 import 
@@ -272,8 +285,8 @@ parameter_signature
 
 parameter_list
 	: type TOK_IDENT ',' parameter_list { 
-		$$ = $4;
-		$$->next = apvar_alloc($2, 0, $1, 0); 
+		$$ = apvar_alloc($2, 0, $1, 0);
+		$$->next = $4;
 	}
 	| type TOK_IDENT { 
 		$$ = apvar_alloc($2, 0, $1, 0);
@@ -297,14 +310,14 @@ type
 	| TOK_PRIMITIVE '*' { $$ = $1; /* TODO: Range */ $$->pointer = 1; }
 	| TOK_PRIMITIVE '?' { $$ = $1; /* TODO: Nullable */ }
     | qualified_name { 
-		apparser_resolve_type($$ = $1);
+		apparser_resolve_type(parser, $$ = $1);
 	}
 	| qualified_name '*' { 
-		apparser_resolve_type($$ = $1);
+		apparser_resolve_type(parser, $$ = $1);
 		$$->pointer = 1;
 	}
 	| qualified_name '?' { 
-		apparser_resolve_type($$ = $1);
+		apparser_resolve_type(parser, $$ = $1);
 		$$->pointer = 1; /* TODO: Nullable */
 	}
     ;
@@ -331,55 +344,56 @@ statement_list
     : statement_list statement { $$ = apstmt_append($1, $2); }
 	| statement_list error ';' { $$ = $1; }
     | /* empty */ { 
-		$$ = apstmt_block(parser->symbols);
+		$$ = apstmt_block(&@$, parser->symbols);
 		parser->symbols = $$->symbols;
 	}
     ;
 
 statement
 	: TOK_FOR '(' clause ';' clause ';' clause ')' block {
-		$$ = apstmt_for($3, $5, $7, $9);
+		apstmt_t *gd[] = { $3, $5, $7 };
+		$$ = apstmt_for(&@$, gd, $9);
 	}
 	| TOK_FOR '(' type TOK_IDENT ':' expression ')' block {
-		$$ = apstmt_foreach(apvar_alloc($4, 0, $3, $6), $8);
+		$$ = apstmt_foreach(&@$, apvar_alloc($4, 0, $3, $6), $8);
 	}
 	| TOK_UNTIL '(' clause ')' block {
-		$$ = apstmt_until($3, $5);
+		$$ = apstmt_until(&@$, $3, $5);
 	}
 	| TOK_WHILE '(' clause ')' block {
-		$$ = apstmt_while($3, $5);
+		$$ = apstmt_while(&@$, $3, $5);
 	}
 	| TOK_DO block TOK_UNTIL '(' clause ')' ';' {
-		$$ = apstmt_dountil($2, $5);
+		$$ = apstmt_dountil(&@$, $2, $5);
 	}
 	| TOK_DO block TOK_WHILE '(' clause ')' ';' {
-		$$ = apstmt_dowhile($2, $5);
+		$$ = apstmt_dowhile(&@$, $2, $5);
 	}
     | type TOK_IDENT ';' { 
-		$$ = apstmt_decl(parser, apvar_alloc($2, 0, $1, 0)); 
+		$$ = apstmt_decl(&@$, parser, apvar_alloc($2, 0, $1, 0)); 
 	}
 	| conditional { $$ = $1; }
 	| clause ';' { $$ = $1; }
-	| TOK_RETURN expression ';' { $$ = apstmt_return($2); }
-	| TOK_RETURN ';' { $$ = apstmt_return(0); }
+	| TOK_RETURN expression ';' { $$ = apstmt_return(&@$, $2); }
+	| TOK_RETURN ';' { $$ = apstmt_return(&@$, 0); }
 	;
 
 clause
     : type TOK_IDENT '=' expression { 
-		$$ = apstmt_decl(parser, apvar_alloc($2, 0, $1, $4)); 
+		$$ = apstmt_decl(&@$, parser, apvar_alloc($2, 0, $1, $4)); 
 	}  
     | expression { 
-		$$ = apstmt_expr($1); 
+		$$ = apstmt_expr(&@$, $1); 
 	}
 	| /* empty */ { $$ = 0; } 
 	;
 
 conditional
 	: TOK_IF '(' clause ')' block {
-		$$ = apstmt_conditional($3, $5, 0);
+		$$ = apstmt_cond(&@$, $3, $5, 0);
 	}
 	| TOK_IF '(' clause ')' block TOK_ELSE conditional {
-		$$ = apstmt_conditional($3, $5, $7);
+		$$ = apstmt_cond(&@$, $3, $5, $7);
 	}
 	| block { $$ = $1; }
 	;
@@ -591,8 +605,8 @@ primary
 
 argument_list
 	: expression ',' argument_list { 
-		$$ = $3;
-		$$->next = $1;
+		$$ = $1;
+		$$->next = $3;
 	}
 	| expression { $$ = $1; } 
 	;
