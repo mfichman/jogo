@@ -125,7 +125,7 @@ apexpr_t *apexpr_ctor(aploc_t *loc, aptype_t *type, apexpr_t *args) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 
 	self->type = APEXPR_TYPE_CTOR;
-	self->string = 0;
+	self->string = strdup("@init");
 	self->nchild = 1;
 	self->child[0] = args;
 	self->chktype = 0;

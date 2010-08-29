@@ -40,7 +40,7 @@ apunit_t *apunit_alloc(int type) {
 	self->ctors = 0;
 	self->dtors = 0;
 	self->funcs = 0;
-	self->symbols = apsymtab_alloc(0);
+	self->symbols = 0;
 	self->next = 0;
 
 	return self;
@@ -70,7 +70,6 @@ void apunit_var(apunit_t *self, apvar_t *var) {
 void apunit_ctor(apunit_t *self, apfunc_t *ctor) {
 	ctor->next = self->ctors;
 	self->ctors = ctor;
-	apsymtab_func(self->symbols, ctor->name, ctor);
 }
 
 void apunit_dtor(apunit_t *self, apfunc_t *dtor) {

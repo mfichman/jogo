@@ -6,5 +6,5 @@ syntax:glob
 apgrammar.h
 apgrammar.l.c
 apgrammar.y.c
-lib/*
+test/*
 apollo

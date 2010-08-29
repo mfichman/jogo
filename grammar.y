@@ -158,7 +158,8 @@ translation_unit
 		apparser_module(parser, $4);
     }
 	| /* empty is an error */ { 
-		yyerror(&@$, parser, scanner, "Syntax error, input file is empty"); 
+		yyerror(&@$, parser, scanner, "Input file is empty"); 
+		YYERROR;
 	}
 	| error { }
     ;
@@ -174,7 +175,7 @@ class
 	| error class { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(APUNIT_TYPE_CLASS); 
-		parser->symbols = $$->symbols;
+		$$->symbols = parser->symbols;
 	}
     ;
 
@@ -185,7 +186,7 @@ interface
 	| error interface { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(APUNIT_TYPE_INTERFACE);
-		parser->symbols = $$->symbols;
+		$$->symbols = parser->symbols;
 	}
     ;
 
@@ -198,7 +199,7 @@ struct
 	| error struct { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(APUNIT_TYPE_STRUCT); 
-		parser->symbols = $$->symbols;
+		$$->symbols = parser->symbols;
 	}
     ;
 
@@ -209,7 +210,7 @@ module
 	| error module { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(APUNIT_TYPE_MODULE); 
-		parser->symbols = $$->symbols;
+		$$->symbols = parser->symbols;
 	}
     ;
     
@@ -244,6 +245,13 @@ constructor
 destructor
     : TOK_DESTROY '(' ')' block { 
 		$$ = apfunc_alloc(strdup("@destroy"), 0, 0, $4); 
+	}
+	| TOK_DESTROY '(' parameter_list ')' block {
+		apvar_free($3);
+		apstmt_free($5);
+		$$ = 0;
+		yyerror(&@$, parser, scanner, "Destructors cannot take arguments"); 
+		YYERROR;
 	}
     ;
 
@@ -336,12 +344,15 @@ qualified_name
 block
     : '{' statement_list '}' { 
 		$$ = $2; 
+		$$->loc = @$;
 		parser->symbols = $$->symbols ? apsymtab_get_parent($$->symbols) : 0;
 	}
     ;
 
 statement_list
-    : statement_list statement { $$ = apstmt_append($1, $2); }
+    : statement_list statement { 
+		$$ = apstmt_append($1, $2); 
+	}
 	| statement_list error ';' { $$ = $1; }
     | /* empty */ { 
 		$$ = apstmt_block(&@$, parser->symbols);
@@ -370,7 +381,7 @@ statement
 		$$ = apstmt_dowhile(&@$, $2, $5);
 	}
     | type TOK_IDENT ';' { 
-		$$ = apstmt_decl(&@$, parser, apvar_alloc($2, 0, $1, 0)); 
+		$$ = apstmt_decl(&@$, apvar_alloc($2, 0, $1, 0)); 
 	}
 	| conditional { $$ = $1; }
 	| clause ';' { $$ = $1; }
@@ -380,7 +391,7 @@ statement
 
 clause
     : type TOK_IDENT '=' expression { 
-		$$ = apstmt_decl(&@$, parser, apvar_alloc($2, 0, $1, $4)); 
+		$$ = apstmt_decl(&@$, apvar_alloc($2, 0, $1, $4)); 
 	}  
     | expression { 
 		$$ = apstmt_expr(&@$, $1); 

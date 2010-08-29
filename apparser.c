@@ -60,14 +60,11 @@ apparser_t *apparser_alloc() {
 void apparser_parse(apparser_t *self, const char *filename, int fd) {
 	self->fd = fd;
 	self->column = 1;
-	self->symbols = 0;
+	self->symbols = apsymtab_alloc(0);
 	self->filename = realloc(self->filename, strlen(filename) + 1);
 	strcpy(self->filename, filename);
 
 	yyparse(self, self->scanner);
-
-	for (apunit_t *unit = self->units; unit; unit = unit->next) {
-	}
 }
 
 int apparser_read(apparser_t *self, char *buffer, int length) {
@@ -123,7 +120,12 @@ void apparser_check_unit(apparser_t *self, apunit_t *unit) {
 void apparser_check_func(apparser_t *self, apfunc_t *func) {
 
 	if (func->block) {
+		self->rets = func->rets;
 		apparser_check_stmt(self, func->block);
+		if (func->rets && !func->block->chktype) {
+			apparser_print_loc_end(self, &func->block->loc);
+			apparser_error(self, "Missing return statement\n");
+		}	
 	}	
 
 	/* TODO: check return types */			
@@ -131,7 +133,7 @@ void apparser_check_func(apparser_t *self, apfunc_t *func) {
 }
 
 void apparser_check_stmt(apparser_t *self, apstmt_t *stmt) {
-	apsymtab_t *symbols;
+	apsymtab_t *symbols = 0;
 
 	switch (stmt->type) {
 	case APSTMT_TYPE_BLOCK:
@@ -139,17 +141,38 @@ void apparser_check_stmt(apparser_t *self, apstmt_t *stmt) {
 		self->symbols = stmt->symbols;
 		for (apstmt_t *child = stmt->child[0]; child; child = child->next) {
 			apparser_check_stmt(self, child);
+			if (child->chktype) {
+				stmt->chktype = child->chktype;	
+			}
 		}
 		self->symbols = symbols;
 		break;
 
 	case APSTMT_TYPE_RETURN:
+		if (stmt->expr) {
+			apparser_check_expr(self, stmt->expr);
+			stmt->chktype = aptype_clone(stmt->expr->chktype);
+		}
+		if (self->rets && !stmt->chktype) {
+			apparser_print_loc_end(self, &stmt->loc);
+			apparser_error(self, "Missing return statement\n");
+		} if (aptype_comp(self->rets, stmt->chktype)) {
+			apparser_print_loc(self, &stmt->loc);	
+			apparser_error(self, "Return type is invalid (got ");
+			apparser_print_type(self, stmt->expr->chktype);
+			apparser_error(self, ", expected ");
+			apparser_print_type(self, self->rets);
+			apparser_error(self, ")\n");
+		}
+		break;
+
 	case APSTMT_TYPE_EXPR:
 		apparser_check_expr(self, stmt->expr);
 		break;
 
 	case APSTMT_TYPE_DECL:
 		apparser_check_var(self, stmt->var);
+		apsymtab_var(self->symbols, stmt->var->name, stmt->var);
 		break;
 
 	case APSTMT_TYPE_UNTIL:
@@ -157,9 +180,22 @@ void apparser_check_stmt(apparser_t *self, apstmt_t *stmt) {
 	case APSTMT_TYPE_DOWHILE:
 	case APSTMT_TYPE_DOUNTIL:
 	case APSTMT_TYPE_FOR:
-	case APSTMT_TYPE_COND:
 		for (int i = 0; i < stmt->nchild; i++) {
 			apparser_check_stmt(self, stmt->child[i]);
+			if (stmt->child[i]->chktype) {
+				stmt->chktype = stmt->child[i]->chktype;
+			}
+		}
+		break;
+
+	case APSTMT_TYPE_COND:
+		apparser_check_stmt(self, stmt->child[0]);
+		apparser_check_stmt(self, stmt->child[1]);
+		if (stmt->child[2]) {
+			apparser_check_stmt(self, stmt->child[2]);
+			if (!aptype_comp(stmt->child[1]->chktype, stmt->child[2]->chktype)) {
+				stmt->chktype = stmt->child[1]->chktype;
+			}
 		}
 		break;
 
@@ -188,17 +224,25 @@ void apparser_check_expr(apparser_t *self, apexpr_t *expr) {
 			apparser_check_expr_var(self, expr);
 			break;
 
+		case APEXPR_TYPE_CALL:
+			apparser_check_expr_call(self, expr);
+			break;
+
 		case APEXPR_TYPE_SCALL:
-		case APEXPR_TYPE_CTOR:
 			apparser_check_expr_scall(self, expr);
+			break;
+
+		case APEXPR_TYPE_CTOR:
+			apparser_check_expr_ctor(self, expr);
 			break;
 
 		case APEXPR_TYPE_MCALL:
 			apparser_check_expr_mcall(self, expr);	
 			break;
 			
-		case APEXPR_TYPE_INDEX:
 		case APEXPR_TYPE_MEMBER:
+			apparser_check_expr_member(self, expr);
+		case APEXPR_TYPE_INDEX:
 		case APEXPR_TYPE_STATIC:
 			break;
 			
@@ -214,12 +258,32 @@ void apparser_check_expr_binary(apparser_t *self, apexpr_t *expr) {
 
 	if (aptype_comp(expr->child[0]->chktype, expr->child[1]->chktype)) {
 		apparser_print_loc(self, &expr->loc); 
-		apparser_error(self, "Cannot apply '%s' ", expr->string);
-		apparser_error(self, "to '%s' ", expr->child[0]->chktype->name);
-		apparser_error(self, "and '%s'\n", expr->child[1]->chktype->name);
+		apparser_error(self, "Cannot apply '%s' to ", expr->string);
+		apparser_print_type(self, expr->child[0]->chktype);
+		apparser_error(self, "and ");
+		apparser_print_type(self, expr->child[1]->chktype);
+		apparser_error(self, "\n");
 		return;
 	}
 	expr->chktype = aptype_clone(expr->child[0]->chktype);
+}
+
+void apparser_check_expr_member(apparser_t *self, apexpr_t *expr) {
+	apparser_check_expr(self, expr->child[1]);
+	aptype_t *type = expr->child[1]->chktype;
+	apunit_t *unit = (apunit_t *)aphash_get(self->types, type);
+	if (!unit) {
+		return;
+	}
+
+	apvar_t *var = apsymtab_get_var(unit->symbols, expr->string);
+	if (!var) {
+		apparser_print_loc(self, &expr->loc);
+		apparser_error(self, "Undeclared member '%s", unit->name->name);
+		apparser_error(self, ".%s\n'\n", expr->string);
+		return;
+	}
+	expr->chktype = aptype_clone(var->type);
 }
 
 void apparser_check_expr_var(apparser_t *self, apexpr_t *expr) {
@@ -230,6 +294,47 @@ void apparser_check_expr_var(apparser_t *self, apexpr_t *expr) {
 		return;
 	}
 	expr->chktype = aptype_clone(var->type);
+}
+
+void apparser_check_expr_ctor(apparser_t *self, apexpr_t *expr) {
+	apunit_t *unit = (apunit_t *)aphash_get(self->types, expr->clstype);
+	if (!unit) {
+		apparser_print_loc(self, &expr->loc);
+		apparser_error(self, "Unknown type '%s'\n", expr->clstype->name);
+		return;
+	}
+	expr->chktype = aptype_clone(expr->clstype);
+
+	for (apfunc_t *ctor = unit->ctors; ctor; ctor = ctor->next) {
+		if (!apparser_check_args(self, ctor, expr->child[0])) {
+			return;
+		}
+	}
+
+	apparser_print_loc(self, &expr->loc);
+	apparser_error(self, "Constructor '%s", expr->clstype->name);
+	apparser_print_args(self, expr->child[0]);
+	apparser_error(self, "' not found\n");
+}
+
+void apparser_check_expr_call(apparser_t *self, apexpr_t *expr) {
+	apfunc_t *func = apsymtab_get_func(self->symbols, expr->string);
+	if (!func) {
+		apparser_print_loc(self, &expr->loc);	
+		apparser_error(self, "Undeclared function '%s()'\n", expr->string);
+		return;
+	}
+	expr->chktype = aptype_clone(func->rets);
+
+	if (apparser_check_args(self, func, expr)) {
+		apparser_print_loc(self, &expr->loc);
+		apparser_error(self, "Cannot apply '%s", func->name);
+		apparser_print_params(self, func->args);
+		apparser_error(self, "' to '");
+		apparser_print_args(self, expr->child[0]);
+		apparser_error(self, "'\n");
+		return;	
+	}
 }
 
 void apparser_check_expr_scall(apparser_t *self, apexpr_t *expr) {
@@ -243,46 +348,21 @@ void apparser_check_expr_scall(apparser_t *self, apexpr_t *expr) {
 	apfunc_t *func = apsymtab_get_func(unit->symbols, expr->string);
 	if (!func) {
 		apparser_print_loc(self, &expr->loc);
-		apparser_error(self, "Undeclared function '%s'\n", expr->string);
+		apparser_error(self, "Undeclared function '%s", unit->name->name);
+		apparser_error(self, ".%s()'\n", expr->string);
 		return;
 	}
 	expr->chktype = aptype_clone(func->rets);
 
-	apvar_t *var = func->args;
-	for (apexpr_t *child = expr->child[0]; child; child = child->next) {
-		apparser_check_expr(self, child);	
-		printf("Here");
-		if (!var || aptype_comp(var->type, child->chktype)) {
-		printf("er");
-			goto error;
-		}
-		var = var->next;
+	if (apparser_check_args(self, func, expr)) {
+		apparser_print_loc(self, &expr->loc);
+		apparser_error(self, "Cannot apply '%s", func->name);
+		apparser_print_params(self, func->args);
+		apparser_error(self, "' to '");
+		apparser_print_args(self, expr->child[0]);
+		apparser_error(self, "'\n");
+		return;
 	}
-	if (var) {
-		goto error;
-	}
-	return;
-
-error:
-	apparser_print_loc(self, &expr->loc);
-	apparser_error(self, "Cannot apply '%s(", func->name);
-	for (apvar_t *var = func->args; var; var = var->next) {
-		if (var->next) {
-			apparser_error(self, "%s,", var->type->name);
-		} else {
-			apparser_error(self, "%s", var->type->name);
-		}
-	}
-	apparser_error(self, ")' to '(");
-
-	for (apexpr_t *child = expr->child[0]; child; child = child->next) {
-		if (child->next) {
-			apparser_error(self, "%s,", child->chktype->name);
-		} else {
-			apparser_error(self, "%s", child->chktype->name);
-		}
-	}
-	apparser_error(self, ")'\n");
 }
 
 void apparser_check_expr_mcall(apparser_t *self, apexpr_t *expr) {
@@ -296,46 +376,21 @@ void apparser_check_expr_mcall(apparser_t *self, apexpr_t *expr) {
 	apfunc_t *func = apsymtab_get_func(unit->symbols, expr->string);
 	if (!func) {
 		apparser_print_loc(self, &expr->loc);
-		apparser_error(self, "Undeclared function '%s'\n", expr->string);
+		apparser_error(self, "Undeclared function '%s", unit->name->name);
+		apparser_error(self, ".%s()'\n", expr->string);
 		return;
 	}
 	expr->chktype = aptype_clone(func->rets);
 	
-	apvar_t *var = func->args;
-	int argno = 1;
-	for (apexpr_t *child = expr->child[0]; child; child = child->next) {
-		apparser_check_expr(self, child);	
-		if (!var || aptype_comp(var->type, child->chktype)) {
-			goto error;
-		}
-		var = var->next;
-		argno++;
+	if (apparser_check_args(self, func, expr)) {
+		apparser_print_loc(self, &expr->loc);
+		apparser_error(self, "Cannot apply '%s", func->name);
+		apparser_print_params(self, func->args);
+		apparser_error(self, "' to '");
+		apparser_print_args(self, expr->child[0]);
+		apparser_error(self, "'\n");
+		return;
 	}
-	if (var) {
-		goto error;
-	}
-	return;
-
-error:
-	apparser_print_loc(self, &expr->loc);
-	apparser_error(self, "Cannot apply '%s(", func->name);
-	for (apvar_t *var = func->args; var; var = var->next) {
-		if (var->next) {
-			apparser_error(self, "%s,", var->type->name);
-		} else {
-			apparser_error(self, "%s", var->type->name);
-		}
-	}
-	apparser_error(self, ")' to '(");
-
-	for (apexpr_t *child = expr->child[0]; child; child = child->next) {
-		if (child->next) {
-			apparser_error(self, "%s,", child->chktype->name);
-		} else {
-			apparser_error(self, "%s", child->chktype->name);
-		}
-	}
-	apparser_error(self, ")'\n");
 }
 
 void apparser_check_var(apparser_t *self, apvar_t *var) {
@@ -344,21 +399,82 @@ void apparser_check_var(apparser_t *self, apvar_t *var) {
 		apparser_check_expr(self, var->expr);
 		if (var->expr->chktype && aptype_comp(var->type, var->expr->chktype)) {
 			apparser_print_loc(self, &var->expr->loc);
-			apparser_error(self, "Incompatible type in assignment ");
-			apparser_error(self, "(got '%s', ", var->expr->chktype->name);
-			apparser_error(self, "expected '%s')\n", var->type->name);
+			apparser_error(self, "Incompatible type in assignment (got ");
+			apparser_print_type(self, var->expr->chktype);
+			apparser_error(self, "expected ");
+			apparser_print_type(self, var->type);
+			apparser_error(self, ")\n");
+			return;
 		}
 	}
 } 
+
+int apparser_check_args(apparser_t *self, apfunc_t *func, apexpr_t *expr) {
+	apvar_t *var = func->args;
+	for (apexpr_t *child = expr->child[0]; child; child = child->next) {
+		apparser_check_expr(self, child);	
+		if (!var || aptype_comp(var->type, child->chktype)) {
+			return 1;
+		}
+		var = var->next;
+	}
+	if (var) {
+		return 1;
+	}
+	return 0;
+}
 
 int apparser_resolve_type(apparser_t *self, aptype_t *type) {
 
 	return 0;
 }
 
+void apparser_print_type(apparser_t *self, aptype_t *type) {
+	if (type) {
+		apparser_error(self, "'%s'", type->name);	
+	} else {
+		apparser_error(self, "'void'");
+	}
+}
+
+void apparser_print_args(apparser_t *self, apexpr_t *expr) {
+	apparser_error(self, "(");
+	while (expr) {
+		if (expr->next) {
+			apparser_error(self, "%s,", expr->chktype->name);
+		} else {
+			apparser_error(self, "%s", expr->chktype->name);
+		}
+		expr = expr->next;
+	}
+	apparser_error(self, ")");
+}
+
+void apparser_print_params(apparser_t *self, apvar_t *var) {
+	apparser_error(self, "(");
+	while (var) {
+		if (var->next) {
+			apparser_error(self, "%s,", var->type->name);
+		} else {
+			apparser_error(self, "%s", var->type->name);
+		}
+		var = var->next;
+	}
+	apparser_error(self, ")");
+
+
+}
+
 void apparser_print_loc(apparser_t *self, aploc_t *loc) {
 	int line = loc->first_line;
 	int column = loc->first_column;
+
+	fprintf(stderr, "%s:%d:%d: ", self->filename, line, column);
+}
+
+void apparser_print_loc_end(apparser_t *self, aploc_t *loc) {
+	int line = loc->last_line;
+	int column = loc->last_column;
 
 	fprintf(stderr, "%s:%d:%d: ", self->filename, line, column);
 }

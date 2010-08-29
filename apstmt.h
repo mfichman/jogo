@@ -44,6 +44,7 @@ struct apstmt {
 	aploc_t loc;			/* Location of the statement */
 	apsymtab_t *symbols;	/* Symbol lookup table */
 	apexpr_t *expr;			/* Possible expression */
+	aptype_t *chktype;		/* Checked type of the statment */
 	apvar_t *var;			/* Possible variable object */
 	int nchild;				/* Number of child stmts */
 	apstmt_t *child[4];		/* Child stmts */
@@ -58,7 +59,7 @@ apstmt_t *apstmt_until(aploc_t *loc, apstmt_t *guard, apstmt_t *block);
 apstmt_t *apstmt_while(aploc_t *loc, apstmt_t *guard, apstmt_t *block);
 apstmt_t *apstmt_dountil(aploc_t *loc, apstmt_t *block, apstmt_t *guard);
 apstmt_t *apstmt_dowhile(aploc_t *loc, apstmt_t *block, apstmt_t *guard);
-apstmt_t *apstmt_decl(aploc_t *loc, apparser_t *parser, apvar_t *var);
+apstmt_t *apstmt_decl(aploc_t *loc, apvar_t *var);
 apstmt_t *apstmt_cond(aploc_t *loc, apstmt_t *gd, apstmt_t *br1, apstmt_t *br2);
 apstmt_t *apstmt_return(aploc_t *loc, apexpr_t *expr);
 apstmt_t *apstmt_append(apstmt_t *self, apstmt_t *stmt);
