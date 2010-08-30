@@ -22,9 +22,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <apparser.h>
+#include <apcgen.h>
 
 
 
@@ -35,9 +34,14 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	int fd = open(argv[1], O_RDONLY);
+	FILE *fd = fopen(argv[1], "r");
 	apparser_t *parser = apparser_alloc();
-	apparser_parse(parser, argv[1], fd);
+	if (!apparser_parse(parser, argv[1], fd)) {
+
+		apcgen_t *cgen = apcgen_alloc();
+		apcgen_gen_unit(cgen, parser->units, stdout);
+		apcgen_free(cgen);
+	}
 	apparser_free(parser);
 
 	printf("File parsed.\n");

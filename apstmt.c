@@ -42,12 +42,12 @@ apstmt_t *apstmt_expr(aploc_t *loc, apexpr_t *expr) {
 	return self;
 }
 
-apstmt_t *apstmt_block(aploc_t *loc, apsymtab_t *symbols) {
+apstmt_t *apstmt_block(aploc_t *loc) {
 	apstmt_t *self = malloc(sizeof(apstmt_t));
 
 	self->type = APSTMT_TYPE_BLOCK;
 	self->chktype = 0;
-	self->symbols = apsymtab_alloc(symbols);
+	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
 	self->nchild = 2;

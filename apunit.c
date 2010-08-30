@@ -40,7 +40,7 @@ apunit_t *apunit_alloc(int type) {
 	self->ctors = 0;
 	self->dtors = 0;
 	self->funcs = 0;
-	self->symbols = 0;
+	self->symbols = apsymtab_alloc(0);
 	self->next = 0;
 
 	return self;

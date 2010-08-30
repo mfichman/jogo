@@ -26,6 +26,7 @@
 #include <apollo.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 /* Primary parser structure; contains symbol table and compilation units */
 struct apparser {
@@ -33,7 +34,7 @@ struct apparser {
 	apsymtab_t *symbols; /* Temporary symbol table variable */
 	aphash_t *types; /* Hash for looking up units by name */
 	aptype_t *rets; /* Return type of current function being parsed */
-	int fd; /* Current file descriptor */
+	FILE *fd; /* Current file descriptor */
 	int column; /* Current column number */
 	int error; /* Error number */
 	char *filename; /* Current filename */
@@ -65,7 +66,7 @@ struct aploc {
 };
 
 apparser_t *apparser_alloc();
-void apparser_parse(apparser_t *self, const char* filename, int fd);
+int apparser_parse(apparser_t *self, const char* filename, FILE *fd);
 void apparser_class(apparser_t *self, apunit_t *unit);
 void apparser_interface(apparser_t *self, apunit_t *unit);
 void apparser_struct(apparser_t *self, apunit_t *unit);

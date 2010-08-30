@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <assert.h>
 
@@ -57,7 +58,7 @@ apparser_t *apparser_alloc() {
 	return self;
 }
 
-void apparser_parse(apparser_t *self, const char *filename, int fd) {
+int apparser_parse(apparser_t *self, const char *filename, FILE *fd) {
 	self->fd = fd;
 	self->column = 1;
 	self->symbols = apsymtab_alloc(0);
@@ -65,60 +66,60 @@ void apparser_parse(apparser_t *self, const char *filename, int fd) {
 	strcpy(self->filename, filename);
 
 	yyparse(self, self->scanner);
+
+	return self->error;
 }
 
 int apparser_read(apparser_t *self, char *buffer, int length) {
-	return read(self->fd, buffer, length);
+	return fread(buffer, sizeof(char), length, self->fd);
 }
 
 void apparser_class(apparser_t *self, apunit_t *unit) {
-	unit->symbols = self->symbols;
 	unit->next = self->units;
 	self->units = unit;
-	self->symbols = unit->symbols;
 	aphash_put(self->types, unit->name, unit);
 	apparser_check_unit(self, unit);
 }
 
 void apparser_interface(apparser_t *self, apunit_t *unit) {
-	unit->symbols = self->symbols;
 	unit->next = self->units;
 	self->units = unit;
-	self->symbols = unit->symbols;
 	aphash_put(self->types, unit->name, unit);
 	apparser_check_unit(self, unit);
 }
 
 void apparser_struct(apparser_t *self, apunit_t *unit) {
-	unit->symbols = self->symbols;
 	unit->next = self->units;
 	self->units = unit;
-	self->symbols = 0;
-	self->symbols = unit->symbols;
 	aphash_put(self->types, unit->name, unit);
 	apparser_check_unit(self, unit);
 }
 
 void apparser_module(apparser_t *self, apunit_t *unit) {
-	unit->symbols = self->symbols;
 	unit->next = self->units;
 	self->units = unit;
-	self->symbols = unit->symbols;
 	aphash_put(self->types, unit->name, unit);
 	apparser_check_unit(self, unit);
 }
 
 void apparser_check_unit(apparser_t *self, apunit_t *unit) {
-	
-	apfunc_t* func = unit->funcs;
-	while (func) {
+	self->symbols = unit->symbols;
+
+	/* Build the symbol table for the compilation unit */
+	for (apvar_t *var = unit->vars; var; var = var->next) {
+		apsymtab_var(unit->symbols, var->name, var);
+	}
+	for (apfunc_t *func = unit->funcs; func; func = func->next) {
+		apsymtab_func(unit->symbols, func->name, func);
+	}
+
+	/* Type check the functions */
+	for (apfunc_t *func = unit->funcs; func; func = func->next) {
 		apparser_check_func(self, func);
-		func = func->next;
 	}
 }
 
 void apparser_check_func(apparser_t *self, apfunc_t *func) {
-
 	if (func->block) {
 		self->rets = func->rets;
 		apparser_check_stmt(self, func->block);
@@ -127,17 +128,13 @@ void apparser_check_func(apparser_t *self, apfunc_t *func) {
 			apparser_error(self, "Missing return statement\n");
 		}	
 	}	
-
-	/* TODO: check return types */			
-	
 }
 
 void apparser_check_stmt(apparser_t *self, apstmt_t *stmt) {
-	apsymtab_t *symbols = 0;
-
 	switch (stmt->type) {
 	case APSTMT_TYPE_BLOCK:
-		symbols = self->symbols;
+		/* Allocate a new symbol table for this block */
+		stmt->symbols = apsymtab_alloc(self->symbols);
 		self->symbols = stmt->symbols;
 		for (apstmt_t *child = stmt->child[0]; child; child = child->next) {
 			apparser_check_stmt(self, child);
@@ -145,7 +142,7 @@ void apparser_check_stmt(apparser_t *self, apstmt_t *stmt) {
 				stmt->chktype = child->chktype;	
 			}
 		}
-		self->symbols = symbols;
+		self->symbols = apsymtab_get_parent(self->symbols);
 		break;
 
 	case APSTMT_TYPE_RETURN:
@@ -494,8 +491,13 @@ void apparser_free(apparser_t *self) {
 		yylex_destroy(self->scanner);
 		apunit_free(self->units);
 		aphash_free(self->types);
-		//apsymtab_free(self->symbols);
 		free(self->filename);
 		free(self);
 	}
+}
+
+void yyerror(aploc_t *loc, apparser_t *self, void* scanner, const char *msg) {
+	fprintf(stderr, "%s:%d:", self->filename, loc->first_line);
+	fprintf(stderr, "%d: %c%s\n", loc->first_column, toupper(msg[0]), msg + 1);
+	self->error = 1;
 }

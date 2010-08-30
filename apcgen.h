@@ -20,32 +20,22 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef APOLLO_H
-#define APOLLO_H
+#ifndef APCGEN_H
+#define APCGEN_H
 
-#include <stdint.h>
+#include <apollo.h>
+#include <stdio.h>
 
-typedef struct apdef apdef_t;
-typedef struct apexpr apexpr_t;
-typedef struct aphash aphash_t;
-typedef struct apimport apimport_t;
-typedef struct apparser apparser_t;
-typedef struct apstmt apstmt_t;
-typedef struct apsymtab apsymtab_t;
-typedef struct aptype aptype_t;
-typedef struct apunit apunit_t;
-typedef struct apvar apvar_t;
-typedef struct apfunc apfunc_t;
-typedef struct aploc aploc_t;
-typedef struct apcgen apcgen_t;
+/* Code generator for the 'C' target */
 
-typedef uint32_t apuint_t;
-typedef int32_t apint_t;
-typedef uint16_t apushort_t;
-typedef int16_t apshort_t;
-typedef uint8_t apubyte_t;
-typedef int8_t apbyte_t;
-typedef uint64_t apulong_t;
-typedef int64_t aplong_t; 
+apcgen_t *apcgen_alloc();
+void apcgen_gen_unit(apcgen_t *self, apunit_t *unit, FILE *fd);
+void apcgen_gen_func(apcgen_t *self, apfunc_t *func);
+void apcgen_gen_stmt(apcgen_t *self, apstmt_t *stmt);
+void apcgen_gen_expr(apcgen_t *self, apexpr_t *expr);
+void apcgen_gen_var(apcgen_t *self, apvar_t *var);
+void apcgen_print_type(apcgen_t *self, aptype_t *type);
+void apcgen_print(apcgen_t *self, const char* fmt, ...);
+void apcgen_free(apcgen_t *self);
 
 #endif

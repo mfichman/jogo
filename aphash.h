@@ -25,6 +25,8 @@
 
 #include <apollo.h>
 
+/* General purpose hash table */
+
 typedef int (*aphash_compfn_t)(const void *, const void *);
 typedef unsigned int (*aphash_hashfn_t)(const void *);
 

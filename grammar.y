@@ -175,7 +175,6 @@ class
 	| error class { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(APUNIT_TYPE_CLASS); 
-		$$->symbols = parser->symbols;
 	}
     ;
 
@@ -186,7 +185,6 @@ interface
 	| error interface { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(APUNIT_TYPE_INTERFACE);
-		$$->symbols = parser->symbols;
 	}
     ;
 
@@ -199,7 +197,6 @@ struct
 	| error struct { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(APUNIT_TYPE_STRUCT); 
-		$$->symbols = parser->symbols;
 	}
     ;
 
@@ -210,7 +207,6 @@ module
 	| error module { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(APUNIT_TYPE_MODULE); 
-		$$->symbols = parser->symbols;
 	}
     ;
     
@@ -345,7 +341,6 @@ block
     : '{' statement_list '}' { 
 		$$ = $2; 
 		$$->loc = @$;
-		parser->symbols = $$->symbols ? apsymtab_get_parent($$->symbols) : 0;
 	}
     ;
 
@@ -355,8 +350,7 @@ statement_list
 	}
 	| statement_list error ';' { $$ = $1; }
     | /* empty */ { 
-		$$ = apstmt_block(&@$, parser->symbols);
-		parser->symbols = $$->symbols;
+		$$ = apstmt_block(&@$);
 	}
     ;
 

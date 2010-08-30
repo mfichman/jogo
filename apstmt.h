@@ -52,7 +52,7 @@ struct apstmt {
 };
 
 apstmt_t *apstmt_expr(aploc_t *loc, apexpr_t *expr);
-apstmt_t *apstmt_block(aploc_t *loc, apsymtab_t *symbols);
+apstmt_t *apstmt_block(aploc_t *loc);
 apstmt_t *apstmt_for(aploc_t *loc, apstmt_t *gd[3], apstmt_t *block);
 apstmt_t *apstmt_foreach(aploc_t *loc, apvar_t *var, apstmt_t *block);
 apstmt_t *apstmt_until(aploc_t *loc, apstmt_t *guard, apstmt_t *block);

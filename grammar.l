@@ -3,7 +3,6 @@
 #include <apexpr.h>
 #include <aptype.h>
 #include <apgrammar.h>
-#include <ctype.h>
 
 #define YYSTYPE apnode_t
 #define YYLTYPE aploc_t
@@ -115,17 +114,3 @@ bool yylval->type = aptype_primitive(strdup(yytext)); return TOK_PRIMITIVE;
 . return yytext[0];
 %%
 
-
-void yyerror(aploc_t *loc, apparser_t *self, void* scanner, const char *msg) {
-	//struct yyguts_t *yyg = (struct yyguts_t*)scanner;
-	
-
-	fprintf(stderr, "%s:%d:%d: %c%s\n", self->filename, loc->first_line, 
-			loc->first_column, toupper(msg[0]), msg + 1);
-	self->error = 1;
-}
-
-int apparser_line_number(apparser_t *self) {
-	struct yyguts_t *yyg = (struct yyguts_t*)self->scanner;
-	return yylineno;
-}
