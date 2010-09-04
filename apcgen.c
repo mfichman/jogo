@@ -58,7 +58,7 @@ void apcgen_gen_unit(apcgen_t *self, apunit_t *unit, FILE *fd) {
 	apcgen_print_type(self, unit->name);
 	apcgen_print(self, " {\n");
 	for (apvar_t *var = unit->vars; var; var = var->next) {
-		apcgen_print(self, "\t");
+		apcgen_print(self, "    ");
 		apcgen_print_type(self, var->type);
 	 	apcgen_print(self, " %s;\n", var->name);
 	}
@@ -84,25 +84,32 @@ void apcgen_gen_func(apcgen_t *self, apfunc_t *func) {
 	apcgen_print(self, ") ");
 	if (func->block) {
 		apcgen_gen_stmt(self, func->block);
+		apcgen_print(self, "\n\n");
 	} else {
 		apcgen_print(self, ";\n");
 	}
 }
 
-void apcgen_gen_stmt(apcgen_t *self, apstmt_t *stmt) {
+void apcgen_indent(apcgen_t *self) {
 	for (int i = 0; i < self->indent; i++) {
-		fprintf(self->fd, "\t");
+		fprintf(self->fd, "    ");
 	}
+}
+
+void apcgen_gen_stmt(apcgen_t *self, apstmt_t *stmt) {
 
 	switch (stmt->type) {
 	case APSTMT_TYPE_BLOCK:
 		apcgen_print(self, "{\n");
 		self->indent++;
 		for (apstmt_t *child = stmt->child[0]; child; child = child->next) {
+			apcgen_indent(self);
 			apcgen_gen_stmt(self, child);
+			apcgen_print(self, "\n");
 		}
 		self->indent--;
-		apcgen_print(self, "}\n");
+		apcgen_indent(self);
+		apcgen_print(self, "}");
 		break;
 
 	case APSTMT_TYPE_RETURN:
@@ -111,10 +118,81 @@ void apcgen_gen_stmt(apcgen_t *self, apstmt_t *stmt) {
 			apcgen_print(self, " ");
 			apcgen_gen_expr(self, stmt->expr);
 		}
-		apcgen_print(self, ";\n");
+		apcgen_print(self, ";");
+		break;
+	
+	case APSTMT_TYPE_EXPR:
+		apcgen_gen_expr(self, stmt->expr);
+		apcgen_print(self, ";");
+		break;
+
+	case APSTMT_TYPE_DECL:
+		apcgen_print_type(self, stmt->var->type);
+		apcgen_print(self, " %s", stmt->var->name);
+		if (stmt->var->expr) {
+			apcgen_print(self, " = ");
+			apcgen_gen_expr(self, stmt->expr);
+		}
+		apcgen_print(self, ";");
+		break;
+
+
+	case APSTMT_TYPE_UNTIL:
+		apcgen_print(self, "while (!(");
+		apcgen_gen_expr(self, stmt->child[0]->expr);
+		apcgen_print(self, ")) ");
+		apcgen_gen_stmt(self, stmt->child[1]);
+		break;
+
+	case APSTMT_TYPE_WHILE:
+		apcgen_print(self, "while (");
+		apcgen_gen_expr(self, stmt->child[0]->expr);
+		apcgen_print(self, ") ");
+		apcgen_gen_stmt(self, stmt->child[1]);
+		break;
+
+	case APSTMT_TYPE_DOUNTIL:
+		apcgen_print(self, "do ");
+		apcgen_gen_stmt(self, stmt->child[1]);
+		apcgen_print(self, " while(!(");
+		apcgen_gen_expr(self, stmt->child[0]->expr);
+		apcgen_print(self, "));\n");
+		break;
+
+	case APSTMT_TYPE_DOWHILE:
+		apcgen_print(self, "do ");
+		apcgen_gen_stmt(self, stmt->child[1]);
+		apcgen_print(self, " while(");
+		apcgen_gen_expr(self, stmt->child[0]->expr);
+		apcgen_print(self, ");\n");
+		break;
+
+	case APSTMT_TYPE_FOR:
+		apcgen_print(self, "for (");
+		apcgen_gen_expr(self, stmt->child[0]->expr);
+		apcgen_print(self, "; ");
+		apcgen_gen_expr(self, stmt->child[1]->expr);
+		apcgen_print(self, "; ");
+		apcgen_gen_expr(self, stmt->child[2]->expr);
+		apcgen_print(self, ") ");
+		apcgen_gen_stmt(self, stmt->child[3]);
+		break;
+
+	case APSTMT_TYPE_COND:
+		apcgen_print(self, "if (");
+		apcgen_gen_expr(self, stmt->child[0]->expr);
+		apcgen_print(self, ") ");
+		apcgen_gen_stmt(self, stmt->child[1]);
+		if (stmt->child[2]) {
+			apcgen_print(self, " else ");
+			apcgen_gen_stmt(self, stmt->child[2]);
+		}
+		break;
+
+	case APSTMT_TYPE_FOREACH:
+
 		break;
 	}
-
 
 }
 
