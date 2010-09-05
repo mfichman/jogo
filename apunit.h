@@ -32,10 +32,11 @@
 
 #define APUNIT_FLAG_PUBLIC 0x1
 #define APUNIT_FLAG_PRIVATE 0x2
-#define APUNIT_FLAG_PROTECTED 0x3
-#define APUNIT_FLAG_NATIVE 0x4
-#define APUNIT_FLAG_STATIC 0x5
-#define APUNIT_FLAG_CONST 0x6
+#define APUNIT_FLAG_PROTECTED 0x4
+#define APUNIT_FLAG_NATIVE 0x8
+#define APUNIT_FLAG_STATIC 0x10
+#define APUNIT_FLAG_CONST 0x20
+#define APUNIT_FLAG_MEMBER 0x40
 
 
 /* Compilation apunit struct for classes, structs, and enums */

@@ -31,6 +31,7 @@
 #include <apexpr.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
@@ -78,6 +79,16 @@ void apparser_class(apparser_t *self, apunit_t *unit) {
 	unit->next = self->units;
 	self->units = unit;
 	aphash_put(self->types, unit->name, unit);
+
+	for (apfunc_t *func = unit->funcs; func; func = func->next) {
+		if (APUNIT_FLAG_MEMBER & func->flags) {
+			/* Add the implicit 'self' argument */
+			aptype_t *type = aptype_clone(unit->name);
+			apvar_t *arg = apvar_alloc(strdup("self"), 0, type, 0);	
+			arg->next = func->args;
+			func->args = arg;
+		}
+	}
 	apparser_check_unit(self, unit);
 }
 
@@ -92,6 +103,16 @@ void apparser_struct(apparser_t *self, apunit_t *unit) {
 	unit->next = self->units;
 	self->units = unit;
 	aphash_put(self->types, unit->name, unit);
+
+	for (apfunc_t *func = unit->funcs; func; func = func->next) {
+		if (APUNIT_FLAG_MEMBER & func->flags) {
+			/* Add the implicit 'self' argument */
+			aptype_t *type = aptype_clone(unit->name);
+			apvar_t *arg = apvar_alloc(strdup("self"), 0, type, 0);	
+			arg->next = func->args;
+			func->args = arg;
+		}
+	}
 	apparser_check_unit(self, unit);
 }
 
@@ -121,6 +142,11 @@ void apparser_check_unit(apparser_t *self, apunit_t *unit) {
 
 void apparser_check_func(apparser_t *self, apfunc_t *func) {
 	if (func->block) {
+		func->block->symbols = apsymtab_alloc(self->symbols);
+		for (apvar_t *arg = func->args; arg; arg = arg->next) {
+			apsymtab_var(func->block->symbols, arg->name, arg);
+		}
+
 		self->rets = func->rets;
 		apparser_check_stmt(self, func->block);
 		if (func->rets && !func->block->chktype) {
@@ -134,7 +160,9 @@ void apparser_check_stmt(apparser_t *self, apstmt_t *stmt) {
 	switch (stmt->type) {
 	case APSTMT_TYPE_BLOCK:
 		/* Allocate a new symbol table for this block */
-		stmt->symbols = apsymtab_alloc(self->symbols);
+		if (!stmt->symbols) { 
+			stmt->symbols = apsymtab_alloc(self->symbols);
+		}
 		self->symbols = stmt->symbols;
 		for (apstmt_t *child = stmt->child[0]; child; child = child->next) {
 			apparser_check_stmt(self, child);
@@ -170,6 +198,10 @@ void apparser_check_stmt(apparser_t *self, apstmt_t *stmt) {
 	case APSTMT_TYPE_DECL:
 		apparser_check_var(self, stmt->var);
 		apsymtab_var(self->symbols, stmt->var->name, stmt->var);
+		if (APTYPE_TYPE_OBJECT == stmt->var->type->type && !stmt->var->expr) {
+			apparser_print_loc(self, &stmt->loc);
+			apparser_error(self, "Uninitialized reference\n");
+		}
 		break;
 
 	case APSTMT_TYPE_UNTIL:
@@ -237,10 +269,15 @@ void apparser_check_expr(apparser_t *self, apexpr_t *expr) {
 			apparser_check_expr_mcall(self, expr);	
 			break;
 			
-		case APEXPR_TYPE_MEMBER:
-			apparser_check_expr_member(self, expr);
+		case APEXPR_TYPE_MVAR:
+			apparser_check_expr_mvar(self, expr);
+			break;
+
 		case APEXPR_TYPE_INDEX:
-		case APEXPR_TYPE_STATIC:
+			break;
+
+		case APEXPR_TYPE_SVAR:
+			apparser_check_expr_svar(self, expr);
 			break;
 			
 	}
@@ -265,18 +302,57 @@ void apparser_check_expr_binary(apparser_t *self, apexpr_t *expr) {
 	expr->chktype = aptype_clone(expr->child[0]->chktype);
 }
 
-void apparser_check_expr_member(apparser_t *self, apexpr_t *expr) {
-	apparser_check_expr(self, expr->child[1]);
-	aptype_t *type = expr->child[1]->chktype;
+void apparser_check_expr_mvar(apparser_t *self, apexpr_t *expr) {
+	apparser_check_expr(self, expr->child[0]);
+	aptype_t *type = expr->child[0]->chktype;
 	apunit_t *unit = (apunit_t *)aphash_get(self->types, type);
 	if (!unit) {
+		apparser_print_loc(self, &expr->loc);
+		apparser_error(self, "Undeclared module, class, or interface ");
+		apparser_error(self, "'%s'\n", type->name);
 		return;
 	}
 
 	apvar_t *var = apsymtab_get_var(unit->symbols, expr->string);
+
 	if (!var) {
 		apparser_print_loc(self, &expr->loc);
-		apparser_error(self, "Undeclared member '%s", unit->name->name);
+		apparser_error(self, "Undeclared variable '%s", unit->name->name);
+		apparser_error(self, ".%s'\n", expr->string);
+		return;
+	}
+	if (APUNIT_FLAG_STATIC & var->flags) {
+		apparser_print_loc(self, &expr->loc);
+		apparser_error(self, "Not an instance variable: ");
+		apparser_error(self, "'%s", unit->name->name);
+		apparser_error(self, ".%s\n'\n", expr->string);
+		return;
+	}
+	expr->chktype = aptype_clone(var->type);
+}
+
+void apparser_check_expr_svar(apparser_t *self, apexpr_t *expr) {
+	aptype_t *type = expr->clstype;
+	apunit_t *unit = (apunit_t *)aphash_get(self->types, type);
+	if (!unit) {
+		apparser_print_loc(self, &expr->loc);
+		apparser_error(self, "Undeclared module, class, or interface ");
+		apparser_error(self, "'%s'\n", type->name);
+		return;
+	}
+
+	apvar_t *var = apsymtab_get_var(unit->symbols, expr->string);
+	
+	if (!var) {
+		apparser_print_loc(self, &expr->loc);
+		apparser_error(self, "Undeclared variable '%s", unit->name->name);
+		apparser_error(self, ".%s'\n", expr->string);
+		return;
+	}
+	if (!(APUNIT_FLAG_STATIC & var->flags)) {
+		apparser_print_loc(self, &expr->loc);
+		apparser_error(self, "Not a static variable: ");
+		apparser_error(self, "'%s", unit->name->name);
 		apparser_error(self, ".%s\n'\n", expr->string);
 		return;
 	}
@@ -289,6 +365,18 @@ void apparser_check_expr_var(apparser_t *self, apexpr_t *expr) {
 		apparser_print_loc(self, &expr->loc);
 		apparser_error(self, "Undeclared variable '%s'\n", expr->string);
 		return;
+	}
+	if (APUNIT_FLAG_MEMBER & var->flags) {
+		if (APUNIT_TYPE_MODULE == self->units->type) {
+			expr->type = APEXPR_TYPE_SVAR;
+			expr->clstype = aptype_clone(self->units->name);
+		} else {
+			/* Member variable access with an implied 'self' keyword */
+			expr->type = APEXPR_TYPE_MVAR;
+			expr->nchild = 1;
+			expr->child[0] = apexpr_var(&expr->loc, strdup("self"));
+			expr->child[0]->chktype = aptype_clone(self->units->name);
+		}
 	}
 	expr->chktype = aptype_clone(var->type);
 }
@@ -322,6 +410,20 @@ void apparser_check_expr_call(apparser_t *self, apexpr_t *expr) {
 		return;
 	}
 	expr->chktype = aptype_clone(func->rets);
+
+	if (APUNIT_FLAG_MEMBER & func->flags) {
+		if (APUNIT_TYPE_MODULE == self->units->type) {
+			expr->type = APEXPR_TYPE_SCALL;
+			expr->clstype = aptype_clone(self->units->name);
+		} else {
+			/* Member function call with implied 'self' keyword */
+			expr->type = APEXPR_TYPE_MCALL;
+			apexpr_t *arg = apexpr_var(&expr->loc, strdup("self"));
+			arg->next = expr->child[0];
+			arg->chktype = aptype_clone(self->units->name);
+			expr->child[0] = arg;
+		}
+	}	
 
 	if (apparser_check_args(self, func, expr)) {
 		apparser_print_loc(self, &expr->loc);
@@ -363,8 +465,8 @@ void apparser_check_expr_scall(apparser_t *self, apexpr_t *expr) {
 }
 
 void apparser_check_expr_mcall(apparser_t *self, apexpr_t *expr) {
-	apparser_check_expr(self, expr->child[1]);
-	aptype_t *type = expr->child[1]->chktype;
+	apparser_check_expr(self, expr->child[0]);
+	aptype_t *type = expr->child[0]->chktype;
 	apunit_t *unit = (apunit_t *)aphash_get(self->types, type);
 	if (!unit) {
 		return;
@@ -408,12 +510,14 @@ void apparser_check_var(apparser_t *self, apvar_t *var) {
 
 int apparser_check_args(apparser_t *self, apfunc_t *func, apexpr_t *expr) {
 	apvar_t *var = func->args;
-	for (apexpr_t *child = expr->child[0]; child; child = child->next) {
-		apparser_check_expr(self, child);	
-		if (!var || aptype_comp(var->type, child->chktype)) {
-			return 1;
+	if (expr) {
+		for (apexpr_t *child = expr->child[0]; child; child = child->next) {
+			apparser_check_expr(self, child);	
+			if (!var || aptype_comp(var->type, child->chktype)) {
+				return 1;
+			}
+			var = var->next;
 		}
-		var = var->next;
 	}
 	if (var) {
 		return 1;

@@ -32,8 +32,8 @@
 #define APEXPR_TYPE_CALL 4
 #define APEXPR_TYPE_INDEX 5
 #define APEXPR_TYPE_SCALL 6
-#define APEXPR_TYPE_MEMBER 7
-#define APEXPR_TYPE_STATIC 8
+#define APEXPR_TYPE_MVAR 7
+#define APEXPR_TYPE_SVAR 8
 #define APEXPR_TYPE_CTOR 9
 #define APEXPR_TYPE_VAR 10 
 #define APEXPR_TYPE_MCALL 11
@@ -59,9 +59,9 @@ apexpr_t *apexpr_mcall(aploc_t *loc, apexpr_t *obj, char *fn, apexpr_t *args);
 apexpr_t *apexpr_scall(aploc_t *loc, aptype_t *obj, char *fn, apexpr_t *args);
 apexpr_t *apexpr_ctor(aploc_t *loc, aptype_t *obj, apexpr_t *args);
 apexpr_t *apexpr_index(aploc_t *loc, apexpr_t *obj, apexpr_t *index);
-apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident);
-apexpr_t *apexpr_static(aploc_t *loc, aptype_t *type, char *ident);
 apexpr_t *apexpr_var(aploc_t *loc, char *name);
+apexpr_t *apexpr_mvar(aploc_t *loc, apexpr_t *expr, char *ident);
+apexpr_t *apexpr_svar(aploc_t *loc, aptype_t *type, char *ident);
 void apexpr_free(apexpr_t *self);
 
 

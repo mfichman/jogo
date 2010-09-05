@@ -2,7 +2,7 @@ OBJS=main.o aptype.o apvar.o apexpr.o apfunc.o apstmt.o apparser.o apunit.o \
 	 apimport.o apdef.o aphash.o apsymtab.o apgrammar.y.o apgrammar.l.o \
 	 apcgen.o
 CFLAGS=-std=c99 -c -g -I. -Wall -Werror -pedantic
-CC=clang
+#CC=clang
 
 
 apollo: $(OBJS)

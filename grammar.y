@@ -306,7 +306,7 @@ access
 
 static
     : TOK_STATIC { $$ = APUNIT_FLAG_STATIC; }
-    | /* empty */ { $$ = 0; }
+    | /* empty */ { $$ = APUNIT_FLAG_MEMBER; }
     ;
     
 type 
@@ -552,7 +552,7 @@ postfix
 	}
     | postfix '.' TOK_IDENT { 
 		/* Member variable access */
-		$$ = apexpr_member(&@$, $1, $3); 
+		$$ = apexpr_mvar(&@$, $1, $3); 
 	}
     | postfix '[' expression ']' { 
 		$$ = apexpr_index(&@$, $1, $3); 
@@ -589,11 +589,11 @@ primary
 	}
 	| type '.' TOK_IDENT { 
 		/* Static varable access */
-		$$ = apexpr_static(&@$, $1, $3); 
+		$$ = apexpr_svar(&@$, $1, $3); 
 	}
 	| type '.' TOK_CONST { 
 		/* Static constant access */
-		$$ = apexpr_static(&@$, $1, $3); 
+		$$ = apexpr_svar(&@$, $1, $3); 
 	}
 	| type '(' argument_list ')' { 
 		/* Constructor with arguments */

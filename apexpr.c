@@ -95,9 +95,9 @@ apexpr_t *apexpr_mcall(aploc_t *loc, apexpr_t *obj, char *fn, apexpr_t *args) {
 	
 	self->type = APEXPR_TYPE_MCALL;
 	self->string = fn;
-	self->nchild = 2;
-	self->child[0] = args;
-	self->child[1] = obj;
+	self->nchild = 1;
+	self->child[0] = obj;
+	self->child[0]->next = args;
 	self->chktype = 0;
 	self->clstype = 0;
 	self->next = 0;
@@ -152,10 +152,10 @@ apexpr_t *apexpr_index(aploc_t *loc, apexpr_t *expr, apexpr_t *index) {
 	return self;
 }
 
-apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident) {
+apexpr_t *apexpr_mvar(aploc_t *loc, apexpr_t *expr, char *ident) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 
-	self->type = APEXPR_TYPE_MEMBER;
+	self->type = APEXPR_TYPE_MVAR;
 	self->string = ident; 
 	self->nchild = 1;
 	self->child[0] = expr;
@@ -167,10 +167,10 @@ apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident) {
 	return self;
 }
 
-apexpr_t *apexpr_static(aploc_t *loc, aptype_t *type, char *ident) {
+apexpr_t *apexpr_svar(aploc_t *loc, aptype_t *type, char *ident) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
-	self->type = APEXPR_TYPE_STATIC;
+	self->type = APEXPR_TYPE_SVAR;
 	self->string = ident;	
 	self->nchild = 0;
 	self->clstype = type;

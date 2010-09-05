@@ -28,6 +28,7 @@
 #include <apstmt.h>
 #include <aptype.h>
 #include <apfunc.h>
+#include <assert.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
@@ -52,17 +53,20 @@ apcgen_t *apcgen_alloc() {
 void apcgen_gen_unit(apcgen_t *self, apunit_t *unit, FILE *fd) {
 	self->fd = fd;
 	self->unit = unit;
-	apcgen_print(self, "typedef struct ");
-	apcgen_print_type(self, unit->name);
-	apcgen_print(self, " ");
-	apcgen_print_type(self, unit->name);
-	apcgen_print(self, " {\n");
-	for (apvar_t *var = unit->vars; var; var = var->next) {
-		apcgen_print(self, "    ");
-		apcgen_print_type(self, var->type);
-	 	apcgen_print(self, " %s;\n", var->name);
+	
+	if (APUNIT_TYPE_STRUCT == unit->type || APUNIT_TYPE_CLASS == unit->type) {
+		apcgen_print(self, "typedef struct ");
+		apcgen_print_type_name(self, unit->name);
+		apcgen_print(self, " ");
+		apcgen_print_type_name(self, unit->name);
+		apcgen_print(self, " {\n");
+		for (apvar_t *var = unit->vars; var; var = var->next) {
+			apcgen_print(self, "    ");
+			apcgen_print_type(self, var->type);
+		 	apcgen_print(self, " %s;\n", var->name);
+		}
+		apcgen_print(self, "};\n\n");
 	}
-	apcgen_print(self, "};\n\n");
 
 	for (apfunc_t *func = unit->funcs; func; func = func->next) {
 		apcgen_gen_func(self, func);
@@ -72,7 +76,7 @@ void apcgen_gen_unit(apcgen_t *self, apunit_t *unit, FILE *fd) {
 void apcgen_gen_func(apcgen_t *self, apfunc_t *func) {
 	apcgen_print_type(self, func->rets);
 	apcgen_print(self, " ");
-	apcgen_print_type(self, self->unit->name);	
+	apcgen_print_type_name(self, self->unit->name);	
 	apcgen_print(self, "_%s(", func->name);
 	for (apvar_t *var = func->args; var; var = var->next) {
 		apcgen_print_type(self, var->type);
@@ -131,7 +135,7 @@ void apcgen_gen_stmt(apcgen_t *self, apstmt_t *stmt) {
 		apcgen_print(self, " %s", stmt->var->name);
 		if (stmt->var->expr) {
 			apcgen_print(self, " = ");
-			apcgen_gen_expr(self, stmt->expr);
+			apcgen_gen_expr(self, stmt->var->expr);
 		}
 		apcgen_print(self, ";");
 		break;
@@ -199,7 +203,11 @@ void apcgen_gen_stmt(apcgen_t *self, apstmt_t *stmt) {
 void apcgen_gen_expr(apcgen_t *self, apexpr_t *expr) {
 	switch (expr->type) {
 		case APEXPR_TYPE_STRING:
-			apcgen_print(self, "\"%s\"", expr->string);
+			if (APTYPE_TYPE_PRIMITIVE == expr->chktype->type) {
+				apcgen_print(self, "%s", expr->string);
+			} else {
+				apcgen_print(self, "\"%s\"", expr->string);
+			}
 			break;
 		
 		case APEXPR_TYPE_UNARY:
@@ -221,13 +229,70 @@ void apcgen_gen_expr(apcgen_t *self, apexpr_t *expr) {
 			apcgen_print(self, "%s", expr->string);
 			break;
 
+		case APEXPR_TYPE_MVAR:
+			apcgen_gen_expr(self, expr->child[0]);
+			apcgen_print(self, "->%s", expr->string);
+			break;
+
+		case APEXPR_TYPE_SVAR:
+			apcgen_print_type_name(self, expr->clstype);
+			apcgen_print(self, "_%s", expr->string);
+			break;
+
+		case APEXPR_TYPE_CALL:
+			assert("Invalid APEXPR_TYPE_CALL" && 0);
+
+		case APEXPR_TYPE_MCALL:
+			apcgen_print_type_name(self, expr->child[0]->chktype);
+			apcgen_print(self, "_%s(", expr->string);
+			apcgen_gen_args(self, expr->child[0]);
+			apcgen_print(self, ")");
+			break;
+
+		case APEXPR_TYPE_SCALL:
+			apcgen_print_type_name(self, expr->clstype);
+			apcgen_print(self, "_%s(", expr->string);
+			apcgen_gen_args(self, expr->child[0]);
+			apcgen_print(self, ")");
+			break;
+
+		case APEXPR_TYPE_CTOR:
+			apcgen_print_type_name(self, expr->clstype);
+			apcgen_print(self, "__init(");	
+			apcgen_gen_args(self, expr->child[0]);
+			apcgen_print(self, ")");
+			break;
+
+
 	}	
 }
 
 void apcgen_gen_var(apcgen_t *self, apvar_t *var) {
 }
 
+void apcgen_gen_args(apcgen_t *self, apexpr_t *expr) {
+	if (expr) {
+		for (apexpr_t *arg = expr; arg; arg = arg->next) {
+			apcgen_gen_expr(self, arg);
+			if (arg->next) {
+				apcgen_print(self, ", ");
+			}
+		}
+	}
+}
+
 void apcgen_print_type(apcgen_t *self, aptype_t *type) {
+	if (!type) {
+		apcgen_print(self, "void");
+	} else {
+		apcgen_print_type_name(self, type);
+		if (APTYPE_TYPE_OBJECT == type->type) {
+			apcgen_print(self, "*");
+		}
+	}
+}
+
+void apcgen_print_type_name(apcgen_t *self, aptype_t *type) {
 	if (APTYPE_TYPE_PRIMITIVE == type->type) {
 		fputs("ap", self->fd);
 	}

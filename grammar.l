@@ -87,8 +87,9 @@ bool yylval->type = aptype_primitive(strdup(yytext)); return TOK_PRIMITIVE;
 	return TOK_NUMBER;
 }
 \"[^"]*\" {
+	yytext[strlen(yytext)-1] = 0;
 	yylval->expr = apexpr_literal(yylloc, aptype_object(strdup("String")), 
-		strdup(yytext));
+		strdup(yytext+1));
 	return TOK_STRING;
 }
 \'[^']*\' {

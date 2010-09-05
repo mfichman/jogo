@@ -30,7 +30,7 @@
 int main(int argc, char **argv) {
 
 	if (argc != 2) {
-		fprintf(stdout, "Illegal argument\n");
+		fprintf(stderr, "Illegal argument\n");
 		return 1;
 	}
 
@@ -44,5 +44,5 @@ int main(int argc, char **argv) {
 	}
 	apparser_free(parser);
 
-	printf("File parsed.\n");
+	fprintf(stderr, "File parsed.\n");
 }

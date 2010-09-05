@@ -34,7 +34,9 @@ void apcgen_gen_func(apcgen_t *self, apfunc_t *func);
 void apcgen_gen_stmt(apcgen_t *self, apstmt_t *stmt);
 void apcgen_gen_expr(apcgen_t *self, apexpr_t *expr);
 void apcgen_gen_var(apcgen_t *self, apvar_t *var);
+void apcgen_gen_args(apcgen_t *selfm, apexpr_t *expr);
 void apcgen_print_type(apcgen_t *self, aptype_t *type);
+void apcgen_print_type_name(apcgen_t *self, aptype_t *type);
 void apcgen_print(apcgen_t *self, const char* fmt, ...);
 void apcgen_free(apcgen_t *self);
 
