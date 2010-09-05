@@ -204,6 +204,7 @@ module
     : import module { $$ = $2; apunit_import($$, $1); }
     | def module { $$ = $2; apunit_def($$, $1); }
     | function module { $$ = $2; apunit_func($$, $1); }
+	| native module { $$ = $2; apunit_func($$, $1); }
 	| error module { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(APUNIT_TYPE_MODULE); 
@@ -579,7 +580,7 @@ primary
 		/* Free variable access, maybe with implicit "self" */
 		$$ = apexpr_var(&@$, $1); 
 	}
-	| type '.' TOK_IDENT '(' argument_list ')' {
+	| type TOK_SCOPE TOK_IDENT '(' argument_list ')' {
 		/* Static function call */
 		$$ = apexpr_scall(&@$, $1, $3, $5); 
 	}

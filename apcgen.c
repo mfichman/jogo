@@ -85,12 +85,13 @@ void apcgen_gen_func(apcgen_t *self, apfunc_t *func) {
 			apcgen_print(self, ", ");
 		}
 	}
-	apcgen_print(self, ") ");
+	apcgen_print(self, ")");
 	if (func->block) {
+		apcgen_print(self, " ");
 		apcgen_gen_stmt(self, func->block);
 		apcgen_print(self, "\n\n");
 	} else {
-		apcgen_print(self, ";\n");
+		apcgen_print(self, ";\n\n");
 	}
 }
 
