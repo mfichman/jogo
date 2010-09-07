@@ -33,6 +33,15 @@ apimport_t *apimport_alloc(aptype_t *type) {
 	return self;
 }
 
+apimport_t *apimport_clone(apimport_t *import) {
+	apimport_t *self = malloc(sizeof(apimport_t));
+
+	self->type = aptype_clone(import->type);
+	self->next = 0;
+
+	return self;
+}
+
 void apimport_free(apimport_t *self) {
 	if (self) {
 		aptype_free(self->type);

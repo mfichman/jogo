@@ -34,15 +34,11 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	FILE *fd = fopen(argv[1], "r");
 	apparser_t *parser = apparser_alloc();
-	if (!apparser_parse(parser, argv[1], fd)) {
-
-		apcgen_t *cgen = apcgen_alloc();
-		apcgen_gen_unit(cgen, parser->units, stdout);
-		apcgen_free(cgen);
+	apcgen_t *cgen = apcgen_alloc();
+	if (!apparser_parse(parser, argv[1])) {
+		apcgen_gen(cgen, parser->units);
 	}
 	apparser_free(parser);
-
-	fprintf(stderr, "File parsed.\n");
+	apcgen_free(cgen);
 }

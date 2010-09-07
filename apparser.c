@@ -27,6 +27,7 @@
 #include <aphash.h>
 #include <apstmt.h>
 #include <aptype.h>
+#include <apimport.h>
 #include <apvar.h>
 #include <apexpr.h>
 #include <stdlib.h>
@@ -51,7 +52,6 @@ apparser_t *apparser_alloc() {
 	self->filename = 0;
 	self->fd = 0;
 	self->column = 1;
-	self->symbols = 0;
 	self->types = aphash_alloc(comp, hash);
 	yylex_init(&self->scanner);
 	yyset_extra(self, self->scanner);
@@ -59,14 +59,53 @@ apparser_t *apparser_alloc() {
 	return self;
 }
 
-int apparser_parse(apparser_t *self, const char *filename, FILE *fd) {
-	self->fd = fd;
-	self->column = 1;
-	self->symbols = apsymtab_alloc(0);
+int apparser_parse(apparser_t *self, const char *filename) {
+	apparser_parse_unit(self, filename);
+
+	while (self->queue) {
+		apimport_t *import = self->queue;
+		self->queue = self->queue->next;
+
+		char *filename = malloc(strlen(import->type->name) + strlen(".ap"));
+		char *in = import->type->name;
+		char *out = filename;
+
+		while (*in) {
+			if (*in == ':') {
+				*out++ = '/';
+				in += 2;
+			} else {
+				*in++ = *out++;
+			}
+		}
+
+		apimport_free(import);
+	}
+
+	return self->error;
+}
+
+int apparser_parse_unit(apparser_t *self, const char *filename) {
 	self->filename = realloc(self->filename, strlen(filename) + 1);
 	strcpy(self->filename, filename);
-
+	self->fd = fopen(self->filename, "r");
+	if (!self->fd) {
+		apparser_error(self, "Could not find '%s'\n", self->filename);	
+		return self->error;
+	}
+	self->column = 1;
+	self->symbols = 0;
 	yyparse(self, self->scanner);
+	fclose(self->fd);
+
+	apunit_t *unit = self->units;
+	for (apimport_t *import = unit->imports; import; import = import->next) {
+		if (!aphash_get(self->types, import->type)) {
+			apimport_t *next = apimport_clone(import);
+			next->next = self->queue;
+			self->queue = next;
+		}
+	}
 
 	return self->error;
 }
@@ -89,14 +128,12 @@ void apparser_class(apparser_t *self, apunit_t *unit) {
 			func->args = arg;
 		}
 	}
-	apparser_check_unit(self, unit);
 }
 
 void apparser_interface(apparser_t *self, apunit_t *unit) {
 	unit->next = self->units;
 	self->units = unit;
 	aphash_put(self->types, unit->name, unit);
-	apparser_check_unit(self, unit);
 }
 
 void apparser_struct(apparser_t *self, apunit_t *unit) {
@@ -113,14 +150,12 @@ void apparser_struct(apparser_t *self, apunit_t *unit) {
 			func->args = arg;
 		}
 	}
-	apparser_check_unit(self, unit);
 }
 
 void apparser_module(apparser_t *self, apunit_t *unit) {
 	unit->next = self->units;
 	self->units = unit;
 	aphash_put(self->types, unit->name, unit);
-	apparser_check_unit(self, unit);
 }
 
 void apparser_check_unit(apparser_t *self, apunit_t *unit) {

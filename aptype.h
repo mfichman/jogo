@@ -26,13 +26,16 @@
 #define APTYPE_TYPE_PRIMITIVE 1
 #define APTYPE_TYPE_OBJECT 2
 
+#define APTYPE_FLAG_ARRAY 3
+#define APTYPE_FLAG_NULLABLE 4
+
 #include <apollo.h>
 
 /* A fully-qualified a aptype name */ 
 struct aptype {
 	char *name;             /* Fully qualified aptype name */
 	int type;				/* Primitive or not? */
-	int pointer;			/* True if this is a pointer */
+	int flags;				/* Type modification flags */
 	aptype_t *next;
 };
 
@@ -42,7 +45,6 @@ aptype_t *aptype_concat(aptype_t *self, aptype_t *type);
 aptype_t *aptype_clone(aptype_t *self);
 int aptype_comp(aptype_t *self, aptype_t *type);
 int aptype_hash(aptype_t *self);
-int aptype_bool_compat(aptype_t *self);
 int aptype_integer_compat(aptype_t *self);
 void aptype_free(aptype_t *self);
 

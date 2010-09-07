@@ -28,11 +28,14 @@
 #include <apsymtab.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
-apunit_t *apunit_alloc(int type) {
+apunit_t *apunit_alloc(const char *filename, int type) {
 	apunit_t *self = malloc(sizeof(apunit_t));
 
 	self->name = 0;
+	self->filename = malloc(strlen(filename) + 1);
+	strcpy(self->filename, filename);
 	self->type = type;
 	self->imports = 0;
 	self->defs = 0;
@@ -67,6 +70,12 @@ void apunit_var(apunit_t *self, apvar_t *var) {
 	apsymtab_var(self->symbols, var->name, var);
 }
 
+void apunit_const(apunit_t *self, apvar_t *cons) {
+	cons->next = self->consts;
+	self->consts = cons;
+	apsymtab_var(self->symbols, cons->name, cons);
+}
+
 void apunit_ctor(apunit_t *self, apfunc_t *ctor) {
 	ctor->next = self->ctors;
 	self->ctors = ctor;
@@ -94,6 +103,7 @@ void apunit_free(apunit_t *self) {
 		apfunc_free(self->funcs);
 		apunit_free(self->next);
 		apsymtab_free(self->symbols);
+		free(self->filename);
 		free(self);
 	}
 }

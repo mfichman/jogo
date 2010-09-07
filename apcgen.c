@@ -37,8 +37,9 @@
 /* Structure for generating C code using the data from the given parser */
 struct apcgen {
 	apunit_t *unit;
-	int indent;
 	FILE *fd;
+	int indent;
+	int error;
 };
 
 apcgen_t *apcgen_alloc() {
@@ -46,12 +47,29 @@ apcgen_t *apcgen_alloc() {
 	self->fd = 0;
 	self->unit = 0;
 	self->indent = 0;
+	self->error = 0;
 
 	return self;
 }
 
-void apcgen_gen_unit(apcgen_t *self, apunit_t *unit, FILE *fd) {
-	self->fd = fd;
+int apcgen_gen(apcgen_t *self, apunit_t *units) {
+	self->error = 0;
+	for (apunit_t *unit = units; unit; unit = unit->next) {
+		apcgen_gen_unit(self, unit);
+	}
+	return self->error;
+}
+
+void apcgen_gen_unit(apcgen_t *self, apunit_t *unit) {
+	char *filename = malloc(strlen(unit->filename) + strlen(".c") + 1); 
+	strcpy(filename, unit->filename);
+	strcat(filename, ".c");
+	self->fd = fopen(filename, "r");
+	if (!self->fd) {
+		fprintf(stderr, "Could not open '%s'\n", filename);
+		self->error++;
+		return;
+	}
 	self->unit = unit;
 	
 	if (APUNIT_TYPE_STRUCT == unit->type || APUNIT_TYPE_CLASS == unit->type) {
@@ -71,6 +89,8 @@ void apcgen_gen_unit(apcgen_t *self, apunit_t *unit, FILE *fd) {
 	for (apfunc_t *func = unit->funcs; func; func = func->next) {
 		apcgen_gen_func(self, func);
 	}
+
+	fclose(self->fd);
 }
 
 void apcgen_gen_func(apcgen_t *self, apfunc_t *func) {

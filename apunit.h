@@ -41,11 +41,13 @@
 
 /* Compilation apunit struct for classes, structs, and enums */
 struct apunit {
-	aptype_t *name; /* Name of the compilation apunit */
+	aptype_t *name; /* Name of the compilation unit */
+	char *filename; /* File name of the compilation unit */
 	int type; /* Type of apunit: struct, class, or enum */
 	apimport_t *imports; /* List of imports */
 	apdef_t *defs; /* List of defines */
 	apvar_t *vars; /* List of variables */
+	apvar_t *consts; /* List of constants */
 	apfunc_t *ctors; /* List of constructors */
 	apfunc_t *dtors; /* List of destructors */
 	apfunc_t *funcs; /* List of functions */
@@ -53,11 +55,12 @@ struct apunit {
 	apunit_t *next;
 };
 
-apunit_t *apunit_alloc(int type);
+apunit_t *apunit_alloc(const char *filename, int type);
 void apunit_name(apunit_t *self, aptype_t *name);
 void apunit_import(apunit_t *self, apimport_t *import);
 void apunit_def(apunit_t *self, apdef_t *def);
 void apunit_var(apunit_t *self, apvar_t *var);
+void apunit_const(apunit_t *self, apvar_t *cons);
 void apunit_ctor(apunit_t *self, apfunc_t *ctor);
 void apunit_dtor(apunit_t *self, apfunc_t *dtor);
 void apunit_func(apunit_t *self, apfunc_t *func);

@@ -34,7 +34,7 @@ aptype_t *aptype_object(char *name) {
 	self->name = name;
 	self->type = APTYPE_TYPE_OBJECT;
 	self->next = 0;
-	self->pointer = 0;
+	self->flags = 0;
 
 	return self;
 }
@@ -45,7 +45,7 @@ aptype_t *aptype_primitive(char *name) {
 	self->name = name;
 	self->type = APTYPE_TYPE_PRIMITIVE;
 	self->next = 0;
-	self->pointer = 0;
+	self->flags = 0;
 	
 	return self;
 }
@@ -72,7 +72,7 @@ aptype_t *aptype_clone(aptype_t *other) {
 	aptype_t *self = malloc(sizeof(aptype_t));
 	self->name = malloc(strlen(other->name) + 1);
 	self->type = other->type;
-	self->pointer = other->pointer;
+	self->flags = other->flags;
 	self->next = 0;
 
 	strcpy(self->name, other->name);
@@ -99,10 +99,6 @@ int aptype_comp(aptype_t *self, aptype_t *other) {
 
 int aptype_hash(aptype_t *self) {
 	return aphash_string(self->name);
-}
-
-int aptype_bool_compat(aptype_t *self) {
-	return APTYPE_TYPE_PRIMITIVE == self->type || self->pointer;
 }
 
 void aptype_free(aptype_t *self) {

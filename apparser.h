@@ -34,6 +34,7 @@ struct apparser {
 	apsymtab_t *symbols; /* Temporary symbol table variable */
 	aphash_t *types; /* Hash for looking up units by name */
 	aptype_t *rets; /* Return type of current function being parsed */
+	apimport_t *queue; /* Queue of files to parse */
 	FILE *fd; /* Current file descriptor */
 	int column; /* Current column number */
 	int error; /* Error number */
@@ -66,7 +67,8 @@ struct aploc {
 };
 
 apparser_t *apparser_alloc();
-int apparser_parse(apparser_t *self, const char* filename, FILE *fd);
+int apparser_parse(apparser_t *self, const char *filename);
+int apparser_parse_unit(apparser_t *self, const char *filename);
 void apparser_class(apparser_t *self, apunit_t *unit);
 void apparser_interface(apparser_t *self, apunit_t *unit);
 void apparser_struct(apparser_t *self, apunit_t *unit);

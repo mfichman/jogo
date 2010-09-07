@@ -101,6 +101,7 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %type <unit> module
 %type <unit> struct
 %type <var> variable
+%type <var> constant
 %type <import> import
 %type <def> def
 %type <func> constructor
@@ -168,23 +169,49 @@ class
     : import class { $$ = $2; apunit_import($$, $1); }
     | def class { $$ = $2; apunit_def($$, $1); }
     | variable class { $$ = $2; apunit_var($$, $1); }
+	| constant class { $$ = $2; apunit_const($$, $1); }
     | constructor class { $$ = $2; apunit_ctor($$, $1); }
     | destructor class { $$ = $2; apunit_dtor($$, $1); }
     | function class { $$ = $2; apunit_func($$, $1); }
 	| native class { $$ = $2; apunit_func($$, $1); }
 	| error class { $$ = $2; }
     | /* empty */ { 
-		$$ = apunit_alloc(APUNIT_TYPE_CLASS); 
+		$$ = apunit_alloc(strdup(parser->filename), APUNIT_TYPE_CLASS); 
 	}
     ;
 
 interface
     : import interface { $$ = $2; apunit_import($$, $1); }
     | def interface { $$ = $2; apunit_def($$, $1); }
+	| variable interface { 
+		$$ = $2;
+		apvar_free($1);
+		yyerror(&@$, parser, scanner, "Instance variable in interface");
+		YYERROR;
+	}
+	| constant interface { $$ = $2; apunit_const($$, $1); }
+    | constructor interface {
+		$$ = $2;
+		apfunc_free($1);
+		yyerror(&@$, parser, scanner, "Interfaces cannot have constructors");
+		YYERROR;
+	}
+    | destructor interface { 
+		$$ = $2;
+		apfunc_free($1);
+		yyerror(&@$, parser, scanner, "Interfaces cannot have destructors");
+		YYERROR;
+	}
+	| native interface {
+		$$ = $2;
+		apunit_func($$, $1);
+		yyerror(&@$, parser, scanner, "Native function in interface");
+		YYERROR;
+	}
     | prototype interface { $$ = $2; apunit_func($$, $1); }
 	| error interface { $$ = $2; }
     | /* empty */ { 
-		$$ = apunit_alloc(APUNIT_TYPE_INTERFACE);
+		$$ = apunit_alloc(strdup(parser->filename), APUNIT_TYPE_INTERFACE);
 	}
     ;
 
@@ -192,22 +219,49 @@ struct
     : import struct { $$ = $2; apunit_import($$, $1); }
     | def struct { $$ = $2; apunit_def($$, $1); }
     | variable struct { $$ = $2; apunit_var($$, $1); }
+	| constant struct { $$ = $2; apunit_const($$, $1); }
     | constructor struct { $$ = $2; apunit_ctor($$, $1); }
+	| destructor struct {
+		$$ = $2;
+		apfunc_free($1);
+		yyerror(&@$, parser, scanner, "Structs cannot have destructors");
+		YYERROR;
+	}
     | function struct { $$ = $2; apunit_func($$, $1); }
+	| native struct { $$ = $2; apunit_func($$, $1); }
 	| error struct { $$ = $2; }
     | /* empty */ { 
-		$$ = apunit_alloc(APUNIT_TYPE_STRUCT); 
+		$$ = apunit_alloc(strdup(parser->filename), APUNIT_TYPE_STRUCT); 
 	}
     ;
 
 module
     : import module { $$ = $2; apunit_import($$, $1); }
     | def module { $$ = $2; apunit_def($$, $1); }
+	| variable module {
+		$$ = $2;
+		apvar_free($1);
+		yyerror(&@$, parser, scanner, "Instance variable in module");
+		YYERROR;
+	}
+	| constant module { $$ = $2; apunit_const($$, $1); }
+	| constructor module {
+		$$ = $2;
+		apfunc_free($1);
+		yyerror(&@$, parser, scanner, "Modules cannot have constructors");
+		YYERROR;
+	}
+	| destructor module {
+		$$ = $2;
+		apfunc_free($1);
+		yyerror(&@$, parser, scanner, "Modules cannot have destructors");
+		YYERROR;
+	}
     | function module { $$ = $2; apunit_func($$, $1); }
 	| native module { $$ = $2; apunit_func($$, $1); }
 	| error module { $$ = $2; }
     | /* empty */ { 
-		$$ = apunit_alloc(APUNIT_TYPE_MODULE); 
+		$$ = apunit_alloc(strdup(parser->filename), APUNIT_TYPE_MODULE); 
 	}
     ;
     
@@ -227,8 +281,16 @@ variable
     | access static type TOK_IDENT ';' {
 		$$ = apvar_alloc($4, $1|$2, $3, 0);
     }
-	| access static type TOK_CONST '=' expression ';' {
+	;
+
+constant
+	: access static type TOK_CONST '=' expression ';' {
 		$$ = apvar_alloc($4, $1|$2|APUNIT_FLAG_CONST, $3, $6);
+	}
+	| access static type TOK_CONST ';' {
+		$$ = apvar_alloc($4, $1|$2|APUNIT_FLAG_CONST, $3, 0);
+		yyerror(&@$, parser, scanner, "Uninitialized constant");
+		YYERROR;
 	}
     ;
 
@@ -310,26 +372,30 @@ static
     | /* empty */ { $$ = APUNIT_FLAG_MEMBER; }
     ;
     
-type 
+type
     : TOK_PRIMITIVE { $$ = $1; } 
-	| TOK_PRIMITIVE '*' { $$ = $1; /* TODO: Range */ $$->pointer = 1; }
-	| TOK_PRIMITIVE '?' { $$ = $1; /* TODO: Nullable */ }
+	| TOK_PRIMITIVE '*' { $$ = $1; $$->flags &= APTYPE_FLAG_ARRAY; }
+	| TOK_PRIMITIVE '?' { $$ = $1; $$->flags &= APTYPE_FLAG_NULLABLE; }
     | qualified_name { 
 		apparser_resolve_type(parser, $$ = $1);
 	}
 	| qualified_name '*' { 
 		apparser_resolve_type(parser, $$ = $1);
-		$$->pointer = 1;
+		$$->flags &= APTYPE_FLAG_ARRAY;
 	}
 	| qualified_name '?' { 
 		apparser_resolve_type(parser, $$ = $1);
-		$$->pointer = 1; /* TODO: Nullable */
+		$$->flags &= APTYPE_FLAG_NULLABLE;
 	}
     ;
 
 qualified_name
-    : TOK_TYPE TOK_SCOPE qualified_name { $$ = aptype_concat($1, $3); }
-    | TOK_TYPE { $$ = $1; } 
+    : TOK_TYPE TOK_SCOPE qualified_name { 
+		$$ = aptype_concat($1, $3); 
+	}
+    | TOK_TYPE { 
+		$$ = $1; 
+	} 
 	| TOK_CONST TOK_SCOPE qualified_name { 
 		$$ = aptype_concat(aptype_object($1), $3); 
 	}
@@ -580,11 +646,11 @@ primary
 		/* Free variable access, maybe with implicit "self" */
 		$$ = apexpr_var(&@$, $1); 
 	}
-	| type TOK_SCOPE TOK_IDENT '(' argument_list ')' {
+	| type '.' TOK_IDENT '(' argument_list ')' {
 		/* Static function call */
 		$$ = apexpr_scall(&@$, $1, $3, $5); 
 	}
-	| type '.' TOK_IDENT '(' ')' {
+	| type ':' TOK_IDENT '(' ')' {
 		/* Static function call */
 		$$ = apexpr_scall(&@$, $1, $3, 0);
 	}

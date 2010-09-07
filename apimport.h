@@ -32,6 +32,7 @@ struct apimport {
 };
 
 apimport_t *apimport_alloc(aptype_t *type);
+apimport_t *apimport_clone(apimport_t *self);
 void apimport_free(apimport_t *self);
 
 
