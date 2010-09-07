@@ -31,6 +31,7 @@
 /* Primary parser structure; contains symbol table and compilation units */
 struct apparser {
 	apunit_t *units; /* List of compilation units (classes) */
+	apunit_t *unit;
 	apsymtab_t *symbols; /* Temporary symbol table variable */
 	aphash_t *types; /* Hash for looking up units by name */
 	aptype_t *rets; /* Return type of current function being parsed */
@@ -89,6 +90,7 @@ void apparser_check_expr_mcall(apparser_t *self, apexpr_t *expr);
 void apparser_check_var(apparser_t *self, apvar_t *var);
 int apparser_check_args(apparser_t *self, apfunc_t *func, apexpr_t *expr);
 int apparser_resolve_type(apparser_t *self, aptype_t *type);
+void apparser_reset_line(apparser_t *self);
 void apparser_print_type(apparser_t *self, aptype_t *type);
 void apparser_print_loc(apparser_t *self, aploc_t *loc);
 void apparser_print_loc_end(apparser_t *self, aploc_t *loc);

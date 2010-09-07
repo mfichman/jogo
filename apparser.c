@@ -69,23 +69,31 @@ int apparser_parse(apparser_t *self, const char *filename) {
 		char *filename = malloc(strlen(import->type->name) + strlen(".ap"));
 		char *in = import->type->name;
 		char *out = filename;
-
 		while (*in) {
 			if (*in == ':') {
 				*out++ = '/';
 				in += 2;
 			} else {
-				*in++ = *out++;
+				*out++ = *in++;
 			}
 		}
+		*out = 0;
+		strcat(out, ".ap");
 
+		apparser_parse_unit(self, filename);
 		apimport_free(import);
+		free(filename);
+	}
+
+	for (apunit_t *unit = self->units; unit; unit = unit->next) {
+		apparser_check_unit(self, unit);
 	}
 
 	return self->error;
 }
 
 int apparser_parse_unit(apparser_t *self, const char *filename) {
+	fprintf(stderr, "Parsing %s\n", filename);
 	self->filename = realloc(self->filename, strlen(filename) + 1);
 	strcpy(self->filename, filename);
 	self->fd = fopen(self->filename, "r");
@@ -96,6 +104,7 @@ int apparser_parse_unit(apparser_t *self, const char *filename) {
 	self->column = 1;
 	self->symbols = 0;
 	yyparse(self, self->scanner);
+	apparser_reset_line(self);
 	fclose(self->fd);
 
 	apunit_t *unit = self->units;
@@ -159,6 +168,7 @@ void apparser_module(apparser_t *self, apunit_t *unit) {
 }
 
 void apparser_check_unit(apparser_t *self, apunit_t *unit) {
+	self->unit = unit;
 	self->symbols = unit->symbols;
 
 	/* Build the symbol table for the compilation unit */
@@ -388,7 +398,7 @@ void apparser_check_expr_svar(apparser_t *self, apexpr_t *expr) {
 		apparser_print_loc(self, &expr->loc);
 		apparser_error(self, "Not a static variable: ");
 		apparser_error(self, "'%s", unit->name->name);
-		apparser_error(self, ".%s\n'\n", expr->string);
+		apparser_error(self, ".%s'\n", expr->string);
 		return;
 	}
 	expr->chktype = aptype_clone(var->type);
@@ -402,15 +412,15 @@ void apparser_check_expr_var(apparser_t *self, apexpr_t *expr) {
 		return;
 	}
 	if (APUNIT_FLAG_MEMBER & var->flags) {
-		if (APUNIT_TYPE_MODULE == self->units->type) {
+		if (APUNIT_TYPE_MODULE == self->unit->type) {
 			expr->type = APEXPR_TYPE_SVAR;
-			expr->clstype = aptype_clone(self->units->name);
+			expr->clstype = aptype_clone(self->unit->name);
 		} else {
 			/* Member variable access with an implied 'self' keyword */
 			expr->type = APEXPR_TYPE_MVAR;
 			expr->nchild = 1;
 			expr->child[0] = apexpr_var(&expr->loc, strdup("self"));
-			expr->child[0]->chktype = aptype_clone(self->units->name);
+			expr->child[0]->chktype = aptype_clone(self->unit->name);
 		}
 	}
 	expr->chktype = aptype_clone(var->type);
@@ -447,15 +457,15 @@ void apparser_check_expr_call(apparser_t *self, apexpr_t *expr) {
 	expr->chktype = aptype_clone(func->rets);
 
 	if (APUNIT_FLAG_MEMBER & func->flags) {
-		if (APUNIT_TYPE_MODULE == self->units->type) {
+		if (APUNIT_TYPE_MODULE == self->unit->type) {
 			expr->type = APEXPR_TYPE_SCALL;
-			expr->clstype = aptype_clone(self->units->name);
+			expr->clstype = aptype_clone(self->unit->name);
 		} else {
 			/* Member function call with implied 'self' keyword */
 			expr->type = APEXPR_TYPE_MCALL;
 			apexpr_t *arg = apexpr_var(&expr->loc, strdup("self"));
 			arg->next = expr->child[0];
-			arg->chktype = aptype_clone(self->units->name);
+			arg->chktype = aptype_clone(self->unit->name);
 			expr->child[0] = arg;
 		}
 	}	
@@ -502,6 +512,9 @@ void apparser_check_expr_scall(apparser_t *self, apexpr_t *expr) {
 void apparser_check_expr_mcall(apparser_t *self, apexpr_t *expr) {
 	apparser_check_expr(self, expr->child[0]);
 	aptype_t *type = expr->child[0]->chktype;
+	if (!type) {
+		return;
+	}
 	apunit_t *unit = (apunit_t *)aphash_get(self->types, type);
 	if (!unit) {
 		return;
@@ -605,14 +618,14 @@ void apparser_print_loc(apparser_t *self, aploc_t *loc) {
 	int line = loc->first_line;
 	int column = loc->first_column;
 
-	fprintf(stderr, "%s:%d:%d: ", self->filename, line, column);
+	fprintf(stderr, "%s:%d:%d: ", self->unit->filename, line, column);
 }
 
 void apparser_print_loc_end(apparser_t *self, aploc_t *loc) {
 	int line = loc->last_line;
 	int column = loc->last_column;
 
-	fprintf(stderr, "%s:%d:%d: ", self->filename, line, column);
+	fprintf(stderr, "%s:%d:%d: ", self->unit->filename, line, column);
 }
 
 void apparser_error(apparser_t *self, const char *fmt, ...) { 

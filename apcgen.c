@@ -64,7 +64,7 @@ void apcgen_gen_unit(apcgen_t *self, apunit_t *unit) {
 	char *filename = malloc(strlen(unit->filename) + strlen(".c") + 1); 
 	strcpy(filename, unit->filename);
 	strcat(filename, ".c");
-	self->fd = fopen(filename, "r");
+	self->fd = fopen(filename, "w");
 	if (!self->fd) {
 		fprintf(stderr, "Could not open '%s'\n", filename);
 		self->error++;

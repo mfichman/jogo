@@ -115,3 +115,9 @@ bool yylval->type = aptype_primitive(strdup(yytext)); return TOK_PRIMITIVE;
 . return yytext[0];
 %%
 
+
+void apparser_reset_line(apparser_t *self) {
+	struct yyguts_t *yyg = (struct yyguts_t *)self->scanner;
+
+	yylineno = 1;
+}

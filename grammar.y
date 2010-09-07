@@ -650,7 +650,7 @@ primary
 		/* Static function call */
 		$$ = apexpr_scall(&@$, $1, $3, $5); 
 	}
-	| type ':' TOK_IDENT '(' ')' {
+	| type '.' TOK_IDENT '(' ')' {
 		/* Static function call */
 		$$ = apexpr_scall(&@$, $1, $3, 0);
 	}
