@@ -243,6 +243,7 @@ void apstmt_free(apstmt_t *self) {
 		}
 		apsymtab_free(self->symbols);
 		apstmt_free(self->next);
+		aptype_free(self->chktype);
 		free(self);
 	}
 }

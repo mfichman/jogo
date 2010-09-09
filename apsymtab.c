@@ -29,43 +29,28 @@
 
 struct apsymtab {
 	apsymtab_t *parent;
-	aphash_t *vars;
-	aphash_t *funcs;
+	aphash_t *symbols;
 };
 
 apsymtab_t *apsymtab_alloc(apsymtab_t *parent) {
 	apsymtab_t *self = malloc(sizeof(apsymtab_t));
 
 	self->parent = parent;
-	self->vars = aphash_alloc((aphash_compfn_t)&strcmp, &aphash_string);
-	self->funcs = aphash_alloc((aphash_compfn_t)&strcmp, &aphash_string);
+	self->symbols = aphash_alloc((aphash_compfn_t)&strcmp, &aphash_string);
 
 	return self;
 }
 
-void apsymtab_var(apsymtab_t *self, const char *name, apvar_t *var) {
-	aphash_put(self->vars, name, var);
+void apsymtab_put(apsymtab_t *self, const char *name, void *symbol) {
+	aphash_put(self->symbols, name, symbol);
 }
 
-void apsymtab_func(apsymtab_t *self, const char *name, apfunc_t *func) {
-	aphash_put(self->funcs, name, func);
-}
-
-apvar_t *apsymtab_get_var(apsymtab_t *self, const char *name) {
-	apvar_t *var = aphash_get(self->vars, name);
-	if (!var && self->parent) {
-		return apsymtab_get_var(self->parent, name);
+void *apsymtab_get(apsymtab_t *self, const char *name) {
+	void *symbol = aphash_get(self->symbols, name);
+	if (!symbol && self->parent) {
+		return apsymtab_get(self->parent, name);
 	} else {
-		return var;
-	}
-}
-
-apfunc_t *apsymtab_get_func(apsymtab_t *self, const char *name) {
-	apfunc_t *func = aphash_get(self->funcs, name);
-	if (!func && self->parent) {
-		return apsymtab_get_func(self->parent, name);
-	} else {
-		return func;
+		return symbol;
 	}
 }
 
@@ -75,8 +60,7 @@ apsymtab_t *apsymtab_get_parent(apsymtab_t *self) {
 
 void apsymtab_free(apsymtab_t *self) {
 	if (self) {
-		aphash_free(self->vars);
-		aphash_free(self->funcs);
+		aphash_free(self->symbols);
 		free(self);
 	}
 

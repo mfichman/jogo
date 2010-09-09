@@ -37,7 +37,6 @@ apexpr_t *apexpr_literal(aploc_t *loc, aptype_t *type, char *string) {
 	self->string = string; 
 	self->nchild = 0;
 	self->chktype = type;
-	self->clstype = 0;
 	self->next = 0;
 	self->loc = *loc;
 
@@ -53,7 +52,6 @@ apexpr_t *apexpr_binary(aploc_t *loc, char *op, apexpr_t *lhs, apexpr_t *rhs) {
 	self->child[0] = lhs;
 	self->child[1] = rhs;
 	self->chktype = 0;
-	self->clstype = 0;
 	self->next = 0;
 	self->loc = *loc;
 		
@@ -68,74 +66,27 @@ apexpr_t *apexpr_unary(aploc_t *loc, char *op, apexpr_t *expr) {
 	self->nchild = 1;
 	self->child[0] = expr;
 	self->chktype = 0;
-	self->clstype = 0;
 	self->next = 0;
 	self->loc = *loc;
 	
 	return self;
 }
 
-apexpr_t *apexpr_call(aploc_t *loc, char *fn, apexpr_t *args) {
+apexpr_t *apexpr_call(aploc_t *loc, apexpr_t *fn, apexpr_t *args) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
 	self->type = APEXPR_TYPE_CALL;
-	self->string = fn; 
-	self->nchild = 1;
-	self->child[0] = args;
+	self->string = 0; 
+	self->nchild = 2;
+	self->child[0] = fn;
+	self->child[1] = args;
 	self->chktype = 0; 
-	self->clstype = 0;
 	self->next = 0;
 	self->loc = *loc;
 		
 	return self;
 }
 
-apexpr_t *apexpr_mcall(aploc_t *loc, apexpr_t *obj, char *fn, apexpr_t *args) {
-	apexpr_t *self = malloc(sizeof(apexpr_t));
-	
-	self->type = APEXPR_TYPE_MCALL;
-	self->string = fn;
-	self->nchild = 1;
-	self->child[0] = obj;
-	self->child[0]->next = args;
-	self->chktype = 0;
-	self->clstype = 0;
-	self->next = 0;
-	self->loc = *loc;
-	
-	return self;
-}
-
-apexpr_t *apexpr_scall(aploc_t *loc, aptype_t *obj, char *fn, apexpr_t *args) {
-	apexpr_t *self = malloc(sizeof(apexpr_t));
-
-	self->type = APEXPR_TYPE_SCALL;
-	self->string = fn;
-	self->nchild = 1;
-	self->child[0] = args;
-	self->chktype = 0;
-	self->clstype = obj;
-	self->next = 0;
-	self->loc = *loc;
-
-	return self;
-}
-
-apexpr_t *apexpr_ctor(aploc_t *loc, aptype_t *type, apexpr_t *args) {
-	apexpr_t *self = malloc(sizeof(apexpr_t));
-
-	self->type = APEXPR_TYPE_CTOR;
-	self->string = strdup("@init");
-	self->nchild = 1;
-	self->child[0] = args;
-	self->chktype = 0;
-	self->clstype = type;
-	self->next = 0;
-	self->loc = *loc;
-
-	return self;
-}
-	
 apexpr_t *apexpr_index(aploc_t *loc, apexpr_t *expr, apexpr_t *index) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
@@ -145,55 +96,39 @@ apexpr_t *apexpr_index(aploc_t *loc, apexpr_t *expr, apexpr_t *index) {
 	self->child[0] = expr;
 	self->child[1] = index;
 	self->chktype = 0;
-	self->clstype = 0;
 	self->next = 0;
 	self->loc = *loc;
 		
 	return self;
 }
 
-apexpr_t *apexpr_mvar(aploc_t *loc, apexpr_t *expr, char *ident) {
+apexpr_t *apexpr_ident(aploc_t *loc, char *name) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
+	
+	self->type = APEXPR_TYPE_IDENT;
+	self->string = name;
+	self->nchild = 0;
+	self->chktype = 0;
+	self->next = 0;
+	self->loc = *loc;
 
-	self->type = APEXPR_TYPE_MVAR;
-	self->string = ident; 
+	return self;
+}
+
+apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident) {
+	apexpr_t *self = malloc(sizeof(apexpr_t));
+	
+	self->type = APEXPR_TYPE_MEMBER;
+	self->string = ident;
 	self->nchild = 1;
 	self->child[0] = expr;
 	self->chktype = 0;
-	self->clstype = 0;
 	self->next = 0;
 	self->loc = *loc;
 
 	return self;
 }
 
-apexpr_t *apexpr_svar(aploc_t *loc, aptype_t *type, char *ident) {
-	apexpr_t *self = malloc(sizeof(apexpr_t));
-	
-	self->type = APEXPR_TYPE_SVAR;
-	self->string = ident;	
-	self->nchild = 0;
-	self->clstype = type;
-	self->chktype = 0;
-	self->next = 0;
-	self->loc = *loc;
-	
-	return self;
-}
-
-apexpr_t *apexpr_var(aploc_t *loc, char *name) {
-	apexpr_t *self = malloc(sizeof(apexpr_t));
-	
-	self->type = APEXPR_TYPE_VAR;
-	self->string = name; 
-	self->nchild = 0;
-	self->chktype = 0;
-	self->clstype = 0;
-	self->next = 0;
-	self->loc = *loc;
-
-	return self;
-}
 	
 void apexpr_free(apexpr_t *self) {
 	if (self) {
@@ -201,7 +136,6 @@ void apexpr_free(apexpr_t *self) {
 			apexpr_free(self->child[i]);	
 		}
 		apexpr_free(self->next);
-		aptype_free(self->clstype);
 		aptype_free(self->chktype);
 		free(self->string);
 		free(self);

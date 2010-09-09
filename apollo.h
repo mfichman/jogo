@@ -25,6 +25,11 @@
 
 #include <stdint.h>
 
+
+#define APSYMBOL_TYPE_FUNC 0
+#define APSYMBOL_TYPE_UNIT 1
+#define APSYMBOL_TYPE_VAR 2
+
 typedef struct apdef apdef_t;
 typedef struct apexpr apexpr_t;
 typedef struct aphash aphash_t;
@@ -38,6 +43,8 @@ typedef struct apvar apvar_t;
 typedef struct apfunc apfunc_t;
 typedef struct aploc aploc_t;
 typedef struct apcgen apcgen_t;
+
+typedef int apsymbol_t;
 
 typedef uint32_t apuint_t;
 typedef int32_t apint_t;

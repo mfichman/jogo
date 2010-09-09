@@ -30,6 +30,7 @@ apvar_t *apvar_alloc(char *name, int flags, aptype_t *type, apexpr_t *expr) {
 	apvar_t *self = malloc(sizeof(apvar_t));
 
 	self->name = name;
+	self->symbol = APSYMBOL_TYPE_VAR;
 	self->flags = flags;
 	self->type = type;
 	self->expr = expr;

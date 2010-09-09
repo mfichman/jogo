@@ -25,17 +25,24 @@
 
 #include <apollo.h>
 
+#define APFUNC_TYPE_MEMBER 0
+#define APFUNC_TYPE_FREE 1
+#define APFUNC_TYPE_CTOR 2
+#define APFUNC_TYPE_DTOR 3
+
 /* Descriptor struct for functions and methods */
 struct apfunc {
+	apsymbol_t symbol;		/* Symbol type tag */
 	char *name;       		/* Qualified function name */
 	int flags;				/* Function flags */
+	apunit_t *unit;			/* Enclosing unit */
 	apstmt_t *block;       	/* Function body */
 	aptype_t *rets;	     	/* List of return types (in reverse order) */
 	apvar_t *args;			/* List of argument types (in reverse_order) */
 	apfunc_t *next;         
 };
 
-apfunc_t *apfunc_alloc(char *name, apvar_t *arg, aptype_t *ret, apstmt_t *body);
+apfunc_t *apfunc_alloc(char *name, apvar_t *arg, aptype_t *ret, apstmt_t *block);
 void apfunc_free(apfunc_t *self);
 
 #endif

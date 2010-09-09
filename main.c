@@ -41,4 +41,6 @@ int main(int argc, char **argv) {
 	}
 	apparser_free(parser);
 	apcgen_free(cgen);
+	
+	return 0;
 }

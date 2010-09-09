@@ -31,12 +31,8 @@
 #define APEXPR_TYPE_BINARY 3 
 #define APEXPR_TYPE_CALL 4
 #define APEXPR_TYPE_INDEX 5
-#define APEXPR_TYPE_SCALL 6
-#define APEXPR_TYPE_MVAR 7
-#define APEXPR_TYPE_SVAR 8
-#define APEXPR_TYPE_CTOR 9
-#define APEXPR_TYPE_VAR 10 
-#define APEXPR_TYPE_MCALL 11
+#define APEXPR_TYPE_IDENT 6
+#define APEXPR_TYPE_MEMBER 7
 
 /* Structure for holding expression syntax tree */
 struct apexpr {
@@ -44,7 +40,6 @@ struct apexpr {
 	char *string;			/* Possible string value of the expression */
 	aploc_t loc;			/* Location of the expression */
 	aptype_t *chktype;		/* Type evaluation for expression */
-	aptype_t *clstype;		/* Optional class type name */
 	int nchild;				/* Number of children */
 	apexpr_t *child[2];     /* Child expressions */
 	apexpr_t *next;
@@ -54,14 +49,10 @@ struct apexpr {
 apexpr_t *apexpr_literal(aploc_t *loc, aptype_t *type, char *string);
 apexpr_t *apexpr_binary(aploc_t *loc, char *op, apexpr_t *lh, apexpr_t *rh);
 apexpr_t *apexpr_unary(aploc_t *loc, char *op, apexpr_t *expr);
-apexpr_t *apexpr_call(aploc_t *loc, char *fn, apexpr_t *args);
-apexpr_t *apexpr_mcall(aploc_t *loc, apexpr_t *obj, char *fn, apexpr_t *args);
-apexpr_t *apexpr_scall(aploc_t *loc, aptype_t *obj, char *fn, apexpr_t *args);
-apexpr_t *apexpr_ctor(aploc_t *loc, aptype_t *obj, apexpr_t *args);
+apexpr_t *apexpr_call(aploc_t *loc, apexpr_t *fn, apexpr_t *args);
 apexpr_t *apexpr_index(aploc_t *loc, apexpr_t *obj, apexpr_t *index);
-apexpr_t *apexpr_var(aploc_t *loc, char *name);
-apexpr_t *apexpr_mvar(aploc_t *loc, apexpr_t *expr, char *ident);
-apexpr_t *apexpr_svar(aploc_t *loc, aptype_t *type, char *ident);
+apexpr_t *apexpr_ident(aploc_t *loc, char *name);
+apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident);
 void apexpr_free(apexpr_t *self);
 
 

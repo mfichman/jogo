@@ -27,6 +27,7 @@
 
 /* Local apvariable/symbol in the current scope */
 struct apvar {
+	apsymbol_t symbol;
 	char *name;
 	int flags;
 	aptype_t *type;

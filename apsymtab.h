@@ -27,10 +27,8 @@
 /* Symbol table for variable and type names */
 
 apsymtab_t *apsymtab_alloc(apsymtab_t *parent);
-void apsymtab_func(apsymtab_t *self, const char *name, apfunc_t *func);
-void apsymtab_var(apsymtab_t *self, const char *name, apvar_t *var);
-apfunc_t *apsymtab_get_func(apsymtab_t *self, const char *name);
-apvar_t *apsymtab_get_var(apsymtab_t *self, const char *name);
+void apsymtab_put(apsymtab_t *self, const char *name, void *symbol);
+void *apsymtab_get(apsymtab_t *self, const char *name);
 apsymtab_t *apsymtab_get_parent(apsymtab_t *self);
 void apsymtab_free(apsymtab_t *self);
 

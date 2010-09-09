@@ -47,14 +47,12 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %destructor { apunit_free($$); $$ = 0; } <unit>
 %destructor { apvar_free($$); $$ = 0; } <var>
 %destructor { apfunc_free($$); $$ = 0; } <func>
-%destructor { free($$); } <string>
+%destructor { free($$); $$ = 0; } <string>
 
 
 /* BISON declarations */
-%token <type> TOK_TYPE
 %token <type> TOK_PRIMITIVE
 %token <string> TOK_IDENT
-%token <string> TOK_CONST
 %token <expr> TOK_STRING
 %token <expr> TOK_NUMBER 
 %token TOK_CLASS
@@ -67,7 +65,6 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %token TOK_DESTROY
 %token <flag> TOK_PUBLIC
 %token <flag> TOK_PRIVATE
-%token <flag> TOK_PROTECTED
 %token <flag> TOK_STATIC
 %token <flag> TOK_NATIVE
 %token TOK_WHILE
@@ -79,7 +76,6 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %token TOK_RETURN
 %token TOK_EQUAL
 %token TOK_NOTEQUAL
-%token TOK_SCOPE
 %token TOK_OR
 %token TOK_AND
 %token TOK_GE
@@ -101,20 +97,17 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %type <unit> module
 %type <unit> struct
 %type <var> variable
-%type <var> constant
 %type <import> import
 %type <def> def
 %type <func> constructor
 %type <func> destructor
 %type <func> function
-%type <func> native
 %type <func> prototype
-%type <flag> access
-%type <flag> static
+%type <func> native
+%type <flag> modifiers
 %type <var> parameter_signature
 %type <var> parameter_list
 %type <type> type
-%type <type> qualified_name 
 %type <stmt> block
 %type <stmt> statement_list
 %type <stmt> statement
@@ -141,20 +134,20 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 /* The Standard Apollo Grammar, 2010 */
 %%
 translation_unit
-    : TOK_CLASS qualified_name ';' class {
+    : TOK_CLASS TOK_IDENT ';' class {
         apunit_name($4, $2); 
 		apparser_class(parser, $4);
 		
     }
-    | TOK_INTERFACE qualified_name ';' interface {
+    | TOK_INTERFACE TOK_IDENT ';' interface {
         apunit_name($4, $2); 
 		apparser_interface(parser, $4);
     }
-    | TOK_STRUCT qualified_name ';' struct {
+    | TOK_STRUCT TOK_IDENT ';' struct {
         apunit_name($4, $2); 
 		apparser_struct(parser, $4);
     }
-    | TOK_MODULE qualified_name ';' module {
+    | TOK_MODULE TOK_IDENT ';' module {
         apunit_name($4, $2);
 		apparser_module(parser, $4);
     }
@@ -169,7 +162,6 @@ class
     : import class { $$ = $2; apunit_import($$, $1); }
     | def class { $$ = $2; apunit_def($$, $1); }
     | variable class { $$ = $2; apunit_var($$, $1); }
-	| constant class { $$ = $2; apunit_const($$, $1); }
     | constructor class { $$ = $2; apunit_ctor($$, $1); }
     | destructor class { $$ = $2; apunit_dtor($$, $1); }
     | function class { $$ = $2; apunit_func($$, $1); }
@@ -183,13 +175,13 @@ class
 interface
     : import interface { $$ = $2; apunit_import($$, $1); }
     | def interface { $$ = $2; apunit_def($$, $1); }
+	| prototype interface { $$ = $2; apunit_func($$, $1); }
 	| variable interface { 
 		$$ = $2;
 		apvar_free($1);
 		yyerror(&@$, parser, scanner, "Instance variable in interface");
 		YYERROR;
 	}
-	| constant interface { $$ = $2; apunit_const($$, $1); }
     | constructor interface {
 		$$ = $2;
 		apfunc_free($1);
@@ -202,13 +194,6 @@ interface
 		yyerror(&@$, parser, scanner, "Interfaces cannot have destructors");
 		YYERROR;
 	}
-	| native interface {
-		$$ = $2;
-		apunit_func($$, $1);
-		yyerror(&@$, parser, scanner, "Native function in interface");
-		YYERROR;
-	}
-    | prototype interface { $$ = $2; apunit_func($$, $1); }
 	| error interface { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(strdup(parser->filename), APUNIT_TYPE_INTERFACE);
@@ -219,16 +204,15 @@ struct
     : import struct { $$ = $2; apunit_import($$, $1); }
     | def struct { $$ = $2; apunit_def($$, $1); }
     | variable struct { $$ = $2; apunit_var($$, $1); }
-	| constant struct { $$ = $2; apunit_const($$, $1); }
     | constructor struct { $$ = $2; apunit_ctor($$, $1); }
+    | function struct { $$ = $2; apunit_func($$, $1); }
+	| prototype struct { $$ = $2; apunit_func($$, $1); }
 	| destructor struct {
 		$$ = $2;
 		apfunc_free($1);
 		yyerror(&@$, parser, scanner, "Structs cannot have destructors");
 		YYERROR;
 	}
-    | function struct { $$ = $2; apunit_func($$, $1); }
-	| native struct { $$ = $2; apunit_func($$, $1); }
 	| error struct { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(strdup(parser->filename), APUNIT_TYPE_STRUCT); 
@@ -238,13 +222,7 @@ struct
 module
     : import module { $$ = $2; apunit_import($$, $1); }
     | def module { $$ = $2; apunit_def($$, $1); }
-	| variable module {
-		$$ = $2;
-		apvar_free($1);
-		yyerror(&@$, parser, scanner, "Instance variable in module");
-		YYERROR;
-	}
-	| constant module { $$ = $2; apunit_const($$, $1); }
+	| variable module { $$ = $2; apunit_var($$, $1); }
 	| constructor module {
 		$$ = $2;
 		apfunc_free($1);
@@ -258,46 +236,34 @@ module
 		YYERROR;
 	}
     | function module { $$ = $2; apunit_func($$, $1); }
-	| native module { $$ = $2; apunit_func($$, $1); }
 	| error module { $$ = $2; }
     | /* empty */ { 
 		$$ = apunit_alloc(strdup(parser->filename), APUNIT_TYPE_MODULE); 
 	}
     ;
     
-import 
-    : TOK_IMPORT qualified_name ';' { $$ = apimport_alloc($2); }
+import
+    : TOK_IMPORT TOK_IDENT ';' { $$ = apimport_alloc(aptype_object($2)); }
     ;
 
 def
-    : TOK_DEF type TOK_TYPE ';' { $$ = apdef_alloc($2, $3); }
+    : TOK_DEF type TOK_IDENT ';' { $$ = apdef_alloc($2, aptype_object($3)); }
     ;
 
 variable
-    : access static type TOK_IDENT '=' expression ';' {
+    : type TOK_IDENT '=' expression ';' {
 		// TODO: Set symbol table for class-level
-		$$ = apvar_alloc($4, $1|$2, $3, $6);
+		$$ = apvar_alloc($2, 0, $1, $4);
     }
-    | access static type TOK_IDENT ';' {
-		$$ = apvar_alloc($4, $1|$2, $3, 0);
+    | type TOK_IDENT ';' {
+		$$ = apvar_alloc($2, 0, $1, 0);
     }
 	;
 
-constant
-	: access static type TOK_CONST '=' expression ';' {
-		$$ = apvar_alloc($4, $1|$2|APUNIT_FLAG_CONST, $3, $6);
-	}
-	| access static type TOK_CONST ';' {
-		$$ = apvar_alloc($4, $1|$2|APUNIT_FLAG_CONST, $3, 0);
-		yyerror(&@$, parser, scanner, "Uninitialized constant");
-		YYERROR;
-	}
-    ;
-
 constructor
-    : TOK_INIT parameter_signature access block { 
-		$$ = apfunc_alloc(strdup("@init"), $2, 0, $4);
-		$$->flags = $3;
+    : TOK_INIT parameter_signature block { 
+		$$ = apfunc_alloc(strdup("@init"), $2, 0, $3);
+		$$->flags &= APUNIT_FLAG_STATIC;
 	}
     ;
 
@@ -315,35 +281,39 @@ destructor
     ;
 
 function
-    : TOK_IDENT parameter_signature access static type block {
-		$$ = apfunc_alloc($1, $2, $5, $6);
-		$$->flags = $3|$4;
+    : TOK_IDENT parameter_signature modifiers type block {
+		$$ = apfunc_alloc($1, $2, $4, $5);
+		$$->flags = $3;
     }
-	| TOK_IDENT parameter_signature access static block {
-		$$ = apfunc_alloc($1, $2, 0, $5);
-		$$->flags = $3|$4;
-	}
-    ;
-
-native
-	: TOK_IDENT parameter_signature access static TOK_NATIVE type ';' {
-		$$ = apfunc_alloc($1, $2, $6, 0); 
-		$$->flags = $3|$4|APUNIT_FLAG_NATIVE;
-	}
-	| TOK_IDENT parameter_signature access static TOK_NATIVE ';' {
-		$$ = apfunc_alloc($1, $2, 0, 0);
-		$$->flags = $3|$4|APUNIT_FLAG_NATIVE;
+	| TOK_IDENT parameter_signature modifiers block {
+		$$ = apfunc_alloc($1, $2, 0, $4);
+		$$->flags = $3;
 	}
 	;
 
 prototype
-    : TOK_IDENT parameter_signature type ';' {
-		$$ = apfunc_alloc($1, $2, $3, 0);
-    }
-	| TOK_IDENT parameter_signature ';' {
+	: TOK_IDENT parameter_signature modifiers type ';' {
+		$$ = apfunc_alloc($1, $2, $4, 0);
+		$$->flags = $3;
+	}
+	| TOK_IDENT parameter_signature modifiers ';' {
 		$$ = apfunc_alloc($1, $2, 0, 0);
+		$$->flags = $3;
 	}
     ;
+
+native
+	: TOK_IDENT parameter_signature modifiers TOK_NATIVE type ';' {
+		$$ = apfunc_alloc($1, $2, $5, 0);
+		$$->flags = $3|APUNIT_FLAG_NATIVE;
+	}
+	| TOK_IDENT parameter_signature modifiers TOK_NATIVE ';' {
+		$$ = apfunc_alloc($1, $2, 0, 0);
+		$$->flags = $3|APUNIT_FLAG_NATIVE;
+	}
+    ;
+	
+
 
 parameter_signature
 	: '(' parameter_list ')' { $$ = $2; }
@@ -360,50 +330,22 @@ parameter_list
 	}
     ;
 
-access 
-    : TOK_PUBLIC { $$ = APUNIT_FLAG_PUBLIC; }
-    | TOK_PRIVATE { $$ = APUNIT_FLAG_PRIVATE; }
-    | TOK_PROTECTED { $$ = APUNIT_FLAG_PROTECTED; }
-    | /* empty */ { $$ = 0; }
-    ;
+modifiers
+	: TOK_PUBLIC { $$ = APUNIT_FLAG_PUBLIC; }
+	| TOK_PRIVATE { $$ = APUNIT_FLAG_PRIVATE; }
+	| TOK_STATIC { $$ = APUNIT_FLAG_STATIC; }
+	| TOK_PUBLIC TOK_STATIC { $$ = APUNIT_FLAG_PUBLIC|APUNIT_FLAG_STATIC; }
+	| TOK_PRIVATE TOK_STATIC { $$ = APUNIT_FLAG_PRIVATE|APUNIT_FLAG_STATIC; }
+	| /* empty */ { $$ = 0; }
+	;
 
-static
-    : TOK_STATIC { $$ = APUNIT_FLAG_STATIC; }
-    | /* empty */ { $$ = APUNIT_FLAG_MEMBER; }
-    ;
-    
 type
     : TOK_PRIMITIVE { $$ = $1; } 
 	| TOK_PRIMITIVE '*' { $$ = $1; $$->flags &= APTYPE_FLAG_ARRAY; }
 	| TOK_PRIMITIVE '?' { $$ = $1; $$->flags &= APTYPE_FLAG_NULLABLE; }
-    | qualified_name { 
-		apparser_resolve_type(parser, $$ = $1);
-	}
-	| qualified_name '*' { 
-		apparser_resolve_type(parser, $$ = $1);
-		$$->flags &= APTYPE_FLAG_ARRAY;
-	}
-	| qualified_name '?' { 
-		apparser_resolve_type(parser, $$ = $1);
-		$$->flags &= APTYPE_FLAG_NULLABLE;
-	}
+    | TOK_IDENT { apparser_resolve_type(parser, $$ = aptype_object($1)); }
     ;
 
-qualified_name
-    : TOK_TYPE TOK_SCOPE qualified_name { 
-		$$ = aptype_concat($1, $3); 
-	}
-    | TOK_TYPE { 
-		$$ = $1; 
-	} 
-	| TOK_CONST TOK_SCOPE qualified_name { 
-		$$ = aptype_concat(aptype_object($1), $3); 
-	}
-	| TOK_CONST { 
-		$$ = aptype_object($1); 
-	}
-    ;
-    
 block
     : '{' statement_list '}' { 
 		$$ = $2; 
@@ -609,17 +551,17 @@ unary
     ;
 
 postfix
-	: postfix '.' TOK_IDENT '(' argument_list ')' {
+	: postfix '(' argument_list ')' {
 		/* Call on an object expression */
-		$$ = apexpr_mcall(&@$, $1, $3, $5);
+		$$ = apexpr_call(&@$, $1, $3);
 	}
-	| postfix '.' TOK_IDENT '(' ')' {
+	| postfix '(' ')' {
 		/* Call on an object expression */
-		$$ = apexpr_mcall(&@$, $1, $3, 0);
+		$$ = apexpr_call(&@$, $1, 0);
 	}
     | postfix '.' TOK_IDENT { 
 		/* Member variable access */
-		$$ = apexpr_mvar(&@$, $1, $3); 
+		$$ = apexpr_member(&@$, $1, $3); 
 	}
     | postfix '[' expression ']' { 
 		$$ = apexpr_index(&@$, $1, $3); 
@@ -634,45 +576,10 @@ postfix
     ;
 
 primary
-    : TOK_IDENT '(' argument_list ')' { 
-		/* Free call, maybe with implicit "self" */
-		$$ = apexpr_call(&@$, $1, $3); 
-	}
-	| TOK_IDENT '(' ')' { 
-		/* Free call, maybe with implicit "self" */
-		$$ = apexpr_call(&@$, $1, 0); 
-	}
-	| TOK_IDENT { 
-		/* Free variable access, maybe with implicit "self" */
-		$$ = apexpr_var(&@$, $1); 
-	}
-	| type '.' TOK_IDENT '(' argument_list ')' {
-		/* Static function call */
-		$$ = apexpr_scall(&@$, $1, $3, $5); 
-	}
-	| type '.' TOK_IDENT '(' ')' {
-		/* Static function call */
-		$$ = apexpr_scall(&@$, $1, $3, 0);
-	}
-	| type '.' TOK_IDENT { 
-		/* Static varable access */
-		$$ = apexpr_svar(&@$, $1, $3); 
-	}
-	| type '.' TOK_CONST { 
-		/* Static constant access */
-		$$ = apexpr_svar(&@$, $1, $3); 
-	}
-	| type '(' argument_list ')' { 
-		/* Constructor with arguments */
-		$$ = apexpr_ctor(&@$, $1, $3); 
-	}
-	| type '(' ')' { 
-		/* Constructor without arguments */
-		$$ = apexpr_ctor(&@$, $1, 0); 
-	}
-    | '(' expression ')' { $$ = $2; } 
+	: '(' expression ')' { $$ = $2; } 
     | TOK_STRING { $$ = $1; }
     | TOK_NUMBER { $$ = $1; }
+	| TOK_IDENT { $$ = apexpr_ident(&@$, $1); }
     ;
 
 argument_list

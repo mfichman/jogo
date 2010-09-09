@@ -31,10 +31,12 @@ apfunc_t *apfunc_alloc(char *name, apvar_t *arg, aptype_t *ret, apstmt_t *body) 
 	apfunc_t *self = malloc(sizeof(apfunc_t));
 
 	self->name = name;
+	self->symbol = APSYMBOL_TYPE_FUNC;
 	self->flags = 0;
 	self->block = body;
 	self->rets = ret;
 	self->args = arg;
+	self->unit = 0;
 	self->next = 0;
 
 	return self;

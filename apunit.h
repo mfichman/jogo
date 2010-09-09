@@ -32,18 +32,17 @@
 
 #define APUNIT_FLAG_PUBLIC 0x1
 #define APUNIT_FLAG_PRIVATE 0x2
-#define APUNIT_FLAG_PROTECTED 0x4
-#define APUNIT_FLAG_NATIVE 0x8
-#define APUNIT_FLAG_STATIC 0x10
-#define APUNIT_FLAG_CONST 0x20
-#define APUNIT_FLAG_MEMBER 0x40
+#define APUNIT_FLAG_NATIVE 0x4
+#define APUNIT_FLAG_STATIC 0x8
+#define APUNIT_FLAG_CONST 0x10
 
 
 /* Compilation apunit struct for classes, structs, and enums */
 struct apunit {
-	aptype_t *name; /* Name of the compilation unit */
-	char *filename; /* File name of the compilation unit */
+	apsymbol_t symbol; /* Symbol type tag */
+	char *name; /* Name of the compilation unit */
 	int type; /* Type of apunit: struct, class, or enum */
+	char *filename; /* File name of the compilation unit */
 	apimport_t *imports; /* List of imports */
 	apdef_t *defs; /* List of defines */
 	apvar_t *vars; /* List of variables */
@@ -55,8 +54,8 @@ struct apunit {
 	apunit_t *next;
 };
 
-apunit_t *apunit_alloc(const char *filename, int type);
-void apunit_name(apunit_t *self, aptype_t *name);
+apunit_t *apunit_alloc(char *filename, int type);
+void apunit_name(apunit_t *self, char *name);
 void apunit_import(apunit_t *self, apimport_t *import);
 void apunit_def(apunit_t *self, apdef_t *def);
 void apunit_var(apunit_t *self, apvar_t *var);

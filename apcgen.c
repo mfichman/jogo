@@ -68,15 +68,16 @@ void apcgen_gen_unit(apcgen_t *self, apunit_t *unit) {
 	if (!self->fd) {
 		fprintf(stderr, "Could not open '%s'\n", filename);
 		self->error++;
+		free(filename);
 		return;
 	}
 	self->unit = unit;
 	
 	if (APUNIT_TYPE_STRUCT == unit->type || APUNIT_TYPE_CLASS == unit->type) {
 		apcgen_print(self, "typedef struct ");
-		apcgen_print_type_name(self, unit->name);
+		apcgen_print_name(self, unit->name);
 		apcgen_print(self, " ");
-		apcgen_print_type_name(self, unit->name);
+		apcgen_print_name(self, unit->name);
 		apcgen_print(self, " {\n");
 		for (apvar_t *var = unit->vars; var; var = var->next) {
 			apcgen_print(self, "    ");
@@ -91,12 +92,13 @@ void apcgen_gen_unit(apcgen_t *self, apunit_t *unit) {
 	}
 
 	fclose(self->fd);
+	free(filename);
 }
 
 void apcgen_gen_func(apcgen_t *self, apfunc_t *func) {
 	apcgen_print_type(self, func->rets);
 	apcgen_print(self, " ");
-	apcgen_print_type_name(self, self->unit->name);	
+	apcgen_print_name(self, self->unit->name);	
 	apcgen_print(self, "_%s(", func->name);
 	for (apvar_t *var = func->args; var; var = var->next) {
 		apcgen_print_type(self, var->type);
@@ -246,46 +248,30 @@ void apcgen_gen_expr(apcgen_t *self, apexpr_t *expr) {
 			apcgen_print(self, ")");
 			break;
 		
-		case APEXPR_TYPE_VAR:
+		case APEXPR_TYPE_CALL:
+			apcgen_gen_expr_call(self, expr);
+			break;
+
+		case APEXPR_TYPE_MEMBER:
+			assert("Invalid APEXPR_TYPE_MEMBER" && 0);
+			break;
+
+		case APEXPR_TYPE_IDENT:
 			apcgen_print(self, "%s", expr->string);
 			break;
-
-		case APEXPR_TYPE_MVAR:
-			apcgen_gen_expr(self, expr->child[0]);
-			apcgen_print(self, "->%s", expr->string);
-			break;
-
-		case APEXPR_TYPE_SVAR:
-			apcgen_print_type_name(self, expr->clstype);
-			apcgen_print(self, "_%s", expr->string);
-			break;
-
-		case APEXPR_TYPE_CALL:
-			assert("Invalid APEXPR_TYPE_CALL" && 0);
-
-		case APEXPR_TYPE_MCALL:
-			apcgen_print_type_name(self, expr->child[0]->chktype);
-			apcgen_print(self, "_%s(", expr->string);
-			apcgen_gen_args(self, expr->child[0]);
-			apcgen_print(self, ")");
-			break;
-
-		case APEXPR_TYPE_SCALL:
-			apcgen_print_type_name(self, expr->clstype);
-			apcgen_print(self, "_%s(", expr->string);
-			apcgen_gen_args(self, expr->child[0]);
-			apcgen_print(self, ")");
-			break;
-
-		case APEXPR_TYPE_CTOR:
-			apcgen_print_type_name(self, expr->clstype);
-			apcgen_print(self, "__init(");	
-			apcgen_gen_args(self, expr->child[0]);
-			apcgen_print(self, ")");
-			break;
-
-
 	}	
+}
+
+void apcgen_gen_expr_call(apcgen_t *self, apexpr_t *expr) {
+	apfunc_t *func = expr->child[0]->chktype->func;
+	apunit_t *unit = func->unit;
+
+	apcgen_print_name(self, unit->name);
+	apcgen_print(self, "_");
+	apcgen_print_name(self, func->name);
+	apcgen_print(self, "(");
+	apcgen_gen_args(self, expr->child[1]);
+	apcgen_print(self, ")");
 }
 
 void apcgen_gen_var(apcgen_t *self, apvar_t *var) {
@@ -306,24 +292,27 @@ void apcgen_print_type(apcgen_t *self, aptype_t *type) {
 	if (!type) {
 		apcgen_print(self, "void");
 	} else {
-		apcgen_print_type_name(self, type);
+		apcgen_print_name(self, type->name);
 		if (APTYPE_TYPE_OBJECT == type->type) {
 			apcgen_print(self, "*");
 		}
 	}
 }
 
-void apcgen_print_type_name(apcgen_t *self, aptype_t *type) {
-	if (APTYPE_TYPE_PRIMITIVE == type->type) {
-		fputs("ap", self->fd);
-	}
-
-	for (char *c = type->name; *c; c++) {
+void apcgen_print_name(apcgen_t *self, char *name) {
+	for (char *c = name; *c; c++) {
 		if (*c == ':') {
 			fputc('_', self->fd);
-			c += 2;
+			c++;
+		} else if (*c == '@') {
+			fputc('_', self->fd);
+		} else if (*c == '?') {
+			fputs("__q", self->fd);
+		} else if (*c == '!') {
+			fputs("__w", self->fd);
+		} else {
+			fputc(*c, self->fd);
 		}
-		fputc(*c, self->fd);
 	}
 }
 
@@ -335,4 +324,5 @@ void apcgen_print(apcgen_t *self, const char* fmt, ...) {
 }
 
 void apcgen_free(apcgen_t *self) {
+	free(self);
 }

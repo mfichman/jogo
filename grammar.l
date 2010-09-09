@@ -44,7 +44,6 @@ def	return TOK_DEF;
 \@destroy return TOK_DESTROY;
 public return TOK_PUBLIC;
 private return TOK_PRIVATE;
-protected return TOK_PROTECTED;
 static return TOK_STATIC;
 native return TOK_NATIVE;
 while return TOK_WHILE;
@@ -56,7 +55,6 @@ for return TOK_FOR;
 return return TOK_RETURN;
 == return TOK_EQUAL; 
 != return TOK_NOTEQUAL; 
-:: return TOK_SCOPE; 
 \|\| return TOK_OR; 
 \&\& return TOK_AND; 
 \>\= return TOK_GE;
@@ -97,15 +95,7 @@ bool yylval->type = aptype_primitive(strdup(yytext)); return TOK_PRIMITIVE;
 		strdup(yytext)); 
 	return TOK_STRING;
 }
-[A-Z][A-Z0-9]* {
-	yylval->string = strdup(yytext);
-	return TOK_CONST;
-}
-[A-Z][A-Za-z0-9]* {
-	yylval->type = aptype_object(strdup(yytext)); 
-	return TOK_TYPE; 
-}
-([a-z]|[a-z][0-9a-z_]*[0-9a-z])(\?|\!)? {
+[A-Za-z0-9][A-Za-z0-9_]*(::[A-Za-z0-9][A-Za-z0-9_]*)*[?!]? {
 	yylval->string = strdup(yytext); 
 	return TOK_IDENT;
 }

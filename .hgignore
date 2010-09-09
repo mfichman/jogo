@@ -3,6 +3,8 @@ syntax:glob
 *.swp
 *.orig
 *.ap
+*.output
+*.ap.c
 apgrammar.h
 apgrammar.l.c
 apgrammar.y.c

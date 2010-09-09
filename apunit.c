@@ -21,6 +21,7 @@
  */  
 
 #include <apunit.h>
+#include <apparser.h>
 #include <apimport.h>
 #include <apdef.h>
 #include <apfunc.h>
@@ -30,12 +31,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-apunit_t *apunit_alloc(const char *filename, int type) {
+apunit_t *apunit_alloc(char *filename, int type) {
 	apunit_t *self = malloc(sizeof(apunit_t));
 
 	self->name = 0;
-	self->filename = malloc(strlen(filename) + 1);
-	strcpy(self->filename, filename);
+	self->symbol = APSYMBOL_TYPE_UNIT;
+	self->filename = filename;
 	self->type = type;
 	self->imports = 0;
 	self->defs = 0;
@@ -49,7 +50,7 @@ apunit_t *apunit_alloc(const char *filename, int type) {
 	return self;
 }
 
-void apunit_name(apunit_t *self, aptype_t *name) {
+void apunit_name(apunit_t *self, char *name) {
 	assert(!self->name);
 	self->name = name;
 }
@@ -67,34 +68,34 @@ void apunit_def(apunit_t *self, apdef_t *def) {
 void apunit_var(apunit_t *self, apvar_t *var) {
 	var->next = self->vars;
 	self->vars = var;
-	apsymtab_var(self->symbols, var->name, var);
-}
-
-void apunit_const(apunit_t *self, apvar_t *cons) {
-	cons->next = self->consts;
-	self->consts = cons;
-	apsymtab_var(self->symbols, cons->name, cons);
+	apsymtab_put(self->symbols, var->name, var);
 }
 
 void apunit_ctor(apunit_t *self, apfunc_t *ctor) {
+	ctor->unit = self;
+	ctor->flags |= APUNIT_FLAG_STATIC;
 	ctor->next = self->ctors;
 	self->ctors = ctor;
 }
 
 void apunit_dtor(apunit_t *self, apfunc_t *dtor) {
+	dtor->unit = self;
 	dtor->next = self->dtors;
 	self->dtors = dtor;
 }
 
 void apunit_func(apunit_t *self, apfunc_t *func) {
+	func->unit = self;
 	func->next = self->funcs;
 	self->funcs = func;
-	apsymtab_func(self->symbols, func->name, func);
+	apsymtab_put(self->symbols, func->name, func);
+	if (APUNIT_TYPE_MODULE == self->type) {
+		func->flags |= APUNIT_FLAG_STATIC;
+	}
 }
 
 void apunit_free(apunit_t *self) {
 	if (self) {
-		aptype_free(self->name);
 		apimport_free(self->imports);
 		apdef_free(self->defs);
 		apvar_free(self->vars);
@@ -104,6 +105,7 @@ void apunit_free(apunit_t *self) {
 		apunit_free(self->next);
 		apsymtab_free(self->symbols);
 		free(self->filename);
+		free(self->name);
 		free(self);
 	}
 }

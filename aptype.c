@@ -33,6 +33,7 @@ aptype_t *aptype_object(char *name) {
 
 	self->name = name;
 	self->type = APTYPE_TYPE_OBJECT;
+	self->func = 0;
 	self->next = 0;
 	self->flags = 0;
 
@@ -44,23 +45,24 @@ aptype_t *aptype_primitive(char *name) {
 
 	self->name = name;
 	self->type = APTYPE_TYPE_PRIMITIVE;
+	self->func = 0;
 	self->next = 0;
 	self->flags = 0;
 	
 	return self;
 }
 
-aptype_t *aptype_concat(aptype_t *self, aptype_t *type) {
+aptype_t *aptype_func(apfunc_t *func) {
+	aptype_t *self = malloc(sizeof(aptype_t));
 
-	size_t length = strlen(self->name) + strlen(type->name) + 3;
-	self->name = realloc(self->name, length); 
-	strcat(self->name, "::");
-	strcat(self->name, type->name);
-	
-	aptype_free(type);
-	
+	self->name = 0;
+	self->type = APTYPE_TYPE_FUNC;
+	self->func = func;
+	self->next = 0;
+	self->flags = 0;
+
 	return self;
-}
+}	
 
 aptype_t *aptype_clone(aptype_t *other) {
 	if (!other) {
@@ -72,6 +74,7 @@ aptype_t *aptype_clone(aptype_t *other) {
 	aptype_t *self = malloc(sizeof(aptype_t));
 	self->name = malloc(strlen(other->name) + 1);
 	self->type = other->type;
+	self->func = other->func;
 	self->flags = other->flags;
 	self->next = 0;
 
@@ -95,10 +98,6 @@ int aptype_comp(aptype_t *self, aptype_t *other) {
 	} else {
 		return 1;
 	}
-}
-
-int aptype_hash(aptype_t *self) {
-	return aphash_string(self->name);
 }
 
 void aptype_free(aptype_t *self) {
