@@ -19,17 +19,50 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */  
-#ifndef APSYMTAB_H
-#define APSYMTAB_H
 
-#include <apollo.h>
+#ifndef APRUNTIME_H
+#define APRUNTIME_H
 
-/* Symbol table for variable and type names */
+#include <stdint.h>
 
-apsymtab_t *apsymtab_alloc(apsymtab_t *parent);
-void apsymtab_put(apsymtab_t *self, const char *name, void *symbol);
-void *apsymtab_get(apsymtab_t *self, const char *name);
-apsymtab_t *apsymtab_get_parent(apsymtab_t *self);
-void apsymtab_free(apsymtab_t *self);
+typedef struct apobject apobject_t;
+typedef struct apiface apiface_t;
+
+typedef uint32_t apuint_t;
+typedef int32_t apint_t;
+typedef uint16_t apushort_t;
+typedef int16_t apshort_t;
+typedef uint8_t apubyte_t;
+typedef int8_t apbyte_t;
+typedef uint64_t apulong_t;
+typedef int64_t aplong_t; 
+
+#define apobject_release(object, dtor) {\
+	if (object && --(object)->__refcount <= 0) {\
+		dtor(object);\
+	}\
+}
+
+#define apobject_retain(object) {\
+	(object)->__refcount++;\
+}
+
+struct apobject {
+	apushort_t __refcount;
+};
+
+typedef void (*apdtor_t)(apobject_t *object);
+
+static inline void *apobject_assign(void **a, void *b, apdtor_t *dtor) {
+	apobject_release((apobject_t *)*a);
+	*a = b;	
+	apobject_retain((apobject_t *)*a);
+	return *a;
+}
+
+static inline void *apobject_init(void *object) {
+	apobject_retain((apobject_t *)*object);
+	return object;
+}
 
 #endif

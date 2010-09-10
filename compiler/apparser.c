@@ -82,7 +82,12 @@ int apparser_parse(apparser_t *self, const char *filename) {
 		*out = 0;
 		strcat(out, ".ap");
 
-		apparser_parse_unit(self, filename);
+		if (apparser_parse_unit(self, filename)) {
+			apparser_error(self, "%s:", import->filename);
+			apparser_error(self, "%d:", import->loc.first_line);
+			apparser_error(self, "%d: ", import->loc.first_column);
+			apparser_error(self, "Could not find '%s'\n", self->filename);	
+		}
 		apimport_free(import);
 		free(filename);
 	}
@@ -100,8 +105,7 @@ int apparser_parse_unit(apparser_t *self, const char *filename) {
 	strcpy(self->filename, filename);
 	self->fd = fopen(self->filename, "r");
 	if (!self->fd) {
-		apparser_error(self, "Could not find '%s'\n", self->filename);	
-		return self->error;
+		return 1;
 	}
 	self->column = 1;
 	self->symbols = 0;
@@ -118,7 +122,7 @@ int apparser_parse_unit(apparser_t *self, const char *filename) {
 		}
 	}
 
-	return self->error;
+	return 0;
 }
 
 int apparser_read(apparser_t *self, char *buffer, int length) {
@@ -191,6 +195,11 @@ void apparser_check_unit(apparser_t *self, apunit_t *unit) {
 	for (apimport_t *import = unit->imports; import; import = import->next) {
 		apunit_t *other = aphash_get(self->types, import->type->name);
 		apsymtab_put(unit->symbols, import->type->name, other);
+		if (APUNIT_TYPE_MODULE == other->type) {
+			for (apfunc_t *func = other->funcs; func; func = func->next) {
+				apsymtab_put(unit->symbols, func->name, func);
+			}
+		}	
 	}
 
 	/* Type check the functions */
@@ -343,6 +352,16 @@ void apparser_check_expr_binary(apparser_t *self, apexpr_t *expr) {
 		apparser_error(self, "\n");
 		return;
 	}
+
+	if ('=' == *expr->string) {
+		int ltype = expr->child[0]->type;
+		if (APEXPR_TYPE_IDENT != ltype && APEXPR_TYPE_MEMBER != ltype) {
+			apparser_print_loc(self, &expr->loc);
+			apparser_error(self, "Expression is not assignable\n");	
+			return;
+		}
+	}
+
 	expr->chktype = aptype_clone(expr->child[0]->chktype);
 }
 

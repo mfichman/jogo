@@ -20,32 +20,57 @@
  * IN THE SOFTWARE.
  */  
 
-#include <apimport.h>
-#include <aptype.h>
+#include <apsymtab.h>
+#include <apvar.h>
+#include <aphash.h>
+#include <assert.h>
+#include <string.h>
 #include <stdlib.h>
 
-apimport_t *apimport_alloc(aptype_t *type) {
-	apimport_t *self = malloc(sizeof(apimport_t));
+struct apsymtab {
+	apsymtab_t *parent;
+	aphash_t *symbols;
+};
 
-	self->type = type;
-	self->next = 0;
-	
-	return self;
-}
+apsymtab_t *apsymtab_alloc(apsymtab_t *parent) {
+	apsymtab_t *self = malloc(sizeof(apsymtab_t));
 
-apimport_t *apimport_clone(apimport_t *import) {
-	apimport_t *self = malloc(sizeof(apimport_t));
-
-	self->type = aptype_clone(import->type);
-	self->next = 0;
+	self->parent = parent;
+	self->symbols = aphash_alloc((aphash_compfn_t)&strcmp, &aphash_string);
 
 	return self;
 }
 
-void apimport_free(apimport_t *self) {
+void apsymtab_put(apsymtab_t *self, const char *name, void *symbol) {
+	aphash_put(self->symbols, name, symbol);
+}
+
+void *apsymtab_get(apsymtab_t *self, const char *name) {
+	void *symbol = aphash_get(self->symbols, name);
+	if (!symbol && self->parent) {
+		return apsymtab_get(self->parent, name);
+	} else {
+		return symbol;
+	}
+}
+
+apsymtab_t *apsymtab_get_parent(apsymtab_t *self) {
+	return self->parent;
+}
+
+apsymtab_iter_t apsymtab_iter(apsymtab_t *self) {
+	return aphash_iter(self->symbols);
+}
+
+void *apsymtab_next(apsymtab_t* self, apsymtab_iter_t *iter) {
+	return aphash_next(self->symbols, iter);
+}
+
+
+void apsymtab_free(apsymtab_t *self) {
 	if (self) {
-		aptype_free(self->type);
-		apimport_free(self->next);
+		aphash_free(self->symbols);
 		free(self);
 	}
+
 }

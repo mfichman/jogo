@@ -28,6 +28,7 @@
 #include <apstmt.h>
 #include <aptype.h>
 #include <apfunc.h>
+#include <apsymtab.h>
 #include <assert.h>
 #include <stdarg.h>
 #include <string.h>
@@ -79,6 +80,7 @@ void apcgen_gen_unit(apcgen_t *self, apunit_t *unit) {
 		apcgen_print(self, " ");
 		apcgen_print_name(self, unit->name);
 		apcgen_print(self, " {\n");
+		apcgen_print(self, "    apushort_t __refcount;\n");
 		for (apvar_t *var = unit->vars; var; var = var->next) {
 			apcgen_print(self, "    ");
 			apcgen_print_type(self, var->type);
@@ -99,7 +101,9 @@ void apcgen_gen_func(apcgen_t *self, apfunc_t *func) {
 	apcgen_print_type(self, func->rets);
 	apcgen_print(self, " ");
 	apcgen_print_name(self, self->unit->name);	
-	apcgen_print(self, "_%s(", func->name);
+	apcgen_print(self, "_");
+	apcgen_print_name(self, func->name);
+	apcgen_print(self, "(");
 	for (apvar_t *var = func->args; var; var = var->next) {
 		apcgen_print_type(self, var->type);
 		apcgen_print(self, " %s", var->name);
@@ -127,16 +131,7 @@ void apcgen_gen_stmt(apcgen_t *self, apstmt_t *stmt) {
 
 	switch (stmt->type) {
 	case APSTMT_TYPE_BLOCK:
-		apcgen_print(self, "{\n");
-		self->indent++;
-		for (apstmt_t *child = stmt->child[0]; child; child = child->next) {
-			apcgen_indent(self);
-			apcgen_gen_stmt(self, child);
-			apcgen_print(self, "\n");
-		}
-		self->indent--;
-		apcgen_indent(self);
-		apcgen_print(self, "}");
+		apcgen_gen_stmt_block(self, stmt);
 		break;
 
 	case APSTMT_TYPE_RETURN:
@@ -154,13 +149,7 @@ void apcgen_gen_stmt(apcgen_t *self, apstmt_t *stmt) {
 		break;
 
 	case APSTMT_TYPE_DECL:
-		apcgen_print_type(self, stmt->var->type);
-		apcgen_print(self, " %s", stmt->var->name);
-		if (stmt->var->expr) {
-			apcgen_print(self, " = ");
-			apcgen_gen_expr(self, stmt->var->expr);
-		}
-		apcgen_print(self, ";");
+		apcgen_gen_stmt_decl(self, stmt);
 		break;
 
 
@@ -223,6 +212,47 @@ void apcgen_gen_stmt(apcgen_t *self, apstmt_t *stmt) {
 
 }
 
+void apcgen_gen_stmt_block(apcgen_t *self, apstmt_t *stmt) {
+	apcgen_print(self, "{\n");
+	self->indent++;
+	for (apstmt_t *child = stmt->child[0]; child; child = child->next) {
+		apcgen_indent(self);
+		apcgen_gen_stmt(self, child);
+		apcgen_print(self, "\n");
+	}
+	self->indent--;
+	apcgen_indent(self);
+
+	/* Free variables that are local to this block */
+	apsymtab_iter_t iter = apsymtab_iter(stmt->symbols);
+	apvar_t *var;
+	while ((var = apsymtab_next(stmt->symbols, &iter))) {
+		if (APTYPE_TYPE_OBJECT == var->type->type) {
+			apcgen_indent(self);
+			apcgen_print(self, "apobject_release(%s);\n", var->name);
+		}
+	}
+
+	apcgen_print(self, "}");
+}
+
+void apcgen_gen_stmt_decl(apcgen_t *self, apstmt_t *stmt) {
+	apcgen_print_type(self, stmt->var->type);
+	apcgen_print(self, " %s", stmt->var->name);
+	if (stmt->var->expr) {
+		if (APTYPE_TYPE_OBJECT == stmt->var->expr->chktype->type) {
+			apcgen_print(self, " = apobject_init(");
+			apcgen_gen_expr(self, stmt->var->expr);
+			apcgen_print(self, ")");
+			
+		} else {
+			apcgen_print(self, " = ");
+			apcgen_gen_expr(self, stmt->var->expr);
+		}
+	}
+	apcgen_print(self, ";");
+}
+
 void apcgen_gen_expr(apcgen_t *self, apexpr_t *expr) {
 	switch (expr->type) {
 		case APEXPR_TYPE_STRING:
@@ -241,11 +271,7 @@ void apcgen_gen_expr(apcgen_t *self, apexpr_t *expr) {
 			break;
 
 		case APEXPR_TYPE_BINARY:
-			apcgen_print(self, "(");
-			apcgen_gen_expr(self, expr->child[0]); 
-			apcgen_print(self, expr->string);
-			apcgen_gen_expr(self, expr->child[1]);
-			apcgen_print(self, ")");
+			apcgen_gen_expr_binary(self, expr);
 			break;
 		
 		case APEXPR_TYPE_CALL:
@@ -260,6 +286,23 @@ void apcgen_gen_expr(apcgen_t *self, apexpr_t *expr) {
 			apcgen_print(self, "%s", expr->string);
 			break;
 	}	
+}
+
+void apcgen_gen_expr_binary(apcgen_t *self, apexpr_t *expr) {
+	aptype_t *type = expr->child[0]->chktype;
+	if ('=' == *expr->string && APTYPE_TYPE_OBJECT == type->type) {
+		apcgen_print(self, "apobject_assign(&");
+		apcgen_gen_expr(self, expr->child[0]);	
+		apcgen_print(self, ", ");
+		apcgen_gen_expr(self, expr->child[1]);
+		apcgen_print(self, ")");
+	} else {
+		apcgen_print(self, "(");
+		apcgen_gen_expr(self, expr->child[0]); 
+		apcgen_print(self, expr->string);
+		apcgen_gen_expr(self, expr->child[1]);
+		apcgen_print(self, ")");
+	}
 }
 
 void apcgen_gen_expr_call(apcgen_t *self, apexpr_t *expr) {
@@ -291,11 +334,11 @@ void apcgen_gen_args(apcgen_t *self, apexpr_t *expr) {
 void apcgen_print_type(apcgen_t *self, aptype_t *type) {
 	if (!type) {
 		apcgen_print(self, "void");
-	} else {
+	} else if (APTYPE_TYPE_PRIMITIVE == type->type) {
+		apcgen_print(self, "ap%s_t", type->name);
+	} else if (APTYPE_TYPE_OBJECT == type->type) {
 		apcgen_print_name(self, type->name);
-		if (APTYPE_TYPE_OBJECT == type->type) {
-			apcgen_print(self, "*");
-		}
+		apcgen_print(self, "*");
 	}
 }
 

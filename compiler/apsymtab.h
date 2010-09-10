@@ -19,23 +19,20 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */  
-
-#ifndef APHASH_H
-#define APHASH_H
+#ifndef APSYMTAB_H
+#define APSYMTAB_H
 
 #include <apollo.h>
 
-/* General purpose hash table */
+/* Symbol table for variable and type names */
+typedef int apsymtab_iter_t;
 
-typedef int (*aphash_compfn_t)(const void *, const void *);
-typedef unsigned int (*aphash_hashfn_t)(const void *);
-
-aphash_t *aphash_alloc(aphash_compfn_t comp, aphash_hashfn_t hash);
-void *aphash_put(aphash_t *self, const void *key, void *value);
-void *aphash_get(aphash_t *self, const void *key);
-void *aphash_remove(aphash_t *self, const void *key);
-unsigned int aphash_string(const void *key);
-unsigned int aphash_pointer(const void *key);
-void aphash_free(aphash_t *self);
+apsymtab_t *apsymtab_alloc(apsymtab_t *parent);
+void apsymtab_put(apsymtab_t *self, const char *name, void *symbol);
+void *apsymtab_get(apsymtab_t *self, const char *name);
+apsymtab_iter_t apsymtab_iter(apsymtab_t *self);
+void *apsymtab_next(apsymtab_t *self, apsymtab_iter_t *iter);
+apsymtab_t *apsymtab_get_parent(apsymtab_t *self);
+void apsymtab_free(apsymtab_t *self);
 
 #endif

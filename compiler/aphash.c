@@ -23,6 +23,7 @@
 #include <aphash.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 typedef struct aphash_entry aphash_entry_t;
 struct aphash_entry {
@@ -122,6 +123,20 @@ void *aphash_remove(aphash_t *self, const void *key) {
 	}
 
 	return 0;
+}
+
+aphash_iter_t aphash_iter(aphash_t *self) {
+	return -1;
+}
+
+void *aphash_next(aphash_t *self, aphash_iter_t *iter) {
+	do {
+		if (++(*iter) > self->capacity) {
+			return 0;
+		}
+	} while (!self->entries[*iter].present);
+
+	return self->entries[*iter].value;
 }
 
 unsigned int aphash_string(const void *key) {

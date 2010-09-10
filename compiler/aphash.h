@@ -20,48 +20,25 @@
  * IN THE SOFTWARE.
  */  
 
-#include <apsymtab.h>
-#include <apvar.h>
-#include <aphash.h>
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
+#ifndef APHASH_H
+#define APHASH_H
 
-struct apsymtab {
-	apsymtab_t *parent;
-	aphash_t *symbols;
-};
+#include <apollo.h>
 
-apsymtab_t *apsymtab_alloc(apsymtab_t *parent) {
-	apsymtab_t *self = malloc(sizeof(apsymtab_t));
+/* General purpose hash table */
 
-	self->parent = parent;
-	self->symbols = aphash_alloc((aphash_compfn_t)&strcmp, &aphash_string);
+typedef int (*aphash_compfn_t)(const void *, const void *);
+typedef unsigned int (*aphash_hashfn_t)(const void *);
+typedef int aphash_iter_t;
 
-	return self;
-}
+aphash_t *aphash_alloc(aphash_compfn_t comp, aphash_hashfn_t hash);
+void *aphash_put(aphash_t *self, const void *key, void *value);
+void *aphash_get(aphash_t *self, const void *key);
+void *aphash_remove(aphash_t *self, const void *key);
+aphash_iter_t aphash_iter(aphash_t *self);
+void *aphash_next(aphash_t *self, aphash_iter_t *iter);
+unsigned int aphash_string(const void *key);
+unsigned int aphash_pointer(const void *key);
+void aphash_free(aphash_t *self);
 
-void apsymtab_put(apsymtab_t *self, const char *name, void *symbol) {
-	aphash_put(self->symbols, name, symbol);
-}
-
-void *apsymtab_get(apsymtab_t *self, const char *name) {
-	void *symbol = aphash_get(self->symbols, name);
-	if (!symbol && self->parent) {
-		return apsymtab_get(self->parent, name);
-	} else {
-		return symbol;
-	}
-}
-
-apsymtab_t *apsymtab_get_parent(apsymtab_t *self) {
-	return self->parent;
-}
-
-void apsymtab_free(apsymtab_t *self) {
-	if (self) {
-		aphash_free(self->symbols);
-		free(self);
-	}
-
-}
+#endif

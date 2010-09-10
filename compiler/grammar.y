@@ -243,11 +243,15 @@ module
     ;
     
 import
-    : TOK_IMPORT TOK_IDENT ';' { $$ = apimport_alloc(aptype_object($2)); }
+    : TOK_IMPORT TOK_IDENT ';' { 
+		$$ = apimport_alloc(&@$, strdup(parser->filename), aptype_object($2));
+	}
     ;
 
 def
-    : TOK_DEF type TOK_IDENT ';' { $$ = apdef_alloc($2, aptype_object($3)); }
+    : TOK_DEF type TOK_IDENT ';' { 
+		$$ = apdef_alloc($2, aptype_object($3)); 
+	}
     ;
 
 variable
