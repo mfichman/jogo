@@ -24,6 +24,7 @@
 #include <apstmt.h>
 #include <aptype.h>
 #include <apvar.h>
+#include <apsymtab.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -37,6 +38,7 @@ apfunc_t *apfunc_alloc(char *name, apvar_t *arg, aptype_t *ret, apstmt_t *body) 
 	self->rets = ret;
 	self->args = arg;
 	self->unit = 0;
+	self->symbols = 0;
 	self->next = 0;
 
 	return self;
@@ -49,6 +51,7 @@ void apfunc_free(apfunc_t *self) {
 		aptype_free(self->rets);
 		apvar_free(self->args);
 		apfunc_free(self->next);
+		apsymtab_free(self->symbols);
 		free(self);
 	}
 }

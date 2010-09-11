@@ -131,7 +131,7 @@ aphash_iter_t aphash_iter(aphash_t *self) {
 
 void *aphash_next(aphash_t *self, aphash_iter_t *iter) {
 	do {
-		if (++(*iter) > self->capacity) {
+		if (++(*iter) >= self->capacity) {
 			return 0;
 		}
 	} while (!self->entries[*iter].present);

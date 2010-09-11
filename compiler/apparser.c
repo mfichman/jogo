@@ -210,9 +210,10 @@ void apparser_check_unit(apparser_t *self, apunit_t *unit) {
 
 void apparser_check_func(apparser_t *self, apfunc_t *func) {
 	if (func->block) {
-		func->block->symbols = apsymtab_alloc(self->symbols);
+		func->symbols = apsymtab_alloc(self->symbols);
+		self->symbols = func->symbols;
 		for (apvar_t *arg = func->args; arg; arg = arg->next) {
-			apsymtab_put(func->block->symbols, arg->name, arg);
+			apsymtab_put(func->symbols, arg->name, arg);
 		}
 
 		self->rets = func->rets;
@@ -229,9 +230,7 @@ void apparser_check_stmt(apparser_t *self, apstmt_t *stmt) {
 	switch (stmt->type) {
 	case APSTMT_TYPE_BLOCK:
 		/* Allocate a new symbol table for this block */
-		if (!stmt->symbols) { 
-			stmt->symbols = apsymtab_alloc(self->symbols);
-		}
+		stmt->symbols = apsymtab_alloc(self->symbols);
 		self->symbols = stmt->symbols;
 		for (apstmt_t *child = stmt->child[0]; child; child = child->next) {
 			apparser_check_stmt(self, child);

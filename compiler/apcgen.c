@@ -220,8 +220,6 @@ void apcgen_gen_stmt_block(apcgen_t *self, apstmt_t *stmt) {
 		apcgen_gen_stmt(self, child);
 		apcgen_print(self, "\n");
 	}
-	self->indent--;
-	apcgen_indent(self);
 
 	/* Free variables that are local to this block */
 	apsymtab_iter_t iter = apsymtab_iter(stmt->symbols);
@@ -233,6 +231,8 @@ void apcgen_gen_stmt_block(apcgen_t *self, apstmt_t *stmt) {
 		}
 	}
 
+	self->indent--;
+	apcgen_indent(self);
 	apcgen_print(self, "}");
 }
 
