@@ -54,16 +54,17 @@ aphash_t *aphash_alloc(aphash_compfn_t comp, aphash_hashfn_t hash) {
 
 void aphash_rehash(aphash_t *self, int capacity) {
 	aphash_entry_t *old = self->entries;
+    int old_capacity = self->capacity;
 	self->entries = calloc(capacity, sizeof(aphash_entry_t));
+    self->capacity = capacity;
 	
-	for (int i = 0; i < self->capacity; i++) {
-		if (self->entries[i].present) {
-			aphash_put(self, self->entries[i].key, self->entries[i].value);
+	for (int i = 0; i < old_capacity; i++) {
+		if (old[i].present) {
+			aphash_put(self, old[i].key, old[i].value);
 		}
 	}
 
 	free(old);
-	self->capacity = capacity;
 }
 
 void *aphash_put(aphash_t *self, const void *key, void *value) {

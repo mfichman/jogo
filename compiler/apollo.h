@@ -24,6 +24,8 @@
 #define APOLLO_H
 
 #include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
 
 
 #define APSYMBOL_TYPE_FUNC 0
@@ -35,6 +37,7 @@ typedef struct apexpr apexpr_t;
 typedef struct aphash aphash_t;
 typedef struct apimport apimport_t;
 typedef struct apparser apparser_t;
+typedef struct apchecker apchecker_t;
 typedef struct apstmt apstmt_t;
 typedef struct apsymtab apsymtab_t;
 typedef struct aptype aptype_t;
@@ -54,5 +57,12 @@ typedef uint8_t apubyte_t;
 typedef int8_t apbyte_t;
 typedef uint64_t apulong_t;
 typedef int64_t aplong_t; 
+
+
+static inline char *strdup(const char* str) {
+	char *copy = malloc(strlen(str) + 1);
+	strcpy(copy, str);
+	return copy;
+}
 
 #endif

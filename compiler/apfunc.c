@@ -28,13 +28,14 @@
 #include <string.h>
 #include <stdlib.h>
 
-apfunc_t *apfunc_alloc(char *name, apvar_t *arg, aptype_t *ret, apstmt_t *body) {
+apfunc_t *apfunc_alloc(aploc_t *loc, char *name, apvar_t *arg, aptype_t *ret) {
 	apfunc_t *self = malloc(sizeof(apfunc_t));
 
 	self->name = name;
 	self->symbol = APSYMBOL_TYPE_FUNC;
+	self->loc = *loc;
 	self->flags = 0;
-	self->block = body;
+	self->block = 0;
 	self->rets = ret;
 	self->args = arg;
 	self->unit = 0;

@@ -20,45 +20,18 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef APPARSER_H
-#define APPARSER_H
+#include <aploc.h>
 
-#include <apollo.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+void aploc_print(aploc_t *loc, const char *filename, FILE *file) {
+	int line = loc->first_line;
+	int column = loc->first_column;
 
-/* Primary parser structure; contains symbol table and compilation units */
-struct apparser {
-	apunit_t *unit; /* Current unit being parsed */
-	FILE *fd; /* Current file descriptor */
-	int column; /* Current column number */
-	int error; /* Error flag */
-	char *filename; /* Current filename */
-	void *scanner;
-};
+	fprintf(file, "%s:%d:%d: ", filename, line, column);
+}
 
-/* Union of the different types possible for a Bison production */
-typedef union apnode apnode_t;
-union apnode {
-	apexpr_t *expr; 
-	apstmt_t *stmt;
-	aptype_t *type;
-	apunit_t *unit;
-	apvar_t *var;
-	apfunc_t *func;
-	apimport_t *import;
-	apdef_t *def;
-	char *string;	
-	int null;
-	int flag;
-};
+void aploc_print_end(aploc_t *loc, const char *filename, FILE *file) {
+	int line = loc->last_line;
+	int column = loc->last_column;
 
-apparser_t *apparser_alloc();
-int apparser_parse(apparser_t *self, apunit_t *unit);
-int apparser_read(apparser_t *self, char *buffer, int length);
-void apparser_newline(apparser_t *self);
-void apparser_error(apparser_t *self, const char* fmt, ...);
-void apparser_free(apparser_t *self);
-
-#endif
+	fprintf(file, "%s:%d:%d: ", filename, line, column);
+}

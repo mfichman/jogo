@@ -23,19 +23,22 @@
 #ifndef APVAR_H
 #define APVAR_H
 
+#include <apollo.h>
 #include <aptype.h>
+#include <aploc.h>
 
 /* Local apvariable/symbol in the current scope */
 struct apvar {
 	apsymbol_t symbol;
 	char *name;
 	int flags;
+	aploc_t loc;
 	aptype_t *type;
 	apexpr_t *expr;
 	apvar_t *next;
 };	
 
-apvar_t *apvar_alloc(char *name, int flags, aptype_t *type, apexpr_t *expr);
+apvar_t *apvar_alloc(aploc_t *loc, char *name, aptype_t *type);
 int apvar_comp(apvar_t *self, apvar_t *apvar);
 void apvar_free(apvar_t *self);
 

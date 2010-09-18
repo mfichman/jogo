@@ -131,25 +131,28 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %type <expr> primary
 
 
-/* The Standard Apollo Grammar, 2010 */
+/* The Standard Apollo Grammar, version 2010 */
 %%
 translation_unit
     : TOK_CLASS TOK_IDENT ';' class {
-        apunit_name($4, $2); 
-		apparser_class(parser, $4);
-		
+		if (strcmp($2, $4->name)) {
+			yyerror(&@$, parser, scanner, "Class name does not match filename");
+		}
     }
     | TOK_INTERFACE TOK_IDENT ';' interface {
-        apunit_name($4, $2); 
-		apparser_interface(parser, $4);
+		if (strcmp($2, $4->name)) {
+			yyerror(&@$, parser, scanner, "Class name does not match filename");
+		}
     }
     | TOK_STRUCT TOK_IDENT ';' struct {
-        apunit_name($4, $2); 
-		apparser_struct(parser, $4);
+		if (strcmp($2, $4->name)) {
+			yyerror(&@$, parser, scanner, "Class name does not match filename");
+		}
     }
     | TOK_MODULE TOK_IDENT ';' module {
-        apunit_name($4, $2);
-		apparser_module(parser, $4);
+		if (strcmp($2, $4->name)) {
+			yyerror(&@$, parser, scanner, "Class name does not match filename");
+		}
     }
 	| /* empty is an error */ { 
 		yyerror(&@$, parser, scanner, "Input file is empty"); 
@@ -168,7 +171,8 @@ class
 	| native class { $$ = $2; apunit_func($$, $1); }
 	| error class { $$ = $2; }
     | /* empty */ { 
-		$$ = apunit_alloc(strdup(parser->filename), APUNIT_TYPE_CLASS); 
+		$$ = parser->unit;
+		$$->type = APUNIT_TYPE_CLASS;
 	}
     ;
 
@@ -196,7 +200,8 @@ interface
 	}
 	| error interface { $$ = $2; }
     | /* empty */ { 
-		$$ = apunit_alloc(strdup(parser->filename), APUNIT_TYPE_INTERFACE);
+		$$ = parser->unit;
+		$$->type = APUNIT_TYPE_INTERFACE;
 	}
     ;
 
@@ -215,7 +220,8 @@ struct
 	}
 	| error struct { $$ = $2; }
     | /* empty */ { 
-		$$ = apunit_alloc(strdup(parser->filename), APUNIT_TYPE_STRUCT); 
+		$$ = parser->unit;
+		$$->type = APUNIT_TYPE_STRUCT;
 	}
     ;
 
@@ -238,13 +244,14 @@ module
     | function module { $$ = $2; apunit_func($$, $1); }
 	| error module { $$ = $2; }
     | /* empty */ { 
-		$$ = apunit_alloc(strdup(parser->filename), APUNIT_TYPE_MODULE); 
+		$$ = parser->unit;
+		$$->type = APUNIT_TYPE_MODULE;
 	}
     ;
     
 import
     : TOK_IMPORT TOK_IDENT ';' { 
-		$$ = apimport_alloc(&@$, strdup(parser->filename), aptype_object($2));
+		$$ = apimport_alloc(&@$, $2);
 	}
     ;
 
@@ -257,23 +264,26 @@ def
 variable
     : type TOK_IDENT '=' expression ';' {
 		// TODO: Set symbol table for class-level
-		$$ = apvar_alloc($2, 0, $1, $4);
+		$$ = apvar_alloc(&@$, $2, $1);
+		$$->expr = $4;
     }
     | type TOK_IDENT ';' {
-		$$ = apvar_alloc($2, 0, $1, 0);
+		$$ = apvar_alloc(&@$, $2, $1);
     }
 	;
 
 constructor
     : TOK_INIT parameter_signature block { 
-		$$ = apfunc_alloc(strdup("@init"), $2, 0, $3);
+		$$ = apfunc_alloc(&@$, strdup("@init"), $2, 0);
 		$$->flags &= APUNIT_FLAG_STATIC;
+		$$->block = $3;
 	}
     ;
 
 destructor
     : TOK_DESTROY '(' ')' block { 
-		$$ = apfunc_alloc(strdup("@destroy"), 0, 0, $4); 
+		$$ = apfunc_alloc(&@$, strdup("@destroy"), 0, 0); 
+		$$->block = $4;
 	}
 	| TOK_DESTROY '(' parameter_list ')' block {
 		apvar_free($3);
@@ -286,33 +296,35 @@ destructor
 
 function
     : TOK_IDENT parameter_signature modifiers type block {
-		$$ = apfunc_alloc($1, $2, $4, $5);
+		$$ = apfunc_alloc(&@$, $1, $2, $4);
 		$$->flags = $3;
+		$$->block = $5;
     }
 	| TOK_IDENT parameter_signature modifiers block {
-		$$ = apfunc_alloc($1, $2, 0, $4);
+		$$ = apfunc_alloc(&@$, $1, $2, 0);
 		$$->flags = $3;
+		$$->block = $4;
 	}
 	;
 
 prototype
 	: TOK_IDENT parameter_signature modifiers type ';' {
-		$$ = apfunc_alloc($1, $2, $4, 0);
+		$$ = apfunc_alloc(&@$, $1, $2, $4);
 		$$->flags = $3;
 	}
 	| TOK_IDENT parameter_signature modifiers ';' {
-		$$ = apfunc_alloc($1, $2, 0, 0);
+		$$ = apfunc_alloc(&@$, $1, $2, 0);
 		$$->flags = $3;
 	}
     ;
 
 native
 	: TOK_IDENT parameter_signature modifiers TOK_NATIVE type ';' {
-		$$ = apfunc_alloc($1, $2, $5, 0);
+		$$ = apfunc_alloc(&@$, $1, $2, $5);
 		$$->flags = $3|APUNIT_FLAG_NATIVE;
 	}
 	| TOK_IDENT parameter_signature modifiers TOK_NATIVE ';' {
-		$$ = apfunc_alloc($1, $2, 0, 0);
+		$$ = apfunc_alloc(&@$, $1, $2, 0);
 		$$->flags = $3|APUNIT_FLAG_NATIVE;
 	}
     ;
@@ -326,11 +338,11 @@ parameter_signature
 
 parameter_list
 	: type TOK_IDENT ',' parameter_list { 
-		$$ = apvar_alloc($2, 0, $1, 0);
+		$$ = apvar_alloc(&@1, $2, $1);
 		$$->next = $4;
 	}
 	| type TOK_IDENT { 
-		$$ = apvar_alloc($2, 0, $1, 0);
+		$$ = apvar_alloc(&@$, $2, $1);
 	}
     ;
 
@@ -347,7 +359,7 @@ type
     : TOK_PRIMITIVE { $$ = $1; } 
 	| TOK_PRIMITIVE '*' { $$ = $1; $$->flags &= APTYPE_FLAG_ARRAY; }
 	| TOK_PRIMITIVE '?' { $$ = $1; $$->flags &= APTYPE_FLAG_NULLABLE; }
-    | TOK_IDENT { apparser_resolve_type(parser, $$ = aptype_object($1)); }
+    | TOK_IDENT { $$ = aptype_object($1); }
     ;
 
 block
@@ -373,7 +385,8 @@ statement
 		$$ = apstmt_for(&@$, gd, $9);
 	}
 	| TOK_FOR '(' type TOK_IDENT ':' expression ')' block {
-		$$ = apstmt_foreach(&@$, apvar_alloc($4, 0, $3, $6), $8);
+		$$ = apstmt_foreach(&@$, apvar_alloc(&@1, $4, $3), $8);
+		$$->var->expr = $6;
 	}
 	| TOK_UNTIL '(' clause ')' block {
 		$$ = apstmt_until(&@$, $3, $5);
@@ -388,7 +401,7 @@ statement
 		$$ = apstmt_dowhile(&@$, $2, $5);
 	}
     | type TOK_IDENT ';' { 
-		$$ = apstmt_decl(&@$, apvar_alloc($2, 0, $1, 0)); 
+		$$ = apstmt_decl(&@$, apvar_alloc(&@$, $2, $1)); 
 	}
 	| conditional { $$ = $1; }
 	| clause ';' { $$ = $1; }
@@ -398,7 +411,8 @@ statement
 
 clause
     : type TOK_IDENT '=' expression { 
-		$$ = apstmt_decl(&@$, apvar_alloc($2, 0, $1, $4)); 
+		$$ = apstmt_decl(&@$, apvar_alloc(&@$, $2, $1)); 
+		$$->var->expr = $4;
 	}  
     | expression { 
 		$$ = apstmt_expr(&@$, $1); 

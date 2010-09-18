@@ -41,9 +41,9 @@
 struct apunit {
 	apsymbol_t symbol; /* Symbol type tag */
 	char *name; /* Name of the compilation unit */
-	int type; /* Type of apunit: struct, class, or enum */
 	char *filename; /* File name of the compilation unit */
-	apimport_t *imports; /* List of imports */
+	int type; /* Type of apunit: struct, class, or enum */
+	apimport_t *imports; /* List of imports for this unit */
 	apdef_t *defs; /* List of defines */
 	apvar_t *vars; /* List of variables */
 	apvar_t *consts; /* List of constants */
@@ -54,8 +54,7 @@ struct apunit {
 	apunit_t *next;
 };
 
-apunit_t *apunit_alloc(char *filename, int type);
-void apunit_name(apunit_t *self, char *name);
+apunit_t *apunit_alloc(char *string);
 void apunit_import(apunit_t *self, apimport_t *import);
 void apunit_def(apunit_t *self, apdef_t *def);
 void apunit_var(apunit_t *self, apvar_t *var);

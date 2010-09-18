@@ -100,6 +100,14 @@ int aptype_comp(aptype_t *self, aptype_t *other) {
 	}
 }
 
+void aptype_print(aptype_t *self, FILE *file) {
+	if (self) {
+		fprintf(file, "'%s'", self->name);
+	} else {
+		fprintf(file, "'void'");
+	}
+}
+
 void aptype_free(aptype_t *self) {
 	if (self) {
 		free(self->name);

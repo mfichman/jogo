@@ -24,6 +24,7 @@
 #define APFUNC_H
 
 #include <apollo.h>
+#include <aploc.h>
 
 #define APFUNC_TYPE_MEMBER 0
 #define APFUNC_TYPE_FREE 1
@@ -35,6 +36,7 @@ struct apfunc {
 	apsymbol_t symbol;		/* Symbol type tag */
 	char *name;       		/* Qualified function name */
 	int flags;				/* Function flags */
+	aploc_t loc;			/* Location of the function text */
 	apunit_t *unit;			/* Enclosing unit */
 	apstmt_t *block;       	/* Function body */
 	aptype_t *rets;	     	/* List of return types (in reverse order) */
@@ -43,7 +45,7 @@ struct apfunc {
 	apfunc_t *next;         
 };
 
-apfunc_t *apfunc_alloc(char *name, apvar_t *arg, aptype_t *ret, apstmt_t *block);
+apfunc_t *apfunc_alloc(aploc_t *loc, char *name, apvar_t *arg, aptype_t *ret);
 void apfunc_free(apfunc_t *self);
 
 #endif

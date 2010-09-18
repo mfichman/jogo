@@ -24,33 +24,20 @@
 #include <aptype.h>
 #include <stdlib.h>
 
-apimport_t *apimport_alloc(aploc_t *loc, char *file, aptype_t *type) {
+apimport_t *apimport_alloc(aploc_t *loc, char *name) {
 	apimport_t *self = malloc(sizeof(apimport_t));
 
-	self->type = type;
-	self->filename = file;
+	self->name = name;
 	self->loc = *loc;
 	self->next = 0;
 	
 	return self;
 }
 
-apimport_t *apimport_clone(apimport_t *import) {
-	apimport_t *self = malloc(sizeof(apimport_t));
-
-	self->type = aptype_clone(import->type);
-	self->filename = strdup(import->filename);
-	self->loc = import->loc;
-	self->next = 0;
-
-	return self;
-}
-
 void apimport_free(apimport_t *self) {
 	if (self) {
-		aptype_free(self->type);
 		apimport_free(self->next);
-		free(self->filename);
+		free(self->name);
 		free(self);
 	}
 }

@@ -25,6 +25,7 @@
 
 #include <apollo.h>
 #include <apparser.h>
+#include <aploc.h>
 
 #define APSTMT_TYPE_BLOCK 1
 #define APSTMT_TYPE_EXPR 2

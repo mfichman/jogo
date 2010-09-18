@@ -25,17 +25,16 @@
 
 #include <apollo.h>
 #include <apparser.h>
+#include <aploc.h>
 
 /* File apimport header */
 struct apimport {
-	aptype_t *type;
+	char *name;
 	apimport_t *next;
 	aploc_t loc;
-	char *filename;
 };
 
-apimport_t *apimport_alloc(aploc_t *loc, char *file, aptype_t *type);
-apimport_t *apimport_clone(apimport_t *self);
+apimport_t *apimport_alloc(aploc_t *loc, char *name);
 void apimport_free(apimport_t *self);
 
 

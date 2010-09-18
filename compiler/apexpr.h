@@ -25,6 +25,7 @@
 
 #include <apollo.h>
 #include <apparser.h>
+#include <aploc.h>
 
 #define APEXPR_TYPE_STRING 1
 #define APEXPR_TYPE_UNARY 2 

@@ -26,14 +26,15 @@
 #include <string.h>
 #include <stdio.h>
 
-apvar_t *apvar_alloc(char *name, int flags, aptype_t *type, apexpr_t *expr) {
+apvar_t *apvar_alloc(aploc_t *loc, char *name, aptype_t *type) {
 	apvar_t *self = malloc(sizeof(apvar_t));
 
 	self->name = name;
 	self->symbol = APSYMBOL_TYPE_VAR;
-	self->flags = flags;
+	self->flags = 0;
 	self->type = type;
-	self->expr = expr;
+	self->expr = 0;
+	self->loc = *loc;
 	self->next = 0;
 	
 	return self;

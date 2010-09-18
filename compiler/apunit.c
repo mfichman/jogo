@@ -31,13 +31,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-apunit_t *apunit_alloc(char *filename, int type) {
+char *name_from_filename(char *filename);
+char *filename_from_name(char *name);
+
+apunit_t *apunit_alloc(char *string) {
 	apunit_t *self = malloc(sizeof(apunit_t));
 
-	self->name = 0;
 	self->symbol = APSYMBOL_TYPE_UNIT;
-	self->filename = filename;
-	self->type = type;
+	self->type = -1;
 	self->imports = 0;
 	self->defs = 0;
 	self->vars = 0;
@@ -47,12 +48,62 @@ apunit_t *apunit_alloc(char *filename, int type) {
 	self->symbols = apsymtab_alloc(0);
 	self->next = 0;
 
+	if (strstr(string, ".ap")) {
+		self->name = name_from_filename(string);
+		self->filename = string;
+	} else {
+		self->name = string;
+		self->filename = filename_from_name(string);
+	}
+
 	return self;
 }
 
-void apunit_name(apunit_t *self, char *name) {
-	assert(!self->name);
-	self->name = name;
+char *name_from_filename(char *filename) {
+	int length = 1;
+	for (char *c = filename; *c != '.'; c++) {
+		if (*c == '/') {
+			length++;	
+		}
+		length++;
+	}
+
+	/* Replace '/' with '::' and remove the file extension */
+	char *name = malloc(length);
+	char *in = filename;
+	char *out = name;
+	while (*in != '.') {
+		if (*in == '/') {
+			*out++ = ':';
+			*out++ = ':';
+		} else {
+			*out++ = *in;
+		}
+		in++;
+	}
+	*out = 0;
+
+	return name;
+}
+
+char *filename_from_name(char *name) {
+
+	/* Replace '::' with '/' and add the file extension */
+	char *filename = malloc(strlen(name) + strlen(".ap") + 1);
+	char *in = name;
+	char *out = filename;
+	while (*in) {
+		if (*in == ':') {
+			*out++ = '/';
+			in += 2;
+		} else {
+			*out++ = *in++;
+		}
+	}
+	*out = 0;
+	strcat(out, ".ap");
+	
+	return filename;
 }
 
 void apunit_import(apunit_t *self, apimport_t *import) {
