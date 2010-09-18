@@ -1,0 +1,18 @@
+# Writes formatted output to a file descriptor.
+class IO::Writer;
+
+# Writes a line to the end of the file.
+line!(String s) {
+}
+
+# Writes a string.
+string!(String s) {
+}
+
+# Writes an integer.
+integer!(int n) {
+}
+
+# Writes a single character.
+char!(int c) {
+}

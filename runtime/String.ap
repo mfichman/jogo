@@ -1,0 +1,21 @@
+# Represents a UTF-8 character string.
+class String;
+
+# Creates a string from a byte buffer.
+# @init(byte* buffer);
+@init() {}
+
+# Returns the number of UTF-8 characters in this string.
+length() native int;
+
+# Returns the nth character in the string.
+char(int n) native int;
+
+# Returns the substring with the range [begin, end].
+slice(int begin, int end) native String;
+
+# Compares the characters of this string with another string.
+compare(String other) native int;
+
+# Concatenates another string to this string.
+concat(String other) native String;
