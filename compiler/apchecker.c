@@ -133,23 +133,11 @@ void apchecker_stmt(apchecker_t *self, apstmt_t *stmt) {
 	case APSTMT_TYPE_DOWHILE:
 	case APSTMT_TYPE_DOUNTIL:
 	case APSTMT_TYPE_FOR:
-		for (int i = 0; i < stmt->nchild; i++) {
-			apchecker_stmt(self, stmt->child[i]);
-			if (stmt->child[i]->chktype) {
-				stmt->chktype = aptype_clone(stmt->child[i]->chktype);
-			}
-		}
+		apchecker_stmt_loop(self, stmt);
 		break;
 
 	case APSTMT_TYPE_COND:
-		apchecker_stmt(self, stmt->child[0]);
-		apchecker_stmt(self, stmt->child[1]);
-		if (stmt->child[2]) {
-			apchecker_stmt(self, stmt->child[2]);
-			if (!aptype_comp(stmt->child[1]->chktype, stmt->child[2]->chktype)) {
-				stmt->chktype = aptype_clone(stmt->child[1]->chktype);
-			}
-		}
+		apchecker_stmt_cond(self, stmt);
 		break;
 
 	case APSTMT_TYPE_FOREACH:
@@ -207,6 +195,32 @@ void apchecker_stmt_decl(apchecker_t *self, apstmt_t *stmt) {
 	apsymtab_put(self->symbols, stmt->var->name, stmt->var);
 }
 
+void apchecker_stmt_loop(apchecker_t *self, apstmt_t *stmt) {
+
+	/* Check the initialization statments and the loop block */
+	for (int i = 0; i < stmt->nchild; i++) {
+		apchecker_stmt(self, stmt->child[i]);
+		if (stmt->child[i]->chktype) {
+			stmt->chktype = aptype_clone(stmt->child[i]->chktype);
+		}
+	}
+}
+
+void apchecker_stmt_cond(apchecker_t *self, apstmt_t *stmt) {
+
+	/* Check the conditional expression and both branches */
+	/* TODO: Make sure the expression is a boolean expression */
+	apchecker_stmt(self, stmt->child[0]);
+	apchecker_stmt(self, stmt->child[1]);
+	if (stmt->child[2]) {
+		apchecker_stmt(self, stmt->child[2]);
+		if (!aptype_comp(stmt->child[1]->chktype, stmt->child[2]->chktype)) {
+			stmt->chktype = aptype_clone(stmt->child[1]->chktype);
+		}
+	}
+}
+
+
 void apchecker_expr(apchecker_t *self, apexpr_t *expr) {
 	switch (expr->type) {
 		case APEXPR_TYPE_STRING:
@@ -251,7 +265,7 @@ void apchecker_expr_binary(apchecker_t *self, apexpr_t *expr) {
 		aploc_print(&expr->loc, self->unit->filename, stderr); 
 		fprintf(stderr, "Cannot apply '%s' to ", expr->string);
 		aptype_print(expr->child[0]->chktype, stderr);
-		fprintf(stderr, "and ");
+		fprintf(stderr, " and ");
 		aptype_print(expr->child[1]->chktype, stderr);
 		fprintf(stderr, "\n");
 		return;
@@ -271,6 +285,8 @@ void apchecker_expr_binary(apchecker_t *self, apexpr_t *expr) {
 }
 
 void apchecker_expr_ident(apchecker_t *self, apexpr_t *expr) {
+
+	/* Look up the identifier in the symbol table */
 	apsymbol_t *sym = apsymtab_get(self->symbols, expr->string);
 	if (!sym) {
 		self->error++;
@@ -288,7 +304,7 @@ void apchecker_expr_ident(apchecker_t *self, apexpr_t *expr) {
 
 	} else if (APSYMBOL_TYPE_UNIT == *sym) {
 		apunit_t *unit = (apunit_t *)sym;
-		expr->chktype = aptype_object(strdup(unit->name));
+		expr->chktype = aptype_ctor(unit);
 
 	}	
 }
@@ -300,6 +316,7 @@ void apchecker_expr_member(apchecker_t *self, apexpr_t *expr) {
 		return;
 	}
 
+	/* Look up the translation unit for the lhs of the '.' */
 	apunit_t *unit = aphash_get(self->types, type->name);
 	if (!unit) {
 		self->error++;
@@ -308,6 +325,7 @@ void apchecker_expr_member(apchecker_t *self, apexpr_t *expr) {
 		return;
 	}
 
+	/* Look up the symbol at the rhs of the '.' */
 	apsymbol_t *sym = apsymtab_get(unit->symbols, expr->string);
 	if (!sym) {
 		self->error++;
@@ -332,7 +350,7 @@ void apchecker_expr_member(apchecker_t *self, apexpr_t *expr) {
 
 void apchecker_expr_call(apchecker_t *self, apexpr_t *expr) {
 	apchecker_expr(self, expr->child[0]);
-	if (!expr->child[0]->chktype->type) {
+	if (!expr->child[0]->chktype) {
 		return; 
 	}
 
@@ -340,7 +358,7 @@ void apchecker_expr_call(apchecker_t *self, apexpr_t *expr) {
 	case APTYPE_TYPE_FUNC:
 		apchecker_expr_call_func(self, expr);
 		break;
-	case APTYPE_TYPE_OBJECT:
+	case APTYPE_TYPE_CTOR:
 		apchecker_expr_call_ctor(self, expr);
 		break;
 	default:
@@ -355,6 +373,8 @@ void apchecker_expr_call(apchecker_t *self, apexpr_t *expr) {
 void apchecker_expr_call_func(apchecker_t *self, apexpr_t *expr) {
 	aptype_t *type = expr->child[0]->chktype;
 	apunit_t *unit = type->func->unit;
+
+	/* Add implicit self argument or transform member call if necessary */
 	if (APUNIT_FLAG_STATIC & ~type->func->flags) {
 		if (APEXPR_TYPE_MEMBER == expr->child[0]->type) {
 			/* object.func() -> func(object, func) */
@@ -371,6 +391,7 @@ void apchecker_expr_call_func(apchecker_t *self, apexpr_t *expr) {
 		}
 	}
 
+	/* Check arguments with function signature */
 	if (apchecker_args(self, type->func, expr->child[1])) {
 		self->error++;
 		aploc_print(&expr->loc, self->unit->filename, stderr);
@@ -387,7 +408,22 @@ void apchecker_expr_call_func(apchecker_t *self, apexpr_t *expr) {
 }
 
 void apchecker_expr_call_ctor(apchecker_t *self, apexpr_t *expr) {
+	apunit_t *unit = expr->child[0]->chktype->unit;
+	
+	/* Look for a consturctor that mathces the arguments */
+	for (apfunc_t *ctor = unit->ctors; ctor; ctor = ctor->next) {
+		if (!apchecker_args(self, ctor, expr->child[1])) {
+			expr->child[0]->chktype->func = ctor;
+			expr->chktype = aptype_object(strdup(unit->name));
+			return;
+		}
+	}
 
+	self->error++;
+	aploc_print(&expr->loc, self->unit->filename, stderr);
+	fprintf(stderr, "No constructor '%s", unit->name);
+	apchecker_print_args(self, expr->child[1]);
+	fprintf(stderr, "'\n");
 }
 
 int apchecker_args(apchecker_t *self, apfunc_t *func, apexpr_t *expr) {

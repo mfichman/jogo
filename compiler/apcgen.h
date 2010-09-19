@@ -29,17 +29,17 @@
 /* Code generator for the 'C' target */
 
 apcgen_t *apcgen_alloc();
-int apcgen_gen(apcgen_t *self, apunit_t *units);
-void apcgen_gen_unit(apcgen_t *self, apunit_t *unit);
-void apcgen_gen_func(apcgen_t *self, apfunc_t *func);
-void apcgen_gen_stmt(apcgen_t *self, apstmt_t *stmt);
-void apcgen_gen_stmt_block(apcgen_t *self, apstmt_t *stmt);
-void apcgen_gen_stmt_decl(apcgen_t *self, apstmt_t *stmt);
-void apcgen_gen_expr(apcgen_t *self, apexpr_t *expr);
-void apcgen_gen_expr_binary(apcgen_t *self, apexpr_t *expr);
-void apcgen_gen_expr_call(apcgen_t *self, apexpr_t *expr);
-void apcgen_gen_var(apcgen_t *self, apvar_t *var);
-void apcgen_gen_args(apcgen_t *selfm, apexpr_t *expr);
+int apcgen_gen(apcgen_t *self, apunit_t *unit);
+void apcgen_unit(apcgen_t *self, apunit_t *unit);
+void apcgen_func(apcgen_t *self, apfunc_t *func);
+void apcgen_stmt(apcgen_t *self, apstmt_t *stmt);
+void apcgen_stmt_block(apcgen_t *self, apstmt_t *stmt);
+void apcgen_stmt_decl(apcgen_t *self, apstmt_t *stmt);
+void apcgen_expr(apcgen_t *self, apexpr_t *expr);
+void apcgen_expr_binary(apcgen_t *self, apexpr_t *expr);
+void apcgen_expr_call(apcgen_t *self, apexpr_t *expr);
+void apcgen_var(apcgen_t *self, apvar_t *var);
+void apcgen_args(apcgen_t *selfm, apexpr_t *expr);
 void apcgen_print_type(apcgen_t *self, aptype_t *type);
 void apcgen_print_name(apcgen_t *self, char *name);
 void apcgen_print(apcgen_t *self, const char* fmt, ...);

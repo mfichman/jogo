@@ -1,8 +1,10 @@
 module Main;
-
+import String;
 import IO;
 
 main() int {
+	String string = String();
+	
     write("hello, world!\n");
     return 0;
 }

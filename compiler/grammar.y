@@ -138,21 +138,25 @@ translation_unit
 		if (strcmp($2, $4->name)) {
 			yyerror(&@$, parser, scanner, "Class name does not match filename");
 		}
+		free($2);
     }
     | TOK_INTERFACE TOK_IDENT ';' interface {
 		if (strcmp($2, $4->name)) {
 			yyerror(&@$, parser, scanner, "Class name does not match filename");
 		}
+		free($2);
     }
     | TOK_STRUCT TOK_IDENT ';' struct {
 		if (strcmp($2, $4->name)) {
 			yyerror(&@$, parser, scanner, "Class name does not match filename");
 		}
+		free($2);
     }
     | TOK_MODULE TOK_IDENT ';' module {
 		if (strcmp($2, $4->name)) {
 			yyerror(&@$, parser, scanner, "Class name does not match filename");
 		}
+		free($2);
     }
 	| /* empty is an error */ { 
 		yyerror(&@$, parser, scanner, "Input file is empty"); 

@@ -1,6 +1,9 @@
 # Represents a UTF-8 character string.
 class String;
 
+int length;
+String string;
+
 # Creates a string from a byte buffer.
 # @init(byte* buffer);
 @init() {}

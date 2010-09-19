@@ -26,6 +26,7 @@
 #define APTYPE_TYPE_PRIMITIVE 1
 #define APTYPE_TYPE_OBJECT 2
 #define APTYPE_TYPE_FUNC 3
+#define APTYPE_TYPE_CTOR 4
 
 #define APTYPE_FLAG_ARRAY 1
 #define APTYPE_FLAG_NULLABLE 2
@@ -46,6 +47,7 @@ struct aptype {
 aptype_t *aptype_object(char *name);
 aptype_t *aptype_primitive(char *name);
 aptype_t *aptype_func(apfunc_t *func);
+aptype_t *aptype_ctor(apunit_t *unit);
 aptype_t *aptype_clone(aptype_t *self);
 int aptype_comp(aptype_t *self, aptype_t *other);
 void aptype_print(aptype_t *self, FILE *file);

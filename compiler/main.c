@@ -41,37 +41,46 @@ int main(int argc, char **argv) {
 	aphash_compfn_t comp = (aphash_compfn_t)&strcmp;
 	aphash_hashfn_t hash = (aphash_hashfn_t)&aphash_string;
 	aphash_t *types = aphash_alloc(comp, hash);
-	apunit_t *queue = apunit_alloc(argv[1]);
+	apunit_t *queue = apunit_alloc(strdup(argv[1]));
 	apunit_t *units = 0;
 
 	apparser_t *parser = apparser_alloc();
 	apchecker_t *checker = apchecker_alloc();
 	apcgen_t *cgen = apcgen_alloc();
 	
+	/* Parsing/semantic analysis phase */
 	for (apunit_t *unit = queue; unit; unit = queue) {
 		queue = queue->next;	
 
+		/* Run the parser to create the translation unit */
 		if (apparser_parse(parser, unit)) {
-			/* Parsing succeeded */
-			unit->next = units;
-			units = unit;	
-	
-			/* Add the translation unit to the queue for parsing */
-			for (apimport_t *im = unit->imports; im; im = im->next) {	
-				apunit_t *unit = aphash_get(types, im->name);
-				if (!unit) {
-					unit = apunit_alloc(im->name);	
-					unit->next = queue;
-					queue = unit;
-					aphash_put(types, im->name, unit);
-				}
-			}
-
-		} else {
-			/* Parsing failed */
 			unit->next = 0;
 			apunit_free(unit);
+			return 1;
 		}
+		unit->next = units;
+		units = unit;	
+	
+		/* Add the translation unit to the queue for parsing */
+		for (apimport_t *im = unit->imports; im; im = im->next) {	
+			apunit_t *unit = aphash_get(types, im->name);
+			if (!unit) {
+				unit = apunit_alloc(strdup(im->name));	
+				unit->next = queue;
+				queue = unit;
+				aphash_put(types, im->name, unit);
+			}
+		}
+	}
+
+	/* Semantic analysis/code generation phase */
+	for (apunit_t *unit = units; unit; unit = unit->next) {
+		if (apchecker_check(checker, unit, types)) {
+			break;
+		}
+		if (apcgen_gen(cgen, unit)) {
+			break;
+		}	
 	}
 
 	aphash_free(types);
@@ -83,53 +92,3 @@ int main(int argc, char **argv) {
 	
 	return 0;
 }
-
-#if 0
-	apimport_t *queue; /* Queue of files to parse */
-int apparser_parse(apparser_t *self, const char *filename) {
-	apparser_unit(self, 0, filename);
-
-	while (self->queue) {
-		apimport_t *import = self->queue;
-		self->queue = self->queue->next;
-
-		char *filename = malloc(strlen(import->type->name) + strlen(".ap") + 1);
-		char *in = import->type->name;
-		char *out = filename;
-		while (*in) {
-			if (*in == ':') {
-				*out++ = '/';
-				in += 2;
-			} else {
-				*out++ = *in++;
-			}
-		}
-		*out = 0;
-		strcat(out, ".ap");
-
-		apparser_unit(self, import, filename);
-        import->next = 0;
-		apimport_free(import);
-		free(filename);
-	}
-
-	for (apunit_t *unit = self->units; unit; unit = unit->next) {
-		if (apchecker_check(self->checker, unit, self->types)) {
-			self->error++;
-		}
-	}
-
-	return self->error;
-}
-
-
-	/* Check semantics for the parsed translation units */
-	for (apimport_t *import = unit->imports; import; import = import->next) {
-		if (!aphash_get(self->types, import->type->name)) {
-			apimport_t *next = apimport_clone(import);
-			next->next = self->queue;
-			self->queue = next;
-		}
-	}
-
-#endif

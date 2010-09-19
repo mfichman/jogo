@@ -1,26 +1,30 @@
 # Reads formatted input from a file descriptor.
 class IO::Reader;
-
 import String;
+
+IO::Handle handle;
+
+# Initializes a new reader from an IO handle
+@init(IO::Handle handle) {
+	self.handle = handle;
+}
 
 # Reads characters to the end of line or the end of the file.
 line() String {
-    String line = String();
-
-    return line;
+	return String();
 }
 
 # Reads a string from the file descriptor.
 string() String {
-    return "hello";
+	return String();
 }
 
 # Reads an integer from the file descriptor.
 integer() int {
-    return 0;
+	return 0;
 }
 
 # Reads a single character from the file descriptor.
 char() int {
-    return 0;
+	return 0;
 }
