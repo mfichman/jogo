@@ -1,24 +1,27 @@
 # Represents a UTF-8 character string.
-class String;
+class String {
 
-int length;
-String string;
+  length:Int = Int();
+  string:String = String("Hello, world");
 
-# Creates a string from a byte buffer.
-# @init(byte* buffer);
-@init() {}
+  # Creates a string from a byte buffer.
+  # @init(byte* buffer);
+  @init() {
+      print("Hello, world");
+  }
 
-# Returns the number of UTF-8 characters in this string.
-length() native int;
+  # Returns the number of UTF-8 characters in this string.
+  length():Int native;
 
-# Returns the nth character in the string.
-char(int n) native int;
+  # Returns the nth character in the string.
+  char(n:Int):Int native;
 
-# Returns the substring with the range [begin, end].
-slice(int begin, int end) native String;
+  # Returns the substring with the range [begin, end].
+  slice(begin:Int, end:Int):String native;
 
-# Compares the characters of this string with another string.
-compare(String other) native int;
+  # Compares the characters of this string with another string.
+  compare(other:String):Int native;
 
-# Concatenates another string to this string.
-concat(String other) native String;
+  # Concatenates another string to this string.
+  concat(other:String):String native;
+}

@@ -34,6 +34,7 @@ void apcgen_unit(apcgen_t *self, apunit_t *unit);
 void apcgen_func(apcgen_t *self, apfunc_t *func);
 void apcgen_stmt(apcgen_t *self, apstmt_t *stmt);
 void apcgen_stmt_block(apcgen_t *self, apstmt_t *stmt);
+void apcgen_stmt_block_end(apcgen_t *self, apstmt_t *stmt);
 void apcgen_stmt_decl(apcgen_t *self, apstmt_t *stmt);
 void apcgen_expr(apcgen_t *self, apexpr_t *expr);
 void apcgen_expr_binary(apcgen_t *self, apexpr_t *expr);

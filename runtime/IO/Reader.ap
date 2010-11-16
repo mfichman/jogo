@@ -11,6 +11,7 @@ IO::Handle handle;
 
 # Reads characters to the end of line or the end of the file.
 line() String {
+	self.handle;
 	return String();
 }
 

@@ -218,12 +218,28 @@ void apcgen_stmt(apcgen_t *self, apstmt_t *stmt) {
 void apcgen_stmt_block(apcgen_t *self, apstmt_t *stmt) {
 	apcgen_print(self, "{\n");
 	self->indent++;
+	
+	int block_end = 0;
 	for (apstmt_t *child = stmt->child[0]; child; child = child->next) {
+		if (APSTMT_TYPE_RETURN == child->type) {
+			block_end = 1;
+			apcgen_stmt_block_end(self, stmt);
+		}
 		apcgen_indent(self);
 		apcgen_stmt(self, child);
 		apcgen_print(self, "\n");
 	}
 
+	if (!block_end) {
+		apcgen_stmt_block_end(self, stmt);
+	}
+
+	self->indent--;
+	apcgen_indent(self);
+	apcgen_print(self, "}");
+}
+
+void apcgen_stmt_block_end(apcgen_t *self, apstmt_t *stmt) {
 	/* Free variables that are local to this block */
 	apsymtab_iter_t iter = apsymtab_iter(stmt->symbols);
 	apvar_t *var;
@@ -233,10 +249,6 @@ void apcgen_stmt_block(apcgen_t *self, apstmt_t *stmt) {
 			apcgen_print(self, "apobject_release(%s);\n", var->name);
 		}
 	}
-
-	self->indent--;
-	apcgen_indent(self);
-	apcgen_print(self, "}");
 }
 
 void apcgen_stmt_decl(apcgen_t *self, apstmt_t *stmt) {
