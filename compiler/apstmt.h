@@ -38,6 +38,7 @@
 #define APSTMT_TYPE_COND 9
 #define APSTMT_TYPE_DECL 10
 #define APSTMT_TYPE_RETURN 11
+#define APSTMT_TYPE_EMPTY 12
 
 /* Structure for holding stmt lists */
 struct apstmt {
@@ -63,6 +64,7 @@ apstmt_t *apstmt_dowhile(aploc_t *loc, apstmt_t *block, apstmt_t *guard);
 apstmt_t *apstmt_decl(aploc_t *loc, apvar_t *var);
 apstmt_t *apstmt_cond(aploc_t *loc, apstmt_t *gd, apstmt_t *br1, apstmt_t *br2);
 apstmt_t *apstmt_return(aploc_t *loc, apexpr_t *expr);
+apstmt_t *apstmt_empty(aploc_t *loc);
 apstmt_t *apstmt_append(apstmt_t *self, apstmt_t *stmt);
 void apstmt_free(apstmt_t *self);
 

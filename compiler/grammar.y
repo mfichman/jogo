@@ -51,7 +51,6 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 
 
 /* BISON declarations */
-%token <type> TOK_PRIMITIVE
 %token <string> TOK_IDENT
 %token <expr> TOK_STRING
 %token <expr> TOK_NUMBER 
@@ -61,6 +60,8 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %token TOK_MODULE
 %token TOK_IMPORT
 %token TOK_DEF
+%token TOK_VAR
+%token TOK_SEP
 %token TOK_INIT
 %token TOK_DESTROY
 %token <flag> TOK_PUBLIC
@@ -96,7 +97,7 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %type <unit> interface
 %type <unit> module
 %type <unit> struct
-%type <var> variable
+%type <var> attribute 
 %type <import> import
 %type <def> def
 %type <func> constructor
@@ -117,6 +118,7 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %type <expr> expression
 %type <expr> nullable
 %type <expr> assignment
+%type <expr> storage
 %type <expr> logical_or
 %type <expr> logical_and
 %type <expr> bitwise_or
@@ -134,25 +136,25 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 /* The Standard Apollo Grammar, version 2010 */
 %%
 translation_unit
-    : TOK_CLASS TOK_IDENT ';' class {
+    : TOK_CLASS TOK_IDENT '{' class '}' {
 		if (strcmp($2, $4->name)) {
 			yyerror(&@$, parser, scanner, "Class name does not match filename");
 		}
 		free($2);
     }
-    | TOK_INTERFACE TOK_IDENT ';' interface {
+    | TOK_INTERFACE TOK_IDENT '{' interface '{' {
 		if (strcmp($2, $4->name)) {
 			yyerror(&@$, parser, scanner, "Class name does not match filename");
 		}
 		free($2);
     }
-    | TOK_STRUCT TOK_IDENT ';' struct {
+    | TOK_STRUCT TOK_IDENT '{' struct '}' {
 		if (strcmp($2, $4->name)) {
 			yyerror(&@$, parser, scanner, "Class name does not match filename");
 		}
 		free($2);
     }
-    | TOK_MODULE TOK_IDENT ';' module {
+    | TOK_MODULE TOK_IDENT '{' module '}' {
 		if (strcmp($2, $4->name)) {
 			yyerror(&@$, parser, scanner, "Class name does not match filename");
 		}
@@ -168,7 +170,7 @@ translation_unit
 class
     : import class { $$ = $2; apunit_import($$, $1); }
     | def class { $$ = $2; apunit_def($$, $1); }
-    | variable class { $$ = $2; apunit_var($$, $1); }
+    | attribute class { $$ = $2; apunit_var($$, $1); }
     | constructor class { $$ = $2; apunit_ctor($$, $1); }
     | destructor class { $$ = $2; apunit_dtor($$, $1); }
     | function class { $$ = $2; apunit_func($$, $1); }
@@ -184,7 +186,7 @@ interface
     : import interface { $$ = $2; apunit_import($$, $1); }
     | def interface { $$ = $2; apunit_def($$, $1); }
 	| prototype interface { $$ = $2; apunit_func($$, $1); }
-	| variable interface { 
+	| attribute interface { 
 		$$ = $2;
 		apvar_free($1);
 		yyerror(&@$, parser, scanner, "Instance variable in interface");
@@ -212,7 +214,7 @@ interface
 struct
     : import struct { $$ = $2; apunit_import($$, $1); }
     | def struct { $$ = $2; apunit_def($$, $1); }
-    | variable struct { $$ = $2; apunit_var($$, $1); }
+    | attribute struct { $$ = $2; apunit_var($$, $1); }
     | constructor struct { $$ = $2; apunit_ctor($$, $1); }
     | function struct { $$ = $2; apunit_func($$, $1); }
 	| prototype struct { $$ = $2; apunit_func($$, $1); }
@@ -232,7 +234,7 @@ struct
 module
     : import module { $$ = $2; apunit_import($$, $1); }
     | def module { $$ = $2; apunit_def($$, $1); }
-	| variable module { $$ = $2; apunit_var($$, $1); }
+	| attribute module { $$ = $2; apunit_var($$, $1); }
 	| constructor module {
 		$$ = $2;
 		apfunc_free($1);
@@ -254,25 +256,25 @@ module
     ;
     
 import
-    : TOK_IMPORT TOK_IDENT ';' { 
+    : TOK_IMPORT TOK_IDENT TOK_SEP { 
 		$$ = apimport_alloc(&@$, $2);
 	}
     ;
 
 def
-    : TOK_DEF type TOK_IDENT ';' { 
+    : TOK_DEF type TOK_IDENT TOK_SEP { 
 		$$ = apdef_alloc($2, aptype_object($3)); 
 	}
     ;
 
-variable
-    : type TOK_IDENT '=' expression ';' {
+attribute
+    : TOK_VAR TOK_IDENT ':' type '=' expression TOK_SEP {
 		// TODO: Set symbol table for class-level
-		$$ = apvar_alloc(&@$, $2, $1);
-		$$->expr = $4;
+		$$ = apvar_alloc(&@$, $2, $4);
+		$$->expr = $6;
     }
-    | type TOK_IDENT ';' {
-		$$ = apvar_alloc(&@$, $2, $1);
+    | TOK_VAR TOK_IDENT ':' type TOK_SEP {
+		$$ = apvar_alloc(&@$, $2, $4);
     }
 	;
 
@@ -299,10 +301,10 @@ destructor
     ;
 
 function
-    : TOK_IDENT parameter_signature modifiers type block {
+    : TOK_IDENT parameter_signature ':' type modifiers block {
 		$$ = apfunc_alloc(&@$, $1, $2, $4);
-		$$->flags = $3;
-		$$->block = $5;
+		$$->flags = $5;
+		$$->block = $6;
     }
 	| TOK_IDENT parameter_signature modifiers block {
 		$$ = apfunc_alloc(&@$, $1, $2, 0);
@@ -312,22 +314,22 @@ function
 	;
 
 prototype
-	: TOK_IDENT parameter_signature modifiers type ';' {
+	: TOK_IDENT parameter_signature ':' type modifiers TOK_SEP {
 		$$ = apfunc_alloc(&@$, $1, $2, $4);
-		$$->flags = $3;
+		$$->flags = $5;
 	}
-	| TOK_IDENT parameter_signature modifiers ';' {
+	| TOK_IDENT parameter_signature modifiers TOK_SEP {
 		$$ = apfunc_alloc(&@$, $1, $2, 0);
 		$$->flags = $3;
 	}
     ;
 
 native
-	: TOK_IDENT parameter_signature modifiers TOK_NATIVE type ';' {
-		$$ = apfunc_alloc(&@$, $1, $2, $5);
-		$$->flags = $3|APUNIT_FLAG_NATIVE;
+	: TOK_IDENT parameter_signature ':' type modifiers TOK_NATIVE TOK_SEP {
+		$$ = apfunc_alloc(&@$, $1, $2, $4);
+		$$->flags = $5|APUNIT_FLAG_NATIVE;
 	}
-	| TOK_IDENT parameter_signature modifiers TOK_NATIVE ';' {
+	| TOK_IDENT parameter_signature modifiers TOK_NATIVE TOK_SEP {
 		$$ = apfunc_alloc(&@$, $1, $2, 0);
 		$$->flags = $3|APUNIT_FLAG_NATIVE;
 	}
@@ -341,12 +343,12 @@ parameter_signature
 	;
 
 parameter_list
-	: type TOK_IDENT ',' parameter_list { 
-		$$ = apvar_alloc(&@1, $2, $1);
-		$$->next = $4;
+	: TOK_IDENT ':' type ',' parameter_list { 
+		$$ = apvar_alloc(&@1, $1, $3);
+		$$->next = $5;
 	}
-	| type TOK_IDENT { 
-		$$ = apvar_alloc(&@$, $2, $1);
+	| TOK_IDENT ':' type { 
+		$$ = apvar_alloc(&@$, $1, $3);
 	}
     ;
 
@@ -360,10 +362,7 @@ modifiers
 	;
 
 type
-    : TOK_PRIMITIVE { $$ = $1; } 
-	| TOK_PRIMITIVE '*' { $$ = $1; $$->flags &= APTYPE_FLAG_ARRAY; }
-	| TOK_PRIMITIVE '?' { $$ = $1; $$->flags &= APTYPE_FLAG_NULLABLE; }
-    | TOK_IDENT { $$ = aptype_object($1); }
+    : TOK_IDENT { $$ = aptype_object($1); }
     ;
 
 block
@@ -377,7 +376,7 @@ statement_list
     : statement_list statement { 
 		$$ = apstmt_append($1, $2); 
 	}
-	| statement_list error ';' { $$ = $1; }
+	| statement_list error { $$ = $1; }
     | /* empty */ { 
 		$$ = apstmt_block(&@$);
 	}
@@ -388,40 +387,42 @@ statement
 		apstmt_t *gd[] = { $3, $5, $7 };
 		$$ = apstmt_for(&@$, gd, $9);
 	}
+    /*
 	| TOK_FOR '(' type TOK_IDENT ':' expression ')' block {
 		$$ = apstmt_foreach(&@$, apvar_alloc(&@1, $4, $3), $8);
 		$$->var->expr = $6;
 	}
+    */
 	| TOK_UNTIL '(' clause ')' block {
 		$$ = apstmt_until(&@$, $3, $5);
 	}
 	| TOK_WHILE '(' clause ')' block {
 		$$ = apstmt_while(&@$, $3, $5);
 	}
-	| TOK_DO block TOK_UNTIL '(' clause ')' ';' {
+	| TOK_DO block TOK_UNTIL '(' clause ')' TOK_SEP {
 		$$ = apstmt_dountil(&@$, $2, $5);
 	}
-	| TOK_DO block TOK_WHILE '(' clause ')' ';' {
+	| TOK_DO block TOK_WHILE '(' clause ')' TOK_SEP {
 		$$ = apstmt_dowhile(&@$, $2, $5);
 	}
-    | type TOK_IDENT ';' { 
-		$$ = apstmt_decl(&@$, apvar_alloc(&@$, $2, $1)); 
+    | TOK_VAR TOK_IDENT ':' type { 
+		$$ = apstmt_decl(&@$, apvar_alloc(&@$, $2, $4)); 
 	}
 	| conditional { $$ = $1; }
-	| clause ';' { $$ = $1; }
-	| TOK_RETURN expression ';' { $$ = apstmt_return(&@$, $2); }
-	| TOK_RETURN ';' { $$ = apstmt_return(&@$, 0); }
+	| clause TOK_SEP { $$ = $1; }
+	| TOK_RETURN expression TOK_SEP { $$ = apstmt_return(&@$, $2); }
+	| TOK_RETURN TOK_SEP { $$ = apstmt_return(&@$, 0); }
 	;
 
 clause
-    : type TOK_IDENT '=' expression { 
-		$$ = apstmt_decl(&@$, apvar_alloc(&@$, $2, $1)); 
-		$$->var->expr = $4;
+    : TOK_VAR TOK_IDENT ':' type '=' expression { 
+		$$ = apstmt_decl(&@$, apvar_alloc(&@$, $2, $4)); 
+		$$->var->expr = $6;
 	}  
     | expression { 
 		$$ = apstmt_expr(&@$, $1); 
 	}
-	| /* empty */ { $$ = 0; } 
+	| /* empty */ { $$ = apstmt_empty(&@$); } 
 	;
 
 conditional
@@ -444,31 +445,37 @@ nullable
 	;	
 
 assignment
-    : unary '=' assignment { 
+    : storage '=' assignment { 
 		$$ = apexpr_binary(&@$, strdup("="), $1, $3); 
 	}
-    | unary TOK_MUL_ASSIGN assignment { 
+    | storage TOK_MUL_ASSIGN assignment { 
 		$$ = apexpr_binary(&@$, strdup("*="), $1, $3); 
 	}
-    | unary TOK_DIV_ASSIGN assignment { 
+    | storage TOK_DIV_ASSIGN assignment { 
 		$$ = apexpr_binary(&@$, strdup("/="), $1, $3); 
 	}
-    | unary TOK_MOD_ASSIGN assignment { 
+    | storage TOK_MOD_ASSIGN assignment { 
 		$$ = apexpr_binary(&@$, strdup("%="), $1, $3); 
 	}
-    | unary TOK_SUB_ASSIGN assignment { 
+    | storage TOK_SUB_ASSIGN assignment { 
 		$$ = apexpr_binary(&@$, strdup("-="), $1, $3); 
 	}
-    | unary TOK_ADD_ASSIGN assignment { 
+    | storage TOK_ADD_ASSIGN assignment { 
 		$$ = apexpr_binary(&@$, strdup("+="), $1, $3); 
 	}
-    | unary TOK_BITAND_ASSIGN assignment { 
+    | storage TOK_BITAND_ASSIGN assignment { 
 		$$ = apexpr_binary(&@$, strdup("&="), $1, $3); 
 	}
-    | unary TOK_BITOR_ASSIGN assignment { 
+    | storage TOK_BITOR_ASSIGN assignment { 
 		$$ = apexpr_binary(&@$, strdup("|="), $1, $3); 
 	}
     | logical_or { $$ = $1; }
+    ;
+
+storage
+    : TOK_IDENT {
+        $$ = apexpr_ident(&@$, $1);
+    }
     ;
 
 logical_or
@@ -562,13 +569,15 @@ multiplication
     ;
 
 unary
-    : TOK_INC unary { $$ = apexpr_unary(&@$, strdup("++"), $2); }
+    : '!' unary { $$ = apexpr_unary(&@$, strdup("!"), $2); }
+    | '~' unary { $$ = apexpr_unary(&@$, strdup("~"), $2); }
+ /*
+    | TOK_INC unary { $$ = apexpr_unary(&@$, strdup("++"), $2); }
     | TOK_DEC unary { $$ = apexpr_unary(&@$, strdup("--"), $2); }
+    | '*' unary { $$ = apexpr_unary(&@$, strdup("*"), $2); }
     | '+' unary { $$ = apexpr_unary(&@$, strdup("+"), $2); }
     | '-' unary { $$ = apexpr_unary(&@$, strdup("-"), $2); }
-    | '!' unary { $$ = apexpr_unary(&@$, strdup("!"), $2); }
-    | '~' unary { $$ = apexpr_unary(&@$, strdup("~"), $2); }
-    | '*' unary { $$ = apexpr_unary(&@$, strdup("*"), $2); }
+ */
     | postfix { $$ = $1; }
     ;
 

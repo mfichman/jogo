@@ -1,13 +1,18 @@
 # Represents a UTF-8 character string.
 class String {
 
-  length:Int = Int();
-  string:String = String("Hello, world");
+  var length:Int = Int();
+  var string:String = String("Hello, world");
 
   # Creates a string from a byte buffer.
   # @init(byte* buffer);
   @init() {
       print("Hello, world");
+      
+      bb(def(a:Int):Int {
+
+      })
+
   }
 
   # Returns the number of UTF-8 characters in this string.

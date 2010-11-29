@@ -41,19 +41,6 @@ aptype_t *aptype_object(char *name) {
 	return self;
 }
 
-aptype_t *aptype_primitive(char *name) {
-	aptype_t *self = malloc(sizeof(aptype_t));
-
-	self->name = name;
-	self->type = APTYPE_TYPE_PRIMITIVE;
-	self->func = 0;
-	self->unit = 0;
-	self->next = 0;
-	self->flags = 0;
-	
-	return self;
-}
-
 aptype_t *aptype_func(apfunc_t *func) {
 	aptype_t *self = malloc(sizeof(aptype_t));
 

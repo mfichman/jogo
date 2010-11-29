@@ -271,11 +271,7 @@ void apcgen_stmt_decl(apcgen_t *self, apstmt_t *stmt) {
 void apcgen_expr(apcgen_t *self, apexpr_t *expr) {
 	switch (expr->type) {
 		case APEXPR_TYPE_STRING:
-			if (APTYPE_TYPE_PRIMITIVE == expr->chktype->type) {
-				apcgen_print(self, "%s", expr->string);
-			} else {
-				apcgen_print(self, "\"%s\"", expr->string);
-			}
+		    apcgen_print(self, "\"%s\"", expr->string);
 			break;
 		
 		case APEXPR_TYPE_UNARY:
@@ -350,8 +346,6 @@ void apcgen_args(apcgen_t *self, apexpr_t *expr) {
 void apcgen_print_type(apcgen_t *self, aptype_t *type) {
 	if (!type) {
 		apcgen_print(self, "void");
-	} else if (APTYPE_TYPE_PRIMITIVE == type->type) {
-		apcgen_print(self, "ap%s_t", type->name);
 	} else if (APTYPE_TYPE_OBJECT == type->type) {
 		apcgen_print_name(self, type->name);
 		apcgen_print(self, "*");

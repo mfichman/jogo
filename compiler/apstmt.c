@@ -26,6 +26,7 @@
 #include <apsymtab.h>
 #include <apparser.h>
 #include <stdlib.h>
+#include <assert.h>
 
 apstmt_t *apstmt_expr(aploc_t *loc, apexpr_t *expr) {
 	apstmt_t *self = malloc(sizeof(apstmt_t));
@@ -216,7 +217,24 @@ apstmt_t *apstmt_return(aploc_t *loc, apexpr_t *expr) {
 	return self;
 }
 
+apstmt_t *apstmt_empty(aploc_t *loc) {
+    apstmt_t *self = malloc(sizeof(apstmt_t));
+    
+    self->type = APSTMT_TYPE_EMPTY;
+    self->chktype = 0;
+    self->symbols = 0;
+    self->expr = 0;
+    self->var = 0;
+    self->nchild = 0;
+    self->next = 0;
+    self->loc = *loc;
+
+    return self;
+}
+
 apstmt_t *apstmt_append(apstmt_t *self, apstmt_t *stmt) {
+
+    assert(stmt);
 
 	if (!self->child[0]) {
 		self->child[0] = stmt;

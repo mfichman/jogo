@@ -59,10 +59,10 @@ typedef uint64_t apulong_t;
 typedef int64_t aplong_t; 
 
 
-static inline char *strdup(const char* str) {
-	char *copy = malloc(strlen(str) + 1);
-	strcpy(copy, str);
-	return copy;
-}
+//static inline char *strdup(const char* str) {
+//	char *copy = malloc(strlen(str) + 1);
+//	strcpy(copy, str);
+//	return copy;
+//}
 
 #endif

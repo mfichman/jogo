@@ -20,35 +20,14 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef APTYPE_H
-#define APTYPE_H
+#ifndef APPROGRAM_H
+#define APPROGRAM_H
 
-#define APTYPE_TYPE_OBJECT 1
-#define APTYPE_TYPE_FUNC 2
-#define APTYPE_TYPE_CTOR 3
-
-#define APTYPE_FLAG_ARRAY 1
-#define APTYPE_FLAG_NULLABLE 2
-
-#include <apollo.h>
-#include <stdio.h>
-
-/* A fully-qualified a aptype name */ 
-struct aptype {
-	char *name;             /* Fully qualified aptype name */
-	int type;				/* Primitive or not? */
-	int flags;				/* Type modification flags */
-	apfunc_t *func;			/* Optional pointer to the function signature */
-	apunit_t *unit;			/* Optional pointer to the unit type */
-	aptype_t *next;
+/* Holds information about the program being compiled */
+struct approgram {
+  apunit_t *units;
+  aphash_t *types; 
 };
 
-aptype_t *aptype_object(char *name);
-aptype_t *aptype_func(apfunc_t *func);
-aptype_t *aptype_ctor(apunit_t *unit);
-aptype_t *aptype_clone(aptype_t *self);
-int aptype_comp(aptype_t *self, aptype_t *other);
-void aptype_print(aptype_t *self, FILE *file);
-void aptype_free(aptype_t *self);
 
 #endif
