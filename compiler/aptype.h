@@ -40,7 +40,7 @@ struct aptype {
 	int flags;				/* Type modification flags */
 	apfunc_t *func;			/* Optional pointer to the function signature */
 	apunit_t *unit;			/* Optional pointer to the unit type */
-	aptype_t *next;
+    aptype_t *next;
 };
 
 aptype_t *aptype_object(char *name);

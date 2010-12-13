@@ -57,12 +57,12 @@ apcgen_t *apcgen_alloc() {
 int apcgen_gen(apcgen_t *self, apenv_t *env) {
 
     for (apunit_t *unit = env->units; unit; unit = unit->next) {
-        apcgen_gen_unit(self, unit);
+        apcgen_unit(self, unit);
     }
     return self->error;
 }
 
-int apcgen_gen_unit(apcgen_t *self, apunit_t *unit) {
+void apcgen_unit(apcgen_t *self, apunit_t *unit) {
 	/* Generate output file name */
 	char *filename = malloc(strlen(unit->filename) + strlen(".c") + 1); 
 	strcpy(filename, unit->filename);
@@ -76,7 +76,7 @@ int apcgen_gen_unit(apcgen_t *self, apunit_t *unit) {
 		fprintf(stderr, "Could not open '%s'\n", filename);
 		self->error++;
 		free(filename);
-		return self->error;
+		return;
 	}
 
 	/* Import the standard header file */
@@ -105,8 +105,6 @@ int apcgen_gen_unit(apcgen_t *self, apunit_t *unit) {
 
 	fclose(self->fd);
 	free(filename);
-
-	return self->error;
 }
 
 void apcgen_func(apcgen_t *self, apfunc_t *func) {

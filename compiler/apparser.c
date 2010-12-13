@@ -64,10 +64,12 @@ int apparser_parse(apparser_t *self, apenv_t *env) {
     apunit_t *unit = apunit_alloc(strdup(env->root));
     apenv_unit(self->env, unit);
 
-    return apparser_parse_unit(self, unit);  
+    apparser_unit(self, unit);  
+
+    return self->error;
 }
 
-int apparser_parse_unit(apparser_t *self, apunit_t *unit) {
+void apparser_unit(apparser_t *self, apunit_t *unit) {
 	fprintf(stderr, "Parsing %s\n", unit->filename);
 
     	/* Open the import class/module/interface file and parse it */
@@ -77,7 +79,7 @@ int apparser_parse_unit(apparser_t *self, apunit_t *unit) {
 	if (!self->fd) {
 		self->error++;
 		fprintf(stderr, "Could not find '%s'\n", self->unit->filename);	
-		return self->error;
+        return;
 	}
 
 	/* Begin parsing */
@@ -103,11 +105,9 @@ int apparser_parse_unit(apparser_t *self, apunit_t *unit) {
         if (!unit) {
             apunit_t *unit = apunit_alloc(strdup(im->name));
             apenv_unit(self->env, unit);
-            apparser_parse_unit(self, unit);
+            apparser_unit(self, unit);
         }
     } 
-
-	return self->error;
 }
 
 int apparser_read(apparser_t *self, char *buffer, int length) {
