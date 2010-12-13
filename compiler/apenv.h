@@ -20,53 +20,20 @@
  * IN THE SOFTWARE.
  */  
 
-#include <apvar.h>
-#include <apexpr.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#ifndef APENV_H
+#define APENV_H
 
-apvar_t *apvar_alloc(aploc_t *loc, char *name, aptype_t *type, apexpr_t *expr) {
-	apvar_t *self = malloc(sizeof(apvar_t));
+#include <apollo.h>
 
-	self->name = name;
-	self->symbol = APSYMBOL_TYPE_VAR;
-	self->flags = 0;
-	self->type = type;
-	self->expr = expr;
-	self->loc = *loc;
-	self->next = 0;
-	
-	return self;
-}
+/* Structure for holding context about the current compilation environment */
+struct apenv {
+    aphash_t *types; /* Hash of typenames to compilation unit structures */
+    apunit_t *units; /* List of compilation unit structures */
+    char *root;
+};
 
-apvar_t *apvar_formal(aploc_t *loc, char *name, aptype_t *type, apvar_t *next) {
-    apvar_t *self = malloc(sizeof(apvar_t));
+apenv_t *apenv_alloc(const char *root);
+void apenv_unit(apenv_t *self, apunit_t *unit);
+void apenv_free(apenv_t *self);
 
-    self->name = name;
-    self->symbol = APSYMBOL_TYPE_VAR;
-    self->flags = 0;
-    self->type = type;
-    self->expr = 0;
-    self->loc = *loc;
-    self->next = next;
-
-    return self;
-}
-
-void apvar_free(apvar_t *self) {
-
-	if (self) {
-
-		free(self->name);
-		aptype_free(self->type);
-		apexpr_free(self->expr);
-		apvar_free(self->next);
-		free(self);
-
-	}
-}
-
-int apvar_comp(apvar_t *self, apvar_t *var) {
-	return self - var;
-}
+#endif

@@ -35,6 +35,7 @@
 typedef struct apdef apdef_t;
 typedef struct apexpr apexpr_t;
 typedef struct aphash aphash_t;
+typedef struct apenv apenv_t;
 typedef struct apimport apimport_t;
 typedef struct apparser apparser_t;
 typedef struct apchecker apchecker_t;

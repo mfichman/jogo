@@ -21,6 +21,7 @@
  */  
 
 #include <apparser.h>
+#include <apenv.h>
 #include <apchecker.h>
 #include <apsymtab.h>
 #include <apunit.h>
@@ -44,6 +45,7 @@ apparser_t *apparser_alloc() {
 	apparser_t *self = malloc(sizeof(apparser_t));
 
 	self->unit = 0;
+    self->env = 0;
 	self->fd = 0;
 	self->column = 1;
 	self->error = 0;
@@ -53,10 +55,22 @@ apparser_t *apparser_alloc() {
 	return self;
 }
 
-int apparser_parse(apparser_t *self, apunit_t *unit) {
+int apparser_parse(apparser_t *self, apenv_t *env) {
+
+    /* Save the environment for compilation help */
+    self->env = env;
+
+    /* Create a new unit for the root file */
+    apunit_t *unit = apunit_alloc(strdup(env->root));
+    apenv_unit(self->env, unit);
+
+    return apparser_parse_unit(self, unit);  
+}
+
+int apparser_parse_unit(apparser_t *self, apunit_t *unit) {
 	fprintf(stderr, "Parsing %s\n", unit->filename);
 
-	/* Open the import class/module/interface file and parse it */
+    	/* Open the import class/module/interface file and parse it */
 	self->unit = unit;
 	self->column = 1;
 	self->fd = fopen(unit->filename, "r");
@@ -76,12 +90,22 @@ int apparser_parse(apparser_t *self, apunit_t *unit) {
 		for (apfunc_t *func = self->unit->funcs; func; func = func->next) {
 			if (APUNIT_FLAG_STATIC & ~func->flags) {
 				aptype_t *type = aptype_object(strdup(self->unit->name));
-				apvar_t *arg = apvar_alloc(&func->loc, strdup("self"), type);	
+				apvar_t *arg = apvar_alloc(&func->loc, strdup("self"), type, 0);	
 				arg->next = func->args;
 				func->args = arg;
 			}
 		}
 	}
+
+    /* Recursively add related units to build environment */
+    for (apimport_t *im = unit->imports; im; im = im->next) {
+        apunit_t *unit = aphash_get(self->env->types, im->name);
+        if (!unit) {
+            apunit_t *unit = apunit_alloc(strdup(im->name));
+            apenv_unit(self->env, unit);
+            apparser_parse_unit(self, unit);
+        }
+    } 
 
 	return self->error;
 }

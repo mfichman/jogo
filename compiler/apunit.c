@@ -123,20 +123,20 @@ void apunit_var(apunit_t *self, apvar_t *var) {
 }
 
 void apunit_ctor(apunit_t *self, apfunc_t *ctor) {
-	ctor->unit = self;
+    ctor->unit = self;
 	ctor->flags |= APUNIT_FLAG_STATIC;
 	ctor->next = self->ctors;
 	self->ctors = ctor;
 }
 
 void apunit_dtor(apunit_t *self, apfunc_t *dtor) {
-	dtor->unit = self;
+    dtor->unit = self;
 	dtor->next = self->dtors;
 	self->dtors = dtor;
 }
 
 void apunit_func(apunit_t *self, apfunc_t *func) {
-	func->unit = self;
+    func->unit = self;
 	func->next = self->funcs;
 	self->funcs = func;
 	apsymtab_put(self->symbols, func->name, func);

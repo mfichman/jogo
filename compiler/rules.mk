@@ -6,7 +6,7 @@ OBJS_$(d) := $(d)/main.o $(d)/aptype.o $(d)/apvar.o $(d)/apexpr.o \
 	 $(d)/apfunc.o $(d)/apstmt.o $(d)/apparser.o $(d)/apunit.o \
 	 $(d)/apimport.o $(d)/apdef.o $(d)/aphash.o $(d)/apsymtab.o \
 	 $(d)/apgrammar.y.o $(d)/apgrammar.l.o $(d)/apcgen.o $(d)/aploc.o \
-	 $(d)/apchecker.o
+	 $(d)/apchecker.o $(d)/apenv.o
 DEPS_$(d) := $(OBJS_$(d):%=%.d)
 
 CLEAN := $(CLEAN) $(OBJS_$(d)) $(DEPS_$(d)) $(d)/apollo $(d)/apgrammar.y.c \

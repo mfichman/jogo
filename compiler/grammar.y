@@ -61,6 +61,8 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %token TOK_IMPORT
 %token TOK_DEF
 %token TOK_VAR
+%token TOK_WHEN
+%token TOK_CASE
 %token TOK_SEP
 %token TOK_INIT
 %token TOK_DESTROY
@@ -75,6 +77,8 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %token TOK_DO
 %token TOK_FOR
 %token TOK_RETURN
+%token TOK_ARROW
+%token TOK_LEFT_ARROW
 %token TOK_EQUAL
 %token TOK_NOTEQUAL
 %token TOK_OR
@@ -110,9 +114,10 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %type <var> parameter_list
 %type <type> type
 %type <stmt> block
+%type <stmt> when_list
+%type <stmt> when
 %type <stmt> statement_list
 %type <stmt> statement
-%type <stmt> clause
 %type <stmt> conditional
 %type <expr> argument_list
 %type <expr> expression
@@ -270,30 +275,29 @@ def
 attribute
     : TOK_VAR TOK_IDENT ':' type '=' expression TOK_SEP {
 		// TODO: Set symbol table for class-level
-		$$ = apvar_alloc(&@$, $2, $4);
-		$$->expr = $6;
+		$$ = apvar_alloc(&@$, $2, $4, $6);
     }
     | TOK_VAR TOK_IDENT ':' type TOK_SEP {
-		$$ = apvar_alloc(&@$, $2, $4);
+		$$ = apvar_alloc(&@$, $2, $4, 0);
     }
 	;
 
 constructor
-    : TOK_INIT parameter_signature block { 
-		$$ = apfunc_alloc(&@$, strdup("@init"), $2, 0);
+    : TOK_DEF TOK_INIT parameter_signature block { 
+		$$ = apfunc_alloc(&@$, strdup("@init"), $3, 0);
 		$$->flags &= APUNIT_FLAG_STATIC;
-		$$->block = $3;
+		$$->block = $4;
 	}
     ;
 
 destructor
-    : TOK_DESTROY '(' ')' block { 
+    : TOK_DEF TOK_DESTROY '(' ')' block { 
 		$$ = apfunc_alloc(&@$, strdup("@destroy"), 0, 0); 
-		$$->block = $4;
+		$$->block = $5;
 	}
-	| TOK_DESTROY '(' parameter_list ')' block {
-		apvar_free($3);
-		apstmt_free($5);
+	| TOK_DEF TOK_DESTROY '(' parameter_list ')' block {
+		apvar_free($4);
+		apstmt_free($6);
 		$$ = 0;
 		yyerror(&@$, parser, scanner, "Destructors cannot take arguments"); 
 		YYERROR;
@@ -301,42 +305,40 @@ destructor
     ;
 
 function
-    : TOK_IDENT parameter_signature ':' type modifiers block {
-		$$ = apfunc_alloc(&@$, $1, $2, $4);
-		$$->flags = $5;
-		$$->block = $6;
+    : TOK_DEF TOK_IDENT parameter_signature ':' type modifiers block {
+		$$ = apfunc_alloc(&@$, $2, $3, $5);
+		$$->flags = $6;
+		$$->block = $7;
     }
-	| TOK_IDENT parameter_signature modifiers block {
-		$$ = apfunc_alloc(&@$, $1, $2, 0);
-		$$->flags = $3;
-		$$->block = $4;
+	| TOK_DEF TOK_IDENT parameter_signature modifiers block {
+		$$ = apfunc_alloc(&@$, $2, $3, 0);
+		$$->flags = $4;
+		$$->block = $5;
 	}
 	;
 
 prototype
-	: TOK_IDENT parameter_signature ':' type modifiers TOK_SEP {
-		$$ = apfunc_alloc(&@$, $1, $2, $4);
-		$$->flags = $5;
+	: TOK_DEF TOK_IDENT parameter_signature ':' type modifiers TOK_SEP {
+		$$ = apfunc_alloc(&@$, $2, $3, $5);
+		$$->flags = $6;
 	}
-	| TOK_IDENT parameter_signature modifiers TOK_SEP {
-		$$ = apfunc_alloc(&@$, $1, $2, 0);
-		$$->flags = $3;
+	| TOK_DEF TOK_IDENT parameter_signature modifiers TOK_SEP {
+		$$ = apfunc_alloc(&@$, $2, $3, 0);
+		$$->flags = $4;
 	}
     ;
 
 native
-	: TOK_IDENT parameter_signature ':' type modifiers TOK_NATIVE TOK_SEP {
-		$$ = apfunc_alloc(&@$, $1, $2, $4);
-		$$->flags = $5|APUNIT_FLAG_NATIVE;
+	: TOK_DEF TOK_IDENT parameter_signature ':' type modifiers TOK_NATIVE TOK_SEP {
+		$$ = apfunc_alloc(&@$, $2, $3, $5);
+		$$->flags = $6|APUNIT_FLAG_NATIVE;
 	}
-	| TOK_IDENT parameter_signature modifiers TOK_NATIVE TOK_SEP {
-		$$ = apfunc_alloc(&@$, $1, $2, 0);
-		$$->flags = $3|APUNIT_FLAG_NATIVE;
+	| TOK_DEF TOK_IDENT parameter_signature modifiers TOK_NATIVE TOK_SEP {
+		$$ = apfunc_alloc(&@$, $2, $3, 0);
+		$$->flags = $4|APUNIT_FLAG_NATIVE;
 	}
     ;
 	
-
-
 parameter_signature
 	: '(' parameter_list ')' { $$ = $2; }
 	| '(' ')' { $$ = 0; }
@@ -344,11 +346,10 @@ parameter_signature
 
 parameter_list
 	: TOK_IDENT ':' type ',' parameter_list { 
-		$$ = apvar_alloc(&@1, $1, $3);
-		$$->next = $5;
+		$$ = apvar_formal(&@1, $1, $3, $5);
 	}
 	| TOK_IDENT ':' type { 
-		$$ = apvar_alloc(&@$, $1, $3);
+		$$ = apvar_formal(&@$, $1, $3, 0);
 	}
     ;
 
@@ -368,8 +369,16 @@ type
 block
     : '{' statement_list '}' { 
 		$$ = $2; 
-		$$->loc = @$;
 	}
+	| TOK_ARROW TOK_RETURN expression TOK_SEP { 
+        $$ = apstmt_return(&@$, $3); 
+    }
+	| TOK_ARROW TOK_RETURN TOK_SEP { 
+        $$ = apstmt_return(&@$, 0); 
+    }
+	| TOK_ARROW expression TOK_SEP { 
+		$$ = apstmt_expr(&@$, $2); 
+    }
     ;
 
 statement_list
@@ -382,57 +391,60 @@ statement_list
 	}
     ;
 
-statement
-	: TOK_FOR '(' clause ';' clause ';' clause ')' block {
-		apstmt_t *gd[] = { $3, $5, $7 };
-		$$ = apstmt_for(&@$, gd, $9);
-	}
-    /*
-	| TOK_FOR '(' type TOK_IDENT ':' expression ')' block {
-		$$ = apstmt_foreach(&@$, apvar_alloc(&@1, $4, $3), $8);
-		$$->var->expr = $6;
-	}
-    */
-	| TOK_UNTIL '(' clause ')' block {
-		$$ = apstmt_until(&@$, $3, $5);
-	}
-	| TOK_WHILE '(' clause ')' block {
-		$$ = apstmt_while(&@$, $3, $5);
-	}
-	| TOK_DO block TOK_UNTIL '(' clause ')' TOK_SEP {
-		$$ = apstmt_dountil(&@$, $2, $5);
-	}
-	| TOK_DO block TOK_WHILE '(' clause ')' TOK_SEP {
-		$$ = apstmt_dowhile(&@$, $2, $5);
-	}
-    | TOK_VAR TOK_IDENT ':' type { 
-		$$ = apstmt_decl(&@$, apvar_alloc(&@$, $2, $4)); 
-	}
-	| conditional { $$ = $1; }
-	| clause TOK_SEP { $$ = $1; }
-	| TOK_RETURN expression TOK_SEP { $$ = apstmt_return(&@$, $2); }
-	| TOK_RETURN TOK_SEP { $$ = apstmt_return(&@$, 0); }
-	;
 
-clause
-    : TOK_VAR TOK_IDENT ':' type '=' expression { 
-		$$ = apstmt_decl(&@$, apvar_alloc(&@$, $2, $4)); 
-		$$->var->expr = $6;
+statement
+	: TOK_FOR TOK_IDENT ':' type TOK_LEFT_ARROW expression block {
+		$$ = apstmt_for(&@$, apvar_alloc(&@1, $2, $4, $6), $7);
+	}
+	| TOK_UNTIL expression block {
+		$$ = apstmt_until(&@$, $2, $3);
+	}
+	| TOK_WHILE expression block {
+		$$ = apstmt_while(&@$, $2, $3);
+	}
+    | TOK_CASE expression '{' when_list '}' {
+        $$ = apstmt_case(&@$, $2, $4);
+    }
+    | TOK_VAR TOK_IDENT ':' type { 
+		$$ = apstmt_decl(&@$, apvar_alloc(&@$, $2, $4, 0)); 
+	}
+	| TOK_RETURN expression TOK_SEP { 
+        $$ = apstmt_return(&@$, $2); 
+    }
+	| TOK_RETURN TOK_SEP { 
+        $$ = apstmt_return(&@$, 0); 
+    }
+    | TOK_VAR TOK_IDENT ':' type '=' expression TOK_SEP { 
+		$$ = apstmt_decl(&@$, apvar_alloc(&@$, $2, $4, $6)); 
 	}  
-    | expression { 
+    | expression TOK_SEP { 
 		$$ = apstmt_expr(&@$, $1); 
 	}
-	| /* empty */ { $$ = apstmt_empty(&@$); } 
+	| conditional { $$ = $1; }
 	;
 
+when_list
+    : when_list when {
+        $$ = apstmt_append($1, $2); 
+    }
+    | when {
+        $$ = apstmt_append(apstmt_block(&@$), $1);
+    }
+    ;
+
+when
+    : TOK_WHEN TOK_IDENT ':' type block {
+        $$ = apstmt_when(&@$, apvar_alloc(&@$, $2, $4, 0), $5); 
+    }
+    ;
+
 conditional
-	: TOK_IF '(' clause ')' block {
-		$$ = apstmt_cond(&@$, $3, $5, 0);
+	: TOK_IF expression block {
+		$$ = apstmt_cond(&@$, $2, $3, 0);
 	}
-	| TOK_IF '(' clause ')' block TOK_ELSE conditional {
-		$$ = apstmt_cond(&@$, $3, $5, $7);
-	}
-	| block { $$ = $1; }
+    | TOK_IF expression block TOK_ELSE block {
+        $$ = apstmt_cond(&@$, $2, $3, $5);
+    }
 	;
 
 expression : nullable { $$ = $1; }

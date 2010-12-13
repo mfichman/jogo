@@ -38,7 +38,8 @@ struct apvar {
 	apvar_t *next;
 };	
 
-apvar_t *apvar_alloc(aploc_t *loc, char *name, aptype_t *type);
+apvar_t *apvar_alloc(aploc_t *loc, char *name, aptype_t *type, apexpr_t *expr);
+apvar_t *apvar_formal(aploc_t *loc, char *name, aptype_t *type, apvar_t *next);
 int apvar_comp(apvar_t *self, apvar_t *apvar);
 void apvar_free(apvar_t *self);
 

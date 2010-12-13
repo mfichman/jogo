@@ -32,8 +32,8 @@ typedef unsigned int (*aphash_hashfn_t)(const void *);
 typedef int aphash_iter_t;
 
 aphash_t *aphash_alloc(aphash_compfn_t comp, aphash_hashfn_t hash);
-void *aphash_put(aphash_t *self, const void *key, void *value);
 void *aphash_get(aphash_t *self, const void *key);
+void *aphash_put(aphash_t *self, const void *key, void *value);
 void *aphash_remove(aphash_t *self, const void *key);
 aphash_iter_t aphash_iter(aphash_t *self);
 void *aphash_next(aphash_t *self, aphash_iter_t *iter);

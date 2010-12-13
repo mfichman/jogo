@@ -36,10 +36,9 @@ apfunc_t *apfunc_alloc(aploc_t *loc, char *name, apvar_t *arg, aptype_t *ret) {
 	self->loc = *loc;
 	self->flags = 0;
 	self->block = 0;
+    self->unit = 0;
 	self->rets = ret;
 	self->args = arg;
-	self->unit = 0;
-	self->symbols = 0;
 	self->next = 0;
 
 	return self;
@@ -52,7 +51,6 @@ void apfunc_free(apfunc_t *self) {
 		aptype_free(self->rets);
 		apvar_free(self->args);
 		apfunc_free(self->next);
-		apsymtab_free(self->symbols);
 		free(self);
 	}
 }

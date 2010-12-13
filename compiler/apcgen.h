@@ -27,9 +27,9 @@
 #include <stdio.h>
 
 /* Code generator for the 'C' target */
-
 apcgen_t *apcgen_alloc();
-int apcgen_gen(apcgen_t *self, apunit_t *unit);
+int apcgen_gen(apcgen_t *self, apenv_t *env);
+int apcgen_gen_unit(apcgen_t *self, apunit_t *unit);
 void apcgen_unit(apcgen_t *self, apunit_t *unit);
 void apcgen_func(apcgen_t *self, apfunc_t *func);
 void apcgen_stmt(apcgen_t *self, apstmt_t *stmt);

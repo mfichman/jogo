@@ -20,53 +20,32 @@
  * IN THE SOFTWARE.
  */  
 
-#include <apvar.h>
-#include <apexpr.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <apenv.h>
+#include <apunit.h>
+#include <aphash.h>
 
-apvar_t *apvar_alloc(aploc_t *loc, char *name, aptype_t *type, apexpr_t *expr) {
-	apvar_t *self = malloc(sizeof(apvar_t));
-
-	self->name = name;
-	self->symbol = APSYMBOL_TYPE_VAR;
-	self->flags = 0;
-	self->type = type;
-	self->expr = expr;
-	self->loc = *loc;
-	self->next = 0;
-	
-	return self;
-}
-
-apvar_t *apvar_formal(aploc_t *loc, char *name, aptype_t *type, apvar_t *next) {
-    apvar_t *self = malloc(sizeof(apvar_t));
-
-    self->name = name;
-    self->symbol = APSYMBOL_TYPE_VAR;
-    self->flags = 0;
-    self->type = type;
-    self->expr = 0;
-    self->loc = *loc;
-    self->next = next;
+apenv_t *apenv_alloc(const char *root) {
+    apenv_t *self = malloc(sizeof(apenv_t));
+    
+	aphash_compfn_t comp = (aphash_compfn_t)&strcmp;
+	aphash_hashfn_t hash = (aphash_hashfn_t)&aphash_string;
+    
+    self->types = aphash_alloc(comp, hash);
+    self->units = 0;
+    self->root = strdup(root);
 
     return self;
 }
 
-void apvar_free(apvar_t *self) {
-
-	if (self) {
-
-		free(self->name);
-		aptype_free(self->type);
-		apexpr_free(self->expr);
-		apvar_free(self->next);
-		free(self);
-
-	}
+void apenv_unit(apenv_t *self, apunit_t *unit) {
+    aphash_put(self->types, unit->name, unit); 
+    unit->next = self->units;
+    self->units = unit;
 }
 
-int apvar_comp(apvar_t *self, apvar_t *var) {
-	return self - var;
+void apenv_free(apenv_t *self) {
+    aphash_free(self->types);
+    apunit_free(self->units);
+    free(self->root);
+    free(self);
 }

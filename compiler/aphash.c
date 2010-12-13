@@ -25,6 +25,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#define APHASH_DEFAULT_CAPACITY 17
+
 typedef struct aphash_entry aphash_entry_t;
 struct aphash_entry {
 	const void *key;
@@ -43,7 +45,7 @@ struct aphash {
 aphash_t *aphash_alloc(aphash_compfn_t comp, aphash_hashfn_t hash) {
 	aphash_t *self = malloc(sizeof(aphash_t));
 	
-	self->capacity = 17;
+	self->capacity = APHASH_DEFAULT_CAPACITY;
 	self->count = 0;
 	self->compare = comp;
 	self->hash = hash; 

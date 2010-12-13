@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <apollo.h>
+#include <apenv.h>
 #include <apparser.h>
 #include <apchecker.h>
 #include <apimport.h>
@@ -38,57 +39,25 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	aphash_compfn_t comp = (aphash_compfn_t)&strcmp;
-	aphash_hashfn_t hash = (aphash_hashfn_t)&aphash_string;
-	aphash_t *types = aphash_alloc(comp, hash);
-	apunit_t *queue = apunit_alloc(strdup(argv[1]));
-	apunit_t *units = 0;
-
+    apenv_t *env = apenv_alloc(argv[1]);
 	apparser_t *parser = apparser_alloc();
 	apchecker_t *checker = apchecker_alloc();
 	apcgen_t *cgen = apcgen_alloc();
+
+    if (!apparser_parse(parser, env)) {
+        return 0;
+    }
+    if (!apchecker_check(checker, env)) {
+        return 0;
+    }
+    if (apcgen_gen(cgen, env)) {
+        return 0;
+    }
 	
-	/* Parsing/semantic analysis phase */
-	for (apunit_t *unit = queue; unit; unit = queue) {
-		queue = queue->next;	
-
-		/* Run the parser to create the translation unit */
-		if (apparser_parse(parser, unit)) {
-			unit->next = 0;
-			apunit_free(unit);
-			return 1;
-		}
-		unit->next = units;
-		units = unit;	
-	
-		/* Add the translation unit to the queue for parsing */
-		for (apimport_t *im = unit->imports; im; im = im->next) {	
-			apunit_t *unit = aphash_get(types, im->name);
-			if (!unit) {
-				unit = apunit_alloc(strdup(im->name));	
-				unit->next = queue;
-				queue = unit;
-				aphash_put(types, im->name, unit);
-			}
-		}
-	}
-
-	/* Semantic analysis/code generation phase */
-	for (apunit_t *unit = units; unit; unit = unit->next) {
-		if (apchecker_check(checker, unit, types)) {
-			break;
-		}
-		if (apcgen_gen(cgen, unit)) {
-			break;
-		}	
-	}
-
-	aphash_free(types);
-	apunit_free(units);
-	apunit_free(queue);
 	apparser_free(parser);
 	apchecker_free(checker);
 	apcgen_free(cgen);
+    apenv_free(env);
 	
 	return 0;
 }

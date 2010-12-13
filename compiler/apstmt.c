@@ -28,19 +28,48 @@
 #include <stdlib.h>
 #include <assert.h>
 
+
 apstmt_t *apstmt_expr(aploc_t *loc, apexpr_t *expr) {
 	apstmt_t *self = malloc(sizeof(apstmt_t));
 
 	self->type = APSTMT_TYPE_EXPR;
 	self->chktype = 0;
-	self->symbols = 0;
 	self->expr = expr;
 	self->var = 0;
-	self->nchild = 0;
 	self->next = 0;
 	self->loc = *loc;
 
 	return self;
+}
+
+apstmt_t *apstmt_case(aploc_t *loc, apexpr_t *expr, apstmt_t *block) {
+    apstmt_t *self = malloc(sizeof(apstmt_t));
+
+    self->type = APSTMT_TYPE_CASE;
+    self->chktype = 0;
+    self->expr = expr;
+    self->var = 0;
+    self->child1 = block;
+    self->child2 = 0;
+    self->next = 0;
+    self->loc = *loc;
+
+    return self;
+}
+
+apstmt_t *apstmt_when(aploc_t *loc, apvar_t *var, apstmt_t *block) {
+    apstmt_t *self = malloc(sizeof(apstmt_t));
+
+    self->type = APSTMT_TYPE_WHEN;
+    self->chktype = 0;
+    self->expr = 0;
+    self->var = var;
+    self->child1 = block;
+    self->child2 = 0;
+    self->next = 0;
+    self->loc = *loc;
+
+    return self;
 }
 
 apstmt_t *apstmt_block(aploc_t *loc) {
@@ -48,115 +77,55 @@ apstmt_t *apstmt_block(aploc_t *loc) {
 
 	self->type = APSTMT_TYPE_BLOCK;
 	self->chktype = 0;
-	self->symbols = 0;
 	self->expr = 0;
 	self->var = 0;
-	self->nchild = 2;
-	self->child[0] = 0; /* Head of the list */
-	self->child[1] = 0; /* Tail fo the list */
+	self->child1 = 0; /* Head of the list */
+	self->child2 = 0; /* Tail fo the list */
 	self->next = 0;
 	self->loc = *loc;
 	
 	return self;
 }
 
-apstmt_t *apstmt_for(aploc_t *loc, apstmt_t *gd[3], apstmt_t *block) {
-	apstmt_t *self = malloc(sizeof(apstmt_t));
-
-	self->type = APSTMT_TYPE_FOR;
-	self->chktype = 0;
-	self->symbols = 0;
-	self->expr = 0;
-	self->var = 0;
-	self->nchild = 4;
-	self->child[0] = gd[0]; /* Initializer */
-	self->child[1] = gd[1]; /* Guard */
-	self->child[2] = gd[2]; /* Increment */
-	self->child[3] = block;	/* Block */
-	self->next = 0;
-	self->loc = *loc;
-
-	return self;
-}
-
-apstmt_t *apstmt_foreach(aploc_t *loc, apvar_t *var, apstmt_t *block) {
+apstmt_t *apstmt_for(aploc_t *loc, apvar_t *var, apstmt_t *block) {
 	apstmt_t *self = malloc(sizeof(apstmt_t));
 	
-	self->type = APSTMT_TYPE_FOREACH;	
+	self->type = APSTMT_TYPE_FOR;	
 	self->chktype = 0;
-	self->symbols = 0;
 	self->expr = 0;
 	self->var = var;
-	self->nchild = 1;
-	self->child[0] = block;
+	self->child1 = block;
+    self->child2 = 0;
 	self->next = 0;
 	self->loc = *loc;
 	
 	return self;
 }
 
-apstmt_t *apstmt_until(aploc_t *loc, apstmt_t *guard, apstmt_t *block) {
+apstmt_t *apstmt_until(aploc_t *loc, apexpr_t *guard, apstmt_t *block) {
 	apstmt_t *self = malloc(sizeof(apstmt_t));
 
 	self->type = APSTMT_TYPE_UNTIL;
 	self->chktype = 0;
-	self->symbols = 0;
-	self->expr = 0;
+	self->expr = guard;
 	self->var = 0;
-	self->nchild = 2;
-	self->child[0] = guard;
-	self->child[1] = block;
+	self->child1 = block;
+    self->child2 = 0;
 	self->next = 0;
 	self->loc = *loc;
 
 	return self;
 }
 
-apstmt_t *apstmt_while(aploc_t *loc, apstmt_t *guard, apstmt_t *block) {
+apstmt_t *apstmt_while(aploc_t *loc, apexpr_t *guard, apstmt_t *block) {
 	apstmt_t *self = malloc(sizeof(apstmt_t));
 
 	self->type = APSTMT_TYPE_WHILE;
 	self->chktype = 0;
-	self->symbols = 0;
-	self->expr = 0;
+	self->expr = guard;
 	self->var = 0;
-	self->nchild = 2;
-	self->child[0] = guard;
-	self->child[1] = block;
-	self->next = 0;
-	self->loc = *loc;
-
-	return self;
-}
-
-apstmt_t *apstmt_dountil(aploc_t *loc, apstmt_t *block, apstmt_t *guard) {
-	apstmt_t *self = malloc(sizeof(apstmt_t));
-
-	self->type = APSTMT_TYPE_DOUNTIL;
-	self->chktype = 0;
-	self->symbols = 0;
-	self->expr = 0;
-	self->var = 0;
-	self->nchild = 2;
-	self->child[0] = guard;
-	self->child[1] = block;
-	self->next = 0;
-	self->loc = *loc;
-
-	return self;
-}
-
-apstmt_t *apstmt_dowhile(aploc_t *loc, apstmt_t *block, apstmt_t *guard) {
-	apstmt_t *self = malloc(sizeof(apstmt_t));
-
-	self->type = APSTMT_TYPE_DOWHILE;
-	self->chktype = 0;
-	self->symbols = 0;
-	self->expr = 0;
-	self->var = 0;
-	self->nchild = 2;
-	self->child[0] = guard;
-	self->child[1] = block;
+	self->child1 = block;
+    self->child2 = 0;
 	self->next = 0;
 	self->loc = *loc;
 
@@ -168,33 +137,28 @@ apstmt_t *apstmt_decl(aploc_t *loc, apvar_t *var) {
 
 	self->type = APSTMT_TYPE_DECL;
 	self->chktype = 0;
-	self->symbols = 0;
 	self->expr = 0;
 	self->var = var;
-	self->nchild = 0;
+    self->child1 = 0;
+    self->child2 = 0;
 	self->next = 0;
 	self->loc = *loc;
 
 	return self;
 }
 
-apstmt_t *apstmt_cond(aploc_t *loc, apstmt_t *guard, apstmt_t *br1, apstmt_t *br2) {
+apstmt_t *apstmt_cond(aploc_t *loc, apexpr_t *guard, apstmt_t *br1, apstmt_t *br2) {
 	apstmt_t *self = malloc(sizeof(apstmt_t));
 
 	self->type = APSTMT_TYPE_COND;
 	self->chktype = 0;
-	self->symbols = 0;
-	self->expr = 0;
+	self->expr = guard;
 	self->var = 0;
+    self->child1 = br1;
 	if (br2) {
-		self->nchild = 3;
-		self->child[0] = guard;
-		self->child[1] = br1;
-		self->child[2] = br2;
+		self->child2 = br2;
 	} else {
-		self->nchild = 2;
-		self->child[0] = guard;
-		self->child[1] = br1;
+        self->child2 = 0;
 	}
 	self->next = 0;
 	self->loc = *loc;
@@ -207,10 +171,10 @@ apstmt_t *apstmt_return(aploc_t *loc, apexpr_t *expr) {
 
 	self->type = APSTMT_TYPE_RETURN;
 	self->chktype = 0;
-	self->symbols = 0;
 	self->expr = expr;
 	self->var = 0;
-	self->nchild = 0;
+    self->child1 = 0;
+    self->child2 = 0;
 	self->next = 0;
 	self->loc = *loc;
 
@@ -222,10 +186,10 @@ apstmt_t *apstmt_empty(aploc_t *loc) {
     
     self->type = APSTMT_TYPE_EMPTY;
     self->chktype = 0;
-    self->symbols = 0;
     self->expr = 0;
     self->var = 0;
-    self->nchild = 0;
+    self->child1 = 0;
+    self->child2 = 0;
     self->next = 0;
     self->loc = *loc;
 
@@ -233,15 +197,17 @@ apstmt_t *apstmt_empty(aploc_t *loc) {
 }
 
 apstmt_t *apstmt_append(apstmt_t *self, apstmt_t *stmt) {
-
+    // The first argument is a block, the second argument
+    // is a statement to append to the block
+    
     assert(stmt);
 
-	if (!self->child[0]) {
-		self->child[0] = stmt;
-		self->child[1] = stmt;
+	if (!self->child1) {
+		self->child1 = stmt;
+		self->child2 = stmt;
 	} else {
-		self->child[1]->next = stmt;
-		self->child[1] = stmt;
+		self->child2->next = stmt;
+		self->child2 = stmt;
 	}
 
 	return self;
@@ -252,14 +218,12 @@ void apstmt_free(apstmt_t *self) {
  	if (self) {
 		apexpr_free(self->expr);
 		apvar_free(self->var);
-		if (APSTMT_TYPE_BLOCK == self->type) {
-			apstmt_free(self->child[0]);
-		} else {
-			for (size_t i = 0; i < self->nchild; i++) {
-				apstmt_free(self->child[i]);
-			}
-		}
-		apsymtab_free(self->symbols);
+	    apstmt_free(self->child1);
+        if (APSTMT_TYPE_BLOCK == self->type) {
+            self->child2 = 0;
+        } else {
+            apstmt_free(self->child2);
+        }
 		apstmt_free(self->next);
 		aptype_free(self->chktype);
 		free(self);

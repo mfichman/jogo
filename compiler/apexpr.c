@@ -35,7 +35,8 @@ apexpr_t *apexpr_literal(aploc_t *loc, aptype_t *type, char *string) {
 
 	self->type = APEXPR_TYPE_STRING;
 	self->string = string; 
-	self->nchild = 0;
+    self->child1 = 0;
+    self->child2 = 0;
 	self->chktype = type;
 	self->next = 0;
 	self->loc = *loc;
@@ -48,9 +49,8 @@ apexpr_t *apexpr_binary(aploc_t *loc, char *op, apexpr_t *lhs, apexpr_t *rhs) {
 	
 	self->type = APEXPR_TYPE_BINARY;
 	self->string = op;
-	self->nchild = 2;
-	self->child[0] = lhs;
-	self->child[1] = rhs;
+	self->child1 = lhs;
+	self->child2 = rhs;
 	self->chktype = 0;
 	self->next = 0;
 	self->loc = *loc;
@@ -63,8 +63,8 @@ apexpr_t *apexpr_unary(aploc_t *loc, char *op, apexpr_t *expr) {
 	
 	self->type = APEXPR_TYPE_UNARY;
 	self->string = op; 
-	self->nchild = 1;
-	self->child[0] = expr;
+	self->child1 = expr;
+    self->child2 = 0;
 	self->chktype = 0;
 	self->next = 0;
 	self->loc = *loc;
@@ -77,9 +77,8 @@ apexpr_t *apexpr_call(aploc_t *loc, apexpr_t *fn, apexpr_t *args) {
 	
 	self->type = APEXPR_TYPE_CALL;
 	self->string = 0; 
-	self->nchild = 2;
-	self->child[0] = fn;
-	self->child[1] = args;
+	self->child1 = fn;
+	self->child2 = args;
 	self->chktype = 0; 
 	self->next = 0;
 	self->loc = *loc;
@@ -92,9 +91,8 @@ apexpr_t *apexpr_index(aploc_t *loc, apexpr_t *expr, apexpr_t *index) {
 	
 	self->type = APEXPR_TYPE_INDEX;
 	self->string = 0; 
-	self->nchild = 2;
-	self->child[0] = expr;
-	self->child[1] = index;
+	self->child1 = expr;
+	self->child2 = index;
 	self->chktype = 0;
 	self->next = 0;
 	self->loc = *loc;
@@ -107,7 +105,8 @@ apexpr_t *apexpr_ident(aploc_t *loc, char *name) {
 	
 	self->type = APEXPR_TYPE_IDENT;
 	self->string = name;
-	self->nchild = 0;
+    self->child1 = 0;
+    self->child2 = 0;
 	self->chktype = 0;
 	self->next = 0;
 	self->loc = *loc;
@@ -120,8 +119,8 @@ apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident) {
 	
 	self->type = APEXPR_TYPE_MEMBER;
 	self->string = ident;
-	self->nchild = 1;
-	self->child[0] = expr;
+	self->child1 = expr;
+    self->child2 = 0;
 	self->chktype = 0;
 	self->next = 0;
 	self->loc = *loc;
@@ -132,9 +131,8 @@ apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident) {
 	
 void apexpr_free(apexpr_t *self) {
 	if (self) {
-		for (size_t i = 0; i < self->nchild; i++) {
-			apexpr_free(self->child[i]);	
-		}
+        apexpr_free(self->child1);
+        apexpr_free(self->child2);
 		apexpr_free(self->next);
 		aptype_free(self->chktype);
 		free(self->string);

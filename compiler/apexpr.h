@@ -37,12 +37,12 @@
 
 /* Structure for holding expression syntax tree */
 struct apexpr {
-	int type;				/* Expression type type */
-	char *string;			/* Possible string value of the expression */
-	aploc_t loc;			/* Location of the expression */
-	aptype_t *chktype;		/* Type evaluation for expression */
-	int nchild;				/* Number of children */
-	apexpr_t *child[2];     /* Child expressions */
+	int type; /* Expression type type */
+	char *string; /* Possible string value of the expression */
+	aploc_t loc; /* Location of the expression */
+	aptype_t *chktype; /* Type evaluation for expression */
+	apexpr_t *child1; /* Child expressions */
+    apexpr_t *child2; /* Child expression */
 	apexpr_t *next;
 };
 

@@ -31,6 +31,7 @@
 /* Primary parser structure; contains symbol table and compilation units */
 struct apparser {
 	apunit_t *unit; /* Current unit being parsed */
+    apenv_t *env; /* Current environment for the unit */
 	FILE *fd; /* Current file descriptor */
 	int column; /* Current column number */
 	int error; /* Error flag */
@@ -55,7 +56,8 @@ union apnode {
 };
 
 apparser_t *apparser_alloc();
-int apparser_parse(apparser_t *self, apunit_t *unit);
+int apparser_parse(apparser_t *self, apenv_t *env);
+int apparser_parse_unit(apparser_t *self, apunit_t *unit);
 int apparser_read(apparser_t *self, char *buffer, int length);
 void apparser_newline(apparser_t *self);
 void apparser_error(apparser_t *self, const char* fmt, ...);
