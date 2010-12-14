@@ -55,12 +55,13 @@ union apnode {
 	int flag;
 };
 
+/* Primary parser structure; contains symbol table and compilation units */
 apparser_t *apparser_alloc();
 int apparser_parse(apparser_t *self, apenv_t *env);
 void apparser_unit(apparser_t *self, apunit_t *unit);
 int apparser_read(apparser_t *self, char *buffer, int length);
 void apparser_newline(apparser_t *self);
-void apparser_error(apparser_t *self, const char* fmt, ...);
+void apparser_error(apparser_t *self, const char *fmt, ...);
 void apparser_free(apparser_t *self);
 
 #endif

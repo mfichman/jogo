@@ -1,6 +1,7 @@
 %{
 #include <apparser.h>
 #include <apexpr.h>
+#include <apenv.h>
 #include <aptype.h>
 #include <apgrammar.h>
 
@@ -54,7 +55,6 @@ while BEGIN(INITIAL); return TOK_WHILE;
 else BEGIN(INITIAL); return TOK_ELSE;
 until BEGIN(INITIAL); return TOK_UNTIL;
 if BEGIN(INITIAL); return TOK_IF;
-do BEGIN(INITIAL); return TOK_DO;
 for BEGIN(INITIAL); return TOK_FOR;
 return BEGIN(SEPARATOR); return TOK_RETURN;
 -> BEGIN(INITIAL); return TOK_ARROW;
@@ -77,26 +77,26 @@ return BEGIN(SEPARATOR); return TOK_RETURN;
 \+\+ BEGIN(INITIAL); return TOK_INC;
 \-\- BEGIN(INITIAL); return TOK_DEC;
 [0-9]+ {
-	yylval->expr = apexpr_literal(yylloc, aptype_object(strdup("Int")), 
-	strdup(yytext)); 
+    aptype_t *type = aptype_object(apenv_ident(yyextra->env, "Int"));
+	yylval->expr = apexpr_literal(yylloc, type, strdup(yytext)); 
     BEGIN(SEPARATOR);
 	return TOK_NUMBER;
 }
 \"[^"]*\" {
 	yytext[strlen(yytext)-1] = 0;
-	yylval->expr = apexpr_literal(yylloc, aptype_object(strdup("String")), 
-	strdup(yytext+1));
+    aptype_t *type = aptype_object(apenv_ident(yyextra->env, "String"));
+	yylval->expr = apexpr_literal(yylloc, type, strdup(yytext+1));
     BEGIN(SEPARATOR);
 	return TOK_STRING;
 }
 \'[^']*\' {
-	yylval->expr = apexpr_literal(yylloc, aptype_object(strdup("String")), 
-	strdup(yytext)); 
+    aptype_t *type = aptype_object(apenv_ident(yyextra->env, "String"));
+	yylval->expr = apexpr_literal(yylloc, type, strdup(yytext)); 
     BEGIN(SEPARATOR);
 	return TOK_STRING;
 }
 [A-Za-z0-9][A-Za-z0-9_]*(::[A-Za-z0-9][A-Za-z0-9_]*)*[?!]? {
-	yylval->string = strdup(yytext); 
+	yylval->string = apenv_ident(yyextra->env, yytext); 
     BEGIN(SEPARATOR);
 	return TOK_IDENT;
 }

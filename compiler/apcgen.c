@@ -277,15 +277,6 @@ void apcgen_expr_binary(apcgen_t *self, apexpr_t *expr) {
 }
 
 void apcgen_expr_call(apcgen_t *self, apexpr_t *expr) {
-	apfunc_t *func = expr->child1->chktype->func;
-	apunit_t *unit = func->unit;
-
-	apcgen_print_name(self, unit->name);
-	apcgen_print(self, "_");
-	apcgen_print_name(self, func->name);
-	apcgen_print(self, "(");
-	apcgen_args(self, expr->child2);
-	apcgen_print(self, ")");
 }
 
 void apcgen_var(apcgen_t *self, apvar_t *var) {

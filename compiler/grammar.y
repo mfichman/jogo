@@ -6,6 +6,7 @@
 #include <apvar.h>
 #include <apfunc.h>
 #include <apunit.h>
+#include <apenv.h>
 #include <apimport.h>
 #include <apsymtab.h>
 #include <apdef.h>
@@ -48,6 +49,24 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %destructor { apvar_free($$); $$ = 0; } <var>
 %destructor { apfunc_free($$); $$ = 0; } <func>
 %destructor { free($$); $$ = 0; } <string>
+
+
+%left '.' '['
+%left TOK_INC TOK_DEC
+%left '!' '~'
+%left '*' '/' '%'
+%left '+' '-'
+%left TOK_LSHIFT TOK_RSHIFT
+%left '<' '>' TOK_LE TOK_GE
+%left TOK_EQUAL TOK_NOTEQUAL
+%left '&'
+%left '|' '^'
+%left TOK_AND
+%left TOK_OR
+%left '=' TOK_MUL_ASSIGN TOK_DIV_ASSIGN TOK_MOD_ASSIGN 
+%left TOK_ADD_ASSIGN TOK_SUB_ASSIGN
+%left TOK_BITAND_ASSIGN TOK_BITOR_ASSIGN
+%left '?'
 
 
 /* BISON declarations */
@@ -118,24 +137,10 @@ void yyerror(aploc_t *loc, apparser_t *parser, void *scanner, const char *messag
 %type <stmt> when
 %type <stmt> statement_list
 %type <stmt> statement
-%type <stmt> conditional
-%type <expr> argument_list
 %type <expr> expression
-%type <expr> nullable
-%type <expr> assignment
+%type <expr> expression_list
 %type <expr> storage
-%type <expr> logical_or
-%type <expr> logical_and
-%type <expr> bitwise_or
-%type <expr> bitwise_and
-%type <expr> equality
-%type <expr> relation
-%type <expr> shift
-%type <expr> addition
-%type <expr> multiplication
-%type <expr> unary
-%type <expr> postfix
-%type <expr> primary
+%type <expr> assignment
 
 
 /* The Standard Apollo Grammar, version 2010 */
@@ -284,7 +289,7 @@ attribute
 
 constructor
     : TOK_DEF TOK_INIT parameter_signature block { 
-		$$ = apfunc_alloc(&@$, strdup("@init"), $3, 0);
+		$$ = apfunc_alloc(&@$, apenv_ident(parser->env, "@init"), $3, 0);
 		$$->flags &= APUNIT_FLAG_STATIC;
 		$$->block = $4;
 	}
@@ -292,7 +297,7 @@ constructor
 
 destructor
     : TOK_DEF TOK_DESTROY '(' ')' block { 
-		$$ = apfunc_alloc(&@$, strdup("@destroy"), 0, 0); 
+		$$ = apfunc_alloc(&@$, apenv_ident(parser->env, "@destroy"), 0, 0); 
 		$$->block = $5;
 	}
 	| TOK_DEF TOK_DESTROY '(' parameter_list ')' block {
@@ -420,8 +425,154 @@ statement
     | expression TOK_SEP { 
 		$$ = apstmt_expr(&@$, $1); 
 	}
-	| conditional { $$ = $1; }
+    | assignment TOK_SEP { 
+		$$ = apstmt_expr(&@$, $1); 
+	}
+	| TOK_IF expression block {
+		$$ = apstmt_cond(&@$, $2, $3, 0);
+	}
+    | TOK_IF expression block TOK_ELSE block {
+        $$ = apstmt_cond(&@$, $2, $3, $5);
+    }
 	;
+
+storage
+    : expression '.' TOK_IDENT { 
+		/* Member variable access */
+		$$ = apexpr_member(&@$, $1, $3); 
+	}
+    | expression '[' expression ']' { 
+		$$ = apexpr_index(&@$, $1, $3); 
+	}
+
+assignment
+    : storage '=' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "="), $1, $3); 
+	}
+    | storage TOK_MUL_ASSIGN expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "*="), $1, $3); 
+	}
+    | storage TOK_DIV_ASSIGN expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "/="), $1, $3); 
+	}
+    | storage TOK_MOD_ASSIGN expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "%="), $1, $3); 
+	}
+    | storage TOK_SUB_ASSIGN expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "-="), $1, $3); 
+	}
+    | storage TOK_ADD_ASSIGN expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "+="), $1, $3); 
+	}
+    | storage TOK_BITAND_ASSIGN expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "&="), $1, $3); 
+	}
+    | storage TOK_BITOR_ASSIGN expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "|="), $1, $3); 
+	}
+    ;
+
+
+expression
+	: expression '?' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "?"), $1, $3);
+	}
+    | expression TOK_OR expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "||"), $1, $3); 
+	}
+    | expression TOK_AND expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "&&"), $1, $3); 
+	}
+    | expression '|' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "|"), $1, $3); 
+	}
+    | expression '^' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "^"), $1, $3); 
+	}
+    | expression '&' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "&"), $1, $3); 
+	}
+    | expression TOK_EQUAL expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "=="), $1, $3); 
+	}
+    | expression TOK_NOTEQUAL expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "!="), $1, $3); 
+	}
+    | expression '>' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, ">"), $1, $3); 
+	}
+    | expression '<' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "<"), $1, $3); 
+	}
+    | expression TOK_GE expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, ">="), $1, $3); 
+	}
+    | expression TOK_LE expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "<="), $1, $3); 
+	}
+    | expression TOK_LSHIFT expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "<<"), $1, $3); 
+	}
+    | expression TOK_RSHIFT expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, ">>"), $1, $3); 
+	}
+    | expression '+' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "+"), $1, $3); 
+	}
+    | expression '-' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "-"), $1, $3); 
+	}
+    | expression '*' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "*"), $1, $3); 
+	}
+    | expression '/' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "/"), $1, $3); 
+	}
+    | expression '%' expression { 
+		$$ = apexpr_binary(&@$, apenv_ident(parser->env, "%"), $1, $3); 
+	}
+    | '!' expression { 
+        $$ = apexpr_unary(&@$, apenv_ident(parser->env, "!"), $2); 
+    }
+    | '~' expression { 
+        $$ = apexpr_unary(&@$, apenv_ident(parser->env, "~"), $2); 
+    }
+    | expression TOK_INC { 
+		$$ = apexpr_unary(&@$, apenv_ident(parser->env, "++"), $1); 
+	}
+    | expression TOK_DEC { 
+		$$ = apexpr_unary(&@$, apenv_ident(parser->env, "--"), $1); 
+	}
+    | TOK_IDENT '(' expression_list ')' {
+		$$ = apexpr_call(&@$, $1, $3);
+    }
+	| TOK_IDENT '(' ')' {
+		/* Call on an object expression */
+		$$ = apexpr_call(&@$, $1, 0);
+	}
+    | expression '.' TOK_IDENT '(' expression_list ')' {
+        $1->next = $5;
+        $$ = apexpr_call(&@$, $3, $1);
+        
+    }
+    | expression '.' TOK_IDENT '(' ')' {
+        $$ = apexpr_call(&@$, $3, $1);
+    }
+    | storage { $$ = $1; }
+	| '(' expression ')' { $$ = $2; } 
+    | TOK_STRING { $$ = $1; }
+    | TOK_NUMBER { $$ = $1; }
+	| TOK_IDENT { $$ = apexpr_ident(&@$, $1); }
+    ;
+
+expression_list
+	: expression ',' expression_list { 
+		$$ = $1;
+		$$->next = $3;
+	}
+	| expression { $$ = $1; } 
+	;
+
 
 when_list
     : when_list when {
@@ -438,197 +589,4 @@ when
     }
     ;
 
-conditional
-	: TOK_IF expression block {
-		$$ = apstmt_cond(&@$, $2, $3, 0);
-	}
-    | TOK_IF expression block TOK_ELSE block {
-        $$ = apstmt_cond(&@$, $2, $3, $5);
-    }
-	;
 
-expression : nullable { $$ = $1; }
-
-nullable
-	: nullable '?' assignment { 
-		$$ = apexpr_binary(&@$, strdup("?"), $1, $3);
-	}
-	| assignment
-	;	
-
-assignment
-    : storage '=' assignment { 
-		$$ = apexpr_binary(&@$, strdup("="), $1, $3); 
-	}
-    | storage TOK_MUL_ASSIGN assignment { 
-		$$ = apexpr_binary(&@$, strdup("*="), $1, $3); 
-	}
-    | storage TOK_DIV_ASSIGN assignment { 
-		$$ = apexpr_binary(&@$, strdup("/="), $1, $3); 
-	}
-    | storage TOK_MOD_ASSIGN assignment { 
-		$$ = apexpr_binary(&@$, strdup("%="), $1, $3); 
-	}
-    | storage TOK_SUB_ASSIGN assignment { 
-		$$ = apexpr_binary(&@$, strdup("-="), $1, $3); 
-	}
-    | storage TOK_ADD_ASSIGN assignment { 
-		$$ = apexpr_binary(&@$, strdup("+="), $1, $3); 
-	}
-    | storage TOK_BITAND_ASSIGN assignment { 
-		$$ = apexpr_binary(&@$, strdup("&="), $1, $3); 
-	}
-    | storage TOK_BITOR_ASSIGN assignment { 
-		$$ = apexpr_binary(&@$, strdup("|="), $1, $3); 
-	}
-    | logical_or { $$ = $1; }
-    ;
-
-storage
-    : TOK_IDENT {
-        $$ = apexpr_ident(&@$, $1);
-    }
-    ;
-
-logical_or
-    : logical_or TOK_OR logical_and { 
-		$$ = apexpr_binary(&@$, strdup("||"), $1, $3); 
-	}
-    | logical_and { $$ = $1; }
-    ;
-
-logical_and
-    : logical_and TOK_AND bitwise_or { 
-		$$ = apexpr_binary(&@$, strdup("&&"), $1, $3); 
-	}
-    | bitwise_or { $$ = $1; }
-    ;
-
-bitwise_or
-    : bitwise_or '|' bitwise_and { 
-		$$ = apexpr_binary(&@$, strdup("|"), $1, $3); 
-	}
-    | bitwise_or '^' bitwise_and { 
-		$$ = apexpr_binary(&@$, strdup("^"), $1, $3); 
-	}
-    | bitwise_and { $$ = $1; }
-    ;
-
-bitwise_and
-    : bitwise_and '&' equality { 
-		$$ = apexpr_binary(&@$, strdup("&"), $1, $3); 
-	}
-    | equality { $$ = $1; }
-    ;
-
-equality
-    : equality TOK_EQUAL relation { 
-		$$ = apexpr_binary(&@$, strdup("=="), $1, $3); 
-	}
-    | equality TOK_NOTEQUAL relation { 
-		$$ = apexpr_binary(&@$, strdup("!="), $1, $3); 
-	}
-    | relation { $$ = $1; }
-    ;
-
-relation
-    : relation '>' shift { 
-		$$ = apexpr_binary(&@$, strdup(">"), $1, $3); 
-	}
-    | relation '<' shift { 
-		$$ = apexpr_binary(&@$, strdup("<"), $1, $3); 
-	}
-    | relation TOK_GE shift { 
-		$$ = apexpr_binary(&@$, strdup(">="), $1, $3); 
-	}
-    | relation TOK_LE shift { 
-		$$ = apexpr_binary(&@$, strdup("<="), $1, $3); 
-	}
-    | shift { $$ = $1; }
-    ;
-
-shift
-    : shift TOK_LSHIFT addition { 
-		$$ = apexpr_binary(&@$, strdup("<<"), $1, $3); 
-	}
-    | shift TOK_RSHIFT addition { 
-		$$ = apexpr_binary(&@$, strdup(">>"), $1, $3); 
-	}
-    | addition { $$ = $1; }
-    ;
-
-addition
-    : addition '+' multiplication { 
-		$$ = apexpr_binary(&@$, strdup("+"), $1, $3); 
-	}
-    | addition '-' multiplication { 
-		$$ = apexpr_binary(&@$, strdup("-"), $1, $3); 
-	}
-    | multiplication { $$ = $1; }
-    ;
-
-multiplication
-    : multiplication '*' unary { 
-		$$ = apexpr_binary(&@$, strdup("*"), $1, $3); 
-	}
-    | multiplication '/' unary { 
-		$$ = apexpr_binary(&@$, strdup("/"), $1, $3); 
-	}
-    | multiplication '%' unary { 
-		$$ = apexpr_binary(&@$, strdup("%"), $1, $3); 
-	}
-    | unary { $$ = $1; }
-    ;
-
-unary
-    : '!' unary { $$ = apexpr_unary(&@$, strdup("!"), $2); }
-    | '~' unary { $$ = apexpr_unary(&@$, strdup("~"), $2); }
- /*
-    | TOK_INC unary { $$ = apexpr_unary(&@$, strdup("++"), $2); }
-    | TOK_DEC unary { $$ = apexpr_unary(&@$, strdup("--"), $2); }
-    | '*' unary { $$ = apexpr_unary(&@$, strdup("*"), $2); }
-    | '+' unary { $$ = apexpr_unary(&@$, strdup("+"), $2); }
-    | '-' unary { $$ = apexpr_unary(&@$, strdup("-"), $2); }
- */
-    | postfix { $$ = $1; }
-    ;
-
-postfix
-	: postfix '(' argument_list ')' {
-		/* Call on an object expression */
-		$$ = apexpr_call(&@$, $1, $3);
-	}
-	| postfix '(' ')' {
-		/* Call on an object expression */
-		$$ = apexpr_call(&@$, $1, 0);
-	}
-    | postfix '.' TOK_IDENT { 
-		/* Member variable access */
-		$$ = apexpr_member(&@$, $1, $3); 
-	}
-    | postfix '[' expression ']' { 
-		$$ = apexpr_index(&@$, $1, $3); 
-	}
-    | postfix TOK_INC { 
-		$$ = apexpr_unary(&@$, strdup("++"), $1); 
-	}
-    | postfix TOK_DEC { 
-		$$ = apexpr_unary(&@$, strdup("--"), $1); 
-	}
-    | primary { $$ = $1; }
-    ;
-
-primary
-	: '(' expression ')' { $$ = $2; } 
-    | TOK_STRING { $$ = $1; }
-    | TOK_NUMBER { $$ = $1; }
-	| TOK_IDENT { $$ = apexpr_ident(&@$, $1); }
-    ;
-
-argument_list
-	: expression ',' argument_list { 
-		$$ = $1;
-		$$->next = $3;
-	}
-	| expression { $$ = $1; } 
-	;

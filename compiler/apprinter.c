@@ -20,26 +20,10 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef APENV_H
-#define APENV_H
+#include <apprinter.h>
 
-#include <apollo.h>
 
-/* Structure for holding context about the current compilation environment */
-struct apenv {
-    apunit_t *units; /* List of compilation unit structures */
-    aphash_t *types; /* Hash of typenames to compilation unit structures */
-    aphash_t *idents; /* Hash of identifiers */
-    aphash_t *integers; /* Hash of integer values */
-    aphash_t *strings; /* Hash of strings */
-    char *root;
+struct apprinter {
+    int indent;
 };
 
-apenv_t *apenv_alloc(const char *root);
-char *apenv_ident(apenv_t *self, const char *ident);
-char *apenv_integer(apenv_t *self, const char *integer);
-char *apenv_string(apenv_t *self, const char *string);
-void apenv_unit(apenv_t *self, apunit_t *unit);
-void apenv_free(apenv_t *self);
-
-#endif

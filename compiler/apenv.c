@@ -37,6 +37,34 @@ apenv_t *apenv_alloc(const char *root) {
     return self;
 }
 
+char *apenv_ident(apenv_t *self, const char *ident) {
+    char *out = aphash_get(self->idents, ident);
+    if (!out) {
+        out = strdup(ident);
+        aphash_put(self->idents, out, out);
+    }
+    return out;
+}
+
+char *apenv_string(apenv_t *self, const char *ident) {
+    char *out = aphash_get(self->idents, ident);
+    if (!out) {
+        out = strdup(ident);
+        aphash_put(self->strings, out, out);
+    }
+    return out;
+}
+
+char *apenv_integers(apenv_t *self, const char *ident) {
+    char *out = aphash_get(self->integers, ident);
+    if (!out) {
+        out = strdup(ident);
+        aphash_put(self->integers, out, out);
+    }
+    return out;
+}
+
+
 void apenv_unit(apenv_t *self, apunit_t *unit) {
     aphash_put(self->types, unit->name, unit); 
     unit->next = self->units;
@@ -44,7 +72,25 @@ void apenv_unit(apenv_t *self, apunit_t *unit) {
 }
 
 void apenv_free(apenv_t *self) {
+    void *value;
+
+    aphash_iter_t i = aphash_iter(self->idents);
+    while ((value = aphash_next(self->idents, &i))) {
+        free(value);
+    }
+    aphash_iter_t j = aphash_iter(self->strings);
+    while ((value = aphash_next(self->idents, &j))) {
+        free(value);
+    }
+    aphash_iter_t k = aphash_iter(self->integers);
+    while ((value = aphash_next(self->idents, &k))) {
+        free(value);
+    }
+
     aphash_free(self->types);
+    aphash_free(self->idents);
+    aphash_free(self->strings);
+    aphash_free(self->integers);
     apunit_free(self->units);
     free(self->root);
     free(self);

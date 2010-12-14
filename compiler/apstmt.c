@@ -35,6 +35,8 @@ apstmt_t *apstmt_expr(aploc_t *loc, apexpr_t *expr) {
 	self->type = APSTMT_TYPE_EXPR;
 	self->chktype = 0;
 	self->expr = expr;
+    self->child1 = 0;
+    self->child2 = 0;
 	self->var = 0;
 	self->next = 0;
 	self->loc = *loc;

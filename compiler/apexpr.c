@@ -72,18 +72,32 @@ apexpr_t *apexpr_unary(aploc_t *loc, char *op, apexpr_t *expr) {
 	return self;
 }
 
-apexpr_t *apexpr_call(aploc_t *loc, apexpr_t *fn, apexpr_t *args) {
+apexpr_t *apexpr_call(aploc_t *loc, char *ident, apexpr_t *args) {
 	apexpr_t *self = malloc(sizeof(apexpr_t));
 	
 	self->type = APEXPR_TYPE_CALL;
-	self->string = 0; 
-	self->child1 = fn;
-	self->child2 = args;
+	self->string = ident;
+	self->child1 = args;
+    self->child2 = 0;
 	self->chktype = 0; 
 	self->next = 0;
 	self->loc = *loc;
 		
 	return self;
+}
+
+apexpr_t *apexpr_dispatch(aploc_t *loc, char *ident, apexpr_t *args) {
+    apexpr_t *self = malloc(sizeof(apexpr_t));
+    
+    self->type = APEXPR_TYPE_DISPATCH;
+    self->string = ident;
+    self->child1 = args;
+    self->child2 = 0;
+    self->chktype = 0;
+    self->next = 0;
+    self->loc = *loc;
+
+    return self;
 }
 
 apexpr_t *apexpr_index(aploc_t *loc, apexpr_t *expr, apexpr_t *index) {
@@ -128,7 +142,6 @@ apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident) {
 	return self;
 }
 
-	
 void apexpr_free(apexpr_t *self) {
 	if (self) {
         apexpr_free(self->child1);

@@ -33,37 +33,8 @@ aptype_t *aptype_object(char *name) {
 
 	self->name = name;
 	self->type = APTYPE_TYPE_OBJECT;
-	self->func = 0;
-	self->unit = 0;
-	self->next = 0;
-	self->flags = 0;
+    self->flags = 0;
 
-	return self;
-}
-
-aptype_t *aptype_func(apfunc_t *func) {
-	aptype_t *self = malloc(sizeof(aptype_t));
-
-	self->name = 0;
-	self->type = APTYPE_TYPE_FUNC;
-	self->func = func;
-	self->unit = 0;
-	self->next = 0;
-	self->flags = 0;
-
-	return self;
-}	
-
-aptype_t *aptype_ctor(apunit_t *unit) {
-	aptype_t *self = malloc(sizeof(aptype_t));
-
-	self->name = 0;
-	self->type = APTYPE_TYPE_CTOR;
-	self->func = 0;
-	self->unit = unit;
-	self->next = 0;
-	self->flags = 0;
-	
 	return self;
 }
 
@@ -72,15 +43,10 @@ aptype_t *aptype_clone(aptype_t *other) {
 		return 0;
 	}
 
-	assert("Can't clone an argument list" && !other->next);
-
 	aptype_t *self = malloc(sizeof(aptype_t));
 	self->name = malloc(strlen(other->name) + 1);
 	self->type = other->type;
-	self->func = other->func;
-	self->unit = other->unit;
-	self->flags = other->flags;
-	self->next = 0;
+    self->flags = 0;
 
 	strcpy(self->name, other->name);
 	
@@ -92,19 +58,9 @@ int aptype_comp(aptype_t *self, aptype_t *other) {
 		return 1;
 	}
 	
-	if (APTYPE_TYPE_FUNC == self->type) {
-		return other->func == self->func;
-	} else if (APTYPE_TYPE_CTOR == self->type) {
-		return other->unit == self->unit;
-	}
-
-	while (self && other) {
-		if (strcmp(self->name, other->name)) {
-			return 1;
-		}
-		self = self->next;
-		other = other->next;
-	}
+    if (strcmp(self->name, other->name)) {
+	    return 1;
+    }
 
 	if (!self && !other) {
 		return 0;
@@ -115,11 +71,7 @@ int aptype_comp(aptype_t *self, aptype_t *other) {
 
 void aptype_print(aptype_t *self, FILE *file) {
 	if (self) {
-		if (APTYPE_TYPE_FUNC == self->type) {
-			fprintf(file, "'function'");
-		} else {
-			fprintf(file, "'%s'", self->name);
-		}
+		fprintf(file, "'%s'", self->name);
 	} else {
 		fprintf(file, "'void'");
 	}
@@ -128,7 +80,6 @@ void aptype_print(aptype_t *self, FILE *file) {
 void aptype_free(aptype_t *self) {
 	if (self) {
 		free(self->name);
-		aptype_free(self->next);
 		free(self);
 	}
 }

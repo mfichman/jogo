@@ -37,15 +37,10 @@
 struct aptype {
 	char *name;             /* Fully qualified aptype name */
 	int type;				/* Primitive or not? */
-	int flags;				/* Type modification flags */
-	apfunc_t *func;			/* Optional pointer to the function signature */
-	apunit_t *unit;			/* Optional pointer to the unit type */
-    aptype_t *next;
+    int flags;
 };
 
 aptype_t *aptype_object(char *name);
-aptype_t *aptype_func(apfunc_t *func);
-aptype_t *aptype_ctor(apunit_t *unit);
 aptype_t *aptype_clone(aptype_t *self);
 int aptype_comp(aptype_t *self, aptype_t *other);
 void aptype_print(aptype_t *self, FILE *file);

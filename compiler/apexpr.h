@@ -31,9 +31,11 @@
 #define APEXPR_TYPE_UNARY 2 
 #define APEXPR_TYPE_BINARY 3 
 #define APEXPR_TYPE_CALL 4
-#define APEXPR_TYPE_INDEX 5
-#define APEXPR_TYPE_IDENT 6
-#define APEXPR_TYPE_MEMBER 7
+#define APEXPR_TYPE_DISPATCH 5
+#define APEXPR_TYPE_INDEX 6
+#define APEXPR_TYPE_IDENT 7
+#define APEXPR_TYPE_MEMBER 8
+#define APEXPR_TYPE_ASSIGN 9
 
 /* Structure for holding expression syntax tree */
 struct apexpr {
@@ -50,7 +52,8 @@ struct apexpr {
 apexpr_t *apexpr_literal(aploc_t *loc, aptype_t *type, char *string);
 apexpr_t *apexpr_binary(aploc_t *loc, char *op, apexpr_t *lh, apexpr_t *rh);
 apexpr_t *apexpr_unary(aploc_t *loc, char *op, apexpr_t *expr);
-apexpr_t *apexpr_call(aploc_t *loc, apexpr_t *fn, apexpr_t *args);
+apexpr_t *apexpr_call(aploc_t *loc, char *ident, apexpr_t *args);
+apexpr_t *apexpr_dispatch(aploc_t *loc, char *ident, apexpr_t *args); 
 apexpr_t *apexpr_index(aploc_t *loc, apexpr_t *obj, apexpr_t *index);
 apexpr_t *apexpr_ident(aploc_t *loc, char *name);
 apexpr_t *apexpr_member(aploc_t *loc, apexpr_t *expr, char *ident);
