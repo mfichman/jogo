@@ -70,8 +70,9 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 %type <feature> feature feature_list attribute import define
 %type <feature> constructor destructor function prototype native
+%type <name> type
 %type <flag> modifiers
-%type <formal> formal_signature formal_list
+%type <formal> formal_signature formal_list formal
 %type <statement> block when_list when statement_list statement
 %type <expression> expression expression_list storage assignment
 
@@ -79,17 +80,17 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 /* The Standard Apollo Grammar, version 2010 */
 %%
 unit
-    : CLASS IDENTIFIER '{' class_feature_list '}' {
-        $$ = new Class(@$, $2, $4);    
+    : CLASS IDENTIFIER '{' feature_list '}' {
+        parser->environment()->unit(new Class(@$, $2, $4)); 
     }
-    | INTERFACE IDENTIFIER '{' interface_feature_list '{' {
-        $$ = new Interface(@$, $2, $4);    
+    | INTERFACE IDENTIFIER '{' feature_list '{' {
+        parser->environment()->unit(new Interface(@$, $2, $4)); 
     }
-    | STRUCT IDENTIFIER '{' struct_feature_list '}' {
-        $$ = new Structure(@$, $2, $4);    
+    | STRUCT IDENTIFIER '{' feature_list '}' {
+        parser->environment()->unit(new Structure(@$, $2, $4));    
     }
-    | MODULE IDENTIFIER '{' module_feature_list '}' {
-        $$ = new Module(@$, $2, $4);    
+    | MODULE IDENTIFIER '{' feature_list '}' {
+        parser->environment()->unit(new Module(@$, $2, $4));    
     }
 	| /* empty is an error */ { 
 		yyerror(&@$, parser, scanner, "Input file is empty"); 
@@ -127,7 +128,7 @@ import
 
 define
     : DEF type IDENTIFIER SEPARATOR { 
-		$$ = new Define(@$, $2, $1);
+		$$ = new Define(@$, $3, $2);
 	}
     ;
 
@@ -246,7 +247,7 @@ statement_list
 
 statement
 	: FOR IDENTIFIER ':' type LEFT_ARROW expression block {
-		$$ = new For(@$, $2, $4, $5, $6);
+		$$ = new For(@$, $2, $4, $6, $7);
 	}
 	| UNTIL expression block {
         // TODO: FIX UNTIL
@@ -436,7 +437,7 @@ when_list
 
 when
     : WHEN IDENTIFIER ':' type block {
-        $$ = new When(@$, $1, $4, $5);
+        $$ = new When(@$, $2, $4, $5);
     }
     ;
 

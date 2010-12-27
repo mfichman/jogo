@@ -33,7 +33,6 @@
 class Parser : public Object {
 public:
     void parse(Environment* env, const std::string& filename);
-    void unit(Unit* unit);
     std::fstream& input() { return input_; }
     Environment* environment() const { return environment_; }
     int column() const { return column_; }
