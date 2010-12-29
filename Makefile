@@ -6,7 +6,7 @@ CPP := g++
 
 # Standard things
 .SUFFIXES:
-.SUFFIXES: .cc .c .o .l.cc .y.cc
+.SUFFIXES: .cpp .c .o
 all: targets
 
 # Subdirectories
@@ -21,7 +21,7 @@ include $(dir)/rules.mk
 %.o: %.c
 	$(CC) $(CFLAGS) $(CFLOCAL) -o $@ $^
 
-%.o: %.cc
+%.o: %.cpp
 	$(CPP) $(CPPFLAGS) $(CFLOCAL) -o $@ $^ 
 
 .PHONY: targets

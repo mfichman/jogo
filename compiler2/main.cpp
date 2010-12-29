@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */  
 
-#include "Environment.h"
-#include "Parser.h"
+#include "environment.hpp"
+#include "parser.hpp"
 
 #include <iostream>
 

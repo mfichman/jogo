@@ -20,35 +20,49 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef ENVIRONMENT_H
-#define ENVIRONMENT_H
+#ifndef PARSER_H
+#define PARSER_H
 
-#include "Apollo.h"
-#include "Object.h"
-#include "Unit.h"
-#include "Name.h"
+#include "apollo.hpp"
+#include "environment.hpp"
+#include "object.hpp"
 
-#include <map>
+#include <fstream>
 
-/* Compilation environment; contains symbol table and compilation units */
-class Environment : public Object {
+/* Primary parser structure; creates compilation units */
+class Parser : public Object {
 public:
-    Unit* units() const { return units_; }
-    Unit* unit(Name *name) { return unit_[Name::Ptr(name)]; }
-    Name* name(const std::string& str) { return name_[str]; }
-
-    void unit(Unit* unit) {
-        unit_[unit->name()] = unit; 
-        unit->next(units_);
-        units_ = unit;
-    }
-
-    typedef Pointer<Environment> Ptr;
+    void parse(Environment* env, const std::string& filename);
+    Environment* environment() const { return environment_; }
+    std::fstream& input() { return input_; }
+	const std::string& filename() const { return filename_; }
+    int column() const { return column_; }
+    void column(int column) { column_ = column; }
+	int error() const { return error_; }
+	void error(int error) { error_ = error; }
+    typedef Pointer<Parser> Ptr;
 
 private:
-    std::map<std::string, Name::Ptr> name_;
-    std::map<Name::Ptr, Unit::Ptr> unit_;
-    Unit::Ptr units_;
+    Environment::Ptr environment_;
+    int column_;
+    int error_;
+    std::fstream input_;
+    std::string filename_;
+    void *scanner_;
 };
+
+/* Union used by Bison and Flex for actions */
+union ParseNode {
+	Expression* expression;
+	Statement* statement;
+	Unit* unit;
+	Formal* formal;
+	When* when;
+	Feature* feature;
+	Name* name;
+	int null;
+	int flag;
+};
+
 
 #endif

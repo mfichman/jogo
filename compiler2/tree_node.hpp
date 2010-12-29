@@ -23,9 +23,9 @@
 #ifndef NODE_H
 #define NODE_H
 
-#include "Apollo.h"
-#include "Object.h"
-#include "Location.h"
+#include "apollo.hpp"
+#include "object.hpp"
+#include "location.hpp"
 
 /* Class for abstract syntax tree nodes */
 class TreeNode : public Object {

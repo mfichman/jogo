@@ -23,8 +23,8 @@
 #ifndef UNIT_H
 #define UNIT_H
 
-#include "TreeNode.h"
-#include "Feature.h"
+#include "tree_node.hpp"
+#include "feature.hpp"
 #include <typeinfo>
 #include <map>
 

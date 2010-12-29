@@ -20,20 +20,25 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef OBJECT_H
-#define OBJECT_H
+#ifndef NAME_H
+#define NAME_H
 
-#include "Pointer.h"
+#include "apollo.hpp"
+#include "object.hpp"
+#include <string>
 
-class Object {
+class Name : public Object {
 public:
-    Object() : refcount_(0) {}
-    virtual ~Object() {}
-    int refcount() { return refcount_; }
-    void refcount(int refcount) { refcount_ = refcount; }    
+    Name(const std::string& string) :
+        string_(string) {
+    }
+
+    const std::string& string() const { return string_; }
+    typedef Pointer<Name> Ptr;
 
 private:
-    int refcount_;
+    std::string string_;
+
 };
 
 #endif

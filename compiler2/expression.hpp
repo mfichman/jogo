@@ -23,8 +23,8 @@
 #ifndef EXPRESSION_H
 #define EXPRESSION_H
 
-#include "TreeNode.h"
-#include "Name.h"
+#include "tree_node.hpp"
+#include "name.hpp"
 
 /* This file includes interfaces for expression nodes */
 class Expression : public TreeNode {

@@ -1,6 +1,6 @@
-#line 2 "compiler2/Lexer.cc"
+#line 2 "compiler2/lexer.cpp"
 
-#line 4 "compiler2/Lexer.cc"
+#line 4 "compiler2/lexer.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -624,15 +624,15 @@ static yyconst flex_int32_t yy_rule_can_match_eol[53] =
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-#line 1 "compiler2/Lexer.l"
-#line 2 "compiler2/Lexer.l"
-#include "Statement.h"
-#include "Formal.h"
-#include "Expression.h"
-#include "Unit.h"
-#include "Feature.h"
-#include "Parser.h"
-#include "Grammar.h"
+#line 1 "compiler2/lexer.l"
+#line 2 "compiler2/lexer.l"
+#include "statement.hpp"
+#include "formal.hpp"
+#include "expression.hpp"
+#include "unit.hpp"
+#include "feature.hpp"
+#include "parser.hpp"
+#include "grammar.hpp"
 
 #define YYSTYPE ParseNode
 #define YYLTYPE Location
@@ -655,7 +655,7 @@ static yyconst flex_int32_t yy_rule_can_match_eol[53] =
 
 
 /* Lexer rules */
-#line 659 "compiler2/Lexer.cc"
+#line 659 "compiler2/lexer.cpp"
 
 #define INITIAL 0
 #define SEPARATOR 1
@@ -895,9 +895,9 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-#line 41 "compiler2/Lexer.l"
+#line 41 "compiler2/lexer.l"
 
-#line 901 "compiler2/Lexer.cc"
+#line 901 "compiler2/lexer.cpp"
 
     yylval = yylval_param;
 
@@ -994,207 +994,207 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 42 "compiler2/Lexer.l"
+#line 42 "compiler2/lexer.l"
 BEGIN(INITIAL); return CLASS;
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 43 "compiler2/Lexer.l"
+#line 43 "compiler2/lexer.l"
 BEGIN(INITIAL); return INTERFACE;
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 44 "compiler2/Lexer.l"
+#line 44 "compiler2/lexer.l"
 BEGIN(INITIAL); return STRUCT;
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 45 "compiler2/Lexer.l"
+#line 45 "compiler2/lexer.l"
 BEGIN(INITIAL); return MODULE;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 46 "compiler2/Lexer.l"
+#line 46 "compiler2/lexer.l"
 BEGIN(INITIAL); return IMPORT;
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 47 "compiler2/Lexer.l"
+#line 47 "compiler2/lexer.l"
 BEGIN(INITIAL); return DEF;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 48 "compiler2/Lexer.l"
+#line 48 "compiler2/lexer.l"
 BEGIN(INITIAL); return VAR; 
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 49 "compiler2/Lexer.l"
+#line 49 "compiler2/lexer.l"
 BEGIN(INITIAL); return CASE;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 50 "compiler2/Lexer.l"
+#line 50 "compiler2/lexer.l"
 BEGIN(INITIAL); return WHEN;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 51 "compiler2/Lexer.l"
+#line 51 "compiler2/lexer.l"
 BEGIN(INITIAL); return INIT;
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 52 "compiler2/Lexer.l"
+#line 52 "compiler2/lexer.l"
 BEGIN(INITIAL); return DESTROY;
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 53 "compiler2/Lexer.l"
+#line 53 "compiler2/lexer.l"
 BEGIN(INITIAL); return PUBLIC;
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 54 "compiler2/Lexer.l"
+#line 54 "compiler2/lexer.l"
 BEGIN(INITIAL); return PRIVATE;
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 55 "compiler2/Lexer.l"
+#line 55 "compiler2/lexer.l"
 BEGIN(INITIAL); return STATIC;
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 56 "compiler2/Lexer.l"
+#line 56 "compiler2/lexer.l"
 BEGIN(INITIAL); return NATIVE;
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 57 "compiler2/Lexer.l"
+#line 57 "compiler2/lexer.l"
 BEGIN(INITIAL); return WHILE;
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 58 "compiler2/Lexer.l"
+#line 58 "compiler2/lexer.l"
 BEGIN(INITIAL); return ELSE;
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 59 "compiler2/Lexer.l"
+#line 59 "compiler2/lexer.l"
 BEGIN(INITIAL); return UNTIL;
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 60 "compiler2/Lexer.l"
+#line 60 "compiler2/lexer.l"
 BEGIN(INITIAL); return IF;
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 61 "compiler2/Lexer.l"
+#line 61 "compiler2/lexer.l"
 BEGIN(INITIAL); return FOR;
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 62 "compiler2/Lexer.l"
+#line 62 "compiler2/lexer.l"
 BEGIN(SEPARATOR); return RETURN;
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 63 "compiler2/Lexer.l"
+#line 63 "compiler2/lexer.l"
 BEGIN(INITIAL); return RIGHT_ARROW;
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 64 "compiler2/Lexer.l"
+#line 64 "compiler2/lexer.l"
 BEGIN(INITIAL); return LEFT_ARROW;
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 65 "compiler2/Lexer.l"
+#line 65 "compiler2/lexer.l"
 BEGIN(INITIAL); return EQUAL; 
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 66 "compiler2/Lexer.l"
+#line 66 "compiler2/lexer.l"
 BEGIN(INITIAL); return NOT_EQUAL; 
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 67 "compiler2/Lexer.l"
+#line 67 "compiler2/lexer.l"
 BEGIN(INITIAL); return OR; 
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 68 "compiler2/Lexer.l"
+#line 68 "compiler2/lexer.l"
 BEGIN(INITIAL); return AND; 
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 69 "compiler2/Lexer.l"
+#line 69 "compiler2/lexer.l"
 BEGIN(INITIAL); return GREATER_OR_EQUAL;
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 70 "compiler2/Lexer.l"
+#line 70 "compiler2/lexer.l"
 BEGIN(INITIAL); return LESS_OR_EQUAL;
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 71 "compiler2/Lexer.l"
+#line 71 "compiler2/lexer.l"
 BEGIN(INITIAL); return LEFT_SHIFT;
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 72 "compiler2/Lexer.l"
+#line 72 "compiler2/lexer.l"
 BEGIN(INITIAL); return RIGHT_SHIFT;
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 73 "compiler2/Lexer.l"
+#line 73 "compiler2/lexer.l"
 BEGIN(INITIAL); return MULTIPLY_ASSIGN;
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 74 "compiler2/Lexer.l"
+#line 74 "compiler2/lexer.l"
 BEGIN(INITIAL); return DIVIDE_ASSIGN;
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 75 "compiler2/Lexer.l"
+#line 75 "compiler2/lexer.l"
 BEGIN(INITIAL); return SUBTRACT_ASSIGN; 
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 76 "compiler2/Lexer.l"
+#line 76 "compiler2/lexer.l"
 BEGIN(INITIAL); return ADD_ASSIGN;
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 77 "compiler2/Lexer.l"
+#line 77 "compiler2/lexer.l"
 BEGIN(INITIAL); return MODULUS_ASSIGN;
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 78 "compiler2/Lexer.l"
+#line 78 "compiler2/lexer.l"
 BEGIN(INITIAL); return BIT_OR_ASSIGN;
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 79 "compiler2/Lexer.l"
+#line 79 "compiler2/lexer.l"
 BEGIN(INITIAL); return BIT_AND_ASSIGN;
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 80 "compiler2/Lexer.l"
+#line 80 "compiler2/lexer.l"
 BEGIN(INITIAL); return INCREMENT;
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 81 "compiler2/Lexer.l"
+#line 81 "compiler2/lexer.l"
 BEGIN(INITIAL); return DECREMENT;
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 82 "compiler2/Lexer.l"
+#line 82 "compiler2/lexer.l"
 {
     Name* type = yyextra->environment()->name("Int");
 	Name* value = yyextra->environment()->name(yytext);
@@ -1206,7 +1206,7 @@ YY_RULE_SETUP
 case 42:
 /* rule 42 can match eol */
 YY_RULE_SETUP
-#line 89 "compiler2/Lexer.l"
+#line 89 "compiler2/lexer.l"
 {
 	yytext[strlen(yytext)-1] = 0;
     Name* type = yyextra->environment()->name("String");
@@ -1219,7 +1219,7 @@ YY_RULE_SETUP
 case 43:
 /* rule 43 can match eol */
 YY_RULE_SETUP
-#line 97 "compiler2/Lexer.l"
+#line 97 "compiler2/lexer.l"
 {
     Name* type = yyextra->environment()->name("String");
 	Name* value = yyextra->environment()->name(yytext);
@@ -1230,7 +1230,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 104 "compiler2/Lexer.l"
+#line 104 "compiler2/lexer.l"
 {
 	yylval->name = yyextra->environment()->name(yytext);
     BEGIN(SEPARATOR);
@@ -1239,47 +1239,47 @@ YY_RULE_SETUP
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 109 "compiler2/Lexer.l"
+#line 109 "compiler2/lexer.l"
 
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 110 "compiler2/Lexer.l"
+#line 110 "compiler2/lexer.l"
 BEGIN(INITIAL); return yytext[0];
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 111 "compiler2/Lexer.l"
+#line 111 "compiler2/lexer.l"
 BEGIN(SEPARATOR); return yytext[0];
 	YY_BREAK
 case 48:
 /* rule 48 can match eol */
 YY_RULE_SETUP
-#line 112 "compiler2/Lexer.l"
+#line 112 "compiler2/lexer.l"
 BEGIN(INITIAL); yyget_extra(yyscanner)->column(1); return SEPARATOR;
 	YY_BREAK
 case 49:
 /* rule 49 can match eol */
 YY_RULE_SETUP
-#line 113 "compiler2/Lexer.l"
+#line 113 "compiler2/lexer.l"
 yyget_extra(yyscanner)->column(1);
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 114 "compiler2/Lexer.l"
+#line 114 "compiler2/lexer.l"
 
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 115 "compiler2/Lexer.l"
+#line 115 "compiler2/lexer.l"
 return yytext[0];
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 116 "compiler2/Lexer.l"
+#line 116 "compiler2/lexer.l"
 ECHO;
 	YY_BREAK
-#line 1283 "compiler2/Lexer.cc"
+#line 1283 "compiler2/lexer.cpp"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(SEPARATOR):
 	yyterminate();
@@ -2424,7 +2424,7 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 116 "compiler2/Lexer.l"
+#line 116 "compiler2/lexer.l"
 
 
 

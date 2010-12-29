@@ -23,9 +23,9 @@
 #ifndef STATEMENT_H
 #define STATEMENT_H
 
-#include "TreeNode.h"
-#include "Name.h"
-#include "Expression.h"
+#include "tree_node.hpp"
+#include "name.hpp"
+#include "expression.hpp"
 
 /* This file includes interfaces for statement nodes */
 class Statement : public TreeNode {

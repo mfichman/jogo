@@ -1,11 +1,11 @@
 %{
-#include "Statement.h"
-#include "Formal.h"
-#include "Expression.h"
-#include "Unit.h"
-#include "Feature.h"
-#include "Parser.h"
-#include "Grammar.h"
+#include "statement.hpp"
+#include "formal.hpp"
+#include "expression.hpp"
+#include "unit.hpp"
+#include "feature.hpp"
+#include "parser.hpp"
+#include "grammar.hpp"
 
 #define YYSTYPE ParseNode
 #define YYLTYPE Location

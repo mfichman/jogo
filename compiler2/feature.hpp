@@ -23,10 +23,10 @@
 #ifndef FEATURE_H
 #define FEATURE_H
 
-#include "TreeNode.h"
-#include "Statement.h"
-#include "Expression.h"
-#include "Formal.h"
+#include "tree_node.hpp"
+#include "statement.hpp"
+#include "expression.hpp"
+#include "formal.hpp"
 
 /* This file holds interfaces for class features */
 class Feature : public TreeNode {

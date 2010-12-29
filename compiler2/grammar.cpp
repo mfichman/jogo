@@ -67,14 +67,14 @@
 /* Copy the first part of user declarations.  */
 
 /* Line 189 of yacc.c  */
-#line 1 "compiler2/Grammar.y"
+#line 1 "compiler2/grammar.y"
 
-#include "Parser.h"
-#include "Expression.h"
-#include "Statement.h"
-#include "Formal.h"
-#include "Feature.h"
-#include "Unit.h"
+#include "parser.hpp"
+#include "expression.hpp"
+#include "statement.hpp"
+#include "formal.hpp"
+#include "feature.hpp"
+#include "unit.hpp"
 
 #define YYSTYPE ParseNode
 #define YYLTYPE Location
@@ -87,7 +87,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 
 /* Line 189 of yacc.c  */
-#line 91 "compiler2/Grammar.cc"
+#line 91 "compiler2/grammar.cpp"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -169,40 +169,40 @@ typedef union YYSTYPE
 {
 
 /* Line 214 of yacc.c  */
-#line 19 "compiler2/Grammar.y"
+#line 19 "compiler2/grammar.y"
  Expression *expression; 
 
 /* Line 214 of yacc.c  */
-#line 20 "compiler2/Grammar.y"
+#line 20 "compiler2/grammar.y"
  Statement *statement; 
 
 /* Line 214 of yacc.c  */
-#line 21 "compiler2/Grammar.y"
+#line 21 "compiler2/grammar.y"
  Name *identifier; 
 
 /* Line 214 of yacc.c  */
-#line 22 "compiler2/Grammar.y"
+#line 22 "compiler2/grammar.y"
  Unit *unit; 
 
 /* Line 214 of yacc.c  */
-#line 23 "compiler2/Grammar.y"
+#line 23 "compiler2/grammar.y"
  Feature *feature; 
 
 /* Line 214 of yacc.c  */
-#line 24 "compiler2/Grammar.y"
+#line 24 "compiler2/grammar.y"
  Formal *formal; 
 
 /* Line 214 of yacc.c  */
-#line 25 "compiler2/Grammar.y"
+#line 25 "compiler2/grammar.y"
  int null; 
 
 /* Line 214 of yacc.c  */
-#line 26 "compiler2/Grammar.y"
+#line 26 "compiler2/grammar.y"
  int flag; 
 
 
 /* Line 214 of yacc.c  */
-#line 206 "compiler2/Grammar.cc"
+#line 206 "compiler2/grammar.cpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -227,7 +227,7 @@ typedef struct YYLTYPE
 
 
 /* Line 264 of yacc.c  */
-#line 231 "compiler2/Grammar.cc"
+#line 231 "compiler2/grammar.cpp"
 
 #ifdef short
 # undef short
@@ -1474,218 +1474,218 @@ yydestruct (yymsg, yytype, yyvaluep, yylocationp, parser, scanner)
       case 37: /* "STRING" */
 
 /* Line 1009 of yacc.c  */
-#line 34 "compiler2/Grammar.y"
+#line 34 "compiler2/grammar.y"
 	{ delete (yyvaluep->expression); (yyvaluep->expression) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1482 "compiler2/Grammar.cc"
+#line 1482 "compiler2/grammar.cpp"
 	break;
       case 38: /* "NUMBER" */
 
 /* Line 1009 of yacc.c  */
-#line 34 "compiler2/Grammar.y"
+#line 34 "compiler2/grammar.y"
 	{ delete (yyvaluep->expression); (yyvaluep->expression) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1491 "compiler2/Grammar.cc"
+#line 1491 "compiler2/grammar.cpp"
 	break;
       case 73: /* "feature_list" */
 
 /* Line 1009 of yacc.c  */
-#line 38 "compiler2/Grammar.y"
+#line 38 "compiler2/grammar.y"
 	{ delete (yyvaluep->feature); (yyvaluep->feature) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1500 "compiler2/Grammar.cc"
+#line 1500 "compiler2/grammar.cpp"
 	break;
       case 74: /* "feature" */
 
 /* Line 1009 of yacc.c  */
-#line 38 "compiler2/Grammar.y"
+#line 38 "compiler2/grammar.y"
 	{ delete (yyvaluep->feature); (yyvaluep->feature) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1509 "compiler2/Grammar.cc"
+#line 1509 "compiler2/grammar.cpp"
 	break;
       case 75: /* "import" */
 
 /* Line 1009 of yacc.c  */
-#line 38 "compiler2/Grammar.y"
+#line 38 "compiler2/grammar.y"
 	{ delete (yyvaluep->feature); (yyvaluep->feature) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1518 "compiler2/Grammar.cc"
+#line 1518 "compiler2/grammar.cpp"
 	break;
       case 76: /* "define" */
 
 /* Line 1009 of yacc.c  */
-#line 38 "compiler2/Grammar.y"
+#line 38 "compiler2/grammar.y"
 	{ delete (yyvaluep->feature); (yyvaluep->feature) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1527 "compiler2/Grammar.cc"
+#line 1527 "compiler2/grammar.cpp"
 	break;
       case 77: /* "attribute" */
 
 /* Line 1009 of yacc.c  */
-#line 38 "compiler2/Grammar.y"
+#line 38 "compiler2/grammar.y"
 	{ delete (yyvaluep->feature); (yyvaluep->feature) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1536 "compiler2/Grammar.cc"
+#line 1536 "compiler2/grammar.cpp"
 	break;
       case 78: /* "constructor" */
 
 /* Line 1009 of yacc.c  */
-#line 38 "compiler2/Grammar.y"
+#line 38 "compiler2/grammar.y"
 	{ delete (yyvaluep->feature); (yyvaluep->feature) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1545 "compiler2/Grammar.cc"
+#line 1545 "compiler2/grammar.cpp"
 	break;
       case 79: /* "destructor" */
 
 /* Line 1009 of yacc.c  */
-#line 38 "compiler2/Grammar.y"
+#line 38 "compiler2/grammar.y"
 	{ delete (yyvaluep->feature); (yyvaluep->feature) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1554 "compiler2/Grammar.cc"
+#line 1554 "compiler2/grammar.cpp"
 	break;
       case 80: /* "function" */
 
 /* Line 1009 of yacc.c  */
-#line 38 "compiler2/Grammar.y"
+#line 38 "compiler2/grammar.y"
 	{ delete (yyvaluep->feature); (yyvaluep->feature) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1563 "compiler2/Grammar.cc"
+#line 1563 "compiler2/grammar.cpp"
 	break;
       case 81: /* "prototype" */
 
 /* Line 1009 of yacc.c  */
-#line 38 "compiler2/Grammar.y"
+#line 38 "compiler2/grammar.y"
 	{ delete (yyvaluep->feature); (yyvaluep->feature) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1572 "compiler2/Grammar.cc"
+#line 1572 "compiler2/grammar.cpp"
 	break;
       case 82: /* "native" */
 
 /* Line 1009 of yacc.c  */
-#line 38 "compiler2/Grammar.y"
+#line 38 "compiler2/grammar.y"
 	{ delete (yyvaluep->feature); (yyvaluep->feature) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1581 "compiler2/Grammar.cc"
+#line 1581 "compiler2/grammar.cpp"
 	break;
       case 83: /* "formal_signature" */
 
 /* Line 1009 of yacc.c  */
-#line 39 "compiler2/Grammar.y"
+#line 39 "compiler2/grammar.y"
 	{ delete (yyvaluep->formal); (yyvaluep->formal) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1590 "compiler2/Grammar.cc"
+#line 1590 "compiler2/grammar.cpp"
 	break;
       case 84: /* "formal_list" */
 
 /* Line 1009 of yacc.c  */
-#line 39 "compiler2/Grammar.y"
+#line 39 "compiler2/grammar.y"
 	{ delete (yyvaluep->formal); (yyvaluep->formal) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1599 "compiler2/Grammar.cc"
+#line 1599 "compiler2/grammar.cpp"
 	break;
       case 85: /* "formal" */
 
 /* Line 1009 of yacc.c  */
-#line 39 "compiler2/Grammar.y"
+#line 39 "compiler2/grammar.y"
 	{ delete (yyvaluep->formal); (yyvaluep->formal) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1608 "compiler2/Grammar.cc"
+#line 1608 "compiler2/grammar.cpp"
 	break;
       case 88: /* "block" */
 
 /* Line 1009 of yacc.c  */
-#line 36 "compiler2/Grammar.y"
+#line 36 "compiler2/grammar.y"
 	{ delete (yyvaluep->statement); (yyvaluep->statement) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1617 "compiler2/Grammar.cc"
+#line 1617 "compiler2/grammar.cpp"
 	break;
       case 89: /* "statement_list" */
 
 /* Line 1009 of yacc.c  */
-#line 36 "compiler2/Grammar.y"
+#line 36 "compiler2/grammar.y"
 	{ delete (yyvaluep->statement); (yyvaluep->statement) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1626 "compiler2/Grammar.cc"
+#line 1626 "compiler2/grammar.cpp"
 	break;
       case 90: /* "statement" */
 
 /* Line 1009 of yacc.c  */
-#line 36 "compiler2/Grammar.y"
+#line 36 "compiler2/grammar.y"
 	{ delete (yyvaluep->statement); (yyvaluep->statement) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1635 "compiler2/Grammar.cc"
+#line 1635 "compiler2/grammar.cpp"
 	break;
       case 91: /* "storage" */
 
 /* Line 1009 of yacc.c  */
-#line 34 "compiler2/Grammar.y"
+#line 34 "compiler2/grammar.y"
 	{ delete (yyvaluep->expression); (yyvaluep->expression) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1644 "compiler2/Grammar.cc"
+#line 1644 "compiler2/grammar.cpp"
 	break;
       case 92: /* "assignment" */
 
 /* Line 1009 of yacc.c  */
-#line 34 "compiler2/Grammar.y"
+#line 34 "compiler2/grammar.y"
 	{ delete (yyvaluep->expression); (yyvaluep->expression) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1653 "compiler2/Grammar.cc"
+#line 1653 "compiler2/grammar.cpp"
 	break;
       case 93: /* "expression" */
 
 /* Line 1009 of yacc.c  */
-#line 34 "compiler2/Grammar.y"
+#line 34 "compiler2/grammar.y"
 	{ delete (yyvaluep->expression); (yyvaluep->expression) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1662 "compiler2/Grammar.cc"
+#line 1662 "compiler2/grammar.cpp"
 	break;
       case 94: /* "expression_list" */
 
 /* Line 1009 of yacc.c  */
-#line 34 "compiler2/Grammar.y"
+#line 34 "compiler2/grammar.y"
 	{ delete (yyvaluep->expression); (yyvaluep->expression) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1671 "compiler2/Grammar.cc"
+#line 1671 "compiler2/grammar.cpp"
 	break;
       case 95: /* "when_list" */
 
 /* Line 1009 of yacc.c  */
-#line 36 "compiler2/Grammar.y"
+#line 36 "compiler2/grammar.y"
 	{ delete (yyvaluep->statement); (yyvaluep->statement) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1680 "compiler2/Grammar.cc"
+#line 1680 "compiler2/grammar.cpp"
 	break;
       case 96: /* "when" */
 
 /* Line 1009 of yacc.c  */
-#line 36 "compiler2/Grammar.y"
+#line 36 "compiler2/grammar.y"
 	{ delete (yyvaluep->statement); (yyvaluep->statement) = 0; };
 
 /* Line 1009 of yacc.c  */
-#line 1689 "compiler2/Grammar.cc"
+#line 1689 "compiler2/grammar.cpp"
 	break;
 
       default:
@@ -2017,7 +2017,7 @@ yyreduce:
         case 2:
 
 /* Line 1464 of yacc.c  */
-#line 88 "compiler2/Grammar.y"
+#line 88 "compiler2/grammar.y"
     {
         parser->environment()->unit(new Class((yyloc), (yyvsp[(2) - (5)].name), (yyvsp[(4) - (5)].feature))); 
     ;}
@@ -2026,7 +2026,7 @@ yyreduce:
   case 3:
 
 /* Line 1464 of yacc.c  */
-#line 91 "compiler2/Grammar.y"
+#line 91 "compiler2/grammar.y"
     {
         parser->environment()->unit(new Interface((yyloc), (yyvsp[(2) - (5)].name), (yyvsp[(4) - (5)].feature))); 
     ;}
@@ -2035,7 +2035,7 @@ yyreduce:
   case 4:
 
 /* Line 1464 of yacc.c  */
-#line 94 "compiler2/Grammar.y"
+#line 94 "compiler2/grammar.y"
     {
         parser->environment()->unit(new Structure((yyloc), (yyvsp[(2) - (5)].name), (yyvsp[(4) - (5)].feature)));    
     ;}
@@ -2044,7 +2044,7 @@ yyreduce:
   case 5:
 
 /* Line 1464 of yacc.c  */
-#line 97 "compiler2/Grammar.y"
+#line 97 "compiler2/grammar.y"
     {
         parser->environment()->unit(new Module((yyloc), (yyvsp[(2) - (5)].name), (yyvsp[(4) - (5)].feature)));    
     ;}
@@ -2053,7 +2053,7 @@ yyreduce:
   case 6:
 
 /* Line 1464 of yacc.c  */
-#line 100 "compiler2/Grammar.y"
+#line 100 "compiler2/grammar.y"
     { 
 		yyerror(&(yyloc), parser, scanner, "Input file is empty"); 
 		YYERROR;
@@ -2063,14 +2063,14 @@ yyreduce:
   case 7:
 
 /* Line 1464 of yacc.c  */
-#line 104 "compiler2/Grammar.y"
+#line 104 "compiler2/grammar.y"
     { ;}
     break;
 
   case 8:
 
 /* Line 1464 of yacc.c  */
-#line 108 "compiler2/Grammar.y"
+#line 108 "compiler2/grammar.y"
     { 
         (yyval.feature) = (yyvsp[(1) - (2)].feature);
         (yyval.feature)->next((yyvsp[(2) - (2)].feature));
@@ -2080,7 +2080,7 @@ yyreduce:
   case 9:
 
 /* Line 1464 of yacc.c  */
-#line 112 "compiler2/Grammar.y"
+#line 112 "compiler2/grammar.y"
     {
         (yyval.feature) = (yyvsp[(1) - (1)].feature);
     ;}
@@ -2089,63 +2089,63 @@ yyreduce:
   case 10:
 
 /* Line 1464 of yacc.c  */
-#line 118 "compiler2/Grammar.y"
+#line 118 "compiler2/grammar.y"
     { (yyval.feature) = (yyvsp[(1) - (1)].feature); ;}
     break;
 
   case 11:
 
 /* Line 1464 of yacc.c  */
-#line 119 "compiler2/Grammar.y"
+#line 119 "compiler2/grammar.y"
     { (yyval.feature) = (yyvsp[(1) - (1)].feature); ;}
     break;
 
   case 12:
 
 /* Line 1464 of yacc.c  */
-#line 120 "compiler2/Grammar.y"
+#line 120 "compiler2/grammar.y"
     { (yyval.feature) = (yyvsp[(1) - (1)].feature); ;}
     break;
 
   case 13:
 
 /* Line 1464 of yacc.c  */
-#line 121 "compiler2/Grammar.y"
+#line 121 "compiler2/grammar.y"
     { (yyval.feature) = (yyvsp[(1) - (1)].feature); ;}
     break;
 
   case 14:
 
 /* Line 1464 of yacc.c  */
-#line 122 "compiler2/Grammar.y"
+#line 122 "compiler2/grammar.y"
     { (yyval.feature) = (yyvsp[(1) - (1)].feature); ;}
     break;
 
   case 15:
 
 /* Line 1464 of yacc.c  */
-#line 123 "compiler2/Grammar.y"
+#line 123 "compiler2/grammar.y"
     { (yyval.feature) = (yyvsp[(1) - (1)].feature); ;}
     break;
 
   case 16:
 
 /* Line 1464 of yacc.c  */
-#line 124 "compiler2/Grammar.y"
+#line 124 "compiler2/grammar.y"
     { (yyval.feature) = (yyvsp[(1) - (1)].feature); ;}
     break;
 
   case 17:
 
 /* Line 1464 of yacc.c  */
-#line 125 "compiler2/Grammar.y"
+#line 125 "compiler2/grammar.y"
     { (yyval.feature) = (yyvsp[(1) - (1)].feature); ;}
     break;
 
   case 18:
 
 /* Line 1464 of yacc.c  */
-#line 129 "compiler2/Grammar.y"
+#line 129 "compiler2/grammar.y"
     { 
 		(yyval.feature) = new Import((yyloc), (yyvsp[(2) - (3)].name));
 	;}
@@ -2154,7 +2154,7 @@ yyreduce:
   case 19:
 
 /* Line 1464 of yacc.c  */
-#line 135 "compiler2/Grammar.y"
+#line 135 "compiler2/grammar.y"
     { 
 		(yyval.feature) = new Define((yyloc), (yyvsp[(3) - (4)].name), (yyvsp[(2) - (4)].name));
 	;}
@@ -2163,7 +2163,7 @@ yyreduce:
   case 20:
 
 /* Line 1464 of yacc.c  */
-#line 141 "compiler2/Grammar.y"
+#line 141 "compiler2/grammar.y"
     {
 		// TODO: Set symbol table for class-level
 		(yyval.feature) = new Attribute((yyloc), (yyvsp[(2) - (7)].name), (yyvsp[(4) - (7)].name), (yyvsp[(6) - (7)].expression));
@@ -2173,7 +2173,7 @@ yyreduce:
   case 21:
 
 /* Line 1464 of yacc.c  */
-#line 145 "compiler2/Grammar.y"
+#line 145 "compiler2/grammar.y"
     {
 		(yyval.feature) = new Attribute((yyloc), (yyvsp[(2) - (5)].name), (yyvsp[(4) - (5)].name), 0);
     ;}
@@ -2182,7 +2182,7 @@ yyreduce:
   case 22:
 
 /* Line 1464 of yacc.c  */
-#line 151 "compiler2/Grammar.y"
+#line 151 "compiler2/grammar.y"
     { 
         Name* name = parser->environment()->name("@init");
         (yyval.feature) = new Function((yyloc), name, (yyvsp[(3) - (4)].formal), 0, (yyvsp[(4) - (4)].statement));
@@ -2192,7 +2192,7 @@ yyreduce:
   case 23:
 
 /* Line 1464 of yacc.c  */
-#line 158 "compiler2/Grammar.y"
+#line 158 "compiler2/grammar.y"
     { 
         Name* name = parser->environment()->name("@destroy");
         (yyval.feature) = new Function((yyloc), name, 0, 0, (yyvsp[(5) - (5)].statement));
@@ -2202,7 +2202,7 @@ yyreduce:
   case 24:
 
 /* Line 1464 of yacc.c  */
-#line 165 "compiler2/Grammar.y"
+#line 165 "compiler2/grammar.y"
     {
         (yyval.feature) = new Function((yyloc), (yyvsp[(2) - (7)].name), (yyvsp[(3) - (7)].formal), (yyvsp[(5) - (7)].name), (yyvsp[(7) - (7)].statement));
     ;}
@@ -2211,7 +2211,7 @@ yyreduce:
   case 25:
 
 /* Line 1464 of yacc.c  */
-#line 168 "compiler2/Grammar.y"
+#line 168 "compiler2/grammar.y"
     {
         (yyval.feature) = new Function((yyloc), (yyvsp[(2) - (5)].name), (yyvsp[(3) - (5)].formal), 0, (yyvsp[(5) - (5)].statement));
 	;}
@@ -2220,7 +2220,7 @@ yyreduce:
   case 26:
 
 /* Line 1464 of yacc.c  */
-#line 174 "compiler2/Grammar.y"
+#line 174 "compiler2/grammar.y"
     {
         (yyval.feature) = new Function((yyloc), (yyvsp[(2) - (7)].name), (yyvsp[(3) - (7)].formal), (yyvsp[(5) - (7)].name), 0);
 	;}
@@ -2229,7 +2229,7 @@ yyreduce:
   case 27:
 
 /* Line 1464 of yacc.c  */
-#line 177 "compiler2/Grammar.y"
+#line 177 "compiler2/grammar.y"
     {
         (yyval.feature) = new Function((yyloc), (yyvsp[(2) - (5)].name), (yyvsp[(3) - (5)].formal), 0, 0);
 	;}
@@ -2238,7 +2238,7 @@ yyreduce:
   case 28:
 
 /* Line 1464 of yacc.c  */
-#line 183 "compiler2/Grammar.y"
+#line 183 "compiler2/grammar.y"
     {
         (yyval.feature) = new Function((yyloc), (yyvsp[(2) - (8)].name), (yyvsp[(3) - (8)].formal), (yyvsp[(5) - (8)].name), 0);
 	;}
@@ -2247,7 +2247,7 @@ yyreduce:
   case 29:
 
 /* Line 1464 of yacc.c  */
-#line 186 "compiler2/Grammar.y"
+#line 186 "compiler2/grammar.y"
     {
         (yyval.feature) = new Function((yyloc), (yyvsp[(2) - (6)].name), (yyvsp[(3) - (6)].formal), 0, 0);
 	;}
@@ -2256,21 +2256,21 @@ yyreduce:
   case 30:
 
 /* Line 1464 of yacc.c  */
-#line 192 "compiler2/Grammar.y"
+#line 192 "compiler2/grammar.y"
     { (yyval.formal) = (yyvsp[(2) - (3)].formal); ;}
     break;
 
   case 31:
 
 /* Line 1464 of yacc.c  */
-#line 193 "compiler2/Grammar.y"
+#line 193 "compiler2/grammar.y"
     { (yyval.formal) = 0; ;}
     break;
 
   case 32:
 
 /* Line 1464 of yacc.c  */
-#line 197 "compiler2/Grammar.y"
+#line 197 "compiler2/grammar.y"
     { 
         (yyval.formal) = (yyvsp[(1) - (3)].formal);
         (yyval.formal)->next((yyvsp[(3) - (3)].formal));
@@ -2280,7 +2280,7 @@ yyreduce:
   case 33:
 
 /* Line 1464 of yacc.c  */
-#line 201 "compiler2/Grammar.y"
+#line 201 "compiler2/grammar.y"
     { 
         (yyval.formal) = (yyvsp[(1) - (1)].formal);
 	;}
@@ -2289,7 +2289,7 @@ yyreduce:
   case 34:
 
 /* Line 1464 of yacc.c  */
-#line 207 "compiler2/Grammar.y"
+#line 207 "compiler2/grammar.y"
     {
         (yyval.formal) = new Formal((yyloc), (yyvsp[(1) - (3)].name), (yyvsp[(3) - (3)].name));
     ;}
@@ -2298,56 +2298,56 @@ yyreduce:
   case 35:
 
 /* Line 1464 of yacc.c  */
-#line 212 "compiler2/Grammar.y"
+#line 212 "compiler2/grammar.y"
     { (yyval.flag) = 0; ;}
     break;
 
   case 36:
 
 /* Line 1464 of yacc.c  */
-#line 213 "compiler2/Grammar.y"
+#line 213 "compiler2/grammar.y"
     { (yyval.flag) = 0; ;}
     break;
 
   case 37:
 
 /* Line 1464 of yacc.c  */
-#line 214 "compiler2/Grammar.y"
+#line 214 "compiler2/grammar.y"
     { (yyval.flag) = 0; ;}
     break;
 
   case 38:
 
 /* Line 1464 of yacc.c  */
-#line 215 "compiler2/Grammar.y"
+#line 215 "compiler2/grammar.y"
     { (yyval.flag) = 0; ;}
     break;
 
   case 39:
 
 /* Line 1464 of yacc.c  */
-#line 216 "compiler2/Grammar.y"
+#line 216 "compiler2/grammar.y"
     { (yyval.flag) = 0; ;}
     break;
 
   case 40:
 
 /* Line 1464 of yacc.c  */
-#line 217 "compiler2/Grammar.y"
+#line 217 "compiler2/grammar.y"
     { (yyval.flag) = 0; ;}
     break;
 
   case 41:
 
 /* Line 1464 of yacc.c  */
-#line 221 "compiler2/Grammar.y"
+#line 221 "compiler2/grammar.y"
     { (yyval.name) = (yyvsp[(1) - (1)].name); ;}
     break;
 
   case 42:
 
 /* Line 1464 of yacc.c  */
-#line 225 "compiler2/Grammar.y"
+#line 225 "compiler2/grammar.y"
     { 
 		(yyval.statement) = new Block((yyloc), (yyvsp[(2) - (3)].statement)); 
 	;}
@@ -2356,7 +2356,7 @@ yyreduce:
   case 43:
 
 /* Line 1464 of yacc.c  */
-#line 228 "compiler2/Grammar.y"
+#line 228 "compiler2/grammar.y"
     { 
         (yyval.statement) = new Return((yyloc), (yyvsp[(3) - (4)].expression)); 
     ;}
@@ -2365,7 +2365,7 @@ yyreduce:
   case 44:
 
 /* Line 1464 of yacc.c  */
-#line 231 "compiler2/Grammar.y"
+#line 231 "compiler2/grammar.y"
     { 
         (yyval.statement) = new Return((yyloc), 0); 
     ;}
@@ -2374,7 +2374,7 @@ yyreduce:
   case 45:
 
 /* Line 1464 of yacc.c  */
-#line 234 "compiler2/Grammar.y"
+#line 234 "compiler2/grammar.y"
     { 
 		(yyval.statement) = new Simple((yyloc), (yyvsp[(2) - (3)].expression)); 
     ;}
@@ -2383,7 +2383,7 @@ yyreduce:
   case 46:
 
 /* Line 1464 of yacc.c  */
-#line 240 "compiler2/Grammar.y"
+#line 240 "compiler2/grammar.y"
     { 
 		(yyval.statement) = (yyvsp[(1) - (2)].statement);
         (yyval.statement)->next((yyvsp[(2) - (2)].statement));
@@ -2393,7 +2393,7 @@ yyreduce:
   case 47:
 
 /* Line 1464 of yacc.c  */
-#line 244 "compiler2/Grammar.y"
+#line 244 "compiler2/grammar.y"
     {
         (yyval.statement) = (yyvsp[(1) - (1)].statement);
     ;}
@@ -2402,7 +2402,7 @@ yyreduce:
   case 48:
 
 /* Line 1464 of yacc.c  */
-#line 247 "compiler2/Grammar.y"
+#line 247 "compiler2/grammar.y"
     { 
         (yyval.statement) = (yyvsp[(2) - (2)].statement); 
     ;}
@@ -2411,7 +2411,7 @@ yyreduce:
   case 49:
 
 /* Line 1464 of yacc.c  */
-#line 254 "compiler2/Grammar.y"
+#line 254 "compiler2/grammar.y"
     {
 		(yyval.statement) = new For((yyloc), (yyvsp[(2) - (7)].name), (yyvsp[(4) - (7)].name), (yyvsp[(6) - (7)].expression), (yyvsp[(7) - (7)].statement));
 	;}
@@ -2420,7 +2420,7 @@ yyreduce:
   case 50:
 
 /* Line 1464 of yacc.c  */
-#line 257 "compiler2/Grammar.y"
+#line 257 "compiler2/grammar.y"
     {
         // TODO: FIX UNTIL
         Name* op = parser->environment()->name("!");
@@ -2432,7 +2432,7 @@ yyreduce:
   case 51:
 
 /* Line 1464 of yacc.c  */
-#line 263 "compiler2/Grammar.y"
+#line 263 "compiler2/grammar.y"
     {
 		(yyval.statement) = new While((yyloc), (yyvsp[(2) - (3)].expression), (yyvsp[(3) - (3)].statement));
 	;}
@@ -2441,7 +2441,7 @@ yyreduce:
   case 52:
 
 /* Line 1464 of yacc.c  */
-#line 266 "compiler2/Grammar.y"
+#line 266 "compiler2/grammar.y"
     {
         (yyval.statement) = new Case((yyloc), (yyvsp[(2) - (5)].expression), static_cast<When*>((yyvsp[(4) - (5)].statement)));
     ;}
@@ -2450,7 +2450,7 @@ yyreduce:
   case 53:
 
 /* Line 1464 of yacc.c  */
-#line 269 "compiler2/Grammar.y"
+#line 269 "compiler2/grammar.y"
     { 
 		(yyval.statement) = new Variable((yyloc), (yyvsp[(2) - (4)].name), (yyvsp[(4) - (4)].name), 0); 
 	;}
@@ -2459,7 +2459,7 @@ yyreduce:
   case 54:
 
 /* Line 1464 of yacc.c  */
-#line 272 "compiler2/Grammar.y"
+#line 272 "compiler2/grammar.y"
     { 
         (yyval.statement) = new Variable((yyloc), (yyvsp[(2) - (7)].name), (yyvsp[(4) - (7)].name), (yyvsp[(6) - (7)].expression)); 
 	;}
@@ -2468,7 +2468,7 @@ yyreduce:
   case 55:
 
 /* Line 1464 of yacc.c  */
-#line 275 "compiler2/Grammar.y"
+#line 275 "compiler2/grammar.y"
     { 
         (yyval.statement) = new Return((yyloc), (yyvsp[(2) - (3)].expression));
     ;}
@@ -2477,7 +2477,7 @@ yyreduce:
   case 56:
 
 /* Line 1464 of yacc.c  */
-#line 278 "compiler2/Grammar.y"
+#line 278 "compiler2/grammar.y"
     { 
         (yyval.statement) = new Return((yyloc), 0);
     ;}
@@ -2486,7 +2486,7 @@ yyreduce:
   case 57:
 
 /* Line 1464 of yacc.c  */
-#line 281 "compiler2/Grammar.y"
+#line 281 "compiler2/grammar.y"
     { 
 		(yyval.statement) = new Simple((yyloc), (yyvsp[(1) - (2)].expression)); 
 	;}
@@ -2495,7 +2495,7 @@ yyreduce:
   case 58:
 
 /* Line 1464 of yacc.c  */
-#line 284 "compiler2/Grammar.y"
+#line 284 "compiler2/grammar.y"
     { 
 		(yyval.statement) = new Simple((yyloc), (yyvsp[(1) - (2)].expression)); 
 	;}
@@ -2504,7 +2504,7 @@ yyreduce:
   case 59:
 
 /* Line 1464 of yacc.c  */
-#line 287 "compiler2/Grammar.y"
+#line 287 "compiler2/grammar.y"
     {
 		(yyval.statement) = new Conditional((yyloc), (yyvsp[(2) - (3)].expression), (yyvsp[(3) - (3)].statement), 0);
 	;}
@@ -2513,7 +2513,7 @@ yyreduce:
   case 60:
 
 /* Line 1464 of yacc.c  */
-#line 290 "compiler2/Grammar.y"
+#line 290 "compiler2/grammar.y"
     {
         (yyval.statement) = new Conditional((yyloc), (yyvsp[(2) - (5)].expression), (yyvsp[(3) - (5)].statement), (yyvsp[(5) - (5)].statement));
     ;}
@@ -2522,7 +2522,7 @@ yyreduce:
   case 61:
 
 /* Line 1464 of yacc.c  */
-#line 296 "compiler2/Grammar.y"
+#line 296 "compiler2/grammar.y"
     { 
 		/* Member variable access */
 		(yyval.expression) = new Member((yyloc), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].name)); 
@@ -2532,7 +2532,7 @@ yyreduce:
   case 62:
 
 /* Line 1464 of yacc.c  */
-#line 300 "compiler2/Grammar.y"
+#line 300 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Index((yyloc), (yyvsp[(1) - (4)].expression), (yyvsp[(3) - (4)].expression));
 	;}
@@ -2541,7 +2541,7 @@ yyreduce:
   case 63:
 
 /* Line 1464 of yacc.c  */
-#line 305 "compiler2/Grammar.y"
+#line 305 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
         (yyval.expression) = new Binary((yyloc), parser->environment()->name("="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression));
@@ -2551,7 +2551,7 @@ yyreduce:
   case 64:
 
 /* Line 1464 of yacc.c  */
-#line 309 "compiler2/Grammar.y"
+#line 309 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("*="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2560,7 +2560,7 @@ yyreduce:
   case 65:
 
 /* Line 1464 of yacc.c  */
-#line 312 "compiler2/Grammar.y"
+#line 312 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("/="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2569,7 +2569,7 @@ yyreduce:
   case 66:
 
 /* Line 1464 of yacc.c  */
-#line 315 "compiler2/Grammar.y"
+#line 315 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("%="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2578,7 +2578,7 @@ yyreduce:
   case 67:
 
 /* Line 1464 of yacc.c  */
-#line 318 "compiler2/Grammar.y"
+#line 318 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("-="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2587,7 +2587,7 @@ yyreduce:
   case 68:
 
 /* Line 1464 of yacc.c  */
-#line 321 "compiler2/Grammar.y"
+#line 321 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("+="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2596,7 +2596,7 @@ yyreduce:
   case 69:
 
 /* Line 1464 of yacc.c  */
-#line 324 "compiler2/Grammar.y"
+#line 324 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("&="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2605,7 +2605,7 @@ yyreduce:
   case 70:
 
 /* Line 1464 of yacc.c  */
-#line 327 "compiler2/Grammar.y"
+#line 327 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("|="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2614,7 +2614,7 @@ yyreduce:
   case 71:
 
 /* Line 1464 of yacc.c  */
-#line 334 "compiler2/Grammar.y"
+#line 334 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("?"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression));
 	;}
@@ -2623,7 +2623,7 @@ yyreduce:
   case 72:
 
 /* Line 1464 of yacc.c  */
-#line 337 "compiler2/Grammar.y"
+#line 337 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("||"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2632,7 +2632,7 @@ yyreduce:
   case 73:
 
 /* Line 1464 of yacc.c  */
-#line 340 "compiler2/Grammar.y"
+#line 340 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("&&"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2641,7 +2641,7 @@ yyreduce:
   case 74:
 
 /* Line 1464 of yacc.c  */
-#line 343 "compiler2/Grammar.y"
+#line 343 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("|"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2650,7 +2650,7 @@ yyreduce:
   case 75:
 
 /* Line 1464 of yacc.c  */
-#line 346 "compiler2/Grammar.y"
+#line 346 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("^"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2659,7 +2659,7 @@ yyreduce:
   case 76:
 
 /* Line 1464 of yacc.c  */
-#line 349 "compiler2/Grammar.y"
+#line 349 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("&"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2668,7 +2668,7 @@ yyreduce:
   case 77:
 
 /* Line 1464 of yacc.c  */
-#line 352 "compiler2/Grammar.y"
+#line 352 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("=="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2677,7 +2677,7 @@ yyreduce:
   case 78:
 
 /* Line 1464 of yacc.c  */
-#line 355 "compiler2/Grammar.y"
+#line 355 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("!="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2686,7 +2686,7 @@ yyreduce:
   case 79:
 
 /* Line 1464 of yacc.c  */
-#line 358 "compiler2/Grammar.y"
+#line 358 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name(">"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2695,7 +2695,7 @@ yyreduce:
   case 80:
 
 /* Line 1464 of yacc.c  */
-#line 361 "compiler2/Grammar.y"
+#line 361 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("<"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2704,7 +2704,7 @@ yyreduce:
   case 81:
 
 /* Line 1464 of yacc.c  */
-#line 364 "compiler2/Grammar.y"
+#line 364 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name(">="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2713,7 +2713,7 @@ yyreduce:
   case 82:
 
 /* Line 1464 of yacc.c  */
-#line 367 "compiler2/Grammar.y"
+#line 367 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("<="), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2722,7 +2722,7 @@ yyreduce:
   case 83:
 
 /* Line 1464 of yacc.c  */
-#line 370 "compiler2/Grammar.y"
+#line 370 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("<<"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2731,7 +2731,7 @@ yyreduce:
   case 84:
 
 /* Line 1464 of yacc.c  */
-#line 373 "compiler2/Grammar.y"
+#line 373 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name(">>"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2740,7 +2740,7 @@ yyreduce:
   case 85:
 
 /* Line 1464 of yacc.c  */
-#line 376 "compiler2/Grammar.y"
+#line 376 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("+"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2749,7 +2749,7 @@ yyreduce:
   case 86:
 
 /* Line 1464 of yacc.c  */
-#line 379 "compiler2/Grammar.y"
+#line 379 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("-"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2758,7 +2758,7 @@ yyreduce:
   case 87:
 
 /* Line 1464 of yacc.c  */
-#line 382 "compiler2/Grammar.y"
+#line 382 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("*"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2767,7 +2767,7 @@ yyreduce:
   case 88:
 
 /* Line 1464 of yacc.c  */
-#line 385 "compiler2/Grammar.y"
+#line 385 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("/"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2776,7 +2776,7 @@ yyreduce:
   case 89:
 
 /* Line 1464 of yacc.c  */
-#line 388 "compiler2/Grammar.y"
+#line 388 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Binary((yyloc), parser->environment()->name("%"), (yyvsp[(1) - (3)].expression), (yyvsp[(3) - (3)].expression)); 
 	;}
@@ -2785,7 +2785,7 @@ yyreduce:
   case 90:
 
 /* Line 1464 of yacc.c  */
-#line 391 "compiler2/Grammar.y"
+#line 391 "compiler2/grammar.y"
     { 
         (yyval.expression) = new Unary((yyloc), parser->environment()->name("!"), (yyvsp[(2) - (2)].expression)); 
     ;}
@@ -2794,7 +2794,7 @@ yyreduce:
   case 91:
 
 /* Line 1464 of yacc.c  */
-#line 394 "compiler2/Grammar.y"
+#line 394 "compiler2/grammar.y"
     { 
         (yyval.expression) = new Unary((yyloc), parser->environment()->name("~"), (yyvsp[(2) - (2)].expression)); 
     ;}
@@ -2803,7 +2803,7 @@ yyreduce:
   case 92:
 
 /* Line 1464 of yacc.c  */
-#line 397 "compiler2/Grammar.y"
+#line 397 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Unary((yyloc), parser->environment()->name("++"), (yyvsp[(1) - (2)].expression)); 
 	;}
@@ -2812,7 +2812,7 @@ yyreduce:
   case 93:
 
 /* Line 1464 of yacc.c  */
-#line 400 "compiler2/Grammar.y"
+#line 400 "compiler2/grammar.y"
     { 
 		(yyval.expression) = new Unary((yyloc), parser->environment()->name("--"), (yyvsp[(1) - (2)].expression)); 
 	;}
@@ -2821,7 +2821,7 @@ yyreduce:
   case 94:
 
 /* Line 1464 of yacc.c  */
-#line 403 "compiler2/Grammar.y"
+#line 403 "compiler2/grammar.y"
     {
 		(yyval.expression) = new Call((yyloc), (yyvsp[(1) - (4)].name), (yyvsp[(3) - (4)].expression));
     ;}
@@ -2830,7 +2830,7 @@ yyreduce:
   case 95:
 
 /* Line 1464 of yacc.c  */
-#line 406 "compiler2/Grammar.y"
+#line 406 "compiler2/grammar.y"
     {
 		/* Call on an object expression */
 		(yyval.expression) = new Call((yyloc), (yyvsp[(1) - (3)].name), 0);
@@ -2840,7 +2840,7 @@ yyreduce:
   case 96:
 
 /* Line 1464 of yacc.c  */
-#line 410 "compiler2/Grammar.y"
+#line 410 "compiler2/grammar.y"
     {
         (yyvsp[(1) - (6)].expression)->next((yyvsp[(5) - (6)].expression));
         (yyval.expression) = new Dispatch((yyloc), (yyvsp[(3) - (6)].name), (yyvsp[(1) - (6)].expression));
@@ -2850,7 +2850,7 @@ yyreduce:
   case 97:
 
 /* Line 1464 of yacc.c  */
-#line 414 "compiler2/Grammar.y"
+#line 414 "compiler2/grammar.y"
     {
         (yyval.expression) = new Dispatch((yyloc), (yyvsp[(3) - (5)].name), (yyvsp[(1) - (5)].expression));
     ;}
@@ -2859,42 +2859,42 @@ yyreduce:
   case 98:
 
 /* Line 1464 of yacc.c  */
-#line 417 "compiler2/Grammar.y"
+#line 417 "compiler2/grammar.y"
     { (yyval.expression) = (yyvsp[(1) - (1)].expression); ;}
     break;
 
   case 99:
 
 /* Line 1464 of yacc.c  */
-#line 418 "compiler2/Grammar.y"
+#line 418 "compiler2/grammar.y"
     { (yyval.expression) = (yyvsp[(2) - (3)].expression); ;}
     break;
 
   case 100:
 
 /* Line 1464 of yacc.c  */
-#line 419 "compiler2/Grammar.y"
+#line 419 "compiler2/grammar.y"
     { (yyval.expression) = (yyvsp[(1) - (1)].expression); ;}
     break;
 
   case 101:
 
 /* Line 1464 of yacc.c  */
-#line 420 "compiler2/Grammar.y"
+#line 420 "compiler2/grammar.y"
     { (yyval.expression) = (yyvsp[(1) - (1)].expression); ;}
     break;
 
   case 102:
 
 /* Line 1464 of yacc.c  */
-#line 421 "compiler2/Grammar.y"
+#line 421 "compiler2/grammar.y"
     { (yyval.expression) = new Identifier((yyloc), (yyvsp[(1) - (1)].name)); ;}
     break;
 
   case 103:
 
 /* Line 1464 of yacc.c  */
-#line 425 "compiler2/Grammar.y"
+#line 425 "compiler2/grammar.y"
     { 
 		(yyval.expression) = (yyvsp[(1) - (3)].expression);
         (yyval.expression)->next((yyvsp[(3) - (3)].expression));
@@ -2904,14 +2904,14 @@ yyreduce:
   case 104:
 
 /* Line 1464 of yacc.c  */
-#line 429 "compiler2/Grammar.y"
+#line 429 "compiler2/grammar.y"
     { (yyval.expression) = (yyvsp[(1) - (1)].expression); ;}
     break;
 
   case 105:
 
 /* Line 1464 of yacc.c  */
-#line 434 "compiler2/Grammar.y"
+#line 434 "compiler2/grammar.y"
     {
         (yyval.statement) = (yyvsp[(1) - (2)].statement);
         (yyval.statement)->next((yyvsp[(2) - (2)].statement));
@@ -2921,7 +2921,7 @@ yyreduce:
   case 106:
 
 /* Line 1464 of yacc.c  */
-#line 438 "compiler2/Grammar.y"
+#line 438 "compiler2/grammar.y"
     {
         (yyval.statement) = (yyvsp[(1) - (1)].statement);
     ;}
@@ -2930,7 +2930,7 @@ yyreduce:
   case 107:
 
 /* Line 1464 of yacc.c  */
-#line 444 "compiler2/Grammar.y"
+#line 444 "compiler2/grammar.y"
     {
         (yyval.statement) = new When((yyloc), (yyvsp[(2) - (5)].name), (yyvsp[(4) - (5)].name), (yyvsp[(5) - (5)].statement));
     ;}
@@ -2939,7 +2939,7 @@ yyreduce:
 
 
 /* Line 1464 of yacc.c  */
-#line 2943 "compiler2/Grammar.cc"
+#line 2943 "compiler2/grammar.cpp"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);

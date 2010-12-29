@@ -93,40 +93,40 @@ typedef union YYSTYPE
 {
 
 /* Line 1685 of yacc.c  */
-#line 19 "compiler2/Grammar.y"
+#line 19 "compiler2/grammar.y"
  Expression *expression; 
 
 /* Line 1685 of yacc.c  */
-#line 20 "compiler2/Grammar.y"
+#line 20 "compiler2/grammar.y"
  Statement *statement; 
 
 /* Line 1685 of yacc.c  */
-#line 21 "compiler2/Grammar.y"
+#line 21 "compiler2/grammar.y"
  Name *identifier; 
 
 /* Line 1685 of yacc.c  */
-#line 22 "compiler2/Grammar.y"
+#line 22 "compiler2/grammar.y"
  Unit *unit; 
 
 /* Line 1685 of yacc.c  */
-#line 23 "compiler2/Grammar.y"
+#line 23 "compiler2/grammar.y"
  Feature *feature; 
 
 /* Line 1685 of yacc.c  */
-#line 24 "compiler2/Grammar.y"
+#line 24 "compiler2/grammar.y"
  Formal *formal; 
 
 /* Line 1685 of yacc.c  */
-#line 25 "compiler2/Grammar.y"
+#line 25 "compiler2/grammar.y"
  int null; 
 
 /* Line 1685 of yacc.c  */
-#line 26 "compiler2/Grammar.y"
+#line 26 "compiler2/grammar.y"
  int flag; 
 
 
 /* Line 1685 of yacc.c  */
-#line 130 "compiler2/Grammar.h"
+#line 130 "compiler2/grammar.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
