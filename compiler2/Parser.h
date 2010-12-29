@@ -33,10 +33,13 @@
 class Parser : public Object {
 public:
     void parse(Environment* env, const std::string& filename);
-    std::fstream& input() { return input_; }
     Environment* environment() const { return environment_; }
+    std::fstream& input() { return input_; }
+	const std::string& filename() const { return filename_; }
     int column() const { return column_; }
     void column(int column) { column_ = column; }
+	int error() const { return error_; }
+	void error(int error) { error_ = error; }
     typedef Pointer<Parser> Ptr;
 
 private:

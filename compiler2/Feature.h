@@ -103,7 +103,7 @@ private:
 /* Type definition */
 class Define : public Feature {
 public:
-    Import(Location loc, Name* name, Name* type) :
+    Define(Location loc, Name* name, Name* type) :
         Feature(loc, name),
         type_(type) {
     }
@@ -112,7 +112,7 @@ public:
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr name_;
+    Name::Ptr type_;
 };
 
 #endif

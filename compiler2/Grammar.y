@@ -1,5 +1,10 @@
 %{
-#include <Parser.h>
+#include "Parser.h"
+#include "Expression.h"
+#include "Statement.h"
+#include "Formal.h"
+#include "Feature.h"
+#include "Unit.h"
 
 #define YYSTYPE ParseNode
 #define YYLTYPE Location
@@ -46,9 +51,9 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %left '|' '^'
 %left AND
 %left OR
-%left '=' MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN 
-%left ADD_ASSIGN SUB_ASSIGN
-%left BITAND_ASSIGN BITOR_ASSIGN
+%left '=' MULTIPLY_ASSIGN DIVIDE_ASSIGN MODULUS_ASSIGN 
+%left ADD_ASSIGN SUBTRACT_ASSIGN
+%left BIT_AND_ASSIGN BIT_OR_ASSIGN
 %left '?'
 
 
@@ -64,8 +69,8 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token EQUAL NOT_EQUAL GREATER_OR_EQUAL LESS_OR_EQUAL
 %token OR AND
 %token LEFT_SHIFT RIGHT_SHIFT
-%token MUL_ASSIGN DIV_ASSIGN SUB_ASSIGN ADD_ASSIGN
-%token MOD_ASSIGN BITOR_ASSIGN BITAND_ASSIGN
+%token MULTIPLY_ASSIGN DIVIDE_ASSIGN SUBTRACT_ASSIGN ADD_ASSIGN
+%token MODULUS_ASSIGN BIT_OR_ASSIGN BIT_AND_ASSIGN
 %token INCREMENT DECREMENT
 
 %type <feature> feature feature_list attribute import define
@@ -161,7 +166,7 @@ function
         $$ = new Function(@$, $2, $3, $5, $7);
     }
 	| DEF IDENTIFIER formal_signature modifiers block {
-        $$ = new Function(@$, $2, $3, $4, $5);
+        $$ = new Function(@$, $2, $3, 0, $5);
 	}
 	;
 
@@ -234,7 +239,7 @@ block
 statement_list
     : statement statement_list { 
 		$$ = $1;
-        $$->next($1);
+        $$->next($2);
 	}
     | statement {
         $$ = $1;
@@ -252,14 +257,14 @@ statement
 	| UNTIL expression block {
         // TODO: FIX UNTIL
         Name* op = parser->environment()->name("!");
-		$$ = new While(@$, new Unary(@$, name, $2), $3);
+		$$ = new While(@$, new Unary(@$, op, $2), $3);
         
 	}
 	| WHILE expression block {
 		$$ = new While(@$, $2, $3);
 	}
     | CASE expression '{' when_list '}' {
-        $$ = new Case(@$, $2, $4);
+        $$ = new Case(@$, $2, static_cast<When*>($4));
     }
     | VAR IDENTIFIER ':' type { 
 		$$ = new Variable(@$, $2, $4, 0); 
@@ -301,25 +306,25 @@ assignment
 		$$ = new Binary(@$, parser->environment()->name("="), $1, $3); 
         $$ = new Binary(@$, parser->environment()->name("="), $1, $3);
 	}
-    | storage MUL_ASSIGN expression { 
+    | storage MULTIPLY_ASSIGN expression { 
 		$$ = new Binary(@$, parser->environment()->name("*="), $1, $3); 
 	}
-    | storage DIV_ASSIGN expression { 
+    | storage DIVIDE_ASSIGN expression { 
 		$$ = new Binary(@$, parser->environment()->name("/="), $1, $3); 
 	}
-    | storage MOD_ASSIGN expression { 
+    | storage MODULUS_ASSIGN expression { 
 		$$ = new Binary(@$, parser->environment()->name("%="), $1, $3); 
 	}
-    | storage SUB_ASSIGN expression { 
+    | storage SUBTRACT_ASSIGN expression { 
 		$$ = new Binary(@$, parser->environment()->name("-="), $1, $3); 
 	}
     | storage ADD_ASSIGN expression { 
 		$$ = new Binary(@$, parser->environment()->name("+="), $1, $3); 
 	}
-    | storage BITAND_ASSIGN expression { 
+    | storage BIT_AND_ASSIGN expression { 
 		$$ = new Binary(@$, parser->environment()->name("&="), $1, $3); 
 	}
-    | storage BITOR_ASSIGN expression { 
+    | storage BIT_OR_ASSIGN expression { 
 		$$ = new Binary(@$, parser->environment()->name("|="), $1, $3); 
 	}
     ;
@@ -427,7 +432,7 @@ expression_list
 
 when_list
     : when when_list {
-        $$ = $1
+        $$ = $1;
         $$->next($2);
     }
     | when {

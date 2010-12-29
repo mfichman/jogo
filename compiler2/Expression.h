@@ -181,8 +181,8 @@ public:
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr identifier_;
     Expression::Ptr child_;
+    Name::Ptr identifier_;
 
 };
 

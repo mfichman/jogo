@@ -52,5 +52,6 @@ class Feature;
 class Function;
 class Attribute;
 class Import;
+class Define;
 
 #endif

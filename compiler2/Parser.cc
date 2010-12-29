@@ -24,6 +24,7 @@
 
 #include <stdexcept>
 #include <fstream>
+#include <iostream>
 
 int yyparse(Parser* parser, void* scanner);
 int yylex_init(void**);
@@ -37,6 +38,7 @@ void Parser::parse(Environment* environment, const std::string& filename) {
     this->column_ = 1;
     this->error_ = 0;
     this->input_.open(filename.c_str()); 
+	this->filename_ = filename;
     if (this->input_.bad()) {
         throw std::runtime_error("Could not find " + filename);
     }
@@ -56,4 +58,12 @@ void Parser::parse(Environment* environment, const std::string& filename) {
             break;
         }
     }
+}
+
+void yyerror(Location* loc, Parser* self, void* scanner, const char* msg) {
+
+	self->error(self->error() + 1);
+	std::cerr << self->filename() << ":" << loc->first_line << ":";
+	std::cerr << loc->first_column << ": ";
+	std::cerr << toupper(msg[0]) << msg + 1 << std::endl;	
 }
