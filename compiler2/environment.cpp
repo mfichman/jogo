@@ -11,7 +11,7 @@
  * The above copyright notice and this permission notice shall be included in 
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
@@ -20,25 +20,26 @@
  * IN THE SOFTWARE.
  */  
 
-#include "unit.hpp"
+#include "environment.hpp"
+#include <cassert>
 
-/* Compilation unit */
+Name* Environment::name(const std::string& str) {
+	std::map<std::string, Name::Ptr>::iterator i = name_.find(str);
+	if (i == name_.end()) {
+		Name* name = new Name(str);
+		name_.insert(std::make_pair(str, name));	
+		return name;
+	} else {
+		return i->second;
+	}
+}
 
-Unit::Unit(Location loc, Type* type, Feature* features) :
-    TreeNode(loc),
-    type_(type),
-    features_(features) {
-
-    for (Feature* feat = features; feat; feat = feat->next()) {
-        if (typeid(feat) == typeid(Attribute*)) {
-            Attribute* attr = static_cast<Attribute*>(feat);
-            attributes_[attr->name()] = attr;
-            break;
-        }
-        if (typeid(feat) == typeid(Function*)) {
-            Function* func = static_cast<Function*>(feat);
-            functions_[func->name()] = func;
-            break;
-        }
-    }
+void Environment::unit(Unit* unit) {
+	std::map<Name::Ptr, Unit::Ptr>::iterator i = unit_.find(unit->name());
+	if (i != unit_.end()) {
+		unit_.insert(std::make_pair(unit->name(), unit));
+		units_ = unit;
+	} else {
+		assert("Recompiling unit!");
+	}
 }

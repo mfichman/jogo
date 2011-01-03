@@ -79,10 +79,11 @@ return BEGIN(SEPARATOR); return RETURN;
 \&\= BEGIN(INITIAL); return BIT_AND_ASSIGN;
 \+\+ BEGIN(INITIAL); return INCREMENT;
 \-\- BEGIN(INITIAL); return DECREMENT;
+\:\: BEGIN(INITIAL); return SCOPE;
 [0-9]+ {
     Name* type = yyextra->environment()->name("Int");
 	Name* value = yyextra->environment()->name(yytext);
-	yylval->expression = new Literal(*yylloc, type, value); 
+	yylval->expression = new IntegerLiteral(*yylloc, type, value); 
     BEGIN(SEPARATOR);
 	return NUMBER;
 }
@@ -90,22 +91,28 @@ return BEGIN(SEPARATOR); return RETURN;
 	yytext[strlen(yytext)-1] = 0;
     Name* type = yyextra->environment()->name("String");
 	Name* value = yyextra->environment()->name(yytext);
-	yylval->expression = new Literal(*yylloc, type, value);
+	yylval->expression = new StringLiteral(*yylloc, type, value);
     BEGIN(SEPARATOR);
 	return STRING;
 }
 \'[^']*\' {
     Name* type = yyextra->environment()->name("String");
 	Name* value = yyextra->environment()->name(yytext);
-	yylval->expression = new Literal(*yylloc, type, value); 
+	yylval->expression = new StringLiteral(*yylloc, type, value); 
     BEGIN(SEPARATOR);
 	return STRING;
 }
-[A-Za-z0-9][A-Za-z0-9_]*(::[A-Za-z0-9][A-Za-z0-9_]*)*[?!]? {
+[a-z][A-Za-z0-9_][?!]? {
 	yylval->name = yyextra->environment()->name(yytext);
     BEGIN(SEPARATOR);
 	return IDENTIFIER;
 }
+[A-Z][A-Za-z0-9_]* {
+	yylval->name = yyextra->environment()->name(yytext);
+    BEGIN(SEPARATOR);
+	return TYPE;
+}
+
 #.*
 [{([,] BEGIN(INITIAL); return yytext[0];
 [)\]] BEGIN(SEPARATOR); return yytext[0];

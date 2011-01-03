@@ -20,13 +20,14 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef APOLLO_H
-#define APOLLO_H
+#ifndef APOLLO_HPP
+#define APOLLO_HPP
 
 class Object;
 class TreeNode; 
 class Expression;
-class Literal;
+class StringLiteral;
+class IntegerLiteral;
 class Binary;
 class Unary;
 class Call;
@@ -48,10 +49,14 @@ class Unit;
 class Class;
 class Structure;
 class Module;
+class Interface;
 class Feature;
 class Function;
 class Attribute;
 class Import;
 class Define;
+class Environment;
+class Type;
+class Generic;
 
 #endif

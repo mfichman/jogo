@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef NAME_H
-#define NAME_H
+#ifndef NAME_HPP
+#define NAME_HPP
 
 #include "apollo.hpp"
 #include "object.hpp"

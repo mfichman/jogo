@@ -56,33 +56,35 @@
      BIT_OR_ASSIGN = 273,
      BIT_AND_ASSIGN = 274,
      IDENTIFIER = 275,
-     STRING = 276,
-     NUMBER = 277,
-     PUBLIC = 278,
-     PRIVATE = 279,
-     STATIC = 280,
-     NATIVE = 281,
-     CLASS = 282,
-     INTERFACE = 283,
-     STRUCT = 284,
-     MODULE = 285,
-     IMPORT = 286,
-     DEF = 287,
-     VAR = 288,
-     INIT = 289,
-     DESTROY = 290,
-     SEPARATOR = 291,
-     WHEN = 292,
-     CASE = 293,
-     WHILE = 294,
-     ELSE = 295,
-     UNTIL = 296,
-     IF = 297,
-     DO = 298,
-     FOR = 299,
-     RETURN = 300,
-     RIGHT_ARROW = 301,
-     LEFT_ARROW = 302
+     TYPE = 276,
+     STRING = 277,
+     NUMBER = 278,
+     PUBLIC = 279,
+     PRIVATE = 280,
+     STATIC = 281,
+     NATIVE = 282,
+     CLASS = 283,
+     INTERFACE = 284,
+     STRUCT = 285,
+     MODULE = 286,
+     IMPORT = 287,
+     DEF = 288,
+     VAR = 289,
+     INIT = 290,
+     DESTROY = 291,
+     SEPARATOR = 292,
+     WHEN = 293,
+     CASE = 294,
+     WHILE = 295,
+     ELSE = 296,
+     UNTIL = 297,
+     IF = 298,
+     DO = 299,
+     FOR = 300,
+     RETURN = 301,
+     RIGHT_ARROW = 302,
+     LEFT_ARROW = 303,
+     SCOPE = 304
    };
 #endif
 
@@ -93,40 +95,48 @@ typedef union YYSTYPE
 {
 
 /* Line 1685 of yacc.c  */
-#line 19 "compiler2/grammar.y"
- Expression *expression; 
-
-/* Line 1685 of yacc.c  */
 #line 20 "compiler2/grammar.y"
- Statement *statement; 
+ Expression* expression; 
 
 /* Line 1685 of yacc.c  */
 #line 21 "compiler2/grammar.y"
- Name *identifier; 
+ Statement* statement; 
 
 /* Line 1685 of yacc.c  */
 #line 22 "compiler2/grammar.y"
- Unit *unit; 
+ Name* identifier; 
 
 /* Line 1685 of yacc.c  */
 #line 23 "compiler2/grammar.y"
- Feature *feature; 
+ Unit* unit; 
 
 /* Line 1685 of yacc.c  */
 #line 24 "compiler2/grammar.y"
- Formal *formal; 
+ Feature* feature; 
 
 /* Line 1685 of yacc.c  */
 #line 25 "compiler2/grammar.y"
- int null; 
+ Formal* formal; 
 
 /* Line 1685 of yacc.c  */
 #line 26 "compiler2/grammar.y"
+ Type* type; 
+
+/* Line 1685 of yacc.c  */
+#line 27 "compiler2/grammar.y"
+ Generic* generic; 
+
+/* Line 1685 of yacc.c  */
+#line 28 "compiler2/grammar.y"
+ int null; 
+
+/* Line 1685 of yacc.c  */
+#line 29 "compiler2/grammar.y"
  int flag; 
 
 
 /* Line 1685 of yacc.c  */
-#line 130 "compiler2/grammar.hpp"
+#line 140 "compiler2/grammar.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

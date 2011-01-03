@@ -20,12 +20,14 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef STATEMENT_H
-#define STATEMENT_H
+#ifndef STATEMENT_HPP
+#define STATEMENT_HPP
 
+#include "apollo.hpp"
 #include "tree_node.hpp"
 #include "name.hpp"
 #include "expression.hpp"
+#include "type.hpp"
 
 /* This file includes interfaces for statement nodes */
 class Statement : public TreeNode {
@@ -34,9 +36,9 @@ public:
         TreeNode(loc) {
     }
     
-    typedef Pointer<Statement> Ptr;
     Statement* next() const { return next_; }
     void next(Statement* next) { next_ = next; }
+    typedef Pointer<Statement> Ptr;
 
 private:
     Statement::Ptr next_;
@@ -60,7 +62,7 @@ private:
 /* When statement */
 class When : public Statement {
 public:
-    When(Location loc, Name* var, Name* type, Statement* block) : 
+    When(Location loc, Name* var, Type* type, Statement* block) : 
         Statement(loc),
         variable_(var),
 		type_(type),
@@ -68,14 +70,14 @@ public:
     }
 
     Name* variable() const { return variable_; }
-	Name* type() const { return type_; }
+    Type* type() const { return type_; }
     Statement* block() const { return block_; }
     typedef Pointer<When> Ptr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr variable_;
-	Name::Ptr type_;
+	Type::Ptr type_;
     Statement::Ptr block_;
 };
 
@@ -115,23 +117,23 @@ private:
 /* For-each loop statement */
 class For : public Statement {
 public:
-    For(Location loc, Name* var, Name* type, Expression* expr, Statement* block) :
+    For(Location loc, Name* var, Type* type, Expression* expr, Statement* block) :
         Statement(loc),
         variable_(var),
-		type_(var),
+		type_(type),
         expression_(expr),
         block_(block) {
     }
 
     Name* variable() const { return variable_; }
-	Name* type() const { return type_; }
+	Type* type() const { return type_; }
     Expression* expression() const { return expression_; }
     Statement* block() const { return block_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr variable_;
-	Name::Ptr type_;
+	Type::Ptr type_;
     Expression::Ptr expression_;
     Statement::Ptr block_;
 };
@@ -139,7 +141,7 @@ private:
 /* Variable declaration */
 class Variable : public Statement {
 public:
-    Variable(Location loc, Name* ident, Name* type, Expression* expr) :
+    Variable(Location loc, Name* ident, Type* type, Expression* expr) :
         Statement(loc),
         identifier_(ident),
 		type_(type),
@@ -147,12 +149,13 @@ public:
     }
 
     Name* identifier() const { return identifier_; }
+    Type* type() const { return type_; }
     Expression* expression() const { return expression_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr identifier_;
-	Name::Ptr type_;
+	Type::Ptr type_;
     Expression::Ptr expression_;
 };
 

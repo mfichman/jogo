@@ -23,43 +23,32 @@
 #ifndef UNIT_H
 #define UNIT_H
 
+#include "apollo.hpp"
 #include "tree_node.hpp"
 #include "feature.hpp"
+#include "location.hpp"
+#include "name.hpp"
+#include "type.hpp"
 #include <typeinfo>
 #include <map>
 
 /* This file includes interfaces for compilation units */
 class Unit : public TreeNode {
 public:
-    Unit(Location loc, Name* name, Feature* features) :
-        TreeNode(loc),
-        name_(name),
-        features_(features) {
-
-        for (Feature* feat = features; feat; feat = feat->next()) {
-            if (typeid(feat) == typeid(Attribute*)) {
-                attributes_[feat->name()] = static_cast<Attribute*>(feat);
-                break;
-            }
-            if (typeid(feat) == typeid(Function*)) {
-                functions_[feat->name()] = static_cast<Function*>(feat);
-                break;
-            }
-        }
-    }
-    
+    Unit(Location loc, Type* type, Feature* features);
     Feature* features() const { return features_; };    
     Attribute* attribute(Name* name) { return attributes_[name]; }
     Function* function(Name* name) { return functions_[name]; }
-    Name* name() const { return name_; }
+    Type* type() const { return type_; }
     Unit* next() const { return next_; }
+    Name* name() const { return type_->qualified_name(); }
     void next(Unit* unit) { next_ = unit; }
     typedef Pointer<Unit> Ptr;
 
 private:
     std::map<Name::Ptr, Attribute::Ptr> attributes_;
     std::map<Name::Ptr, Function::Ptr> functions_;
-    Name::Ptr name_;
+    Type::Ptr type_;
     Feature::Ptr features_;
     Unit::Ptr next_;
 };
@@ -67,32 +56,44 @@ private:
 /* Represents a class object */
 class Class : public Unit {
 public:
-    Class(Location loc, Name* name, Feature* features) :
-        Unit(loc, name, features) {
+    Class(Location loc, Type* type, Feature* features) :
+        Unit(loc, type, features) {
     }
+
+private:
+    void operator()(Functor *functor) { functor->operator()(this); }
 };
 
 /* Represents a class object */
 class Interface : public Unit {
 public:
-    Interface(Location loc, Name* name, Feature* features) :
-        Unit(loc, name, features) {
+    Interface(Location loc, Type* type, Feature* features) :
+        Unit(loc, type, features) {
     }
+
+private:
+    void operator()(Functor *functor) { functor->operator()(this); }
 };
 
 
 class Structure : public Unit {
 public:
-    Structure(Location loc, Name* name, Feature* features) :
-        Unit(loc, name, features) {
+    Structure(Location loc, Type* type, Feature* features) :
+        Unit(loc, type, features) {
     }
+
+private:
+    void operator()(Functor *functor) { functor->operator()(this); }
 };
 
 class Module : public Unit {
 public:
-    Module(Location loc, Name* name, Feature* features) :
-        Unit(loc, name, features) {
+    Module(Location loc, Type* type, Feature* features) :
+        Unit(loc, type, features) {
     }
+
+private:
+    void operator()(Functor *functor) { functor->operator()(this); }
 };
 
 

@@ -20,25 +20,49 @@
  * IN THE SOFTWARE.
  */  
 
-#include "unit.hpp"
+#ifndef TYPE_HPP
+#define TYPE_HPP
 
-/* Compilation unit */
+#include "apollo.hpp"
+#include "object.hpp"
+#include "name.hpp"
 
-Unit::Unit(Location loc, Type* type, Feature* features) :
-    TreeNode(loc),
-    type_(type),
-    features_(features) {
+/* Type object */
+class Type : public Object {
+public:
+    Type(Type* enclosing_type, Name* name, Generic* gen, Environment* env);
+    Type* enclosing_type() const { return enclosing_type_; }
+    Name* name() const { return name_; }
+    Generic* generics() const { return generics_; }
+    Name* qualified_name() const { return qualified_name_; }
+    bool equals(Type* other);
+    typedef Pointer<Type> Ptr;
 
-    for (Feature* feat = features; feat; feat = feat->next()) {
-        if (typeid(feat) == typeid(Attribute*)) {
-            Attribute* attr = static_cast<Attribute*>(feat);
-            attributes_[attr->name()] = attr;
-            break;
-        }
-        if (typeid(feat) == typeid(Function*)) {
-            Function* func = static_cast<Function*>(feat);
-            functions_[func->name()] = func;
-            break;
-        }
+private:
+    Type::Ptr enclosing_type_;
+    Name::Ptr name_;
+    Pointer<Generic> generics_;
+    Name::Ptr qualified_name_;
+
+};
+
+/* Holder for a generics type parameter */
+class Generic : public Object {
+public: 
+    Generic(Type* type) :
+        type_(type) {
+
     }
-}
+
+    Type* type() const { return type_; }
+    Generic* next() const { return next_; }
+    void next(Generic* next) { next_ = next; }
+    typedef Pointer<Generic> Ptr;
+
+private:
+    Type::Ptr type_;
+    Generic::Ptr next_;
+};
+
+
+#endif

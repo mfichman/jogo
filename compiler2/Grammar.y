@@ -5,6 +5,7 @@
 #include "formal.hpp"
 #include "feature.hpp"
 #include "unit.hpp"
+#include "type.hpp"
 
 #define YYSTYPE ParseNode
 #define YYLTYPE Location
@@ -16,20 +17,22 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 %}
 
-%union { Expression *expression; }
-%union { Statement *statement; }
-%union { Name *identifier; }
-%union { Unit *unit; }
-%union { Feature *feature; }
-%union { Formal *formal; }
+%union { Expression* expression; }
+%union { Statement* statement; }
+%union { Name* identifier; }
+%union { Unit* unit; }
+%union { Feature* feature; }
+%union { Formal* formal; }
+%union { Type* type; }
+%union { Generic* generic; }
 %union { int null; }
 %union { int flag; }
 
 %pure_parser
 %locations
-%parse-param { Parser *parser }
-%parse-param { void *scanner }
-%lex-param { yyscan_t *scanner }
+%parse-param { Parser* parser }
+%parse-param { void* scanner }
+%lex-param { yyscan_t* scanner }
 
 %destructor { delete $$; $$ = 0; } <expression>
 %destructor { delete $$; $$ = 0; } <identifier>
@@ -37,6 +40,8 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %destructor { delete $$; $$ = 0; } <unit>
 %destructor { delete $$; $$ = 0; } <feature>
 %destructor { delete $$; $$ = 0; } <formal>
+%destructor { delete $$; $$ = 0; } <type>
+%destructor { delete $$; $$ = 0; } <generic>
 
 
 %left '.' '['
@@ -58,7 +63,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 
 /* BISON declarations */
-%token <name> IDENTIFIER
+%token <name> IDENTIFIER TYPE
 %token <expression> STRING NUMBER 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
 %token CLASS INTERFACE STRUCT MODULE
@@ -72,10 +77,12 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token MULTIPLY_ASSIGN DIVIDE_ASSIGN SUBTRACT_ASSIGN ADD_ASSIGN
 %token MODULUS_ASSIGN BIT_OR_ASSIGN BIT_AND_ASSIGN
 %token INCREMENT DECREMENT
+%token SCOPE
 
 %type <feature> feature feature_list attribute import define
 %type <feature> constructor destructor function prototype native
-%type <name> type
+%type <type> type
+%type <generic> generic_list generic
 %type <flag> modifiers
 %type <formal> formal_signature formal_list formal
 %type <statement> block when_list when statement_list statement
@@ -85,16 +92,16 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 /* The Standard Apollo Grammar, version 2010 */
 %%
 unit
-    : CLASS IDENTIFIER '{' feature_list '}' {
+    : CLASS type '{' feature_list '}' {
         parser->environment()->unit(new Class(@$, $2, $4)); 
     }
-    | INTERFACE IDENTIFIER '{' feature_list '{' {
+    | INTERFACE type '{' feature_list '{' {
         parser->environment()->unit(new Interface(@$, $2, $4)); 
     }
-    | STRUCT IDENTIFIER '{' feature_list '}' {
+    | STRUCT type '{' feature_list '}' {
         parser->environment()->unit(new Structure(@$, $2, $4));    
     }
-    | MODULE IDENTIFIER '{' feature_list '}' {
+    | MODULE type '{' feature_list '}' {
         parser->environment()->unit(new Module(@$, $2, $4));    
     }
 	| /* empty is an error */ { 
@@ -126,13 +133,13 @@ feature
     ;
 
 import
-    : IMPORT IDENTIFIER SEPARATOR { 
+    : IMPORT type SEPARATOR { 
 		$$ = new Import(@$, $2);
 	}
     ;
 
 define
-    : DEF type IDENTIFIER SEPARATOR { 
+    : DEF type TYPE SEPARATOR { 
 		$$ = new Define(@$, $3, $2);
 	}
     ;
@@ -218,7 +225,32 @@ modifiers
 	;
 
 type
-    : IDENTIFIER { $$ = $1; }
+    : type SCOPE TYPE { 
+        $$ = new Type($1, $3, 0, parser->environment()); 
+    }
+    | type SCOPE TYPE '[' generic_list ']' {
+        $$ = new Type($1, $3, $5, parser->environment());
+    }
+    | TYPE {
+        $$ = new Type(0, $1, 0, parser->environment()); 
+    }
+    | TYPE '[' generic_list ']' {
+        $$ = new Type(0, $1, $3, parser->environment());
+    }
+    ;
+
+generic_list
+    : generic ',' generic_list {
+        $$ = $1;
+        $$->next($3);
+    }
+    | generic {
+        $$ = $1;
+    }
+    ;
+
+generic
+    : type { $$ = new Generic($1); }
     ;
 
 block

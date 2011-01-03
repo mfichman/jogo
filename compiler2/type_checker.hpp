@@ -20,30 +20,45 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef FORMAL_HPP
-#define FORMAL_HPP
+#ifndef TYPE_CHECKER_HPP
+#define TYPE_CHECKER_HPP
 
 #include "apollo.hpp"
 #include "tree_node.hpp"
-#include "type.hpp"
 
-class Formal : public TreeNode {
+class TypeChecker : public TreeNode::Functor {
 public:
-	Formal(Location loc, Name* name, Type* type) :
-		TreeNode(loc),
-		name_(name),
-		type_(type) {
+	TypeChecker(Environment* environment) {
 	}
-
-	Name* name() const { return name_; }
-	Type* type() const { return type_; }
-	void next(Formal* next) { next_ = next; }
-	typedef Pointer<Formal> Ptr;
+    typedef Pointer<TypeChecker> Ptr;
 
 private:
-	Name::Ptr name_;
-	Type::Ptr type_;
-	Formal::Ptr next_;
+    void operator()(Class* unit);
+    void operator()(Interface* unit);
+    void operator()(Structure* unit);
+    void operator()(Module* unit);
+    void operator()(StringLiteral* expression);
+    void operator()(IntegerLiteral* expression);
+    void operator()(Binary* expression);
+    void operator()(Unary* expression);
+    void operator()(Call* expression);
+    void operator()(Dispatch* expression);
+    void operator()(Index* expression);
+    void operator()(Identifier* expression);
+    void operator()(Member* expression);
+    void operator()(Block* statment);
+    void operator()(Simple* statment);
+    void operator()(While* statment);
+    void operator()(For* statment);
+    void operator()(Conditional* statment);
+    void operator()(Variable* statment);
+    void operator()(Return* statment);
+    void operator()(When* statment);
+    void operator()(Case* statment);
+    void operator()(Function* feature);
+    void operator()(Define* feature);
+    void operator()(Attribute* feature);
+    void operator()(Import* feature);
 };
 
 #endif

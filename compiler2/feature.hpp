@@ -20,99 +20,111 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef FEATURE_H
-#define FEATURE_H
+#ifndef FEATURE_HPP
+#define FEATURE_HPP
 
+#include "apollo.hpp"
 #include "tree_node.hpp"
 #include "statement.hpp"
 #include "expression.hpp"
 #include "formal.hpp"
+#include "type.hpp"
 
 /* This file holds interfaces for class features */
 class Feature : public TreeNode {
 public:
-    Feature(Location loc, Name* name) :
-        TreeNode(loc),
-        name_(name) {
+    Feature(Location loc) :
+        TreeNode(loc) {
     }
 
-    Name* name() const { return name_; }
     Feature* next() const { return next_; }
     void next(Feature* next) { next_ = next; }
     typedef Pointer<Feature> Ptr;
 
 private:
-    Name::Ptr name_;
     Feature::Ptr next_;
 };
 
 /* Class for instance variables (attributes) of a class or module */
 class Attribute : public Feature {
 public:
-    Attribute(Location loc, Name* name, Name* type, Expression* init) :
-        Feature(loc, name),
+    Attribute(Location loc, Name* name, Type* type, Expression* init) :
+        Feature(loc),
+        name_(name),
 		type_(type),
         initializer_(init) {
     }
 
-	Name* type() const { return type_; }
+    Name* name() const { return name_; }
+	Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
     typedef Pointer<Attribute> Ptr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-	Name::Ptr type_;
+	Name::Ptr name_;
+    Type::Ptr type_;
     Expression::Ptr initializer_;
 };
 
 /* Class for functions belonging to a class or module */
 class Function : public Feature {
 public:
-    Function(Location loc, Name* nm, Formal* fm, Name* ret, Statement* blk) :
-        Feature(loc, nm),
+    Function(Location loc, Name* nm, Formal* fm, Type* ret, Statement* blk) :
+        Feature(loc),
+        name_(nm),
 		formals_(fm),
 		type_(ret),
         block_(blk) {
     }
 
+    Name* name() const { return name_; }
 	Formal* formals() const { return formals_; }
-	Name* type() const { return type_; }
+	Type* type() const { return type_; }
     Statement* block() const { return block_; }
     typedef Pointer<Function> Ptr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
+    Name::Ptr name_;
 	Formal::Ptr formals_;
-	Name::Ptr type_;
+	Type::Ptr type_;
     Statement::Ptr block_;
 };
 
 /* Class for imports */
 class Import : public Feature {
 public:
-    Import(Location loc, Name* name) :
-        Feature(loc, name) {
+    Import(Location loc, Type* type) :
+        Feature(loc),
+        type_(type) {
     }
 
     const std::string& file() const { return file_; }
+    Type* type() const { return type_; }
 
 private:
+    void operator()(Functor* functor) { functor->operator()(this); }
     std::string file_;
+    Type::Ptr type_;
 };
 
 /* Type definition */
 class Define : public Feature {
 public:
-    Define(Location loc, Name* name, Name* type) :
-        Feature(loc, name),
+    Define(Location loc, Name* name, Type* type) :
+        Feature(loc),
+        name_(name),
         type_(type) {
     }
 
-    Name* type() const { return type_; }
+    Name* name() const { return name_; }
+    Type* type() const { return type_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr type_;
+    Name::Ptr name_;
+    Type::Ptr type_;
 };
 
 #endif

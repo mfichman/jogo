@@ -20,29 +20,22 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef ENVIRONMENT_H
-#define ENVIRONMENT_H
+#ifndef ENVIRONMENT_HPP
+#define ENVIRONMENT_HPP
 
 #include "apollo.hpp"
 #include "object.hpp"
 #include "unit.hpp"
 #include "name.hpp"
-
 #include <map>
 
 /* Compilation environment; contains symbol table and compilation units */
 class Environment : public Object {
 public:
+    Name* name(const std::string& str);
     Unit* units() const { return units_; }
     Unit* unit(Name *name) { return unit_[Name::Ptr(name)]; }
-    Name* name(const std::string& str) { return name_[str]; }
-
-    void unit(Unit* unit) {
-        unit_[unit->name()] = unit; 
-        unit->next(units_);
-        units_ = unit;
-    }
-
+    void unit(Unit* unit);
     typedef Pointer<Environment> Ptr;
 
 private:

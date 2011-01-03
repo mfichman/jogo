@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef POINTER_H
-#define POINTER_H
+#ifndef POINTER_HPP
+#define POINTER_HPP
 
 template <typename T>
 class Pointer {
@@ -49,6 +49,14 @@ public:
         }
 		return *this;
     }
+
+    template <typename F>
+    void operator()(F* functor) {
+        if (object_) {
+            object_->operator()(functor);
+        }
+    }
+    
 
     T* pointer() const { return object_; }
     T* operator->() const { return object_; }

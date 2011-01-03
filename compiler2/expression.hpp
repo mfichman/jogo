@@ -20,9 +20,10 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef EXPRESSION_H
-#define EXPRESSION_H
+#ifndef EXPRESSION_HPP
+#define EXPRESSION_HPP
 
+#include "apollo.hpp"
 #include "tree_node.hpp"
 #include "name.hpp"
 
@@ -42,9 +43,27 @@ private:
 };
 
 /* Literal expression (integers, strings, booleans, hashes, etc.) */
-class Literal : public Expression {
+class StringLiteral : public Expression {
 public:
-    Literal(Location loc, Name* value, Name* type) :
+    StringLiteral(Location loc, Name* value, Name* type) :
+        Expression(loc),
+        value_(value),
+        type_(type) {
+    }
+
+    Name* value() const { return value_; } 
+    Name* type() const { return type_; }
+
+private:
+    void operator()(Functor* functor) { functor->operator()(this); }
+    Name::Ptr value_;
+    Name::Ptr type_;
+};
+
+/* Literal expression (integers, strings, booleans, hashes, etc.) */
+class IntegerLiteral : public Expression {
+public:
+    IntegerLiteral(Location loc, Name* value, Name* type) :
         Expression(loc),
         value_(value),
         type_(type) {

@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef NODE_H
-#define NODE_H
+#ifndef TREE_NODE_HPP
+#define TREE_NODE_HPP
 
 #include "apollo.hpp"
 #include "object.hpp"
@@ -43,30 +43,35 @@ private:
     Location location_;
 };
 
-class TreeNode::Functor : public Object{
+class TreeNode::Functor : public Object {
 public:
     virtual ~Functor() {} 
-    virtual void operator()(Literal* expr) {}
-    virtual void operator()(Binary* expr) {}
-    virtual void operator()(Unary* expr) {}
-    virtual void operator()(Call* expr) {}
-    virtual void operator()(Dispatch* expr) {}
-    virtual void operator()(Index* expr) {}
-    virtual void operator()(Identifier* expr) {}
-    virtual void operator()(Member* expr) {}
-    virtual void operator()(Block* stmt) {}
-    virtual void operator()(Simple* stmt) {}
-    virtual void operator()(While* stmt) {}
-    virtual void operator()(For* stmt) {}
-    virtual void operator()(Conditional* stmt) {}
-    virtual void operator()(Variable* stmt) {}
-    virtual void operator()(Return* stmt) {}
-    virtual void operator()(When* stmt) {}
-    virtual void operator()(Case* stmt) {}
-    virtual void operator()(Function* feat) {}
-    virtual void operator()(Define* feat) {}
-    virtual void operator()(Attribute* feat) {}
-    virtual void operator()(Import* feat) {}
+    virtual void operator()(Class* unit) {}
+    virtual void operator()(Interface* unit) {}
+    virtual void operator()(Structure* unit) {}
+    virtual void operator()(Module* unit) {}
+    virtual void operator()(StringLiteral* expression) {}
+    virtual void operator()(IntegerLiteral* expression) {}
+    virtual void operator()(Binary* expression) {}
+    virtual void operator()(Unary* expression) {}
+    virtual void operator()(Call* expression) {}
+    virtual void operator()(Dispatch* expression) {}
+    virtual void operator()(Index* expression) {}
+    virtual void operator()(Identifier* expression) {}
+    virtual void operator()(Member* expression) {}
+    virtual void operator()(Block* statment) {}
+    virtual void operator()(Simple* statment) {}
+    virtual void operator()(While* statment) {}
+    virtual void operator()(For* statment) {}
+    virtual void operator()(Conditional* statment) {}
+    virtual void operator()(Variable* statment) {}
+    virtual void operator()(Return* statment) {}
+    virtual void operator()(When* statment) {}
+    virtual void operator()(Case* statment) {}
+    virtual void operator()(Function* feature) {}
+    virtual void operator()(Define* feature) {}
+    virtual void operator()(Attribute* feature) {}
+    virtual void operator()(Import* feature) {}
 };
 
 

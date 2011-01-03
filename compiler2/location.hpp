@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef LOCATION_H
-#define LOCATION_H
+#ifndef LOCATION_HPP
+#define LOCATION_HPP
 
 class Location {
 public:

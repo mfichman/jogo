@@ -2,7 +2,9 @@ sp := $(sp).x
 dirstack_$(sp) := $(d)
 d := $(dir)
 
-OBJS_$(d) := $(d)/main.o $(d)/parser.o $(d)/grammar.o $(d)/lexer.o
+OBJS_$(d) := $(d)/main.o $(d)/parser.o $(d)/grammar.o $(d)/lexer.o \
+    $(d)/unit.o $(d)/type.o $(d)/environment.o $(d)/type_checker.o
+
 DEPS_$(d) := $(OBJS_$(d):%=%.d)
 
 CLEAN := $(CLEAN) $(OBJS_$(d)) $(DEPS_$(d)) $(d)/apollo $(d)/grammar.cpp \

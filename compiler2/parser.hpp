@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef PARSER_HPP
+#define PARSER_HPP
 
 #include "apollo.hpp"
 #include "environment.hpp"
@@ -32,13 +32,17 @@
 /* Primary parser structure; creates compilation units */
 class Parser : public Object {
 public:
-    void parse(Environment* env, const std::string& filename);
+    Parser(Environment* env) :
+		environment_(env) {
+	}
+
     Environment* environment() const { return environment_; }
     std::fstream& input() { return input_; }
-	const std::string& filename() const { return filename_; }
+	const std::string& file() const { return file_; }
     int column() const { return column_; }
-    void column(int column) { column_ = column; }
 	int error() const { return error_; }
+	void file(const std::string& file);
+    void column(int column) { column_ = column; }
 	void error(int error) { error_ = error; }
     typedef Pointer<Parser> Ptr;
 
@@ -47,7 +51,7 @@ private:
     int column_;
     int error_;
     std::fstream input_;
-    std::string filename_;
+    std::string file_;
     void *scanner_;
 };
 
@@ -60,6 +64,8 @@ union ParseNode {
 	When* when;
 	Feature* feature;
 	Name* name;
+    Type* type;
+    Generic* generic;
 	int null;
 	int flag;
 };
