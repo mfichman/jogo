@@ -81,24 +81,21 @@ return BEGIN(SEPARATOR); return RETURN;
 \-\- BEGIN(INITIAL); return DECREMENT;
 \:\: BEGIN(INITIAL); return SCOPE;
 [0-9]+ {
-    Name* type = yyextra->environment()->name("Int");
 	Name* value = yyextra->environment()->name(yytext);
-	yylval->expression = new IntegerLiteral(*yylloc, type, value); 
+	yylval->expression = new IntegerLiteral(*yylloc, value); 
     BEGIN(SEPARATOR);
 	return NUMBER;
 }
 \"[^"]*\" {
 	yytext[strlen(yytext)-1] = 0;
-    Name* type = yyextra->environment()->name("String");
 	Name* value = yyextra->environment()->name(yytext);
-	yylval->expression = new StringLiteral(*yylloc, type, value);
+	yylval->expression = new StringLiteral(*yylloc, value);
     BEGIN(SEPARATOR);
 	return STRING;
 }
 \'[^']*\' {
-    Name* type = yyextra->environment()->name("String");
 	Name* value = yyextra->environment()->name(yytext);
-	yylval->expression = new StringLiteral(*yylloc, type, value); 
+	yylval->expression = new StringLiteral(*yylloc, value); 
     BEGIN(SEPARATOR);
 	return STRING;
 }

@@ -37,13 +37,12 @@ public:
     Name* qualified_name() const { return qualified_name_; }
     bool equals(Type* other);
     typedef Pointer<Type> Ptr;
-
+    
 private:
     Type::Ptr enclosing_type_;
     Name::Ptr name_;
     Pointer<Generic> generics_;
     Name::Ptr qualified_name_;
-
 };
 
 /* Holder for a generics type parameter */

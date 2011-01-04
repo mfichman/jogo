@@ -25,6 +25,13 @@
 #include "statement.hpp"
 #include "expression.hpp"
 #include "unit.hpp"
+#include <iostream>
+
+std::ostream& operator<<(std::ostream& out, const Location& location) {
+    out << location.first_line << ":" << std::endl;
+    out << location.first_column << ": " << std::endl;
+    return out;
+}
 
 void TypeChecker::operator()(Class* unit) {
     for (Feature::Ptr f = unit->features(); f; f = f->next()) {
@@ -51,9 +58,11 @@ void TypeChecker::operator()(Module* unit) {
 }
 
 void TypeChecker::operator()(StringLiteral* expression) {
+    expression->type(new Type(0, environment_->name("String"), 0, environment_)); 
 }
 
 void TypeChecker::operator()(IntegerLiteral* expression) {
+    expression->type(new Type(0, environment_->name("Integer"), 0, environment_)); 
 }
 
 void TypeChecker::operator()(Binary* expression) {
@@ -77,41 +86,104 @@ void TypeChecker::operator()(Identifier* expression) {
 void TypeChecker::operator()(Member* expression) {
 }
 
-void TypeChecker::operator()(Block* statment) {
+void TypeChecker::operator()(Block* statement) {
+    for (Statement::Ptr s = statement->children(); s; s = s->next()) {
+        s(this);
+    }
 }
 
-void TypeChecker::operator()(Simple* statment) {
+void TypeChecker::operator()(Simple* statement) {
+    Expression::Ptr expression = statement->expression();
+    expression(this);
 }
 
-void TypeChecker::operator()(While* statment) {
+void TypeChecker::operator()(While* statement) {
+    Expression::Ptr guard = statement->guard();
+    Statement::Ptr block = statement->block();
+    guard(this);
+    if (!boolean_type_->equals(guard->type())) {
+        std::cerr << statement->location();
+        std::cerr << "While statement guard expression must have type Boolean";
+        std::cerr << std::endl;
+    }
+    block(this);
 }
 
-void TypeChecker::operator()(For* statment) {
+void TypeChecker::operator()(For* statement) {
+    Expression::Ptr expression = statement->expression();
+    Statment::Ptr block = statement->block();
+    expression(this);
+    assert("statement->type() is a collection of expression->type()");
+    block(this);
 }
 
-void TypeChecker::operator()(Conditional* statment) {
+void TypeChecker::operator()(Conditional* statement) {
+    Expression::Ptr guard = statement->guard();
+    Expression::Ptr true_branch = statement->true_branch();
+    Expression::Ptr false_branch = statmenet->false_branch();
+    guard(this);
+    if (!boolean_type_->equals(guard->type())) {
+        std::cerr << statement->location();
+        std::cerr << "Conditional guard expression must have type Boolean";
+        std::cerr << std::endl;
+    } 
+    true_branch(this);
+    false_branch(this);
 }
 
-void TypeChecker::operator()(Variable* statment) {
+void TypeChecker::operator()(Variable* statement) {
+    Expression::Ptr initializer = statement->initializer();
+    initializer(this);
+    assert("Fix variable check");
+    if (!statement->type()->supertype(initializer->type())) {
+        std::cerr << statement->location();
+        std::cerr << "Expression does not conform to type ..." << endl;
+        std::cerr << std::endl;
+    } 
+    assert("Add variable to symbol table for function");
 }
 
-void TypeChecker::operator()(Return* statment) {
+void TypeChecker::operator()(Return* statement) {
+    Expression::Ptr expression = statement->expression();
+    if (expression) {
+        expression(this);
+    } 
+    assert("Check return value of function");
 }
 
-void TypeChecker::operator()(When* statment) {
+void TypeChecker::operator()(When* statement) {
+    Statement::Ptr block = statement->block():
+    block(this);
 }
 
-void TypeChecker::operator()(Case* statment) {
+void TypeChecker::operator()(Case* statement) {
+    Expression::Ptr guard = statement->guard();
+    guard(this);
+    for (When::Ptr b = statement->branches(); b; b = b->next()) {
+        b(this);
+    }
 }
 
 void TypeChecker::operator()(Function* feature) {
+    Statement::Ptr block = feature->block();
+    block(this); 
 }
 
 void TypeChecker::operator()(Define* feature) {
 }
 
 void TypeChecker::operator()(Attribute* feature) {
+    Expression::Ptr initializer = feature->initializer();
+    initializer(this);
+    assert("Fix variable check");
+    if (!feature->type()->supertype(initializer()->type())) {
+        std::cerr << feature->location() << std::endl;
+        std::cerr << "Expression does not conform to type ..." << endl;
+        std::cerr << std::endl;
+    }
+    assert("Add variable to symbol table for class");
 }
+
 
 void TypeChecker::operator()(Import* feature) {
 }

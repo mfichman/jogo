@@ -26,6 +26,7 @@
 #include "apollo.hpp"
 #include "tree_node.hpp"
 #include "name.hpp"
+#include "type.hpp"
 
 /* This file includes interfaces for expression nodes */
 class Expression : public TreeNode {
@@ -35,47 +36,44 @@ public:
     }
 	
 	Expression* next() const { return next_; }
+    Type* type() const { return type_; }
 	void next(Expression* next) { next_ = next; }
+    void type(Type* type) { type_ = type; }
     typedef Pointer<Expression> Ptr;
 
 private:
-	Expression* next_;
+	Expression::Ptr next_;
+    Type::Ptr type_;
 };
 
 /* Literal expression (integers, strings, booleans, hashes, etc.) */
 class StringLiteral : public Expression {
 public:
-    StringLiteral(Location loc, Name* value, Name* type) :
+    StringLiteral(Location loc, Name* value) :
         Expression(loc),
-        value_(value),
-        type_(type) {
+        value_(value) {
     }
 
     Name* value() const { return value_; } 
-    Name* type() const { return type_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr value_;
-    Name::Ptr type_;
 };
 
 /* Literal expression (integers, strings, booleans, hashes, etc.) */
 class IntegerLiteral : public Expression {
 public:
-    IntegerLiteral(Location loc, Name* value, Name* type) :
+    IntegerLiteral(Location loc, Name* value) :
         Expression(loc),
-        value_(value),
-        type_(type) {
+        value_(value) {
     }
 
     Name* value() const { return value_; } 
-    Name* type() const { return type_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr value_;
-    Name::Ptr type_;
 };
 
 /* Simple binary expression */

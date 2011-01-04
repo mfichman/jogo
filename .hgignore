@@ -1,12 +1,8 @@
-syntax:glob
+syntax: glob
+
+compiler2/grammar.hpp
+compiler2/grammar.cpp
+compiler2/lexer.cpp
+compiler2/apollo
+compiler2/grammar.output
 *.o
-*.swp
-*.orig
-*.ap
-*.output
-*.ap.c
-apgrammar.h
-apgrammar.l.c
-apgrammar.y.c
-test/*
-apollo

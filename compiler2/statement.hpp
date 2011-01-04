@@ -145,18 +145,18 @@ public:
         Statement(loc),
         identifier_(ident),
 		type_(type),
-        expression_(expr) {
+        initializer_(expr) {
     }
 
     Name* identifier() const { return identifier_; }
     Type* type() const { return type_; }
-    Expression* expression() const { return expression_; }
+    Expression* initializer() const { return initializer_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr identifier_;
 	Type::Ptr type_;
-    Expression::Ptr expression_;
+    Expression::Ptr initializer_;
 };
 
 /* While loop */
@@ -183,19 +183,19 @@ public:
     Conditional(Location loc, Expression* ex, Statement* yes, Statement* no) :
         Statement(loc),
         guard_(ex),
-        yes_(yes),
-        no_(no) {
+        true_branch_(yes),
+        false_branch_(no) {
     }
 
     Expression* guard() const { return guard_; }
-    Statement* yes() const { return yes_; }
-    Statement* no() const { return no_; }
+    Statement* true_branch() const { return true_branch_; }
+    Statement* false_branch() const { return false_branch_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     Expression::Ptr guard_;
-    Statement::Ptr yes_;
-    Statement::Ptr no_;
+    Statement::Ptr true_branch_;
+    Statement::Ptr false_branch_;
 };
 
 /* Return statement */
@@ -213,4 +213,6 @@ private:
     Expression::Ptr expression_;
 };
 
+/* 
+    
 #endif

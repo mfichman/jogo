@@ -25,10 +25,12 @@
 
 #include "apollo.hpp"
 #include "tree_node.hpp"
+#include "environment.hpp"
 
 class TypeChecker : public TreeNode::Functor {
 public:
-	TypeChecker(Environment* environment) {
+	TypeChecker(Environment* environment) :
+        environment_(environment) {
 	}
     typedef Pointer<TypeChecker> Ptr;
 
@@ -59,6 +61,11 @@ private:
     void operator()(Define* feature);
     void operator()(Attribute* feature);
     void operator()(Import* feature);
+
+    Environment::Ptr environment_;
+    Type::Ptr boolean_type_;
+    Type::Ptr integer_type_;
+    Type::Ptr string_type_;
 };
 
 #endif
