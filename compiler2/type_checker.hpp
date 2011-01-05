@@ -29,8 +29,12 @@
 
 class TypeChecker : public TreeNode::Functor {
 public:
-	TypeChecker(Environment* environment) :
-        environment_(environment) {
+	TypeChecker(Environment* env) :
+        environment_(env),
+        void_type_(new Type(0, env->name("Void"), 0, env)),
+        boolean_type_(new Type(0, env->name("Boolean"), 0, env)),
+        integer_type_(new Type(0, env->name("Integer"), 0, env)),
+        string_type_(new Type(0, env->name("String"), 0, env)) {
 	}
     typedef Pointer<TypeChecker> Ptr;
 
@@ -63,9 +67,11 @@ private:
     void operator()(Import* feature);
 
     Environment::Ptr environment_;
+    Type::Ptr void_type_;
     Type::Ptr boolean_type_;
     Type::Ptr integer_type_;
     Type::Ptr string_type_;
+    Type::Ptr no_type_;
 };
 
 #endif

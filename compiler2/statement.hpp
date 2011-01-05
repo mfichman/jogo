@@ -213,6 +213,4 @@ private:
     Expression::Ptr expression_;
 };
 
-/* 
-    
 #endif

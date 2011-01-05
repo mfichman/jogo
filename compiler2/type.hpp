@@ -36,9 +36,14 @@ public:
     Generic* generics() const { return generics_; }
     Name* qualified_name() const { return qualified_name_; }
     bool equals(Type* other);
+    bool supertype(Type* other);
+    bool subtype(Type* other);
+    bool collection(Type* other);
+    Type* least_upper_bound(Type* other);
     typedef Pointer<Type> Ptr;
     
 private:
+    Pointer<Environment> environment_;
     Type::Ptr enclosing_type_;
     Name::Ptr name_;
     Pointer<Generic> generics_;

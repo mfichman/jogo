@@ -22,8 +22,10 @@
 
 #include "type.hpp"
 #include "environment.hpp"
+#include <cassert>
 
 Type::Type(Type* enclosing_type, Name* name, Generic* gen, Environment* env) :
+    environment_(env),
     enclosing_type_(enclosing_type),
     name_(name),
     generics_(gen) {
@@ -70,10 +72,25 @@ bool Type::equals(Type* other) {
     return true;
 }
 
+bool Type::subtype(Type* other) {
+    assert("Not implemented");
+    return false;
+}
 
+bool Type::supertype(Type* other) {
+    assert("Not implemented");
+    return false;
+}
 
+bool Type::collection(Type* other) {
+    assert("Not implemented");
+    return false;
+}
 
-
+Type* Type::least_upper_bound(Type* other) {
+    assert("Not implemented");
+    return false;
+}
 
 
 

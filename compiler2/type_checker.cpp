@@ -26,6 +26,7 @@
 #include "expression.hpp"
 #include "unit.hpp"
 #include <iostream>
+#include <cassert>
 
 std::ostream& operator<<(std::ostream& out, const Location& location) {
     out << location.first_line << ":" << std::endl;
@@ -111,7 +112,7 @@ void TypeChecker::operator()(While* statement) {
 
 void TypeChecker::operator()(For* statement) {
     Expression::Ptr expression = statement->expression();
-    Statment::Ptr block = statement->block();
+    Statement::Ptr block = statement->block();
     expression(this);
     assert("statement->type() is a collection of expression->type()");
     block(this);
@@ -119,8 +120,8 @@ void TypeChecker::operator()(For* statement) {
 
 void TypeChecker::operator()(Conditional* statement) {
     Expression::Ptr guard = statement->guard();
-    Expression::Ptr true_branch = statement->true_branch();
-    Expression::Ptr false_branch = statmenet->false_branch();
+    Statement::Ptr true_branch = statement->true_branch();
+    Statement::Ptr false_branch = statement->false_branch();
     guard(this);
     if (!boolean_type_->equals(guard->type())) {
         std::cerr << statement->location();
@@ -137,7 +138,7 @@ void TypeChecker::operator()(Variable* statement) {
     assert("Fix variable check");
     if (!statement->type()->supertype(initializer->type())) {
         std::cerr << statement->location();
-        std::cerr << "Expression does not conform to type ..." << endl;
+        std::cerr << "Expression does not conform to type ..." << std::endl;
         std::cerr << std::endl;
     } 
     assert("Add variable to symbol table for function");
@@ -152,14 +153,14 @@ void TypeChecker::operator()(Return* statement) {
 }
 
 void TypeChecker::operator()(When* statement) {
-    Statement::Ptr block = statement->block():
+    Statement::Ptr block = statement->block();
     block(this);
 }
 
 void TypeChecker::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
     guard(this);
-    for (When::Ptr b = statement->branches(); b; b = b->next()) {
+    for (Statement::Ptr b = statement->branches(); b; b = b->next()) {
         b(this);
     }
 }
@@ -176,9 +177,9 @@ void TypeChecker::operator()(Attribute* feature) {
     Expression::Ptr initializer = feature->initializer();
     initializer(this);
     assert("Fix variable check");
-    if (!feature->type()->supertype(initializer()->type())) {
+    if (!feature->type()->supertype(initializer->type())) {
         std::cerr << feature->location() << std::endl;
-        std::cerr << "Expression does not conform to type ..." << endl;
+        std::cerr << "Expression does not conform to type ..." << std::endl;
         std::cerr << std::endl;
     }
     assert("Add variable to symbol table for class");
