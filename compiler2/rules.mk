@@ -2,7 +2,7 @@ sp := $(sp).x
 dirstack_$(sp) := $(d)
 d := $(dir)
 
-OBJS_$(d) := $(d)/main.o $(d)/parser.o $(d)/grammar.o $(d)/lexer.o \
+OBJS_$(d) := $(d)/parser.o $(d)/grammar.o $(d)/lexer.o \
     $(d)/unit.o $(d)/type.o $(d)/environment.o $(d)/type_checker.o \
     $(d)/printer.o
 
@@ -13,10 +13,13 @@ CLEAN := $(CLEAN) $(OBJS_$(d)) $(DEPS_$(d)) $(d)/apollo $(d)/grammar.cpp \
 
 $(OBJS_$(d)): CFLOCAL := -I$(d)
 
-TARGETS := $(TARGETS) $(d)/apollo
+TARGETS := $(TARGETS) $(d)/main $(d)/test
 GRAMMAR := $(d)/grammar.hpp
 
-$(d)/apollo: $(OBJS_$(d))
+$(d)/main: $(d)/main.o $(OBJS_$(d))
+	$(CPP) -g -o $@ $^
+
+$(d)/test: $(d)/test.o $(OBJS_$(d))
 	$(CPP) -g -o $@ $^
 
 $(d)/grammar.cpp: $(d)/grammar.y

@@ -45,23 +45,22 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %destructor { delete $$; $$ = 0; } <generic>
 
 
-%left '.' '['
-%left INCREMENT DECREMENT
-%left '!' '~'
-%left '*' '/' '%'
-%left '+' '-'
-%left LEFT_SHIFT RIGHT_SHIFT
-%left '<' '>' LESS_OR_EQUAL GREATER_OR_EQUAL
-%left EQUAL NOT_EQUAL
-%left '&'
-%left '|' '^'
-%left AND
-%left OR
-%left '=' MULTIPLY_ASSIGN DIVIDE_ASSIGN MODULUS_ASSIGN 
-%left ADD_ASSIGN SUBTRACT_ASSIGN
-%left BIT_AND_ASSIGN BIT_OR_ASSIGN BIT_XOR_ASSIGN
 %left '?'
-
+%left BIT_AND_ASSIGN BIT_OR_ASSIGN BIT_XOR_ASSIGN
+%left ADD_ASSIGN SUBTRACT_ASSIGN
+%left '=' MULTIPLY_ASSIGN DIVIDE_ASSIGN MODULUS_ASSIGN 
+%left OR
+%left AND
+%left '|' '^'
+%left '&'
+%left EQUAL NOT_EQUAL
+%left '<' '>' LESS_OR_EQUAL GREATER_OR_EQUAL
+%left LEFT_SHIFT RIGHT_SHIFT
+%left '+' '-'
+%left '*' '/' '%'
+%left '!' '~'
+%left INCREMENT DECREMENT
+%left '.' '['
 
 /* BISON declarations */
 %token <name> IDENTIFIER TYPE

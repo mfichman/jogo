@@ -139,16 +139,16 @@ public:
     Call(Location loc, Name* ident, Expression* args) :
         Expression(loc),
         identifier_(ident),
-        args_(args) {
+        arguments_(args) {
     }
 
     Name* identifier() const { return identifier_; }
-    Expression* args() const { return args_; }
+    Expression* arguments() const { return arguments_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr identifier_;
-    Expression::Ptr args_;
+    Expression::Ptr arguments_;
 };
 
 /* Object-oriented function call dispatch */
