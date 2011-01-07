@@ -31,9 +31,15 @@
 /* Primary parser structure; creates compilation units */
 class Parser : public Object {
 public:
-    Parser(Environment* env) :
+    Parser(Environment* env, const std::string& file) :
 		environment_(env) {
+
+        Parser::file(file);
 	}
+
+    Parser(Environment* env) :
+        environment_(env) {
+    }
 
     Environment* environment() const { return environment_; }
     std::fstream& input() { return input_; }

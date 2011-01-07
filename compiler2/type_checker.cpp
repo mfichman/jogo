@@ -49,6 +49,14 @@ std::ostream& operator<<(std::ostream& out, Type::Ptr type) {
     return out;
 }
 
+TypeChecker::TypeChecker(Environment* environment) :
+    environment_(environment) {
+
+    for (Unit::Ptr u = environment_->units(); u; u = u->next()) {
+        u(this);
+    }  
+}
+
 void TypeChecker::operator()(Class* unit) {
     for (Feature::Ptr f = unit->features(); f; f = f->next()) {
         f(this);

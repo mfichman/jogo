@@ -6,6 +6,7 @@
 #include "feature.hpp"
 #include "parser.hpp"
 #include "grammar.hpp"
+#include <iostream>
 
 #define YYSTYPE ParseNode
 #define YYLTYPE Location
@@ -26,6 +27,8 @@
 	yylloc->last_line = yylineno;\
 }
 
+using namespace std;
+
 %}
 
 %option reentrant 
@@ -35,7 +38,7 @@
 %option nounput
 %option yylineno
 %option bison-locations
-%s SEPARATOR
+%s END
 
 /* Lexer rules */
 %%
@@ -59,7 +62,7 @@ else BEGIN(INITIAL); return ELSE;
 until BEGIN(INITIAL); return UNTIL;
 if BEGIN(INITIAL); return IF;
 for BEGIN(INITIAL); return FOR;
-return BEGIN(SEPARATOR); return RETURN;
+return BEGIN(END); return RETURN;
 -> BEGIN(INITIAL); return RIGHT_ARROW;
 \<\- BEGIN(INITIAL); return LEFT_ARROW;
 == BEGIN(INITIAL); return EQUAL; 
@@ -84,38 +87,44 @@ return BEGIN(SEPARATOR); return RETURN;
 [0-9]+ {
 	Name* value = yyextra->environment()->name(yytext);
 	yylval->expression = new IntegerLiteral(*yylloc, value); 
-    BEGIN(SEPARATOR);
+    BEGIN(END);
 	return NUMBER;
 }
 \"[^"]*\" {
 	yytext[strlen(yytext)-1] = 0;
 	Name* value = yyextra->environment()->name(yytext);
 	yylval->expression = new StringLiteral(*yylloc, value);
-    BEGIN(SEPARATOR);
+    BEGIN(END);
 	return STRING;
 }
 \'[^']*\' {
 	Name* value = yyextra->environment()->name(yytext);
 	yylval->expression = new StringLiteral(*yylloc, value); 
-    BEGIN(SEPARATOR);
+    BEGIN(END);
 	return STRING;
 }
-[a-z][A-Za-z0-9_][?!]? {
+[a-z][A-Za-z0-9_]*[?!]? {
 	yylval->name = yyextra->environment()->name(yytext);
-    BEGIN(SEPARATOR);
+    BEGIN(END);
 	return IDENTIFIER;
 }
 [A-Z][A-Za-z0-9_]* {
 	yylval->name = yyextra->environment()->name(yytext);
-    BEGIN(SEPARATOR);
+    BEGIN(END);
 	return TYPE;
 }
 
 #.*
 [{([,] BEGIN(INITIAL); return yytext[0];
-[)\]] BEGIN(SEPARATOR); return yytext[0];
-<SEPARATOR>[\n\r] BEGIN(INITIAL); yyget_extra(yyscanner)->column(1); return SEPARATOR;
-<INITIAL>[\n\r] yyget_extra(yyscanner)->column(1);
+[)\]] BEGIN(END); return yytext[0];
+<END>[\n\r] {
+    BEGIN(INITIAL); 
+    yyget_extra(yyscanner)->column(1); 
+    return SEPARATOR;
+}
+<INITIAL>[\n\r] {
+    yyget_extra(yyscanner)->column(1);
+}
 [\t ]
 . return yytext[0];
 %%

@@ -20,19 +20,17 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef TYPE_CHECKER_HPP
-#define TYPE_CHECKER_HPP
+#ifndef PRINTER_HPP
+#define PRINTER_HPP
 
 #include "apollo.hpp"
 #include "tree_node.hpp"
 #include "environment.hpp"
-#include <vector>
-#include <map>
 
-class TypeChecker : public TreeNode::Functor {
+class Printer : public TreeNode::Functor {
 public:
-	TypeChecker(Environment* environment);
-    typedef Pointer<TypeChecker> Ptr;
+    Printer(Environment* environment);
+    typedef Pointer<Printer> Ptr;
 
 private:
     void operator()(Class* unit);
@@ -63,13 +61,10 @@ private:
     void operator()(Attribute* feature);
     void operator()(Import* feature);
 
-    Type* variable_type(Name* name);
-    void variable_type(Name* name, Type* type);
-    void enter_scope();
-    void exit_scope();
+    void print_tabs();
 
     Environment::Ptr environment_;
-    std::vector<std::map<Name::Ptr, Type::Ptr> > variable_type_;
+    int indent_level_;
 };
 
 #endif

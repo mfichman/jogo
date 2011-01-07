@@ -23,6 +23,7 @@
 #include "environment.hpp"
 #include "parser.hpp"
 #include "type_checker.hpp"
+#include "printer.hpp"
 
 #include <iostream>
 
@@ -33,15 +34,10 @@ int main(int argc, char** argv) {
     }
 
     Environment::Ptr environment(new Environment());
-    Parser::Ptr parser(new Parser(environment));
-    parser->file(argv[1]);
-
-    TypeChecker::Ptr checker(new TypeChecker(environment));
-    for (Unit::Ptr unit = environment->units(); unit; unit = unit->next()) {
-        unit(checker.pointer());
-    }    
-
-
+    Parser::Ptr parser(new Parser(environment, argv[1]));
+    Printer::Ptr printer(new Printer(environment));
+    
+    
 
     return 0;
 }

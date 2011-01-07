@@ -6,6 +6,7 @@
 #include "feature.hpp"
 #include "unit.hpp"
 #include "type.hpp"
+#include <iostream>
 
 #define YYSTYPE ParseNode
 #define YYLTYPE Location
@@ -273,8 +274,8 @@ statement_list
 		$$ = $1;
         $$->next($2);
 	}
-    | statement {
-        $$ = $1;
+    | /* empty */ {
+        $$ = 0;
     }
 	| error statement_list { 
         $$ = $2; 

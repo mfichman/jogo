@@ -6,3 +6,4 @@ compiler2/lexer.cpp
 compiler2/apollo
 compiler2/grammar.output
 *.o
+*.swp

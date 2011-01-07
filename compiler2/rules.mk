@@ -3,7 +3,8 @@ dirstack_$(sp) := $(d)
 d := $(dir)
 
 OBJS_$(d) := $(d)/main.o $(d)/parser.o $(d)/grammar.o $(d)/lexer.o \
-    $(d)/unit.o $(d)/type.o $(d)/environment.o $(d)/type_checker.o
+    $(d)/unit.o $(d)/type.o $(d)/environment.o $(d)/type_checker.o \
+    $(d)/printer.o
 
 DEPS_$(d) := $(OBJS_$(d):%=%.d)
 

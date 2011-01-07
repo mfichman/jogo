@@ -29,11 +29,15 @@ public:
     Pointer() : object_(0) {}
 
     Pointer(T* object) : object_(object) {
-        object_->refcount(object->refcount() + 1);
+        if (object_) {
+            object_->refcount(object_->refcount() + 1);
+        }
     } 
 
-    Pointer(const Pointer<T>& other) : object_(other) {
-        object_->refcount(object_->refcount() + 1);
+    Pointer(const Pointer<T>& other) : object_(other.object_) {
+        if (object_) {
+            object_->refcount(object_->refcount() + 1);
+        }
     }
 
     Pointer<T>& operator=(const Pointer<T>& other) {

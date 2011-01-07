@@ -64,5 +64,5 @@ void yyerror(Location* loc, Parser* self, void* scanner, const char* msg) {
 	self->error(self->error() + 1);
 	std::cerr << self->file() << ":" << loc->first_line << ":";
 	std::cerr << loc->first_column << ": ";
-	std::cerr << toupper(msg[0]) << msg + 1 << std::endl;	
+	std::cerr << (char)toupper(msg[0]) << msg + 1 << std::endl;	
 }
