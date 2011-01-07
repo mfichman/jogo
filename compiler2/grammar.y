@@ -58,7 +58,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %left OR
 %left '=' MULTIPLY_ASSIGN DIVIDE_ASSIGN MODULUS_ASSIGN 
 %left ADD_ASSIGN SUBTRACT_ASSIGN
-%left BIT_AND_ASSIGN BIT_OR_ASSIGN
+%left BIT_AND_ASSIGN BIT_OR_ASSIGN BIT_XOR_ASSIGN
 %left '?'
 
 
@@ -75,7 +75,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token OR AND
 %token LEFT_SHIFT RIGHT_SHIFT
 %token MULTIPLY_ASSIGN DIVIDE_ASSIGN SUBTRACT_ASSIGN ADD_ASSIGN
-%token MODULUS_ASSIGN BIT_OR_ASSIGN BIT_AND_ASSIGN
+%token MODULUS_ASSIGN BIT_OR_ASSIGN BIT_AND_ASSIGN BIT_XOR_ASSIGN
 %token INCREMENT DECREMENT
 %token SCOPE
 
@@ -335,30 +335,40 @@ storage
 
 assignment
     : storage '=' expression { 
-		$$ = new Binary(@$, parser->environment()->name("="), $1, $3); 
-        $$ = new Binary(@$, parser->environment()->name("="), $1, $3);
+        $$ = new Assignment(@$, $1, $3); 
 	}
     | storage MULTIPLY_ASSIGN expression { 
-		$$ = new Binary(@$, parser->environment()->name("*="), $1, $3); 
+        $$ = new Assignment(@$, $1, new Binary(@$, 
+            parser->environment()->name("@multiply"), $1, $3));
 	}
     | storage DIVIDE_ASSIGN expression { 
-		$$ = new Binary(@$, parser->environment()->name("/="), $1, $3); 
+        $$ = new Assignment(@$, $1, new Binary(@$, 
+            parser->environment()->name("@divide"), $1, $3));
 	}
     | storage MODULUS_ASSIGN expression { 
-		$$ = new Binary(@$, parser->environment()->name("%="), $1, $3); 
+        $$ = new Assignment(@$, $1, new Binary(@$, 
+            parser->environment()->name("@modulus"), $1, $3));
 	}
     | storage SUBTRACT_ASSIGN expression { 
-		$$ = new Binary(@$, parser->environment()->name("-="), $1, $3); 
+        $$ = new Assignment(@$, $1, new Binary(@$, 
+            parser->environment()->name("@subtract"), $1, $3));
 	}
     | storage ADD_ASSIGN expression { 
-		$$ = new Binary(@$, parser->environment()->name("+="), $1, $3); 
+        $$ = new Assignment(@$, $1, new Binary(@$, 
+            parser->environment()->name("@add"), $1, $3));
 	}
     | storage BIT_AND_ASSIGN expression { 
-		$$ = new Binary(@$, parser->environment()->name("&="), $1, $3); 
+        $$ = new Assignment(@$, $1, new Binary(@$, 
+            parser->environment()->name("@bitwise_and"), $1, $3));
 	}
     | storage BIT_OR_ASSIGN expression { 
-		$$ = new Binary(@$, parser->environment()->name("|="), $1, $3); 
+        $$ = new Assignment(@$, $1, new Binary(@$, 
+            parser->environment()->name("@bitwise_or"), $1, $3));
 	}
+    | storage BIT_XOR_ASSIGN expression {
+        $$ = new Assignment(@$, $1, new Binary(@$,
+            parser->environment()->name("@bitwise_xor"), $1, $3));
+    }
     ;
 
 
@@ -373,52 +383,57 @@ expression
 		$$ = new Binary(@$, parser->environment()->name("&&"), $1, $3); 
 	}
     | expression '|' expression { 
-		$$ = new Binary(@$, parser->environment()->name("|"), $1, $3); 
+		$$ = new Binary(@$, 
+            parser->environment()->name("@bitwise_or"), $1, $3); 
 	}
     | expression '^' expression { 
-		$$ = new Binary(@$, parser->environment()->name("^"), $1, $3); 
+		$$ = new Binary(@$, 
+            parser->environment()->name("@bitwise_xor"), $1, $3); 
 	}
     | expression '&' expression { 
-		$$ = new Binary(@$, parser->environment()->name("&"), $1, $3); 
+		$$ = new Binary(@$, 
+            parser->environment()->name("@bitwise_and"), $1, $3); 
 	}
     | expression EQUAL expression { 
-		$$ = new Binary(@$, parser->environment()->name("=="), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("@equal"), $1, $3); 
 	}
     | expression NOT_EQUAL expression { 
-		$$ = new Binary(@$, parser->environment()->name("!="), $1, $3); 
+        $$ = new Binary(@$, parser->environment()->name("@not_equal"), $1, $3);
 	}
     | expression '>' expression { 
-		$$ = new Binary(@$, parser->environment()->name(">"), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("@greater"), $1, $3); 
 	}
     | expression '<' expression { 
-		$$ = new Binary(@$, parser->environment()->name("<"), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("@less"), $1, $3); 
 	}
     | expression GREATER_OR_EQUAL expression { 
-		$$ = new Binary(@$, parser->environment()->name(">="), $1, $3); 
+		$$ = new Binary(@$, 
+            parser->environment()->name("@greater_or_equal"), $1, $3); 
 	}
     | expression LESS_OR_EQUAL expression { 
-		$$ = new Binary(@$, parser->environment()->name("<="), $1, $3); 
+		$$ = new Binary(@$, 
+            parser->environment()->name("@less_or_equal"), $1, $3); 
 	}
     | expression LEFT_SHIFT expression { 
-		$$ = new Binary(@$, parser->environment()->name("<<"), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("@shift"), $1, $3); 
 	}
     | expression RIGHT_SHIFT expression { 
-		$$ = new Binary(@$, parser->environment()->name(">>"), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("@unshift"), $1, $3); 
 	}
     | expression '+' expression { 
-		$$ = new Binary(@$, parser->environment()->name("+"), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("@add"), $1, $3); 
 	}
     | expression '-' expression { 
-		$$ = new Binary(@$, parser->environment()->name("-"), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("@subtract"), $1, $3); 
 	}
     | expression '*' expression { 
-		$$ = new Binary(@$, parser->environment()->name("*"), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("@multiply"), $1, $3); 
 	}
     | expression '/' expression { 
-		$$ = new Binary(@$, parser->environment()->name("/"), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("@divide"), $1, $3); 
 	}
     | expression '%' expression { 
-		$$ = new Binary(@$, parser->environment()->name("%"), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("@modulus"), $1, $3); 
 	}
     | '!' expression { 
         $$ = new Unary(@$, parser->environment()->name("!"), $2); 
@@ -427,10 +442,10 @@ expression
         $$ = new Unary(@$, parser->environment()->name("~"), $2); 
     }
     | expression INCREMENT { 
-		$$ = new Unary(@$, parser->environment()->name("++"), $1); 
+		$$ = new Unary(@$, parser->environment()->name("@increment"), $1); 
 	}
     | expression DECREMENT { 
-		$$ = new Unary(@$, parser->environment()->name("--"), $1); 
+		$$ = new Unary(@$, parser->environment()->name("@decrement"), $1); 
 	}
     | IDENTIFIER '(' expression_list ')' {
 		$$ = new Call(@$, $1, $3);

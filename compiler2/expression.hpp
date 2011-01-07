@@ -76,6 +76,24 @@ private:
     Name::Ptr value_;
 };
 
+/* Assignment expression */
+class Assignment : public Expression {
+public:
+    Assignment(Location loc, Expression* storage, Expression* expression) :
+        Expression(loc),
+        storage_(storage),
+        expression_(expression) {
+    }
+
+    Expression* storage() const { return storage_; }
+    Expression* expression() const { return expression_; }
+
+private:
+    void operator()(Functor* functor) { functor->operator()(this); }
+    Expression::Ptr storage_;
+    Expression::Ptr expression_;
+};
+
 /* Simple binary expression */
 class Binary : public Expression {
 public:

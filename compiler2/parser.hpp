@@ -26,7 +26,6 @@
 #include "apollo.hpp"
 #include "environment.hpp"
 #include "object.hpp"
-
 #include <fstream>
 
 /* Primary parser structure; creates compilation units */

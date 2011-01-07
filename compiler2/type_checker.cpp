@@ -34,6 +34,21 @@ std::ostream& operator<<(std::ostream& out, const Location& location) {
     return out;
 }
 
+std::ostream& operator<<(std::ostream& out, Type::Ptr type) {
+    out << type->qualified_name()->string();
+    if (type->generics()) {
+        out << '[';
+        for (Generic::Ptr g = type->generics(); g; g = g->next()) {
+            out << g->type();
+            if (g->next()) {
+                out << ',';
+            }
+        }
+        out << ']';
+    } 
+    return out;
+}
+
 void TypeChecker::operator()(Class* unit) {
     for (Feature::Ptr f = unit->features(); f; f = f->next()) {
         f(this);
@@ -66,6 +81,18 @@ void TypeChecker::operator()(IntegerLiteral* expression) {
     expression->type(new Type(0, environment_->name("Integer"), 0, environment_)); 
 }
 
+void TypeChecker::operator()(Assignment* expression) {
+    Expression::Ptr storage = expression->storage();
+    Expression::Ptr value = expression->expression(); 
+    storage(this);
+    value(this);
+    if (!value->type()->subtype(storage->type())) {
+        std::cerr << expression->location();
+        std::cerr << "Type does not conform in assignment";
+        std::cerr << std::endl;
+    }
+}
+
 void TypeChecker::operator()(Binary* expression) {
 }
 
@@ -82,15 +109,28 @@ void TypeChecker::operator()(Index* expression) {
 }
 
 void TypeChecker::operator()(Identifier* expression) {
+    Type::Ptr type = variable_type(expression->identifier());
+    if (!type) {
+        std::cerr << expression->location();
+        std::cerr << "Undeclared identifier \"";
+        std::cerr << expression->identifier()->string();
+        std::cerr << "\"";
+        std::cerr << std::endl;
+        expression->type(environment_->no_type());
+    } else {
+        expression->type(type);
+    }
 }
 
 void TypeChecker::operator()(Member* expression) {
 }
 
 void TypeChecker::operator()(Block* statement) {
+    enter_scope();
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
     }
+    exit_scope();
 }
 
 void TypeChecker::operator()(Simple* statement) {
@@ -102,7 +142,7 @@ void TypeChecker::operator()(While* statement) {
     Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
     guard(this);
-    if (!boolean_type_->equals(guard->type())) {
+    if (!environment_->boolean_type()->equals(guard->type())) {
         std::cerr << statement->location();
         std::cerr << "While statement guard expression must have type Boolean";
         std::cerr << std::endl;
@@ -114,7 +154,11 @@ void TypeChecker::operator()(For* statement) {
     Expression::Ptr expression = statement->expression();
     Statement::Ptr block = statement->block();
     expression(this);
-    assert("statement->type() is a collection of expression->type()");
+    if (!statement->type()->collection(expression->type())) {
+        std::cerr << statement->location();
+        std::cerr << "For expression is not a conforming collection";
+        std::cerr << std::endl;
+    }
     block(this);
 }
 
@@ -123,7 +167,7 @@ void TypeChecker::operator()(Conditional* statement) {
     Statement::Ptr true_branch = statement->true_branch();
     Statement::Ptr false_branch = statement->false_branch();
     guard(this);
-    if (!boolean_type_->equals(guard->type())) {
+    if (!environment_->boolean_type()->equals(guard->type())) {
         std::cerr << statement->location();
         std::cerr << "Conditional guard expression must have type Boolean";
         std::cerr << std::endl;
@@ -135,13 +179,12 @@ void TypeChecker::operator()(Conditional* statement) {
 void TypeChecker::operator()(Variable* statement) {
     Expression::Ptr initializer = statement->initializer();
     initializer(this);
-    assert("Fix variable check");
     if (!statement->type()->supertype(initializer->type())) {
         std::cerr << statement->location();
         std::cerr << "Expression does not conform to type ..." << std::endl;
         std::cerr << std::endl;
     } 
-    assert("Add variable to symbol table for function");
+    variable_type(statement->identifier(), statement->type()); 
 }
 
 void TypeChecker::operator()(Return* statement) {
@@ -182,11 +225,34 @@ void TypeChecker::operator()(Attribute* feature) {
         std::cerr << "Expression does not conform to type ..." << std::endl;
         std::cerr << std::endl;
     }
-    assert("Add variable to symbol table for class");
+    variable_type(feature->name(), feature->type());
 }
 
 
 void TypeChecker::operator()(Import* feature) {
 }
 
+Type* TypeChecker::variable_type(Name* name) {
+    std::vector<std::map<Name::Ptr, Type::Ptr> >::reverse_iterator i;
+    for (i = variable_type_.rbegin(); i != variable_type_.rend(); i++) {
+        std::map<Name::Ptr, Type::Ptr>::iterator j = i->find(name);        
+        if (j != i->end()) {
+            return j->second;
+        }
+    }
+    return 0;
+}
+
+void TypeChecker::variable_type(Name* name, Type* type) {
+    assert(variable_type_.size());
+    variable_type_.back().insert(std::make_pair(name, type));
+}
+
+void TypeChecker::enter_scope() {
+    variable_type_.push_back(std::map<Name::Ptr, Type::Ptr>());
+}
+
+void TypeChecker::exit_scope() {
+    variable_type_.pop_back();
+}
 

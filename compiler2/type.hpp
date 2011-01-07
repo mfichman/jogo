@@ -26,6 +26,8 @@
 #include "apollo.hpp"
 #include "object.hpp"
 #include "name.hpp"
+#include <vector>
+#include <map>
 
 /* Type object */
 class Type : public Object {
@@ -40,6 +42,7 @@ public:
     bool subtype(Type* other);
     bool collection(Type* other);
     Type* least_upper_bound(Type* other);
+    
     typedef Pointer<Type> Ptr;
     
 private:

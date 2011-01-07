@@ -32,16 +32,33 @@
 /* Compilation environment; contains symbol table and compilation units */
 class Environment : public Object {
 public:
+    Environment() :
+        void_type_(new Type(0, name("Void"), 0, this)),
+        boolean_type_(new Type(0, name("Boolean"), 0, this)),
+        integer_type_(new Type(0, name("Integer"), 0, this)),
+        string_type_(new Type(0, name("String"), 0, this)) {
+    }
     Name* name(const std::string& str);
     Unit* units() const { return units_; }
     Unit* unit(Name *name) { return unit_[Name::Ptr(name)]; }
     void unit(Unit* unit);
     typedef Pointer<Environment> Ptr;
 
+    Type* void_type() const { return void_type_; }
+    Type* boolean_type() const { return boolean_type_; }
+    Type* integer_type() const { return integer_type_; }
+    Type* string_type() const { return string_type_; }
+    Type* no_type() const { return no_type_; }
+
 private:
     std::map<std::string, Name::Ptr> name_;
     std::map<Name::Ptr, Unit::Ptr> unit_;
     Unit::Ptr units_;
+    Type::Ptr void_type_;
+    Type::Ptr boolean_type_;
+    Type::Ptr integer_type_;
+    Type::Ptr string_type_;
+    Type::Ptr no_type_;
 };
 
 #endif

@@ -26,15 +26,13 @@
 #include "apollo.hpp"
 #include "tree_node.hpp"
 #include "environment.hpp"
+#include <vector>
+#include <map>
 
 class TypeChecker : public TreeNode::Functor {
 public:
-	TypeChecker(Environment* env) :
-        environment_(env),
-        void_type_(new Type(0, env->name("Void"), 0, env)),
-        boolean_type_(new Type(0, env->name("Boolean"), 0, env)),
-        integer_type_(new Type(0, env->name("Integer"), 0, env)),
-        string_type_(new Type(0, env->name("String"), 0, env)) {
+	TypeChecker(Environment* environment) :
+        environment_(environment) {
 	}
     typedef Pointer<TypeChecker> Ptr;
 
@@ -46,6 +44,7 @@ private:
     void operator()(StringLiteral* expression);
     void operator()(IntegerLiteral* expression);
     void operator()(Binary* expression);
+    void operator()(Assignment* expression);
     void operator()(Unary* expression);
     void operator()(Call* expression);
     void operator()(Dispatch* expression);
@@ -66,12 +65,13 @@ private:
     void operator()(Attribute* feature);
     void operator()(Import* feature);
 
+    Type* variable_type(Name* name);
+    void variable_type(Name* name, Type* type);
+    void enter_scope();
+    void exit_scope();
+
     Environment::Ptr environment_;
-    Type::Ptr void_type_;
-    Type::Ptr boolean_type_;
-    Type::Ptr integer_type_;
-    Type::Ptr string_type_;
-    Type::Ptr no_type_;
+    std::vector<std::map<Name::Ptr, Type::Ptr> > variable_type_;
 };
 
 #endif
