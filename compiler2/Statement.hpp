@@ -23,11 +23,11 @@
 #ifndef STATEMENT_HPP
 #define STATEMENT_HPP
 
-#include "apollo.hpp"
-#include "tree_node.hpp"
-#include "name.hpp"
-#include "expression.hpp"
-#include "type.hpp"
+#include "Apollo.hpp"
+#include "TreeNode.hpp"
+#include "Name.hpp"
+#include "Expression.hpp"
+#include "Type.hpp"
 
 /* This file includes interfaces for statement nodes */
 class Statement : public TreeNode {

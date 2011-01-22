@@ -11,7 +11,7 @@
  * The above copyright notice and this permission notice shall be included in 
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR 
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
@@ -20,27 +20,30 @@
  * IN THE SOFTWARE.
  */  
 
-#include "environment.hpp"
-#include <cassert>
+#ifndef FORMAL_HPP
+#define FORMAL_HPP
 
-Name* Environment::name(const std::string& str) {
-	std::map<std::string, Name::Ptr>::iterator i = name_.find(str);
-	if (i == name_.end()) {
-		Name* name = new Name(str);
-		name_.insert(std::make_pair(str, name));	
-		return name;
-	} else {
-		return i->second;
-	}
-}
+#include "Apollo.hpp"
+#include "TreeNode.hpp"
+#include "Type.hpp"
 
-void Environment::unit(Unit* unit) {
-	std::map<Name::Ptr, Unit::Ptr>::iterator i = unit_.find(unit->name());
-	if (i == unit_.end()) {
-		unit_.insert(std::make_pair(unit->name(), unit));
-        unit->next(units_);
-		units_ = unit;
-	} else {
-		assert("Recompiling unit!");
+class Formal : public TreeNode {
+public:
+	Formal(Location loc, Name* name, Type* type) :
+		TreeNode(loc),
+		name_(name),
+		type_(type) {
 	}
-}
+
+	Name* name() const { return name_; }
+	Type* type() const { return type_; }
+	void next(Formal* next) { next_ = next; }
+	typedef Pointer<Formal> Ptr;
+
+private:
+	Name::Ptr name_;
+	Type::Ptr type_;
+	Formal::Ptr next_;
+};
+
+#endif

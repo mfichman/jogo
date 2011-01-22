@@ -11,7 +11,7 @@
  * The above copyright notice and this permission notice shall be included in 
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
@@ -20,20 +20,27 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef OBJECT_HPP
-#define OBJECT_HPP
+#include "Environment.hpp"
+#include <cassert>
 
-#include "pointer.hpp"
+Name* Environment::name(const std::string& str) {
+	std::map<std::string, Name::Ptr>::iterator i = name_.find(str);
+	if (i == name_.end()) {
+		Name* name = new Name(str);
+		name_.insert(std::make_pair(str, name));	
+		return name;
+	} else {
+		return i->second;
+	}
+}
 
-class Object {
-public:
-    Object() : refcount_(0) {}
-    virtual ~Object() {}
-    int refcount() { return refcount_; }
-    void refcount(int refcount) { refcount_ = refcount; }    
-
-private:
-    int refcount_;
-};
-
-#endif
+void Environment::unit(Unit* unit) {
+	std::map<Name::Ptr, Unit::Ptr>::iterator i = unit_.find(unit->name());
+	if (i == unit_.end()) {
+		unit_.insert(std::make_pair(unit->name(), unit));
+        unit->next(units_);
+		units_ = unit;
+	} else {
+		assert("Recompiling unit!");
+	}
+}

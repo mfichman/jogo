@@ -20,7 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#include "parser.hpp"
+#include "Parser.hpp"
 
 #include <stdexcept>
 #include <fstream>

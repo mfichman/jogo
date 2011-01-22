@@ -1,11 +1,11 @@
 %{
-#include "statement.hpp"
-#include "formal.hpp"
-#include "expression.hpp"
-#include "unit.hpp"
-#include "feature.hpp"
-#include "parser.hpp"
-#include "grammar.hpp"
+#include "Statement.hpp"
+#include "Formal.hpp"
+#include "Expression.hpp"
+#include "Unit.hpp"
+#include "Feature.hpp"
+#include "Parser.hpp"
+#include "Grammar.hpp"
 #include <iostream>
 
 #define YYSTYPE ParseNode
@@ -63,6 +63,7 @@ until BEGIN(INITIAL); return UNTIL;
 if BEGIN(INITIAL); return IF;
 for BEGIN(INITIAL); return FOR;
 return BEGIN(END); return RETURN;
+xor BEGIN(INITIAL); return XOR;
 -> BEGIN(INITIAL); return RIGHT_ARROW;
 \<\- BEGIN(INITIAL); return LEFT_ARROW;
 == BEGIN(INITIAL); return EQUAL; 
@@ -73,13 +74,14 @@ return BEGIN(END); return RETURN;
 \<\= BEGIN(INITIAL); return LESS_OR_EQUAL;
 \<\< BEGIN(INITIAL); return LEFT_SHIFT;
 \>\> BEGIN(INITIAL); return RIGHT_SHIFT;
+\^\= BEGIN(INITIAL); return POWER_ASSIGN;
 \*\= BEGIN(INITIAL); return MULTIPLY_ASSIGN;
 \/\= BEGIN(INITIAL); return DIVIDE_ASSIGN;
 \-\= BEGIN(INITIAL); return SUBTRACT_ASSIGN; 
 \+\= BEGIN(INITIAL); return ADD_ASSIGN;
 \%\= BEGIN(INITIAL); return MODULUS_ASSIGN;
 \|\= BEGIN(INITIAL); return BIT_OR_ASSIGN;
-\^\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
+xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
 \&\= BEGIN(INITIAL); return BIT_AND_ASSIGN;
 \+\+ BEGIN(INITIAL); return INCREMENT;
 \-\- BEGIN(INITIAL); return DECREMENT;

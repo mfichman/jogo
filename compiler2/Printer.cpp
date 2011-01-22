@@ -20,7 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#include "printer.hpp"
+#include "Printer.hpp"
 #include <iostream>
 
 using namespace std;

@@ -1,12 +1,13 @@
 %{
-#include "parser.hpp"
-#include "expression.hpp"
-#include "statement.hpp"
-#include "formal.hpp"
-#include "feature.hpp"
-#include "unit.hpp"
-#include "type.hpp"
+#include "Parser.hpp"
+#include "Expression.hpp"
+#include "Statement.hpp"
+#include "Formal.hpp"
+#include "Feature.hpp"
+#include "Unit.hpp"
+#include "Type.hpp"
 #include <iostream>
+#include <cassert>
 
 #define YYSTYPE ParseNode
 #define YYLTYPE Location
@@ -48,16 +49,17 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %left '?'
 %left BIT_AND_ASSIGN BIT_OR_ASSIGN BIT_XOR_ASSIGN
 %left ADD_ASSIGN SUBTRACT_ASSIGN
-%left '=' MULTIPLY_ASSIGN DIVIDE_ASSIGN MODULUS_ASSIGN 
+%left '=' MULTIPLY_ASSIGN DIVIDE_ASSIGN MODULUS_ASSIGN POWER_ASSIGN 
 %left OR
 %left AND
-%left '|' '^'
+%left '|' XOR
 %left '&'
 %left EQUAL NOT_EQUAL
 %left '<' '>' LESS_OR_EQUAL GREATER_OR_EQUAL
 %left LEFT_SHIFT RIGHT_SHIFT
 %left '+' '-'
 %left '*' '/' '%'
+%left '^'
 %left '!' '~'
 %left INCREMENT DECREMENT
 %left '.' '['
@@ -337,37 +339,59 @@ assignment
     : storage '=' expression { 
         $$ = new Assignment(@$, $1, $3); 
 	}
+    | storage POWER_ASSIGN expression {
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* power = new Dispatch(@$, env->name("@power"), $1);
+        $$ = new Assignment(@$, $1, power);
+    }
     | storage MULTIPLY_ASSIGN expression { 
-        $$ = new Assignment(@$, $1, new Binary(@$, 
-            parser->environment()->name("@multiply"), $1, $3));
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* multiply = new Dispatch(@$, env->name("@multiply"), $1);
+        $$ = new Assignment(@$, $1, multiply);
 	}
     | storage DIVIDE_ASSIGN expression { 
-        $$ = new Assignment(@$, $1, new Binary(@$, 
-            parser->environment()->name("@divide"), $1, $3));
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* divide = new Dispatch(@$, env->name("@divide"), $1);
+        $$ = new Assignment(@$, $1, divide);
 	}
     | storage MODULUS_ASSIGN expression { 
-        $$ = new Assignment(@$, $1, new Binary(@$, 
-            parser->environment()->name("@modulus"), $1, $3));
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* modulus = new Dispatch(@$, env->name("@modulus"), $1);
+        $$ = new Assignment(@$, $1, modulus);
 	}
     | storage SUBTRACT_ASSIGN expression { 
-        $$ = new Assignment(@$, $1, new Binary(@$, 
-            parser->environment()->name("@subtract"), $1, $3));
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* subtract = new Dispatch(@$, env->name("@subtract"), $1);
+        $$ = new Assignment(@$, $1, subtract);
 	}
     | storage ADD_ASSIGN expression { 
-        $$ = new Assignment(@$, $1, new Binary(@$, 
-            parser->environment()->name("@add"), $1, $3));
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* add = new Dispatch(@$, env->name("@add"), $1);
+        $$ = new Assignment(@$, $1, add);
 	}
     | storage BIT_AND_ASSIGN expression { 
-        $$ = new Assignment(@$, $1, new Binary(@$, 
-            parser->environment()->name("@bitwise_and"), $1, $3));
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* child = new Dispatch(@$, env->name("@bitand"), $1);
+        $$ = new Assignment(@$, $1, child);
 	}
     | storage BIT_OR_ASSIGN expression { 
-        $$ = new Assignment(@$, $1, new Binary(@$, 
-            parser->environment()->name("@bitwise_or"), $1, $3));
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* child = new Dispatch(@$, env->name("@bitor"), $1);
+        $$ = new Assignment(@$, $1, child);
 	}
     | storage BIT_XOR_ASSIGN expression {
-        $$ = new Assignment(@$, $1, new Binary(@$,
-            parser->environment()->name("@bitwise_xor"), $1, $3));
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* child = new Dispatch(@$, env->name("@bitxor"), $1);
+        $$ = new Assignment(@$, $1, child);
     }
     ;
 
@@ -375,6 +399,7 @@ assignment
 expression
 	: expression '?' expression { 
 		$$ = new Binary(@$, parser->environment()->name("?"), $1, $3);
+        assert("Not implemented");
 	}
     | expression OR expression { 
 		$$ = new Binary(@$, parser->environment()->name("||"), $1, $3); 
@@ -382,78 +407,110 @@ expression
     | expression AND expression { 
 		$$ = new Binary(@$, parser->environment()->name("&&"), $1, $3); 
 	}
+    | expression XOR expression {
+        $1->next($3);
+        $$ = new Dispatch(@$, parser->environment()->name("@bitxor"), $1);
+    }
     | expression '|' expression { 
-		$$ = new Binary(@$, 
-            parser->environment()->name("@bitwise_or"), $1, $3); 
-	}
-    | expression '^' expression { 
-		$$ = new Binary(@$, 
-            parser->environment()->name("@bitwise_xor"), $1, $3); 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@bitor"), $1); 
 	}
     | expression '&' expression { 
-		$$ = new Binary(@$, 
-            parser->environment()->name("@bitwise_and"), $1, $3); 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@bitand"), $1); 
 	}
     | expression EQUAL expression { 
-		$$ = new Binary(@$, parser->environment()->name("@equal"), $1, $3); 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@equal"), $1); 
 	}
     | expression NOT_EQUAL expression { 
-        $$ = new Binary(@$, parser->environment()->name("@not_equal"), $1, $3);
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* equal = new Dispatch(@$, env->name("@equal"), $1);
+        $$ = new Unary(@$, env->name("!"), equal);
 	}
     | expression '>' expression { 
-		$$ = new Binary(@$, parser->environment()->name("@greater"), $1, $3); 
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* less = new Dispatch(@$, env->name("@less"), $1); 
+        Dispatch* equal = new Dispatch(@$, env->name("@equal"), $1);
+        Binary* child = new Binary(@$, env->name("||"), less, equal); 
+		$$ = new Unary(@$, env->name("!"), child); 
 	}
     | expression '<' expression { 
-		$$ = new Binary(@$, parser->environment()->name("@less"), $1, $3); 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@less"), $1); 
 	}
     | expression GREATER_OR_EQUAL expression { 
-		$$ = new Binary(@$, 
-            parser->environment()->name("@greater_or_equal"), $1, $3); 
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* less = new Dispatch(@$, env->name("@less"), $1);
+        $$ = new Unary(@$, env->name("!"), less); 
 	}
     | expression LESS_OR_EQUAL expression { 
-		$$ = new Binary(@$, 
-            parser->environment()->name("@less_or_equal"), $1, $3); 
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* less = new Dispatch(@$, env->name("@less"), $1);
+        Dispatch* equal = new Dispatch(@$, env->name("@equal"), $1);
+        $$ = new Binary(@$, env->name("||"), less, equal);  
 	}
     | expression LEFT_SHIFT expression { 
-		$$ = new Binary(@$, parser->environment()->name("@shift"), $1, $3); 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@shift"), $1); 
 	}
     | expression RIGHT_SHIFT expression { 
-		$$ = new Binary(@$, parser->environment()->name("@unshift"), $1, $3); 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@unshift"), $1); 
+	}
+    | expression '^' expression { 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@power"), $1); 
 	}
     | expression '+' expression { 
-		$$ = new Binary(@$, parser->environment()->name("@add"), $1, $3); 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@add"), $1); 
 	}
     | expression '-' expression { 
-		$$ = new Binary(@$, parser->environment()->name("@subtract"), $1, $3); 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@subtract"), $1); 
 	}
     | expression '*' expression { 
-		$$ = new Binary(@$, parser->environment()->name("@multiply"), $1, $3); 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@multiply"), $1); 
 	}
     | expression '/' expression { 
-		$$ = new Binary(@$, parser->environment()->name("@divide"), $1, $3); 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@divide"), $1); 
 	}
     | expression '%' expression { 
-		$$ = new Binary(@$, parser->environment()->name("@modulus"), $1, $3); 
+        $1->next($3);
+		$$ = new Dispatch(@$, parser->environment()->name("@modulus"), $1); 
 	}
     | '!' expression { 
         $$ = new Unary(@$, parser->environment()->name("!"), $2); 
     }
     | '~' expression { 
-        $$ = new Unary(@$, parser->environment()->name("~"), $2); 
+        $$ = new Dispatch(@$, parser->environment()->name("@complement"), $2); 
     }
     | expression INCREMENT { 
-		$$ = new Unary(@$, parser->environment()->name("@increment"), $1); 
+		$$ = new Dispatch(@$, parser->environment()->name("@increment"), $1); 
 	}
     | expression DECREMENT { 
-		$$ = new Unary(@$, parser->environment()->name("@decrement"), $1); 
+		$$ = new Dispatch(@$, parser->environment()->name("@decrement"), $1); 
 	}
     | IDENTIFIER '(' expression_list ')' {
-		$$ = new Call(@$, $1, $3);
+		$$ = new Call(@$, 0, $1, $3);
     }
 	| IDENTIFIER '(' ')' {
 		/* Call on an object expression */
-		$$ = new Call(@$, $1, 0);
+		$$ = new Call(@$, 0, $1, 0);
 	}
+    | type SCOPE IDENTIFIER '(' expression_list ')' {
+        $$ = new Call(@$, $1, $3, $5);
+    } 
+    | type SCOPE IDENTIFIER '(' ')' {
+        $$ = new Call(@$, $1, $3, 0);
+    }
     | expression '.' IDENTIFIER '(' expression_list ')' {
         $1->next($5);
         $$ = new Dispatch(@$, $3, $1);

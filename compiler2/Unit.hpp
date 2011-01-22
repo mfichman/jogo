@@ -23,12 +23,12 @@
 #ifndef UNIT_H
 #define UNIT_H
 
-#include "apollo.hpp"
-#include "tree_node.hpp"
-#include "feature.hpp"
-#include "location.hpp"
-#include "name.hpp"
-#include "type.hpp"
+#include "Apollo.hpp"
+#include "TreeNode.hpp"
+#include "Feature.hpp"
+#include "Location.hpp"
+#include "Name.hpp"
+#include "Type.hpp"
 #include <typeinfo>
 #include <map>
 

@@ -23,9 +23,9 @@
 #ifndef PARSER_HPP
 #define PARSER_HPP
 
-#include "apollo.hpp"
-#include "environment.hpp"
-#include "object.hpp"
+#include "Apollo.hpp"
+#include "Environment.hpp"
+#include "Object.hpp"
 #include <fstream>
 
 /* Primary parser structure; creates compilation units */

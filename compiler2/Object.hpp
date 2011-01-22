@@ -11,7 +11,7 @@
  * The above copyright notice and this permission notice shall be included in 
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR 
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
@@ -20,24 +20,20 @@
  * IN THE SOFTWARE.
  */  
 
-#include "environment.hpp"
-#include "parser.hpp"
-#include "type_checker.hpp"
-#include "printer.hpp"
+#ifndef OBJECT_HPP
+#define OBJECT_HPP
 
-#include <iostream>
+#include "Pointer.hpp"
 
-int main(int argc, char** argv) {
-    if (argc != 2) {
-        std::cerr << "Illegal argument\n";
-        return 1;
-    }
+class Object {
+public:
+    Object() : refcount_(0) {}
+    virtual ~Object() {}
+    int refcount() { return refcount_; }
+    void refcount(int refcount) { refcount_ = refcount; }    
 
-    Environment::Ptr environment(new Environment());
-    Parser::Ptr parser(new Parser(environment, argv[1]));
-    Printer::Ptr printer(new Printer(environment));
-    
-    
+private:
+    int refcount_;
+};
 
-    return 0;
-}
+#endif

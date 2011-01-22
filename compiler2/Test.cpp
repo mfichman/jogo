@@ -11,7 +11,7 @@
  * The above copyright notice and this permission notice shall be included in 
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
@@ -20,25 +20,24 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef NAME_HPP
-#define NAME_HPP
+#include "Environment.hpp"
+#include "Parser.hpp"
+#include "TypeChecker.hpp"
+#include "Printer.hpp"
 
-#include "apollo.hpp"
-#include "object.hpp"
-#include <string>
+#include <iostream>
 
-class Name : public Object {
-public:
-    Name(const std::string& string) :
-        string_(string) {
+int main(int argc, char** argv) {
+    if (argc != 2) {
+        std::cerr << "Illegal argument\n";
+        return 1;
     }
 
-    const std::string& string() const { return string_; }
-    typedef Pointer<Name> Ptr;
+    Environment::Ptr environment(new Environment());
+    Parser::Ptr parser(new Parser(environment, argv[1]));
+    Printer::Ptr printer(new Printer(environment));
+    
+    
 
-private:
-    std::string string_;
-
-};
-
-#endif
+    return 0;
+}

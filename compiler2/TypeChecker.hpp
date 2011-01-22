@@ -23,9 +23,9 @@
 #ifndef TYPE_CHECKER_HPP
 #define TYPE_CHECKER_HPP
 
-#include "apollo.hpp"
-#include "tree_node.hpp"
-#include "environment.hpp"
+#include "Apollo.hpp"
+#include "TreeNode.hpp"
+#include "Environment.hpp"
 #include <vector>
 #include <map>
 

@@ -23,9 +23,9 @@
 #ifndef TYPE_HPP
 #define TYPE_HPP
 
-#include "apollo.hpp"
-#include "object.hpp"
-#include "name.hpp"
+#include "Apollo.hpp"
+#include "Object.hpp"
+#include "Name.hpp"
 #include <vector>
 #include <map>
 

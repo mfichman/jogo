@@ -3,6 +3,7 @@ CFLAGS := -std=c99 -c -g -Wall -Werror -pedantic
 CC := clang
 CPPFLAGS := -c -g -Wall -Werror -Wno-sign-compare -pedantic
 CPP := g++
+BINARIES=binaries
 
 # Standard things
 .SUFFIXES:
@@ -15,7 +16,7 @@ all: targets
 #dir=runtime
 #include $(dir)/rules.mk
 dir=compiler2
-include $(dir)/rules.mk
+include $(dir)/Rules.mk
 
 # General rules
 %.o: %.c

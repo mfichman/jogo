@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */  
 
-#include "type.hpp"
-#include "environment.hpp"
+#include "Type.hpp"
+#include "Environment.hpp"
 #include <cassert>
 
 Type::Type(Type* enclosing_type, Name* name, Generic* gen, Environment* env) :

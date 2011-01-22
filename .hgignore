@@ -1,9 +1,10 @@
 syntax: glob
 
-compiler2/grammar.hpp
-compiler2/grammar.cpp
-compiler2/lexer.cpp
-compiler2/apollo
-compiler2/grammar.output
+compiler2/Grammar.hpp
+compiler2/Grammar.cpp
+compiler2/Lexer.cpp
+compiler2/Grammar.output
+binaries/*
 *.o
 *.swp
+*~

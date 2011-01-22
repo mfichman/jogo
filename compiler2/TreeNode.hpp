@@ -23,9 +23,9 @@
 #ifndef TREE_NODE_HPP
 #define TREE_NODE_HPP
 
-#include "apollo.hpp"
-#include "object.hpp"
-#include "location.hpp"
+#include "Apollo.hpp"
+#include "Object.hpp"
+#include "Location.hpp"
 
 /* Class for abstract syntax tree nodes */
 class TreeNode : public Object {

@@ -23,10 +23,10 @@
 #ifndef EXPRESSION_HPP
 #define EXPRESSION_HPP
 
-#include "apollo.hpp"
-#include "tree_node.hpp"
-#include "name.hpp"
-#include "type.hpp"
+#include "Apollo.hpp"
+#include "TreeNode.hpp"
+#include "Name.hpp"
+#include "Type.hpp"
 
 /* This file includes interfaces for expression nodes */
 class Expression : public TreeNode {
@@ -136,17 +136,20 @@ private:
 /* Normal function all */
 class Call : public Expression {
 public:
-    Call(Location loc, Name* ident, Expression* args) :
+    Call(Location loc, Type* unit, Name* ident, Expression* args) :
         Expression(loc),
+        unit_(unit),
         identifier_(ident),
         arguments_(args) {
     }
 
+    Type* unit() const { return unit_; }
     Name* identifier() const { return identifier_; }
     Expression* arguments() const { return arguments_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
+    Type::Ptr unit_;
     Name::Ptr identifier_;
     Expression::Ptr arguments_;
 };

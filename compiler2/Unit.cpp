@@ -20,7 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#include "unit.hpp"
+#include "Unit.hpp"
 
 /* Compilation unit */
 

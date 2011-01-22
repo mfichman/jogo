@@ -11,7 +11,7 @@
  * The above copyright notice and this permission notice shall be included in 
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
@@ -20,30 +20,24 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef FORMAL_HPP
-#define FORMAL_HPP
+#include "Environment.hpp"
+#include "Parser.hpp"
+#include "TypeChecker.hpp"
+#include "Printer.hpp"
 
-#include "apollo.hpp"
-#include "tree_node.hpp"
-#include "type.hpp"
+#include <iostream>
 
-class Formal : public TreeNode {
-public:
-	Formal(Location loc, Name* name, Type* type) :
-		TreeNode(loc),
-		name_(name),
-		type_(type) {
-	}
+int main(int argc, char** argv) {
+    if (argc != 2) {
+        std::cerr << "Illegal argument\n";
+        return 1;
+    }
 
-	Name* name() const { return name_; }
-	Type* type() const { return type_; }
-	void next(Formal* next) { next_ = next; }
-	typedef Pointer<Formal> Ptr;
+    Environment::Ptr environment(new Environment());
+    Parser::Ptr parser(new Parser(environment, argv[1]));
+    Printer::Ptr printer(new Printer(environment));
+    
+    
 
-private:
-	Name::Ptr name_;
-	Type::Ptr type_;
-	Formal::Ptr next_;
-};
-
-#endif
+    return 0;
+}

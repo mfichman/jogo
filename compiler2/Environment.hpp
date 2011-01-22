@@ -23,10 +23,10 @@
 #ifndef ENVIRONMENT_HPP
 #define ENVIRONMENT_HPP
 
-#include "apollo.hpp"
-#include "object.hpp"
-#include "unit.hpp"
-#include "name.hpp"
+#include "Apollo.hpp"
+#include "Object.hpp"
+#include "Unit.hpp"
+#include "Name.hpp"
 #include <map>
 
 /* Compilation environment; contains symbol table and compilation units */
@@ -36,7 +36,8 @@ public:
         void_type_(new Type(0, name("Void"), 0, this)),
         boolean_type_(new Type(0, name("Boolean"), 0, this)),
         integer_type_(new Type(0, name("Integer"), 0, this)),
-        string_type_(new Type(0, name("String"), 0, this)) {
+        string_type_(new Type(0, name("String"), 0, this)),
+        float_type_(new Type(0, name("Float"), 0, this)) {
     }
     Name* name(const std::string& str);
     Unit* units() const { return units_; }
@@ -49,6 +50,7 @@ public:
     Type* integer_type() const { return integer_type_; }
     Type* string_type() const { return string_type_; }
     Type* no_type() const { return no_type_; }
+    Type* float_type() const { return float_type_; }
 
 private:
     std::map<std::string, Name::Ptr> name_;
@@ -59,6 +61,7 @@ private:
     Type::Ptr integer_type_;
     Type::Ptr string_type_;
     Type::Ptr no_type_;
+    Type::Ptr float_type_;
 };
 
 #endif

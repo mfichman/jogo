@@ -20,11 +20,11 @@
  * IN THE SOFTWARE.
  */  
 
-#include "type_checker.hpp"
-#include "feature.hpp"
-#include "statement.hpp"
-#include "expression.hpp"
-#include "unit.hpp"
+#include "TypeChecker.hpp"
+#include "Feature.hpp"
+#include "Statement.hpp"
+#include "Expression.hpp"
+#include "Unit.hpp"
 #include <iostream>
 #include <cassert>
 
@@ -102,18 +102,53 @@ void TypeChecker::operator()(Assignment* expression) {
 }
 
 void TypeChecker::operator()(Binary* expression) {
+    Expression::Ptr left = expression->left();
+    Expression::Ptr right = expression->right();
+
+    if (environment_->name("||") == expression->operation()
+        || environment_->name("&&") == expression->operation()) {
+
+        if (!environment_->boolean_type()->equals(left->type()) 
+            || !environment_->boolean_type()->equals(left->type())) {
+
+            std::cerr << expression->location();
+            std::cerr << "Operator can only be applied to type Boolean";
+            std::cerr << std::endl;
+        }
+    } else if (environment_->name("?") == expression->operation()) {
+        assert("Not implemented");
+    } else {
+        assert("Not implemented");
+    }
 }
 
 void TypeChecker::operator()(Unary* expression) {
+    Expression::Ptr child = expression->child();
+    child(this);
+
+    if (environment_->name("!") == expression->operation()) {
+        if (!environment_->boolean_type()->equals(child->type())) {
+            std::cerr << expression->location();
+            std::cerr << "Operator '!' must be applied to a Boolean";
+            std::cerr << std::endl;
+        }
+    } else {
+        assert("Unary operator not implemented");
+    }
+        
+    // TODO: Check expression
 }
 
 void TypeChecker::operator()(Call* expression) {
+    // TODO: Check expression
 }
 
 void TypeChecker::operator()(Dispatch* expression) {
+    // TODO: Check expression
 }
 
 void TypeChecker::operator()(Index* expression) {
+    // TODO: Check expression
 }
 
 void TypeChecker::operator()(Identifier* expression) {

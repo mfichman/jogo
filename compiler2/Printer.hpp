@@ -23,9 +23,9 @@
 #ifndef PRINTER_HPP
 #define PRINTER_HPP
 
-#include "apollo.hpp"
-#include "tree_node.hpp"
-#include "environment.hpp"
+#include "Apollo.hpp"
+#include "TreeNode.hpp"
+#include "Environment.hpp"
 
 class Printer : public TreeNode::Functor {
 public:

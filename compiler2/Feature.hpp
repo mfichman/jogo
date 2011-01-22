@@ -23,12 +23,12 @@
 #ifndef FEATURE_HPP
 #define FEATURE_HPP
 
-#include "apollo.hpp"
-#include "tree_node.hpp"
-#include "statement.hpp"
-#include "expression.hpp"
-#include "formal.hpp"
-#include "type.hpp"
+#include "Apollo.hpp"
+#include "TreeNode.hpp"
+#include "Statement.hpp"
+#include "Expression.hpp"
+#include "Formal.hpp"
+#include "Type.hpp"
 
 /* This file holds interfaces for class features */
 class Feature : public TreeNode {
