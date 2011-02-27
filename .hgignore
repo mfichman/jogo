@@ -4,7 +4,14 @@ compiler2/Grammar.hpp
 compiler2/Grammar.cpp
 compiler2/Lexer.cpp
 compiler2/Grammar.output
+compiler2/apollo
+compiler/apgrammar.h
+compiler/apgrammar.l.c
+compiler/apgrammar.y.c
+compiler/apollo
 binaries/*
+*.orig
+*.output
 *.o
 *.swp
 *~
