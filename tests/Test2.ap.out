@@ -1,0 +1,6 @@
+unit0: Class
+  name: Test2
+  feature0: Function
+    name: foo
+    type: Void
+    block: Block

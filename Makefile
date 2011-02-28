@@ -4,11 +4,12 @@ CC := clang
 CPPFLAGS := -c -g -Wall -Werror -Wno-sign-compare -pedantic
 CPP := g++
 BINARIES=binaries
+TESTS := $(wildcard tests/*.ap)
 
 # Standard things
 .SUFFIXES:
 .SUFFIXES: .cpp .c .o
-all: targets
+all: targets test
 
 # Subdirectories
 #dir=compiler
@@ -24,6 +25,11 @@ include $(dir)/Rules.mk
 
 %.o: %.cpp
 	$(CPP) $(CPPFLAGS) $(CFLOCAL) -o $@ $^ 
+
+
+.PHONY: test
+test: $(TESTS)
+	scripts/test $(TESTS)
 
 .PHONY: targets
 targets: $(TARGETS)

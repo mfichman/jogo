@@ -1,0 +1,22 @@
+#!/usr/bin/ruby
+
+failed = false
+
+ARGV.each do |test|
+    result = `binaries/test #{test} | diff - #{test}.out`
+    if !result.empty?
+        (1..79).each { putc '-' }        
+        puts
+        puts "FAILED TEST: #{test}"
+        (1..79).each { putc '-' }        
+        puts
+        puts result
+        failed = true
+        
+    end
+end
+
+if failed 
+    exit(-1)
+end
+

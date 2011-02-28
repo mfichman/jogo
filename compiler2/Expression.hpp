@@ -224,4 +224,15 @@ private:
 
 };
 
+/* Empty expression */
+class Empty : public Expression {
+public:
+    Empty(Location loc) :
+        Expression(loc) {
+    }
+
+private:
+    void operator()(Functor* functor) { functor->operator()(this); }
+};
+
 #endif

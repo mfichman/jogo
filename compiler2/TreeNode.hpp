@@ -60,6 +60,7 @@ public:
     virtual void operator()(Index* expression) {}
     virtual void operator()(Identifier* expression) {}
     virtual void operator()(Member* expression) {}
+    virtual void operator()(Empty* empty) {}
     virtual void operator()(Block* statment) {}
     virtual void operator()(Simple* statment) {}
     virtual void operator()(While* statment) {}

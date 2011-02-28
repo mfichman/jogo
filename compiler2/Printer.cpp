@@ -114,7 +114,6 @@ void Printer::operator()(Binary* expression) {
     indent_level_++;
     Expression::Ptr left = expression->left();
     Expression::Ptr right = expression->right();
-
     cout << "Binary" << endl;
     print_tabs(); cout << "operation: ";
     cout << expression->operation()->string() << endl;
@@ -165,63 +164,223 @@ void Printer::operator()(Call* expression) {
 }
 
 void Printer::operator()(Dispatch* expression) {
+    indent_level_++;
+    Expression::Ptr arguments = expression->arguments();
+    cout << "Dispatch" << endl;
+    print_tabs(); cout << "name: ";
+    cout << expression->identifier()->string() << endl;
+
+    int i = 0;
+    for (Expression::Ptr a = arguments; a; a = a->next()) {
+        print_tabs(); cout << "argument" << i << ": ";
+        a(this);
+        i++;
+    }
+    indent_level_--;
 }
 
 void Printer::operator()(Index* expression) {
+    indent_level_++; 
+    Expression::Ptr object = expression->object();
+    Expression::Ptr index = expression->index();
+    
+    cout << "Index" << endl;
+    print_tabs(); cout << "object: ";
+    object(this);
+    print_tabs(); cout << "index: ";
+    index(this);
+    
+    indent_level_--;
 }
 
 void Printer::operator()(Identifier* expression) {
+    indent_level_++;
+    cout << "Identifier" << endl;
+    print_tabs(); cout << "name: ";
+    cout << expression->identifier()->string() << endl;
+    indent_level_--; 
 }
 
 void Printer::operator()(Member* expression) {
+    indent_level_++;
+    Expression::Ptr child = expression->child();
+    cout << "Member" << endl;
+    print_tabs(); cout << "name: ";
+    cout << expression->identifier()->string() << endl;
+    print_tabs(); cout << "expression: ";
+    child(this);
+    indent_level_--;
 }
 
-void Printer::operator()(Block* statment) {
+void Printer::operator()(Empty* empty) {
+    cout << "Empty" << endl;
 }
 
-void Printer::operator()(Simple* statment) {
+void Printer::operator()(Block* statement) {
+    indent_level_++;
+    Statement::Ptr children = statement->children();
+    cout << "Block" << endl;
+
+    int i = 0;
+    for (Statement::Ptr c = children; c; c = c->next()) {
+        print_tabs(); cout << "child" << i << ": ";
+        c(this);
+        i++;
+    }
+    indent_level_--;
 }
 
-void Printer::operator()(While* statment) {
+void Printer::operator()(Simple* statement) {
+    indent_level_++;
+    Expression::Ptr expression = statement->expression();
+    cout << "Statement" << endl;
+    print_tabs(); cout << "expression: ";
+    expression(this);
+    indent_level_--;
 }
 
-void Printer::operator()(For* statment) {
+void Printer::operator()(While* statement) {
+    indent_level_++;
+    Expression::Ptr guard = statement->guard();
+    Statement::Ptr block = statement->block();
+    cout << "While" << endl;
+    print_tabs(); cout << "guard: ";
+    guard(this);
+    print_tabs(); cout << "block: ";
+    block(this);
+    indent_level_--;
 }
 
-void Printer::operator()(Conditional* statment) {
+void Printer::operator()(For* statement) {
+    indent_level_++;
+    Expression::Ptr expression = statement->expression();
+    Statement::Ptr block = statement->block();
+    cout << "For" << endl;
+    print_tabs(); cout << "variable: "; 
+    cout << statement->variable()->string() << endl;
+    print_tabs(); cout << "type: ";
+    cout << statement->type()->qualified_name()->string() << endl;
+    print_tabs(); cout << "expression: ";
+    expression(this);
+    print_tabs(); cout << "block: ";
+    block(this);
+    indent_level_--;
 }
 
-void Printer::operator()(Variable* statment) {
+void Printer::operator()(Conditional* statement) {
+    indent_level_++;
+    Expression::Ptr guard = statement->guard();
+    Statement::Ptr true_branch = statement->true_branch();
+    Statement::Ptr false_branch = statement->false_branch();
+    cout << "Conditional" << endl;
+    print_tabs(); cout << "guard: ";
+    guard(this);
+    print_tabs(); cout << "true: ";
+    true_branch(this);
+    print_tabs(); cout << "false: ";
+    false_branch(this);
+    indent_level_--;
 }
 
-void Printer::operator()(Return* statment) {
+void Printer::operator()(Variable* statement) {
+    indent_level_++;
+    Expression::Ptr initializer = statement->initializer();
+    cout << "Variable" << endl;
+    print_tabs(); cout << "name: ";
+    cout << statement->identifier()->string() << endl;
+    print_tabs(); cout << "type: ";
+    cout << statement->type()->qualified_name()->string() << endl;
+    print_tabs(); cout << "initializer: ";
+    initializer(this);
+    indent_level_--; 
 }
 
-void Printer::operator()(When* statment) {
+void Printer::operator()(Return* statement) {
+    indent_level_++;
+    Expression::Ptr expression = statement->expression();
+    cout << "Return" << endl;
+    print_tabs(); cout << "expression: "; 
+    expression(this);
+    indent_level_--;
 }
 
-void Printer::operator()(Case* statment) {
+void Printer::operator()(When* statement) {
+    indent_level_++;
+    Statement::Ptr block = statement->block();
+    cout << "When" << endl;
+    print_tabs(); cout << "name: ";
+    cout << statement->variable()->string() << endl;
+    print_tabs(); cout << "type: ";
+    cout << statement->type()->qualified_name()->string() << endl;
+    print_tabs(); cout << "block: ";
+    block(this);
+    indent_level_--; 
+}
+
+void Printer::operator()(Case* statement) {
+    indent_level_++;
+    Expression::Ptr guard = statement->guard();
+    cout << "Case" << endl;
+    print_tabs(); cout << "guard: ";
+    guard(this);
+
+    int i = 0; 
+    for (Statement::Ptr b = statement->branches(); b; b = b->next()) {
+        print_tabs(); cout << "branch" << i << ": ";
+        b(this);
+    } 
+    indent_level_--;
 }
 
 void Printer::operator()(Function* feature) {
+    indent_level_++;
+    Statement::Ptr block = feature->block();
+    cout << "Function" << endl;
+    print_tabs(); cout << "name: ";
+    cout << feature->name()->string() << endl;
+    print_tabs(); cout << "type: ";
+    cout << feature->type()->qualified_name()->string() << endl;
+    
+    int i = 0;
+    for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
+        print_tabs(); cout << "formal" << i << ": ";
+        f(this);
+    }
+    print_tabs(); cout << "block: ";
+    block(this);
+    indent_level_--;
 }
 
 void Printer::operator()(Define* feature) {
+    indent_level_++;
+    cout << "Define" << endl;
+    print_tabs(); cout << "name: ";
+    cout << feature->name()->string() << endl;
+    print_tabs(); cout << "type: ";
+    cout << feature->type()->qualified_name()->string() << endl;
+    indent_level_--; 
 }
 
 void Printer::operator()(Attribute* feature) {
     indent_level_++;
     Expression::Ptr initializer = feature->initializer();
     cout << "Attribute" << endl;
-    print_tabs(); cout << "name: " << feature->name()->string() << endl;
-
-    if (initializer) {
-        print_tabs(); cout << "initializer: ";
-        initializer(this);
-    }
+    print_tabs(); cout << "name: ";
+    cout << feature->name()->string() << endl;
+    print_tabs(); cout << "type: ";
+    cout << feature->type()->qualified_name()->string() << endl;
+    print_tabs(); cout << "initializer: ";
+    initializer(this);
     indent_level_--;
 }
 
 void Printer::operator()(Import* feature) {
+    indent_level_++;
+    cout << "Import" << endl;
+    print_tabs(); cout << "file: ";
+    cout << feature->file() << endl;
+    print_tabs(); cout << "type: ";
+    cout << feature->type()->qualified_name()->string() << endl;
+    indent_level_--;
 }
 

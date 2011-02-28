@@ -4,6 +4,7 @@ class Test1 {
     var bob:Int = 0 + 19 + 29 + 29 * 28
     var bill:Int = ~929
     var jim:Int = f(99, 19, 2)
+    var mike:Int = jim.foo(1, 2, 3)
 
 
 }

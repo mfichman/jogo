@@ -23,8 +23,6 @@
 #ifndef OBJECT_HPP
 #define OBJECT_HPP
 
-#include "Pointer.hpp"
-
 class Object {
 public:
     Object() : refcount_(0) {}

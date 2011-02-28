@@ -59,5 +59,8 @@ class Define;
 class Environment;
 class Type;
 class Generic;
+class Empty;
+
+#include "Pointer.hpp"
 
 #endif

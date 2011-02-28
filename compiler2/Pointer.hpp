@@ -23,6 +23,8 @@
 #ifndef POINTER_HPP
 #define POINTER_HPP
 
+#include "Object.hpp"
+
 template <typename T>
 class Pointer {
 public:
@@ -43,31 +45,48 @@ public:
     Pointer<T>& operator=(const Pointer<T>& other) {
         if (object_) {
             object_->refcount(object_->refcount() - 1);
-        }
-        object_ = other.object_;
-        if (object_) {
-            object_->refcount(object_->refcount() + 1);
             if (object_->refcount() <= 0) {
                 delete object_;
             }
         }
+        object_ = other.object_;
+        if (object_) {
+            object_->refcount(object_->refcount() + 1);
+        }
 		return *this;
+    }
+
+    ~Pointer() {
+        if (object_) {
+            object_->refcount(object_->refcount() - 1);
+            if (object_->refcount() <= 0) {
+                delete object_;
+            }
+        }
     }
 
     template <typename F>
     void operator()(F* functor) {
         if (object_) {
-            object_->operator()(functor);
+            static_cast<T*>(object_)->operator()(functor);
         }
     }
     
 
-    T* pointer() const { return object_; }
-    T* operator->() const { return object_; }
-    operator T*() const { return object_; }
+    T* pointer() const { 
+        return static_cast<T*>(object_);
+    }
+
+    T* operator->() const {
+        return static_cast<T*>(object_);
+    }
+
+    operator T*() const { 
+        return static_cast<T*>(object_);
+    }
 
 private:
-    mutable T* object_;
+    mutable Object* object_;
 };
 
 

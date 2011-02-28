@@ -37,6 +37,7 @@ public:
 
 	Name* name() const { return name_; }
 	Type* type() const { return type_; }
+    Formal* next() const { return next_; }
 	void next(Formal* next) { next_ = next; }
 	typedef Pointer<Formal> Ptr;
 

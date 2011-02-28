@@ -152,21 +152,23 @@ attribute
 		$$ = new Attribute(@$, $2, $4, $6);
     }
     | VAR IDENTIFIER ':' type SEPARATOR {
-		$$ = new Attribute(@$, $2, $4, 0);
+		$$ = new Attribute(@$, $2, $4, new Empty(@$));
     }
 	;
 
 constructor
     : DEF INIT formal_signature block { 
         Name* name = parser->environment()->name("@init");
-        $$ = new Function(@$, name, $3, 0, $4);
+        Type* type = parser->environment()->void_type();
+        $$ = new Function(@$, name, $3, type, $4);
 	}
     ;
 
 destructor
     : DEF DESTROY '(' ')' block { 
         Name* name = parser->environment()->name("@destroy");
-        $$ = new Function(@$, name, 0, 0, $5);
+        Type* type = parser->environment()->void_type();
+        $$ = new Function(@$, name, 0, type, $5);
 	}
     ;
 
@@ -175,7 +177,8 @@ function
         $$ = new Function(@$, $2, $3, $5, $7);
     }
 	| DEF IDENTIFIER formal_signature modifiers block {
-        $$ = new Function(@$, $2, $3, 0, $5);
+        Type* type = parser->environment()->void_type();
+        $$ = new Function(@$, $2, $3, type, $5);
 	}
 	;
 
@@ -184,7 +187,8 @@ prototype
         $$ = new Function(@$, $2, $3, $5, 0);
 	}
 	| DEF IDENTIFIER formal_signature modifiers SEPARATOR {
-        $$ = new Function(@$, $2, $3, 0, 0);
+        Type* type = parser->environment()->void_type();
+        $$ = new Function(@$, $2, $3, type, 0);
 	}
     ;
 
@@ -193,7 +197,8 @@ native
         $$ = new Function(@$, $2, $3, $5, 0);
 	}
 	| DEF IDENTIFIER formal_signature modifiers NATIVE SEPARATOR {
-        $$ = new Function(@$, $2, $3, 0, 0);
+        Type* type = parser->environment()->void_type();
+        $$ = new Function(@$, $2, $3, type, 0);
 	}
     ;
 	
@@ -263,7 +268,7 @@ block
         $$ = new Return(@$, $3); 
     }
 	| RIGHT_ARROW RETURN SEPARATOR { 
-        $$ = new Return(@$, 0); 
+        $$ = new Return(@$, new Empty(@$)); 
     }
 	| RIGHT_ARROW expression SEPARATOR { 
 		$$ = new Simple(@$, $2); 
@@ -301,7 +306,7 @@ statement
         $$ = new Case(@$, $2, static_cast<When*>($4));
     }
     | VAR IDENTIFIER ':' type { 
-		$$ = new Variable(@$, $2, $4, 0); 
+		$$ = new Variable(@$, $2, $4, new Empty(@$)); 
 	}
     | VAR IDENTIFIER ':' type '=' expression SEPARATOR { 
         $$ = new Variable(@$, $2, $4, $6); 
@@ -310,7 +315,7 @@ statement
         $$ = new Return(@$, $2);
     }
 	| RETURN SEPARATOR { 
-        $$ = new Return(@$, 0);
+        $$ = new Return(@$, new Empty(@$));
     }
     | expression SEPARATOR { 
 		$$ = new Simple(@$, $1); 

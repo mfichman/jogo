@@ -47,6 +47,7 @@ private:
     void operator()(Index* expression);
     void operator()(Identifier* expression);
     void operator()(Member* expression);
+    void operator()(Empty* empty);
     void operator()(Block* statment);
     void operator()(Simple* statment);
     void operator()(While* statment);
