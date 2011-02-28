@@ -110,6 +110,13 @@ void Printer::operator()(IntegerLiteral* expression) {
     indent_level_--;
 }
 
+void Printer::operator()(BooleanLiteral* expression) {
+    indent_level_++;
+    cout << "BooleanLiteral(";
+    cout << expression->value()->string() << ")" << endl;
+    indent_level_--;
+}
+
 void Printer::operator()(Binary* expression) {
     indent_level_++;
     Expression::Ptr left = expression->left();

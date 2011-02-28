@@ -76,6 +76,21 @@ private:
     Name::Ptr value_;
 };
 
+/* Boolean literal expression */
+class BooleanLiteral : public Expression {
+public:
+    BooleanLiteral(Location loc, Name* value) :
+        Expression(loc),
+        value_(value) {
+    }
+        
+    Name* value() const { return value_; }
+
+private:
+    void operator()(Functor* functor) { functor->operator()(this); }
+    Name::Ptr value_;
+};    
+
 /* Assignment expression */
 class Assignment : public Expression {
 public:

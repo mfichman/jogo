@@ -28,6 +28,7 @@ class TreeNode;
 class Expression;
 class StringLiteral;
 class IntegerLiteral;
+class BooleanLiteral;
 class Binary;
 class Assignment;
 class Unary;

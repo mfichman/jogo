@@ -1,0 +1,19 @@
+class Loop {
+
+
+    def loop1() {
+        for i:Int <- 0 {
+    
+        }
+    }
+
+    def loop2() {
+        while true {
+        }
+    }
+
+    def loop3() {
+        until false {
+        }
+    } 
+}

@@ -66,7 +66,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 /* BISON declarations */
 %token <name> IDENTIFIER TYPE
-%token <expression> STRING NUMBER 
+%token <expression> STRING NUMBER BOOLEAN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
 %token CLASS INTERFACE STRUCT MODULE
 %token IMPORT DEF VAR INIT DESTROY
@@ -87,7 +87,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %type <generic> generic_list generic
 %type <flag> modifiers
 %type <formal> formal_signature formal_list formal
-%type <statement> block when_list when statement_list statement
+%type <statement> block when_list when statement_list statement conditional
 %type <expression> expression expression_list storage assignment
 
 
@@ -323,10 +323,19 @@ statement
     | assignment SEPARATOR { 
 		$$ = new Simple(@$, $1); 
 	}
-	| IF expression block {
+    | conditional {
+        $$ = $1;
+    }
+    ;
+
+conditional
+	: IF expression block {
 		$$ = new Conditional(@$, $2, $3, 0);
 	}
     | IF expression block ELSE block {
+        $$ = new Conditional(@$, $2, $3, $5);
+    }
+    | IF expression block ELSE conditional {
         $$ = new Conditional(@$, $2, $3, $5);
     }
 	;
@@ -527,6 +536,7 @@ expression
 	| '(' expression ')' { $$ = $2; } 
     | STRING { $$ = $1; }
     | NUMBER { $$ = $1; }
+    | BOOLEAN { $$ = $1; }
 	| IDENTIFIER { $$ = new Identifier(@$, $1); }
     ;
 

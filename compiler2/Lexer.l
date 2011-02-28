@@ -92,6 +92,12 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
     BEGIN(END);
 	return NUMBER;
 }
+(true|false) {
+    Name* value = yyextra->environment()->name(yytext);
+    yylval->expression = new BooleanLiteral(*yylloc, value);
+    BEGIN(END);
+    return BOOLEAN;
+}
 \"[^"]*\" {
 	yytext[strlen(yytext)-1] = 0;
 	Name* value = yyextra->environment()->name(yytext);

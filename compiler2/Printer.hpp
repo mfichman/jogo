@@ -39,6 +39,7 @@ private:
     void operator()(Module* unit);
     void operator()(StringLiteral* expression);
     void operator()(IntegerLiteral* expression);
+    void operator()(BooleanLiteral* expression);
     void operator()(Binary* expression);
     void operator()(Assignment* expression);
     void operator()(Unary* expression);

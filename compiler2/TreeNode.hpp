@@ -52,6 +52,7 @@ public:
     virtual void operator()(Module* unit) {}
     virtual void operator()(StringLiteral* expression) {}
     virtual void operator()(IntegerLiteral* expression) {}
+    virtual void operator()(BooleanLiteral* expression) {}
     virtual void operator()(Binary* expression) {}
     virtual void operator()(Assignment* expression) {}
     virtual void operator()(Unary* expression) {}
