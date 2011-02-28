@@ -25,31 +25,11 @@
 #include "Statement.hpp"
 #include "Expression.hpp"
 #include "Unit.hpp"
+#include "Location.hpp"
 #include <iostream>
 #include <cassert>
 
 using namespace std;
-
-ostream& operator<<(ostream& out, const Location& location) {
-    out << location.first_line << ":" << endl;
-    out << location.first_column << ": " << endl;
-    return out;
-}
-
-ostream& operator<<(ostream& out, Type::Ptr type) {
-    out << type->qualified_name()->string();
-    if (type->generics()) {
-        out << '[';
-        for (Generic::Ptr g = type->generics(); g; g = g->next()) {
-            out << g->type();
-            if (g->next()) {
-                out << ',';
-            }
-        }
-        out << ']';
-    } 
-    return out;
-}
 
 TypeChecker::TypeChecker(Environment* environment) :
     environment_(environment) {
@@ -58,6 +38,7 @@ TypeChecker::TypeChecker(Environment* environment) :
         // Clear out old function - name bindings.
         enter_scope();
         function_.clear();
+        unit_ = u;
         u(this);
 
         // Iterate though all features and add them to the scope
@@ -185,7 +166,6 @@ void TypeChecker::operator()(Call* expression) {
             cerr << formal->type();
             cerr << endl;
         }
-
         arg = arg->next();
         formal = formal->next();
     }
@@ -204,11 +184,55 @@ void TypeChecker::operator()(Call* expression) {
 }
 
 void TypeChecker::operator()(Dispatch* expression) {
-    // TODO: Check expression
-}
+    // Evaluate types of argument expressions
+    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
+        a(this);
+    }
 
-void TypeChecker::operator()(Index* expression) {
-    // TODO: Check expression
+    // Look up the function by name from the unit
+    Expression::Ptr object = expression->arguments();
+    Unit::Ptr unit = environment_->unit(object->type()->qualified_name());
+    if (!unit) {
+        expression->type(environment_->no_type());
+        return;
+    }
+
+    Function::Ptr func = unit->function(expression->identifier()); 
+    if (!func) {
+        cerr << expression->location();
+        cerr << "Undeclared function ";
+        cerr << expression->identifier()->string();
+        cerr << endl;
+        expression->type(environment_->no_type());
+        return;
+    } 
+    expression->type(func->type());
+
+    // Check argument types versus formal parameter types
+    Expression::Ptr arg = expression->arguments();
+    Formal::Ptr formal = func->formals();
+    while (arg && formal) {
+        if (!arg->type()->subtype(formal->type())) {
+            cerr << arg->location();
+            cerr << "Argument does not conform to type ";
+            cerr << formal->type();
+            cerr << endl;
+        }
+        arg = arg->next();
+        formal = formal->next();
+    }
+    if (arg) {
+        cerr << expression->location();
+        cerr << "Too many arguments to function ";
+        cerr << expression->identifier()->string();
+        cerr << endl;
+    }
+    if (formal) {
+        cerr << expression->location();
+        cerr << "Not enough arguments to function ";
+        cerr << expression->identifier()->string();
+        cerr << endl;
+    }
 }
 
 void TypeChecker::operator()(Identifier* expression) {
@@ -226,6 +250,31 @@ void TypeChecker::operator()(Identifier* expression) {
 }
 
 void TypeChecker::operator()(Member* expression) {
+    Expression::Ptr object = expression->object(); 
+    object(this);
+
+    Unit::Ptr unit = environment_->unit(object->type()->qualified_name());
+    if (!unit) {
+        expression->type(environment_->no_type());
+        return;
+    }
+    if (unit != unit_) {
+        cerr << expression->location();
+        cerr << "Cannot access private attribute ";
+        cerr << expression->identifier()->string();
+        expression->type(environment_->no_type());
+        return;
+    } 
+    Attribute::Ptr attr = unit->attribute(expression->identifier());
+    if (!attr) {
+        cerr << expression->location();
+        cerr << "Undefined attribute ";
+        cerr << expression->identifier()->string();
+        cerr << endl;
+        expression->type(environment_->no_type());
+        return;
+    }
+    expression->type(attr->type());
 }
 
 void TypeChecker::operator()(Block* statement) {
@@ -297,8 +346,16 @@ void TypeChecker::operator()(Return* statement) {
     Expression::Ptr expression = statement->expression();
     if (expression) {
         expression(this);
-    } 
-    assert("Check return value of function");
+        statement->type(expression->type());
+    } else {
+        statement->type(environment_->void_type());
+    }
+    if (!statement->type()->subtype(function_->type())) {
+        cerr << statement->location();
+        cerr << "Expression does not conform to return type ";
+        cerr << function_->type();
+        cerr << endl;
+    }
 }
 
 void TypeChecker::operator()(When* statement) {
@@ -316,6 +373,7 @@ void TypeChecker::operator()(Case* statement) {
 
 void TypeChecker::operator()(Function* feature) {
     Statement::Ptr block = feature->block();
+    function_ = feature;
     block(this); 
 }
 
@@ -327,8 +385,9 @@ void TypeChecker::operator()(Attribute* feature) {
     initializer(this);
     assert("Fix variable check");
     if (!feature->type()->supertype(initializer->type())) {
-        cerr << feature->location() << endl;
-        cerr << "Expression does not conform to type ..." << endl;
+        cerr << feature->location();
+        cerr << "Expression does not conform to type: ";
+        cerr << initializer->type();
         cerr << endl;
     }
     variable(feature->name(), feature->type());

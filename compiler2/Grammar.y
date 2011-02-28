@@ -346,7 +346,9 @@ storage
 		$$ = new Member(@$, $1, $3); 
 	}
     | expression '[' expression ']' { 
-		$$ = new Index(@$, $1, $3);
+        $1->next($3);
+        Environment* env = parser->environment();
+        $$ = new Dispatch(@$, env->name("@index"), $1);
 	}
 
 assignment

@@ -20,47 +20,12 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef APOLLO_HPP
-#define APOLLO_HPP
+#include "Location.hpp"
 
-class Object;
-class TreeNode; 
-class Expression;
-class StringLiteral;
-class IntegerLiteral;
-class BooleanLiteral;
-class Binary;
-class Assignment;
-class Unary;
-class Call;
-class Dispatch;
-class Identifier;
-class Member;
-class Case;
-class Simple;
-class Block;
-class When;
-class For;
-class Variable;
-class Until;
-class While;
-class Conditional;
-class Return;
-class Unit;
-class Class;
-class Structure;
-class Module;
-class Interface;
-class Feature;
-class Function;
-class Attribute;
-class Import;
-class Define;
-class Environment;
-class Type;
-class Generic;
-class Empty;
+std::ostream& operator<<(std::ostream& out, const Location& location) {
+    out << location.first_line << ":";
+    out << location.first_column << ": " << std::endl;
+    return out;
+}
 
-#include "Pointer.hpp"
 
-#endif

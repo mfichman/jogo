@@ -45,7 +45,6 @@ private:
     void operator()(Unary* expression);
     void operator()(Call* expression);
     void operator()(Dispatch* expression);
-    void operator()(Index* expression);
     void operator()(Identifier* expression);
     void operator()(Member* expression);
     void operator()(Empty* empty);

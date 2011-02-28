@@ -47,7 +47,6 @@ private:
     void operator()(Unary* expression);
     void operator()(Call* expression);
     void operator()(Dispatch* expression);
-    void operator()(Index* expression);
     void operator()(Identifier* expression);
     void operator()(Member* expression);
     void operator()(Block* statment);
@@ -74,6 +73,8 @@ private:
     Environment::Ptr environment_;
     std::vector<std::map<Name::Ptr, Type::Ptr> > variable_;
     std::map<Name::Ptr, Function::Ptr> function_;
+    Unit::Ptr unit_; 
+    Function::Ptr function_;
 };
 
 #endif

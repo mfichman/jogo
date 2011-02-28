@@ -186,20 +186,6 @@ void Printer::operator()(Dispatch* expression) {
     indent_level_--;
 }
 
-void Printer::operator()(Index* expression) {
-    indent_level_++; 
-    Expression::Ptr object = expression->object();
-    Expression::Ptr index = expression->index();
-    
-    cout << "Index" << endl;
-    print_tabs(); cout << "object: ";
-    object(this);
-    print_tabs(); cout << "index: ";
-    index(this);
-    
-    indent_level_--;
-}
-
 void Printer::operator()(Identifier* expression) {
     indent_level_++;
     cout << "Identifier" << endl;
@@ -210,7 +196,7 @@ void Printer::operator()(Identifier* expression) {
 
 void Printer::operator()(Member* expression) {
     indent_level_++;
-    Expression::Ptr child = expression->child();
+    Expression::Ptr child = expression->object();
     cout << "Member" << endl;
     print_tabs(); cout << "name: ";
     cout << expression->identifier()->string() << endl;

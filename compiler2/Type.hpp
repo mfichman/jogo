@@ -28,6 +28,7 @@
 #include "Name.hpp"
 #include <vector>
 #include <map>
+#include <iostream>
 
 /* Type object */
 class Type : public Object {
@@ -70,6 +71,8 @@ private:
     Type::Ptr type_;
     Generic::Ptr next_;
 };
+
+std::ostream& operator<<(std::ostream&out, Type::Ptr type);
 
 
 #endif

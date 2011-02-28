@@ -4,7 +4,7 @@ d := $(dir)
 
 OBJS_$(d) := $(d)/Parser.o $(d)/Grammar.o $(d)/Lexer.o \
     $(d)/Unit.o $(d)/Type.o $(d)/Environment.o $(d)/TypeChecker.o \
-    $(d)/Printer.o
+    $(d)/Printer.o $(d)/Location.o
 
 DEPS_$(d) := $(OBJS_$(d):%=%.d)
 

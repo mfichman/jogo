@@ -187,24 +187,6 @@ private:
     Expression::Ptr arguments_;
 };
 
-/* Index operator call */
-class Index : public Expression {
-public:
-    Index(Location loc, Expression* obj, Expression* index) :
-        Expression(loc),
-        object_(obj),
-        index_(index) {
-    }
-
-    Expression* object() const { return object_; }
-    Expression* index() const { return index_; }
-
-private:
-    void operator()(Functor* functor) { functor->operator()(this); }
-    Expression::Ptr object_;
-    Expression::Ptr index_;
-};
-
 /* Identifier expression (variable access) */
 class Identifier : public Expression {
 public:
@@ -223,18 +205,18 @@ private:
 /* Member identifier access */
 class Member : public Expression {
 public:
-    Member(Location loc, Expression* child, Name* ident) :
+    Member(Location loc, Expression* object, Name* ident) :
         Expression(loc),
-        child_(child),
+        object_(object),
         identifier_(ident) {
     }
 
     Name* identifier() const { return identifier_; }
-    Expression* child() const { return child_; }
+    Expression* object() const { return object_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Expression::Ptr child_;
+    Expression::Ptr object_;
     Name::Ptr identifier_;
 
 };

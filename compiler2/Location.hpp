@@ -23,6 +23,8 @@
 #ifndef LOCATION_HPP
 #define LOCATION_HPP
 
+#include <iostream>
+
 class Location {
 public:
     int first_line;
@@ -30,5 +32,7 @@ public:
     int last_line;
     int last_column;
 };
+
+std::ostream& operator<<(std::ostream& out, const Location& location);
 
 #endif

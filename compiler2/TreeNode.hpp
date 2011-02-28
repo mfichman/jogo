@@ -58,7 +58,6 @@ public:
     virtual void operator()(Unary* expression) {}
     virtual void operator()(Call* expression) {}
     virtual void operator()(Dispatch* expression) {}
-    virtual void operator()(Index* expression) {}
     virtual void operator()(Identifier* expression) {}
     virtual void operator()(Member* expression) {}
     virtual void operator()(Empty* empty) {}
