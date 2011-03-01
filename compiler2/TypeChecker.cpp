@@ -28,13 +28,15 @@
 #include <iostream>
 #include <cassert>
 
-std::ostream& operator<<(std::ostream& out, const Location& location) {
-    out << location.first_line << ":" << std::endl;
-    out << location.first_column << ": " << std::endl;
+using namespace std;
+
+ostream& operator<<(ostream& out, const Location& location) {
+    out << location.first_line << ":" << endl;
+    out << location.first_column << ": " << endl;
     return out;
 }
 
-std::ostream& operator<<(std::ostream& out, Type::Ptr type) {
+ostream& operator<<(ostream& out, Type::Ptr type) {
     out << type->qualified_name()->string();
     if (type->generics()) {
         out << '[';
@@ -53,40 +55,50 @@ TypeChecker::TypeChecker(Environment* environment) :
     environment_(environment) {
 
     for (Unit::Ptr u = environment_->units(); u; u = u->next()) {
+        // Clear out old function - name bindings.
+        enter_scope();
+        function_.clear();
         u(this);
+
+        // Iterate though all features and add them to the scope
+        for (Feature::Ptr f = u->features(); f; f = f->next()) {
+            if (dynamic_cast<Function*>(f.pointer())) {
+                Function::Ptr func = static_cast<Function*>(f.pointer());
+                function(func->name(), func);
+            } else if (dynamic_cast<Attribute*>(f.pointer())) {
+                Attribute::Ptr attr = static_cast<Attribute*>(f.pointer());
+                variable(attr->name(), attr->type());
+            }
+        }
+        
+        // Now compile the features
+        for (Feature::Ptr f = u->features(); f; f = f->next()) {
+            f(this);
+        }
+        exit_scope();
     }  
 }
 
 void TypeChecker::operator()(Class* unit) {
-    for (Feature::Ptr f = unit->features(); f; f = f->next()) {
-        f(this);
-    }
 }
 
 void TypeChecker::operator()(Interface* unit) {
-    for (Feature::Ptr f = unit->features(); f; f = f->next()) {
-        f(this);
-    }
 }
 
 void TypeChecker::operator()(Structure* unit) {
-    for (Feature::Ptr f = unit->features(); f; f = f->next()) {
-        f(this);
-    }
 }
 
 void TypeChecker::operator()(Module* unit) {
-    for (Feature::Ptr f = unit->features(); f; f = f->next()) {
-        f(this);
-    }
 }
 
 void TypeChecker::operator()(StringLiteral* expression) {
-    expression->type(new Type(0, environment_->name("String"), 0, environment_)); 
+    Name* name = environment_->name("String");
+    expression->type(new Type(0, name, 0, environment_)); 
 }
 
 void TypeChecker::operator()(IntegerLiteral* expression) {
-    expression->type(new Type(0, environment_->name("Integer"), 0, environment_)); 
+    Name* name = environment_->name("Integer");
+    expression->type(new Type(0, name, 0, environment_)); 
 }
 
 void TypeChecker::operator()(Assignment* expression) {
@@ -95,9 +107,9 @@ void TypeChecker::operator()(Assignment* expression) {
     storage(this);
     value(this);
     if (!value->type()->subtype(storage->type())) {
-        std::cerr << expression->location();
-        std::cerr << "Type does not conform in assignment";
-        std::cerr << std::endl;
+        cerr << expression->location();
+        cerr << "Type does not conform in assignment";
+        cerr << endl;
     }
 }
 
@@ -111,9 +123,10 @@ void TypeChecker::operator()(Binary* expression) {
         if (!environment_->boolean_type()->equals(left->type()) 
             || !environment_->boolean_type()->equals(left->type())) {
 
-            std::cerr << expression->location();
-            std::cerr << "Operator can only be applied to type Boolean";
-            std::cerr << std::endl;
+            cerr << expression->location();
+            cerr << "Operator can only be applied to type ";
+            cerr << environment_->boolean_type();
+            cerr << endl;
         }
     } else if (environment_->name("?") == expression->operation()) {
         assert("Not implemented");
@@ -128,19 +141,66 @@ void TypeChecker::operator()(Unary* expression) {
 
     if (environment_->name("!") == expression->operation()) {
         if (!environment_->boolean_type()->equals(child->type())) {
-            std::cerr << expression->location();
-            std::cerr << "Operator '!' must be applied to a Boolean";
-            std::cerr << std::endl;
+            cerr << expression->location();
+            cerr << "Operator '!' must be applied to type ";
+            cerr << environment_->boolean_type();
+            cerr << endl;
         }
     } else {
         assert("Unary operator not implemented");
     }
-        
-    // TODO: Check expression
 }
 
 void TypeChecker::operator()(Call* expression) {
-    // TODO: Check expression
+    // Evaluate types of argument expressions
+    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
+        a(this);
+    }
+
+    // Look up the function by name in the current context
+    Function::Ptr func;
+    if (expression->unit()) {
+        // Look up the unit by type name, then look up the function
+        assert("Not implemented");
+    } else {
+        func = function(expression->identifier()); 
+    }
+    if (!func) {
+        cerr << expression->location();
+        cerr << "Undeclared function ";
+        cerr << expression->identifier()->string();
+        cerr << endl;
+        expression->type(environment_->no_type());
+        return;
+    }
+    expression->type(func->type());
+    
+    // Check argument types versus formal parameter types
+    Expression::Ptr arg = expression->arguments(); 
+    Formal::Ptr formal = func->formals();
+    while (arg && formal) {
+        if (!arg->type()->subtype(formal->type())) {
+            cerr << arg->location();
+            cerr << "Argument does not conform to type ";
+            cerr << formal->type();
+            cerr << endl;
+        }
+
+        arg = arg->next();
+        formal = formal->next();
+    }
+    if (arg) {
+        cerr << expression->location();
+        cerr << "Too many arguments to function ";
+        cerr << expression->identifier()->string();
+        cerr << endl;
+    }
+    if (formal) {
+        cerr << expression->location();
+        cerr << "Not enough arguments to function ";
+        cerr << expression->identifier()->string();
+        cerr << endl;
+    }
 }
 
 void TypeChecker::operator()(Dispatch* expression) {
@@ -152,13 +212,13 @@ void TypeChecker::operator()(Index* expression) {
 }
 
 void TypeChecker::operator()(Identifier* expression) {
-    Type::Ptr type = variable_type(expression->identifier());
+    Type::Ptr type = variable(expression->identifier());
     if (!type) {
-        std::cerr << expression->location();
-        std::cerr << "Undeclared identifier \"";
-        std::cerr << expression->identifier()->string();
-        std::cerr << "\"";
-        std::cerr << std::endl;
+        cerr << expression->location();
+        cerr << "Undeclared identifier \"";
+        cerr << expression->identifier()->string();
+        cerr << "\"";
+        cerr << endl;
         expression->type(environment_->no_type());
     } else {
         expression->type(type);
@@ -186,9 +246,10 @@ void TypeChecker::operator()(While* statement) {
     Statement::Ptr block = statement->block();
     guard(this);
     if (!environment_->boolean_type()->equals(guard->type())) {
-        std::cerr << statement->location();
-        std::cerr << "While statement guard expression must have type Boolean";
-        std::cerr << std::endl;
+        cerr << statement->location();
+        cerr << "While statement guard expression must have type ";
+        cerr << environment_->boolean_type();
+        cerr << endl;
     }
     block(this);
 }
@@ -198,9 +259,9 @@ void TypeChecker::operator()(For* statement) {
     Statement::Ptr block = statement->block();
     expression(this);
     if (!statement->type()->collection(expression->type())) {
-        std::cerr << statement->location();
-        std::cerr << "For expression is not a conforming collection";
-        std::cerr << std::endl;
+        cerr << statement->location();
+        cerr << "For expression is not a conforming collection";
+        cerr << endl;
     }
     block(this);
 }
@@ -211,9 +272,10 @@ void TypeChecker::operator()(Conditional* statement) {
     Statement::Ptr false_branch = statement->false_branch();
     guard(this);
     if (!environment_->boolean_type()->equals(guard->type())) {
-        std::cerr << statement->location();
-        std::cerr << "Conditional guard expression must have type Boolean";
-        std::cerr << std::endl;
+        cerr << statement->location();
+        cerr << "Conditional guard expression must have type ";
+        cerr << environment_->boolean_type();
+        cerr << endl;
     } 
     true_branch(this);
     false_branch(this);
@@ -223,11 +285,12 @@ void TypeChecker::operator()(Variable* statement) {
     Expression::Ptr initializer = statement->initializer();
     initializer(this);
     if (!statement->type()->supertype(initializer->type())) {
-        std::cerr << statement->location();
-        std::cerr << "Expression does not conform to type ..." << std::endl;
-        std::cerr << std::endl;
+        cerr << statement->location();
+        cerr << "Expression does not conform to type ";
+        cerr << initializer->type();
+        cerr << endl;
     } 
-    variable_type(statement->identifier(), statement->type()); 
+    variable(statement->identifier(), statement->type()); 
 }
 
 void TypeChecker::operator()(Return* statement) {
@@ -264,21 +327,21 @@ void TypeChecker::operator()(Attribute* feature) {
     initializer(this);
     assert("Fix variable check");
     if (!feature->type()->supertype(initializer->type())) {
-        std::cerr << feature->location() << std::endl;
-        std::cerr << "Expression does not conform to type ..." << std::endl;
-        std::cerr << std::endl;
+        cerr << feature->location() << endl;
+        cerr << "Expression does not conform to type ..." << endl;
+        cerr << endl;
     }
-    variable_type(feature->name(), feature->type());
+    variable(feature->name(), feature->type());
 }
 
 
 void TypeChecker::operator()(Import* feature) {
 }
 
-Type* TypeChecker::variable_type(Name* name) {
-    std::vector<std::map<Name::Ptr, Type::Ptr> >::reverse_iterator i;
-    for (i = variable_type_.rbegin(); i != variable_type_.rend(); i++) {
-        std::map<Name::Ptr, Type::Ptr>::iterator j = i->find(name);        
+Type* TypeChecker::variable(Name* name) {
+    vector<map<Name::Ptr, Type::Ptr> >::reverse_iterator i;
+    for (i = variable_.rbegin(); i != variable_.rend(); i++) {
+        map<Name::Ptr, Type::Ptr>::iterator j = i->find(name);        
         if (j != i->end()) {
             return j->second;
         }
@@ -286,16 +349,29 @@ Type* TypeChecker::variable_type(Name* name) {
     return 0;
 }
 
-void TypeChecker::variable_type(Name* name, Type* type) {
-    assert(variable_type_.size());
-    variable_type_.back().insert(std::make_pair(name, type));
+void TypeChecker::variable(Name* name, Type* type) {
+    assert(variable_.size());
+    variable_.back().insert(make_pair(name, type));
+}
+
+Function* TypeChecker::function(Name* name) {
+    map<Name::Ptr, Function::Ptr>::iterator i = function_.find(name);
+    if (i != function_.end()) {
+        return i->second;
+    } else {
+        return 0;
+    }
+}
+
+void TypeChecker::function(Name* name, Function* function) {
+    function_.insert(make_pair(name, function));
 }
 
 void TypeChecker::enter_scope() {
-    variable_type_.push_back(std::map<Name::Ptr, Type::Ptr>());
+    variable_.push_back(map<Name::Ptr, Type::Ptr>());
 }
 
 void TypeChecker::exit_scope() {
-    variable_type_.pop_back();
+    variable_.pop_back();
 }
 

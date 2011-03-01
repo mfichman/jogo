@@ -26,6 +26,7 @@
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
 #include "Environment.hpp"
+#include "Feature.hpp"
 #include <vector>
 #include <map>
 
@@ -63,13 +64,16 @@ private:
     void operator()(Attribute* feature);
     void operator()(Import* feature);
 
-    Type* variable_type(Name* name);
-    void variable_type(Name* name, Type* type);
+    Type* variable(Name* name);
+    void variable(Name* name, Type* type);
+    Function* function(Name* name);
+    void function(Name* name, Function* function);
     void enter_scope();
     void exit_scope();
 
     Environment::Ptr environment_;
-    std::vector<std::map<Name::Ptr, Type::Ptr> > variable_type_;
+    std::vector<std::map<Name::Ptr, Type::Ptr> > variable_;
+    std::map<Name::Ptr, Function::Ptr> function_;
 };
 
 #endif
