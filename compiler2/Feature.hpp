@@ -29,6 +29,7 @@
 #include "Expression.hpp"
 #include "Formal.hpp"
 #include "Type.hpp"
+#include "BasicBlock.hpp"
 
 /* This file holds interfaces for class features */
 class Feature : public TreeNode {
@@ -75,13 +76,15 @@ public:
         name_(nm),
 		formals_(fm),
 		type_(ret),
-        block_(blk) {
+        block_(blk),
+        code_(new BasicBlock(nm)) {
     }
 
     Name* name() const { return name_; }
 	Formal* formals() const { return formals_; }
 	Type* type() const { return type_; }
     Statement* block() const { return block_; }
+    BasicBlock* code() const { return code_; }
     typedef Pointer<Function> Ptr;
 
 private:
@@ -90,6 +93,7 @@ private:
 	Formal::Ptr formals_;
 	Type::Ptr type_;
     Statement::Ptr block_;
+    BasicBlock::Ptr code_;
 };
 
 /* Class for imports */

@@ -26,25 +26,19 @@
 #include "Apollo.hpp"
 #include <vector>
 
-/* Class for basic block nodes */
-class BasicBlock : public Object {
-public:
-    BasicBlock();
-
-    std::vector<Instruction> instructions_;
-};
-
 /* Class for instructions */
 class Instruction {
 public:
-    enum Opcode { };
+    enum Opcode { ADD, SUB, MUL, DIV, AND, OR, LOAD, STORE };
 
     Instruction(Opcode opcode, int t1, int t2, int t3) :
+        opcode_(opcode),
         operand1_(t1),
         operand2_(t2),
         result_(t3) {
     }
     
+    Opcode opcode() const { return opcode_; }
     int operand1() const { return operand1_; }
     int operand2() const { return operand2_; }
     int result() const { return result_; }
@@ -55,3 +49,41 @@ private:
     int operand2_;
     int result_;
 };
+
+/* Class for basic block nodes */
+class BasicBlock : public Object {
+public:
+    enum ControlCode { CALL, JUMP, BNE, BEQ, BEQZ, RETURN, HALT };
+
+    BasicBlock(Name* label) :
+        control_code_(HALT),
+        label_(label)  {
+    }
+
+    BasicBlock* branch1() const { return branch1_; }
+    BasicBlock* branch2() const { return branch2_; }
+    ControlCode control_code() const { return control_code_; }
+    Name* label() const { return label_; }
+    const Instruction& instruction(size_t index) const { 
+        return instructions_[index];
+    }
+    size_t instruction_count() const { return instructions_.size(); }
+    void branch1(BasicBlock* branch) { branch1_ = branch; }
+    void branch2(BasicBlock* branch) { branch2_ = branch; }
+    void control_code(ControlCode code) { control_code_ = code; }
+    void instruction(const Instruction& inst) { 
+        instructions_.push_back(inst); 
+    }
+    typedef Pointer<BasicBlock> Ptr; 
+
+private:
+    std::vector<Instruction> instructions_;
+    BasicBlock::Ptr branch1_;
+    BasicBlock::Ptr branch2_;
+    ControlCode control_code_;
+    Name::Ptr label_;
+};
+
+
+#endif
+

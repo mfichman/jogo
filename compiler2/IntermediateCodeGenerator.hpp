@@ -20,20 +20,18 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef TYPE_CHECKER_HPP
-#define TYPE_CHECKER_HPP
+#ifdef INTERMEDIATE_CODE_GENERATOR_HPP
+#ifdef INTERMEDIATE_CODE_GENERATOR_HPP
 
 #include "Apollo.hpp"
-#include "TreeNode.hpp"
-#include "Environment.hpp"
-#include "Feature.hpp"
-#include <vector>
-#include <map>
+#include "BasicBlock.hpp"
+#include "Object.hpp"
 
-class TypeChecker : public TreeNode::Functor {
+/* Code generator structure; creates basic block flow graphs */
+class IntermediateCodeGenerator : public Object {
 public:
-	TypeChecker(Environment* environment);
-    typedef Pointer<TypeChecker> Ptr;
+    IntermediateCodeGenerator(Environment* env);
+    typedef Pointer<IntermediateCodeGenerator> Ptr; 
 
 private:
     void operator()(Class* unit);
@@ -63,18 +61,12 @@ private:
     void operator()(Attribute* feature);
     void operator()(Import* feature);
 
-    Type* variable(Name* name);
-    void variable(Name* name, Type* type);
-    Function* function(Name* name);
-    void function(Name* name, Function* function);
-    void enter_scope();
-    void exit_scope();
-
     Environment::Ptr environment_;
-    std::vector<std::map<Name::Ptr, Type::Ptr> > variable_;
-    std::map<Name::Ptr, Function::Ptr> function_;
-    Unit::Ptr current_unit_; 
+    Unit::Ptr current_unit_;
     Function::Ptr current_function_;
+    BasicBlock::Ptr block_;
+    int temporary_;
 };
+
 
 #endif

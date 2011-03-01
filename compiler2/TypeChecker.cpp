@@ -38,7 +38,7 @@ TypeChecker::TypeChecker(Environment* environment) :
         // Clear out old function - name bindings.
         enter_scope();
         function_.clear();
-        unit_ = u;
+        current_unit_ = u;
         u(this);
 
         // Iterate though all features and add them to the scope
@@ -258,7 +258,7 @@ void TypeChecker::operator()(Member* expression) {
         expression->type(environment_->no_type());
         return;
     }
-    if (unit != unit_) {
+    if (unit != current_unit_) {
         cerr << expression->location();
         cerr << "Cannot access private attribute ";
         cerr << expression->identifier()->string();
@@ -346,14 +346,11 @@ void TypeChecker::operator()(Return* statement) {
     Expression::Ptr expression = statement->expression();
     if (expression) {
         expression(this);
-        statement->type(expression->type());
-    } else {
-        statement->type(environment_->void_type());
     }
-    if (!statement->type()->subtype(function_->type())) {
+    if (!expression->type()->subtype(current_function_->type())) {
         cerr << statement->location();
         cerr << "Expression does not conform to return type ";
-        cerr << function_->type();
+        cerr << current_function_->type();
         cerr << endl;
     }
 }
@@ -373,7 +370,7 @@ void TypeChecker::operator()(Case* statement) {
 
 void TypeChecker::operator()(Function* feature) {
     Statement::Ptr block = feature->block();
-    function_ = feature;
+    current_function_ = feature;
     block(this); 
 }
 
