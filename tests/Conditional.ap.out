@@ -1,54 +1,56 @@
-unit0: Class
+feature0: Module
   name: Conditional
-  feature0: Function
-    name: conditional1
-    type: Integer
-    block: Block
-      child0: Conditional
-        guard: BooleanLiteral(true)
-        true: Block
-          child0: Return
-            expression: IntegerLiteral(1)
-        false: Block
-          child0: Return
-            expression: IntegerLiteral(0)
-  feature1: Function
-    name: conditional2
-    type: Integer
-    block: Block
-      child0: Conditional
-        guard: BooleanLiteral(true)
-        true: Block
-          child0: Return
-            expression: IntegerLiteral(1)
-        false: Conditional
-          guard: BooleanLiteral(false)
+  feature0: Class
+    name: Conditional
+    feature0: Function
+      name: conditional1
+      type: Integer
+      block: Block
+        child0: Conditional
+          guard: BooleanLiteral(true)
           true: Block
             child0: Return
-              expression: IntegerLiteral(2)
+              expression: IntegerLiteral(1)
           false: Block
             child0: Return
-              expression: IntegerLiteral(3)
-  feature2: Function
-    name: conditional3
-    type: Integer
-    block: Block
-      child0: Conditional
-        guard: BooleanLiteral(true)
-        true: Block
-          child0: Return
-            expression: IntegerLiteral(1)
-        false: Block
-          child0: Conditional
-            guard: BooleanLiteral(true)
+              expression: IntegerLiteral(0)
+    feature1: Function
+      name: conditional2
+      type: Integer
+      block: Block
+        child0: Conditional
+          guard: BooleanLiteral(true)
+          true: Block
+            child0: Return
+              expression: IntegerLiteral(1)
+          false: Conditional
+            guard: BooleanLiteral(false)
             true: Block
               child0: Return
                 expression: IntegerLiteral(2)
-            false: Conditional
-              guard: BooleanLiteral(false)
+            false: Block
+              child0: Return
+                expression: IntegerLiteral(3)
+    feature2: Function
+      name: conditional3
+      type: Integer
+      block: Block
+        child0: Conditional
+          guard: BooleanLiteral(true)
+          true: Block
+            child0: Return
+              expression: IntegerLiteral(1)
+          false: Block
+            child0: Conditional
+              guard: BooleanLiteral(true)
               true: Block
                 child0: Return
-                  expression: IntegerLiteral(4)
-              false: Block
-                child0: Return
-                  expression: IntegerLiteral(6)
+                  expression: IntegerLiteral(2)
+              false: Conditional
+                guard: BooleanLiteral(false)
+                true: Block
+                  child0: Return
+                    expression: IntegerLiteral(4)
+                false: Block
+                  child0: Return
+                    expression: IntegerLiteral(6)

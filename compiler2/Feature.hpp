@@ -31,6 +31,7 @@
 #include "Type.hpp"
 #include "BasicBlock.hpp"
 
+
 /* This file holds interfaces for class features */
 class Feature : public TreeNode {
 public:
@@ -59,10 +60,10 @@ public:
     Name* name() const { return name_; }
 	Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Attribute> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
 	Name::Ptr name_;
     Type::Ptr type_;
     Expression::Ptr initializer_;
@@ -85,10 +86,10 @@ public:
 	Type* type() const { return type_; }
     Statement* block() const { return block_; }
     BasicBlock* code() const { return code_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr name_;
 	Formal::Ptr formals_;
 	Type::Ptr type_;
@@ -106,11 +107,60 @@ public:
 
     const std::string& file() const { return file_; }
     Type* type() const { return type_; }
+    static std::string basename(const std::string& file);
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Import> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     std::string file_;
     Type::Ptr type_;
+};
+
+/* Represents a class object */
+class Class : public Feature {
+public:
+    Class(Location loc, Type* type, Feature* features);
+    Feature* features() const { return features_; };    
+    Attribute* attribute(Name* name) { return attributes_[name]; }
+    Function* function(Name* name) { return functions_[name]; }
+    Type* type() const { return type_; }
+    Name* name() const { return type_->name(); }
+    void feature(Feature* feature);
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Class> Ptr;
+
+private:
+    std::map<Name::Ptr, Attribute::Ptr> attributes_;
+    std::map<Name::Ptr, Function::Ptr> functions_;
+    Type::Ptr type_;
+    Feature::Ptr features_;
+};
+
+/* Module, contains classes, functions, imports, etc. */
+class Module : public Feature {
+public:
+    Module(Location loc, Name* name) :
+        Feature(loc),
+        name_(name) {
+    }
+
+    Feature* features() const { return features_; }
+    Module* module(Name* name) { return modules_[name]; }
+    Function* function(Name* name) { return functions_[name]; }
+    Class* clazz(Name* name) { return classes_[name]; }
+    Import* import(Name* name) { return imports_[name]; }
+    Name* name() const { return name_; }
+    void feature(Feature* feature);
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Module> Ptr; 
+
+private:
+    std::map<Name::Ptr, Module::Ptr> modules_;
+    std::map<Name::Ptr, Function::Ptr> functions_;
+    std::map<Name::Ptr, Class::Ptr> classes_;
+    std::map<Name::Ptr, Import::Ptr> imports_;
+    Name::Ptr name_; 
+    Feature::Ptr features_;
 };
 
 #endif

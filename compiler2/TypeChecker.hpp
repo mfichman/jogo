@@ -37,8 +37,6 @@ public:
 
 private:
     void operator()(Class* unit);
-    void operator()(Interface* unit);
-    void operator()(Structure* unit);
     void operator()(Module* unit);
     void operator()(Formal* formal);
     void operator()(StringLiteral* expression);
@@ -77,7 +75,8 @@ private:
     Environment::Ptr environment_;
     std::vector<std::map<Name::Ptr, Type::Ptr> > variable_;
     std::map<Name::Ptr, Function::Ptr> function_;
-    Unit::Ptr current_unit_; 
+    Module::Ptr current_module_;
+    Class::Ptr current_class_;
     Function::Ptr current_function_;
 };
 

@@ -66,6 +66,91 @@ ActiveRecord::ConnectionAdapters::Column < Object {
 }
 
 
+MaterialRenderer < Object {
+
+    @dispatch(transform Transform) {
+        previous = model_transform
+        model_transform = model_transform * transform.transform
+        for node in transform.children {
+            #self !! node
+        }
+        model_transform = previous
+    }
+
+    
+}
+
+Transform < Object {
+    #position(position Vector) {
+    #    transform.position = position
+    #}
+    rotation(rotation Quaternion) { 
+        transform.rotation = rotation
+    }
+
+    world_position() Vector { 
+        return world.position
+    }
+
+    world_rotation() Quaternion { 
+        return world.rotation
+    }
+
+    position() Vector {
+        return transform.origin
+    }
+
+    rotation() Quaternion {
+        return transform.rotation
+    }     
+
+    children List[Node]
+    transform Matrix
+    world_transform Matrix
+}
+
+MeshObject < Object {
+    material Material
+    mesh Mesh
+    effect Effect
+}
+
+PointLight < Object {
+    diffuse_color Color
+    specular_color Color
+    constant_atten Float
+    linear_atten Float
+    quadratic_atten Float
+}
+
+SpotLight < Object {
+    diffuse_color Color
+    specular_color Color
+    direction Vector
+    constant_atten Float
+    linear_atten Float
+    quadratic_atten Float
+    spot_cutoff Float
+    spot_power Float            
+}
+
+ HemiLight < Object {
+    diffuse_color Color
+    back_diffuse_color Color
+    direction Vector
+    constant_atten Float
+    linear_atten Float
+    quadratic_atten Float
+    radius_of_effect Float
+}
+
+
+
+
+# If name is a dir, import all files.  If name is a file, open the file.
+# Note: when modules are instantiated, we will need to save the file
+# name.
+
 KernelThread < Object {
 
     bind(task Task, cpu Integer) {

@@ -46,10 +46,8 @@ private:
 class TreeNode::Functor : public Object {
 public:
     virtual ~Functor() {} 
-    virtual void operator()(Class* unit)=0;
-    virtual void operator()(Structure* unit)=0;
-    virtual void operator()(Interface* unit)=0;
-    virtual void operator()(Module* unit)=0;
+    virtual void operator()(Class* feature)=0;
+    virtual void operator()(Module* feature)=0;
     virtual void operator()(Formal* formal)=0;
     virtual void operator()(StringLiteral* expression)=0;
     virtual void operator()(IntegerLiteral* expression)=0;

@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <fstream>
 #include <iostream>
+#include <cassert>
 
 int yyparse(Parser* parser, void* scanner);
 int yylex_init(void**);
@@ -44,7 +45,7 @@ Parser::~Parser() {
 }
 
 void Parser::file(const std::string& file) {
-    /* Begin parsing at the root file */
+    // Begin parsing at the root file.
     this->column_ = 1;
     this->input_.open(file.c_str()); 
 	this->file_ = file;
@@ -52,19 +53,30 @@ void Parser::file(const std::string& file) {
         throw std::runtime_error("Could not find " + file);
     }
 
-    /* Begin parsing */
+    // Create a new module using the file name
+    Name::Ptr name = environment_->name(Import::basename(file));
+    Module::Ptr module = new Module(Location(), name);
+    if (module_) {
+        module_->feature(module);
+    } else {
+        environment_->root()->feature(module);
+    }
+    module_ = module;
+
+    // HACK
+    
+
+    // Begin parsing
     yyparse(this, this->scanner_);
 
-    /* Now parse other units that depend on the unit that was added */
-    Unit* unit = environment_->units();
-    if (!unit) {
-        return;
-    }
-    for (Feature* feat = unit->features(); feat; feat = feat->next()) {
-        Import* import = dynamic_cast<Import*>(feat);
+    // Now parse other modules that depend on the unit that was added
+    for (Feature* f = module->features(); f; f = f->next()) {
+        Import* import = dynamic_cast<Import*>(f);
         if (import) {
+            assert("Not supported! Need to fix import logic for dirs and files");
+            assert("Also add a flag so file doesn't get imported twice");
+            assert("Also do some import logic into the namespace of the current module");
             Parser::file(import->file());
-            break;
         }
     }
 }

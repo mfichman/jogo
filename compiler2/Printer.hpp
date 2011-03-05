@@ -33,10 +33,8 @@ public:
     typedef Pointer<Printer> Ptr;
 
 private:
-    void operator()(Class* unit);
-    void operator()(Interface* unit);
-    void operator()(Structure* unit);
-    void operator()(Module* unit);
+    void operator()(Module* feature);
+    void operator()(Class* feature);
     void operator()(Formal* formal);
     void operator()(StringLiteral* expression);
     void operator()(IntegerLiteral* expression);

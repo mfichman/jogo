@@ -3,8 +3,8 @@ dirstack_$(sp) := $(d)
 d := $(dir)
 
 OBJS_$(d) := $(d)/Parser.o $(d)/Grammar.o $(d)/Lexer.o \
-    $(d)/Unit.o $(d)/Type.o $(d)/Environment.o $(d)/TypeChecker.o \
-    $(d)/Printer.o $(d)/Location.o
+    $(d)/Type.o $(d)/Environment.o $(d)/TypeChecker.o \
+    $(d)/Printer.o $(d)/Location.o $(d)/Feature.o
 
 DEPS_$(d) := $(OBJS_$(d):%=%.d)
 
@@ -23,7 +23,7 @@ $(BINARIES)/test: $(d)/Test.o $(OBJS_$(d))
 	$(CPP) -g -o $@ $^
 
 $(d)/Grammar.cpp: $(d)/Grammar.y
-	bison -v --defines=$(GRAMMAR) --output=$@ $^
+	bison -v -r all --defines=$(GRAMMAR) --output=$@ $^
 
 $(d)/Lexer.cpp: $(d)/Lexer.l
 	flex --outfile=$@ $^

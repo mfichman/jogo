@@ -151,20 +151,20 @@ private:
 /* Normal function all */
 class Call : public Expression {
 public:
-    Call(Location loc, Type* unit, Name* ident, Expression* args) :
+    Call(Location loc, Type* module, Name* ident, Expression* args) :
         Expression(loc),
-        unit_(unit),
+        module_(module),
         identifier_(ident),
         arguments_(args) {
     }
 
-    Type* unit() const { return unit_; }
+    Type* module() const { return module_; }
     Name* identifier() const { return identifier_; }
     Expression* arguments() const { return arguments_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Type::Ptr unit_;
+    Type::Ptr module_;
     Name::Ptr identifier_;
     Expression::Ptr arguments_;
 };
@@ -190,18 +190,18 @@ private:
 /* Constructor call */
 class Construct : public Expression {
 public:
-    Construct(Location loc, Type* unit, Expression* args) :
+    Construct(Location loc, Type* type, Expression* args) :
         Expression(loc),
-        unit_(unit),
         arguments_(args) {
+        
+        Expression::type(type);
     }
 
-    Type* unit() const { return unit_; }
     Expression* arguments() const { return arguments_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Type::Ptr unit_;
+    Type::Ptr clazz_;
     Expression::Ptr arguments_;
 };
 

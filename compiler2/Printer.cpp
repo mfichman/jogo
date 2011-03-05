@@ -33,12 +33,8 @@ Printer::Printer(Environment* environment) :
         return;
     }
 
-    int i = 0;
-    for (Unit::Ptr u = environment_->units(); u; u = u->next()) {
-        cout << "unit" << i << ": ";
-        u(this);
-        i++;
-    }  
+    Module::Ptr root = environment_->root();
+    root(this);
 }
 
 void Printer::print_tabs() {
@@ -47,51 +43,29 @@ void Printer::print_tabs() {
     }
 }
 
-void Printer::operator()(Class* unit) {
+void Printer::operator()(Module* feature) {
+    if (feature != environment_->root()) {
+        indent_level_++;
+        cout << "Module" << endl;
+        print_tabs(); cout << "name: " << feature->name()->string() << endl;
+    }
+    int i = 0;
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        print_tabs(); cout << "feature" << i << ": ";
+        f(this);
+        i++;
+    }
+    if (feature != environment_->root()) {
+        indent_level_--;
+    }
+}
+
+void Printer::operator()(Class* feature) {
     indent_level_++; 
     cout << "Class" << endl;
-    print_tabs(); cout << "name: " << unit->name()->string() << endl;
+    print_tabs(); cout << "name: " << feature->name()->string() << endl;
     int i = 0;
-    for (Feature::Ptr f = unit->features(); f; f = f->next()) {
-        print_tabs(); cout << "feature" << i << ": ";
-        f(this);
-        i++;
-    }
-    indent_level_--;
-}
-
-void Printer::operator()(Interface* unit) {
-    indent_level_++; 
-    cout << "Interface" << endl;
-    print_tabs(); cout << "name: " << unit->name()->string() << endl;
-    int i = 0;
-    for (Feature::Ptr f = unit->features(); f; f = f->next()) {
-        print_tabs(); cout << "feature" << i << ": ";
-        f(this);
-        i++;
-    }
-    indent_level_--;
-}
-
-void Printer::operator()(Structure* unit) {
-    indent_level_++; 
-    cout << "Structure" << endl;
-    print_tabs(); cout << "name: " << unit->name()->string() << endl;
-    int i = 0;
-    for (Feature::Ptr f = unit->features(); f; f = f->next()) {
-        print_tabs(); cout << "feature" << i << ": ";
-        f(this);
-        i++;
-    }
-    indent_level_--;
-}
-
-void Printer::operator()(Module* unit) {
-    indent_level_++; 
-    cout << "Module" << endl;
-    print_tabs(); cout << "name: " << unit->name()->string() << endl;
-    int i = 0;
-    for (Feature::Ptr f = unit->features(); f; f = f->next()) {
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         print_tabs(); cout << "feature" << i << ": ";
         f(this);
         i++;
@@ -221,8 +195,8 @@ void Printer::operator()(Construct* expression) {
     indent_level_++;
     Expression::Ptr arguments = expression->arguments();
     cout << "Construct" << endl;
-    print_tabs(); cout << "unit: ";
-    cout << expression->unit()->qualified_name()->string() << endl;
+    print_tabs(); cout << "type: ";
+    cout << expression->type()->qualified_name()->string() << endl;
 
     int i = 0;
     for (Expression::Ptr a = arguments; a; a = a->next()) {

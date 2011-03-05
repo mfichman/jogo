@@ -24,7 +24,6 @@
 #include "Feature.hpp"
 #include "Statement.hpp"
 #include "Expression.hpp"
-#include "Unit.hpp"
 #include "Location.hpp"
 #include <iostream>
 #include <cassert>
@@ -38,42 +37,43 @@ TypeChecker::TypeChecker(Environment* environment) :
         return;
     }
 
-    for (Unit::Ptr u = environment_->units(); u; u = u->next()) {
-        // Clear out old function - name bindings.
-        enter_scope();
-        function_.clear();
-        current_unit_ = u;
-        u(this);
+    Module::Ptr root = environment_->root();
+    root(this);
+}
 
-        // Iterate though all features and add them to the scope
-        for (Feature::Ptr f = u->features(); f; f = f->next()) {
-            if (dynamic_cast<Function*>(f.pointer())) {
-                Function::Ptr func = static_cast<Function*>(f.pointer());
-                function(func->name(), func);
-            } else if (dynamic_cast<Attribute*>(f.pointer())) {
-                Attribute::Ptr attr = static_cast<Attribute*>(f.pointer());
-                variable(attr->name(), attr->type());
-            }
+void TypeChecker::operator()(Module* feature) {
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        f(this);
+    }
+}
+
+void TypeChecker::operator()(Class* feature) {
+    enter_scope();
+
+    // TODO: Check interface/struct/object baseclass and make sure that 
+    // disallowed things aren't included.
+
+    // Iterate through all the features and add the functions and variables to
+    // the current scope.
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (dynamic_cast<Function*>(f.pointer())) {
+            Function::Ptr func = static_cast<Function*>(f.pointer());
+            function(func->name(), func);
+            continue;
         }
-        
-        // Now compile the features
-        for (Feature::Ptr f = u->features(); f; f = f->next()) {
-            f(this);
+        if (dynamic_cast<Attribute*>(f.pointer())) {
+            Attribute::Ptr attr = static_cast<Attribute*>(f.pointer());
+            variable(attr->name(), attr->type());
         }
-        exit_scope();
-    }  
-}
+    }
 
-void TypeChecker::operator()(Class* unit) {
-}
+    // Now type-check all the sub-features.
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        f(this); // lol
+    }
 
-void TypeChecker::operator()(Interface* unit) {
-}
-
-void TypeChecker::operator()(Structure* unit) {
-}
-
-void TypeChecker::operator()(Module* unit) {
+    exit_scope();
+    function_.clear();
 }
 
 void TypeChecker::operator()(Empty* expression) {
@@ -164,7 +164,7 @@ void TypeChecker::operator()(Call* expression) {
 
     // Look up the function by name in the current context
     Function::Ptr func;
-    if (expression->unit()) {
+    if (expression->module()) {
         // Look up the unit by type name, then look up the function
         assert("Not implemented");
     } else {
@@ -218,8 +218,9 @@ void TypeChecker::operator()(Dispatch* expression) {
     Expression::Ptr object = expression->arguments();
     assert(object->type());
 
-    Unit::Ptr unit = environment_->unit(object->type()->qualified_name());
-    if (!unit) {
+    Class::Ptr clazz;// = environment_->clazz(object->type()->qualified_name());
+    assert(false);
+    if (!clazz) {
         cerr << expression->location();
         cerr << "Undefined class ";
         cerr << object->type()->qualified_name()->string();
@@ -228,7 +229,7 @@ void TypeChecker::operator()(Dispatch* expression) {
         return;
     }
 
-    Function::Ptr func = unit->function(expression->identifier()); 
+    Function::Ptr func = clazz->function(expression->identifier()); 
     if (!func) {
         cerr << expression->location();
         cerr << "Undeclared function ";
@@ -275,8 +276,6 @@ void TypeChecker::operator()(Construct* expression) {
 
     // TODO: Need to choose the constructor by argument type.
     assert("Not implemented!");
-
-    expression->type(expression->unit());
 }
 
 void TypeChecker::operator()(Identifier* expression) {
@@ -297,19 +296,13 @@ void TypeChecker::operator()(Member* expression) {
     Expression::Ptr object = expression->object(); 
     object(this);
 
-    Unit::Ptr unit = environment_->unit(object->type()->qualified_name());
-    if (!unit) {
+    Class::Ptr clazz;// = environment_->clazz(object->type()->qualified_name());
+    assert(false);
+    if (!clazz) {
         expression->type(environment_->no_type());
         return;
     }
-    if (unit != current_unit_) {
-        cerr << expression->location();
-        cerr << "Cannot access private attribute ";
-        cerr << expression->identifier()->string();
-        expression->type(environment_->no_type());
-        return;
-    } 
-    Attribute::Ptr attr = unit->attribute(expression->identifier());
+    Attribute::Ptr attr = clazz->attribute(expression->identifier());
     if (!attr) {
         cerr << expression->location();
         cerr << "Undefined attribute ";

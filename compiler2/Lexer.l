@@ -2,7 +2,6 @@
 #include "Statement.hpp"
 #include "Formal.hpp"
 #include "Expression.hpp"
-#include "Unit.hpp"
 #include "Feature.hpp"
 #include "Parser.hpp"
 #include "Grammar.hpp"
@@ -45,8 +44,6 @@ using namespace std;
 import BEGIN(INITIAL); return IMPORT;
 case BEGIN(INITIAL); return CASE;
 when BEGIN(INITIAL); return WHEN;
-\@init BEGIN(INITIAL); return INIT;
-\@destroy BEGIN(INITIAL); return DESTROY;
 public BEGIN(INITIAL); return PUBLIC;
 private BEGIN(INITIAL); return PRIVATE;
 static BEGIN(INITIAL); return STATIC;
@@ -108,6 +105,11 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
 	yylval->expression = new StringLiteral(*yylloc, value); 
     BEGIN(END);
 	return STRING;
+}
+@[a-z][a-z]* {
+    yylval->name = yyextra->environment()->name(yytext);
+    BEGIN(END); 
+    return OPERATOR;
 }
 [a-z][A-Za-z0-9_]*[?!]? {
 	yylval->name = yyextra->environment()->name(yytext);

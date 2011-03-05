@@ -34,13 +34,3 @@ Name* Environment::name(const std::string& str) {
 	}
 }
 
-void Environment::unit(Unit* unit) {
-	std::map<Name::Ptr, Unit::Ptr>::iterator i = unit_.find(unit->name());
-	if (i == unit_.end()) {
-		unit_.insert(std::make_pair(unit->name(), unit));
-        unit->next(units_);
-		units_ = unit;
-	} else {
-		assert("Recompiling unit!");
-	}
-}

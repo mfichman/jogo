@@ -25,7 +25,7 @@
 
 #include "Apollo.hpp"
 #include "Object.hpp"
-#include "Unit.hpp"
+#include "Feature.hpp"
 #include "Name.hpp"
 #include <map>
 
@@ -33,6 +33,7 @@
 class Environment : public Object {
 public:
     Environment() :
+        root_(new Module(Location(), name(""))),
         void_type_(new Type(0, name("Void"), 0, this)),
         boolean_type_(new Type(0, name("Boolean"), 0, this)),
         integer_type_(new Type(0, name("Integer"), 0, this)),
@@ -42,10 +43,8 @@ public:
         errors_(0) {
     }
     Name* name(const std::string& str);
-    Unit* units() const { return units_; }
+    Module* root() const { return root_; }
     int errors() { return errors_; }
-    Unit* unit(Name *name) { return unit_[Name::Ptr(name)]; }
-    void unit(Unit* unit);
     void error(const std::string& error) { errors_++; }
     typedef Pointer<Environment> Ptr;
 
@@ -58,8 +57,7 @@ public:
 
 private:
     std::map<std::string, Name::Ptr> name_;
-    std::map<Name::Ptr, Unit::Ptr> unit_;
-    Unit::Ptr units_;
+    Module::Ptr root_;
     Type::Ptr void_type_;
     Type::Ptr boolean_type_;
     Type::Ptr integer_type_;

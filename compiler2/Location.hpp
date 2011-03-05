@@ -27,6 +27,12 @@
 
 class Location {
 public:
+    Location() :
+        first_line(0),
+        first_column(0),
+        last_line(0),
+        last_column(0) {
+    }
     int first_line;
     int first_column;
     int last_line;

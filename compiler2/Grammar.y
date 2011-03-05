@@ -4,7 +4,6 @@
 #include "Statement.hpp"
 #include "Formal.hpp"
 #include "Feature.hpp"
-#include "Unit.hpp"
 #include "Type.hpp"
 #include <iostream>
 #include <cassert>
@@ -22,7 +21,6 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %union { Expression* expression; }
 %union { Statement* statement; }
 %union { Name* identifier; }
-%union { Unit* unit; }
 %union { Feature* feature; }
 %union { Formal* formal; }
 %union { Type* type; }
@@ -67,10 +65,10 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %left '.' '['
 
 /* BISON declarations */
-%token <name> IDENTIFIER TYPE
+%token <name> IDENTIFIER TYPE OPERATOR
 %token <expression> STRING NUMBER BOOLEAN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
-%token IMPORT INIT DESTROY
+%token IMPORT
 %token SEPARATOR
 %token WHEN CASE WHILE ELSE UNTIL IF DO FOR RETURN
 %token RIGHT_ARROW LEFT_ARROW
@@ -82,8 +80,8 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token INCREMENT DECREMENT
 %token SCOPE LET IN
 
-%type <feature> feature feature_list attribute
-%type <feature> constructor destructor function prototype native
+%type <feature> feature feature_list attribute class
+%type <feature> operator function prototype native import
 %type <type> type
 %type <generic> generic_list generic
 %type <flag> modifiers
@@ -96,37 +94,33 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 /* The Standard Apollo Grammar, version 2010 */
 %%
 
-module
-    : unit_list {
+input
+    : class input {
+        parser->module()->feature($1);
     }
-	| /* empty is an error */ { 
-		yyerror(&@$, parser, scanner, "Input file is empty"); 
-		YYERROR;
-	}
+    | import input {
+        parser->module()->feature($1);
+    }
+    | function input {
+        parser->module()->feature($1);
+    }
+    | /* empty */ { }
     ;
 
-unit_list
-    : unit unit_list {
-    }
-    | unit {
+import
+    : IMPORT type SEPARATOR {
+        $$ = new Import(@$, $2);
     }
     ;
 
-unit
+class
     : type '<' type '{' feature_list '}' {
+        $$ = new Class(@$, $1, $5);
         delete $3; // FixMe
-        parser->environment()->unit(new Class(@$, $1, $5)); 
     }
-    | IMPORT type SEPARATOR { 
-		//$$ = new Import(@$, $2);
-        $2 = 0;
-        assert("Not supported");
-	}
-    | function {
-        $1 = 0;
-        assert("Not supported");
+	| error {
+        $$ = 0;    
     }
-	| error { }
     ;
 
 feature_list
@@ -141,8 +135,7 @@ feature_list
 
 feature
     : attribute { $$ = $1; }
-    | constructor { $$ = $1; }
-    | destructor { $$ = $1; }
+    | operator { $$ = $1; }
     | function { $$ = $1; }
 	| native { $$ = $1; }
 	| prototype { $$ = $1; }
@@ -162,27 +155,21 @@ attribute
     }
 	;
 
-constructor
-    : INIT formal_signature block { 
-        Name* name = parser->environment()->name("@init");
-        Type* type = parser->environment()->void_type();
-        $$ = new Function(@$, name, $2, type, $3);
-	}
-    ;
-
-destructor
-    : DESTROY '(' ')' block { 
-        Name* name = parser->environment()->name("@destroy");
-        Type* type = parser->environment()->void_type();
-        $$ = new Function(@$, name, 0, type, $4);
-	}
-    ;
-
 function
     : IDENTIFIER formal_signature type modifiers block {
         $$ = new Function(@$, $1, $2, $3, $5);
     }
 	| IDENTIFIER formal_signature modifiers block {
+        Type* type = parser->environment()->void_type();
+        $$ = new Function(@$, $1, $2, type, $4);
+	}
+	;
+
+operator
+    : OPERATOR formal_signature type modifiers block {
+        $$ = new Function(@$, $1, $2, $3, $5);
+    }
+	| OPERATOR formal_signature modifiers block {
         Type* type = parser->environment()->void_type();
         $$ = new Function(@$, $1, $2, type, $4);
 	}
@@ -266,15 +253,6 @@ block
     : '{' statement_list '}' { 
 		$$ = new Block(@$, $2); 
 	}
-	| RIGHT_ARROW RETURN expression SEPARATOR { 
-        $$ = new Return(@$, $3); 
-    }
-	| RIGHT_ARROW RETURN SEPARATOR { 
-        $$ = new Return(@$, new Empty(@$)); 
-    }
-	| RIGHT_ARROW expression SEPARATOR { 
-		$$ = new Simple(@$, $2); 
-    }
     ;
 
 statement_list

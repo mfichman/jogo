@@ -25,6 +25,7 @@
 
 #include "Apollo.hpp"
 #include "Environment.hpp"
+#include "Feature.hpp"
 #include "Object.hpp"
 #include <fstream>
 
@@ -35,6 +36,7 @@ public:
     ~Parser();
 
     Environment* environment() const { return environment_; }
+    Module* module() const { return module_; }
     std::fstream& input() { return input_; }
 	const std::string& file() const { return file_; }
     int column() const { return column_; }
@@ -44,6 +46,7 @@ public:
 
 private:
     Environment::Ptr environment_;
+    Module::Ptr module_;
     int column_;
     std::fstream input_;
     std::string file_;
@@ -54,7 +57,6 @@ private:
 union ParseNode {
 	Expression* expression;
 	Statement* statement;
-	Unit* unit;
 	Formal* formal;
 	When* when;
 	Feature* feature;
