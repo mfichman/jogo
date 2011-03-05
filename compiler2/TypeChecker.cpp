@@ -105,11 +105,16 @@ void TypeChecker::operator()(Let* expression) {
 }
 
 void TypeChecker::operator()(Assignment* expression) {
-    Expression::Ptr storage = expression->storage();
     Expression::Ptr value = expression->expression(); 
-    storage(this);
+    Type::Ptr type = variable(expression->identifier());
     value(this);
-    if (!value->type()->subtype(storage->type())) {
+
+    if (!type) {
+        // Auto-declare the variable if it isn't in scope.
+        variable(expression->identifier(), expression->type());
+    }
+
+    if (!value->type()->subtype(type)) {
         cerr << expression->location();
         cerr << "Type does not conform in assignment";
         cerr << endl;

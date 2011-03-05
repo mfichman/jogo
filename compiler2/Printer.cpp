@@ -138,11 +138,11 @@ void Printer::operator()(Let* expression) {
 
 void Printer::operator()(Assignment* expression) {
     indent_level_++;
-    Expression::Ptr storage = expression->storage();
+    Name::Ptr identifier = expression->identifier();
     Expression::Ptr right = expression->expression();
     cout << "Assignment" << endl;
-    print_tabs(); cout << "storage:";
-    storage(this);
+    print_tabs(); cout << "identifier:";
+    cout << identifier->string() << endl;
     print_tabs(); cout << "expression:";
     right(this);
     indent_level_--;

@@ -82,13 +82,13 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 %type <feature> feature feature_list attribute class
 %type <feature> operator function prototype native import
-%type <type> type
+%type <type> type 
 %type <generic> generic_list generic
 %type <flag> modifiers
 %type <formal> formal_signature formal_list formal
 %type <statement> block when_list when statement_list statement conditional
 %type <variable> variable_list variable
-%type <expression> expression expression_list storage assignment
+%type <expression> expression expression_list
 
 
 /* The Standard Apollo Grammar, version 2010 */
@@ -109,6 +109,7 @@ input
 
 import
     : IMPORT type SEPARATOR {
+        // TODO: Generic in the import? That's probably bad.
         $$ = new Import(@$, $2);
     }
     ;
@@ -300,9 +301,6 @@ statement
     | expression SEPARATOR { 
 		$$ = new Simple(@$, $1); 
 	}
-    | assignment SEPARATOR { 
-		$$ = new Simple(@$, $1); 
-	}
     | conditional {
         $$ = $1;
     }
@@ -319,79 +317,6 @@ conditional
         $$ = new Conditional(@$, $2, $3, $5);
     }
 	;
-
-storage
-    : expression '.' IDENTIFIER { 
-		/* Member variable access */
-		$$ = new Member(@$, $1, $3); 
-	}
-    | expression '[' expression ']' { 
-        $1->next($3);
-        Environment* env = parser->environment();
-        $$ = new Dispatch(@$, env->name("@index"), $1);
-	}
-
-assignment
-    : storage '=' expression { 
-        $$ = new Assignment(@$, $1, $3); 
-	}
-    | storage POWER_ASSIGN expression {
-        $1->next($3);
-        Environment* env = parser->environment();
-        Dispatch* power = new Dispatch(@$, env->name("@power"), $1);
-        $$ = new Assignment(@$, $1, power);
-    }
-    | storage MULTIPLY_ASSIGN expression { 
-        $1->next($3);
-        Environment* env = parser->environment();
-        Dispatch* multiply = new Dispatch(@$, env->name("@multiply"), $1);
-        $$ = new Assignment(@$, $1, multiply);
-	}
-    | storage DIVIDE_ASSIGN expression { 
-        $1->next($3);
-        Environment* env = parser->environment();
-        Dispatch* divide = new Dispatch(@$, env->name("@divide"), $1);
-        $$ = new Assignment(@$, $1, divide);
-	}
-    | storage MODULUS_ASSIGN expression { 
-        $1->next($3);
-        Environment* env = parser->environment();
-        Dispatch* modulus = new Dispatch(@$, env->name("@modulus"), $1);
-        $$ = new Assignment(@$, $1, modulus);
-	}
-    | storage SUBTRACT_ASSIGN expression { 
-        $1->next($3);
-        Environment* env = parser->environment();
-        Dispatch* subtract = new Dispatch(@$, env->name("@subtract"), $1);
-        $$ = new Assignment(@$, $1, subtract);
-	}
-    | storage ADD_ASSIGN expression { 
-        $1->next($3);
-        Environment* env = parser->environment();
-        Dispatch* add = new Dispatch(@$, env->name("@add"), $1);
-        $$ = new Assignment(@$, $1, add);
-	}
-    | storage BIT_AND_ASSIGN expression { 
-        $1->next($3);
-        Environment* env = parser->environment();
-        Dispatch* child = new Dispatch(@$, env->name("@bitand"), $1);
-        $$ = new Assignment(@$, $1, child);
-	}
-    | storage BIT_OR_ASSIGN expression { 
-        $1->next($3);
-        Environment* env = parser->environment();
-        Dispatch* child = new Dispatch(@$, env->name("@bitor"), $1);
-        $$ = new Assignment(@$, $1, child);
-	}
-    | storage BIT_XOR_ASSIGN expression {
-        $1->next($3);
-        Environment* env = parser->environment();
-        Dispatch* child = new Dispatch(@$, env->name("@bitxor"), $1);
-        $$ = new Assignment(@$, $1, child);
-    }
-    ;
-
-
 expression
 	: expression '?' expression { 
 		$$ = new Binary(@$, parser->environment()->name("?"), $1, $3);
@@ -493,12 +418,6 @@ expression
     | '~' expression { 
         $$ = new Dispatch(@$, parser->environment()->name("@complement"), $2); 
     }
-    | expression INCREMENT { 
-		$$ = new Dispatch(@$, parser->environment()->name("@increment"), $1); 
-	}
-    | expression DECREMENT { 
-		$$ = new Dispatch(@$, parser->environment()->name("@decrement"), $1); 
-	}
     | IDENTIFIER '(' expression_list ')' {
 		$$ = new Call(@$, 0, $1, $3);
     }
@@ -518,6 +437,34 @@ expression
     | type '(' ')' {
         $$ = new Construct(@$, $1, 0);
     } 
+    | expression '[' expression_list ']' {
+        /* Invokes the special method, a la Lua and Python */
+        $1->next($3);
+        $$ = new Dispatch(@$, parser->environment()->name("@index"), $1);
+    }
+    | expression '[' expression_list ']' '=' expression {
+        /* Invokes the special method, a la Lua and Python */
+        $1->next($3);
+        Expression* last = $3;
+        while (last->next()) {
+            last = last->next();
+        }
+        last->next($6);
+        $$ = new Dispatch(@$, parser->environment()->name("@insert"), $1);
+    }
+    | IDENTIFIER '=' expression {
+        $$ = new Assignment(@$, $1, $3); 
+    }
+    | expression '.' IDENTIFIER '=' expression {
+        /* Attribute write, calls the mutator function */
+        Name* name = parser->environment()->name($3->string() + "=");
+        $1->next($5);
+        $$ = new Dispatch(@$, name, $1);
+    }
+    | expression '.' IDENTIFIER {
+        /* Attribute read, calls the accessor function */
+        $$ = new Dispatch(@$, $3, $1);
+    }
     | expression '.' IDENTIFIER '(' expression_list ')' {
         $1->next($5);
         $$ = new Dispatch(@$, $3, $1);
@@ -525,7 +472,6 @@ expression
     | expression '.' IDENTIFIER '(' ')' {
         $$ = new Dispatch(@$, $3, $1);
     }
-    | storage { $$ = $1; }
 	| '(' expression ')' { $$ = $2; } 
     | STRING { $$ = $1; }
     | NUMBER { $$ = $1; }
@@ -559,9 +505,6 @@ variable
     | IDENTIFIER type '=' expression {
         $$ = new Variable(@$, $1, $2, $4);
     }
-    | IDENTIFIER '=' expression {
-        $$ = new Variable(@$, $1, parser->environment()->void_type(), $3);
-    }
     ;
 
 when_list
@@ -579,5 +522,3 @@ when
         $$ = new When(@$, $2, $3, $4);
     }
     ;
-
-

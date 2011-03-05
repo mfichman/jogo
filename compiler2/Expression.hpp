@@ -94,18 +94,18 @@ private:
 /* Assignment expression */
 class Assignment : public Expression {
 public:
-    Assignment(Location loc, Expression* storage, Expression* expression) :
+    Assignment(Location loc, Name* identifier, Expression* expression) :
         Expression(loc),
-        storage_(storage),
+        identifier_(identifier),
         expression_(expression) {
     }
 
-    Expression* storage() const { return storage_; }
+    Name* identifier() const { return identifier_; }
     Expression* expression() const { return expression_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Expression::Ptr storage_;
+    Name::Ptr identifier_;
     Expression::Ptr expression_;
 };
 
