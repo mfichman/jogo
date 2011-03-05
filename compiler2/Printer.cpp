@@ -135,6 +135,23 @@ void Printer::operator()(Binary* expression) {
     indent_level_--;
 }
 
+void Printer::operator()(Let* expression) {
+    indent_level_++;
+    Statement::Ptr block = expression->block();
+    cout << "Let" << endl;
+    
+    int i = 0;
+    for (Statement::Ptr v = expression->variables(); v; v = v->next()) {
+        print_tabs(); cout << "variable" << i << ": ";
+        v(this);
+        i++;
+    }
+    print_tabs(); cout << "block: ";
+    block(this);
+
+    indent_level_--;
+}
+
 void Printer::operator()(Assignment* expression) {
     indent_level_++;
     Expression::Ptr storage = expression->storage();
@@ -325,7 +342,8 @@ void Printer::operator()(Case* statement) {
     for (Statement::Ptr b = statement->branches(); b; b = b->next()) {
         print_tabs(); cout << "branch" << i << ": ";
         b(this);
-    } 
+        i++;
+    }
     indent_level_--;
 }
 

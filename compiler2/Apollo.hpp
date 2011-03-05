@@ -29,6 +29,7 @@ class Expression;
 class StringLiteral;
 class IntegerLiteral;
 class BooleanLiteral;
+class Name;
 class Binary;
 class Assignment;
 class Unary;

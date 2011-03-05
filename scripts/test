@@ -3,8 +3,8 @@
 failed = false
 
 ARGV.each do |test|
-    result = `binaries/test #{test} | diff - #{test}.out`
-    if !result.empty?
+    result = `binaries/test #{test} 2>&1 | diff - #{test}.out`
+    if !result.empty? || $? != 0
         (1..79).each { putc '-' }        
         puts
         puts "FAILED TEST: #{test}"

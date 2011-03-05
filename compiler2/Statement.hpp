@@ -53,9 +53,9 @@ public:
     }
 
     Expression* expression() const { return expression_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Expression::Ptr expression_;
 };
 
@@ -72,10 +72,10 @@ public:
     Name* variable() const { return variable_; }
     Type* type() const { return type_; }
     Statement* block() const { return block_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<When> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr variable_;
 	Type::Ptr type_;
     Statement::Ptr block_;
@@ -92,9 +92,10 @@ public:
 
 	Expression* guard() const { return guard_; }
     When* branches() const { return branches_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Case> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
 	Expression::Ptr guard_;
     When::Ptr branches_;
 };
@@ -108,9 +109,10 @@ public:
     }
     
     Statement* children() const { return children_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Block> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Statement::Ptr children_;
 };
 
@@ -129,9 +131,10 @@ public:
 	Type* type() const { return type_; }
     Expression* expression() const { return expression_; }
     Statement* block() const { return block_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<For> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr variable_;
 	Type::Ptr type_;
     Expression::Ptr expression_;
@@ -151,9 +154,10 @@ public:
     Name* identifier() const { return identifier_; }
     Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Variable> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr identifier_;
 	Type::Ptr type_;
     Expression::Ptr initializer_;
@@ -170,9 +174,10 @@ public:
 
     Expression* guard() const { return guard_; }
     Statement* block() const { return block_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<While> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Expression::Ptr guard_;
     Statement::Ptr block_;
 };
@@ -190,9 +195,10 @@ public:
     Expression* guard() const { return guard_; }
     Statement* true_branch() const { return true_branch_; }
     Statement* false_branch() const { return false_branch_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Conditional> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Expression::Ptr guard_;
     Statement::Ptr true_branch_;
     Statement::Ptr false_branch_;
@@ -207,27 +213,29 @@ public:
     }
 
     Expression* expression() const { return expression_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Return> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Expression::Ptr expression_;
 };
 
 /* Let statement */
 class Let : public Statement {
 public:
-    Let(Location loc, Statement* variables, Statement* block) :
+    Let(Location loc, Variable* variables, Statement* block) :
         Statement(loc),
         variables_(variables),
         block_(block) {
     }
 
-    Statement* variables() const { return variables_; }
+    Variable* variables() const { return variables_; }
     Statement* block() const { return block_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Let> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
-    Statement::Ptr variables_;
+    Variable::Ptr variables_;
     Statement::Ptr block_;
 };
 

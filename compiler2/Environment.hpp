@@ -37,6 +37,7 @@ public:
         boolean_type_(new Type(0, name("Boolean"), 0, this)),
         integer_type_(new Type(0, name("Integer"), 0, this)),
         string_type_(new Type(0, name("String"), 0, this)),
+        no_type_(new Type(0, name("<<notype>>"), 0, this)),
         float_type_(new Type(0, name("Float"), 0, this)),
         errors_(0) {
     }

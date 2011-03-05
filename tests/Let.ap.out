@@ -1,0 +1,16 @@
+unit0: Class
+  name: Let
+  feature0: Function
+    name: let1
+    type: Void
+    block: Block
+      child0: Let
+        variable0: Variable
+          name: a
+          type: Int
+          initializer: IntegerLiteral(0)
+        variable1: Variable
+          name: b
+          type: Int
+          initializer: Empty
+        block: Block

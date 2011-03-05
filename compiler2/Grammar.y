@@ -27,6 +27,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %union { Formal* formal; }
 %union { Type* type; }
 %union { Generic* generic; }
+%union { Variable* variable; }
 %union { int null; }
 %union { int flag; }
 
@@ -44,6 +45,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %destructor { delete $$; $$ = 0; } <formal>
 %destructor { delete $$; $$ = 0; } <type>
 %destructor { delete $$; $$ = 0; } <generic>
+%destructor { delete $$; $$ = 0; } <variable>
 
 
 %left '?'
@@ -88,7 +90,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %type <flag> modifiers
 %type <formal> formal_signature formal_list formal
 %type <statement> block when_list when statement_list statement conditional
-%type <statement> variable_list variable
+%type <variable> variable_list variable
 %type <expression> expression expression_list storage assignment
 
 

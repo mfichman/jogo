@@ -1,0 +1,9 @@
+class Let {
+
+    let1() {
+        let a:Int = 0, b:Int {
+
+        } 
+    }
+
+}

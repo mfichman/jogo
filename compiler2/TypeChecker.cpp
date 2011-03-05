@@ -76,14 +76,28 @@ void TypeChecker::operator()(Structure* unit) {
 void TypeChecker::operator()(Module* unit) {
 }
 
+void TypeChecker::operator()(Empty* expression) {
+}
+
 void TypeChecker::operator()(StringLiteral* expression) {
-    Name* name = environment_->name("String");
-    expression->type(new Type(0, name, 0, environment_)); 
+    expression->type(environment_->string_type()); 
 }
 
 void TypeChecker::operator()(IntegerLiteral* expression) {
-    Name* name = environment_->name("Integer");
-    expression->type(new Type(0, name, 0, environment_)); 
+    expression->type(environment_->integer_type()); 
+}
+
+void TypeChecker::operator()(BooleanLiteral* expression) {
+    assert(environment_->boolean_type());
+    expression->type(environment_->boolean_type());
+}
+
+void TypeChecker::operator()(Let* expression) {
+    Statement::Ptr block = expression->block();
+    for (Statement::Ptr v = expression->variables(); v; v = v->next()) {
+        v(this);
+    }
+    block(this);
 }
 
 void TypeChecker::operator()(Assignment* expression) {
@@ -131,8 +145,10 @@ void TypeChecker::operator()(Unary* expression) {
             cerr << environment_->boolean_type();
             cerr << endl;
         }
+        expression->type(environment_->boolean_type());
     } else {
         assert("Unary operator not implemented");
+        expression->type(environment_->no_type());
     }
 }
 
@@ -188,6 +204,7 @@ void TypeChecker::operator()(Call* expression) {
 }
 
 void TypeChecker::operator()(Dispatch* expression) {
+
     // Evaluate types of argument expressions
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         a(this);
@@ -195,8 +212,14 @@ void TypeChecker::operator()(Dispatch* expression) {
 
     // Look up the function by name from the unit
     Expression::Ptr object = expression->arguments();
+    assert(object->type());
+
     Unit::Ptr unit = environment_->unit(object->type()->qualified_name());
     if (!unit) {
+        cerr << expression->location();
+        cerr << "Undefined class ";
+        cerr << object->type()->qualified_name()->string();
+        cerr << endl;
         expression->type(environment_->no_type());
         return;
     }
@@ -297,7 +320,10 @@ void TypeChecker::operator()(Simple* statement) {
 void TypeChecker::operator()(While* statement) {
     Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
+
     guard(this);
+    Type* t = guard->type();
+    assert(t);
     if (!environment_->boolean_type()->equals(guard->type())) {
         cerr << statement->location();
         cerr << "While statement guard expression must have type ";

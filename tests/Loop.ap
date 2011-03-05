@@ -1,6 +1,4 @@
 class Loop {
-
-
     loop1() {
         for i:Int in 0 {
     
