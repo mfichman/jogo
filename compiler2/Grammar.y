@@ -83,7 +83,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token INCREMENT DECREMENT
 %token SCOPE LET IN
 
-%type <feature> feature feature_list attribute import
+%type <feature> feature feature_list attribute
 %type <feature> constructor destructor function prototype native
 %type <type> type
 %type <generic> generic_list generic
@@ -96,6 +96,23 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 /* The Standard Apollo Grammar, version 2010 */
 %%
+
+module
+    : unit_list {
+    }
+	| /* empty is an error */ { 
+		yyerror(&@$, parser, scanner, "Input file is empty"); 
+		YYERROR;
+	}
+    ;
+
+unit_list
+    : unit unit_list {
+    }
+    | unit {
+    }
+    ;
+
 unit
     : CLASS type '{' feature_list '}' {
         parser->environment()->unit(new Class(@$, $2, $4)); 
@@ -106,13 +123,15 @@ unit
     | STRUCT type '{' feature_list '}' {
         parser->environment()->unit(new Structure(@$, $2, $4));    
     }
-    | MODULE type '{' feature_list '}' {
-        parser->environment()->unit(new Module(@$, $2, $4));    
-    }
-	| /* empty is an error */ { 
-		yyerror(&@$, parser, scanner, "Input file is empty"); 
-		YYERROR;
+    | IMPORT type SEPARATOR { 
+		//$$ = new Import(@$, $2);
+        $2 = 0;
+        assert("Not supported");
 	}
+    | function {
+        $1 = 0;
+        assert("Not supported");
+    }
 	| error { }
     ;
 
@@ -121,25 +140,18 @@ feature_list
         $$ = $1;
         $$->next($2);
     }
-    | feature {
-        $$ = $1;
+    | /* empty */ {
+        $$ = 0;
     }
     ;
 
 feature
-    : import { $$ = $1; }
-    | attribute { $$ = $1; }
+    : attribute { $$ = $1; }
     | constructor { $$ = $1; }
     | destructor { $$ = $1; }
     | function { $$ = $1; }
 	| native { $$ = $1; }
 	| prototype { $$ = $1; }
-    ;
-
-import
-    : IMPORT type SEPARATOR { 
-		$$ = new Import(@$, $2);
-	}
     ;
 
 attribute
@@ -220,8 +232,6 @@ formal
 
 modifiers
 	: PRIVATE { $$ = 0; }
-	| STATIC { $$ = 0; }
-	| PRIVATE STATIC { $$ = 0; }
 	| /* empty */ { $$ = 0; }
 	;
 

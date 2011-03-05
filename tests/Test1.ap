@@ -5,6 +5,7 @@ class Test1 {
     bill:Integer = ~929
     jim:Integer = f(99, 19, 2)
     mike:Integer = jim.foo(1, 2, 3)
+}
 
-
+class Test2 {
 }

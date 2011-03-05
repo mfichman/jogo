@@ -1,6 +1,5 @@
 class Conditional {
 
-
     conditional1():Integer {
         if (true) {
             return 1

@@ -116,7 +116,7 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
     BEGIN(END);
 	return IDENTIFIER;
 }
-[A-Z][A-Za-z0-9_]* {
+[A-Z][A-Za-z0-9]* {
 	yylval->name = yyextra->environment()->name(yytext);
     BEGIN(END);
 	return TYPE;
