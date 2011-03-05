@@ -19,7 +19,7 @@ syn region apComment start="#" end="$" contains=apTodo
 syn region apString start=+"+ end=+"+
 syn region apString start=+'+ end=+'+
 
-syn keyword apConstant true false
+syn keyword apConstant true false nil self
 
 syn keyword apFunction @init @destroy @add @subtract @divide @mulitply
 syn keyword apFunction @index @modulus @bitand @bitor @bitxor @equal
@@ -28,7 +28,7 @@ syn keyword apFunction @decrement @dispatch  @compare
 
 syn match apType "[A-Z][A-Za-z0-9]*"
 syn match apFunction "[a-z][A-Za-z0-9_]*(\@="
-syn match apFunction "\.\@<=[a-z][A-Za-z0-9_]*\>"
+"syn match apFunction "\.\@<=[a-z][A-Za-z0-9_]*\>"
 
 
 syn keyword apOperator + - / * <> == != ^ ?

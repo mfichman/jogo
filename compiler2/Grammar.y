@@ -332,7 +332,7 @@ statement
 
 conditional
 	: IF expression block {
-		$$ = new Conditional(@$, $2, $3, 0);
+		$$ = new Conditional(@$, $2, $3, new Block(@$, 0));
 	}
     | IF expression block ELSE block {
         $$ = new Conditional(@$, $2, $3, $5);

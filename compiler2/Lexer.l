@@ -62,7 +62,7 @@ xor BEGIN(INITIAL); return XOR;
 and BEGIN(INITIAL); return AND;
 or BEGIN(INITIAL); return OR;
 in BEGIN(INITIAL); return IN;
-not BEGIN(INITIAL); return NOT;
+not return NOT;
 -> BEGIN(INITIAL); return RIGHT_ARROW;
 \<\- BEGIN(INITIAL); return LEFT_ARROW;
 == BEGIN(INITIAL); return EQUAL; 

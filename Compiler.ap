@@ -1,0 +1,102 @@
+
+
+SQLCompiler < Object {
+
+    query Query
+    connection Connection
+    #quote_cache = {}
+
+    @init(query Query, conn Connection) {
+        self.query = query
+        self.connection = conn
+    }
+
+
+    pre_sql_setup() {
+        # Does any necessary class setup immediately prior to introducing SQL.
+        # This is for things that can't necessarily be done in @init because we
+        # might not have all the pieces in place at that time.
+
+        if not self.query.tables {
+            self.query.join(nil, self.query.model.db_table, nil, nil)
+        }
+        if not self.query.select and self.query.default_cols and not
+                self.query.included_inherited_models {
+        
+            self.query.setup_inherited_models()
+        }
+        if self.query.select_related and not self.query.related_select_colrs {
+            self.fill_related_selections()
+        }
+    }
+
+    quote_name_unless_alias(name String) { 
+        # A wrapper around connection.ops.quote_name that doesn't quote aliases
+        # for table names.  This avoids the problems with some SQL dialects
+        # that treat quoted strings specially (e.g., PostgresSQL)
+
+        if self.quote_cache.contains(name) {
+            return self.quote_cache[name]
+        }
+    }
+}
+
+
+ActiveRecord::Base < Object {
+    
+    postresql_connection(config Map[String,Any]) {
+        config = config.symbolize_keys
+        host = config['host']
+        port = config['port'] or 5432
+    }
+
+    
+}
+
+ActiveRecord::ConnectionAdapters::Column < Object {
+
+    name String
+    sql_type String
+
+    @init(name String, default String, sql_type String, null Boolean) {
+        
+
+    }
+
+}
+
+
+KernelThread < Object {
+
+    bind(task Task, cpu Integer) {
+
+        if not wait_task_inactive(p, Task::uninterruptible()) {
+            warn_on(true)
+            return
+        }
+
+        task.cpus_allowed = cpumask_of_cpu(cpu)
+        task.rt.nr_cpus_allowed = 1
+        task.flags |= thread_bound
+    }
+
+    stop(task Task) Integer {
+        trace_sched_kthread_stop(task)
+        get_task_struct(task)
+        
+        kthread = to_kthread(task)
+        barrier()
+
+        if task.vfork_done {
+            kthread.should_stop = true
+            wake_up_process(task)
+            wait_for_completion(kthread.exited)
+        }
+        ret = task.exit_code
+
+        put_task_struct(k)
+        trace_sched_kthread_stop_ret(ret)
+
+        return ret
+    }
+}
