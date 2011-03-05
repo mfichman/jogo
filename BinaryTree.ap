@@ -2,10 +2,6 @@ TreeMap[K,V] < Object {
     
     root:TreeMap[K,V]::Node
 
-
-    "hello"
-
-
     valueIs(key:K, value:V) {
         if !root {
             root:TreeMap[K,V] = TreeMap[K,V]::Node(key, value)
@@ -19,7 +15,8 @@ TreeMap[K,V] < Object {
             else if node.key < key {
                 if node.right {
                     node = node.right
-                } else {
+                }
+                else {
                     node.right = TreeMap[K,V]::Node(key, value)
                     return
                 }
@@ -27,7 +24,8 @@ TreeMap[K,V] < Object {
             else {
                 if node.left() {
                     node = node.left
-                } else {
+                }
+                else {
                     node.left = TreeMap[K,V]::Node(key, value)
                     return
                 }

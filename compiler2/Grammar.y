@@ -57,7 +57,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %left '|' XOR
 %left '&'
 %left EQUAL NOT_EQUAL
-%left '<' '>' LESS_OR_EQUAL GREATER_OR_EQUAL
+%left '<' '>' LESS_OR_EQUAL GREATER_OR_EQUAL COMPARE
 %left LEFT_SHIFT RIGHT_SHIFT
 %left '+' '-'
 %left '*' '/' '%'
@@ -416,10 +416,10 @@ expression
         assert("Not implemented");
 	}
     | expression OR expression { 
-		$$ = new Binary(@$, parser->environment()->name("||"), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("or"), $1, $3); 
 	}
     | expression AND expression { 
-		$$ = new Binary(@$, parser->environment()->name("&&"), $1, $3); 
+		$$ = new Binary(@$, parser->environment()->name("and"), $1, $3); 
 	}
     | expression XOR expression {
         $1->next($3);
@@ -443,6 +443,11 @@ expression
         Dispatch* equal = new Dispatch(@$, env->name("@equal"), $1);
         $$ = new Unary(@$, env->name("!"), equal);
 	}
+    | expression COMPARE expression {
+        $1->next($3);
+        Environment* env = parser->environment();
+        $$ = new Dispatch(@$, env->name("@compare"), $1);
+    }
     | expression '>' expression { 
         $1->next($3);
         Environment* env = parser->environment();

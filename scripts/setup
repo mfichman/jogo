@@ -17,6 +17,7 @@ def setup_vim()
     options.add "set noerrorbells"
     options.add "set number"
     options.add "set nowrap"
+    options.add "set t_Co=256"
 
     File.open("#{ENV['HOME']}/.vimrc", "w") do |file|
         options.each do |option|
@@ -24,6 +25,7 @@ def setup_vim()
         end
     end
 
+    FileUtils.rm "#{ENV['HOME']}/.vim/syntax/apollo.vim"
     FileUtils.mkdir_p "#{ENV['HOME']}/.vim/syntax/"
     FileUtils.ln "tools/apollo.vim", "#{ENV['HOME']}/.vim/syntax/" 
 
