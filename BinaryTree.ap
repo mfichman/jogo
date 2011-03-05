@@ -1,7 +1,7 @@
-BinaryTree::Node[K,V] {
-    left BinaryTree::Node[K,V]
-    right BinaryTree::Node[K,V]
-    key K
-    value V
+BinaryTree::Node[K,V] < Object {
+    left:BinaryTree::Node[K,V]
+    right:BinaryTree::Node[K,V]
+    key:K
+    value:V
 
 }

@@ -1,0 +1,47 @@
+
+Test < Object {
+
+    dijkstra(graph Graph, source Vertex) Map[Vertex, Float] {
+        dist = Map[Vertex, Float]()
+        previous = Map[Vertex, Vertex]()
+
+        for v in graph {
+            dist[v] = inifinity
+            previous[v] = nil
+        }
+        dist[source] = 0
+        q = PriorityQueue[Vertex](graph.vertices) # lambda(v1:Vertex, v2:Vertex)
+        
+        while not q.empty {
+            #u = argmin(q, dist, dist::get)
+            u = q.pop()
+            if dist[u] == infinity {
+                break
+            }
+            for v in u.neighbors {
+                alt = dist[u] + dist(u, v)
+                if alt < dist[v] {
+                    dist[v] = alt
+                    previous[v] = u
+                }
+            }
+        }
+        return dist
+    }
+
+    bfs(graph Graph, source Vertex) {
+        q = Queue([source])
+        marked = Set[Vertex]()
+        marked.add(source)
+        while not q.empty {
+            v = q.dequeue() 
+            for e in v.neighbors {
+                w = e.opposite
+                if not marked[w] {
+                    marked.add(w)
+                    q.enqueue(w)
+                }
+            }
+        }
+    }
+}

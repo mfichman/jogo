@@ -153,6 +153,10 @@ attribute
 		// TODO: Set symbol table for class-level
 		$$ = new Attribute(@$, $1, $3, $5);
     }
+    | IDENTIFIER '=' expression SEPARATOR {
+		// TODO: Set symbol table for class-level
+		$$ = new Attribute(@$, $1, parser->environment()->void_type(), $3);
+    }
     | IDENTIFIER ':' type SEPARATOR {
 		$$ = new Attribute(@$, $1, $3, new Empty(@$));
     }
