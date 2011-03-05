@@ -30,7 +30,7 @@ Test < Object {
     }
 
     bfs(graph Graph, source Vertex) {
-        q = Queue([source])
+        q = Queue(source) #[source])
         marked = Set[Vertex]()
         marked.add(source)
         while not q.empty {

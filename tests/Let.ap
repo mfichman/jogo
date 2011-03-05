@@ -1,7 +1,7 @@
 Let < Object {
 
     let1() {
-        let a:Int = 0, b:Int {
+        let a Int = 0, b Int {
 
         } 
     }

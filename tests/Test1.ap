@@ -1,7 +1,7 @@
 Test1 < Object {
 
-    bob:Integer = 0 + 19 + 29 + 29 * 28
-    bill:Integer = ~929
-    jim:Integer = f(99, 19, 2)
-    mike:Integer = jim.foo(1, 2, 3)
+    bob Integer = 0 + 19 + 29 + 29 * 28
+    bill Integer = ~929
+    jim Integer = f(99, 19, 2)
+    mike Integer = jim.foo(1, 2, 3)
 }

@@ -149,16 +149,16 @@ feature
     ;
 
 attribute
-    : IDENTIFIER ':' type '=' expression SEPARATOR {
+    : IDENTIFIER type '=' expression SEPARATOR {
 		// TODO: Set symbol table for class-level
-		$$ = new Attribute(@$, $1, $3, $5);
+		$$ = new Attribute(@$, $1, $2, $4);
     }
     | IDENTIFIER '=' expression SEPARATOR {
 		// TODO: Set symbol table for class-level
 		$$ = new Attribute(@$, $1, parser->environment()->void_type(), $3);
     }
-    | IDENTIFIER ':' type SEPARATOR {
-		$$ = new Attribute(@$, $1, $3, new Empty(@$));
+    | IDENTIFIER type SEPARATOR {
+		$$ = new Attribute(@$, $1, $2, new Empty(@$));
     }
 	;
 
@@ -179,8 +179,8 @@ destructor
     ;
 
 function
-    : IDENTIFIER formal_signature ':' type modifiers block {
-        $$ = new Function(@$, $1, $2, $4, $6);
+    : IDENTIFIER formal_signature type modifiers block {
+        $$ = new Function(@$, $1, $2, $3, $5);
     }
 	| IDENTIFIER formal_signature modifiers block {
         Type* type = parser->environment()->void_type();
@@ -189,8 +189,8 @@ function
 	;
 
 prototype
-	: IDENTIFIER formal_signature ':' type modifiers SEPARATOR {
-        $$ = new Function(@$, $1, $2, $4, 0);
+	: IDENTIFIER formal_signature type modifiers SEPARATOR {
+        $$ = new Function(@$, $1, $2, $3, 0);
 	}
 	| IDENTIFIER formal_signature modifiers SEPARATOR {
         Type* type = parser->environment()->void_type();
@@ -199,8 +199,8 @@ prototype
     ;
 
 native
-	: IDENTIFIER formal_signature ':' type modifiers NATIVE SEPARATOR {
-        $$ = new Function(@$, $1, $2, $4, 0);
+	: IDENTIFIER formal_signature type modifiers NATIVE SEPARATOR {
+        $$ = new Function(@$, $1, $2, $3, 0);
 	}
 	| IDENTIFIER formal_signature modifiers NATIVE SEPARATOR {
         Type* type = parser->environment()->void_type();
@@ -224,8 +224,8 @@ formal_list
     ;
 
 formal
-    : IDENTIFIER ':' type {
-        $$ = new Formal(@$, $1, $3);
+    : IDENTIFIER type {
+        $$ = new Formal(@$, $1, $2);
     }
 
 modifiers
@@ -575,11 +575,11 @@ variable_list
     ;
 
 variable
-    : IDENTIFIER ':' type {
-        $$ = new Variable(@$, $1, $3, new Empty(@$));
+    : IDENTIFIER type {
+        $$ = new Variable(@$, $1, $2, new Empty(@$));
     }
-    | IDENTIFIER ':' type '=' expression {
-        $$ = new Variable(@$, $1, $3, $5);
+    | IDENTIFIER type '=' expression {
+        $$ = new Variable(@$, $1, $2, $4);
     }
     | IDENTIFIER '=' expression {
         $$ = new Variable(@$, $1, parser->environment()->void_type(), $3);
@@ -597,8 +597,8 @@ when_list
     ;
 
 when
-    : WHEN IDENTIFIER ':' type block {
-        $$ = new When(@$, $2, $4, $5);
+    : WHEN IDENTIFIER type block {
+        $$ = new When(@$, $2, $3, $4);
     }
     ;
 
