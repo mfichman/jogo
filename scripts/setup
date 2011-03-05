@@ -25,7 +25,7 @@ def setup_vim()
     end
 
     FileUtils.mkdir_p "#{ENV['HOME']}/.vim/syntax/"
-    FileUtils.cp "tools/apollo.vim", "#{ENV['HOME']}/.vim/syntax/" 
+    FileUtils.ln "tools/apollo.vim", "#{ENV['HOME']}/.vim/syntax/" 
 
     FileUtils.mkdir_p "#{ENV['HOME']}/.vim/colors/"
     FileUtils.cp "tools/molokai.vim", "#{ENV['HOME']}/.vim/colors/"
