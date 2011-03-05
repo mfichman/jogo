@@ -1,6 +1,6 @@
 Loop < Object {
     loop1() {
-        for i:Int in 0 {
+        for i in 0 {
     
         }
     }

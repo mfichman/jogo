@@ -354,11 +354,6 @@ void TypeChecker::operator()(For* statement) {
     Expression::Ptr expression = statement->expression();
     Statement::Ptr block = statement->block();
     expression(this);
-    if (!statement->type()->collection(expression->type())) {
-        cerr << statement->location();
-        cerr << "For expression is not a conforming collection";
-        cerr << endl;
-    }
     block(this);
 }
 

@@ -1,59 +1,7 @@
-TreeMap[K,V] < Object {
-    
-    root:TreeMap[K,V]::Node
+BinaryTree::Node[K,V] {
+    left BinaryTree::Node[K,V]
+    right BinaryTree::Node[K,V]
+    key K
+    value V
 
-    valueIs(key:K, value:V) {
-        if !root {
-            root:TreeMap[K,V] = TreeMap[K,V]::Node(key, value)
-            return
-        }
-        node = root
-        while true {
-            if node.key == key {
-                node.value = value
-            }
-            else if node.key < key {
-                if node.right {
-                    node = node.right
-                }
-                else {
-                    node.right = TreeMap[K,V]::Node(key, value)
-                    return
-                }
-            }
-            else {
-                if node.left() {
-                    node = node.left
-                }
-                else {
-                    node.left = TreeMap[K,V]::Node(key, value)
-                    return
-                }
-
-            }
-        }
-    }
-
-    value(key:K) {
-        node = root
-        while node {
-            if node.key == key {
-                return node.value
-            }
-            else if node.key < key {
-                node = node.right
-            }
-            else {
-                node = node.left
-            }
-        }
-        return nil
-    }
-}
-
-TreeMap[K,V]::Node < Object {
-    key:K
-    value:V
-    left:TreeMap[K,V]::Node
-    right:TreeMap[K,V]::Node
 }

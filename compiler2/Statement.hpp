@@ -119,16 +119,14 @@ private:
 /* For-each loop statement */
 class For : public Statement {
 public:
-    For(Location loc, Name* var, Type* type, Expression* expr, Statement* block) :
+    For(Location loc, Name* var, Expression* expr, Statement* block) :
         Statement(loc),
         variable_(var),
-		type_(type),
         expression_(expr),
         block_(block) {
     }
 
     Name* variable() const { return variable_; }
-	Type* type() const { return type_; }
     Expression* expression() const { return expression_; }
     Statement* block() const { return block_; }
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -136,7 +134,6 @@ public:
 
 private:
     Name::Ptr variable_;
-	Type::Ptr type_;
     Expression::Ptr expression_;
     Statement::Ptr block_;
 };

@@ -6,7 +6,6 @@ unit0: Class
     block: Block
       child0: For
         variable: i
-        type: Int
         expression: IntegerLiteral(0)
         block: Block
   feature1: Function

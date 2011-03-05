@@ -298,8 +298,6 @@ void Printer::operator()(For* statement) {
     cout << "For" << endl;
     print_tabs(); cout << "variable: "; 
     cout << statement->variable()->string() << endl;
-    print_tabs(); cout << "type: ";
-    cout << statement->type()->qualified_name()->string() << endl;
     print_tabs(); cout << "expression: ";
     expression(this);
     print_tabs(); cout << "block: ";

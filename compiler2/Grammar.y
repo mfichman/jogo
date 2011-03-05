@@ -62,7 +62,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %left '+' '-'
 %left '*' '/' '%'
 %left '^'
-%left '!' '~'
+%left NOT '!' '~'
 %left INCREMENT DECREMENT
 %left '.' '['
 
@@ -288,8 +288,8 @@ statement_list
 
 
 statement
-	: FOR IDENTIFIER ':' type IN expression block {
-		$$ = new For(@$, $2, $4, $6, $7);
+	: FOR IDENTIFIER IN expression block {
+		$$ = new For(@$, $2, $4, $5);
 	}
     | LET variable_list block {
         $$ = new Let(@$, $2, $3);
@@ -505,7 +505,7 @@ expression
         $1->next($3);
 		$$ = new Dispatch(@$, parser->environment()->name("@modulus"), $1); 
 	}
-    | '!' expression { 
+    | NOT expression { 
         $$ = new Unary(@$, parser->environment()->name("!"), $2); 
     }
     | '~' expression { 
