@@ -34,6 +34,10 @@ using namespace std;
 TypeChecker::TypeChecker(Environment* environment) :
     environment_(environment) {
 
+    if (environment_->errors()) {
+        return;
+    }
+
     for (Unit::Ptr u = environment_->units(); u; u = u->next()) {
         // Clear out old function - name bindings.
         enter_scope();
@@ -163,7 +167,7 @@ void TypeChecker::operator()(Call* expression) {
         if (!arg->type()->subtype(formal->type())) {
             cerr << arg->location();
             cerr << "Argument does not conform to type ";
-            cerr << formal->type();
+            cerr << *formal->type();
             cerr << endl;
         }
         arg = arg->next();
@@ -215,7 +219,7 @@ void TypeChecker::operator()(Dispatch* expression) {
         if (!arg->type()->subtype(formal->type())) {
             cerr << arg->location();
             cerr << "Argument does not conform to type ";
-            cerr << formal->type();
+            cerr << *formal->type();
             cerr << endl;
         }
         arg = arg->next();
@@ -336,7 +340,7 @@ void TypeChecker::operator()(Variable* statement) {
     if (!statement->type()->supertype(initializer->type())) {
         cerr << statement->location();
         cerr << "Expression does not conform to type ";
-        cerr << initializer->type();
+        cerr << *initializer->type();
         cerr << endl;
     } 
     variable(statement->identifier(), statement->type()); 
@@ -350,7 +354,7 @@ void TypeChecker::operator()(Return* statement) {
     if (!expression->type()->subtype(current_function_->type())) {
         cerr << statement->location();
         cerr << "Expression does not conform to return type ";
-        cerr << current_function_->type();
+        cerr << *current_function_->type();
         cerr << endl;
     }
 }
@@ -384,7 +388,7 @@ void TypeChecker::operator()(Attribute* feature) {
     if (!feature->type()->supertype(initializer->type())) {
         cerr << feature->location();
         cerr << "Expression does not conform to type: ";
-        cerr << initializer->type();
+        cerr << *initializer->type();
         cerr << endl;
     }
     variable(feature->name(), feature->type());

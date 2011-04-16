@@ -34,7 +34,9 @@ int main(int argc, char** argv) {
     }
 
     Environment::Ptr environment(new Environment());
-    Parser::Ptr parser(new Parser(environment, argv[1]));
+    Parser::Ptr parser(new Parser(environment));
+    parser->file(argv[1]);
+
     Printer::Ptr printer(new Printer(environment));
     
     

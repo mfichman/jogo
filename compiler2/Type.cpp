@@ -92,12 +92,12 @@ Type* Type::least_upper_bound(Type* other) {
     return false;
 }
 
-std::ostream& operator<<(std::ostream& out, Type::Ptr type) {
-    out << type->qualified_name()->string();
-    if (type->generics()) {
+std::ostream& operator<<(std::ostream& out, const Type& type) {
+    out << type.qualified_name()->string();
+    if (type.generics()) {
         out << '[';
-        for (Generic::Ptr g = type->generics(); g; g = g->next()) {
-            out << g->type();
+        for (Generic::Ptr g = type.generics(); g; g = g->next()) {
+            out << *g->type();
             if (g->next()) {
                 out << ',';
             }

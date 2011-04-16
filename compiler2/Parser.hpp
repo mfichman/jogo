@@ -31,30 +31,20 @@
 /* Primary parser structure; creates compilation units */
 class Parser : public Object {
 public:
-    Parser(Environment* env, const std::string& file) :
-		environment_(env) {
-
-        Parser::file(file);
-	}
-
-    Parser(Environment* env) :
-        environment_(env) {
-    }
+    Parser(Environment* env);
+    ~Parser();
 
     Environment* environment() const { return environment_; }
     std::fstream& input() { return input_; }
 	const std::string& file() const { return file_; }
     int column() const { return column_; }
-	int error() const { return error_; }
 	void file(const std::string& file);
     void column(int column) { column_ = column; }
-	void error(int error) { error_ = error; }
     typedef Pointer<Parser> Ptr;
 
 private:
     Environment::Ptr environment_;
     int column_;
-    int error_;
     std::fstream input_;
     std::string file_;
     void *scanner_;

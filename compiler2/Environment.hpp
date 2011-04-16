@@ -37,12 +37,15 @@ public:
         boolean_type_(new Type(0, name("Boolean"), 0, this)),
         integer_type_(new Type(0, name("Integer"), 0, this)),
         string_type_(new Type(0, name("String"), 0, this)),
-        float_type_(new Type(0, name("Float"), 0, this)) {
+        float_type_(new Type(0, name("Float"), 0, this)),
+        errors_(0) {
     }
     Name* name(const std::string& str);
     Unit* units() const { return units_; }
+    int errors() { return errors_; }
     Unit* unit(Name *name) { return unit_[Name::Ptr(name)]; }
     void unit(Unit* unit);
+    void error(const std::string& error) { errors_++; }
     typedef Pointer<Environment> Ptr;
 
     Type* void_type() const { return void_type_; }
@@ -62,6 +65,7 @@ private:
     Type::Ptr string_type_;
     Type::Ptr no_type_;
     Type::Ptr float_type_;
+    int errors_;
 };
 
 #endif

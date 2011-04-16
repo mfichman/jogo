@@ -31,11 +31,21 @@ int yylex_init(void**);
 int yylex_destroy(void*);
 void yyset_extra(Parser*, void*);
 
+Parser::Parser(Environment* env) :
+	environment_(env) {
+
+    yylex_init(&this->scanner_);
+    yyset_extra(this, this->scanner_);
+}
+
+Parser::~Parser() {
+
+    yylex_destroy(this->scanner_);   
+}
 
 void Parser::file(const std::string& file) {
     /* Begin parsing at the root file */
     this->column_ = 1;
-    this->error_ = 0;
     this->input_.open(file.c_str()); 
 	this->file_ = file;
     if (this->input_.bad()) {
@@ -43,13 +53,13 @@ void Parser::file(const std::string& file) {
     }
 
     /* Begin parsing */
-    yylex_init(&this->scanner_);
-    yyset_extra(this, this->scanner_);
     yyparse(this, this->scanner_);
-    yylex_destroy(this->scanner_);   
 
-    /* Now parse other units that depend on this unit */
+    /* Now parse other units that depend on the unit that was added */
     Unit* unit = environment_->units();
+    if (!unit) {
+        return;
+    }
     for (Feature* feat = unit->features(); feat; feat = feat->next()) {
         Import* import = dynamic_cast<Import*>(feat);
         if (import) {
@@ -61,7 +71,7 @@ void Parser::file(const std::string& file) {
 
 void yyerror(Location* loc, Parser* self, void* scanner, const char* msg) {
 
-	self->error(self->error() + 1);
+    self->environment()->error(msg);
 	std::cerr << self->file() << ":" << loc->first_line << ":";
 	std::cerr << loc->first_column << ": ";
 	std::cerr << (char)toupper(msg[0]) << msg + 1 << std::endl;	

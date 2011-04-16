@@ -24,7 +24,7 @@
 
 std::ostream& operator<<(std::ostream& out, const Location& location) {
     out << location.first_line << ":";
-    out << location.first_column << ": " << std::endl;
+    out << location.first_column << ": ";
     return out;
 }
 

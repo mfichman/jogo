@@ -29,6 +29,10 @@ Printer::Printer(Environment* environment) :
     environment_(environment),
     indent_level_(0) {
 
+    if (environment_->errors()) {
+        return;
+    }
+
     int i = 0;
     for (Unit::Ptr u = environment_->units(); u; u = u->next()) {
         cout << "unit" << i << ": ";
