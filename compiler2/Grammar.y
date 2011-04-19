@@ -79,7 +79,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token MULTIPLY_ASSIGN DIVIDE_ASSIGN SUBTRACT_ASSIGN ADD_ASSIGN
 %token MODULUS_ASSIGN BIT_OR_ASSIGN BIT_AND_ASSIGN BIT_XOR_ASSIGN
 %token INCREMENT DECREMENT
-%token SCOPE LET
+%token SCOPE LET IN
 
 %type <feature> feature feature_list attribute import
 %type <feature> constructor destructor function prototype native
@@ -282,7 +282,7 @@ statement_list
 
 
 statement
-	: FOR IDENTIFIER ':' type LEFT_ARROW expression block {
+	: FOR IDENTIFIER ':' type IN expression block {
 		$$ = new For(@$, $2, $4, $6, $7);
 	}
     | LET variable_list block {
