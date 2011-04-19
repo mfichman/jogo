@@ -2,7 +2,7 @@ unit0: Class
   name: Test1
   feature0: Attribute
     name: bob
-    type: Int
+    type: Integer
     initializer: Dispatch
       name: @add
       argument0: Dispatch
@@ -18,13 +18,13 @@ unit0: Class
         argument1: IntegerLiteral(28)
   feature1: Attribute
     name: bill
-    type: Int
+    type: Integer
     initializer: Dispatch
       name: @complement
       argument0: IntegerLiteral(929)
   feature2: Attribute
     name: jim
-    type: Int
+    type: Integer
     initializer: Call
       name: f
       argument0: IntegerLiteral(99)
@@ -32,7 +32,7 @@ unit0: Class
       argument2: IntegerLiteral(2)
   feature3: Attribute
     name: mike
-    type: Int
+    type: Integer
     initializer: Dispatch
       name: foo
       argument0: Identifier

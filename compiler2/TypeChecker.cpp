@@ -337,6 +337,9 @@ void TypeChecker::operator()(Conditional* statement) {
 void TypeChecker::operator()(Variable* statement) {
     Expression::Ptr initializer = statement->initializer();
     initializer(this);
+    if (!initializer->type()) {
+        initializer->type(statement->type());
+    }
     if (!statement->type()->supertype(initializer->type())) {
         cerr << statement->location();
         cerr << "Expression does not conform to type ";
@@ -376,9 +379,6 @@ void TypeChecker::operator()(Function* feature) {
     Statement::Ptr block = feature->block();
     current_function_ = feature;
     block(this); 
-}
-
-void TypeChecker::operator()(Define* feature) {
 }
 
 void TypeChecker::operator()(Attribute* feature) {

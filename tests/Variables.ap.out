@@ -1,0 +1,14 @@
+unit0: Class
+  name: Variables
+  feature0: Function
+    name: variables1
+    type: Void
+    block: Block
+      child0: Variable
+        name: one
+        type: Int
+        initializer: Empty
+      child1: Variable
+        name: two
+        type: Int
+        initializer: IntegerLiteral(0)

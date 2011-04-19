@@ -213,4 +213,22 @@ private:
     Expression::Ptr expression_;
 };
 
+/* Let statement */
+class Let : public Statement {
+public:
+    Let(Location loc, Statement* variables, Statement* block) :
+        Statement(loc),
+        variables_(variables),
+        block_(block) {
+    }
+
+    Statement* variables() const { return variables_; }
+    Statement* block() const { return block_; }
+
+private:
+    void operator()(Functor* functor) { functor->operator()(this); }
+    Statement::Ptr variables_;
+    Statement::Ptr block_;
+};
+
 #endif

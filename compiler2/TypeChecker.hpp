@@ -59,7 +59,6 @@ private:
     void operator()(When* statment);
     void operator()(Case* statment);
     void operator()(Function* feature);
-    void operator()(Define* feature);
     void operator()(Attribute* feature);
     void operator()(Import* feature);
 

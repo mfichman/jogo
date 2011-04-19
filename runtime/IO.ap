@@ -1,13 +1,9 @@
 # Simple input/output operations.  Most functions in this file are convenience
 # wrappers for operations in the IO::Handle class.
-module IO;
 
-import IO::Reader;
-import IO::Writer;
-
-IO::Reader STDIN = IO::Reader(0);   # Standard input
-IO::Writer STDOUT = IO::Writer(1);  # Standard output
-IO::Writer STDERR = IO::Writer(2);  # Standard error
+Reader STDIN = Reader(0);   # Standard input
+Writer STDOUT = Writer(1);  # Standard output
+Writer STDERR = Writer(2);  # Standard error
 
 # Writes a string to standard output.
 write(String s) {

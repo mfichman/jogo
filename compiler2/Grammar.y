@@ -69,7 +69,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token <expression> STRING NUMBER BOOLEAN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
 %token CLASS INTERFACE STRUCT MODULE
-%token IMPORT DEF VAR INIT DESTROY
+%token IMPORT INIT DESTROY
 %token SEPARATOR
 %token WHEN CASE WHILE ELSE UNTIL IF DO FOR RETURN
 %token RIGHT_ARROW LEFT_ARROW
@@ -79,15 +79,16 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token MULTIPLY_ASSIGN DIVIDE_ASSIGN SUBTRACT_ASSIGN ADD_ASSIGN
 %token MODULUS_ASSIGN BIT_OR_ASSIGN BIT_AND_ASSIGN BIT_XOR_ASSIGN
 %token INCREMENT DECREMENT
-%token SCOPE
+%token SCOPE LET
 
-%type <feature> feature feature_list attribute import define
+%type <feature> feature feature_list attribute import
 %type <feature> constructor destructor function prototype native
 %type <type> type
 %type <generic> generic_list generic
 %type <flag> modifiers
 %type <formal> formal_signature formal_list formal
 %type <statement> block when_list when statement_list statement conditional
+%type <statement> variable_list variable
 %type <expression> expression expression_list storage assignment
 
 
@@ -125,7 +126,6 @@ feature_list
 
 feature
     : import { $$ = $1; }
-    | define { $$ = $1; }
     | attribute { $$ = $1; }
     | constructor { $$ = $1; }
     | destructor { $$ = $1; }
@@ -140,65 +140,59 @@ import
 	}
     ;
 
-define
-    : DEF type TYPE SEPARATOR { 
-		$$ = new Define(@$, $3, $2);
-	}
-    ;
-
 attribute
-    : VAR IDENTIFIER ':' type '=' expression SEPARATOR {
+    : IDENTIFIER ':' type '=' expression SEPARATOR {
 		// TODO: Set symbol table for class-level
-		$$ = new Attribute(@$, $2, $4, $6);
+		$$ = new Attribute(@$, $1, $3, $5);
     }
-    | VAR IDENTIFIER ':' type SEPARATOR {
-		$$ = new Attribute(@$, $2, $4, new Empty(@$));
+    | IDENTIFIER ':' type SEPARATOR {
+		$$ = new Attribute(@$, $1, $3, new Empty(@$));
     }
 	;
 
 constructor
-    : DEF INIT formal_signature block { 
+    : INIT formal_signature block { 
         Name* name = parser->environment()->name("@init");
         Type* type = parser->environment()->void_type();
-        $$ = new Function(@$, name, $3, type, $4);
+        $$ = new Function(@$, name, $2, type, $3);
 	}
     ;
 
 destructor
-    : DEF DESTROY '(' ')' block { 
+    : DESTROY '(' ')' block { 
         Name* name = parser->environment()->name("@destroy");
         Type* type = parser->environment()->void_type();
-        $$ = new Function(@$, name, 0, type, $5);
+        $$ = new Function(@$, name, 0, type, $4);
 	}
     ;
 
 function
-    : DEF IDENTIFIER formal_signature ':' type modifiers block {
-        $$ = new Function(@$, $2, $3, $5, $7);
+    : IDENTIFIER formal_signature ':' type modifiers block {
+        $$ = new Function(@$, $1, $2, $4, $6);
     }
-	| DEF IDENTIFIER formal_signature modifiers block {
+	| IDENTIFIER formal_signature modifiers block {
         Type* type = parser->environment()->void_type();
-        $$ = new Function(@$, $2, $3, type, $5);
+        $$ = new Function(@$, $1, $2, type, $4);
 	}
 	;
 
 prototype
-	: DEF IDENTIFIER formal_signature ':' type modifiers SEPARATOR {
-        $$ = new Function(@$, $2, $3, $5, 0);
+	: IDENTIFIER formal_signature ':' type modifiers SEPARATOR {
+        $$ = new Function(@$, $1, $2, $4, 0);
 	}
-	| DEF IDENTIFIER formal_signature modifiers SEPARATOR {
+	| IDENTIFIER formal_signature modifiers SEPARATOR {
         Type* type = parser->environment()->void_type();
-        $$ = new Function(@$, $2, $3, type, 0);
+        $$ = new Function(@$, $1, $2, type, 0);
 	}
     ;
 
 native
-	: DEF IDENTIFIER formal_signature ':' type modifiers NATIVE SEPARATOR {
-        $$ = new Function(@$, $2, $3, $5, 0);
+	: IDENTIFIER formal_signature ':' type modifiers NATIVE SEPARATOR {
+        $$ = new Function(@$, $1, $2, $4, 0);
 	}
-	| DEF IDENTIFIER formal_signature modifiers NATIVE SEPARATOR {
+	| IDENTIFIER formal_signature modifiers NATIVE SEPARATOR {
         Type* type = parser->environment()->void_type();
-        $$ = new Function(@$, $2, $3, type, 0);
+        $$ = new Function(@$, $1, $2, type, 0);
 	}
     ;
 	
@@ -223,10 +217,8 @@ formal
     }
 
 modifiers
-	: PUBLIC { $$ = 0; }
-	| PRIVATE { $$ = 0; }
+	: PRIVATE { $$ = 0; }
 	| STATIC { $$ = 0; }
-	| PUBLIC STATIC { $$ = 0; }
 	| PRIVATE STATIC { $$ = 0; }
 	| /* empty */ { $$ = 0; }
 	;
@@ -293,6 +285,9 @@ statement
 	: FOR IDENTIFIER ':' type LEFT_ARROW expression block {
 		$$ = new For(@$, $2, $4, $6, $7);
 	}
+    | LET variable_list block {
+        $$ = new Let(@$, $2, $3);
+    }
 	| UNTIL expression block {
         // TODO: FIX UNTIL
         Name* op = parser->environment()->name("!");
@@ -305,17 +300,14 @@ statement
     | CASE expression '{' when_list '}' {
         $$ = new Case(@$, $2, static_cast<When*>($4));
     }
-    | VAR IDENTIFIER ':' type { 
-		$$ = new Variable(@$, $2, $4, new Empty(@$)); 
-	}
-    | VAR IDENTIFIER ':' type '=' expression SEPARATOR { 
-        $$ = new Variable(@$, $2, $4, $6); 
-	}  
 	| RETURN expression SEPARATOR { 
         $$ = new Return(@$, $2);
     }
 	| RETURN SEPARATOR { 
         $$ = new Return(@$, new Empty(@$));
+    }
+    | variable SEPARATOR {
+        $$ = $1;
     }
     | expression SEPARATOR { 
 		$$ = new Simple(@$, $1); 
@@ -550,6 +542,25 @@ expression_list
 	| expression { $$ = $1; } 
 	;
 
+
+variable_list
+    : variable ',' variable_list {
+        $$ = $1;
+        $$->next($3);
+    }
+    | variable {
+        $$ = $1;
+    }
+    ;
+
+variable
+    : IDENTIFIER ':' type {
+        $$ = new Variable(@$, $1, $3, new Empty(@$));
+    }
+    | IDENTIFIER ':' type '=' expression {
+        $$ = new Variable(@$, $1, $3, $5);
+    }
+    ;
 
 when_list
     : when when_list {

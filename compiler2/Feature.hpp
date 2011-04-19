@@ -113,22 +113,4 @@ private:
     Type::Ptr type_;
 };
 
-/* Type definition */
-class Define : public Feature {
-public:
-    Define(Location loc, Name* name, Type* type) :
-        Feature(loc),
-        name_(name),
-        type_(type) {
-    }
-
-    Name* name() const { return name_; }
-    Type* type() const { return type_; }
-
-private:
-    void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr name_;
-    Type::Ptr type_;
-};
-
 #endif

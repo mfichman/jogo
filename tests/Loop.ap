@@ -1,18 +1,18 @@
 class Loop {
 
 
-    def loop1() {
+    loop1() {
         for i:Int <- 0 {
     
         }
     }
 
-    def loop2() {
+    loop2() {
         while true {
         }
     }
 
-    def loop3() {
+    loop3() {
         until false {
         }
     } 

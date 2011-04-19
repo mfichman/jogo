@@ -1,7 +1,7 @@
 class Conditional {
 
 
-    def conditional1():Integer {
+    conditional1():Integer {
         if (true) {
             return 1
         } else {
@@ -9,7 +9,7 @@ class Conditional {
         }
     }
 
-    def conditional2():Integer {
+    conditional2():Integer {
         if (true) {
             return 1
         } else if (false) {
@@ -19,7 +19,7 @@ class Conditional {
         }
     }
 
-    def conditional3():Integer {
+    conditional3():Integer {
         if (true) {
             return 1
         } else {

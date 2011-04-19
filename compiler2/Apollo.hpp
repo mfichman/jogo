@@ -55,11 +55,11 @@ class Feature;
 class Function;
 class Attribute;
 class Import;
-class Define;
 class Environment;
 class Type;
 class Generic;
 class Empty;
+class Let;
 
 #include "Pointer.hpp"
 

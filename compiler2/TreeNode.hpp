@@ -61,17 +61,17 @@ public:
     virtual void operator()(Identifier* expression) {}
     virtual void operator()(Member* expression) {}
     virtual void operator()(Empty* empty) {}
-    virtual void operator()(Block* statment) {}
-    virtual void operator()(Simple* statment) {}
-    virtual void operator()(While* statment) {}
-    virtual void operator()(For* statment) {}
-    virtual void operator()(Conditional* statment) {}
-    virtual void operator()(Variable* statment) {}
-    virtual void operator()(Return* statment) {}
-    virtual void operator()(When* statment) {}
-    virtual void operator()(Case* statment) {}
+    virtual void operator()(Block* statement) {}
+    virtual void operator()(Simple* statement) {}
+    virtual void operator()(While* statement) {}
+    virtual void operator()(For* statement) {}
+    virtual void operator()(Let* statement) {}
+    virtual void operator()(Conditional* statement) {}
+    virtual void operator()(Variable* statement) {}
+    virtual void operator()(Return* statement) {}
+    virtual void operator()(When* statement) {}
+    virtual void operator()(Case* statement) {}
     virtual void operator()(Function* feature) {}
-    virtual void operator()(Define* feature) {}
     virtual void operator()(Attribute* feature) {}
     virtual void operator()(Import* feature) {}
 };

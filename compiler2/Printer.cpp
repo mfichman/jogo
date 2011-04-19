@@ -348,16 +348,6 @@ void Printer::operator()(Function* feature) {
     indent_level_--;
 }
 
-void Printer::operator()(Define* feature) {
-    indent_level_++;
-    cout << "Define" << endl;
-    print_tabs(); cout << "name: ";
-    cout << feature->name()->string() << endl;
-    print_tabs(); cout << "type: ";
-    cout << feature->type()->qualified_name()->string() << endl;
-    indent_level_--; 
-}
-
 void Printer::operator()(Attribute* feature) {
     indent_level_++;
     Expression::Ptr initializer = feature->initializer();
