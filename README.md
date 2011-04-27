@@ -10,3 +10,5 @@ Building and Testing
 2. Install bison, version > 2.4
 3. Install flex, version > 2.5
 4. Type "make"
+
+Test!
