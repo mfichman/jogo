@@ -39,6 +39,7 @@ public:
 	Type* type() const { return type_; }
     Formal* next() const { return next_; }
 	void next(Formal* next) { next_ = next; }
+    virtual void operator()(Functor* functor) { functor->operator()(this); }
 	typedef Pointer<Formal> Ptr;
 
 private:

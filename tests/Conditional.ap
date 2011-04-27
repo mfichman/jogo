@@ -1,4 +1,4 @@
-class Conditional {
+Conditional < Object {
 
     conditional1():Integer {
         if (true) {

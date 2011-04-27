@@ -77,6 +77,11 @@ void TypeChecker::operator()(Module* unit) {
 }
 
 void TypeChecker::operator()(Empty* expression) {
+    expression->type(environment_->void_type());
+}
+
+void TypeChecker::operator()(Formal* formal) {
+     
 }
 
 void TypeChecker::operator()(StringLiteral* expression) {
@@ -88,7 +93,6 @@ void TypeChecker::operator()(IntegerLiteral* expression) {
 }
 
 void TypeChecker::operator()(BooleanLiteral* expression) {
-    assert(environment_->boolean_type());
     expression->type(environment_->boolean_type());
 }
 
@@ -260,6 +264,19 @@ void TypeChecker::operator()(Dispatch* expression) {
         cerr << expression->identifier()->string();
         cerr << endl;
     }
+}
+
+void TypeChecker::operator()(Construct* expression) {
+    
+    // Evaluate type of argument expression
+    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
+        a(this); 
+    }
+
+    // TODO: Need to choose the constructor by argument type.
+    assert("Not implemented!");
+
+    expression->type(expression->unit());
 }
 
 void TypeChecker::operator()(Identifier* expression) {

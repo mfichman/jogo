@@ -70,7 +70,6 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token <name> IDENTIFIER TYPE
 %token <expression> STRING NUMBER BOOLEAN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
-%token CLASS INTERFACE STRUCT MODULE
 %token IMPORT INIT DESTROY
 %token SEPARATOR
 %token WHEN CASE WHILE ELSE UNTIL IF DO FOR RETURN
@@ -114,14 +113,9 @@ unit_list
     ;
 
 unit
-    : CLASS type '{' feature_list '}' {
-        parser->environment()->unit(new Class(@$, $2, $4)); 
-    }
-    | INTERFACE type '{' feature_list '{' {
-        parser->environment()->unit(new Interface(@$, $2, $4)); 
-    }
-    | STRUCT type '{' feature_list '}' {
-        parser->environment()->unit(new Structure(@$, $2, $4));    
+    : type '<' type '{' feature_list '}' {
+        delete $3; // FixMe
+        parser->environment()->unit(new Class(@$, $1, $5)); 
     }
     | IMPORT type SEPARATOR { 
 		//$$ = new Import(@$, $2);
@@ -531,6 +525,12 @@ expression
     | type SCOPE IDENTIFIER '(' ')' {
         $$ = new Call(@$, $1, $3, 0);
     }
+    | type '(' expression_list ')' {
+        $$ = new Construct(@$, $1, $3);
+    }
+    | type '(' ')' {
+        $$ = new Construct(@$, $1, 0);
+    } 
     | expression '.' IDENTIFIER '(' expression_list ')' {
         $1->next($5);
         $$ = new Dispatch(@$, $3, $1);
@@ -571,6 +571,9 @@ variable
     }
     | IDENTIFIER ':' type '=' expression {
         $$ = new Variable(@$, $1, $3, $5);
+    }
+    | IDENTIFIER '=' expression {
+        $$ = new Variable(@$, $1, parser->environment()->void_type(), $3);
     }
     ;
 

@@ -42,10 +42,6 @@ using namespace std;
 
 /* Lexer rules */
 %%
-class BEGIN(INITIAL); return CLASS;
-interface BEGIN(INITIAL); return INTERFACE;
-struct BEGIN(INITIAL); return STRUCT;
-module BEGIN(INITIAL); return MODULE;
 import BEGIN(INITIAL); return IMPORT;
 case BEGIN(INITIAL); return CASE;
 when BEGIN(INITIAL); return WHEN;

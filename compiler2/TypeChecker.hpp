@@ -40,6 +40,7 @@ private:
     void operator()(Interface* unit);
     void operator()(Structure* unit);
     void operator()(Module* unit);
+    void operator()(Formal* formal);
     void operator()(StringLiteral* expression);
     void operator()(IntegerLiteral* expression);
     void operator()(BooleanLiteral* expression);
@@ -48,6 +49,7 @@ private:
     void operator()(Unary* expression);
     void operator()(Call* expression);
     void operator()(Dispatch* expression);
+    void operator()(Construct* expression);
     void operator()(Identifier* expression);
     void operator()(Member* expression);
     void operator()(Empty* expression);

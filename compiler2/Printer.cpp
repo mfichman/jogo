@@ -99,6 +99,16 @@ void Printer::operator()(Module* unit) {
     indent_level_--;
 }
 
+void Printer::operator()(Formal* formal) {
+    indent_level_++;
+    cout << "Formal" << endl;
+    print_tabs(); cout << "name: ";
+    cout << formal->name()->string() << endl;
+    print_tabs(); cout << "type: ";
+    cout << formal->type()->qualified_name()->string() << endl;
+    indent_level_--;
+}
+
 void Printer::operator()(StringLiteral* expression) {
     indent_level_++;
     cout << "StringLiteral" << endl;
@@ -197,6 +207,22 @@ void Printer::operator()(Dispatch* expression) {
     cout << "Dispatch" << endl;
     print_tabs(); cout << "name: ";
     cout << expression->identifier()->string() << endl;
+
+    int i = 0;
+    for (Expression::Ptr a = arguments; a; a = a->next()) {
+        print_tabs(); cout << "argument" << i << ": ";
+        a(this);
+        i++;
+    }
+    indent_level_--;
+}
+
+void Printer::operator()(Construct* expression) {
+    indent_level_++;
+    Expression::Ptr arguments = expression->arguments();
+    cout << "Construct" << endl;
+    print_tabs(); cout << "unit: ";
+    cout << expression->unit()->qualified_name()->string() << endl;
 
     int i = 0;
     for (Expression::Ptr a = arguments; a; a = a->next()) {
@@ -360,6 +386,7 @@ void Printer::operator()(Function* feature) {
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
         print_tabs(); cout << "formal" << i << ": ";
         f(this);
+        i++;
     }
     print_tabs(); cout << "block: ";
     block(this);

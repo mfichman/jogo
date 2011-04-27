@@ -1,0 +1,34 @@
+#!/usr/bin/ruby
+
+require 'fileutils'
+require 'set'
+
+def setup_vim()
+    options = Set.new
+    File.open("#{ENV['HOME']}/.vimrc").each_line do |line|
+        options.add(line.strip)
+    end
+
+    options.add "au BufNew,BufRead *.ap setf apollo"
+    options.add "syntax on"
+    options.add "set tabstop=4"
+    options.add "set expandtab"
+    options.add "colors molokai"
+    options.add "set noerrorbells"
+    options.add "set number"
+    options.add "set nowrap"
+
+    File.open("#{ENV['HOME']}/.vimrc", "w") do |file|
+        options.each do |option|
+            file.puts option
+        end
+    end
+
+    FileUtils.mkdir_p "#{ENV['HOME']}/.vim/syntax/"
+    FileUtils.cp "tools/apollo.vim", "#{ENV['HOME']}/.vim/syntax/" 
+
+    FileUtils.mkdir_p "#{ENV['HOME']}/.vim/colors/"
+    FileUtils.cp "tools/molokai.vim", "#{ENV['HOME']}/.vim/colors/"
+end
+
+setup_vim

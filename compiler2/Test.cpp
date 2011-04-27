@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
     parser->file(argv[1]);
 
     Printer::Ptr printer(new Printer(environment));
-    TypeChecker::Ptr checker(new TypeChecker(environment));
+//    TypeChecker::Ptr checker(new TypeChecker(environment));
     
     
 

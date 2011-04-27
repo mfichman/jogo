@@ -30,6 +30,7 @@ include $(dir)/Rules.mk
 .PHONY: test
 test: $(TESTS)
 	scripts/test $(TESTS)
+	binaries/test BinaryTree.ap
 
 .PHONY: targets
 targets: $(TARGETS)

@@ -1,4 +1,4 @@
-class Loop {
+Loop < Object {
     loop1() {
         for i:Int in 0 {
     

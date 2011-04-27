@@ -187,6 +187,24 @@ private:
     Expression::Ptr arguments_;
 };
 
+/* Constructor call */
+class Construct : public Expression {
+public:
+    Construct(Location loc, Type* unit, Expression* args) :
+        Expression(loc),
+        unit_(unit),
+        arguments_(args) {
+    }
+
+    Type* unit() const { return unit_; }
+    Expression* arguments() const { return arguments_; }
+
+private:
+    void operator()(Functor* functor) { functor->operator()(this); }
+    Type::Ptr unit_;
+    Expression::Ptr arguments_;
+};
+
 /* Identifier expression (variable access) */
 class Identifier : public Expression {
 public:

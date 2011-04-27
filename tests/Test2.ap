@@ -1,4 +1,4 @@
-class Test2 {
+Test2 < Object {
 
 
     foo() {
