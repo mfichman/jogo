@@ -26,7 +26,6 @@ include $(dir)/Rules.mk
 %.o: %.cpp
 	$(CPP) $(CPPFLAGS) $(CFLOCAL) -o $@ $^ 
 
-
 .PHONY: test
 test: $(TESTS)
 	scripts/diff-test $(TESTS)
