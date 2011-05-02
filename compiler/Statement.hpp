@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef STATEMENT_HPP
-#define STATEMENT_HPP
+#pragma once
 
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
@@ -236,4 +235,3 @@ private:
     Statement::Ptr block_;
 };
 
-#endif

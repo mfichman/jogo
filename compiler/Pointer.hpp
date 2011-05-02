@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef POINTER_HPP
-#define POINTER_HPP
+#pragma once
 
 #include "Object.hpp"
 
@@ -89,6 +88,3 @@ private:
     mutable Object* object_;
 };
 
-
-
-#endif

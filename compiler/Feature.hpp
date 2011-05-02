@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef FEATURE_HPP
-#define FEATURE_HPP
+#pragma once
 
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
@@ -120,7 +119,7 @@ private:
 class Class : public Feature {
 public:
     Class(Location loc, Type* type, Feature* features);
-    Feature* features() const { return features_; };    
+    Feature* features() const { return features_; }    
     Attribute* attribute(Name* name) { return attributes_[name]; }
     Function* function(Name* name) { return functions_[name]; }
     Type* type() const { return type_; }
@@ -163,4 +162,3 @@ private:
     Feature::Ptr features_;
 };
 
-#endif

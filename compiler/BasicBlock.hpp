@@ -20,10 +20,10 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef BASIC_BLOCK_HPP
-#define BASIC_BLOCK_HPP
+#pragma once
 
 #include "Apollo.hpp"
+#include "Name.hpp"
 #include <vector>
 
 /* Class for instructions */
@@ -84,6 +84,4 @@ private:
     Name::Ptr label_;
 };
 
-
-#endif
 

@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef ENVIRONMENT_HPP
-#define ENVIRONMENT_HPP
+#pragma once
 
 #include "Apollo.hpp"
 #include "Object.hpp"
@@ -67,4 +66,3 @@ private:
     int errors_;
 };
 
-#endif

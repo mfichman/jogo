@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef TYPE_CHECKER_HPP
-#define TYPE_CHECKER_HPP
+#pragma once
 
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
@@ -80,4 +79,3 @@ private:
     Function::Ptr current_function_;
 };
 
-#endif

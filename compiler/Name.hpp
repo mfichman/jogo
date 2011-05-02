@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef NAME_HPP
-#define NAME_HPP
+#pragma once
 
 #include "Apollo.hpp"
 #include "Object.hpp"
@@ -41,4 +40,3 @@ private:
 
 };
 
-#endif

@@ -1,0 +1,102 @@
+
+
+
+ /*
+    | expression INCREMENT { 
+		$$ = new Dispatch(@$, parser->environment()->name("@increment"), $1); 
+	}
+    | expression DECREMENT { 
+		$$ = new Dispatch(@$, parser->environment()->name("@decrement"), $1); 
+	}
+
+ */
+
+
+/*
+storage
+    : expression '.' IDENTIFIER { 
+		$$ = new Member(@$, $1, $3);
+        // expression '.' IDENTIFIER '=' expression
+        // $$ = new Dispatch(@$, $3 + "=", $1)??
+        // statement
+
+        // expression '.' IDENTIFIER
+        // $$ = new Dispatch(@$, $3, $1)
+        // expression
+
+        // expression '.' IDENTIFIER '[' expression ']' '=' expression
+        // $$ = new Dispatch(@$, $3 + "=", $1, 5)??
+        // statement
+
+        // expression '.' IDENTIFIER '[' expression ']'
+        // $$ = new Dispatch(@$, $3, $1, $5)??
+        // expression
+	}
+    | expression '[' expression ']' { 
+        $1->next($3);
+        Environment* env = parser->environment();
+        $$ = new Dispatch(@$, env->name("@index"), $1);
+	}
+
+assignment
+    : storage '=' expression { 
+        $$ = new Assignment(@$, $1, $3); 
+	}
+    | storage POWER_ASSIGN expression {
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* power = new Dispatch(@$, env->name("@power"), $1);
+        $$ = new Assignment(@$, $1, power);
+    }
+    | storage MULTIPLY_ASSIGN expression { 
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* multiply = new Dispatch(@$, env->name("@multiply"), $1);
+        $$ = new Assignment(@$, $1, multiply);
+	}
+    | storage DIVIDE_ASSIGN expression { 
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* divide = new Dispatch(@$, env->name("@divide"), $1);
+        $$ = new Assignment(@$, $1, divide);
+	}
+    | storage MODULUS_ASSIGN expression { 
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* modulus = new Dispatch(@$, env->name("@modulus"), $1);
+        $$ = new Assignment(@$, $1, modulus);
+	}
+    | storage SUBTRACT_ASSIGN expression { 
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* subtract = new Dispatch(@$, env->name("@subtract"), $1);
+        $$ = new Assignment(@$, $1, subtract);
+	}
+    | storage ADD_ASSIGN expression { 
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* add = new Dispatch(@$, env->name("@add"), $1);
+        $$ = new Assignment(@$, $1, add);
+	}
+    | storage BIT_AND_ASSIGN expression { 
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* child = new Dispatch(@$, env->name("@bitand"), $1);
+        $$ = new Assignment(@$, $1, child);
+	}
+    | storage BIT_OR_ASSIGN expression { 
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* child = new Dispatch(@$, env->name("@bitor"), $1);
+        $$ = new Assignment(@$, $1, child);
+	}
+    | storage BIT_XOR_ASSIGN expression {
+        $1->next($3);
+        Environment* env = parser->environment();
+        Dispatch* child = new Dispatch(@$, env->name("@bitxor"), $1);
+        $$ = new Assignment(@$, $1, child);
+    }
+    ;
+*/
+
+

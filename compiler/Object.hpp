@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef OBJECT_HPP
-#define OBJECT_HPP
+#pragma once
 
 class Object {
 public:
@@ -34,4 +33,3 @@ private:
     int refcount_;
 };
 
-#endif

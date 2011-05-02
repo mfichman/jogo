@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef PARSER_HPP
-#define PARSER_HPP
+#pragma once
 
 #include "Apollo.hpp"
 #include "Environment.hpp"
@@ -69,4 +68,3 @@ union ParseNode {
 };
 
 
-#endif

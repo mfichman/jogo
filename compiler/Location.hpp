@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef LOCATION_HPP
-#define LOCATION_HPP
+#pragma once
 
 #include <iostream>
 
@@ -40,5 +39,3 @@ public:
 };
 
 std::ostream& operator<<(std::ostream& out, const Location& location);
-
-#endif

@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef EXPRESSION_HPP
-#define EXPRESSION_HPP
+#pragma once
 
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
@@ -250,4 +249,3 @@ private:
     void operator()(Functor* functor) { functor->operator()(this); }
 };
 
-#endif

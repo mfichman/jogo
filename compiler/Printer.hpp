@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef PRINTER_HPP
-#define PRINTER_HPP
+#pragma once
 
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
@@ -68,4 +67,3 @@ private:
     int indent_level_;
 };
 
-#endif

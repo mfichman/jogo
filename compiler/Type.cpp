@@ -89,7 +89,7 @@ bool Type::collection(Type* other) {
 
 Type* Type::least_upper_bound(Type* other) {
     assert("Not implemented");
-    return false;
+    return 0;
 }
 
 std::ostream& operator<<(std::ostream& out, const Type& type) {

@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef FORMAL_HPP
-#define FORMAL_HPP
+#pragma once
 
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
@@ -48,4 +47,3 @@ private:
 	Formal::Ptr next_;
 };
 
-#endif

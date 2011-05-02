@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef APOLLO_HPP
-#define APOLLO_HPP
+#pragma once
 
 class Object;
 class TreeNode; 
@@ -62,5 +61,3 @@ class Empty;
 class Let;
 
 #include "Pointer.hpp"
-
-#endif

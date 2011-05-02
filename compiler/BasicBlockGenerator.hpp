@@ -20,23 +20,21 @@
  * IN THE SOFTWARE.
  */  
 
-#ifdef INTERMEDIATE_CODE_GENERATOR_HPP
-#ifdef INTERMEDIATE_CODE_GENERATOR_HPP
+#pragma once
 
 #include "Apollo.hpp"
+#include "Environment.hpp"
 #include "BasicBlock.hpp"
 #include "Object.hpp"
 
 /* Code generator structure; creates basic block flow graphs */
-class IntermediateCodeGenerator : public Object {
+class BasicBlockGenerator : public Object {
 public:
-    IntermediateCodeGenerator(Environment* env);
-    typedef Pointer<IntermediateCodeGenerator> Ptr; 
+    BasicBlockGenerator(Environment* env);
+    typedef Pointer<BasicBlockGenerator> Ptr; 
 
 private:
     void operator()(Class* unit);
-    void operator()(Interface* unit);
-    void operator()(Structure* unit);
     void operator()(Module* unit);
     void operator()(StringLiteral* expression);
     void operator()(IntegerLiteral* expression);
@@ -57,16 +55,13 @@ private:
     void operator()(When* statment);
     void operator()(Case* statment);
     void operator()(Function* feature);
-    void operator()(Define* feature);
     void operator()(Attribute* feature);
     void operator()(Import* feature);
 
     Environment::Ptr environment_;
-    Unit::Ptr current_unit_;
+    Class::Ptr current_class_;
     Function::Ptr current_function_;
     BasicBlock::Ptr block_;
     int temporary_;
 };
 
-
-#endif

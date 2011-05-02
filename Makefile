@@ -16,7 +16,7 @@ all: targets test
 #include $(dir)/rules.mk 
 #dir=runtime
 #include $(dir)/rules.mk
-dir=compiler2
+dir=compiler
 include $(dir)/Rules.mk
 
 # General rules
@@ -29,8 +29,8 @@ include $(dir)/Rules.mk
 
 .PHONY: test
 test: $(TESTS)
-	scripts/test $(TESTS)
-	binaries/test BinaryTree.ap
+	scripts/diff-test $(TESTS)
+	binaries/test samples/BinaryTree.ap
 
 .PHONY: targets
 targets: $(TARGETS)

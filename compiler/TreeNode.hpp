@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef TREE_NODE_HPP
-#define TREE_NODE_HPP
+#pragma once
 
 #include "Apollo.hpp"
 #include "Object.hpp"
@@ -77,4 +76,3 @@ public:
 };
 
 
-#endif

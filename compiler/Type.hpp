@@ -20,8 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#ifndef TYPE_HPP
-#define TYPE_HPP
+#pragma once
 
 #include "Apollo.hpp"
 #include "Object.hpp"
@@ -75,4 +74,3 @@ private:
 std::ostream& operator<<(std::ostream&out, const Type& type);
 
 
-#endif
