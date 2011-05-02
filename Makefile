@@ -28,7 +28,7 @@ include $(dir)/Rules.mk
 
 .PHONY: test
 test: $(TESTS)
-	scripts/diff-test $(TESTS)
+	scripts/test $(TESTS)
 	binaries/test samples/BinaryTree.ap
 
 .PHONY: targets
