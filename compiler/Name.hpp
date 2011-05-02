@@ -40,3 +40,7 @@ private:
 
 };
 
+inline std::ostream& operator<<(std::ostream& out, const Name* name) {
+    out << name->string();
+    return out;
+}

@@ -71,6 +71,6 @@ private:
     Generic::Ptr next_;
 };
 
-std::ostream& operator<<(std::ostream&out, const Type& type);
+std::ostream& operator<<(std::ostream&out, const Type* type);
 
 

@@ -178,7 +178,7 @@ void TypeChecker::operator()(Call* expression) {
     if (!func) {
         cerr << expression->location();
         cerr << "Undeclared function ";
-        cerr << expression->identifier()->string();
+        cerr << expression->identifier();
         cerr << endl;
         expression->type(environment_->no_type());
         return;
@@ -192,7 +192,7 @@ void TypeChecker::operator()(Call* expression) {
         if (!arg->type()->subtype(formal->type())) {
             cerr << arg->location();
             cerr << "Argument does not conform to type ";
-            cerr << *formal->type();
+            cerr << formal->type();
             cerr << endl;
         }
         arg = arg->next();
@@ -201,13 +201,13 @@ void TypeChecker::operator()(Call* expression) {
     if (arg) {
         cerr << expression->location();
         cerr << "Too many arguments to function ";
-        cerr << expression->identifier()->string();
+        cerr << expression->identifier();
         cerr << endl;
     }
     if (formal) {
         cerr << expression->location();
         cerr << "Not enough arguments to function ";
-        cerr << expression->identifier()->string();
+        cerr << expression->identifier();
         cerr << endl;
     }
 }
@@ -228,7 +228,7 @@ void TypeChecker::operator()(Dispatch* expression) {
     if (!clazz) {
         cerr << expression->location();
         cerr << "Undefined class ";
-        cerr << object->type()->qualified_name()->string();
+        cerr << object->type()->qualified_name();
         cerr << endl;
         expression->type(environment_->no_type());
         return;
@@ -238,7 +238,7 @@ void TypeChecker::operator()(Dispatch* expression) {
     if (!func) {
         cerr << expression->location();
         cerr << "Undeclared function ";
-        cerr << expression->identifier()->string();
+        cerr << expression->identifier();
         cerr << endl;
         expression->type(environment_->no_type());
         return;
@@ -252,7 +252,7 @@ void TypeChecker::operator()(Dispatch* expression) {
         if (!arg->type()->subtype(formal->type())) {
             cerr << arg->location();
             cerr << "Argument does not conform to type ";
-            cerr << *formal->type();
+            cerr << formal->type();
             cerr << endl;
         }
         arg = arg->next();
@@ -261,13 +261,13 @@ void TypeChecker::operator()(Dispatch* expression) {
     if (arg) {
         cerr << expression->location();
         cerr << "Too many arguments to function ";
-        cerr << expression->identifier()->string();
+        cerr << expression->identifier();
         cerr << endl;
     }
     if (formal) {
         cerr << expression->location();
         cerr << "Not enough arguments to function ";
-        cerr << expression->identifier()->string();
+        cerr << expression->identifier();
         cerr << endl;
     }
 }
@@ -288,7 +288,7 @@ void TypeChecker::operator()(Identifier* expression) {
     if (!type) {
         cerr << expression->location();
         cerr << "Undeclared identifier \"";
-        cerr << expression->identifier()->string();
+        cerr << expression->identifier();
         cerr << "\"";
         cerr << endl;
         expression->type(environment_->no_type());
@@ -311,7 +311,7 @@ void TypeChecker::operator()(Member* expression) {
     if (!attr) {
         cerr << expression->location();
         cerr << "Undefined attribute ";
-        cerr << expression->identifier()->string();
+        cerr << expression->identifier();
         cerr << endl;
         expression->type(environment_->no_type());
         return;
@@ -379,7 +379,7 @@ void TypeChecker::operator()(Variable* statement) {
     if (!statement->type()->supertype(initializer->type())) {
         cerr << statement->location();
         cerr << "Expression does not conform to type ";
-        cerr << *initializer->type();
+        cerr << initializer->type();
         cerr << endl;
     } 
     variable(statement->identifier(), statement->type()); 
@@ -393,7 +393,7 @@ void TypeChecker::operator()(Return* statement) {
     if (!expression->type()->subtype(current_function_->type())) {
         cerr << statement->location();
         cerr << "Expression does not conform to return type ";
-        cerr << *current_function_->type();
+        cerr << current_function_->type();
         cerr << endl;
     }
 }
@@ -424,7 +424,7 @@ void TypeChecker::operator()(Attribute* feature) {
     if (!feature->type()->supertype(initializer->type())) {
         cerr << feature->location();
         cerr << "Expression does not conform to type: ";
-        cerr << *initializer->type();
+        cerr << initializer->type();
         cerr << endl;
     }
     variable(feature->name(), feature->type());
