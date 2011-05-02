@@ -28,6 +28,8 @@ class Expression;
 class StringLiteral;
 class IntegerLiteral;
 class BooleanLiteral;
+class Fork;
+class Yield;
 class Formal;
 class Name;
 class Binary;

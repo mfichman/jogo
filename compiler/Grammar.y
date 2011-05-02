@@ -78,7 +78,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token MULTIPLY_ASSIGN DIVIDE_ASSIGN SUBTRACT_ASSIGN ADD_ASSIGN
 %token MODULUS_ASSIGN BIT_OR_ASSIGN BIT_AND_ASSIGN BIT_XOR_ASSIGN
 %token INCREMENT DECREMENT
-%token SCOPE LET IN
+%token SCOPE LET IN YIELD FORK
 
 %type <feature> feature feature_list attribute class
 %type <feature> operator function prototype native import
@@ -88,7 +88,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %type <formal> formal_signature formal_list formal
 %type <statement> block when_list when statement_list statement conditional
 %type <variable> variable_list variable
-%type <expression> expression expression_list
+%type <expression> call expression expression_list
 
 
 /* The Standard Apollo Grammar, version 2010 */
@@ -295,6 +295,12 @@ statement
 	| RETURN SEPARATOR { 
         $$ = new Return(@$, new Empty(@$));
     }
+    | YIELD expression SEPARATOR {
+        $$ = new Yield(@$, $2);
+    }
+    | FORK call SEPARATOR {
+        $$ = new Fork(@$, $2);
+    }
     | variable SEPARATOR {
         $$ = $1;
     }
@@ -418,25 +424,6 @@ expression
     | '~' expression { 
         $$ = new Dispatch(@$, parser->environment()->name("@complement"), $2); 
     }
-    | IDENTIFIER '(' expression_list ')' {
-		$$ = new Call(@$, 0, $1, $3);
-    }
-	| IDENTIFIER '(' ')' {
-		/* Call on an object expression */
-		$$ = new Call(@$, 0, $1, 0);
-	}
-    | type SCOPE IDENTIFIER '(' expression_list ')' {
-        $$ = new Call(@$, $1, $3, $5);
-    } 
-    | type SCOPE IDENTIFIER '(' ')' {
-        $$ = new Call(@$, $1, $3, 0);
-    }
-    | type '(' expression_list ')' {
-        $$ = new Construct(@$, $1, $3);
-    }
-    | type '(' ')' {
-        $$ = new Construct(@$, $1, 0);
-    } 
     | expression '[' expression_list ']' {
         /* Invokes the special method, a la Lua and Python */
         $1->next($3);
@@ -451,9 +438,6 @@ expression
         }
         last->next($6);
         $$ = new Dispatch(@$, parser->environment()->name("@insert"), $1);
-    }
-    | IDENTIFIER '=' expression {
-        $$ = new Assignment(@$, $1, $3); 
     }
     | expression '.' IDENTIFIER '=' expression {
         /* Attribute write, calls the mutator function */
@@ -472,6 +456,7 @@ expression
     | expression '.' IDENTIFIER '(' ')' {
         $$ = new Dispatch(@$, $3, $1);
     }
+    | call { $$ = $1; }
 	| '(' expression ')' { $$ = $2; } 
     | STRING { $$ = $1; }
     | NUMBER { $$ = $1; }
@@ -505,7 +490,31 @@ variable
     | IDENTIFIER type '=' expression {
         $$ = new Variable(@$, $1, $2, $4);
     }
+    | IDENTIFIER '=' expression {
+        $$ = new Variable(@$, $1, parser->environment()->void_type(), $3);
+    }
     ;
+
+call
+    : IDENTIFIER '(' expression_list ')' {
+		$$ = new Call(@$, 0, $1, $3);
+    }
+	| IDENTIFIER '(' ')' {
+		/* Call on an object expression */
+		$$ = new Call(@$, 0, $1, 0);
+	}
+    | type SCOPE IDENTIFIER '(' expression_list ')' {
+        $$ = new Call(@$, $1, $3, $5);
+    } 
+    | type SCOPE IDENTIFIER '(' ')' {
+        $$ = new Call(@$, $1, $3, 0);
+    }
+    | type '(' expression_list ')' {
+        $$ = new Construct(@$, $1, $3);
+    }
+    | type '(' ')' {
+        $$ = new Construct(@$, $1, 0);
+    } 
 
 when_list
     : when when_list {

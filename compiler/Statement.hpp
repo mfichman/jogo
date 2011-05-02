@@ -235,3 +235,35 @@ private:
     Statement::Ptr block_;
 };
 
+
+/* Fork statement */
+class Fork : public Statement {
+public:
+    Fork(Location loc, Expression* expression) : 
+        Statement(loc),
+        expression_(expression) {
+    }
+    
+    Expression* expression() const { return expression_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Fork> Ptr;
+
+private:
+    Expression::Ptr expression_;
+};
+
+/* Yield statement */
+class Yield : public Statement {
+public:
+    Yield(Location loc, Expression* expression) :
+        Statement(loc),
+        expression_(expression) {
+    }
+    Expression* expression() const { return expression_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Yield> Ptr;
+
+private:
+    Expression::Ptr expression_;
+};
+

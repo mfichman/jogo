@@ -403,6 +403,14 @@ void TypeChecker::operator()(When* statement) {
     block(this);
 }
 
+void TypeChecker::operator()(Fork* statement) {
+    assert("Not supported");
+}
+
+void TypeChecker::operator()(Yield* statement) {
+    assert("Not supported");
+}
+
 void TypeChecker::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
     guard(this);

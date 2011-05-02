@@ -69,6 +69,8 @@ public:
     virtual void operator()(Variable* statement)=0;
     virtual void operator()(Return* statement)=0;
     virtual void operator()(When* statement)=0;
+    virtual void operator()(Yield* statement)=0;
+    virtual void operator()(Fork* statement)=0;
     virtual void operator()(Case* statement)=0;
     virtual void operator()(Function* feature)=0;
     virtual void operator()(Attribute* feature)=0;

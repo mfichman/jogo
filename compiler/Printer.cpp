@@ -345,6 +345,24 @@ void Printer::operator()(Case* statement) {
     indent_level_--;
 }
 
+void Printer::operator()(Fork* statement) {
+    indent_level_++;
+    Expression::Ptr expression = statement->expression();
+    cout << "Fork" << endl;
+    print_tabs(); cout << "expression: ";
+    expression(this);
+    indent_level_--;
+}
+
+void Printer::operator()(Yield* statement) {
+    indent_level_++;
+    Expression::Ptr expression = statement->expression();
+    cout << "Yield" << endl;
+    print_tabs(); cout << "expression: ";
+    expression(this);
+    indent_level_--;
+}
+
 void Printer::operator()(Function* feature) {
     indent_level_++;
     Statement::Ptr block = feature->block();

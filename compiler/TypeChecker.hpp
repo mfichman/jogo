@@ -60,6 +60,8 @@ private:
     void operator()(Return* statement);
     void operator()(When* statement);
     void operator()(Case* statement);
+    void operator()(Fork* statement);
+    void operator()(Yield* statement);
     void operator()(Function* feature);
     void operator()(Attribute* feature);
     void operator()(Import* feature);

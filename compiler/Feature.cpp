@@ -44,6 +44,10 @@ Class::Class(Location loc, Type* type, Feature* features) :
 }
 
 void Class::feature(Feature* feature) {
+    if (!feature) {
+        return;
+    }
+
     feature->next(features_);
     features_ = feature;
 
@@ -60,6 +64,10 @@ void Class::feature(Feature* feature) {
 }
 
 void Module::feature(Feature* feature) {
+    if (!feature) {
+        return;
+    }
+
     feature->next(features_);
     features_ = feature;
 

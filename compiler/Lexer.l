@@ -60,6 +60,8 @@ and BEGIN(INITIAL); return AND;
 or BEGIN(INITIAL); return OR;
 in BEGIN(INITIAL); return IN;
 not BEGIN(INITIAL); return NOT;
+fork BEGIN(INITIAL); return FORK;
+yield BEGIN(INITIAL); return YIELD;
 -> BEGIN(INITIAL); return RIGHT_ARROW;
 \<\- BEGIN(INITIAL); return LEFT_ARROW;
 == BEGIN(INITIAL); return EQUAL; 
