@@ -307,6 +307,25 @@ statement
     | expression SEPARATOR { 
 		$$ = new Simple(@$, $1); 
 	}
+    | expression '[' expression_list ']' '=' expression SEPARATOR {
+        /* Indexed assignment */
+        Environment* env = parser->environment();
+        $1->next($3);
+        Expression* last = $3;
+        while (last->next()) {
+            last = last->next();
+        }
+        last->next($6);
+
+        /* Invokes the special @insert method, a la Lua and Python */
+        $$ = new Simple(@$, new Dispatch(@$, env->name("@insert"), $1));
+    }
+    | expression '.' IDENTIFIER '=' expression SEPARATOR {
+        /* Attribute assignment, calls the mutator function */
+        Name* name = parser->environment()->name($3->string() + "=");
+        $1->next($5);
+        $$ = new Simple(@$, new Dispatch(@$, name, $1));
+    }
     | conditional {
         $$ = $1;
     }
@@ -428,22 +447,6 @@ expression
         /* Invokes the special method, a la Lua and Python */
         $1->next($3);
         $$ = new Dispatch(@$, parser->environment()->name("@index"), $1);
-    }
-    | expression '[' expression_list ']' '=' expression {
-        /* Invokes the special method, a la Lua and Python */
-        $1->next($3);
-        Expression* last = $3;
-        while (last->next()) {
-            last = last->next();
-        }
-        last->next($6);
-        $$ = new Dispatch(@$, parser->environment()->name("@insert"), $1);
-    }
-    | expression '.' IDENTIFIER '=' expression {
-        /* Attribute write, calls the mutator function */
-        Name* name = parser->environment()->name($3->string() + "=");
-        $1->next($5);
-        $$ = new Dispatch(@$, name, $1);
     }
     | expression '.' IDENTIFIER {
         /* Attribute read, calls the accessor function */

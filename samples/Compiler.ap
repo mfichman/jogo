@@ -9,8 +9,16 @@ SQLCompiler < Object {
     @init(query Query, conn Connection) {
         self.query = query
         self.connection = conn
+
+        fork ajax_setup()
     }
 
+
+    server_request() {
+        result = HTTP::get("http://www.google.com")
+        HTTP::post("http://www.bob.com", result)
+
+    }
 
     pre_sql_setup() {
         # Does any necessary class setup immediately prior to introducing SQL.
@@ -162,7 +170,7 @@ KernelThread < Object {
 
         task.cpus_allowed = cpumask_of_cpu(cpu)
         task.rt.nr_cpus_allowed = 1
-        task.flags |= thread_bound
+        #task.flags |= thread_bound
     }
 
     stop(task Task) Integer {
