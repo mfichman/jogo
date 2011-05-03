@@ -76,8 +76,8 @@ private:
     Environment::Ptr environment_;
     std::vector<std::map<Name::Ptr, Type::Ptr> > variable_;
     std::map<Name::Ptr, Function::Ptr> function_;
-    Module::Ptr current_module_;
-    Class::Ptr current_class_;
-    Function::Ptr current_function_;
+    Module::Ptr module_;
+    Class::Ptr class_;
+    Function::Ptr scope_;
 };
 

@@ -26,9 +26,11 @@
 #include "Environment.hpp"
 #include "BasicBlock.hpp"
 #include "Object.hpp"
+#include <vector>
+#include <map>
 
 /* Code generator structure; creates basic block flow graphs */
-class BasicBlockGenerator : public Object {
+class BasicBlockGenerator : public TreeNode::Functor {
 public:
     BasicBlockGenerator(Environment* env);
     typedef Pointer<BasicBlockGenerator> Ptr; 
@@ -58,10 +60,92 @@ private:
     void operator()(Attribute* feature);
     void operator()(Import* feature);
 
+    int add(BasicBlock* block, int t2, int t3) {
+        block->instruction(Instruction(Instruction::ADD, ++temp_, t2, t3));
+        return temp_;
+    }
+
+    int sub(BasicBlock* block, int t2, int t3) {
+        block->instruction(Instruction(Instruction::SUB, ++temp_, t2, t3));    
+        return temp_;
+    }
+
+    int mul(BasicBlock* block, int t2, int t3) {
+        block->instruction(Instruction(Instruction::MUL, ++temp_, t2, t3));    
+        return temp_;
+    }
+
+    int div(BasicBlock* block, int t2, int t3) {
+        block->instruction(Instruction(Instruction::DIV, ++temp_, t2, t3));    
+        return temp_;
+    }
+
+    int andl(BasicBlock* block, int t2, int t3) {
+        block->instruction(Instruction(Instruction::ANDL, ++temp_, t2, t3));    
+        return temp_;
+    }
+
+    int orl(BasicBlock* block, int t2, int t3) {
+        block->instruction(Instruction(Instruction::ORL, ++temp_, t2, t3));    
+        return temp_;
+    }
+
+    int andb(BasicBlock* block, int t2, int t3) {
+        block->instruction(Instruction(Instruction::ANDB, ++temp_, t2, t3));    
+        return temp_;
+    }
+
+    int orb(BasicBlock* block, int t2, int t3) {
+        block->instruction(Instruction(Instruction::ORB, ++temp_, t2, t3));    
+        return temp_;
+    }
+
+    void push(BasicBlock* block, int t2) {
+        block->instruction(Instruction(Instruction::PUSH, 0, t2, 0));    
+    }
+
+    void pop(BasicBlock* block, int t2) {
+        block->instruction(Instruction(Instruction::POP, 0, t2, 0));    
+    }
+
+    int load(BasicBlock* block, int t2) {
+        block->instruction(Instruction(Instruction::LOAD, ++temp_, t2, 0));    
+        return temp_;
+    }
+
+    void store(BasicBlock* block, int t2, int t3) {
+        block->instruction(Instruction(Instruction::STORE, 0, t2, t3));    
+    }
+
+    int li(BasicBlock* block, int immediate) {
+        block->instruction(Instruction(Instruction::LI, ++temp_, immediate, 0));
+        return temp_;
+    }
+
+    void beqz(BasicBlock* block, int t2) {
+        block->instruction(Instruction(Instruction::BEQZ, 0, t2, 0));
+    }
+
+    int call(BasicBlock* block, Name* name) {
+        block->instruction(Instruction(Instruction::CALL, 0, 0, 0));
+        block->call_label(name);
+        return ++temp_;
+    }
+
+    int variable(Name* name);
+    void variable(Name* name, int temporary);
+    void enter_scope();
+    void exit_scope();
+
     Environment::Ptr environment_;
-    Class::Ptr current_class_;
-    Function::Ptr current_function_;
+    Class::Ptr class_;
+    Function::Ptr function_;
     BasicBlock::Ptr block_;
-    int temporary_;
+    
+    // Mapping from var to temporary
+    std::vector<std::map<Name::Ptr, int> > variable_;
+
+    // Next temporary to use
+    int temp_;
 };
 

@@ -19,4 +19,4 @@ env.Command('test', 'bin/test', 'scripts/test')
 
 
 
-env.Program('bin/asmtest', 'src/runtime/Test.asm')
+env.Program('bin/asmtest', 'samples/Test.linux.asm')

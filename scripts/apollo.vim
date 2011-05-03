@@ -30,7 +30,7 @@ syn match apFunction "[@][a-z][a-z]*"
 
 syn match apType "[A-Z][A-Za-z0-9]*"
 syn match apFunction "[a-z][A-Za-z0-9_]*[=!?]\=(\@="
-syn match apFunction "\.\@<=[a-z][A-Za-z0-9_]*[=!?]\=\>"
+"syn match apFunction "\.\@<=[a-z][A-Za-z0-9_]*[=!?]\=\>"
 
 
 syn keyword apOperator + - / * <> == != ^ ?

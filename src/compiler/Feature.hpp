@@ -77,7 +77,7 @@ public:
 		formals_(fm),
 		type_(ret),
         block_(blk),
-        code_(new BasicBlock(nm)) {
+        code_(new BasicBlock) {
     }
 
     Name* name() const { return name_; }
