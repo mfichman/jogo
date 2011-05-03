@@ -5,6 +5,8 @@ SetOption('num_jobs', 2)
 
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(BISONFLAGS = ['--defines=build/compiler/Grammar.hpp'])
+env['AS'] = 'nasm'
+env.Append(ASFLAGS = '-felf')
 
 compiler_sources = []
 compiler_sources += env.Glob('build/compiler/*.cpp')
@@ -14,3 +16,7 @@ env.Program('bin/apollo', compiler_sources +  ['build/Main.cpp'])
 env.Program('bin/test', compiler_sources + ['build/Test.cpp'])
 
 env.Command('test', 'bin/test', 'scripts/test')
+
+
+
+env.Program('bin/asmtest', 'src/runtime/Test.asm')

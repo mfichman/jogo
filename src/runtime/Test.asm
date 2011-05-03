@@ -1,10 +1,10 @@
 section .text
-    global start
+    global main
 
 Main.main:
     ret
 
-start:
+main:
     push len
     push msg
     push 1
