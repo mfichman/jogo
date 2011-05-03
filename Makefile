@@ -2,7 +2,7 @@
 CFLAGS := -std=c99 -c -g -Wall -Werror -pedantic
 CC := clang
 CPPFLAGS := -c -g -Wall -Werror -Wno-sign-compare -pedantic
-CPP := g++
+CPP := clang++ 
 BINARIES=binaries
 TESTS := $(wildcard tests/*.ap)
 
