@@ -54,17 +54,16 @@ void
 BasicBlockGenerator::operator()(Binary* expression) {
     Expression::Ptr left = expression->left();
     Expression::Ptr right = expression->right();
-    
 
     left(this);
-    int l = temp_;
+    int tleft = temp_;
     right(this);
-    int r = temp_;
+    int tright = temp_;
 
     if (environment_->name("or") == expression->operation()) {
-        orl(block_, l, r);
+        orl(block_, tleft, tright);
     } else if (environment_->name("and") == expression->operation()) {
-        andl(block_, l, r);
+        andl(block_, tleft, tright);
     }
 }
 
@@ -72,21 +71,28 @@ void
 BasicBlockGenerator::operator()(Assignment* expression) {
     Expression::Ptr child = expression->expression();
 
-    int prev = variable(expression->identifier()); 
+    // Load pointer to the variable on the stack, if it's in the lookup table
+    int tprev = variable(expression->identifier()); 
+    if (tprev < 0) {
+        // Variable is in the 'self' object, or is a module variable.
+        int tself = variable(environment_->name("self"));
+        assert("TODO: look up variable offset");
+    }
+        
     //if (expression->type()->pointer() && prev) {
 
         BasicBlock::Ptr pass(new BasicBlock);
         BasicBlock::Ptr fail(new BasicBlock); 
-        beqz(block_, prev); 
+        beqz(block_, tprev); 
         block_->branch1(pass);
         block_->branch2(fail);
         pass->branch1(fail);
         
-        int addr = add(pass, prev, REFCOUNT_OFFSET);       
-        int refc = load(pass, addr);
-        int one = li(pass, 1); 
-        int result = add(pass, refc, one); 
-        store(pass, addr, result);
+        int taddr = add(pass, tprev, REFCOUNT_OFFSET);       
+        int trefc = load(pass, taddr);
+        int tone = li(pass, 1); 
+        int tresult = add(pass, trefc, tone); 
+        store(pass, taddr, tresult);
 
         block_ = fail;
 
@@ -195,9 +201,7 @@ BasicBlockGenerator::variable(Name* name) {
             return j->second;
         }
     }
-    int temporary = temp_++;
-    variable(name, temporary);
-    return temporary;
+    return -1;
 }
 
 void
