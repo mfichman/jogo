@@ -1,12 +1,28 @@
 #!/usr/bin/ruby
 
+require 'optparse'
+
 failed = false
+options = {}
+
+OptionParser.new do |opts|
+    opts.on('-f', '--full', 'Run all tests, including memchecker') do |v|
+        options[:full] = v
+    end
+    opts.on('-v', '--verbose', 'Print test status') do |v|
+        options[:verbose] = v
+    end
+end.parse!
 
 Dir.chdir('tests')
 
-tests = ARGV.count > 0 ? ARGV : Dir.glob('*.ap')
+tests = Dir.glob('*.ap')
 tests.each do |test|
-    result = `../bin/test #{test} 2>&1 | diff - #{test}.out`
+    if options[:full]
+        result = `valgrind --leak-check=full -q ../bin/test #{test} 2>&1 | diff - #{test}.out`
+    else
+        result = `../bin/test #{test} 2>&1 | diff - #{test}.out`
+    end
     if !result.empty? || $? != 0
         (1..79).each { putc '-' }        
         puts
@@ -22,7 +38,7 @@ end
 
 if failed 
     exit(-1)
-else
+elsif options[:verbose]
     puts "All #{tests.length} tests passed."
 end
 

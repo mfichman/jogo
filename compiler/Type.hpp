@@ -49,7 +49,7 @@ public:
 private:
     Name::Ptr scope_;
     Pointer<Generic> generics_;
-    Pointer<Environment> environment_;
+    Environment* environment_;
     Name::Ptr name_;
     Type::Ptr next_;
 };

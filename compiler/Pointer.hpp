@@ -46,6 +46,7 @@ public:
             object_->refcount(object_->refcount() - 1);
             if (object_->refcount() <= 0) {
                 delete object_;
+                object_ = 0;
             }
         }
         object_ = other.object_;
@@ -60,6 +61,7 @@ public:
             object_->refcount(object_->refcount() - 1);
             if (object_->refcount() <= 0) {
                 delete object_;
+                object_ = 0;
             }
         }
     }
