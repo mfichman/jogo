@@ -5,3 +5,6 @@ all:
 .PHONY:
 clean:
 	scons -c
+
+test:
+	scripts/test

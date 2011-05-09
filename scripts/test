@@ -18,7 +18,13 @@ tests.each do |test|
     end
 end
 
+
+
 if failed 
     exit(-1)
+else
+    puts "All #{tests.length} tests passed."
 end
+
+
 

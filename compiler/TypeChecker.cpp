@@ -146,9 +146,9 @@ TypeChecker::operator()(Binary* expression) {
             cerr << endl;
         }
     } else if (environment_->name("?") == expression->operation()) {
-        assert("Not implemented");
+        assert(false && "Not implemented");
     } else {
-        assert("Not implemented");
+        assert(false && "Not implemented");
     }
 }
 

@@ -128,7 +128,7 @@ class
         $$ = new Class(@$, $1, $5);
         delete $3; // FixMe
     }
-	| error {
+    | error {
         $$ = 0;    
     }
     ;
@@ -147,77 +147,77 @@ member
     : attribute { $$ = $1; }
     | operator { $$ = $1; }
     | function { $$ = $1; }
-	| native { $$ = $1; }
-	| prototype { $$ = $1; }
+    | native { $$ = $1; }
+    | prototype { $$ = $1; }
     ;
 
 attribute
     : IDENTIFIER type '=' expression SEPARATOR {
-		// TODO: Set symbol table for class-level
-		$$ = new Attribute(@$, $1, $2, $4);
+        // TODO: Set symbol table for class-level
+        $$ = new Attribute(@$, $1, $2, $4);
     }
     | IDENTIFIER '=' expression SEPARATOR {
-		// TODO: Set symbol table for class-level
-		$$ = new Attribute(@$, $1, parser->environment()->void_type(), $3);
+        // TODO: Set symbol table for class-level
+        $$ = new Attribute(@$, $1, parser->environment()->void_type(), $3);
     }
     | IDENTIFIER type SEPARATOR {
-		$$ = new Attribute(@$, $1, $2, new Empty(@$));
+        $$ = new Attribute(@$, $1, $2, new Empty(@$));
     }
-	;
+    ;
 
 function
     : IDENTIFIER formal_signature type modifiers block {
         $$ = new Function(@$, $1, $2, $3, $5);
     }
-	| IDENTIFIER formal_signature modifiers block {
+    | IDENTIFIER formal_signature modifiers block {
         Type* type = parser->environment()->void_type();
         $$ = new Function(@$, $1, $2, type, $4);
-	}
-	;
+    }
+    ;
 
 operator
     : OPERATOR formal_signature type modifiers block {
         $$ = new Function(@$, $1, $2, $3, $5);
     }
-	| OPERATOR formal_signature modifiers block {
+    | OPERATOR formal_signature modifiers block {
         Type* type = parser->environment()->void_type();
         $$ = new Function(@$, $1, $2, type, $4);
-	}
-	;
+    }
+    ;
 
 prototype
-	: IDENTIFIER formal_signature type modifiers SEPARATOR {
+    : IDENTIFIER formal_signature type modifiers SEPARATOR {
         $$ = new Function(@$, $1, $2, $3, 0);
-	}
-	| IDENTIFIER formal_signature modifiers SEPARATOR {
+    }
+    | IDENTIFIER formal_signature modifiers SEPARATOR {
         Type* type = parser->environment()->void_type();
         $$ = new Function(@$, $1, $2, type, 0);
-	}
+    }
     ;
 
 native
-	: IDENTIFIER formal_signature type modifiers NATIVE SEPARATOR {
+    : IDENTIFIER formal_signature type modifiers NATIVE SEPARATOR {
         $$ = new Function(@$, $1, $2, $3, 0);
-	}
-	| IDENTIFIER formal_signature modifiers NATIVE SEPARATOR {
+    }
+    | IDENTIFIER formal_signature modifiers NATIVE SEPARATOR {
         Type* type = parser->environment()->void_type();
         $$ = new Function(@$, $1, $2, type, 0);
-	}
+    }
     ;
-	
+    
 formal_signature
-	: '(' formal_list ')' { $$ = $2; }
-	| '(' ')' { $$ = 0; }
-	;
+    : '(' formal_list ')' { $$ = $2; }
+    | '(' ')' { $$ = 0; }
+    ;
 
 formal_list
-	: formal ',' formal_list { 
+    : formal ',' formal_list { 
         $$ = $1;
         $$->next($3);
-	}
-	| formal { 
+    }
+    | formal { 
         $$ = $1;
-	}
+    }
     ;
 
 formal
@@ -226,9 +226,9 @@ formal
     }
 
 modifiers
-	: PRIVATE { $$ = 0; }
-	| /* empty */ { $$ = 0; }
-	;
+    : PRIVATE { $$ = 0; }
+    | /* empty */ { $$ = 0; }
+    ;
 
 scope
     : TYPE SCOPE scope {
@@ -279,47 +279,47 @@ generic
 
 block
     : '{' statement_list '}' { 
-		$$ = new Block(@$, $2); 
-	}
+        $$ = new Block(@$, $2); 
+    }
     ;
 
 statement_list
     : statement statement_list { 
-		$$ = $1;
+        $$ = $1;
         $$->next($2);
-	}
+    }
     | /* empty */ {
         $$ = 0;
     }
-	| error statement_list { 
+    | error statement_list { 
         $$ = $2; 
     }
     ;
 
 
 statement
-	: FOR IDENTIFIER IN expression block {
-		$$ = new For(@$, $2, $4, $5);
-	}
+    : FOR IDENTIFIER IN expression block {
+        $$ = new For(@$, $2, $4, $5);
+    }
     | LET variable_list block {
         $$ = new Let(@$, $2, $3);
     }
-	| UNTIL expression block {
+    | UNTIL expression block {
         // TODO: FIX UNTIL
         Name* op = parser->environment()->name("!");
-		$$ = new While(@$, new Unary(@$, op, $2), $3);
+        $$ = new While(@$, new Unary(@$, op, $2), $3);
         
-	}
-	| WHILE expression block {
-		$$ = new While(@$, $2, $3);
-	}
+    }
+    | WHILE expression block {
+        $$ = new While(@$, $2, $3);
+    }
     | CASE expression '{' when_list '}' {
         $$ = new Case(@$, $2, static_cast<When*>($4));
     }
-	| RETURN expression SEPARATOR { 
+    | RETURN expression SEPARATOR { 
         $$ = new Return(@$, $2);
     }
-	| RETURN SEPARATOR { 
+    | RETURN SEPARATOR { 
         $$ = new Return(@$, new Empty(@$));
     }
     | YIELD expression SEPARATOR {
@@ -332,8 +332,8 @@ statement
         $$ = $1;
     }
     | expression SEPARATOR { 
-		$$ = new Simple(@$, $1); 
-	}
+        $$ = new Simple(@$, $1); 
+    }
     | expression '[' expression_list ']' '=' expression SEPARATOR {
         /* Indexed assignment */
         Environment* env = parser->environment();
@@ -359,49 +359,49 @@ statement
     ;
 
 conditional
-	: IF expression block {
-		$$ = new Conditional(@$, $2, $3, new Block(@$, 0));
-	}
+    : IF expression block {
+        $$ = new Conditional(@$, $2, $3, new Block(@$, 0));
+    }
     | IF expression block ELSE block {
         $$ = new Conditional(@$, $2, $3, $5);
     }
     | IF expression block ELSE conditional {
         $$ = new Conditional(@$, $2, $3, $5);
     }
-	;
+    ;
 expression
-	: expression '?' expression { 
-		$$ = new Binary(@$, parser->environment()->name("?"), $1, $3);
-        assert("Not implemented");
-	}
+    : expression '?' expression { 
+        $$ = new Binary(@$, parser->environment()->name("?"), $1, $3);
+        assert(false && "Not implemented");
+    }
     | expression OR expression { 
-		$$ = new Binary(@$, parser->environment()->name("or"), $1, $3); 
-	}
+        $$ = new Binary(@$, parser->environment()->name("or"), $1, $3); 
+    }
     | expression AND expression { 
-		$$ = new Binary(@$, parser->environment()->name("and"), $1, $3); 
-	}
+        $$ = new Binary(@$, parser->environment()->name("and"), $1, $3); 
+    }
     | expression XOR expression {
         $1->next($3);
         $$ = new Dispatch(@$, parser->environment()->name("@bitxor"), $1);
     }
     | expression '|' expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@bitor"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@bitor"), $1); 
+    }
     | expression '&' expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@bitand"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@bitand"), $1); 
+    }
     | expression EQUAL expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@equal"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@equal"), $1); 
+    }
     | expression NOT_EQUAL expression { 
         $1->next($3);
         Environment* env = parser->environment();
         Dispatch* equal = new Dispatch(@$, env->name("@equal"), $1);
         $$ = new Unary(@$, env->name("!"), equal);
-	}
+    }
     | expression COMPARE expression {
         $1->next($3);
         Environment* env = parser->environment();
@@ -413,57 +413,57 @@ expression
         Dispatch* less = new Dispatch(@$, env->name("@less"), $1); 
         Dispatch* equal = new Dispatch(@$, env->name("@equal"), $1);
         Binary* child = new Binary(@$, env->name("||"), less, equal); 
-		$$ = new Unary(@$, env->name("!"), child); 
-	}
+        $$ = new Unary(@$, env->name("!"), child); 
+    }
     | expression '<' expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@less"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@less"), $1); 
+    }
     | expression GREATER_OR_EQUAL expression { 
         $1->next($3);
         Environment* env = parser->environment();
         Dispatch* less = new Dispatch(@$, env->name("@less"), $1);
         $$ = new Unary(@$, env->name("!"), less); 
-	}
+    }
     | expression LESS_OR_EQUAL expression { 
         $1->next($3);
         Environment* env = parser->environment();
         Dispatch* less = new Dispatch(@$, env->name("@less"), $1);
         Dispatch* equal = new Dispatch(@$, env->name("@equal"), $1);
         $$ = new Binary(@$, env->name("||"), less, equal);  
-	}
+    }
     | expression LEFT_SHIFT expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@shift"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@shift"), $1); 
+    }
     | expression RIGHT_SHIFT expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@unshift"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@unshift"), $1); 
+    }
     | expression '^' expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@power"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@power"), $1); 
+    }
     | expression '+' expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@add"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@add"), $1); 
+    }
     | expression '-' expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@subtract"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@subtract"), $1); 
+    }
     | expression '*' expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@multiply"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@multiply"), $1); 
+    }
     | expression '/' expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@divide"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@divide"), $1); 
+    }
     | expression '%' expression { 
         $1->next($3);
-		$$ = new Dispatch(@$, parser->environment()->name("@modulus"), $1); 
-	}
+        $$ = new Dispatch(@$, parser->environment()->name("@modulus"), $1); 
+    }
     | NOT expression { 
         $$ = new Unary(@$, parser->environment()->name("!"), $2); 
     }
@@ -487,21 +487,20 @@ expression
         $$ = new Dispatch(@$, $3, $1);
     }
     | call { $$ = $1; }
-	| '(' expression ')' { $$ = $2; } 
+    | '(' expression ')' { $$ = $2; } 
     | STRING { $$ = $1; }
     | NUMBER { $$ = $1; }
     | BOOLEAN { $$ = $1; }
-	| IDENTIFIER { $$ = new Identifier(@$, $1); }
+    | IDENTIFIER { $$ = new Identifier(@$, $1); }
     ;
 
 expression_list
-	: expression ',' expression_list { 
-		$$ = $1;
+    : expression ',' expression_list { 
+        $$ = $1;
         $$->next($3);
-	}
-	| expression { $$ = $1; } 
-	;
-
+    }
+    | expression { $$ = $1; } 
+    ;
 
 variable_list
     : variable ',' variable_list {
@@ -536,18 +535,20 @@ variable
 
 call
     : IDENTIFIER '(' expression_list ')' {
-		$$ = new Call(@$, 0, $1, $3);
+        $$ = new Call(@$, 0, $1, $3);
     }
-	| IDENTIFIER '(' ')' {
-		/* Call on an object expression */
-		$$ = new Call(@$, 0, $1, 0);
-	}
+    | IDENTIFIER '(' ')' {
+        /* Call on an object expression */
+        $$ = new Call(@$, 0, $1, 0);
+    }
+/*
     | type SCOPE IDENTIFIER '(' expression_list ')' {
         $$ = new Call(@$, $1, $3, $5);
     } 
     | type SCOPE IDENTIFIER '(' ')' {
         $$ = new Call(@$, $1, $3, 0);
     }
+*/
     | type '(' expression_list ')' {
         $$ = new Construct(@$, $1, $3);
     }
