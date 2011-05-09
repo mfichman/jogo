@@ -18,6 +18,10 @@ Dir.chdir('tests')
 
 tests = Dir.glob('*.ap')
 tests.each do |test|
+    if options[:verbose]
+        puts test
+    end
+
     if options[:full]
         result = `valgrind --leak-check=full -q ../bin/test #{test} 2>&1 | diff - #{test}.out`
     else
