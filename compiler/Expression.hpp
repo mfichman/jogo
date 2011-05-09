@@ -150,20 +150,20 @@ private:
 /* Normal function all */
 class Call : public Expression {
 public:
-    Call(Location loc, Type* module, Name* ident, Expression* args) :
+    Call(Location loc, Name* module, Name* ident, Expression* args) :
         Expression(loc),
         module_(module),
         identifier_(ident),
         arguments_(args) {
     }
 
-    Type* module() const { return module_; }
+    Name* module() const { return module_; }
     Name* identifier() const { return identifier_; }
     Expression* arguments() const { return arguments_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Type::Ptr module_;
+    Name::Ptr module_;
     Name::Ptr identifier_;
     Expression::Ptr arguments_;
 };

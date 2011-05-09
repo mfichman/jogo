@@ -28,7 +28,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %union { Variable* variable; }
 %union { int flag; }
 
-%pure_parser
+%pure-parser
 %locations
 %parse-param { Parser* parser }
 %parse-param { void* scanner }
@@ -82,7 +82,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %type <feature> member member_list attribute class
 %type <feature> operator function prototype native 
 %type <type> type type_list
-%type <name> scope 
+%type <name> scope scope_prefix 
 %type <generic> generic_list generic
 %type <flag> modifiers
 %type <formal> formal_signature formal_list formal
@@ -228,6 +228,14 @@ modifiers
     : PRIVATE { $$ = 0; }
     | /* empty */ { $$ = 0; }
     ;
+
+scope_prefix
+    : TYPE SCOPE scope_prefix {
+        $$ = parser->environment()->name($1->string() + "::" + $3->string()); 
+    }
+    | TYPE SCOPE {
+        $$ = $1;
+    }
 
 scope
     : TYPE SCOPE scope {
@@ -534,14 +542,12 @@ call
         /* Call on an object expression */
         $$ = new Call(@$, 0, $1, 0);
     }
-/*
-    | type SCOPE IDENTIFIER '(' expression_list ')' {
-        $$ = new Call(@$, $1, $3, $5);
+    | scope_prefix IDENTIFIER '(' expression_list ')' {
+        $$ = new Call(@$, $1, $2, $4);
     } 
-    | type SCOPE IDENTIFIER '(' ')' {
-        $$ = new Call(@$, $1, $3, 0);
+    | scope_prefix IDENTIFIER '(' ')' {
+        $$ = new Call(@$, $1, $2, 0);
     }
-*/
     | type '(' expression_list ')' {
         $$ = new Construct(@$, $1, $3);
     }

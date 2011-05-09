@@ -3,7 +3,8 @@ VariantDir('build/drivers', 'drivers', duplicate=0)
 
 
 env = Environment(CPPPATH = ['build/compiler'])
-env.Append(YACCFLAGS = ['--defines=build/compiler/Grammar.hpp'])
+env.Append(YACCFLAGS = '--defines=build/compiler/Grammar.hpp')
+env.Append(YACCFLAGS = '--report=all')
 env['AS'] = 'nasm'
 env.Append(ASFLAGS = '-felf')
 env.Append(CXXFLAGS = '-g')
