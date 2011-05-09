@@ -53,11 +53,11 @@ public:
 private:
     Name::Ptr scope_;
     Pointer<Generic> generics_;
-    Pointer<Module> module_;
+    Module* module_;
     Environment* environment_;
     Name::Ptr name_;
     Type::Ptr next_;
-    Pointer<Class> clazz_;
+    Class* clazz_;
 };
 
 /* Holder for a generics type parameter */

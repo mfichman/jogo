@@ -33,13 +33,11 @@ Class::Class(Location loc, Type* type, Type* mixins, Feature* features) :
     features_(features) {
 
     for (Feature* feat = features; feat; feat = feat->next()) {
-        if (typeid(feat) == typeid(Attribute*)) {
-            Attribute* attr = static_cast<Attribute*>(feat);
+        if (Attribute* attr = dynamic_cast<Attribute*>(feat)) {
             attributes_[attr->name()] = attr;
             continue;
         }
-        if (typeid(feat) == typeid(Function*)) {
-            Function* func = static_cast<Function*>(feat);
+        if (Function* func = static_cast<Function*>(feat)) {
             functions_[func->name()] = func;
             continue;
         }
