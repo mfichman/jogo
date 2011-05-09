@@ -2,8 +2,6 @@ VariantDir('build/compiler', 'compiler', duplicate=0)
 VariantDir('build/drivers', 'drivers', duplicate=0)
 
 
-SetOption('num_jobs', 2)
-
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(YACCFLAGS = ['--defines=build/compiler/Grammar.hpp'])
 env['AS'] = 'nasm'
@@ -21,4 +19,6 @@ env.Program('bin/apollo', compiler_sources +  ['build/drivers/Main.cpp'])
 env.Program('bin/test', compiler_sources + ['build/drivers/Test.cpp'])
 #env.Program('bin/asmtest', 'samples/Test.linux.asm')
 env.Command('check', 'bin/test', 'scripts/test')
-env.Command('test', 'bin/test', 'scripts/test --full --verbose')
+
+if 'test' in COMMAND_LINE_TARGETS:
+    env.Command('test', 'bin/test', 'scripts/test --full --verbose')
