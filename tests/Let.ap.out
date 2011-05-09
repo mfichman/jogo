@@ -5,6 +5,9 @@ Module
     feature0: Function
       name: let1
       type: Void
+      formal0: Formal
+        name: self
+        type: Self
       block: Block
         child0: Let
           variable0: Variable

@@ -87,6 +87,6 @@ public:
     }
 
 private:
-    mutable Object* object_;
+    mutable T* object_;
 };
 

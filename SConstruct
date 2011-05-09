@@ -11,6 +11,7 @@ env.Append(CXXFLAGS = '-g')
 env.Append(CXXFLAGS = '-Wall -Werror -pedantic')
 env.Append(CXXFLAGS = '-Wno-unused')
 env.Append(CXXFLAGS = '-Wno-sign-compare')
+env.Append(CXXFLAGS = '-O0')
 
 compiler_sources = []
 compiler_sources += env.Glob('build/compiler/*.cpp')

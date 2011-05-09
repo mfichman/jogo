@@ -5,4 +5,7 @@ Module
     feature0: Function
       name: foo
       type: Void
+      formal0: Formal
+        name: self
+        type: Self
       block: Block

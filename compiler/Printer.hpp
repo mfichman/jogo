@@ -39,13 +39,11 @@ private:
     void operator()(IntegerLiteral* expression);
     void operator()(BooleanLiteral* expression);
     void operator()(Binary* expression);
-    void operator()(Assignment* expression);
     void operator()(Unary* expression);
     void operator()(Call* expression);
     void operator()(Dispatch* expression);
     void operator()(Construct* expression);
     void operator()(Identifier* expression);
-    void operator()(Member* expression);
     void operator()(Empty* empty);
     void operator()(Let* statement);
     void operator()(Block* statement);

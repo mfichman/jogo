@@ -43,16 +43,31 @@ TypeChecker::TypeChecker(Environment* environment) :
 }
 
 void TypeChecker::operator()(Module* feature) {
+    module_ = feature;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
 }
 
 void TypeChecker::operator()(Class* feature) {
+    class_ = feature;
     enter_scope();
 
-    // TODO: Check interface/struct/object baseclass and make sure that 
+    // Check interface/struct/object baseclass and make sure that 
     // disallowed things aren't included.
+    if (feature->is_object() && feature->is_interface()) {
+        cerr << feature->location();
+        cerr << "Class has both object and interface mixins";
+        cerr << endl;    
+    } else if (feature->is_interface() && feature->is_value()) {
+        cerr << feature->location();
+        cerr << "Class has both interfaces and value mixins";
+        cerr << endl;
+    } else if (feature->is_value() && feature->is_object()) {
+        cerr << feature->location();
+        cerr << "Class has both value and object mixins";
+        cerr << endl;
+    }
 
     // Iterate through all the features and add the functions and variables to
     // the current scope.
@@ -77,11 +92,12 @@ void TypeChecker::operator()(Class* feature) {
 }
 
 void TypeChecker::operator()(Empty* expression) {
-    expression->type(environment_->void_type());
+    expression->type(environment_->no_type());
 }
 
 void TypeChecker::operator()(Formal* formal) {
-     
+    Type::Ptr type = formal->type();
+    type(this);
 }
 
 void TypeChecker::operator()(StringLiteral* expression) {
@@ -104,26 +120,11 @@ void TypeChecker::operator()(Let* expression) {
     block(this);
 }
 
-void TypeChecker::operator()(Assignment* expression) {
-    Expression::Ptr value = expression->expression(); 
-    Type::Ptr type = variable(expression->identifier());
-    value(this);
-
-    if (!type) {
-        // Auto-declare the variable if it isn't in scope.
-        variable(expression->identifier(), expression->type());
-    }
-
-    if (!value->type()->subtype(type)) {
-        cerr << expression->location();
-        cerr << "Type does not conform in assignment";
-        cerr << endl;
-    }
-}
-
 void TypeChecker::operator()(Binary* expression) {
     Expression::Ptr left = expression->left();
     Expression::Ptr right = expression->right();
+    left(this);
+    right(this);
 
     if (environment_->name("||") == expression->operation()
         || environment_->name("&&") == expression->operation()) {
@@ -136,10 +137,10 @@ void TypeChecker::operator()(Binary* expression) {
             cerr << environment_->boolean_type();
             cerr << endl;
         }
-    } else if (environment_->name("?") == expression->operation()) {
-        assert(false && "Not implemented");
+        expression->type(environment_->boolean_type());
     } else {
-        assert(false && "Not implemented");
+        assert(!"Operator not implemented");
+        expression->type(environment_->no_type());
     }
 }
 
@@ -156,7 +157,7 @@ void TypeChecker::operator()(Unary* expression) {
         }
         expression->type(environment_->boolean_type());
     } else {
-        assert("Unary operator not implemented");
+        assert(!"Operator not implemented");
         expression->type(environment_->no_type());
     }
 }
@@ -168,17 +169,13 @@ void TypeChecker::operator()(Call* expression) {
     }
 
     // Look up the function by name in the current context
-    Function::Ptr func;
-    if (expression->module()) {
-        // Look up the unit by type name, then look up the function
-        assert("Not implemented");
-    } else {
-        func = function(expression->identifier()); 
-    }
+    Name::Ptr id = expression->identifier();
+    Name::Ptr scope = expression->module();
+    Function::Ptr func = module_->function(scope, id);  
     if (!func) {
         cerr << expression->location();
-        cerr << "Undeclared function ";
-        cerr << expression->identifier();
+        cerr << "Undeclared function '";
+        cerr << expression->identifier() << "'";
         cerr << endl;
         expression->type(environment_->no_type());
         return;
@@ -214,31 +211,32 @@ void TypeChecker::operator()(Call* expression) {
 
 void TypeChecker::operator()(Dispatch* expression) {
 
-    // Evaluate types of argument expressions
+    // Evaluate types of argument expressions and the receiver
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         a(this);
     }
 
-    // Look up the function by name from the unit
-    Expression::Ptr object = expression->arguments();
-    assert(object->type());
-
-    Class::Ptr clazz;// = environment_->clazz(object->type()->qualified_name());
-    assert(false);
+    // Get the class associated with the receiver (always the first argument)
+    Expression::Ptr receiver = expression->arguments();
+    if (receiver->type() == environment_->no_type()) {
+        return;
+    }
+    Class::Ptr clazz = receiver->type()->clazz();
     if (!clazz) {
         cerr << expression->location();
-        cerr << "Undefined class ";
-        cerr << object->type()->scope();
+        cerr << "Undefined class '";
+        cerr << receiver->type() << "'";
         cerr << endl;
         expression->type(environment_->no_type());
         return;
     }
-
+    
+    // Look up the function
     Function::Ptr func = clazz->function(expression->identifier()); 
     if (!func) {
         cerr << expression->location();
-        cerr << "Undeclared function ";
-        cerr << expression->identifier();
+        cerr << "Undeclared function '";
+        cerr << expression->identifier() << "'";
         cerr << endl;
         expression->type(environment_->no_type());
         return;
@@ -249,10 +247,14 @@ void TypeChecker::operator()(Dispatch* expression) {
     Expression::Ptr arg = expression->arguments();
     Formal::Ptr formal = func->formals();
     while (arg && formal) {
-        if (!arg->type()->subtype(formal->type())) {
+        Type::Ptr ft = formal->type();
+        if (formal->type() == environment_->self_type()) {
+            ft = receiver->type();
+        }
+        if (!arg->type()->subtype(ft)) {
             cerr << arg->location();
-            cerr << "Argument does not conform to type ";
-            cerr << formal->type();
+            cerr << "Argument does not conform to type '";
+            cerr << formal->type() << "'";
             cerr << endl;
         }
         arg = arg->next();
@@ -260,27 +262,63 @@ void TypeChecker::operator()(Dispatch* expression) {
     }
     if (arg) {
         cerr << expression->location();
-        cerr << "Too many arguments to function ";
-        cerr << expression->identifier();
+        cerr << "Too many arguments to function '";
+        cerr << expression->identifier() << "'";
         cerr << endl;
     }
     if (formal) {
         cerr << expression->location();
-        cerr << "Not enough arguments to function ";
-        cerr << expression->identifier();
+        cerr << "Not enough arguments to function '";
+        cerr << expression->identifier() << "'";
         cerr << endl;
     }
 }
 
 void TypeChecker::operator()(Construct* expression) {
-    
     // Evaluate type of argument expression
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         a(this); 
     }
 
-    // TODO: Need to choose the constructor by argument type.
-    assert("Not implemented!");
+    // Look up constructor class
+    Class::Ptr clazz = expression->type()->clazz(); 
+    if (!clazz) {
+        cerr << expression->location();
+        cerr << "Undefined class '";
+        cerr << expression->type() << "'";
+        cerr << endl;
+        expression->type(environment_->no_type());
+        return;
+    }
+
+    // Look up the constructor
+    Function::Ptr constr = clazz->function(environment_->name("@init"));
+
+    // Check arguments types versus formal parameter types
+    Expression::Ptr arg = expression->arguments();
+    Formal::Ptr formal = constr ? constr->formals() : 0;
+    while (arg && formal) {
+        if (!arg->type()->subtype(formal->type())) {
+            cerr << arg->location();
+            cerr << "Argument does not conform to type '";
+            cerr << formal->type() << "'";
+            cerr << endl;
+        }
+        arg = arg->next();
+        formal = formal->next();
+    } 
+    if (arg) {
+        cerr << expression->location();
+        cerr << "Too many arguments to constructor '";
+        cerr << expression->type() << "'";
+        cerr << endl;
+    }
+    if (formal) {
+        cerr << expression->location();
+        cerr << "Not enough arguments to constructor '";
+        cerr << expression->type() << "'";
+        cerr << endl;
+    }
 }
 
 void TypeChecker::operator()(Identifier* expression) {
@@ -295,28 +333,6 @@ void TypeChecker::operator()(Identifier* expression) {
     } else {
         expression->type(type);
     }
-}
-
-void TypeChecker::operator()(Member* expression) {
-    Expression::Ptr object = expression->object(); 
-    object(this);
-
-    Class::Ptr clazz;// = environment_->clazz(object->type()->qualified_name());
-    assert(false);
-    if (!clazz) {
-        expression->type(environment_->no_type());
-        return;
-    }
-    Attribute::Ptr attr = clazz->attribute(expression->identifier());
-    if (!attr) {
-        cerr << expression->location();
-        cerr << "Undefined attribute ";
-        cerr << expression->identifier();
-        cerr << endl;
-        expression->type(environment_->no_type());
-        return;
-    }
-    expression->type(attr->type());
 }
 
 void TypeChecker::operator()(Block* statement) {
@@ -341,8 +357,8 @@ void TypeChecker::operator()(While* statement) {
     assert(t);
     if (!environment_->boolean_type()->equals(guard->type())) {
         cerr << statement->location();
-        cerr << "While statement guard expression must have type ";
-        cerr << environment_->boolean_type();
+        cerr << "While statement guard expression must have type '";
+        cerr << environment_->boolean_type() << "'";
         cerr << endl;
     }
     block(this);
@@ -362,8 +378,8 @@ void TypeChecker::operator()(Conditional* statement) {
     guard(this);
     if (!environment_->boolean_type()->equals(guard->type())) {
         cerr << statement->location();
-        cerr << "Conditional guard expression must have type ";
-        cerr << environment_->boolean_type();
+        cerr << "Conditional guard expression must have type '";
+        cerr << environment_->boolean_type() << "'";
         cerr << endl;
     } 
     true_branch(this);
@@ -373,16 +389,15 @@ void TypeChecker::operator()(Conditional* statement) {
 void TypeChecker::operator()(Variable* statement) {
     Expression::Ptr initializer = statement->initializer();
     initializer(this);
-    if (!initializer->type()) {
-        initializer->type(statement->type());
-    }
-    if (!statement->type()->supertype(initializer->type())) {
+    if (statement->type() && !initializer->type()->subtype(statement->type())) {
         cerr << statement->location();
-        cerr << "Expression does not conform to type ";
-        cerr << initializer->type();
+        cerr << "Expression does not conform to type '";
+        cerr << initializer->type() << "'";
         cerr << endl;
-    } 
-    variable(statement->identifier(), statement->type()); 
+        variable(statement->identifier(), statement->type()); 
+    } else {
+        variable(statement->identifier(), initializer->type()); 
+    }
 }
 
 void TypeChecker::operator()(Return* statement) {
@@ -392,8 +407,8 @@ void TypeChecker::operator()(Return* statement) {
     }
     if (!expression->type()->subtype(scope_->type())) {
         cerr << statement->location();
-        cerr << "Expression does not conform to return type ";
-        cerr << scope_->type();
+        cerr << "Expression does not conform to return type '";
+        cerr << scope_->type() << "'";
         cerr << endl;
     }
 }
@@ -422,17 +437,24 @@ void TypeChecker::operator()(Case* statement) {
 void TypeChecker::operator()(Function* feature) {
     Statement::Ptr block = feature->block();
     scope_ = feature;
+    
+    for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
+        Type::Ptr type = f->type();
+        type(this);
+        variable(f->name(), f->type());
+    }
+    
     block(this); 
 }
 
 void TypeChecker::operator()(Attribute* feature) {
     Expression::Ptr initializer = feature->initializer();
     initializer(this);
-    assert("Fix variable check");
+
     if (!feature->type()->supertype(initializer->type())) {
         cerr << feature->location();
-        cerr << "Expression does not conform to type: ";
-        cerr << initializer->type();
+        cerr << "Expression does not conform to type '";
+        cerr << initializer->type() << "'";
         cerr << endl;
     }
     variable(feature->name(), feature->type());

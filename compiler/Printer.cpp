@@ -76,7 +76,7 @@ void Printer::operator()(Formal* formal) {
     print_tabs(); cout << "name: ";
     cout << formal->name() << endl;
     print_tabs(); cout << "type: ";
-    cout << formal->type()->scope() << endl;
+    cout << formal->type() << endl;
 
     indent_level_--;
 }
@@ -134,18 +134,6 @@ void Printer::operator()(Let* expression) {
     indent_level_--;
 }
 
-void Printer::operator()(Assignment* expression) {
-    indent_level_++;
-    Name::Ptr identifier = expression->identifier();
-    Expression::Ptr right = expression->expression();
-    cout << "Assignment" << endl;
-    print_tabs(); cout << "identifier:";
-    cout << identifier << endl;
-    print_tabs(); cout << "expression:";
-    right(this);
-    indent_level_--;
-}
-
 void Printer::operator()(Unary* expression) {
     indent_level_++;
     Expression::Ptr child = expression->child();
@@ -194,7 +182,7 @@ void Printer::operator()(Construct* expression) {
     Expression::Ptr arguments = expression->arguments();
     cout << "Construct" << endl;
     print_tabs(); cout << "type: ";
-    cout << expression->type()->scope() << endl;
+    cout << expression->type() << endl;
 
     int i = 0;
     for (Expression::Ptr a = arguments; a; a = a->next()) {
@@ -211,17 +199,6 @@ void Printer::operator()(Identifier* expression) {
     print_tabs(); cout << "name: ";
     cout << expression->identifier() << endl;
     indent_level_--; 
-}
-
-void Printer::operator()(Member* expression) {
-    indent_level_++;
-    Expression::Ptr child = expression->object();
-    cout << "Member" << endl;
-    print_tabs(); cout << "name: ";
-    cout << expression->identifier() << endl;
-    print_tabs(); cout << "expression: ";
-    child(this);
-    indent_level_--;
 }
 
 void Printer::operator()(Empty* empty) {
@@ -299,7 +276,7 @@ void Printer::operator()(Variable* statement) {
     print_tabs(); cout << "name: ";
     cout << statement->identifier() << endl;
     print_tabs(); cout << "type: ";
-    cout << statement->type()->scope() << endl;
+    cout << statement->type() << endl;
     print_tabs(); cout << "initializer: ";
     initializer(this);
     indent_level_--; 
@@ -321,7 +298,7 @@ void Printer::operator()(When* statement) {
     print_tabs(); cout << "name: ";
     cout << statement->variable() << endl;
     print_tabs(); cout << "type: ";
-    cout << statement->type()->scope() << endl;
+    cout << statement->type() << endl;
     print_tabs(); cout << "block: ";
     block(this);
     indent_level_--; 
@@ -368,7 +345,7 @@ void Printer::operator()(Function* feature) {
     print_tabs(); cout << "name: ";
     cout << feature->name() << endl;
     print_tabs(); cout << "type: ";
-    cout << feature->type()->scope() << endl;
+    cout << feature->type() << endl;
     
     int i = 0;
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
@@ -388,7 +365,7 @@ void Printer::operator()(Attribute* feature) {
     print_tabs(); cout << "name: ";
     cout << feature->name() << endl;
     print_tabs(); cout << "type: ";
-    cout << feature->type()->scope() << endl;
+    cout << feature->type() << endl;
     print_tabs(); cout << "initializer: ";
     initializer(this);
     indent_level_--;

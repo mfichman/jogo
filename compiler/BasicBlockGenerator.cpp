@@ -67,6 +67,7 @@ BasicBlockGenerator::operator()(Binary* expression) {
     }
 }
 
+/*
 void
 BasicBlockGenerator::operator()(Assignment* expression) {
     Expression::Ptr child = expression->expression();
@@ -104,6 +105,7 @@ BasicBlockGenerator::operator()(Assignment* expression) {
 
     assert("Failure: Need to handle pointer case");
 }
+*/
 
 void
 BasicBlockGenerator::operator()(Unary* expression) {
@@ -133,10 +135,6 @@ BasicBlockGenerator::operator()(Dispatch* expression) {
 
 void
 BasicBlockGenerator::operator()(Identifier* expression) {
-}
-
-void
-BasicBlockGenerator::operator()(Member* expression) {
 }
 
 void

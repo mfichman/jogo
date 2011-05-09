@@ -32,7 +32,7 @@
 /* Type object */
 class Type : public TreeNode {
 public:
-    Type(Location loc, Name* sc, Generic* gen, Module* mod, Environment* env);
+    Type(Location loc, Name* qn, Generic* gen, Module* mod, Environment* env);
     Generic* generics() const { return generics_; }
     Name* name() const { return name_; }
     Name* scope() const { return scope_; }
@@ -51,13 +51,13 @@ public:
 
     
 private:
-    Name::Ptr scope_;
     Pointer<Generic> generics_;
     Module* module_;
     Environment* environment_;
+    Name::Ptr scope_;
     Name::Ptr name_;
     Type::Ptr next_;
-    Class* clazz_;
+    Class* class_;
 };
 
 /* Holder for a generics type parameter */

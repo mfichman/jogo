@@ -52,13 +52,11 @@ public:
     virtual void operator()(IntegerLiteral* expression)=0;
     virtual void operator()(BooleanLiteral* expression)=0;
     virtual void operator()(Binary* expression)=0;
-    virtual void operator()(Assignment* expression)=0;
     virtual void operator()(Unary* expression)=0;
     virtual void operator()(Call* expression)=0;
     virtual void operator()(Dispatch* expression)=0;
     virtual void operator()(Construct* expression)=0;
     virtual void operator()(Identifier* expression)=0;
-    virtual void operator()(Member* expression)=0;
     virtual void operator()(Empty* empty)=0;
     virtual void operator()(Block* statement)=0;
     virtual void operator()(Simple* statement)=0;

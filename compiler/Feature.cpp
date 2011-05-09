@@ -30,7 +30,10 @@ Class::Class(Location loc, Type* type, Type* mixins, Feature* features) :
     Feature(loc),
     type_(type),
     mixins_(mixins),
-    features_(features) {
+    features_(features),
+    is_object_(false),
+    is_value_(false),
+    is_interface_(false) {
 
     for (Feature* feat = features; feat; feat = feat->next()) {
         if (Attribute* attr = dynamic_cast<Attribute*>(feat)) {
@@ -45,15 +48,15 @@ Class::Class(Location loc, Type* type, Type* mixins, Feature* features) :
 
     for (Type* mixin = mixins; mixin; mixin = mixin->next()) {
         if ("Object" == mixin->name()->string()) {
-            object_ = true;
+            is_object_ = true;
             continue;
         }
         if ("Interface" == mixin->name()->string()) {
-            interface_ = true;
+            is_interface_ = true;
             continue;
         }
         if ("Value" == mixin->name()->string()) {
-            value_ = true;
+            is_value_ = true;
             continue;
         }
     }
@@ -91,6 +94,10 @@ bool Class::subtype(Class* other) const {
     // Returns true if this class is a subtype of 'other.'  A class is a subtype
     // of another class if it implements all methods found in the class.
 
+    if (!other->is_interface() && !is_interface()) {
+        return this == other; 
+    }
+
     for (Feature* f = other->features(); f; f = f->next()) {
         if (Function* func = dynamic_cast<Function*>(f)) {
             Function* mine = function(func->name());   
@@ -126,9 +133,14 @@ bool Function::covariant(Function* other) const {
     Formal* f2 = other->formals_;
 
     while (f1 && f2) {
-        if (!f1->type()->equals(f2->type())) {
+        if (f1->type()->name()->string() == "Self" 
+            && f2->type()->name()->string() == "Self") {
+            /* pass */
+        } else if (!f1->type()->equals(f2->type())) {
             return false;
         }
+        f1 = f1->next();
+        f2 = f2->next();
     }
     if (f1 || f2) {
         return false;
@@ -163,26 +175,18 @@ Function* Module::function(Name* scope, Name* name) {
     // through imports included in this module to attempt to find the function.
 
     if (!scope || scope->string() == "") {
-        return function(name);
+        Function* fn = function(name);
+        if (fn) {
+            return fn;
+        }
+        return environment_->root()->function(name);
     }
 
-    Function* function = 0;
-    std::map<Name::Ptr, Import::Ptr>::iterator i = imports_.begin();
-    for (; i != imports_.end(); i++) {
-        Name* is = i->second->scope();
-        Name* mn = environment_->name(scope->string() + is->string());
-        Module* module = environment_->module(mn); 
-        if (!module) {
-            continue;   
-        }
-        Function* fn = module->function(name);
-        if (fn && function) {
-            environment_->error("Ambiguous function call, check imports");
-            return function;
-        }
-        function = fn;
+    Module* module = this->module(scope);
+    if (module) {
+        return 0;
     }
-    return function;
+    return module->function(name);
 }
 
 Class* Module::clazz(Name* scope, Name* name) {
@@ -190,26 +194,37 @@ Class* Module::clazz(Name* scope, Name* name) {
     // through imports included in this module to attempt to find the class.
 
     if (!scope || scope->string() == "") {
-        return clazz(name);
+        Class* cs = clazz(name);
+        if (cs) {
+            return cs;
+        }
+        return environment_->root()->clazz(name);
     }
 
-    Class* clazz = 0;
+    Module* module = this->module(scope);
+    if (module) {
+        return 0;
+    }
+    return module->clazz(name);
+}
+
+Module* Module::module(Name* scope) {
+    // Returns the module with the name "scope."  Searches through imports
+    // included in this module to attempt to find the module.
+
+    Module* module = environment_->module(scope);
+
     std::map<Name::Ptr, Import::Ptr>::iterator i = imports_.begin();
     for (; i != imports_.end(); i++) {
         Name* is = i->second->scope();
         Name* mn = environment_->name(scope->string() + is->string());
-        Module* module = environment_->module(mn);
-        if (!module) {
-            continue;
+        Module* m = environment_->module(mn);
+        if (module && m) {
+            // Ambiguous: more than one module that matches this name
+            return 0;
         }
-        Class* cs = module->clazz(name);
-        if (cs && clazz) {
-            environment_->error("Ambiguous class name, check imports");
-            return clazz;
-        }
-        clazz = cs;
     }
-    return clazz;
+    return module;
 }
 
 std::string Import::file_name(Name* scope) {

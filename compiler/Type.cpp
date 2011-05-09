@@ -25,20 +25,21 @@
 #include "Environment.hpp"
 #include <cassert>
 
-Type::Type(Location loc, Name* sc, Generic* gen, Module* mod, Environment* env) :
+Type::Type(Location loc, Name* qn, Generic* gen, Module* mod, Environment* env) :
     TreeNode(loc),
-    scope_(sc),
     generics_(gen),
     module_(mod),
-    environment_(env) {
+    environment_(env),
+    class_(0) {
 
-    size_t scope_end = scope_->string().find_last_of(':');
+    size_t scope_end = qn->string().find_last_of(':');
     if (scope_end == std::string::npos) {
-        name_ = scope_;
+        name_ = qn;
+        scope_ = environment_->name("");
     } else {
-        name_ = env->name(scope_->string().substr(scope_end + 1));
+        name_ = env->name(qn->string().substr(scope_end + 1));
+        scope_ = env->name(qn->string().substr(0, scope_end - 1));
     }
-
 }
 
 bool Type::equals(Type* other) const {
@@ -62,32 +63,47 @@ bool Type::equals(Type* other) const {
 }
 
 bool Type::subtype(Type* other) const {
-    if (!clazz() || !other->clazz()) {
-        return false;
+    if (this == environment_->no_type()) {
+        return true;
+    }
+    if (other == environment_->no_type()) {
+        return true;
+    }
+    if (this->equals(other)) {
+        return true;
     }
     return clazz()->subtype(other->clazz());
 }
 
 bool Type::supertype(Type* other) const {
-    if (!clazz() || !other->clazz()) {
-        return false;
+    if (this == environment_->no_type()) {
+        return true;
+    } 
+    if (other == environment_->no_type()) {
+        return true;
+    }
+    if (this->equals(other)) {
+        return true;
     }
     return clazz()->supertype(other->clazz());
 }
 
 Class* Type::clazz() const {
-    if (clazz_) {
-        return clazz_;
+    if (class_) {
+        return class_;
     }
     Type* self = const_cast<Type*>(this);
-    self->clazz_ = self->module_->clazz(name_);
-
-    return 0;
+    self->class_ = self->module_->clazz(scope_, name_);
+    return self->class_;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const Type* type) {
-    out << type->scope()->string();
+    if (type->scope()->string().empty()) {
+        out << type->name();
+    } else {
+        out << type->scope() << "::" << type->name();
+    }
     if (type->generics()) {
         out << '[';
         for (Generic::Ptr g = type->generics(); g; g = g->next()) {

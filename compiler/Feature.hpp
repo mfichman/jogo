@@ -129,9 +129,9 @@ public:
     Type* type() const { return type_; }
     Type* mixins() const { return mixins_; }
     Name* name() const { return type_->name(); }
-    bool object() const { return object_; }
-    bool value() const { return value_; }
-    bool interface() const { return interface_; }
+    bool is_object() const { return is_object_; }
+    bool is_value() const { return is_value_; }
+    bool is_interface() const { return is_interface_; }
     bool subtype(Class* other) const;
     bool supertype(Class* other) const;
     void feature(Feature* feature);
@@ -144,9 +144,9 @@ private:
     Type::Ptr type_;
     Type::Ptr mixins_;
     Feature::Ptr features_;
-    bool object_;
-    bool value_;
-    bool interface_;
+    bool is_object_;
+    bool is_value_;
+    bool is_interface_;
 };
 
 /* Module, contains classes, functions, imports, etc. */
@@ -163,6 +163,7 @@ public:
     Function* function(Name* scope, Name* name);
     Class* clazz(Name* name) { return classes_[name]; }
     Class* clazz(Name* scope, Name* name);
+    Module* module(Name* scope);
     Import* import(Name* name) { return imports_[name]; }
     Name* name() const { return name_; }
     void feature(Feature* feature);

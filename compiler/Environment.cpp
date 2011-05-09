@@ -24,6 +24,64 @@
 #include <cassert>
 #include <stack>
 
+Environment::Environment() :
+    root_(new Module(Location(), name(""), this)),
+    void_type_(new Type(Location(), name("Void"), 0, root_, this)),
+    boolean_type_(new Type(Location(), name("Bool"), 0, root_, this)),
+    integer_type_(new Type(Location(), name("Int"), 0, root_, this)),
+    string_type_(new Type(Location(), name("String"), 0, root_, this)),
+    no_type_(new Type(Location(), name("<<notype>>"), 0, root_, this)),
+    float_type_(new Type(Location(), name("Float"), 0, root_, this)),
+    self_type_(new Type(Location(), name("Self"), 0, root_, this)),
+    errors_(0) {
+
+    init_boolean();
+    init_integer();
+    init_string();
+    init_float();
+}
+
+void Environment::init_boolean() {
+    root_->feature(new Class(Location(), boolean_type_, 0, 0));
+}
+
+void Environment::init_integer() {
+    Location loc;
+    Formal::Ptr formals;
+
+    Class::Ptr clazz = new Class(loc, integer_type_, 0, 0);
+
+    formals = new Formal(loc, name("_"), integer_type_);
+    formals->next(new Formal(loc, name("_"), integer_type_));
+    clazz->feature(new Function(loc, name("@add"), formals, integer_type_, 0));
+    
+    formals = new Formal(loc, name("_"), integer_type_);
+    formals->next(new Formal(loc, name("_"), integer_type_));
+    clazz->feature(new Function(loc, name("@subtract"), formals, integer_type_, 0));
+
+    formals = new Formal(loc, name("_"), integer_type_);
+    formals->next(new Formal(loc, name("_"), integer_type_));
+    clazz->feature(new Function(loc, name("@multiply"), formals, integer_type_, 0));
+
+    formals = new Formal(loc, name("_"), integer_type_);
+    formals->next(new Formal(loc, name("_"), integer_type_));
+    clazz->feature(new Function(loc, name("@divide"), formals, integer_type_, 0));
+
+    formals = new Formal(loc, name("_"), integer_type_);
+    formals->next(new Formal(loc, name("_"), integer_type_));
+    clazz->feature(new Function(loc, name("@modulus"), formals, integer_type_, 0));
+
+    root_->feature(clazz);
+}
+
+void Environment::init_string() {
+    root_->feature(new Class(Location(), string_type_, 0, 0));
+}
+
+void Environment::init_float() {
+    root_->feature(new Class(Location(), float_type_, 0, 0));
+}
+
 Name* Environment::name(const std::string& str) {
     // Returns a name if it exists, otherwise, a new one is created.
 

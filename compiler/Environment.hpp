@@ -31,19 +31,11 @@
 /* Compilation environment; contains symbol table and compilation units */
 class Environment : public Object {
 public:
-    Environment() :
-        root_(new Module(Location(), name(""), this)),
-        void_type_(new Type(Location(), name("Void"), 0, root_, this)),
-        boolean_type_(new Type(Location(), name("Boolean"), 0, root_, this)),
-        integer_type_(new Type(Location(), name("Integer"), 0, root_, this)),
-        string_type_(new Type(Location(), name("String"), 0, root_, this)),
-        no_type_(new Type(Location(), name("<<notype>>"), 0, root_, this)),
-        float_type_(new Type(Location(), name("Float"), 0, root_, this)),
-        errors_(0) {
-    }
+    Environment();
     Name* name(const std::string& str);
     Module* module(Name* scope);
     Module* modules() const { return modules_; }
+    Module* root() const { return root_; }
     int errors() { return errors_; }
     void module(Module* module);
     void error(const std::string& error) { errors_++; }
@@ -56,8 +48,14 @@ public:
     Type* string_type() const { return string_type_; }
     Type* no_type() const { return no_type_; }
     Type* float_type() const { return float_type_; }
+    Type* self_type() const { return self_type_; }
 
 private:
+    void init_integer();
+    void init_boolean();
+    void init_string();
+    void init_float();
+
     std::map<std::string, Name::Ptr> name_;
     std::map<Name::Ptr, Module::Ptr> module_;
     Module::Ptr root_;
@@ -68,6 +66,7 @@ private:
     Type::Ptr string_type_;
     Type::Ptr no_type_;
     Type::Ptr float_type_;
+    Type::Ptr self_type_;
     int errors_;
 };
 

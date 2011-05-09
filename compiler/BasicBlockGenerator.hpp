@@ -41,12 +41,10 @@ private:
     void operator()(StringLiteral* expression);
     void operator()(IntegerLiteral* expression);
     void operator()(Binary* expression);
-    void operator()(Assignment* expression);
     void operator()(Unary* expression);
     void operator()(Call* expression);
     void operator()(Dispatch* expression);
     void operator()(Identifier* expression);
-    void operator()(Member* expression);
     void operator()(Block* statment);
     void operator()(Simple* statment);
     void operator()(While* statment);

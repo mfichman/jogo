@@ -90,24 +90,6 @@ private:
     Name::Ptr value_;
 };    
 
-/* Assignment expression */
-class Assignment : public Expression {
-public:
-    Assignment(Location loc, Name* identifier, Expression* expression) :
-        Expression(loc),
-        identifier_(identifier),
-        expression_(expression) {
-    }
-
-    Name* identifier() const { return identifier_; }
-    Expression* expression() const { return expression_; }
-
-private:
-    void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr identifier_;
-    Expression::Ptr expression_;
-};
-
 /* Simple binary expression */
 class Binary : public Expression {
 public:
@@ -217,25 +199,6 @@ public:
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     Name::Ptr identifier_;
-};
-
-/* Member identifier access */
-class Member : public Expression {
-public:
-    Member(Location loc, Expression* object, Name* ident) :
-        Expression(loc),
-        object_(object),
-        identifier_(ident) {
-    }
-
-    Name* identifier() const { return identifier_; }
-    Expression* object() const { return object_; }
-
-private:
-    void operator()(Functor* functor) { functor->operator()(this); }
-    Expression::Ptr object_;
-    Name::Ptr identifier_;
-
 };
 
 /* Empty expression */

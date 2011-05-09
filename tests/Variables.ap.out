@@ -5,6 +5,9 @@ Module
     feature0: Function
       name: variables1
       type: Void
+      formal0: Formal
+        name: self
+        type: Self
       block: Block
         child0: Variable
           name: one

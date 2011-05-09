@@ -79,7 +79,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token INCREMENT DECREMENT
 %token SCOPE LET IN YIELD FORK
 
-%type <feature> member member_list attribute class function prototype 
+%type <feature> member member_list attribute class method function prototype 
 %type <type> type type_list maybe_type
 %type <name> scope scope_prefix 
 %type <generic> generic generic_list
@@ -142,7 +142,7 @@ member_list
 
 member
     : attribute { $$ = $1; }
-    | function { $$ = $1; }
+    | method { $$ = $1; }
     | prototype { $$ = $1; }
     ;
 
@@ -153,7 +153,7 @@ attribute
     }
     | IDENTIFIER '=' expression SEPARATOR {
         // TODO: Set symbol table for class-level
-        $$ = new Attribute(@$, $1, parser->environment()->void_type(), $3);
+        $$ = new Attribute(@$, $1, parser->environment()->no_type(), $3);
     }
     | IDENTIFIER type SEPARATOR {
         $$ = new Attribute(@$, $1, $2, new Empty(@$));
@@ -166,9 +166,23 @@ function
     }
     ;
 
+method
+    : IDENTIFIER formal_signature maybe_type modifiers block {
+        Type* type = parser->environment()->self_type();
+        Name* name = parser->environment()->name("self");
+        Formal* self = new Formal(@$, name, type);
+        self->next($2);
+        $$ = new Function(@$, $1, self, $3, $5);
+    }
+    ;
+
 prototype
     : IDENTIFIER formal_signature maybe_type modifiers SEPARATOR {
-        $$ = new Function(@$, $1, $2, $3, 0);
+        Type* type = parser->environment()->self_type();
+        Name* name = parser->environment()->name("self");
+        Formal* self = new Formal(@$, name, type);
+        self->next($2);
+        $$ = new Function(@$, $1, self, $3, 0);
     }
     ;
 
@@ -348,6 +362,7 @@ conditional
         $$ = new Conditional(@$, $2, $3, $5);
     }
     ;
+
 expression
     : expression '?' expression { 
         $$ = new Binary(@$, parser->environment()->name("?"), $1, $3);
@@ -497,7 +512,7 @@ variable_list
     }
     | expression ',' variable_list {
         Name* name = parser->environment()->name("__unused");
-        $$ = new Variable(@$, name, parser->environment()->void_type(), $1);
+        $$ = new Variable(@$, name, parser->environment()->no_type(), $1);
         $$->next($3);
     }
     | variable {
@@ -505,7 +520,7 @@ variable_list
     }
     | expression {
         Name* name = parser->environment()->name("__unused");
-        $$ = new Variable(@$, name, parser->environment()->void_type(), $1);
+        $$ = new Variable(@$, name, parser->environment()->no_type(), $1);
     }
     ;
 
@@ -517,7 +532,7 @@ variable
         $$ = new Variable(@$, $1, $2, $4);
     }
     | IDENTIFIER '=' expression {
-        $$ = new Variable(@$, $1, parser->environment()->void_type(), $3);
+        $$ = new Variable(@$, $1, parser->environment()->no_type(), $3);
     }
     ;
 

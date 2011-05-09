@@ -5,6 +5,9 @@ Module
     feature0: Function
       name: loop1
       type: Void
+      formal0: Formal
+        name: self
+        type: Self
       block: Block
         child0: For
           variable: i
@@ -13,6 +16,9 @@ Module
     feature1: Function
       name: loop2
       type: Void
+      formal0: Formal
+        name: self
+        type: Self
       block: Block
         child0: While
           guard: BooleanLiteral(true)
@@ -20,6 +26,9 @@ Module
     feature2: Function
       name: loop3
       type: Void
+      formal0: Formal
+        name: self
+        type: Self
       block: Block
         child0: While
           guard: Unary

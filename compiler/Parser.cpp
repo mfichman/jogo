@@ -62,7 +62,7 @@ void Parser::file(const std::string& file) {
 	this->file_ = file;
     if (this->input_.fail() || this->input_.bad()) {
         environment_->error("Could not find " + file);
-        std::cerr << "Could not find + " + file << std::endl;
+        std::cerr << "Could not find '" + file << "'" << std::endl;
         return;
     }
 
