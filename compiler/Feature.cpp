@@ -77,16 +77,12 @@ void Module::feature(Feature* feature) {
         functions_[func->name()] = func;
         return;
     }
-    if (Module* module = dynamic_cast<Module*>(feature)) {
-        modules_[module->name()] = module;
-        return;
-    }
 }
 
-std::string Import::file_name(Name* qualified_name) {
+std::string Import::file_name(Name* scope) {
     // Converts a module name to the name of the file that contains the 
     // module.
-    const std::string& name = qualified_name->string();
+    const std::string& name = scope->string();
     std::string out;
     for (size_t i = 1; i <= name.length(); i++) {    
         if (name[i-1] == ':' && name[i] == ':') {
@@ -100,7 +96,7 @@ std::string Import::file_name(Name* qualified_name) {
     return out + ".ap";
 }
 
-std::string Import::basename(const std::string& file) {
+std::string Import::base_name(const std::string& file) {
     // Returns the last component of a file path, without the .ap extension.
 
     size_t slash = file.find_last_of('/');
@@ -121,4 +117,21 @@ std::string Import::basename(const std::string& file) {
     }
     
     return file.substr(slash, dot - slash); // slashdot!!
+}
+
+std::string Import::scope_name(const std::string& file) {
+
+    std::string name;
+    for (size_t i = 0; i < file.size(); i++) {
+        if (!isalnum(file[i])) {
+            if (file[i] == '/') {
+                name += "::";
+            } else {
+                return name;
+            }
+        } else {
+            name += file[i];
+        }
+    }
+    return name;
 }

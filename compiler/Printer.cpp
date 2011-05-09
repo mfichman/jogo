@@ -33,8 +33,9 @@ Printer::Printer(Environment* environment) :
         return;
     }
 
-    Module::Ptr root = environment_->root();
-    root(this);
+    for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
+        m(this);
+    }    
 }
 
 void Printer::print_tabs() {
@@ -44,20 +45,16 @@ void Printer::print_tabs() {
 }
 
 void Printer::operator()(Module* feature) {
-    if (feature != environment_->root()) {
-        indent_level_++;
-        cout << "Module" << endl;
-        print_tabs(); cout << "name: " << feature->name() << endl;
-    }
+    indent_level_++;
+    cout << "Module" << endl;
+    print_tabs(); cout << "name: " << feature->name() << endl;
     int i = 0;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         print_tabs(); cout << "feature" << i << ": ";
         f(this);
         i++;
     }
-    if (feature != environment_->root()) {
-        indent_level_--;
-    }
+    indent_level_--;
 }
 
 void Printer::operator()(Class* feature) {
@@ -79,7 +76,8 @@ void Printer::operator()(Formal* formal) {
     print_tabs(); cout << "name: ";
     cout << formal->name() << endl;
     print_tabs(); cout << "type: ";
-    cout << formal->type()->qualified_name() << endl;
+    cout << formal->type()->scope() << endl;
+
     indent_level_--;
 }
 
@@ -196,7 +194,7 @@ void Printer::operator()(Construct* expression) {
     Expression::Ptr arguments = expression->arguments();
     cout << "Construct" << endl;
     print_tabs(); cout << "type: ";
-    cout << expression->type()->qualified_name() << endl;
+    cout << expression->type()->scope() << endl;
 
     int i = 0;
     for (Expression::Ptr a = arguments; a; a = a->next()) {
@@ -301,7 +299,7 @@ void Printer::operator()(Variable* statement) {
     print_tabs(); cout << "name: ";
     cout << statement->identifier() << endl;
     print_tabs(); cout << "type: ";
-    cout << statement->type()->qualified_name() << endl;
+    cout << statement->type()->scope() << endl;
     print_tabs(); cout << "initializer: ";
     initializer(this);
     indent_level_--; 
@@ -323,7 +321,7 @@ void Printer::operator()(When* statement) {
     print_tabs(); cout << "name: ";
     cout << statement->variable() << endl;
     print_tabs(); cout << "type: ";
-    cout << statement->type()->qualified_name() << endl;
+    cout << statement->type()->scope() << endl;
     print_tabs(); cout << "block: ";
     block(this);
     indent_level_--; 
@@ -370,7 +368,7 @@ void Printer::operator()(Function* feature) {
     print_tabs(); cout << "name: ";
     cout << feature->name() << endl;
     print_tabs(); cout << "type: ";
-    cout << feature->type()->qualified_name() << endl;
+    cout << feature->type()->scope() << endl;
     
     int i = 0;
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
@@ -390,7 +388,7 @@ void Printer::operator()(Attribute* feature) {
     print_tabs(); cout << "name: ";
     cout << feature->name() << endl;
     print_tabs(); cout << "type: ";
-    cout << feature->type()->qualified_name() << endl;
+    cout << feature->type()->scope() << endl;
     print_tabs(); cout << "initializer: ";
     initializer(this);
     indent_level_--;
@@ -401,8 +399,8 @@ void Printer::operator()(Import* feature) {
     cout << "Import" << endl;
     print_tabs(); cout << "file: ";
     cout << feature->file_name() << endl;
-    print_tabs(); cout << "module: ";
-    cout << feature->module_name() << endl;
+    print_tabs(); cout << "scope: ";
+    cout << feature->scope() << endl;
     indent_level_--;
 }
 

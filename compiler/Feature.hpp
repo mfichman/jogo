@@ -99,22 +99,23 @@ private:
 /* Class for imports */
 class Import : public Feature {
 public:
-    Import(Location loc, Name* name) :
+    Import(Location loc, Name* scope) :
         Feature(loc),
-        file_name_(file_name(name)),
-        module_name_(name) {
+        file_name_(file_name(scope)),
+        scope_(scope) {
     }
         
     const std::string& file_name() const { return file_name_; }
-    Name* module_name() const { return module_name_; }
+    Name* scope() const { return scope_; }
     static std::string file_name(Name* name);
-    static std::string basename(const std::string& file);
+    static std::string base_name(const std::string& file);
+    static std::string scope_name(const std::string& file);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Import> Ptr;
 
 private:
     std::string file_name_;
-    Name::Ptr module_name_;
+    Name::Ptr scope_;
 };
 
 /* Represents a class object */
@@ -142,29 +143,23 @@ class Module : public Feature {
 public:
     Module(Location loc, Name* name) :
         Feature(loc),
-        name_(name),
-        parsed_(false) {
+        name_(name) {
     }
 
     Feature* features() const { return features_; }
-    Module* module(Name* name) { return modules_[name]; }
     Function* function(Name* name) { return functions_[name]; }
     Class* clazz(Name* name) { return classes_[name]; }
     Import* import(Name* name) { return imports_[name]; }
     Name* name() const { return name_; }
-    bool parsed() const { return parsed_; }
     void feature(Feature* feature);
-    void parsed(bool parsed) { parsed_ = parsed; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Module> Ptr; 
 
 private:
-    std::map<Name::Ptr, Module::Ptr> modules_;
     std::map<Name::Ptr, Function::Ptr> functions_;
     std::map<Name::Ptr, Class::Ptr> classes_;
     std::map<Name::Ptr, Import::Ptr> imports_;
     Name::Ptr name_; 
     Feature::Ptr features_;
-    bool parsed_;
 };
 

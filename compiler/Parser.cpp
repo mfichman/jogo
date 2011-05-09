@@ -45,10 +45,15 @@ Parser::~Parser() {
 }
 
 void Parser::file(const std::string& file) {
+    Name* scope = environment_->name(Import::scope_name(file));
+
     // Begin parsing a module file if it doesn't already exist
-    module_ = environment_->module(file);
-    if (module_->parsed()) {
+    module_ = environment_->module(scope);
+    if (module_) {
         return;
+    } else {
+        module_ = new Module(Location(), scope);
+        environment_->module(module_);
     }
 
     this->column_ = 1;
@@ -56,12 +61,13 @@ void Parser::file(const std::string& file) {
     this->input_.open(file.c_str()); 
 	this->file_ = file;
     if (this->input_.fail() || this->input_.bad()) {
-        throw std::runtime_error("Could not find " + file);
+        environment_->error("Could not find " + file);
+        std::cerr << "Could not find + " + file << std::endl;
+        return;
     }
 
     // Begin parsing
     yyparse(this, this->scanner_);
-    module_->parsed(true);
 
     // Now parse other modules that depend on the unit that was added
     for (Feature* f = module_->features(); f; f = f->next()) {

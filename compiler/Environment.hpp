@@ -32,20 +32,19 @@
 class Environment : public Object {
 public:
     Environment() :
-        root_(new Module(Location(), name(""))),
-        void_type_(new Type(0, name("Void"), 0, this)),
-        boolean_type_(new Type(0, name("Boolean"), 0, this)),
-        integer_type_(new Type(0, name("Integer"), 0, this)),
-        string_type_(new Type(0, name("String"), 0, this)),
-        no_type_(new Type(0, name("<<notype>>"), 0, this)),
-        float_type_(new Type(0, name("Float"), 0, this)),
+        void_type_(new Type(name("Void"), 0, this)),
+        boolean_type_(new Type(name("Boolean"), 0, this)),
+        integer_type_(new Type(name("Integer"), 0, this)),
+        string_type_(new Type(name("String"), 0, this)),
+        no_type_(new Type(name("<<notype>>"), 0, this)),
+        float_type_(new Type(name("Float"), 0, this)),
         errors_(0) {
     }
     Name* name(const std::string& str);
-    Module* root() const { return root_; }
-    Module* module(Import* import);
-    Module* module(const std::string& filename);
+    Module* module(Name* scope);
+    Module* modules() const { return modules_; }
     int errors() { return errors_; }
+    void module(Module* module);
     void error(const std::string& error) { errors_++; }
     typedef Pointer<Environment> Ptr;
 
@@ -58,7 +57,8 @@ public:
 
 private:
     std::map<std::string, Name::Ptr> name_;
-    Module::Ptr root_;
+    std::map<Name::Ptr, Module::Ptr> module_;
+    Module::Ptr modules_;
     Type::Ptr void_type_;
     Type::Ptr boolean_type_;
     Type::Ptr integer_type_;

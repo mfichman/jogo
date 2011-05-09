@@ -64,7 +64,6 @@ union ParseNode {
     Type* type;
     Generic* generic;
     Variable* variable;
-	int null;
 	int flag;
 };
 

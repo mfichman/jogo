@@ -32,11 +32,10 @@
 /* Type object */
 class Type : public Object {
 public:
-    Type(Type* enclosing_type, Name* name, Generic* gen, Environment* env);
-    Type* enclosing_type() const { return enclosing_type_; }
-    Name* name() const { return name_; }
+    Type(Name* scope, Generic* gen, Environment* env);
     Generic* generics() const { return generics_; }
-    Name* qualified_name() const { return qualified_name_; }
+    Name* name() const { return name_; }
+    Name* scope() const { return scope_; }
     Type* next() const { return next_; }
     bool equals(Type* other);
     bool supertype(Type* other);
@@ -48,11 +47,10 @@ public:
     typedef Pointer<Type> Ptr;
     
 private:
-    Pointer<Environment> environment_;
-    Type::Ptr enclosing_type_;
-    Name::Ptr name_;
+    Name::Ptr scope_;
     Pointer<Generic> generics_;
-    Name::Ptr qualified_name_;
+    Pointer<Environment> environment_;
+    Name::Ptr name_;
     Type::Ptr next_;
 };
 

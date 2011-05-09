@@ -70,6 +70,7 @@ private:
     void variable(Name* name, Type* type);
     Function* function(Name* name);
     void function(Name* name, Function* function);
+    Class* clazz(Name* name);
     void enter_scope();
     void exit_scope();
 

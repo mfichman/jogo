@@ -37,8 +37,9 @@ TypeChecker::TypeChecker(Environment* environment) :
         return;
     }
 
-    Module::Ptr root = environment_->root();
-    root(this);
+    for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
+        m(this);
+    }    
 }
 
 void
@@ -240,7 +241,7 @@ TypeChecker::operator()(Dispatch* expression) {
     if (!clazz) {
         cerr << expression->location();
         cerr << "Undefined class ";
-        cerr << object->type()->qualified_name();
+        cerr << object->type()->scope();
         cerr << endl;
         expression->type(environment_->no_type());
         return;

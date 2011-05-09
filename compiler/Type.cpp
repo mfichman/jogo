@@ -24,17 +24,18 @@
 #include "Environment.hpp"
 #include <cassert>
 
-Type::Type(Type* enclosing_type, Name* name, Generic* gen, Environment* env) :
-    environment_(env),
-    enclosing_type_(enclosing_type),
-    name_(name),
-    generics_(gen) {
+Type::Type(Name* scope, Generic* gen, Environment* env) :
+    scope_(scope),
+    generics_(gen),
+    environment_(env) {
 
-    std::string qualified_name = name->string();
-    for (Type* tp = enclosing_type; tp; tp = tp->enclosing_type()) {
-        qualified_name = tp->name()->string() + "::" + qualified_name;
+    size_t scope_end = scope->string().find_last_of(':');
+    if (scope_end == std::string::npos) {
+        name_ = scope_;
+    } else {
+        name_ = env->name(scope->string().substr(scope_end + 1));
     }
-    qualified_name_ = env->name(qualified_name);
+
 }
 
 bool Type::equals(Type* other) {
@@ -44,19 +45,9 @@ bool Type::equals(Type* other) {
     }
 
     /* Make sure the enclosing types are all equal */
-    Type* t1 = enclosing_type();
-    Type* t2 = other->enclosing_type();
-    while (t1 && t2) {
-        if (t1->name() != t2->name()) {
-            return false;
-        }         
-
-        t1 = t1->enclosing_type();
-        t2 = t2->enclosing_type();
-    }
-    if (t1 != 0 && t2 != 0) {
-        return false;
-    }
+    //if (scope() != other->scope()) {
+    //  return false;
+   // }
 
     /* Make sure the generic parameters are the same */
     Generic* g1 = generics();
@@ -93,7 +84,7 @@ Type* Type::least_upper_bound(Type* other) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Type* type) {
-    out << type->qualified_name()->string();
+    out << type->scope()->string();
     if (type->generics()) {
         out << '[';
         for (Generic::Ptr g = type->generics(); g; g = g->next()) {

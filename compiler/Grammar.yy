@@ -26,7 +26,6 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %union { Type* type; }
 %union { Generic* generic; }
 %union { Variable* variable; }
-%union { int null; }
 %union { int flag; }
 
 %pure_parser
@@ -249,17 +248,11 @@ type_list
     ;
 
 type
-    : type SCOPE TYPE { 
-        $$ = new Type($1, $3, 0, parser->environment()); 
+    : scope '[' generic_list ']' {
+        $$ = new Type($1, $3, parser->environment());
     }
-    | type SCOPE TYPE '[' generic_list ']' {
-        $$ = new Type($1, $3, $5, parser->environment());
-    }
-    | TYPE {
-        $$ = new Type(0, $1, 0, parser->environment()); 
-    }
-    | TYPE '[' generic_list ']' {
-        $$ = new Type(0, $1, $3, parser->environment());
+    | scope {
+        $$ = new Type($1, 0, parser->environment()); 
     }
     ;
 
