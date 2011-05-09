@@ -293,12 +293,11 @@ void Printer::operator()(Return* statement) {
 
 void Printer::operator()(When* statement) {
     indent_level_++;
+    Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
     cout << "When" << endl;
-    print_tabs(); cout << "name: ";
-    cout << statement->variable() << endl;
-    print_tabs(); cout << "type: ";
-    cout << statement->type() << endl;
+    print_tabs(); cout << "guard: ";
+    guard(this);
     print_tabs(); cout << "block: ";
     block(this);
     indent_level_--; 

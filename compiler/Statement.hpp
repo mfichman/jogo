@@ -61,22 +61,19 @@ private:
 /* When statement */
 class When : public Statement {
 public:
-    When(Location loc, Name* var, Type* type, Statement* block) : 
+    When(Location loc, Expression* guard, Statement* block) : 
         Statement(loc),
-        variable_(var),
-		type_(type),
+        guard_(guard),
         block_(block) {
     }
 
-    Name* variable() const { return variable_; }
-    Type* type() const { return type_; }
+    Expression* guard() const { return guard_; }
     Statement* block() const { return block_; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<When> Ptr;
 
 private:
-    Name::Ptr variable_;
-	Type::Ptr type_;
+    Expression::Ptr guard_;
     Statement::Ptr block_;
 };
 

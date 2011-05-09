@@ -389,13 +389,32 @@ void TypeChecker::operator()(Conditional* statement) {
 void TypeChecker::operator()(Variable* statement) {
     Expression::Ptr initializer = statement->initializer();
     initializer(this);
-    if (statement->type() && !initializer->type()->subtype(statement->type())) {
+
+    Type::Ptr type = variable(statement->identifier());
+    if (type && !statement->type()->equals(environment_->no_type())) {
         cerr << statement->location();
-        cerr << "Expression does not conform to type '";
-        cerr << initializer->type() << "'";
+        cerr << "Duplicate definition of variable '";
+        cerr << statement->identifier() << "'";
         cerr << endl;
+        return;
+    }
+    if (type && !initializer->type()->subtype(type)) {
+        cerr << initializer->location();
+        cerr << "Expression does not conform to type '";
+        cerr << type << "'";
+        cerr << endl;
+        return;
+    }
+    if (!initializer->type()->subtype(statement->type())) {
+        cerr << initializer->location();
+        cerr << "Expression does not conform to type '";
+        cerr << type << "'";
+        cerr << endl;
+        return;
+    }
+    if (initializer->type()->equals(environment_->no_type())) {
         variable(statement->identifier(), statement->type()); 
-    } else {
+    } else { 
         variable(statement->identifier(), initializer->type()); 
     }
 }
@@ -414,7 +433,9 @@ void TypeChecker::operator()(Return* statement) {
 }
 
 void TypeChecker::operator()(When* statement) {
+    Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
+    guard(this);
     block(this);
 }
 
@@ -429,8 +450,16 @@ void TypeChecker::operator()(Yield* statement) {
 void TypeChecker::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
     guard(this);
+
     for (Statement::Ptr b = statement->branches(); b; b = b->next()) {
         b(this);
+        When::Ptr when = static_cast<When*>(b.pointer());
+        if (!guard->type()->equals(when->guard()->type())) {
+            cerr << statement->location();
+            cerr << "Case expression does not conform to type '";
+            cerr << guard->type() << "'";
+            cerr << endl;
+        }
     }
 }
 
@@ -444,6 +473,8 @@ void TypeChecker::operator()(Function* feature) {
         variable(f->name(), f->type());
     }
     
+    Type::Ptr type = feature->type();
+    type(this);
     block(this); 
 }
 
@@ -465,7 +496,28 @@ void TypeChecker::operator()(Import* feature) {
 }
 
 void TypeChecker::operator()(Type* type) {
+    if (type == environment_->self_type()) {
+        return;
+    }
+    if (type == environment_->void_type()) {
+        return;
+    }
 
+    if (!type->clazz()) {
+        cerr << type->location();
+        cerr << "Undefined type '" << type << "'";
+        cerr << endl;
+        return;
+    }
+
+    for (Generic::Ptr g = type->generics(); g; g = g->next()) {
+        if (!g->type()->clazz() && !type->equals(environment_->self_type())) {
+
+            cerr << type->location() << endl;
+            cerr << "Undefined type '" << type << "'";
+            cerr << endl;
+        }
+    }
 }
 
 Type* TypeChecker::variable(Name* name) {

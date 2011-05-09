@@ -174,6 +174,13 @@ method
         self->next($2);
         $$ = new Function(@$, $1, self, $3, $5);
     }
+    | OPERATOR formal_signature maybe_type modifiers block {
+        Type* type = parser->environment()->self_type();
+        Name* name = parser->environment()->name("self");
+        Formal* self = new Formal(@$, name, type);
+        self->next($2);
+        $$ = new Function(@$, $1, self, $3, $5);
+    }
     ;
 
 prototype
@@ -568,7 +575,7 @@ when_list
     ;
 
 when
-    : WHEN IDENTIFIER type block {
-        $$ = new When(@$, $2, $3, $4);
+    : WHEN expression block {
+        $$ = new When(@$, $2, $3);
     }
     ;
