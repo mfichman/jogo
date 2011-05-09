@@ -51,13 +51,11 @@ void Class::feature(Feature* feature) {
     feature->next(features_);
     features_ = feature;
 
-    if (typeid(feature) == typeid(Attribute*)) {
-        Attribute* attr = static_cast<Attribute*>(feature);
+    if (Attribute* attr = dynamic_cast<Attribute*>(feature)) {
         attributes_[attr->name()] = attr;
         return;
     }
-    if (typeid(feature) == typeid(Function*)) {
-        Function* func = static_cast<Function*>(feature);
+    if (Function* func = dynamic_cast<Function*>(feature)) {
         functions_[func->name()] = func;
         return;
     }
@@ -71,24 +69,39 @@ void Module::feature(Feature* feature) {
     feature->next(features_);
     features_ = feature;
 
-    if (typeid(feature) == typeid(Class*)) {
-        Class* clazz = static_cast<Class*>(feature);
+    if (Class* clazz = dynamic_cast<Class*>(feature)) {
         classes_[clazz->name()] = clazz;
         return;
     }
-    if (typeid(feature) == typeid(Function*)) {
-        Function* func = static_cast<Function*>(feature);
+    if (Function* func = dynamic_cast<Function*>(feature)) {
         functions_[func->name()] = func;
         return;
     }
-    if (typeid(feature) == typeid(Module*)) {
-        Module* module = static_cast<Module*>(feature);
+    if (Module* module = dynamic_cast<Module*>(feature)) {
         modules_[module->name()] = module;
         return;
     }
 }
 
+std::string Import::file_name(Name* qualified_name) {
+    // Converts a module name to the name of the file that contains the 
+    // module.
+    const std::string& name = qualified_name->string();
+    std::string out;
+    for (size_t i = 1; i <= name.length(); i++) {    
+        if (name[i-1] == ':' && name[i] == ':') {
+            out += '/';
+            i++;
+        } else {
+            out += name[i-1];
+        }
+    }
+
+    return out + ".ap";
+}
+
 std::string Import::basename(const std::string& file) {
+    // Returns the last component of a file path, without the .ap extension.
 
     size_t slash = file.find_last_of('/');
     size_t dot = file.find_last_of('.');

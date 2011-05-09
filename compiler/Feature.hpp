@@ -99,20 +99,22 @@ private:
 /* Class for imports */
 class Import : public Feature {
 public:
-    Import(Location loc, Type* type) :
+    Import(Location loc, Name* name) :
         Feature(loc),
-        type_(type) {
+        file_name_(file_name(name)),
+        module_name_(name) {
     }
-
-    const std::string& file() const { return file_; }
-    Type* type() const { return type_; }
+        
+    const std::string& file_name() const { return file_name_; }
+    Name* module_name() const { return module_name_; }
+    static std::string file_name(Name* name);
     static std::string basename(const std::string& file);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Import> Ptr;
 
 private:
-    std::string file_;
-    Type::Ptr type_;
+    std::string file_name_;
+    Name::Ptr module_name_;
 };
 
 /* Represents a class object */
@@ -140,7 +142,8 @@ class Module : public Feature {
 public:
     Module(Location loc, Name* name) :
         Feature(loc),
-        name_(name) {
+        name_(name),
+        parsed_(false) {
     }
 
     Feature* features() const { return features_; }
@@ -149,7 +152,9 @@ public:
     Class* clazz(Name* name) { return classes_[name]; }
     Import* import(Name* name) { return imports_[name]; }
     Name* name() const { return name_; }
+    bool parsed() const { return parsed_; }
     void feature(Feature* feature);
+    void parsed(bool parsed) { parsed_ = parsed; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Module> Ptr; 
 
@@ -160,5 +165,6 @@ private:
     std::map<Name::Ptr, Import::Ptr> imports_;
     Name::Ptr name_; 
     Feature::Ptr features_;
+    bool parsed_;
 };
 

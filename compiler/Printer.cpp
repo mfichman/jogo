@@ -400,9 +400,9 @@ void Printer::operator()(Import* feature) {
     indent_level_++;
     cout << "Import" << endl;
     print_tabs(); cout << "file: ";
-    cout << feature->file() << endl;
-    print_tabs(); cout << "type: ";
-    cout << feature->type()->qualified_name() << endl;
+    cout << feature->file_name() << endl;
+    print_tabs(); cout << "module: ";
+    cout << feature->module_name() << endl;
     indent_level_--;
 }
 

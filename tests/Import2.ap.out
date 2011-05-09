@@ -1,0 +1,17 @@
+feature0: Module
+  name: Import1
+  feature0: Class
+    name: ImportA
+  feature1: Import
+    file: Import1.ap
+    module: Import1
+  feature2: Import
+    file: Import2.ap
+    module: Import2
+feature1: Module
+  name: Import2
+  feature0: Class
+    name: ImportB
+  feature1: Import
+    file: Import1.ap
+    module: Import1

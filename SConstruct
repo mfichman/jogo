@@ -5,9 +5,12 @@ VariantDir('build/drivers', 'drivers', duplicate=0)
 SetOption('num_jobs', 2)
 
 env = Environment(CPPPATH = ['build/compiler'])
-env.Append(BISONFLAGS = ['--defines=build/compiler/Grammar.hpp'])
+env.Append(YACCFLAGS = ['--defines=build/compiler/Grammar.hpp'])
 env['AS'] = 'nasm'
 env.Append(ASFLAGS = '-felf')
+env.Append(CXXFLAGS = '-g')
+env.Append(CXXFLAGS = '-Wall -Werror -pedantic')
+env.Append(CXXFLAGS = '-Wno-unused')
 
 compiler_sources = []
 compiler_sources += env.Glob('build/compiler/*.cpp')

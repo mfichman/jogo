@@ -27,6 +27,7 @@
 #include "Feature.hpp"
 #include "Object.hpp"
 #include <fstream>
+#include <set>
 
 /* Primary parser structure; creates compilation units */
 class Parser : public Object {

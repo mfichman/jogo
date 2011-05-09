@@ -83,6 +83,7 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
 \+\+ BEGIN(INITIAL); return INCREMENT;
 \-\- BEGIN(INITIAL); return DECREMENT;
 \:\: BEGIN(INITIAL); return SCOPE;
+; BEGIN(INITIAL); return SEMICOLON;
 [0-9]+ {
 	Name* value = yyextra->environment()->name(yytext);
 	yylval->expression = new IntegerLiteral(*yylloc, value); 

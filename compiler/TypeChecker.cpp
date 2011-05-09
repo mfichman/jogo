@@ -58,14 +58,13 @@ TypeChecker::operator()(Class* feature) {
     // Iterate through all the features and add the functions and variables to
     // the current scope.
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (dynamic_cast<Function*>(f.pointer())) {
-            Function::Ptr func = static_cast<Function*>(f.pointer());
+        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
             function(func->name(), func);
             continue;
         }
-        if (dynamic_cast<Attribute*>(f.pointer())) {
-            Attribute::Ptr attr = static_cast<Attribute*>(f.pointer());
+        if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             variable(attr->name(), attr->type());
+            continue;
         }
     }
 

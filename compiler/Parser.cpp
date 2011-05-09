@@ -45,38 +45,28 @@ Parser::~Parser() {
 }
 
 void Parser::file(const std::string& file) {
-    // Begin parsing at the root file.
+    // Begin parsing a module file if it doesn't already exist
+    module_ = environment_->module(file);
+    if (module_->parsed()) {
+        return;
+    }
+
     this->column_ = 1;
+    this->input_.close();
     this->input_.open(file.c_str()); 
 	this->file_ = file;
-    if (this->input_.bad()) {
+    if (this->input_.fail() || this->input_.bad()) {
         throw std::runtime_error("Could not find " + file);
     }
 
-    // Create a new module using the file name
-    Name::Ptr name = environment_->name(Import::basename(file));
-    Module::Ptr module = new Module(Location(), name);
-    if (module_) {
-        module_->feature(module);
-    } else {
-        environment_->root()->feature(module);
-    }
-    module_ = module;
-
-    // HACK
-    
-
     // Begin parsing
     yyparse(this, this->scanner_);
+    module_->parsed(true);
 
     // Now parse other modules that depend on the unit that was added
-    for (Feature* f = module->features(); f; f = f->next()) {
-        Import* import = dynamic_cast<Import*>(f);
-        if (import) {
-            assert("Not supported! Need to fix import logic for dirs and files");
-            assert("Also add a flag so file doesn't get imported twice");
-            assert("Also do some import logic into the namespace of the current module");
-            Parser::file(import->file());
+    for (Feature* f = module_->features(); f; f = f->next()) {
+        if (Import* import = dynamic_cast<Import*>(f)) {
+            Parser::file(import->file_name());
         }
     }
 }

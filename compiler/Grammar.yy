@@ -20,7 +20,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 %union { Expression* expression; }
 %union { Statement* statement; }
-%union { Name* identifier; }
+%union { Name* name; }
 %union { Feature* feature; }
 %union { Formal* formal; }
 %union { Type* type; }
@@ -69,7 +69,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token <expression> STRING NUMBER BOOLEAN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
 %token IMPORT
-%token SEPARATOR
+%token SEPARATOR SEMICOLON
 %token WHEN CASE WHILE ELSE UNTIL IF DO FOR RETURN
 %token RIGHT_ARROW LEFT_ARROW
 %token EQUAL NOT_EQUAL GREATER_OR_EQUAL LESS_OR_EQUAL
@@ -80,9 +80,10 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token INCREMENT DECREMENT
 %token SCOPE LET IN YIELD FORK
 
-%type <feature> feature feature_list attribute class
-%type <feature> operator function prototype native import
-%type <type> type 
+%type <feature> member member_list attribute class
+%type <feature> operator function prototype native 
+%type <type> type
+%type <name> scope 
 %type <generic> generic_list generic
 %type <flag> modifiers
 %type <formal> formal_signature formal_list formal
@@ -99,7 +100,7 @@ input
         parser->module()->feature($1);
     }
     | import input {
-        parser->module()->feature($1);
+//        parser->module()->feature($1);
     }
     | function input {
         parser->module()->feature($1);
@@ -108,14 +109,22 @@ input
     ;
 
 import
-    : IMPORT type SEPARATOR {
+    : IMPORT import_list SEPARATOR {
+    }
+    ;
+
+import_list
+    : scope ',' import_list {
         // TODO: Generic in the import? That's probably bad.
-        $$ = new Import(@$, $2);
+        parser->module()->feature(new Import(@$, $1));
+    }
+    | scope {
+        parser->module()->feature(new Import(@$, $1));
     }
     ;
 
 class
-    : type '<' type '{' feature_list '}' {
+    : type '<' type '{' member_list '}' {
         $$ = new Class(@$, $1, $5);
         delete $3; // FixMe
     }
@@ -124,8 +133,8 @@ class
     }
     ;
 
-feature_list
-    : feature feature_list { 
+member_list
+    : member member_list { 
         $$ = $1;
         $$->next($2);
     }
@@ -134,7 +143,7 @@ feature_list
     }
     ;
 
-feature
+member
     : attribute { $$ = $1; }
     | operator { $$ = $1; }
     | function { $$ = $1; }
@@ -220,6 +229,14 @@ modifiers
 	: PRIVATE { $$ = 0; }
 	| /* empty */ { $$ = 0; }
 	;
+
+scope
+    : TYPE SCOPE scope {
+        $$ = parser->environment()->name($1->string() + "::" + $3->string()); 
+    }
+    | TYPE {
+        $$ = $1; 
+    }
 
 type
     : type SCOPE TYPE { 

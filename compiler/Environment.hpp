@@ -43,6 +43,8 @@ public:
     }
     Name* name(const std::string& str);
     Module* root() const { return root_; }
+    Module* module(Import* import);
+    Module* module(const std::string& filename);
     int errors() { return errors_; }
     void error(const std::string& error) { errors_++; }
     typedef Pointer<Environment> Ptr;

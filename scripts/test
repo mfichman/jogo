@@ -2,9 +2,11 @@
 
 failed = false
 
-tests = ARGV.count > 0 ? ARGV : Dir.glob('tests/*.ap')
+Dir.chdir('tests')
+
+tests = ARGV.count > 0 ? ARGV : Dir.glob('*.ap')
 tests.each do |test|
-    result = `bin/test #{test} 2>&1 | diff - #{test}.out`
+    result = `../bin/test #{test} 2>&1 | diff - #{test}.out`
     if !result.empty? || $? != 0
         (1..79).each { putc '-' }        
         puts
@@ -13,7 +15,6 @@ tests.each do |test|
         puts
         puts result
         failed = true
-        
     end
 end
 

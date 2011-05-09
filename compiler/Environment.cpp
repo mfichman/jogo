@@ -22,8 +22,11 @@
 
 #include "Environment.hpp"
 #include <cassert>
+#include <stack>
 
 Name* Environment::name(const std::string& str) {
+    // Returns a name if it exists, otherwise, a new one is created.
+
 	std::map<std::string, Name::Ptr>::iterator i = name_.find(str);
 	if (i == name_.end()) {
 		Name* name = new Name(str);
@@ -32,5 +35,36 @@ Name* Environment::name(const std::string& str) {
 	} else {
 		return i->second;
 	}
+}
+
+Module* Environment::module(Import* import) {
+    // Creates a new module using the path specified by the given import,
+    // or returns an existing module if it exists.
+        
+    return module(import->file_name());
+}
+
+Module* Environment::module(const std::string& file_name) {
+    // Look up a module by file_name path
+    Module* module = root();
+
+    std::string name;
+    for (size_t i = 0; i < file_name.size(); i++) {
+        if (!isalnum(file_name[i])) {
+            Module* next = module->module(Environment::name(name));
+            if (!next) {
+                next = new Module(Location(), Environment::name(name));
+                module->feature(next);
+            } 
+            module = next;
+            if (file_name[i] != '/') {
+                return module;        
+            }
+        } else {
+            name += file_name[i];
+        }
+    }
+
+    return module;
 }
 
