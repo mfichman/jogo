@@ -82,7 +82,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 %type <feature> member member_list attribute class
 %type <feature> operator function prototype native 
-%type <type> type
+%type <type> type type_list
 %type <name> scope 
 %type <generic> generic_list generic
 %type <flag> modifiers
@@ -124,7 +124,7 @@ import_list
     ;
 
 class
-    : type '<' type '{' member_list '}' {
+    : type '<' type_list '{' member_list '}' {
         $$ = new Class(@$, $1, $5);
         delete $3; // FixMe
     }
@@ -237,6 +237,16 @@ scope
     | TYPE {
         $$ = $1; 
     }
+
+type_list
+    : type ',' type_list {
+        $$ = $1;
+        $$->next($3);
+    }
+    | type {
+        $$ = $1;
+    }
+    ;
 
 type
     : type SCOPE TYPE { 
@@ -498,8 +508,17 @@ variable_list
         $$ = $1;
         $$->next($3);
     }
+    | expression ',' variable_list {
+        Name* name = parser->environment()->name("__unused");
+        $$ = new Variable(@$, name, parser->environment()->void_type(), $1);
+        $$->next($3);
+    }
     | variable {
         $$ = $1;
+    }
+    | expression {
+        Name* name = parser->environment()->name("__unused");
+        $$ = new Variable(@$, name, parser->environment()->void_type(), $1);
     }
     ;
 

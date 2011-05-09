@@ -37,10 +37,12 @@ public:
     Name* name() const { return name_; }
     Generic* generics() const { return generics_; }
     Name* qualified_name() const { return qualified_name_; }
+    Type* next() const { return next_; }
     bool equals(Type* other);
     bool supertype(Type* other);
     bool subtype(Type* other);
     bool collection(Type* other);
+    void next(Type* next) { next_ = next; }
     Type* least_upper_bound(Type* other);
     
     typedef Pointer<Type> Ptr;
@@ -51,6 +53,7 @@ private:
     Name::Ptr name_;
     Pointer<Generic> generics_;
     Name::Ptr qualified_name_;
+    Type::Ptr next_;
 };
 
 /* Holder for a generics type parameter */
