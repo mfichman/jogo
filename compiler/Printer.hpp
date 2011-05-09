@@ -62,6 +62,7 @@ private:
     void operator()(Function* feature);
     void operator()(Attribute* feature);
     void operator()(Import* feature);
+    void operator()(Type* type);
 
     void print_tabs();
 

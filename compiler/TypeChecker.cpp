@@ -42,15 +42,13 @@ TypeChecker::TypeChecker(Environment* environment) :
     }    
 }
 
-void
-TypeChecker::operator()(Module* feature) {
+void TypeChecker::operator()(Module* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
 }
 
-void
-TypeChecker::operator()(Class* feature) {
+void TypeChecker::operator()(Class* feature) {
     enter_scope();
 
     // TODO: Check interface/struct/object baseclass and make sure that 
@@ -78,33 +76,27 @@ TypeChecker::operator()(Class* feature) {
     function_.clear();
 }
 
-void
-TypeChecker::operator()(Empty* expression) {
+void TypeChecker::operator()(Empty* expression) {
     expression->type(environment_->void_type());
 }
 
-void
-TypeChecker::operator()(Formal* formal) {
+void TypeChecker::operator()(Formal* formal) {
      
 }
 
-void
-TypeChecker::operator()(StringLiteral* expression) {
+void TypeChecker::operator()(StringLiteral* expression) {
     expression->type(environment_->string_type()); 
 }
 
-void
-TypeChecker::operator()(IntegerLiteral* expression) {
+void TypeChecker::operator()(IntegerLiteral* expression) {
     expression->type(environment_->integer_type()); 
 }
 
-void
-TypeChecker::operator()(BooleanLiteral* expression) {
+void TypeChecker::operator()(BooleanLiteral* expression) {
     expression->type(environment_->boolean_type());
 }
 
-void
-TypeChecker::operator()(Let* expression) {
+void TypeChecker::operator()(Let* expression) {
     Statement::Ptr block = expression->block();
     for (Statement::Ptr v = expression->variables(); v; v = v->next()) {
         v(this);
@@ -112,8 +104,7 @@ TypeChecker::operator()(Let* expression) {
     block(this);
 }
 
-void
-TypeChecker::operator()(Assignment* expression) {
+void TypeChecker::operator()(Assignment* expression) {
     Expression::Ptr value = expression->expression(); 
     Type::Ptr type = variable(expression->identifier());
     value(this);
@@ -130,8 +121,7 @@ TypeChecker::operator()(Assignment* expression) {
     }
 }
 
-void
-TypeChecker::operator()(Binary* expression) {
+void TypeChecker::operator()(Binary* expression) {
     Expression::Ptr left = expression->left();
     Expression::Ptr right = expression->right();
 
@@ -153,8 +143,7 @@ TypeChecker::operator()(Binary* expression) {
     }
 }
 
-void
-TypeChecker::operator()(Unary* expression) {
+void TypeChecker::operator()(Unary* expression) {
     Expression::Ptr child = expression->child();
     child(this);
 
@@ -172,8 +161,7 @@ TypeChecker::operator()(Unary* expression) {
     }
 }
 
-void
-TypeChecker::operator()(Call* expression) {
+void TypeChecker::operator()(Call* expression) {
     // Evaluate types of argument expressions
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         a(this);
@@ -224,8 +212,7 @@ TypeChecker::operator()(Call* expression) {
     }
 }
 
-void
-TypeChecker::operator()(Dispatch* expression) {
+void TypeChecker::operator()(Dispatch* expression) {
 
     // Evaluate types of argument expressions
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
@@ -285,8 +272,7 @@ TypeChecker::operator()(Dispatch* expression) {
     }
 }
 
-void
-TypeChecker::operator()(Construct* expression) {
+void TypeChecker::operator()(Construct* expression) {
     
     // Evaluate type of argument expression
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
@@ -297,8 +283,7 @@ TypeChecker::operator()(Construct* expression) {
     assert("Not implemented!");
 }
 
-void
-TypeChecker::operator()(Identifier* expression) {
+void TypeChecker::operator()(Identifier* expression) {
     Type::Ptr type = variable(expression->identifier());
     if (!type) {
         cerr << expression->location();
@@ -312,8 +297,7 @@ TypeChecker::operator()(Identifier* expression) {
     }
 }
 
-void
-TypeChecker::operator()(Member* expression) {
+void TypeChecker::operator()(Member* expression) {
     Expression::Ptr object = expression->object(); 
     object(this);
 
@@ -335,8 +319,7 @@ TypeChecker::operator()(Member* expression) {
     expression->type(attr->type());
 }
 
-void
-TypeChecker::operator()(Block* statement) {
+void TypeChecker::operator()(Block* statement) {
     enter_scope();
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
@@ -344,14 +327,12 @@ TypeChecker::operator()(Block* statement) {
     exit_scope();
 }
 
-void
-TypeChecker::operator()(Simple* statement) {
+void TypeChecker::operator()(Simple* statement) {
     Expression::Ptr expression = statement->expression();
     expression(this);
 }
 
-void
-TypeChecker::operator()(While* statement) {
+void TypeChecker::operator()(While* statement) {
     Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
 
@@ -367,16 +348,14 @@ TypeChecker::operator()(While* statement) {
     block(this);
 }
 
-void
-TypeChecker::operator()(For* statement) {
+void TypeChecker::operator()(For* statement) {
     Expression::Ptr expression = statement->expression();
     Statement::Ptr block = statement->block();
     expression(this);
     block(this);
 }
 
-void
-TypeChecker::operator()(Conditional* statement) {
+void TypeChecker::operator()(Conditional* statement) {
     Expression::Ptr guard = statement->guard();
     Statement::Ptr true_branch = statement->true_branch();
     Statement::Ptr false_branch = statement->false_branch();
@@ -391,8 +370,7 @@ TypeChecker::operator()(Conditional* statement) {
     false_branch(this);
 }
 
-void
-TypeChecker::operator()(Variable* statement) {
+void TypeChecker::operator()(Variable* statement) {
     Expression::Ptr initializer = statement->initializer();
     initializer(this);
     if (!initializer->type()) {
@@ -407,8 +385,7 @@ TypeChecker::operator()(Variable* statement) {
     variable(statement->identifier(), statement->type()); 
 }
 
-void
-TypeChecker::operator()(Return* statement) {
+void TypeChecker::operator()(Return* statement) {
     Expression::Ptr expression = statement->expression();
     if (expression) {
         expression(this);
@@ -421,24 +398,20 @@ TypeChecker::operator()(Return* statement) {
     }
 }
 
-void
-TypeChecker::operator()(When* statement) {
+void TypeChecker::operator()(When* statement) {
     Statement::Ptr block = statement->block();
     block(this);
 }
 
-void
-TypeChecker::operator()(Fork* statement) {
+void TypeChecker::operator()(Fork* statement) {
     assert("Not supported");
 }
 
-void
-TypeChecker::operator()(Yield* statement) {
+void TypeChecker::operator()(Yield* statement) {
     assert("Not supported");
 }
 
-void
-TypeChecker::operator()(Case* statement) {
+void TypeChecker::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
     guard(this);
     for (Statement::Ptr b = statement->branches(); b; b = b->next()) {
@@ -446,15 +419,13 @@ TypeChecker::operator()(Case* statement) {
     }
 }
 
-void
-TypeChecker::operator()(Function* feature) {
+void TypeChecker::operator()(Function* feature) {
     Statement::Ptr block = feature->block();
     scope_ = feature;
     block(this); 
 }
 
-void
-TypeChecker::operator()(Attribute* feature) {
+void TypeChecker::operator()(Attribute* feature) {
     Expression::Ptr initializer = feature->initializer();
     initializer(this);
     assert("Fix variable check");
@@ -468,12 +439,14 @@ TypeChecker::operator()(Attribute* feature) {
 }
 
 
-void
-TypeChecker::operator()(Import* feature) {
+void TypeChecker::operator()(Import* feature) {
 }
 
-Type*
-TypeChecker::variable(Name* name) {
+void TypeChecker::operator()(Type* type) {
+
+}
+
+Type* TypeChecker::variable(Name* name) {
     vector<map<Name::Ptr, Type::Ptr> >::reverse_iterator i;
     for (i = variable_.rbegin(); i != variable_.rend(); i++) {
         map<Name::Ptr, Type::Ptr>::iterator j = i->find(name);        
@@ -484,14 +457,12 @@ TypeChecker::variable(Name* name) {
     return 0;
 }
 
-void
-TypeChecker::variable(Name* name, Type* type) {
+void TypeChecker::variable(Name* name, Type* type) {
     assert(variable_.size());
     variable_.back().insert(make_pair(name, type));
 }
 
-Function*
-TypeChecker::function(Name* name) {
+Function* TypeChecker::function(Name* name) {
     map<Name::Ptr, Function::Ptr>::iterator i = function_.find(name);
     if (i != function_.end()) {
         return i->second;
@@ -500,18 +471,15 @@ TypeChecker::function(Name* name) {
     }
 }
 
-void
-TypeChecker::function(Name* name, Function* function) {
+void TypeChecker::function(Name* name, Function* function) {
     function_.insert(make_pair(name, function));
 }
 
-void
-TypeChecker::enter_scope() {
+void TypeChecker::enter_scope() {
     variable_.push_back(map<Name::Ptr, Type::Ptr>());
 }
 
-void
-TypeChecker::exit_scope() {
+void TypeChecker::exit_scope() {
     variable_.pop_back();
 }
 

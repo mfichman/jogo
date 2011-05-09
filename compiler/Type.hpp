@@ -23,28 +23,30 @@
 #pragma once
 
 #include "Apollo.hpp"
-#include "Object.hpp"
+#include "TreeNode.hpp"
 #include "Name.hpp"
 #include <vector>
 #include <map>
 #include <iostream>
 
 /* Type object */
-class Type : public Object {
+class Type : public TreeNode {
 public:
-    Type(Name* scope, Generic* gen, Environment* env);
+    Type(Location loc, Name* scope, Generic* gen, Environment* env);
     Generic* generics() const { return generics_; }
     Name* name() const { return name_; }
     Name* scope() const { return scope_; }
     Type* next() const { return next_; }
-    bool equals(Type* other);
-    bool supertype(Type* other);
-    bool subtype(Type* other);
-    bool collection(Type* other);
+    bool equals(Type* other) const;
+    bool supertype(Type* other) const;
+    bool subtype(Type* other) const;
+    bool collection(Type* other) const;
     void next(Type* next) { next_ = next; }
-    Type* least_upper_bound(Type* other);
-    
+    Type* least_upper_bound(Type* other) const;
+    Type* clone() const;
+    void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Type> Ptr;
+
     
 private:
     Name::Ptr scope_;
@@ -59,9 +61,9 @@ class Generic : public Object {
 public: 
     Generic(Type* type) :
         type_(type) {
-
     }
 
+    Generic* clone() const;
     Type* type() const { return type_; }
     Generic* next() const { return next_; }
     void next(Generic* next) { next_ = next; }

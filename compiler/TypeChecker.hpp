@@ -65,6 +65,7 @@ private:
     void operator()(Function* feature);
     void operator()(Attribute* feature);
     void operator()(Import* feature);
+    void operator()(Type* type);
 
     Type* variable(Name* name);
     void variable(Name* name, Type* type);

@@ -36,7 +36,8 @@ public:
     const Location& location() const { return location_; }
 
     class Functor;
-    virtual void operator()(Functor *functor) {}
+    virtual void operator()(Functor *functor)=0;
+    //virtual TreeNode* clone() const=0;
 
 private:
     Location location_;
@@ -75,6 +76,7 @@ public:
     virtual void operator()(Function* feature)=0;
     virtual void operator()(Attribute* feature)=0;
     virtual void operator()(Import* feature)=0;
+    virtual void operator()(Type* type)=0;
 };
 
 

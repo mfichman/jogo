@@ -32,12 +32,12 @@
 class Environment : public Object {
 public:
     Environment() :
-        void_type_(new Type(name("Void"), 0, this)),
-        boolean_type_(new Type(name("Boolean"), 0, this)),
-        integer_type_(new Type(name("Integer"), 0, this)),
-        string_type_(new Type(name("String"), 0, this)),
-        no_type_(new Type(name("<<notype>>"), 0, this)),
-        float_type_(new Type(name("Float"), 0, this)),
+        void_type_(new Type(Location(), name("Void"), 0, this)),
+        boolean_type_(new Type(Location(), name("Boolean"), 0, this)),
+        integer_type_(new Type(Location(), name("Integer"), 0, this)),
+        string_type_(new Type(Location(), name("String"), 0, this)),
+        no_type_(new Type(Location(), name("<<notype>>"), 0, this)),
+        float_type_(new Type(Location(), name("Float"), 0, this)),
         errors_(0) {
     }
     Name* name(const std::string& str);

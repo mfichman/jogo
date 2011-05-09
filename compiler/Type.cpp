@@ -24,7 +24,8 @@
 #include "Environment.hpp"
 #include <cassert>
 
-Type::Type(Name* scope, Generic* gen, Environment* env) :
+Type::Type(Location location, Name* scope, Generic* gen, Environment* env) :
+    TreeNode(location),
     scope_(scope),
     generics_(gen),
     environment_(env) {
@@ -38,7 +39,7 @@ Type::Type(Name* scope, Generic* gen, Environment* env) :
 
 }
 
-bool Type::equals(Type* other) {
+bool Type::equals(Type* other) const {
     /* Make sure the base name is equal */
     if (name() != other->name()) {
         return false;
@@ -63,24 +64,32 @@ bool Type::equals(Type* other) {
     return true;
 }
 
-bool Type::subtype(Type* other) {
+bool Type::subtype(Type* other) const {
     assert("Not implemented");
     return false;
 }
 
-bool Type::supertype(Type* other) {
+bool Type::supertype(Type* other) const {
     assert("Not implemented");
     return false;
 }
 
-bool Type::collection(Type* other) {
+bool Type::collection(Type* other) const {
     assert("Not implemented");
     return false;
 }
 
-Type* Type::least_upper_bound(Type* other) {
+Type* Type::least_upper_bound(Type* other) const {
     assert("Not implemented");
     return 0;
+}
+
+Type* Type::clone() const {
+    return const_cast<Type*>(this);
+}
+
+Generic* Generic::clone() const { 
+    return const_cast<Generic*>(this);
 }
 
 std::ostream& operator<<(std::ostream& out, const Type* type) {

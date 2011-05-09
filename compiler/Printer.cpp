@@ -404,3 +404,6 @@ void Printer::operator()(Import* feature) {
     indent_level_--;
 }
 
+void Printer::operator()(Type* type) {
+    cout << type << endl;
+}
