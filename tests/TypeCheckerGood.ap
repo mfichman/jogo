@@ -1,0 +1,30 @@
+# aptest print_tree off
+
+CycleType1 < Interface {
+    check1() CycleType2
+}
+
+CycleType2 < Interface {
+    check1() CycleType1
+}
+
+
+TypeChecker < Object {
+
+
+    check1() Int {
+    }
+
+    check2(bob Int) {
+    }
+
+    main() {
+        t = TypeChecker()
+        t.check2(t.check1())
+        a = t.check1()
+        b = a + 10
+
+        c = CycleType1()
+        c = CycleType2()
+    }
+}

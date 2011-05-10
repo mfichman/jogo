@@ -408,7 +408,7 @@ void TypeChecker::operator()(Variable* statement) {
     if (!initializer->type()->subtype(statement->type())) {
         cerr << initializer->location();
         cerr << "Expression does not conform to type '";
-        cerr << type << "'";
+        cerr << statement->type() << "'";
         cerr << endl;
         return;
     }
@@ -482,7 +482,7 @@ void TypeChecker::operator()(Attribute* feature) {
     Expression::Ptr initializer = feature->initializer();
     initializer(this);
 
-    if (!feature->type()->supertype(initializer->type())) {
+    if (!initializer->type()->subtype(feature->type())) {
         cerr << feature->location();
         cerr << "Expression does not conform to type '";
         cerr << initializer->type() << "'";

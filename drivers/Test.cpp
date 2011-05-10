@@ -26,6 +26,7 @@
 #include "Printer.hpp"
 
 #include <iostream>
+#include <fstream>
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -33,12 +34,19 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    std::fstream in(argv[1]);
+    std::string line;
+    std::getline(in, line);
+    
+
+
     Environment::Ptr environment(new Environment());
     Parser::Ptr parser(new Parser(environment));
     parser->file(argv[1]);
-
-    Printer::Ptr printer(new Printer(environment));
-//    TypeChecker::Ptr checker(new TypeChecker(environment));
+    if (line != "# aptest print_tree off") {
+        Printer::Ptr printer(new Printer(environment));
+    }
+    TypeChecker::Ptr checker(new TypeChecker(environment));
     
     return 0;
 }

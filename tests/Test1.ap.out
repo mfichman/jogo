@@ -4,7 +4,7 @@ Module
     name: Test1
     feature0: Attribute
       name: bob
-      type: Integer
+      type: Int
       initializer: Dispatch
         name: @add
         argument0: Dispatch
@@ -20,13 +20,13 @@ Module
           argument1: IntegerLiteral(28)
     feature1: Attribute
       name: bill
-      type: Integer
+      type: Int
       initializer: Dispatch
         name: @complement
         argument0: IntegerLiteral(929)
     feature2: Attribute
       name: jim
-      type: Integer
+      type: Int
       initializer: Call
         name: f
         argument0: IntegerLiteral(99)
@@ -34,7 +34,7 @@ Module
         argument2: IntegerLiteral(2)
     feature3: Attribute
       name: mike
-      type: Integer
+      type: Int
       initializer: Dispatch
         name: foo
         argument0: Identifier
@@ -42,3 +42,6 @@ Module
         argument1: IntegerLiteral(1)
         argument2: IntegerLiteral(2)
         argument3: IntegerLiteral(3)
+4:16: Undeclared function '@complement'
+5:15: Undeclared function 'f'
+6:16: Undeclared function 'foo'

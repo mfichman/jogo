@@ -1,0 +1,25 @@
+# aptest print_tree off
+# aptest gen_code off
+
+TypeCheckerBad < Object {
+
+    blarg(blarg Int) {
+    }
+
+    void() {
+    }
+
+    main() {
+        a Int = "Hello, world"
+        b = "Hello, world"
+        b String
+        b Int
+        
+        c Foo
+        c.whatever()
+        
+        d = TypeCheckerBad().blarg("Hello, world")
+        d String
+        d = 1
+    }
+}

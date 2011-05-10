@@ -93,15 +93,28 @@ Function* Class::function(Name* name) const {
 bool Class::subtype(Class* other) const {
     // Returns true if this class is a subtype of 'other.'  A class is a subtype
     // of another class if it implements all methods found in the class.
-
+    
+    // Check if this comparison has been done before.  If so, then we don't need
+    // to do it again.
+    std::map<Class*, bool>::iterator i = subtype_.find(other);
+    if (i != subtype_.end()) {
+        return i->second;
+    }
     if (!other->is_interface() && !is_interface()) {
         return this == other; 
     }
+
+    // Assume that this type is a subtype of 'other.'  This will break cycles
+    // caused when checking function return values for covariance.
+    subtype_[other] = true;
 
     for (Feature* f = other->features(); f; f = f->next()) {
         if (Function* func = dynamic_cast<Function*>(f)) {
             Function* mine = function(func->name());   
             if (!mine || !mine->covariant(func)) {
+                // Now we know that the types are not compatible, so mark
+                // 'other' as a disjoint type.
+                subtype_[other] = false;
                 return false;
             }
         }
@@ -109,22 +122,6 @@ bool Class::subtype(Class* other) const {
     return true;
 }
 
-
-bool Class::supertype(Class* other) const { 
-    // Returns true if this class is a supertype of 'other.'  A class is a
-    // subtype of another class if the other class implements all methods found
-    // in this class.
-
-    for (Feature* f = features(); f; f = f->next()) {
-        if (Function* mine = dynamic_cast<Function*>(f)) {
-            Function* func = other->function(mine->name());   
-            if (!func || !func->covariant(mine)) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
 
 bool Function::covariant(Function* other) const {
     // Returns true if this function is covariant, i.e., its return type is the
@@ -183,7 +180,7 @@ Function* Module::function(Name* scope, Name* name) {
     }
 
     Module* module = this->module(scope);
-    if (module) {
+    if (!module) {
         return 0;
     }
     return module->function(name);
@@ -202,7 +199,7 @@ Class* Module::clazz(Name* scope, Name* name) {
     }
 
     Module* module = this->module(scope);
-    if (module) {
+    if (!module) {
         return 0;
     }
     return module->clazz(name);

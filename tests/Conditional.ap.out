@@ -4,7 +4,7 @@ Module
     name: Conditional
     feature0: Function
       name: conditional1
-      type: Integer
+      type: Int
       formal0: Formal
         name: self
         type: Self
@@ -19,7 +19,7 @@ Module
               expression: IntegerLiteral(0)
     feature1: Function
       name: conditional2
-      type: Integer
+      type: Int
       formal0: Formal
         name: self
         type: Self
@@ -39,7 +39,7 @@ Module
                 expression: IntegerLiteral(3)
     feature2: Function
       name: conditional3
-      type: Integer
+      type: Int
       formal0: Formal
         name: self
         type: Self

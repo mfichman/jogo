@@ -75,26 +75,13 @@ bool Type::subtype(Type* other) const {
     if (this->equals(other)) {
         return true;
     }
+    if (!clazz() || !other->clazz()) {
+        return false;
+    }
     if (!clazz()->subtype(other->clazz())) {
         return false;
     }
     /* TODO: Need to fill out template parameters */
-    return true;
-}
-
-bool Type::supertype(Type* other) const {
-    if (this == environment_->no_type()) {
-        return true;
-    } 
-    if (other == environment_->no_type()) {
-        return true;
-    }
-    if (this->equals(other)) {
-        return true;
-    }
-    if (!clazz()->supertype(other->clazz())) {
-        return false;
-    }
     return true;
 }
 

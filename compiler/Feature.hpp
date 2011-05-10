@@ -133,7 +133,6 @@ public:
     bool is_value() const { return is_value_; }
     bool is_interface() const { return is_interface_; }
     bool subtype(Class* other) const;
-    bool supertype(Class* other) const;
     void feature(Feature* feature);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Class> Ptr;
@@ -141,12 +140,14 @@ public:
 private:
     std::map<Name::Ptr, Attribute::Ptr> attributes_;
     std::map<Name::Ptr, Function::Ptr> functions_;
+    mutable std::map<Class*, bool> subtype_;
     Type::Ptr type_;
     Type::Ptr mixins_;
     Feature::Ptr features_;
     bool is_object_;
     bool is_value_;
     bool is_interface_;
+    mutable int visited_;
 };
 
 /* Module, contains classes, functions, imports, etc. */

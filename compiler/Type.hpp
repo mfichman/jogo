@@ -40,7 +40,6 @@ public:
     Class* clazz() const;
     Module* module() const { return module_; }
     bool equals(Type* other) const;
-    bool supertype(Type* other) const;
     bool subtype(Type* other) const;
     bool interface() const;
     bool object() const;
