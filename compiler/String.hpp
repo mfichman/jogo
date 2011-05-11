@@ -44,3 +44,4 @@ inline std::ostream& operator<<(std::ostream& out, const String* name) {
     out << name->string();
     return out;
 }
+

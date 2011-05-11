@@ -30,10 +30,10 @@ Object1 < Object {
     }
 }
 
-# Fully-qualified names are not allowed in the class definition.
-Scoped::Illegal < Interface {
-    blarg() Int
-}
+# Fully-qualified names are not allowed (now handled by parser).
+#Scoped::Illegal < Interface {
+#    blarg() Int
+#}
 
 Value1 < Value {
 }

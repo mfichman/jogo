@@ -26,16 +26,3 @@ Module
         child0: While
           guard: BooleanLiteral(true)
           block: Block
-    feature2: Function
-      name: loop3
-      type: Void
-      comment:
-      formal0: Formal
-        name: self
-        type: Self
-      block: Block
-        child0: While
-          guard: Unary
-            child: BooleanLiteral(false)
-            operation: not
-          block: Block

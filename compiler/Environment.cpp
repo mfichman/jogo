@@ -57,19 +57,19 @@ void Environment::init_integer() {
     
     formals = new Formal(loc, name("_"), integer_type_);
     formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@subtract"), formals, integer_type_, 0));
+    clazz->feature(new Function(loc, name("@sub"), formals, integer_type_, 0));
 
     formals = new Formal(loc, name("_"), integer_type_);
     formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@multiply"), formals, integer_type_, 0));
+    clazz->feature(new Function(loc, name("@mul"), formals, integer_type_, 0));
 
     formals = new Formal(loc, name("_"), integer_type_);
     formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@divide"), formals, integer_type_, 0));
+    clazz->feature(new Function(loc, name("@div"), formals, integer_type_, 0));
 
     formals = new Formal(loc, name("_"), integer_type_);
     formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@modulus"), formals, integer_type_, 0));
+    clazz->feature(new Function(loc, name("@mod"), formals, integer_type_, 0));
 
     root_->feature(clazz);
 }

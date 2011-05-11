@@ -9,9 +9,4 @@ Loop < Object {
         while true {
         }
     }
-
-    loop3() {
-        until false {
-        }
-    } 
 }

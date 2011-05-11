@@ -153,10 +153,12 @@ private:
 /* Object-oriented function call dispatch */
 class Dispatch : public Expression {
 public:
-    Dispatch(Location loc, String* ident, Expression* args) :
+    Dispatch(Location loc, String* ident, Expression* self, Expression* args) :
         Expression(loc),
-        identifier_(ident),
-        arguments_(args) {
+        identifier_(ident) {
+        
+        self->next(args);
+        arguments_ = self;
     }
 
     String* identifier() const { return identifier_; }
