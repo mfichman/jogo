@@ -127,6 +127,7 @@ class
             std::cerr << $1;
             std::cerr << "' in class definition";
             std::cerr << std::endl;
+            delete $1; delete $3; delete $5; delete $6;
             YYERROR;
         } else {
             Environment* env = parser->environment();
@@ -300,7 +301,7 @@ comment
         } else {
             $$ = new String($1->string() + " " + $2->string());
         }
-        delete $1;
+        delete $1; delete $2;
     }
     | /* empty */ {
         $$ = new String("");
