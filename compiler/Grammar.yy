@@ -14,7 +14,7 @@
 #define YY_NO_INPUT
 #define YYERROR_VERBOSE
 int yylex(ParseNode *node, Location *loc, void *scanner);
-void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
+void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 
 #define ID(X) parser->environment()->name((X))
 // Shortcut, adds an identifier name to the current environment
@@ -41,15 +41,14 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %parse-param { void* scanner }
 %lex-param { yyscan_t* scanner }
 
-%destructor { delete $$; $$ = 0; } <expression>
-%destructor { delete $$; $$ = 0; } <statement>
-%destructor { delete $$; $$ = 0; } <string>
-%destructor { delete $$; $$ = 0; } <feature>
-%destructor { delete $$; $$ = 0; } <formal>
-%destructor { delete $$; $$ = 0; } <type>
-%destructor { delete $$; $$ = 0; } <generic>
-%destructor { delete $$; $$ = 0; } <variable>
-
+%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <expression>
+%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <statement>
+%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <string>
+%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <feature>
+%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <formal>
+%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <type>
+%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <generic>
+%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <variable>
 
 %left '?'
 %left BIT_AND_ASSIGN BIT_OR_ASSIGN BIT_XOR_ASSIGN
@@ -71,14 +70,14 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 /* BISON declarations */
 %token <string> IDENTIFIER TYPE OPERATOR COMMENT
-%token <expression> STRING NUMBER BOOLEAN 
+%token <expression> STRING NUMBER BOOLEAN SBEGIN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
 %token IMPORT FUNCTION
 %token SEPARATOR SEMICOLON
 %token WHEN CASE WHILE ELSE UNTIL IF DO FOR RETURN
 %token RIGHT_ARROW LEFT_ARROW
 %token EQUAL NOT_EQUAL GREATER_OR_EQUAL LESS_OR_EQUAL
-%token OR AND
+%token OR AND 
 %token LEFT_SHIFT RIGHT_SHIFT
 %token MULTIPLY_ASSIGN DIVIDE_ASSIGN SUBTRACT_ASSIGN ADD_ASSIGN
 %token MODULUS_ASSIGN BIT_OR_ASSIGN BIT_AND_ASSIGN BIT_XOR_ASSIGN
@@ -94,7 +93,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %type <statement> block when when_list statement statement_list
 %type <statement> conditional method_body
 %type <variable> variable variable_list
-%type <expression> call expression expression_list
+%type <expression> call string expression expression_list
 
 
 /* The Standard Apollo Grammar, version 2010 */
@@ -105,7 +104,7 @@ module
     | function module { MODULE->feature($1); }
     | IMPORT import_list SEPARATOR module {}
     | error module {}
-    | /* empty */ { }
+    | /* empty */ {}
     ;
 
 class_name
@@ -265,6 +264,13 @@ statement
     | variable SEPARATOR { $$ = $1; }
     | expression SEPARATOR { $$ = new Simple(@$, $1); }
     | conditional { $$ = $1; }
+    | IDENTIFIER formal_signature return_signature block {
+        $$ = new Simple(@$, new Empty(@$));
+        $1 = 0;
+        $2 = 0;
+        $3 = 0;
+        $4 = 0;
+    }
     | CASE expression '{' comment when_list '}' {
         $$ = new Case(@$, $2, static_cast<When*>($5));
         delete $4; // '{' may introduce a comment, but we discard it
@@ -291,7 +297,6 @@ expression_list
     | expression { $$ = $1; } 
     ;
 
-
 expression
     : expression '?' expression { $$ = new Binary(@$, ID("?"), $1, $3); }
     | expression '^' expression { $$ = new Dispatch(@$, ID("@pow"), $1, $3); } 
@@ -304,7 +309,7 @@ expression
     | '~' expression { $$ = new Dispatch(@$, ID("@compl"), $2, 0); } 
     | call { $$ = $1; }
     | '(' expression ')' { $$ = $2; } 
-    | STRING { $$ = $1; }
+    | string { $$ = $1; }
     | NUMBER { $$ = $1; }
     | BOOLEAN { $$ = $1; }
     | IDENTIFIER { $$ = new Identifier(@$, $1); }
@@ -326,12 +331,12 @@ expression
         $$ = new Unary(@$, ID("not"), new Dispatch(@$, ID("@equal"), $1, $3));
     }
     | expression COMPARE expression {
-        $$ = new Dispatch(@$, ID("@compare"), $1, $3);
+        $$ = new Dispatch(@$, ID("@comp"), $1, $3);
     }
     | expression '>' expression { 
         Dispatch* less = new Dispatch(@$, ID("@less"), $1, $3); 
         Dispatch* equal = new Dispatch(@$, ID("@equal"), $1, $3);
-        Binary* child = new Binary(@$, ID("||"), less, equal); 
+        Binary* child = new Binary(@$, ID("or"), less, equal); 
         $$ = new Unary(@$, ID("not"), child); 
     }
     | expression '<' expression {
@@ -343,7 +348,7 @@ expression
     | expression LESS_OR_EQUAL expression { 
         Dispatch* less = new Dispatch(@$, ID("@less"), $1, $3);
         Dispatch* equal = new Dispatch(@$, ID("@equal"), $1, $3);
-        $$ = new Binary(@$, ID("||"), less, equal);  
+        $$ = new Binary(@$, ID("or"), less, equal);  
     }
     | expression LEFT_SHIFT expression { 
         $$ = new Dispatch(@$, ID("@shift"), $1, $3); 
@@ -376,6 +381,17 @@ expression
     }
     ;
 
+string
+    : SBEGIN expression string {
+        Dispatch* string = new Dispatch(@$, ID("string"), $2, 0);
+        Dispatch* concat = new Dispatch(@$, ID("@add"), $1, string);
+        $$ = new Dispatch(@$, ID("@add"), concat, $3);
+    }
+    | STRING {
+        $$ = $1;
+    }   
+    ;
+
 conditional
     : IF expression block ELSE block { $$ = new Conditional(@$, $2, $3, $5); }
     | IF expression block {
@@ -397,12 +413,6 @@ call
     } 
     ; 
 
-when_list
-    : when when_list { $1->next($2); $$ = $1; }
-    | when { $$ = $1; }
-    ;
-
-
 variable_list
     : variable ',' variable_list { $1->next($3); $$ = $1; }
     | variable { $$ = $1; }
@@ -417,6 +427,11 @@ variable
     : IDENTIFIER type { $$ = new Variable(@$, $1, $2, new Empty(@$)); }
     | IDENTIFIER type '=' expression { $$ = new Variable(@$, $1, $2, $4); }
     | IDENTIFIER '=' expression { $$ = new Variable(@$, $1, NOTYPE, $3); }
+    ;
+
+when_list
+    : when when_list { $1->next($2); $$ = $1; }
+    | when { $$ = $1; }
     ;
 
 when

@@ -23,7 +23,11 @@ tests.each do |test|
     end
 
     if options[:full]
-        result = `valgrind --leak-check=full -q ../bin/test #{test} 2>&1 | diff - #{test}.out`
+        flags = ""
+        flags = flags + " --leak-check=full"
+        flags = flags + " --suppressions=../scripts/flex.supp"
+        flags = flags + " --gen-suppressions=all"
+        result = `valgrind #{flags} -q ../bin/test #{test} 2>&1 | diff - #{test}.out`
     else
         result = `../bin/test #{test} 2>&1 | diff - #{test}.out`
     end

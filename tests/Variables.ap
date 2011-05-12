@@ -3,8 +3,5 @@ Variables < Object {
     variables1() {
         one Int
         two Int = 0
-
     }
-
-    
 }

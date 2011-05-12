@@ -75,7 +75,19 @@ void Environment::init_integer() {
 }
 
 void Environment::init_string() {
-    root_->feature(new Class(Location(), string_type_, 0, 0, 0));
+    Location loc;
+    Formal::Ptr formals;
+
+    Class::Ptr clazz = new Class(loc, string_type_, 0, 0, 0);
+
+    formals = new Formal(loc, name("_"), string_type_);
+    formals->next(new Formal(loc, name("_"), string_type_));
+    clazz->feature(new Function(loc, name("@add"), formals, string_type_, 0));
+
+    formals = new Formal(loc, name("_"), string_type_);
+    clazz->feature(new Function(loc, name("string"), formals, string_type_, 0));
+
+    root_->feature(clazz);
 }
 
 void Environment::init_float() {

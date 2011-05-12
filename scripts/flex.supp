@@ -1,0 +1,5 @@
+{
+    flex/yy_top_state
+    Memcheck:Addr4
+    fun:_ZL12yy_top_statePv
+}

@@ -236,6 +236,7 @@ void TypeChecker::operator()(Dispatch* expression) {
     // Get the class associated with the receiver (always the first argument)
     Expression::Ptr receiver = expression->arguments();
     if (receiver->type() == environment_->no_type()) {
+        expression->type(environment_->no_type());
         return;
     }
     Class::Ptr clazz = receiver->type()->clazz();

@@ -1,0 +1,13 @@
+
+
+Stringable < Object {
+    string() String {
+        return "is"
+    }
+}
+
+main() Int {
+    bob = "what #{Stringable()} up"
+    bob = "what #{ "what #{Stringable()} up"} up"
+    bob = "what #{Stringable()} up what #{Stringable()} up"
+}

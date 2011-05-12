@@ -25,6 +25,16 @@
 	yylloc->last_column = parser->column() - 1;\
 	yylloc->last_line = yylineno;\
 }
+#define POP_SEPARATOR() {\
+    if (1||YY_START == SC_SEPARATOR) {\
+        yy_pop_state(yyscanner);\
+    }\
+}
+#define PUSH_SEPARATOR() {\
+    if (YY_START != SC_SEPARATOR) {\
+        yy_push_state(SC_SEPARATOR, yyscanner);\
+    }\
+}
 
 using namespace std;
 
@@ -34,113 +44,145 @@ using namespace std;
 %option bison-bridge
 %option never-interactive
 %option noyywrap
-%option nounput
 %option yylineno
 %option bison-locations
-%s END DOC
+%option stack
+%x SC_COMMENT SC_SEPARATOR SC_STRING
 
 /* Lexer rules */
 %%
-import BEGIN(INITIAL); return IMPORT;
-case BEGIN(INITIAL); return CASE;
-when BEGIN(INITIAL); return WHEN;
-public BEGIN(INITIAL); return PUBLIC;
-private BEGIN(INITIAL); return PRIVATE;
-static BEGIN(INITIAL); return STATIC;
-native BEGIN(INITIAL); return NATIVE;
-while BEGIN(INITIAL); return WHILE;
-else BEGIN(INITIAL); return ELSE;
-until BEGIN(INITIAL); return UNTIL;
-if BEGIN(INITIAL); return IF;
-function BEGIN(INITIAL); return FUNCTION;
-for BEGIN(INITIAL); return FOR;
-let BEGIN(INITIAL); return LET;
-return BEGIN(END); return RETURN;
-xor BEGIN(INITIAL); return XOR;
-and BEGIN(INITIAL); return AND;
-or BEGIN(INITIAL); return OR;
-in BEGIN(INITIAL); return IN;
-not BEGIN(INITIAL); return NOT;
-fork BEGIN(INITIAL); return FORK;
-yield BEGIN(INITIAL); return YIELD;
--> BEGIN(INITIAL); return RIGHT_ARROW;
-\<\- BEGIN(INITIAL); return LEFT_ARROW;
-== BEGIN(INITIAL); return EQUAL; 
-!= BEGIN(INITIAL); return NOT_EQUAL; 
-\>\= BEGIN(INITIAL); return GREATER_OR_EQUAL;
-\<\> BEGIN(INITIAL); return COMPARE;
-\<\= BEGIN(INITIAL); return LESS_OR_EQUAL;
-\<\< BEGIN(INITIAL); return LEFT_SHIFT;
-\>\> BEGIN(INITIAL); return RIGHT_SHIFT;
-\^\= BEGIN(INITIAL); return POWER_ASSIGN;
-\*\= BEGIN(INITIAL); return MULTIPLY_ASSIGN;
-\/\= BEGIN(INITIAL); return DIVIDE_ASSIGN;
-\-\= BEGIN(INITIAL); return SUBTRACT_ASSIGN; 
-\+\= BEGIN(INITIAL); return ADD_ASSIGN;
-\%\= BEGIN(INITIAL); return MODULUS_ASSIGN;
-\|\= BEGIN(INITIAL); return BIT_OR_ASSIGN;
-xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
-\&\= BEGIN(INITIAL); return BIT_AND_ASSIGN;
-\+\+ BEGIN(INITIAL); return INCREMENT;
-\-\- BEGIN(INITIAL); return DECREMENT;
-\:\: BEGIN(INITIAL); return SCOPE;
-; BEGIN(INITIAL); return SEMICOLON;
+import return IMPORT;
+case return CASE;
+when return WHEN;
+public return PUBLIC;
+private return PRIVATE;
+static return STATIC;
+native return NATIVE;
+while return WHILE;
+else return ELSE;
+until return UNTIL;
+if return IF;
+function return FUNCTION;
+for return FOR;
+let return LET;
+return yy_push_state(SC_SEPARATOR, yyscanner); return RETURN;
+xor return XOR;
+and return AND;
+or return OR;
+in return IN;
+not return NOT;
+fork return FORK;
+yield return YIELD;
+-> return RIGHT_ARROW;
+\<\- return LEFT_ARROW;
+== return EQUAL; 
+!= return NOT_EQUAL; 
+\>\= return GREATER_OR_EQUAL;
+\<\> return COMPARE;
+\<\= return LESS_OR_EQUAL;
+\<\< return LEFT_SHIFT;
+\>\> return RIGHT_SHIFT;
+\^\= return POWER_ASSIGN;
+\*\= return MULTIPLY_ASSIGN;
+\/\= return DIVIDE_ASSIGN;
+\-\= return SUBTRACT_ASSIGN; 
+\+\= return ADD_ASSIGN;
+\%\= return MODULUS_ASSIGN;
+\|\= return BIT_OR_ASSIGN;
+xor\= return BIT_XOR_ASSIGN;
+\&\= return BIT_AND_ASSIGN;
+\+\+ return INCREMENT;
+\-\- return DECREMENT;
+\:\: return SCOPE;
+; return SEMICOLON;
 [0-9]+ {
 	String* value = yyextra->environment()->number(yytext);
 	yylval->expression = new IntegerLiteral(*yylloc, value); 
-    BEGIN(END);
+    yy_push_state(SC_SEPARATOR, yyscanner);
 	return NUMBER;
 }
 (true|false) {
     String* value = yyextra->environment()->name(yytext);
     yylval->expression = new BooleanLiteral(*yylloc, value);
-    BEGIN(END);
+    yy_push_state(SC_SEPARATOR, yyscanner);
     return BOOLEAN;
 }
-\"[^"]*\" {
-	yytext[strlen(yytext)-1] = 0;
-	String* value = yyextra->environment()->string(yytext);
-	yylval->expression = new StringLiteral(*yylloc, value);
-    BEGIN(END);
-	return STRING;
+\" {
+    yy_push_state(SC_STRING, yyscanner);
 }
 \'[^']*\' {
 	String* value = yyextra->environment()->string(yytext);
 	yylval->expression = new StringLiteral(*yylloc, value); 
-    BEGIN(END);
+    yy_push_state(SC_SEPARATOR, yyscanner);
 	return STRING;
 }
 @[a-z][a-z]* {
     yylval->string = yyextra->environment()->name(yytext);
-    BEGIN(END); 
+    yy_push_state(SC_SEPARATOR, yyscanner); 
     return OPERATOR;
 }
 [a-z][A-Za-z0-9_]*[?!]? {
 	yylval->string = yyextra->environment()->name(yytext);
-    BEGIN(END);
+    yy_push_state(SC_SEPARATOR, yyscanner);
 	return IDENTIFIER;
 }
 [A-Z][A-Za-z0-9]* {
 	yylval->string = yyextra->environment()->name(yytext);
-    BEGIN(END);
+    yy_push_state(SC_SEPARATOR, yyscanner);
 	return TYPE;
 }
-
-[{([,] BEGIN(DOC); return yytext[0];
-[)\]] BEGIN(END); return yytext[0];
-[}] BEGIN(INITIAL); return yytext[0];
-<END>[\n\r] {
-    BEGIN(INITIAL); 
-    yyget_extra(yyscanner)->column(1); 
+[{] {
+    yy_push_state(SC_COMMENT, yyscanner);
+    return yytext[0];
+}
+[([,] return yytext[0]; 
+[)\]] yy_push_state(SC_SEPARATOR, yyscanner); return yytext[0];
+[}] {
+    if (yy_top_state(yyscanner) == SC_STRING) {
+        yy_pop_state(yyscanner);
+    } else {
+        return yytext[0];
+    }
+}
+[\n\r] {
+    yyextra->column(1);
+}
+#.*
+[\t ]
+. return yytext[0];
+<SC_STRING>[^"#]*#\{ {
+    yytext[strlen(yytext)-2] = 0;
+    String* value = yyextra->environment()->string(yytext);
+    yylloc->first_column--;
+    yylval->expression = new StringLiteral(*yylloc, value);
+    yy_push_state(INITIAL, yyscanner);
+    return SBEGIN;
+}
+<SC_STRING>[^"#]*\" {
+    yytext[strlen(yytext)-1] = 0;
+    String* value = yyextra->environment()->string(yytext);
+    yylloc->first_column--;
+    yylval->expression = new StringLiteral(*yylloc, value);
+    yy_pop_state(yyscanner);
+    yy_push_state(SC_SEPARATOR, yyscanner);
+    return STRING;
+}
+<SC_SEPARATOR>[\n\r] {
+    yy_pop_state(yyscanner);
+    yyextra->column(1); 
     return SEPARATOR;
 }
-<INITIAL>[\n\r] {
-    yyget_extra(yyscanner)->column(1);
+<SC_SEPARATOR>#.* 
+<SC_SEPARATOR>[\t ]
+<SC_SEPARATOR>. {
+    yy_pop_state(yyscanner);
+    yyunput(yytext[0], 0, yyscanner);
+	yyextra->column(yyextra->column() - 1);
 }
-<DOC>[\n\r] {
-    yyget_extra(yyscanner)->column(1);
+<SC_COMMENT>[\n\r] {
+    yyextra->column(1);
 }
-<DOC>#.* {
+<SC_COMMENT>#.* {
     const char* comment = yytext + 1;    
     while (isspace(*comment)) {
         comment++;
@@ -148,14 +190,18 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
     yylval->string = new String(comment);
     return COMMENT;
 }
-
-#.*
-[\t ]
-. return yytext[0];
+<SC_COMMENT>[^\t ] {
+    yy_pop_state(yyscanner);
+    yyunput(yytext[0], 0, yyscanner);
+	yyextra->column(yyextra->column() - 1);
+}
+<SC_COMMENT>. 
 %%
 
 void Parser::force_separator() {
     struct yyguts_t *yyg = (struct yyguts_t *)scanner_;
-    BEGIN(END);
+    if (YY_START != SC_SEPARATOR) {
+        yy_push_state(SC_SEPARATOR, scanner_);
+    }
 }
 
