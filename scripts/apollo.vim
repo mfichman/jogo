@@ -21,6 +21,7 @@ syn region apString start=+'+ end=+'+
 
 syn keyword apConstant true false nil self
 
+
 "syn keyword apFunction @init @destroy @add @subtract @divide @mulitply
 "syn keyword apFunction @index @modulus @bitand @bitor @bitxor @equal
 "syn keyword apFunction @less @shift @unshift @power @complement @increment

@@ -24,9 +24,10 @@
 
 #include <typeinfo>
 
-Class::Class(Location loc, Type* type, Feature* features) :
+Class::Class(Location loc, Type* type, Type* mixins, Feature* features) :
     Feature(loc),
     type_(type),
+    mixins_(mixins),
     features_(features) {
 
     for (Feature* feat = features; feat; feat = feat->next()) {

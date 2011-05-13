@@ -67,7 +67,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token <name> IDENTIFIER TYPE OPERATOR
 %token <expression> STRING NUMBER BOOLEAN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
-%token IMPORT
+%token IMPORT FUNCTION
 %token SEPARATOR SEMICOLON
 %token WHEN CASE WHILE ELSE UNTIL IF DO FOR RETURN
 %token RIGHT_ARROW LEFT_ARROW
@@ -79,15 +79,14 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token INCREMENT DECREMENT
 %token SCOPE LET IN YIELD FORK
 
-%type <feature> member member_list attribute class
-%type <feature> operator function prototype native 
-%type <type> type type_list
+%type <feature> member member_list attribute class function prototype 
+%type <type> type type_list maybe_type
 %type <name> scope scope_prefix 
-%type <generic> generic_list generic
+%type <generic> generic generic_list
 %type <flag> modifiers
-%type <formal> formal_signature formal_list formal
-%type <statement> block when_list when statement_list statement conditional
-%type <variable> variable_list variable
+%type <formal> formal_signature formal formal_list
+%type <statement> block when when_list statement statement_list conditional
+%type <variable> variable variable_list
 %type <expression> call expression expression_list
 
 
@@ -124,8 +123,7 @@ import_list
 
 class
     : type '<' type_list '{' member_list '}' {
-        $$ = new Class(@$, $1, $5);
-        delete $3; // FixMe
+        $$ = new Class(@$, $1, $3, $5);
     }
     | error {
         $$ = 0;    
@@ -144,9 +142,7 @@ member_list
 
 member
     : attribute { $$ = $1; }
-    | operator { $$ = $1; }
     | function { $$ = $1; }
-    | native { $$ = $1; }
     | prototype { $$ = $1; }
     ;
 
@@ -165,45 +161,25 @@ attribute
     ;
 
 function
-    : IDENTIFIER formal_signature type modifiers block {
+    : IDENTIFIER formal_signature maybe_type modifiers block {
         $$ = new Function(@$, $1, $2, $3, $5);
-    }
-    | IDENTIFIER formal_signature modifiers block {
-        Type* type = parser->environment()->void_type();
-        $$ = new Function(@$, $1, $2, type, $4);
-    }
-    ;
-
-operator
-    : OPERATOR formal_signature type modifiers block {
-        $$ = new Function(@$, $1, $2, $3, $5);
-    }
-    | OPERATOR formal_signature modifiers block {
-        Type* type = parser->environment()->void_type();
-        $$ = new Function(@$, $1, $2, type, $4);
     }
     ;
 
 prototype
-    : IDENTIFIER formal_signature type modifiers SEPARATOR {
+    : IDENTIFIER formal_signature maybe_type modifiers SEPARATOR {
         $$ = new Function(@$, $1, $2, $3, 0);
-    }
-    | IDENTIFIER formal_signature modifiers SEPARATOR {
-        Type* type = parser->environment()->void_type();
-        $$ = new Function(@$, $1, $2, type, 0);
     }
     ;
 
-native
-    : IDENTIFIER formal_signature type modifiers NATIVE SEPARATOR {
-        $$ = new Function(@$, $1, $2, $3, 0);
+maybe_type
+    : type {
+        $$ = $1;
     }
-    | IDENTIFIER formal_signature modifiers NATIVE SEPARATOR {
-        Type* type = parser->environment()->void_type();
-        $$ = new Function(@$, $1, $2, type, 0);
+    | /* empty */ {
+        $$ = parser->environment()->void_type();
     }
-    ;
-    
+
 formal_signature
     : '(' formal_list ')' { $$ = $2; }
     | '(' ')' { $$ = 0; }
@@ -226,6 +202,8 @@ formal
 
 modifiers
     : PRIVATE { $$ = 0; }
+    | PRIVATE NATIVE { $$ = 0; }
+    | NATIVE { $$ = 0; }
     | /* empty */ { $$ = 0; }
     ;
 
@@ -486,6 +464,15 @@ expression
     }
     | expression '.' IDENTIFIER '(' ')' {
         $$ = new Dispatch(@$, $3, $1);
+    }
+    | FUNCTION formal_signature maybe_type block {
+        //Name* name = parser->environment()->name("@call");
+        //$$ = new Function(@$, name, $2, $3, $4);
+        $$ = new Empty(@$);
+        $2 = 0;
+        $4 = 0;
+        $3 = 0;
+        parser->force_separator();
     }
     | call { $$ = $1; }
     | '(' expression ')' { $$ = $2; } 

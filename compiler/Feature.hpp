@@ -121,11 +121,12 @@ private:
 /* Represents a class object */
 class Class : public Feature {
 public:
-    Class(Location loc, Type* type, Feature* features);
+    Class(Location loc, Type* type, Type* mixins, Feature* features);
     Feature* features() const { return features_; }    
     Attribute* attribute(Name* name) { return attributes_[name]; }
     Function* function(Name* name) { return functions_[name]; }
     Type* type() const { return type_; }
+    Type* mixins() const { return mixins_; }
     Name* name() const { return type_->name(); }
     void feature(Feature* feature);
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -135,6 +136,7 @@ private:
     std::map<Name::Ptr, Attribute::Ptr> attributes_;
     std::map<Name::Ptr, Function::Ptr> functions_;
     Type::Ptr type_;
+    Type::Ptr mixins_;
     Feature::Ptr features_;
 };
 

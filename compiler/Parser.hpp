@@ -42,6 +42,7 @@ public:
     int column() const { return column_; }
 	void file(const std::string& file);
     void column(int column) { column_ = column; }
+    void force_separator();
     typedef Pointer<Parser> Ptr;
 
 private:

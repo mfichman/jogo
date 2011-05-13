@@ -52,6 +52,7 @@ while BEGIN(INITIAL); return WHILE;
 else BEGIN(INITIAL); return ELSE;
 until BEGIN(INITIAL); return UNTIL;
 if BEGIN(INITIAL); return IF;
+function BEGIN(INITIAL); return FUNCTION;
 for BEGIN(INITIAL); return FOR;
 let BEGIN(INITIAL); return LET;
 return BEGIN(END); return RETURN;
@@ -140,6 +141,8 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
 . return yytext[0];
 %%
 
+void Parser::force_separator() {
+    struct yyguts_t *yyg = (struct yyguts_t *)scanner_;
+    BEGIN(END);
+}
 
-//  struct yyguts_t *yyg = (struct yyguts_t *)self->scanner;
-//	yylineno = 1;
