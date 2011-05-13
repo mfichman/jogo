@@ -235,10 +235,10 @@ type_list
 
 type
     : scope '[' generic_list ']' {
-        $$ = new Type(@$, $1, $3, parser->environment());
+        $$ = new Type(@$, $1, $3, parser->module(), parser->environment());
     }
     | scope {
-        $$ = new Type(@$, $1, 0, parser->environment()); 
+        $$ = new Type(@$, $1, 0, parser->module(), parser->environment()); 
     }
     ;
 

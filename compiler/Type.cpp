@@ -21,34 +21,31 @@
  */  
 
 #include "Type.hpp"
+#include "Feature.hpp"
 #include "Environment.hpp"
 #include <cassert>
 
-Type::Type(Location location, Name* scope, Generic* gen, Environment* env) :
-    TreeNode(location),
-    scope_(scope),
+Type::Type(Location loc, Name* sc, Generic* gen, Module* mod, Environment* env) :
+    TreeNode(loc),
+    scope_(sc),
     generics_(gen),
+    module_(mod),
     environment_(env) {
 
-    size_t scope_end = scope->string().find_last_of(':');
+    size_t scope_end = scope_->string().find_last_of(':');
     if (scope_end == std::string::npos) {
         name_ = scope_;
     } else {
-        name_ = env->name(scope->string().substr(scope_end + 1));
+        name_ = env->name(scope_->string().substr(scope_end + 1));
     }
 
 }
 
 bool Type::equals(Type* other) const {
-    /* Make sure the base name is equal */
-    if (name() != other->name()) {
+    /* Make sure the classes are equal */
+    if (clazz() != other->clazz()) {
         return false;
     }
-
-    /* Make sure the enclosing types are all equal */
-    //if (scope() != other->scope()) {
-    //  return false;
-   // }
 
     /* Make sure the generic parameters are the same */
     Generic* g1 = generics();
@@ -65,32 +62,29 @@ bool Type::equals(Type* other) const {
 }
 
 bool Type::subtype(Type* other) const {
-    assert("Not implemented");
-    return false;
+    if (!clazz() || !other->clazz()) {
+        return false;
+    }
+    return clazz()->subtype(other->clazz());
 }
 
 bool Type::supertype(Type* other) const {
-    assert("Not implemented");
-    return false;
+    if (!clazz() || !other->clazz()) {
+        return false;
+    }
+    return clazz()->supertype(other->clazz());
 }
 
-bool Type::collection(Type* other) const {
-    assert("Not implemented");
-    return false;
-}
+Class* Type::clazz() const {
+    if (clazz_) {
+        return clazz_;
+    }
+    Type* self = const_cast<Type*>(this);
+    self->clazz_ = self->module_->clazz(name_);
 
-Type* Type::least_upper_bound(Type* other) const {
-    assert("Not implemented");
     return 0;
 }
 
-Type* Type::clone() const {
-    return const_cast<Type*>(this);
-}
-
-Generic* Generic::clone() const { 
-    return const_cast<Generic*>(this);
-}
 
 std::ostream& operator<<(std::ostream& out, const Type* type) {
     out << type->scope()->string();

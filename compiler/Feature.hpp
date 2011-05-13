@@ -85,6 +85,7 @@ public:
 	Type* type() const { return type_; }
     Statement* block() const { return block_; }
     BasicBlock* code() const { return code_; }
+    bool covariant(Function* other) const;
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
 
@@ -123,11 +124,16 @@ class Class : public Feature {
 public:
     Class(Location loc, Type* type, Type* mixins, Feature* features);
     Feature* features() const { return features_; }    
-    Attribute* attribute(Name* name) { return attributes_[name]; }
-    Function* function(Name* name) { return functions_[name]; }
+    Attribute* attribute(Name* name) const;
+    Function* function(Name* name) const;
     Type* type() const { return type_; }
     Type* mixins() const { return mixins_; }
     Name* name() const { return type_->name(); }
+    bool object() const { return object_; }
+    bool value() const { return value_; }
+    bool interface() const { return interface_; }
+    bool subtype(Class* other) const;
+    bool supertype(Class* other) const;
     void feature(Feature* feature);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Class> Ptr;
@@ -138,19 +144,25 @@ private:
     Type::Ptr type_;
     Type::Ptr mixins_;
     Feature::Ptr features_;
+    bool object_;
+    bool value_;
+    bool interface_;
 };
 
 /* Module, contains classes, functions, imports, etc. */
 class Module : public Feature {
 public:
-    Module(Location loc, Name* name) :
+    Module(Location loc, Name* name, Environment* env) :
         Feature(loc),
-        name_(name) {
+        name_(name),
+        environment_(env) {
     }
 
     Feature* features() const { return features_; }
     Function* function(Name* name) { return functions_[name]; }
+    Function* function(Name* scope, Name* name);
     Class* clazz(Name* name) { return classes_[name]; }
+    Class* clazz(Name* scope, Name* name);
     Import* import(Name* name) { return imports_[name]; }
     Name* name() const { return name_; }
     void feature(Feature* feature);
@@ -163,5 +175,6 @@ private:
     std::map<Name::Ptr, Import::Ptr> imports_;
     Name::Ptr name_; 
     Feature::Ptr features_;
+    Environment* environment_;
 };
 

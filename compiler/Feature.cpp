@@ -21,8 +21,10 @@
  */  
 
 #include "Feature.hpp"
+#include "Environment.hpp"
+#include <iostream>
 
-#include <typeinfo>
+using namespace std;
 
 Class::Class(Location loc, Type* type, Type* mixins, Feature* features) :
     Feature(loc),
@@ -39,6 +41,21 @@ Class::Class(Location loc, Type* type, Type* mixins, Feature* features) :
         if (typeid(feat) == typeid(Function*)) {
             Function* func = static_cast<Function*>(feat);
             functions_[func->name()] = func;
+            continue;
+        }
+    }
+
+    for (Type* mixin = mixins; mixin; mixin = mixin->next()) {
+        if ("Object" == mixin->name()->string()) {
+            object_ = true;
+            continue;
+        }
+        if ("Interface" == mixin->name()->string()) {
+            interface_ = true;
+            continue;
+        }
+        if ("Value" == mixin->name()->string()) {
+            value_ = true;
             continue;
         }
     }
@@ -62,6 +79,69 @@ void Class::feature(Feature* feature) {
     }
 }
 
+Attribute* Class::attribute(Name* name) const {
+    std::map<Name::Ptr, Attribute::Ptr>::const_iterator i = attributes_.find(name);
+    return (i == attributes_.end()) ? 0 : i->second;
+}
+
+Function* Class::function(Name* name) const {
+    std::map<Name::Ptr, Function::Ptr>::const_iterator i = functions_.find(name);
+    return (i == functions_.end()) ? 0 : i->second;
+}
+
+bool Class::subtype(Class* other) const {
+    // Returns true if this class is a subtype of 'other.'  A class is a subtype
+    // of another class if it implements all methods found in the class.
+
+    for (Feature* f = other->features(); f; f = f->next()) {
+        if (Function* func = dynamic_cast<Function*>(f)) {
+            Function* mine = function(func->name());   
+            if (!mine || !mine->covariant(func)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
+bool Class::supertype(Class* other) const { 
+    // Returns true if this class is a supertype of 'other.'  A class is a
+    // subtype of another class if the other class implements all methods found
+    // in this class.
+
+    for (Feature* f = features(); f; f = f->next()) {
+        if (Function* mine = dynamic_cast<Function*>(f)) {
+            Function* func = other->function(mine->name());   
+            if (!func || !func->covariant(mine)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool Function::covariant(Function* other) const {
+    // Returns true if this function is covariant, i.e., its return type is the
+    // same as or a subtype of 'other.'  The arguments must match exactly.
+    Formal* f1 = formals_;
+    Formal* f2 = other->formals_;
+
+    while (f1 && f2) {
+        if (!f1->type()->equals(f2->type())) {
+            return false;
+        }
+    }
+    if (f1 || f2) {
+        return false;
+    }
+    if (!type_->subtype(other->type())) {
+        return false;
+    } 
+
+    return true;
+}
+
 void Module::feature(Feature* feature) {
     if (!feature) {
         return;
@@ -78,6 +158,60 @@ void Module::feature(Feature* feature) {
         functions_[func->name()] = func;
         return;
     }
+}
+
+Function* Module::function(Name* scope, Name* name) {
+    // Returns the function with scope "scope" and name "name."  Searches
+    // through imports included in this module to attempt to find the function.
+
+    if (!scope || scope->string() == "") {
+        return function(name);
+    }
+
+    Function* function = 0;
+    std::map<Name::Ptr, Import::Ptr>::iterator i = imports_.begin();
+    for (; i != imports_.end(); i++) {
+        Name* is = i->second->scope();
+        Name* mn = environment_->name(scope->string() + is->string());
+        Module* module = environment_->module(mn); 
+        if (!module) {
+            continue;   
+        }
+        Function* fn = module->function(name);
+        if (fn && function) {
+            environment_->error("Ambiguous function call, check imports");
+            return function;
+        }
+        function = fn;
+    }
+    return function;
+}
+
+Class* Module::clazz(Name* scope, Name* name) {
+    // Returns the class with the scope "scope" and name "name."  Searches
+    // through imports included in this module to attempt to find the class.
+
+    if (!scope || scope->string() == "") {
+        return clazz(name);
+    }
+
+    Class* clazz = 0;
+    std::map<Name::Ptr, Import::Ptr>::iterator i = imports_.begin();
+    for (; i != imports_.end(); i++) {
+        Name* is = i->second->scope();
+        Name* mn = environment_->name(scope->string() + is->string());
+        Module* module = environment_->module(mn);
+        if (!module) {
+            continue;
+        }
+        Class* cs = module->clazz(name);
+        if (cs && clazz) {
+            environment_->error("Ambiguous class name, check imports");
+            return clazz;
+        }
+        clazz = cs;
+    }
+    return clazz;
 }
 
 std::string Import::file_name(Name* scope) {
@@ -121,6 +255,7 @@ std::string Import::base_name(const std::string& file) {
 }
 
 std::string Import::scope_name(const std::string& file) {
+    // Given the file name, returns the module's scope name
 
     std::string name;
     for (size_t i = 0; i < file.size(); i++) {

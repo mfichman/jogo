@@ -37,7 +37,6 @@ public:
 
     class Functor;
     virtual void operator()(Functor *functor)=0;
-    //virtual TreeNode* clone() const=0;
 
 private:
     Location location_;

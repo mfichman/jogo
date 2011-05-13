@@ -52,7 +52,7 @@ void Parser::file(const std::string& file) {
     if (module_) {
         return;
     } else {
-        module_ = new Module(Location(), scope);
+        module_ = new Module(Location(), scope, environment_);
         environment_->module(module_);
     }
 
