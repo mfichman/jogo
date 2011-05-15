@@ -1,0 +1,19 @@
+# aptest print_ir off
+
+foo() Int {
+}
+
+foo() Bool {
+}
+
+Bob < Object {
+    foo() Int {
+    }
+    foo() Int {
+    }
+    blarg Int
+    blarg Bool
+}
+
+Bob < Object {
+}

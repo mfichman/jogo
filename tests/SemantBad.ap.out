@@ -1,0 +1,46 @@
+Module
+  name: 
+  feature0: Function
+    name: foo
+    type: Int
+    comment:
+    block: Block
+  feature1: Function
+    name: foo
+    type: Bool
+    comment:
+    block: Block
+  feature2: Class
+    name: Bob
+    comment:
+    feature0: Function
+      name: foo
+      type: Int
+      comment:
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature1: Function
+      name: foo
+      type: Int
+      comment:
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature2: Attribute
+      name: blarg
+      type: Int
+      initializer: Empty
+    feature3: Attribute
+      name: blarg
+      type: Bool
+      initializer: Empty
+  feature3: Class
+    name: Bob
+    comment:
+SemantBad.ap:6:1: Duplicate definition of function 'foo'
+SemantBad.ap:12:5: Duplicate definition of function 'foo'
+SemantBad.ap:15:5: Duplicate definition of attribute 'blarg'
+SemantBad.ap:18:1: Duplicate definition of class 'Bob'

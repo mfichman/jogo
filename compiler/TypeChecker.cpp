@@ -27,6 +27,7 @@
 #include "Location.hpp"
 #include <iostream>
 #include <cassert>
+#include <set>
 
 using namespace std;
 
@@ -43,7 +44,23 @@ TypeChecker::TypeChecker(Environment* environment) :
 
 void TypeChecker::operator()(Module* feature) {
     module_ = feature;
+    std::set<String::Ptr> features;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+            if (features.find(func->name()) != features.end()) {
+                cerr << f->location();
+                cerr << "Duplicate definition of function '";
+                cerr << func->name() << "'" << endl;
+            }
+            features.insert(func->name());
+        } else if (Class::Ptr clazz = dynamic_cast<Class*>(f.pointer())) {
+            if (features.find(clazz->name()) != features.end()) {
+                cerr << f->location();
+                cerr << "Duplicate definition of class '";
+                cerr << clazz->name() << "'" << endl;
+            }
+            features.insert(clazz->name());
+        }
         f(this);
     }
 }
@@ -92,9 +109,25 @@ void TypeChecker::operator()(Class* feature) {
 
     // Iterate through all the features and add the functions and variables to
     // the current scope.
+    std::set<String::Ptr> features;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
-            variable(attr->name(), attr->type());
+            if (variable(attr->name())) {
+                cerr << f->location();
+                cerr << "Duplicate definition of attribute '";
+                cerr << attr->name() << "'" << endl;
+            } else {
+                variable(attr->name(), attr->type());
+            }
+            continue;
+        }
+        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+            if (features.find(func->name()) != features.end()) {
+                cerr << f->location();
+                cerr << "Duplicate definition of function '";
+                cerr << func->name() << "'" << endl;
+            }
+            features.insert(func->name());
             continue;
         }
     }
