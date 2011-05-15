@@ -263,8 +263,7 @@ statement_list
     ;
 
 statement
-    : FOR IDENTIFIER IN expression block { $$ = new For(@$, $2, $4, $5); }
-    | LET variable_list block { $$ = new Let(@$, $2, $3); }
+    : LET variable_list block { $$ = new Let(@$, $2, $3); }
     | WHILE expression block { $$ = new While(@$, $2, $3); }
     | RETURN expression SEPARATOR { $$ = new Return(@$, $2); }
     | RETURN SEPARATOR { $$ = new Return(@$, new Empty(@$)); }
@@ -273,6 +272,34 @@ statement
     | variable SEPARATOR { $$ = $1; }
     | expression SEPARATOR { $$ = new Simple(@$, $1); }
     | conditional { $$ = $1; }
+    | FOR IDENTIFIER IN expression block { 
+        //$$ = new For(@$, $2, $4, $5);
+
+        // _i = $4.iterator()
+        Dispatch* t1 = new Dispatch(@$, ID("iterator"), $4, 0);
+        Variable* t2 = new Variable(@$, ID("_i"), NOTYPE, t1);
+        
+        // _i.more()
+        Identifier* t3 = new Identifier(@$, ID("_i"));
+        Dispatch* t4 = new Dispatch(@$, ID("more"), t3, 0); 
+
+        // $2 = _i.value()
+        Identifier* t5 = new Identifier(@$, ID("_i"));
+        Dispatch* t6 = new Dispatch(@$, ID("value"), t5, 0); 
+        Variable* t7 = new Variable(@$, $2, NOTYPE, t6); 
+
+        // i.next()
+        Identifier* t8 = new Identifier(@$, ID("_i"));
+        Simple* t9 = new Simple(@$, new Dispatch(@$, ID("next"), t8, 0)); 
+        
+        t7->next(t9);
+        t9->next($5);
+         
+        // Whole loop body
+        While* t10 = new While(@$, t4, new Block(@$, 0, t7));
+         
+        $$ = new Let(@$, t2, t10);
+    }
     | IDENTIFIER formal_signature return_signature block {
         $$ = new Simple(@$, new Empty(@$));
         $1 = 0;

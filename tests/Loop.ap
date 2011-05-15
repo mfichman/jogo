@@ -1,8 +1,33 @@
 # aptest print_ir off
-Loop < Object {
-    loop1() {
-        for i in 0 {
+
+
+Iterator < Object {
+    value() String {
+        return "Hello, world"
+    }
+
+    next() {
+    }
     
+    more() Bool {
+        return true
+    }    
+}
+
+Iterable < Object {
+    iterator() Iterator {
+        return Iterator()
+    }
+}
+
+test(var String) {
+}
+
+Loop < Object {
+
+    loop1() {
+        for i in Iterable() {
+            test(i)
         }
     }
 

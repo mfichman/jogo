@@ -52,7 +52,6 @@ private:
     void operator()(Block* statement);
     void operator()(Simple* statement);
     void operator()(While* statement);
-    void operator()(For* statement);
     void operator()(Conditional* statement);
     void operator()(Variable* statement);
     void operator()(Return* statement);

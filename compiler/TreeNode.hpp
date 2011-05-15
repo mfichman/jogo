@@ -62,7 +62,6 @@ public:
     virtual void operator()(Block* statement)=0;
     virtual void operator()(Simple* statement)=0;
     virtual void operator()(While* statement)=0;
-    virtual void operator()(For* statement)=0;
     virtual void operator()(Let* statement)=0;
     virtual void operator()(Conditional* statement)=0;
     virtual void operator()(Variable* statement)=0;

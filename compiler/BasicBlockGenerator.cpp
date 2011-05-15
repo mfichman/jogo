@@ -187,10 +187,6 @@ void BasicBlockGenerator::operator()(While* statement) {
     block_ = pre->branch();
 }
 
-void BasicBlockGenerator::operator()(For* statement) {
-    assert(!"For loops should be converted into while loops by expansion");
-}
-
 void BasicBlockGenerator::operator()(Conditional* statement) {
     Operand guard = emit(statement->guard());
     BasicBlock::Ptr pre = bneqz(block_, guard);

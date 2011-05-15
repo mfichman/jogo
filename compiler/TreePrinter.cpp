@@ -305,20 +305,6 @@ void TreePrinter::operator()(While* statement) {
     indent_level_--;
 }
 
-void TreePrinter::operator()(For* statement) {
-    indent_level_++;
-    Expression::Ptr expression = statement->expression();
-    Statement::Ptr block = statement->block();
-    cout << "For" << endl;
-    print_tabs(); cout << "variable: "; 
-    cout << statement->variable() << endl;
-    print_tabs(); cout << "expression: ";
-    expression(this);
-    print_tabs(); cout << "block: ";
-    block(this);
-    indent_level_--;
-}
-
 void TreePrinter::operator()(Conditional* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();

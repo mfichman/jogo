@@ -204,9 +204,6 @@ void BasicBlockPrinter::operator()(Simple* statement) {
 void BasicBlockPrinter::operator()(While* statement) {
 }
 
-void BasicBlockPrinter::operator()(For* statement) {
-}
-
 void BasicBlockPrinter::operator()(Conditional* statement) {
 }
 

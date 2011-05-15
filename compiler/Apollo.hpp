@@ -44,7 +44,6 @@ class Case;
 class Simple;
 class Block;
 class When;
-class For;
 class Variable;
 class Until;
 class While;

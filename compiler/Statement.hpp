@@ -115,28 +115,6 @@ private:
     Statement::Ptr children_;
 };
 
-/* For-each loop statement */
-class For : public Statement {
-public:
-    For(Location loc, String* var, Expression* expr, Statement* block) :
-        Statement(loc),
-        variable_(var),
-        expression_(expr),
-        block_(block) {
-    }
-
-    String* variable() const { return variable_; }
-    Expression* expression() const { return expression_; }
-    Statement* block() const { return block_; }
-    void operator()(Functor* functor) { functor->operator()(this); }
-    typedef Pointer<For> Ptr;
-
-private:
-    String::Ptr variable_;
-    Expression::Ptr expression_;
-    Statement::Ptr block_;
-};
-
 /* Variable declaration */
 class Variable : public Statement {
 public:

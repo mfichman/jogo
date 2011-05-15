@@ -257,8 +257,8 @@ void TypeChecker::operator()(Call* expression) {
     while (arg && formal) {
         if (!arg->type()->subtype(formal->type())) {
             cerr << arg->location();
-            cerr << "Argument does not conform to type ";
-            cerr << formal->type();
+            cerr << "Argument does not conform to type '";
+            cerr << formal->type() << "'";
             cerr << endl;
         }
         arg = arg->next();
@@ -461,14 +461,6 @@ void TypeChecker::operator()(While* statement) {
     block(this);
 }
 
-void TypeChecker::operator()(For* statement) {
-    // TODO: Need to make sure that the expression supports .iterator()
-    Expression::Ptr expression = statement->expression();
-    Statement::Ptr block = statement->block();
-    expression(this);
-    block(this);
-}
-
 void TypeChecker::operator()(Conditional* statement) {
     // Ensure that the guard is convertible to type bool.  This is always true
     // unless the guard is a value type.
@@ -601,11 +593,14 @@ void TypeChecker::operator()(Case* statement) {
 }
 
 void TypeChecker::operator()(Function* feature) {
+    // Begin type checking a function.  The formal parameters are type-checked
+    // first, followed by the function body.  If the function belongs to an
+    // an interface, the function should not have a body.
     Statement::Ptr block = feature->block();
     scope_ = feature;
-
     enter_scope();
-    
+
+    // Check all formal parameters.
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
         Type::Ptr type = f->type();
         type(this);
@@ -613,8 +608,10 @@ void TypeChecker::operator()(Function* feature) {
     }
     Type::Ptr type = feature->type();
     type(this);
-
     
+    // Check the different combinations of prototype/body/no-body, method,
+    // and function.  Prototypes (as in interface definitions) should not 
+    // have a body.
     if (block && class_ && class_->is_interface()) {
         cerr << block->location();
         cerr << "Interface method '" << feature->name();
@@ -638,9 +635,23 @@ void TypeChecker::operator()(Function* feature) {
 }
 
 void TypeChecker::operator()(Attribute* feature) {
+    // Make sure that the attribute type conforms to the declared type of
+    // the attribute, if there is one.
     Expression::Ptr initializer = feature->initializer();
     initializer(this);
 
+    // No explicitly declared type, but the initializer can be used to infer
+    // the type.
+    if (!feature->type()) {
+        variable(feature->name(), feature->initializer()->type());     
+        return;
+    }
+
+    // Check that the feature type exists.
+    Type::Ptr type = feature->type();
+    type(this);
+
+    // Make sure that the initializer and the feature type conform.
     if (!initializer->type()->subtype(feature->type())) {
         cerr << feature->location();
         cerr << "Expression does not conform to type '";
@@ -650,14 +661,13 @@ void TypeChecker::operator()(Attribute* feature) {
     variable(feature->name(), feature->type());
 }
 
-
 void TypeChecker::operator()(Import* feature) {
 }
 
 void TypeChecker::operator()(Type* type) {
     // Check to make sure that the type has a defined class.  Also, check
     // all generics that are part of the type to make sure that they resolve.
-    if (type == environment_->self_type() 
+    if (type == environment_->self_type() || type == environment_->no_type() 
             || type == environment_->void_type()) {
         return;
     }
