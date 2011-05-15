@@ -34,187 +34,165 @@ BasicBlockGenerator::BasicBlockGenerator(Environment* env) :
 
 typedef Pointer<BasicBlockGenerator> Ptr; 
 
-void
-BasicBlockGenerator::operator()(Class* unit) {
+void BasicBlockGenerator::operator()(Class* feature) {
 }
 
-void
-BasicBlockGenerator::operator()(Module* unit) {
+void BasicBlockGenerator::operator()(Module* feature) {
+    module_ = feature;
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        f(this);
+    }
 }
 
-void
-BasicBlockGenerator::operator()(StringLiteral* expression) {
+void BasicBlockGenerator::operator()(StringLiteral* expression) {
+    // Load a pointer to the string from the string table
+    assert(!"Not implemented");
 }
 
-void
-BasicBlockGenerator::operator()(IntegerLiteral* expression) {
+void BasicBlockGenerator::operator()(IntegerLiteral* expression) {
+    // Load the literal value with load-immediate
+    return_ = li(block_, expression->value());
 }
 
-void
-BasicBlockGenerator::operator()(Binary* expression) {
-    Expression::Ptr left = expression->left();
-    Expression::Ptr right = expression->right();
-
-    left(this);
-    int tleft = temp_;
-    right(this);
-    int tright = temp_;
+void BasicBlockGenerator::operator()(Binary* expression) {
+    // Emit the left and right expressions, then perform the operation on
+    // the two operands, and return the result.
+    Operand left = emit(expression->left());
+    Operand right = emit(expression->right());
 
     if (environment_->name("or") == expression->operation()) {
-        orl(block_, tleft, tright);
+        return_ = orl(block_, left, right);
     } else if (environment_->name("and") == expression->operation()) {
-        andl(block_, tleft, tright);
+        return_ = andl(block_, left, right);
     }
 }
 
-/*
-void
-BasicBlockGenerator::operator()(Assignment* expression) {
-    Expression::Ptr child = expression->expression();
-
-    // Load pointer to the variable on the stack, if it's in the lookup table
-    int tprev = variable(expression->identifier()); 
-    if (tprev < 0) {
-        // Variable is in the 'self' object, or is a module variable.
-        int tself = variable(environment_->name("self"));
-        assert("TODO: look up variable offset");
-    }
-        
-    //if (expression->type()->pointer() && prev) {
-
-        BasicBlock::Ptr pass(new BasicBlock);
-        BasicBlock::Ptr fail(new BasicBlock); 
-        beqz(block_, tprev); 
-        block_->branch1(pass);
-        block_->branch2(fail);
-        pass->branch1(fail);
-        
-        int taddr = add(pass, tprev, REFCOUNT_OFFSET);       
-        int trefc = load(pass, taddr);
-        int tone = li(pass, 1); 
-        int tresult = add(pass, trefc, tone); 
-        store(pass, taddr, tresult);
-
-        block_ = fail;
-
-        // Dealoc if count < 0
-    //}
-
-    int r = temp_;
-    child(this); 
-
-    assert("Failure: Need to handle pointer case");
-}
-*/
-
-void
-BasicBlockGenerator::operator()(Unary* expression) {
+void BasicBlockGenerator::operator()(Unary* expression) {
 }
 
-void
-BasicBlockGenerator::operator()(Call* expression) {
-    // Push all the arguments on the stack in order
-    int nargs = 0;
+void BasicBlockGenerator::operator()(Call* expression) {
+    // Push objects in anticipation of the call instruction.
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
-        a(this);
-        push(block_, temp_);
-        nargs++;
-    } 
+        push(block_, emit(a));
+    }
 
-    assert("Need to look up the actual function's name");
-    // If it's a fn pointer, then don't need to lookup, load the ptr
-    // from the local scope.  Could be inside the 'self' object
-    call(block_, expression->identifier()); 
-    block_->branch1(new BasicBlock);
-    block_ = block_->branch1();
+    // Look up the function by name in the current context.
+    String::Ptr id = expression->module();
+    String::Ptr scope = expression->module();
+    String::Ptr name;
+    if (expression->unit()) {
+        name = expression->unit()->function(scope, id)->name();
+    } else {
+        name = module_->function(scope, id)->name();
+    }
+
+    // Insert a call expression, then pop the return value off the stack.
+    call(block_, name);
+    return_ = pop(block_);
 }
 
-void
-BasicBlockGenerator::operator()(Dispatch* expression) {
+void BasicBlockGenerator::operator()(Dispatch* expression) {
 }
 
-void
-BasicBlockGenerator::operator()(Identifier* expression) {
+void BasicBlockGenerator::operator()(Identifier* expression) {
+    // Simply look up the value of the variable as stored previously.
+    return_ = variable(expression->identifier());
 }
 
-void
-BasicBlockGenerator::operator()(Block* statement) {
+void BasicBlockGenerator::operator()(Block* statement) {
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
     }
 }
 
-void
-BasicBlockGenerator::operator()(Simple* statement) {
+void BasicBlockGenerator::operator()(Simple* statement) {
     Expression::Ptr expression = statement->expression();
     expression(this);
 }
 
-void
-BasicBlockGenerator::operator()(While* statement) {
+void BasicBlockGenerator::operator()(While* statement) {
+    // Jump to the setup block, then emit the guard expression.
+    block_ = jump(block_);
+    Operand guard = emit(statement->guard());
+    BasicBlock::Ptr pre = bneqz(block_, guard);
+    
+    // Now generate the loop (true) block.  Make sure that the fallthrough
+    // faster the loop block is back to the guard block
+    block_ = pre->branch();
+    emit(statement->block());
+    block_->next(pre);
+
+    // Now set the pass-through block and continue code with the following
+    // statement.
+    block_ = pre->next();
 }
 
-void
-BasicBlockGenerator::operator()(For* statement) {
+void BasicBlockGenerator::operator()(For* statement) {
+    assert(!"For loops should be converted into while loops by expansion");
 }
 
-void
-BasicBlockGenerator::operator()(Conditional* statement) {
+void BasicBlockGenerator::operator()(Conditional* statement) {
+    Operand guard = emit(statement->guard());
+    BasicBlock::Ptr pre = beqz(block_, guard);
+
+    // Emit the fall-through (true) block here.  Switch the insert block to
+    // the 'next' block.
+    block_ = pre->next();
+    emit(statement->true_branch());
+
+    // Emit the branch (false) block here.  Switch the insert block to the
+    // 'branch' block.
+    block_ = pre->branch();
+    emit(statement->false_branch());
+
+    // Jump to the post block (after the conditional) from the branch block,
+    // and fall-through from the true block to the post block.
+    block_ = jump(block_);
+    pre->next()->next(block_);
 }
 
-void
-BasicBlockGenerator::operator()(Variable* statement) {
+void BasicBlockGenerator::operator()(Variable* statement) {
 }
 
-void
-BasicBlockGenerator::operator()(Return* statement) {
+void BasicBlockGenerator::operator()(Return* statement) {
 }
 
-void
-BasicBlockGenerator::operator()(When* statement) {
+void BasicBlockGenerator::operator()(When* statement) {
 }
 
-void
-BasicBlockGenerator::operator()(Case* statement) {
+void BasicBlockGenerator::operator()(Case* statement) {
 }
 
-void
-BasicBlockGenerator::operator()(Function* feature) {
+void BasicBlockGenerator::operator()(Function* feature) {
 }
 
-void
-BasicBlockGenerator::operator()(Attribute* feature) {
+void BasicBlockGenerator::operator()(Attribute* feature) {
 }
 
-void
-BasicBlockGenerator::operator()(Import* feature) {
+void BasicBlockGenerator::operator()(Import* feature) {
 }
 
-int
-BasicBlockGenerator::variable(String* name) {
-    vector<map<String::Ptr, int> >::reverse_iterator i;
+Operand BasicBlockGenerator::variable(String* name) {
+    vector<map<String::Ptr, Operand> >::reverse_iterator i;
     for (i = variable_.rbegin(); i != variable_.rend(); i++) {
-        map<String::Ptr, int>::iterator j = i->find(name);        
+        map<String::Ptr, Operand>::iterator j = i->find(name);        
         if (j != i->end()) {
             return j->second;
         }
     }
-    return -1;
+    return Operand();
 }
 
-void
-BasicBlockGenerator::variable(String* name, int temporary) {
+void BasicBlockGenerator::variable(String* name, Operand temporary) {
     assert(variable_.size());
     variable_.back().insert(make_pair(name, temporary));
 }
 
-void
-BasicBlockGenerator::enter_scope() {
-    variable_.push_back(map<String::Ptr, int>());
+void BasicBlockGenerator::enter_scope() {
+    variable_.push_back(map<String::Ptr, Operand>());
 }
 
-void
-BasicBlockGenerator::exit_scope() {
+void BasicBlockGenerator::exit_scope() {
     variable_.pop_back();
 }
 

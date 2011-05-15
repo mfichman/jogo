@@ -26,56 +26,75 @@
 #include "String.hpp"
 #include <vector>
 
+/* Operands for three-address code SSA instructions */
+class Operand {
+public:
+    Operand(String* literal) : literal_(literal) {}
+    Operand() : temporary_(0) {}
+    const Operand& operator++() { temporary_++; return *this; }
+    String::Ptr literal() const { return literal_; }
+    int temporary() const { return temporary_; }
+
+private:
+    String::Ptr literal_;
+    int temporary_;
+};
+
+/* Enumeration of opcodes available to the TAC code */
+enum Opcode { 
+    ADD, SUB, MUL, DIV, ANDL, ORL, ANDB, ORB, PUSH, POP, LOAD, STORE, LI,
+    CALL, JUMP, BNE, BEQ, BEQZ, BNEQZ, RET, HALT
+};
+
+
 /* Class for three-address code instructions */
 class Instruction {
 public:
-    enum Opcode { 
-        ADD, SUB, MUL, DIV, ANDL, ORL, ANDB, ORB, PUSH, POP, LOAD, STORE, LI,
-        CALL, JUMP, BNE, BEQ, BEQZ, RETURN, HALT
-    };
-
-    Instruction(Opcode opcode, int t1, int t2, int t3) :
-        opcode_(opcode),
-        operand1_(t2),
-        operand2_(t3),
-        result_(t1) {
+    Instruction(Opcode op, Operand result, Operand first, Operand second):
+        opcode_(op),
+        first_(first),
+        second_(second),
+        result_(result) {
     }
 
     Opcode opcode() const { return opcode_; }
-    int operand1() const { return operand1_; }
-    int operand2() const { return operand2_; }
-    int result() const { return result_; }
+    Operand first() const { return first_; }
+    Operand second() const { return second_; }
+    Operand result() const { return result_; }
 
 private:
     Opcode opcode_;
-    int operand1_;
-    int operand2_;
-    int result_;
+    Operand first_;
+    Operand second_;
+    Operand result_;
 };
 
 /* Class for basic block nodes */
 class BasicBlock : public Object {
 public:
-    BasicBlock* branch1() const { return branch1_; }
-    BasicBlock* branch2() const { return branch2_; }
-    String* call_label() const { return call_label_; }
-    const Instruction& instruction(size_t index) const { 
-        return instructions_[index];
+    BasicBlock* branch() const { return branch_; }
+    BasicBlock* next() const { return next_; }
+    String* label() const { return label_; }
+    const Instruction& instr(size_t index) const { 
+        return instrs_[index];
     }
-    size_t instruction_count() const { return instructions_.size(); }
-    void branch1(BasicBlock* branch) { branch1_ = branch; }
-    void branch2(BasicBlock* branch) { branch2_ = branch; }
-    void call_label(String* label) { call_label_ = label; }
-    void instruction(const Instruction& inst) { 
-        instructions_.push_back(inst); 
+    size_t length() const { return instrs_.size(); }
+    void branch(BasicBlock* branch) { branch_ = branch; }
+    void next(BasicBlock* branch) { next_ = branch; }
+    void label(String* label) { label_ = label; }
+    void instr(const Instruction& inst) { 
+        instrs_.push_back(inst); 
+    }
+    void instr(Opcode op, Operand first, Operand second, Operand result) {
+        instrs_.push_back(Instruction(op, first, second, result));
     }
     typedef Pointer<BasicBlock> Ptr; 
 
 private:
-    std::vector<Instruction> instructions_;
-    BasicBlock::Ptr branch1_;
-    BasicBlock::Ptr branch2_;
-    String::Ptr call_label_;
+    std::vector<Instruction> instrs_;
+    BasicBlock::Ptr branch_;
+    BasicBlock::Ptr next_;
+    String::Ptr label_;
 };
 
 

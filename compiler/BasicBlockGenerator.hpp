@@ -58,92 +58,115 @@ private:
     void operator()(Attribute* feature);
     void operator()(Import* feature);
 
-    int add(BasicBlock* block, int t2, int t3) {
-        block->instruction(Instruction(Instruction::ADD, ++temp_, t2, t3));
+
+    Operand emit(TreeNode* node) {
+        node->operator()(this);
+        return return_;
+    }
+
+    Operand add(BasicBlock* block, Operand t2, Operand t3) {
+        block->instr(ADD, ++temp_, t2, t3);
         return temp_;
     }
 
-    int sub(BasicBlock* block, int t2, int t3) {
-        block->instruction(Instruction(Instruction::SUB, ++temp_, t2, t3));    
+    Operand sub(BasicBlock* block, Operand t2, Operand t3) {
+        block->instr(SUB, ++temp_, t2, t3);    
         return temp_;
     }
 
-    int mul(BasicBlock* block, int t2, int t3) {
-        block->instruction(Instruction(Instruction::MUL, ++temp_, t2, t3));    
+    Operand mul(BasicBlock* block, Operand t2, Operand t3) {
+        block->instr(MUL, ++temp_, t2, t3);    
         return temp_;
     }
 
-    int div(BasicBlock* block, int t2, int t3) {
-        block->instruction(Instruction(Instruction::DIV, ++temp_, t2, t3));    
+    Operand div(BasicBlock* block, Operand t2, Operand t3) {
+        block->instr(DIV, ++temp_, t2, t3);    
         return temp_;
     }
 
-    int andl(BasicBlock* block, int t2, int t3) {
-        block->instruction(Instruction(Instruction::ANDL, ++temp_, t2, t3));    
+    Operand andl(BasicBlock* block, Operand t2, Operand t3) {
+        block->instr(ANDL, ++temp_, t2, t3);    
         return temp_;
     }
 
-    int orl(BasicBlock* block, int t2, int t3) {
-        block->instruction(Instruction(Instruction::ORL, ++temp_, t2, t3));    
+    Operand orl(BasicBlock* block, Operand t2, Operand t3) {
+        block->instr(ORL, ++temp_, t2, t3);    
         return temp_;
     }
 
-    int andb(BasicBlock* block, int t2, int t3) {
-        block->instruction(Instruction(Instruction::ANDB, ++temp_, t2, t3));    
+    Operand andb(BasicBlock* block, Operand t2, Operand t3) {
+        block->instr(ANDB, ++temp_, t2, t3);    
         return temp_;
     }
 
-    int orb(BasicBlock* block, int t2, int t3) {
-        block->instruction(Instruction(Instruction::ORB, ++temp_, t2, t3));    
+    Operand orb(BasicBlock* block, Operand t2, Operand t3) {
+        block->instr(ORB, ++temp_, t2, t3);    
         return temp_;
     }
 
-    void push(BasicBlock* block, int t2) {
-        block->instruction(Instruction(Instruction::PUSH, 0, t2, 0));    
-    }
-
-    void pop(BasicBlock* block, int t2) {
-        block->instruction(Instruction(Instruction::POP, 0, t2, 0));    
-    }
-
-    int load(BasicBlock* block, int t2) {
-        block->instruction(Instruction(Instruction::LOAD, ++temp_, t2, 0));    
+    Operand load(BasicBlock* block, Operand t2) {
+        block->instr(LOAD, ++temp_, t2, 0);    
         return temp_;
     }
 
-    void store(BasicBlock* block, int t2, int t3) {
-        block->instruction(Instruction(Instruction::STORE, 0, t2, t3));    
-    }
-
-    int li(BasicBlock* block, int immediate) {
-        block->instruction(Instruction(Instruction::LI, ++temp_, immediate, 0));
+    Operand li(BasicBlock* block, Operand immediate) {
+        block->instr(LI, ++temp_, immediate, 0);
         return temp_;
     }
 
-    void beqz(BasicBlock* block, int t2) {
-        block->instruction(Instruction(Instruction::BEQZ, 0, t2, 0));
+    Operand pop(BasicBlock* block) {
+        block->instr(POP, ++temp_, 0, 0);    
+        return temp_;
     }
 
-    int call(BasicBlock* block, String* name) {
-        block->instruction(Instruction(Instruction::CALL, 0, 0, 0));
-        block->call_label(name);
-        return ++temp_;
+    void push(BasicBlock* block, Operand t2) {
+        block->instr(PUSH, 0, t2, 0);    
     }
 
-    int variable(String* name);
-    void variable(String* name, int temporary);
+    void store(BasicBlock* block, Operand t2, Operand t3) {
+        block->instr(STORE, 0, t2, t3);    
+    }
+
+    void call(BasicBlock* block, String* name) {
+        block->instr(CALL, name, 0, 0);
+    }
+    
+    BasicBlock* beqz(BasicBlock* block, Operand t2) {
+        block->instr(BEQZ, 0, t2, 0);
+        block->next(new BasicBlock);
+        block->branch(new BasicBlock);
+        return block;
+    }
+
+    BasicBlock* bneqz(BasicBlock* block, Operand t2) {
+        block->instr(BNEQZ, 0, t2, 0);
+        block->next(new BasicBlock);
+        block->branch(new BasicBlock);
+        return block;
+    }
+
+    BasicBlock* jump(BasicBlock* block) {
+        block->instr(JUMP, 0, 0, 0);
+        block->branch(new BasicBlock);
+        return block->branch();
+    }
+
+    Operand variable(String* name);
+    void variable(String* name, Operand temporary);
     void enter_scope();
     void exit_scope();
 
     Environment::Ptr environment_;
     Class::Ptr class_;
+    Module::Ptr module_;
     Function::Ptr function_;
     BasicBlock::Ptr block_;
+    Operand return_;
     
     // Mapping from var to temporary
-    std::vector<std::map<String::Ptr, int> > variable_;
+    std::vector<std::map<String::Ptr, Operand> > variable_;
 
     // Next temporary to use
-    int temp_;
+    Operand temp_;
 };
 
