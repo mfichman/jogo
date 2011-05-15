@@ -184,6 +184,10 @@ void Printer::operator()(Call* expression) {
     cout << "Call" << endl;
     print_tabs(); cout << "name: ";
     cout << expression->identifier() << endl;
+    if (expression->module()) {
+        print_tabs(); cout << "module: ";
+        cout << expression->module() << endl;
+    }
 
     int i = 0;
     for (Expression::Ptr a = arguments; a; a = a->next()) {

@@ -132,19 +132,22 @@ private:
 /* Normal function all */
 class Call : public Expression {
 public:
-    Call(Location loc, String* module, String* ident, Expression* args) :
+    Call(Location loc, Module* u, String* mod, String* id, Expression* args) :
         Expression(loc),
-        module_(module),
-        identifier_(ident),
+        unit_(u),
+        module_(mod),
+        identifier_(id),
         arguments_(args) {
     }
 
     String* module() const { return module_; }
     String* identifier() const { return identifier_; }
+    Module* unit() const { return unit_; } 
     Expression* arguments() const { return arguments_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
+    Module* unit_;
     String::Ptr module_;
     String::Ptr identifier_;
     Expression::Ptr arguments_;

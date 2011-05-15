@@ -188,7 +188,13 @@ void TypeChecker::operator()(Call* expression) {
     // Look up the function by name in the current context
     String::Ptr id = expression->identifier();
     String::Ptr scope = expression->module();
-    Function::Ptr func = module_->function(scope, id);  
+    
+    Function::Ptr func;
+    if (expression->unit()) {
+        func = expression->unit()->function(scope, id);  
+    } else {
+        func = module_->function(scope, id);
+    }
     if (!func) {
         cerr << expression->location();
         cerr << "Undeclared function '";

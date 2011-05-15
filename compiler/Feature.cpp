@@ -267,27 +267,6 @@ Class* Module::clazz(String* scope, String* name) {
     return environment_->builtins()->clazz(name);
 }
 
-/*
-Module* Module::module(String* scope) {
-    // Returns the module with the name "scope."  Searches through imports
-    // included in this module to attempt to find the module.
-
-    Module* module = environment_->module(scope);
-
-    std::map<String::Ptr, Import::Ptr>::iterator i = imports_.begin();
-    for (; i != imports_.end(); i++) {
-        String* is = i->second->scope();
-        String* mn = environment_->name(scope->string() + is->string());
-        Module* m = environment_->module(mn);
-        if (module && m) {
-            // Ambiguous: more than one module that matches this name
-            return 0;
-        }
-    }
-    return module;
-}
-*/
-
 std::string Import::file_name(String* scope) {
     // Converts a module name to the name of the file that contains the 
     // module.

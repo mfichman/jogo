@@ -1,0 +1,61 @@
+Module
+  name: Sub2
+  feature0: Class
+    name: Test
+    comment:
+  feature1: Function
+    name: test
+    type: Int
+    comment:
+    block: Block
+      child0: Return
+        expression: IntegerLiteral(0)
+Module
+  name: Sub1
+  feature0: Class
+    name: Test
+    comment:
+  feature1: Function
+    name: test
+    type: Int
+    comment:
+    block: Block
+      child0: Return
+        expression: IntegerLiteral(0)
+Module
+  name: 
+  feature0: Class
+    name: Import3
+    comment:
+    feature0: Attribute
+      name: var1
+      type: <<notype>>
+      initializer: Construct
+        type: Sub1::Test
+    feature1: Attribute
+      name: var2
+      type: <<notype>>
+      initializer: Call
+        name: test
+        module: Sub1
+    feature2: Attribute
+      name: var3
+      type: <<notype>>
+      initializer: Construct
+        type: Sub2::Test
+    feature3: Attribute
+      name: var4
+      type: <<notype>>
+      initializer: Call
+        name: test
+        module: Sub2
+    feature4: Attribute
+      name: var5
+      type: <<notype>>
+      initializer: Construct
+        type: Test
+    feature5: Attribute
+      name: var6
+      type: <<notype>>
+      initializer: Call
+        name: test

@@ -414,11 +414,11 @@ conditional
 call
     : type '(' expression_list ')' { $$ = new Construct(@$, $1, $3); }
     | type '(' ')' { $$ = new Construct(@$, $1, 0); }
-    | IDENTIFIER '(' expression_list ')' { $$ = new Call(@$, 0, $1, $3); }
-    | IDENTIFIER '(' ')' { $$ = new Call(@$, 0, $1, 0); }
-    | scope_list IDENTIFIER '(' ')' { $$ = new Call(@$, $1, $2, 0); }
+    | IDENTIFIER '(' expression_list ')' { $$ = new Call(@$, UNIT, 0, $1, $3); }
+    | IDENTIFIER '(' ')' { $$ = new Call(@$, UNIT, 0, $1, 0); }
+    | scope_list IDENTIFIER '(' ')' { $$ = new Call(@$, UNIT, $1, $2, 0); }
     | scope_list IDENTIFIER '(' expression_list ')' {
-        $$ = new Call(@$, $1, $2, $4);
+        $$ = new Call(@$, UNIT, $1, $2, $4);
     } 
     ; 
 
