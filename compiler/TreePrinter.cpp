@@ -25,7 +25,7 @@
 
 using namespace std;
 
-Printer::Printer(Environment* environment) :
+TreePrinter::TreePrinter(Environment* environment) :
     environment_(environment),
     indent_level_(0) {
 
@@ -38,13 +38,13 @@ Printer::Printer(Environment* environment) :
     }    
 }
 
-void Printer::print_tabs() {
+void TreePrinter::print_tabs() {
     for (int i = 0; i < indent_level_;  i++) {
         cout << "  ";
     }
 }
 
-void Printer::print_comment(String* comment) {
+void TreePrinter::print_comment(String* comment) {
     if (!comment || comment->string().empty()) {
         return;
     }
@@ -93,7 +93,7 @@ void Printer::print_comment(String* comment) {
     indent_level_--;
 }
 
-void Printer::operator()(Module* feature) {
+void TreePrinter::operator()(Module* feature) {
     indent_level_++;
     cout << "Module" << endl;
     print_tabs(); cout << "name: " << feature->name() << endl;
@@ -106,7 +106,7 @@ void Printer::operator()(Module* feature) {
     indent_level_--;
 }
 
-void Printer::operator()(Class* feature) {
+void TreePrinter::operator()(Class* feature) {
     indent_level_++; 
     cout << "Class" << endl;
     print_tabs(); cout << "name: " << feature->name() << endl;
@@ -121,7 +121,7 @@ void Printer::operator()(Class* feature) {
     indent_level_--;
 }
 
-void Printer::operator()(Formal* formal) {
+void TreePrinter::operator()(Formal* formal) {
     indent_level_++;
     cout << "Formal" << endl;
     print_tabs(); cout << "name: ";
@@ -132,7 +132,7 @@ void Printer::operator()(Formal* formal) {
     indent_level_--;
 }
 
-void Printer::operator()(StringLiteral* expression) {
+void TreePrinter::operator()(StringLiteral* expression) {
     indent_level_++;
     cout << "StringLiteral" << endl;
     print_tabs(); cout << "value: ";
@@ -140,7 +140,7 @@ void Printer::operator()(StringLiteral* expression) {
     indent_level_--;
 }
 
-void Printer::operator()(IntegerLiteral* expression) {
+void TreePrinter::operator()(IntegerLiteral* expression) {
     indent_level_++;
     cout << "IntegerLiteral(";
     cout << expression->value() << ")" << endl;
@@ -148,21 +148,21 @@ void Printer::operator()(IntegerLiteral* expression) {
 }
 
 
-void Printer::operator()(FloatLiteral* expression) {
+void TreePrinter::operator()(FloatLiteral* expression) {
     indent_level_++;
     cout << "FloatLiteral(";
     cout << expression->value() << ")" << endl;
     indent_level_--;
 }
 
-void Printer::operator()(BooleanLiteral* expression) {
+void TreePrinter::operator()(BooleanLiteral* expression) {
     indent_level_++;
     cout << "BooleanLiteral(";
     cout << expression->value() << ")" << endl;
     indent_level_--;
 }
 
-void Printer::operator()(Binary* expression) {
+void TreePrinter::operator()(Binary* expression) {
     indent_level_++;
     Expression::Ptr left = expression->left();
     Expression::Ptr right = expression->right();
@@ -176,7 +176,7 @@ void Printer::operator()(Binary* expression) {
     indent_level_--;
 }
 
-void Printer::operator()(Let* expression) {
+void TreePrinter::operator()(Let* expression) {
     indent_level_++;
     Statement::Ptr block = expression->block();
     cout << "Let" << endl;
@@ -193,7 +193,7 @@ void Printer::operator()(Let* expression) {
     indent_level_--;
 }
 
-void Printer::operator()(Unary* expression) {
+void TreePrinter::operator()(Unary* expression) {
     indent_level_++;
     Expression::Ptr child = expression->child();
     cout << "Unary" << endl;
@@ -204,7 +204,7 @@ void Printer::operator()(Unary* expression) {
     indent_level_--;
 }
 
-void Printer::operator()(Call* expression) {
+void TreePrinter::operator()(Call* expression) {
     indent_level_++;
     Expression::Ptr arguments = expression->arguments();
     cout << "Call" << endl;
@@ -224,7 +224,7 @@ void Printer::operator()(Call* expression) {
     indent_level_--;
 }
 
-void Printer::operator()(Dispatch* expression) {
+void TreePrinter::operator()(Dispatch* expression) {
     indent_level_++;
     Expression::Ptr arguments = expression->arguments();
     cout << "Dispatch" << endl;
@@ -240,7 +240,7 @@ void Printer::operator()(Dispatch* expression) {
     indent_level_--;
 }
 
-void Printer::operator()(Construct* expression) {
+void TreePrinter::operator()(Construct* expression) {
     indent_level_++;
     Expression::Ptr arguments = expression->arguments();
     cout << "Construct" << endl;
@@ -256,7 +256,7 @@ void Printer::operator()(Construct* expression) {
     indent_level_--;
 }
 
-void Printer::operator()(Identifier* expression) {
+void TreePrinter::operator()(Identifier* expression) {
     indent_level_++;
     cout << "Identifier" << endl;
     print_tabs(); cout << "name: ";
@@ -264,11 +264,11 @@ void Printer::operator()(Identifier* expression) {
     indent_level_--; 
 }
 
-void Printer::operator()(Empty* empty) {
+void TreePrinter::operator()(Empty* empty) {
     cout << "Empty" << endl;
 }
 
-void Printer::operator()(Block* statement) {
+void TreePrinter::operator()(Block* statement) {
     indent_level_++;
     Statement::Ptr children = statement->children();
     cout << "Block" << endl;
@@ -282,7 +282,7 @@ void Printer::operator()(Block* statement) {
     indent_level_--;
 }
 
-void Printer::operator()(Simple* statement) {
+void TreePrinter::operator()(Simple* statement) {
     indent_level_++;
     Expression::Ptr expression = statement->expression();
     cout << "Statement" << endl;
@@ -291,7 +291,7 @@ void Printer::operator()(Simple* statement) {
     indent_level_--;
 }
 
-void Printer::operator()(While* statement) {
+void TreePrinter::operator()(While* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
@@ -303,7 +303,7 @@ void Printer::operator()(While* statement) {
     indent_level_--;
 }
 
-void Printer::operator()(For* statement) {
+void TreePrinter::operator()(For* statement) {
     indent_level_++;
     Expression::Ptr expression = statement->expression();
     Statement::Ptr block = statement->block();
@@ -317,7 +317,7 @@ void Printer::operator()(For* statement) {
     indent_level_--;
 }
 
-void Printer::operator()(Conditional* statement) {
+void TreePrinter::operator()(Conditional* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();
     Statement::Ptr true_branch = statement->true_branch();
@@ -332,7 +332,7 @@ void Printer::operator()(Conditional* statement) {
     indent_level_--;
 }
 
-void Printer::operator()(Variable* statement) {
+void TreePrinter::operator()(Variable* statement) {
     indent_level_++;
     Expression::Ptr initializer = statement->initializer();
     cout << "Variable" << endl;
@@ -345,7 +345,7 @@ void Printer::operator()(Variable* statement) {
     indent_level_--; 
 }
 
-void Printer::operator()(Return* statement) {
+void TreePrinter::operator()(Return* statement) {
     indent_level_++;
     Expression::Ptr expression = statement->expression();
     cout << "Return" << endl;
@@ -354,7 +354,7 @@ void Printer::operator()(Return* statement) {
     indent_level_--;
 }
 
-void Printer::operator()(When* statement) {
+void TreePrinter::operator()(When* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
@@ -366,7 +366,7 @@ void Printer::operator()(When* statement) {
     indent_level_--; 
 }
 
-void Printer::operator()(Case* statement) {
+void TreePrinter::operator()(Case* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();
     cout << "Case" << endl;
@@ -382,7 +382,7 @@ void Printer::operator()(Case* statement) {
     indent_level_--;
 }
 
-void Printer::operator()(Fork* statement) {
+void TreePrinter::operator()(Fork* statement) {
     indent_level_++;
     Expression::Ptr expression = statement->expression();
     cout << "Fork" << endl;
@@ -391,7 +391,7 @@ void Printer::operator()(Fork* statement) {
     indent_level_--;
 }
 
-void Printer::operator()(Yield* statement) {
+void TreePrinter::operator()(Yield* statement) {
     indent_level_++;
     Expression::Ptr expression = statement->expression();
     cout << "Yield" << endl;
@@ -400,7 +400,7 @@ void Printer::operator()(Yield* statement) {
     indent_level_--;
 }
 
-void Printer::operator()(Function* feature) {
+void TreePrinter::operator()(Function* feature) {
     indent_level_++;
     Statement::Ptr block = feature->block();
     cout << "Function" << endl;
@@ -427,7 +427,7 @@ void Printer::operator()(Function* feature) {
     indent_level_--;
 }
 
-void Printer::operator()(Attribute* feature) {
+void TreePrinter::operator()(Attribute* feature) {
     indent_level_++;
     Expression::Ptr initializer = feature->initializer();
     cout << "Attribute" << endl;
@@ -440,7 +440,7 @@ void Printer::operator()(Attribute* feature) {
     indent_level_--;
 }
 
-void Printer::operator()(Import* feature) {
+void TreePrinter::operator()(Import* feature) {
     indent_level_++;
     cout << "Import" << endl;
     print_tabs(); cout << "file: ";
@@ -450,6 +450,6 @@ void Printer::operator()(Import* feature) {
     indent_level_--;
 }
 
-void Printer::operator()(Type* type) {
+void TreePrinter::operator()(Type* type) {
     cout << type << endl;
 }

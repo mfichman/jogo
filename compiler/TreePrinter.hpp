@@ -26,10 +26,10 @@
 #include "TreeNode.hpp"
 #include "Environment.hpp"
 
-class Printer : public TreeNode::Functor {
+class TreePrinter : public TreeNode::Functor {
 public:
-    Printer(Environment* environment);
-    typedef Pointer<Printer> Ptr;
+    TreePrinter(Environment* environment);
+    typedef Pointer<TreePrinter> Ptr;
 
 private:
     void operator()(Module* feature);

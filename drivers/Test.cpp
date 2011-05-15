@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     Parser::Ptr parser(new Parser(environment));
     parser->input(argv[1]);
     if (line != "# aptest print_tree off") {
-        Printer::Ptr printer(new Printer(environment));
+        TreePrinter::Ptr printer(new TreePrinter(environment));
     }
     TypeChecker::Ptr checker(new TypeChecker(environment));
     
