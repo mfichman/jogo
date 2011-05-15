@@ -20,7 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#include "Printer.hpp"
+#include "TreePrinter.hpp"
 #include <iostream>
 
 using namespace std;

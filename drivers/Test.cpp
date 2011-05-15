@@ -23,7 +23,7 @@
 #include "Environment.hpp"
 #include "Parser.hpp"
 #include "TypeChecker.hpp"
-#include "Printer.hpp"
+#include "TreePrinter.hpp"
 
 #include <iostream>
 #include <fstream>
