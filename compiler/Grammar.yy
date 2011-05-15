@@ -81,7 +81,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %token <string> IDENTIFIER TYPE OPERATOR COMMENT
 %token <expression> STRING FLOAT INTEGER BOOLEAN SBEGIN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
-%token IMPORT FUNCTION
+%token IMPORT FUNCTION VOID
 %token SEPARATOR SEMICOLON
 %token WHEN CASE WHILE ELSE UNTIL IF DO FOR RETURN
 %token RIGHT_ARROW LEFT_ARROW

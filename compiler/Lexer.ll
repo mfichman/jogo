@@ -74,6 +74,7 @@ in return IN;
 not return NOT;
 fork return FORK;
 yield return YIELD;
+Void return VOID;
 -> return RIGHT_ARROW;
 \<\- return LEFT_ARROW;
 == return EQUAL; 

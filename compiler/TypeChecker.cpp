@@ -44,6 +44,9 @@ TypeChecker::TypeChecker(Environment* environment) :
 
 void TypeChecker::operator()(Module* feature) {
     module_ = feature;
+
+    // Iterate through all functions and classes in the module, and check 
+    // their semantics.  Ensure there are no duplicate functions or classes.
     std::set<String::Ptr> features;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
@@ -93,6 +96,8 @@ void TypeChecker::operator()(Class* feature) {
         }
     }
 
+    // Check for illegal mixins for the current class.  Certain object types
+    // cannot be combined, as below:
     if (feature->is_object() && feature->is_interface()) {
         cerr << feature->location();
         cerr << "Class has both object and interface mixins";
@@ -107,7 +112,7 @@ void TypeChecker::operator()(Class* feature) {
         cerr << endl;
     }
 
-    // Iterate through all the features and add the functions and variables to
+    // Iterate through all the features and add the functions and variables in
     // the current scope.
     std::set<String::Ptr> features;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
@@ -162,14 +167,20 @@ void TypeChecker::operator()(BooleanLiteral* expression) {
 }
 
 void TypeChecker::operator()(Let* expression) {
+    // For a lot expression, introduce the new variables in a new scope, and 
+    // then check the block.
+    enter_scope();
     Statement::Ptr block = expression->block();
     for (Statement::Ptr v = expression->variables(); v; v = v->next()) {
         v(this);
     }
     block(this);
+    exit_scope();
 }
 
 void TypeChecker::operator()(Binary* expression) {
+    // Checks primitive binary expressions.  These include basic logic
+    // operations, which cannot be overloaded as methods.
     Expression::Ptr left = expression->left();
     Expression::Ptr right = expression->right();
     left(this);
@@ -195,9 +206,10 @@ void TypeChecker::operator()(Binary* expression) {
 }
 
 void TypeChecker::operator()(Unary* expression) {
+    // Check primitive unary expressions.  These include basic logic 
+    // operations, which cannot be overloaded as methods.
     Expression::Ptr child = expression->child();
     child(this);
-
     if (environment_->name("not") == expression->operation()) {
         if (child->type()->clazz()->is_value()) {
             cerr << expression->location();
@@ -211,12 +223,15 @@ void TypeChecker::operator()(Unary* expression) {
 }
 
 void TypeChecker::operator()(Call* expression) {
-    // Evaluate types of argument expressions
+    // Evaluate types of argument expressions, then perform type checking
+    // on the body of the function.
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         a(this);
     }
 
-    // Look up the function by name in the current context
+    // Look up the function by name in the current context.  The function may
+    // be a member of the current module, or of a module that was imported
+    // in the current compilation unit.
     String::Ptr id = expression->identifier();
     String::Ptr scope = expression->module();
     Function::Ptr func;
@@ -235,7 +250,8 @@ void TypeChecker::operator()(Call* expression) {
     }
     expression->type(func->type());
     
-    // Check argument types versus formal parameter types
+    // Check argument types versus formal parameter types.  Check the arity
+    // of the function as well.
     Expression::Ptr arg = expression->arguments(); 
     Formal::Ptr formal = func->formals();
     while (arg && formal) {
@@ -285,7 +301,7 @@ void TypeChecker::operator()(Dispatch* expression) {
         return;
     }
     
-    // Look up the function
+    // Look up the function using the class object.
     Function::Ptr func = clazz->function(expression->identifier()); 
     if (!func) {
         cerr << expression->location();
@@ -353,7 +369,7 @@ void TypeChecker::operator()(Construct* expression) {
         return;
     }
 
-    // Look up the constructor
+    // Look up the constructor using the class object.
     Function::Ptr constr = clazz->function(environment_->name("@init"));
 
     // Check arguments types versus formal parameter types
@@ -384,6 +400,9 @@ void TypeChecker::operator()(Construct* expression) {
 }
 
 void TypeChecker::operator()(Identifier* expression) {
+    // Determine the type of the identifier from the variable store.  If the
+    // variable is undeclared, set the type of the expression to no-type to
+    // prevent further error messages.
     Type::Ptr type = variable(expression->identifier());
     if (!type) {
         cerr << expression->location();
@@ -402,6 +421,9 @@ void TypeChecker::operator()(Empty* expression) {
 }
 
 void TypeChecker::operator()(Block* statement) {
+    // Enter a new scope, then check each of the children.  Perform
+    // reachability analysis to make sure that the first 'return' statement is
+    // always the last statement in the block.
     enter_scope();
     return_ = 0;
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
@@ -423,6 +445,7 @@ void TypeChecker::operator()(Simple* statement) {
 }
 
 void TypeChecker::operator()(While* statement) {
+    // Check the while statement guard type, and then check all the branches.
     Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
 
@@ -439,6 +462,7 @@ void TypeChecker::operator()(While* statement) {
 }
 
 void TypeChecker::operator()(For* statement) {
+    // TODO: Need to make sure that the expression supports .iterator()
     Expression::Ptr expression = statement->expression();
     Statement::Ptr block = statement->block();
     expression(this);
@@ -446,6 +470,8 @@ void TypeChecker::operator()(For* statement) {
 }
 
 void TypeChecker::operator()(Conditional* statement) {
+    // Ensure that the guard is convertible to type bool.  This is always true
+    // unless the guard is a value type.
     Expression::Ptr guard = statement->guard();
     Statement::Ptr true_branch = statement->true_branch();
     Statement::Ptr false_branch = statement->false_branch();
@@ -460,6 +486,9 @@ void TypeChecker::operator()(Conditional* statement) {
 }
 
 void TypeChecker::operator()(Variable* statement) {
+    // Ensure that a variable is not duplicated, or re-initialized with a 
+    // different type.  This function handles both assignment and variable
+    // initialization.
     Expression::Ptr initializer = statement->initializer();
     initializer(this);
 
@@ -474,38 +503,52 @@ void TypeChecker::operator()(Variable* statement) {
 
     Type::Ptr type = variable(statement->identifier());
 
+    // The variable was declared with an explicit type, but the variable
+    // already exists.
     if (type && !statement->type()->equals(environment_->no_type())) {
         cerr << statement->location();
         cerr << "Duplicate definition of variable '";
-        cerr << statement->identifier() << "'";
-        cerr << endl;
+        cerr << statement->identifier() << "'" << endl;
         return;
     }
+
+    // The variable was already declared, but the initializer type is not
+    // compatible with the variable type.
     if (type && !initializer->type()->subtype(type)) {
         cerr << initializer->location();
         cerr << "Expression does not conform to type '";
-        cerr << type << "'";
-        cerr << " in assignment of '";
-        cerr << statement->identifier() << "'";
-        cerr << endl;
+        cerr << type << "' in assignment of '";
+        cerr << statement->identifier() << "'" << endl;
         return;
     }
+
+    // The variable was declared with an explicit type, and the initializer
+    // does not conform to that type.
     if (!initializer->type()->subtype(statement->type())) {
         cerr << initializer->location();
         cerr << "Expression does not conform to type '";
-        cerr << statement->type() << "'";
-        cerr << endl;
+        cerr << statement->type() << "'" << endl;
         return;
     }
+        
+    // Grab the variable type from the explicit type.
     if (initializer->type()->equals(environment_->no_type())) {
         variable(statement->identifier(), statement->type()); 
-    } else if (initializer->type()->equals(environment_->void_type())) {
+        return;
+    }
+
+    // Attempt to assign void to a variable during initialization.
+    if (initializer->type()->equals(environment_->void_type())) {
         cerr << initializer->location();
         cerr << "Void value assigned to variable '";
-        cerr << statement->identifier() << "'";
-        cerr << endl;
+        cerr << statement->identifier() << "'" << endl;
         variable(statement->identifier(), environment_->no_type());
-    } else if (!statement->type()->equals(environment_->no_type())) {
+        return;
+    }
+    
+    // Get the variable type from either the explicit type or the 
+    // initializer.
+    if (!statement->type()->equals(environment_->no_type())) {
         variable(statement->identifier(), statement->type());
     } else {
         variable(statement->identifier(), initializer->type()); 
