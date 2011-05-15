@@ -84,3 +84,5 @@ Module
                   type: Stringable
             argument1: StringLiteral
               value:  up
+      child3: Return
+        expression: IntegerLiteral(0)

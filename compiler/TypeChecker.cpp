@@ -403,8 +403,16 @@ void TypeChecker::operator()(Empty* expression) {
 
 void TypeChecker::operator()(Block* statement) {
     enter_scope();
+    return_ = 0;
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
-        s(this);
+        if (return_) {
+            cerr << s->location();
+            cerr << "Statements after 'return' are illegal";
+            cerr << endl;
+            break;
+        } else {
+            s(this);
+        }
     }
     exit_scope();
 }
@@ -508,6 +516,7 @@ void TypeChecker::operator()(Return* statement) {
     Expression::Ptr expression = statement->expression();
     if (expression) {
         expression(this);
+        return_ = expression->type();
     }
     if (!expression->type()->subtype(scope_->type())) {
         cerr << statement->location();
@@ -559,17 +568,21 @@ void TypeChecker::operator()(Function* feature) {
         type(this);
         variable(f->name(), f->type());
     }
-    
     Type::Ptr type = feature->type();
     type(this);
 
-    if (block) {
-        if (class_ && class_->is_interface()) {
-            cerr << block->location();
-            cerr << "Interface method '" << feature->name();
-            cerr << "' has a body" << endl;
-        }
+    
+    if (block && class_ && class_->is_interface()) {
+        cerr << block->location();
+        cerr << "Interface method '" << feature->name();
+        cerr << "' has a body" << endl;
+    } else if (block) {
         block(this); 
+        if (type != environment_->void_type() && !return_) {
+            cerr << feature->location();
+            cerr << "Function '" << feature->name();
+            cerr << "' must return a value" << endl;     
+        }
     } else if (!class_) {
         cerr << feature->location();
         cerr << "Function '" << feature->name() << "' has no body" << endl;

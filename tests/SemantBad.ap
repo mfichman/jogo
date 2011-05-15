@@ -1,15 +1,54 @@
 # aptest print_ir off
 
 foo() Int {
+    if true {
+        return 1
+    } else {
+    }
 }
 
-foo() Bool {
+foo() Int {
+    if true {
+        return 2
+    } else {
+        return 3
+    }
 }
 
 Bob < Object {
     foo() Int {
+        if true and not false {
+            if true {
+                return 9
+            } else {
+                
+            }
+            return 1
+        } else if true {
+            return 1
+        } else {
+            if true {
+                return 1
+            }
+        }
     }
     foo() Int {
+        if true and not false {
+            if true {
+                return 9
+            } else {
+                
+            }
+            return 1
+        } else if true {
+            return 1
+        } else {
+            if true {
+                return 1
+            } else {
+                return 99
+            }
+        }
     }
     blarg Int
     blarg Bool

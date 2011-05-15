@@ -10,4 +10,5 @@ main() Int {
     bob = "what #{Stringable()} up"
     bob = "what #{ "what #{Stringable()} up"} up"
     bob = "what #{Stringable()} up what #{Stringable()} up"
+    return 0
 }

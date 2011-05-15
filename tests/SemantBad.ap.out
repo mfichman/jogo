@@ -5,11 +5,25 @@ Module
     type: Int
     comment:
     block: Block
+      child0: Conditional
+        guard: BooleanLiteral(true)
+        true: Block
+          child0: Return
+            expression: IntegerLiteral(1)
+        false: Block
   feature1: Function
     name: foo
-    type: Bool
+    type: Int
     comment:
     block: Block
+      child0: Conditional
+        guard: BooleanLiteral(true)
+        true: Block
+          child0: Return
+            expression: IntegerLiteral(2)
+        false: Block
+          child0: Return
+            expression: IntegerLiteral(3)
   feature2: Class
     name: Bob
     comment:
@@ -21,6 +35,34 @@ Module
         name: self
         type: Self
       block: Block
+        child0: Conditional
+          guard: Binary
+            operation: and
+            left: BooleanLiteral(true)
+            right: Unary
+              child: BooleanLiteral(false)
+              operation: not
+          true: Block
+            child0: Conditional
+              guard: BooleanLiteral(true)
+              true: Block
+                child0: Return
+                  expression: IntegerLiteral(9)
+              false: Block
+            child1: Return
+              expression: IntegerLiteral(1)
+          false: Conditional
+            guard: BooleanLiteral(true)
+            true: Block
+              child0: Return
+                expression: IntegerLiteral(1)
+            false: Block
+              child0: Conditional
+                guard: BooleanLiteral(true)
+                true: Block
+                  child0: Return
+                    expression: IntegerLiteral(1)
+                false: Block
     feature1: Function
       name: foo
       type: Int
@@ -29,6 +71,36 @@ Module
         name: self
         type: Self
       block: Block
+        child0: Conditional
+          guard: Binary
+            operation: and
+            left: BooleanLiteral(true)
+            right: Unary
+              child: BooleanLiteral(false)
+              operation: not
+          true: Block
+            child0: Conditional
+              guard: BooleanLiteral(true)
+              true: Block
+                child0: Return
+                  expression: IntegerLiteral(9)
+              false: Block
+            child1: Return
+              expression: IntegerLiteral(1)
+          false: Conditional
+            guard: BooleanLiteral(true)
+            true: Block
+              child0: Return
+                expression: IntegerLiteral(1)
+            false: Block
+              child0: Conditional
+                guard: BooleanLiteral(true)
+                true: Block
+                  child0: Return
+                    expression: IntegerLiteral(1)
+                false: Block
+                  child0: Return
+                    expression: IntegerLiteral(99)
     feature2: Attribute
       name: blarg
       type: Int
@@ -40,7 +112,9 @@ Module
   feature3: Class
     name: Bob
     comment:
-SemantBad.ap:6:1: Duplicate definition of function 'foo'
-SemantBad.ap:12:5: Duplicate definition of function 'foo'
-SemantBad.ap:15:5: Duplicate definition of attribute 'blarg'
-SemantBad.ap:18:1: Duplicate definition of class 'Bob'
+SemantBad.ap:3:1: Function 'foo' must return a value
+SemantBad.ap:10:1: Duplicate definition of function 'foo'
+SemantBad.ap:35:5: Duplicate definition of function 'foo'
+SemantBad.ap:54:5: Duplicate definition of attribute 'blarg'
+SemantBad.ap:19:5: Function 'foo' must return a value
+SemantBad.ap:57:1: Duplicate definition of class 'Bob'
