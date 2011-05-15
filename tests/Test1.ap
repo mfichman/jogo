@@ -1,3 +1,5 @@
+# aptest print_ir off
+
 Test1 < Object {
 
     bob Int = 0 + 19 + 29 + 29 * 28

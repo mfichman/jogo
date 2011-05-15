@@ -29,12 +29,24 @@ using namespace std;
 
 BasicBlockGenerator::BasicBlockGenerator(Environment* env) :
     environment_(env),
-    temp_(0) {
+    temp_(0),
+    label_(0) {
+
+    if (environment_->errors()) {
+        return;
+    }
+    for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
+        m(this);
+    }    
 }
 
-typedef Pointer<BasicBlockGenerator> Ptr; 
-
 void BasicBlockGenerator::operator()(Class* feature) {
+    class_ = feature;
+    enter_scope();
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        f(this);
+    }
+    exit_scope();
 }
 
 void BasicBlockGenerator::operator()(Module* feature) {
@@ -44,12 +56,25 @@ void BasicBlockGenerator::operator()(Module* feature) {
     }
 }
 
+void BasicBlockGenerator::operator()(Formal* formal) {
+}
+
 void BasicBlockGenerator::operator()(StringLiteral* expression) {
     // Load a pointer to the string from the string table
     assert(!"Not implemented");
 }
 
 void BasicBlockGenerator::operator()(IntegerLiteral* expression) {
+    // Load the literal value with load-immediate
+    return_ = li(block_, expression->value());
+}
+
+void BasicBlockGenerator::operator()(FloatLiteral* expression) {
+    // Load the literal value with load-immediate
+    return_ = li(block_, expression->value());
+}
+
+void BasicBlockGenerator::operator()(BooleanLiteral* expression) {
     // Load the literal value with load-immediate
     return_ = li(block_, expression->value());
 }
@@ -64,10 +89,21 @@ void BasicBlockGenerator::operator()(Binary* expression) {
         return_ = orl(block_, left, right);
     } else if (environment_->name("and") == expression->operation()) {
         return_ = andl(block_, left, right);
+    } else {
+        assert(!"Unsupported binary operation");
     }
 }
 
 void BasicBlockGenerator::operator()(Unary* expression) {
+    // Emit the code for the expression, then perform the operation on the
+    // operand and return the result.
+    Operand op = emit(expression->child());
+
+    if (environment_->name("not")) {
+        return_ = notl(block_, op); 
+    } else {
+        assert(!"Unsupported unary operation");
+    }
 }
 
 void BasicBlockGenerator::operator()(Call* expression) {
@@ -77,7 +113,7 @@ void BasicBlockGenerator::operator()(Call* expression) {
     }
 
     // Look up the function by name in the current context.
-    String::Ptr id = expression->module();
+    String::Ptr id = expression->identifier();
     String::Ptr scope = expression->module();
     String::Ptr name;
     if (expression->unit()) {
@@ -94,9 +130,17 @@ void BasicBlockGenerator::operator()(Call* expression) {
 void BasicBlockGenerator::operator()(Dispatch* expression) {
 }
 
+void BasicBlockGenerator::operator()(Construct* expression) {
+}
+
 void BasicBlockGenerator::operator()(Identifier* expression) {
     // Simply look up the value of the variable as stored previously.
     return_ = variable(expression->identifier());
+}
+
+void BasicBlockGenerator::operator()(Empty* expression) {
+    // Do nothing
+    return_ = li(block_, environment_->integer("0"));
 }
 
 void BasicBlockGenerator::operator()(Block* statement) {
@@ -110,21 +154,37 @@ void BasicBlockGenerator::operator()(Simple* statement) {
     expression(this);
 }
 
+void BasicBlockGenerator::operator()(Let* statement) {
+    // Enter a new scope, then emit code for initializing all the let
+    // variables, and initialize code for the body.
+    enter_scope();
+    for (Statement::Ptr v = statement->variables(); v; v = v->next()) {
+        emit(v);
+    } 
+    emit(statement->block());
+    exit_scope();
+}
+
 void BasicBlockGenerator::operator()(While* statement) {
-    // Jump to the setup block, then emit the guard expression.
-    block_ = jump(block_);
+    // Emit the guard expression in a new basic block
+    BasicBlock::Ptr test = new BasicBlock;
+    test->label(environment_->string("l" + stringify(++label_)));
+    block_->next(test);
+    block_ = test;
     Operand guard = emit(statement->guard());
     BasicBlock::Ptr pre = bneqz(block_, guard);
     
-    // Now generate the loop (true) block.  Make sure that the fallthrough
-    // faster the loop block is back to the guard block
-    block_ = pre->branch();
+    // Now generate the loop (true) block.
+    block_ = pre->next();
     emit(statement->block());
-    block_->next(pre);
+    
+    // Emit jump back up to the test condition
+    block_->instr(JUMP, 0, 0, 0);
+    block_->branch(test);
 
     // Now set the pass-through block and continue code with the following
     // statement.
-    block_ = pre->next();
+    block_ = pre->branch();
 }
 
 void BasicBlockGenerator::operator()(For* statement) {
@@ -133,28 +193,66 @@ void BasicBlockGenerator::operator()(For* statement) {
 
 void BasicBlockGenerator::operator()(Conditional* statement) {
     Operand guard = emit(statement->guard());
-    BasicBlock::Ptr pre = beqz(block_, guard);
+    BasicBlock::Ptr pre = bneqz(block_, guard);
 
     // Emit the fall-through (true) block here.  Switch the insert block to
     // the 'next' block.
     block_ = pre->next();
     emit(statement->true_branch());
+    BasicBlock::Ptr t = block_;
 
     // Emit the branch (false) block here.  Switch the insert block to the
     // 'branch' block.
     block_ = pre->branch();
     emit(statement->false_branch());
+    BasicBlock::Ptr f = block_;
 
     // Jump to the post block (after the conditional) from the branch block,
     // and fall-through from the true block to the post block.
-    block_ = jump(block_);
-    pre->next()->next(block_);
+    if (f->terminated()) {
+        t->next(new BasicBlock);
+        t->label(environment_->name("l" + stringify(++label_)));
+    } else {
+        block_ = jump(block_);
+        t->next(block_);
+    }
 }
 
 void BasicBlockGenerator::operator()(Variable* statement) {
+
+    Operand prev = variable(statement->identifier());
+    if (prev.temporary()) {
+        // Generate code to decrement the reference count if the reference
+        // is non-null.
+        BasicBlock::Ptr pre_dec = bneqz(block_, prev); 
+        
+        // Emit code to decrement the reference count.
+        block_ = pre_dec->branch();
+        Operand refc1 = load(block_, prev /* + offset */);
+        Operand refc2 = sub(block_, refc1, environment_->integer("1"));
+        store(block_, prev /* + offset */, refc2);
+        
+        // Deallocate the object if the refcount dropped below zero.
+        BasicBlock::Ptr pre_dealloc = beqz(block_, refc2);
+        
+        // Emit code to call the destructor.
+        block_ = pre_dealloc->branch();
+        /* TODO: DEALLOCATE */
+        
+        
+        
+        
+    
+    }
+
 }
 
 void BasicBlockGenerator::operator()(Return* statement) {
+    if (!dynamic_cast<Empty*>(statement->expression())) {
+        Operand value = emit(statement->expression());
+        push(block_, value);
+    }
+    ret(block_);
 }
 
 void BasicBlockGenerator::operator()(When* statement) {
@@ -163,13 +261,63 @@ void BasicBlockGenerator::operator()(When* statement) {
 void BasicBlockGenerator::operator()(Case* statement) {
 }
 
+void BasicBlockGenerator::operator()(Fork* statement) {
+}
+
+void BasicBlockGenerator::operator()(Yield* statament) {
+}
+
 void BasicBlockGenerator::operator()(Function* feature) {
+    // If the function is just a prototype, don't emit any code.
+    if (!feature->block()) {
+        return;
+    }
+
+    // Reset the temporaries for the function.
+    temp_ = Operand();
+
+    std::string name = module_->name()->string();
+    if (class_) {
+        if (!name.empty()) {
+            name += "::";
+        }
+        name += class_->name()->string();
+    }
+    if (!name.empty()) {
+        name += "::";
+    }
+    name += feature->name()->string();
+
+    block_ = feature->code();
+    block_->label(environment_->name(name));
+    enter_scope();
+
+    // Pop the formal parameters off the stack in reverse order, and save them
+    // to a temporary.
+    std::vector<Formal::Ptr> formals;
+    for (Formal* f = feature->formals(); f; f = f->next()) {
+        formals.push_back(f);
+    } 
+    while (!formals.empty()) {
+        variable(formals.back()->name(), pop(block_));
+        formals.pop_back();
+    }
+    
+    // Generate code for the body of the function.
+    emit(feature->block());
+    exit_scope();
 }
 
 void BasicBlockGenerator::operator()(Attribute* feature) {
+    // Pass, handled by constructor
 }
 
 void BasicBlockGenerator::operator()(Import* feature) {
+    // Pass
+}
+
+void BasicBlockGenerator::operator()(Type* feature) {
+    // Pass
 }
 
 Operand BasicBlockGenerator::variable(String* name) {

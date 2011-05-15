@@ -1,3 +1,4 @@
+# aptest print_ir off
 Comment < Object {
 # This is a class comment for the current class scope.  It can span multiple
 # lines, and all whitespace will be stripped from the beginning of the 

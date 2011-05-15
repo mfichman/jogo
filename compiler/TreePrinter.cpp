@@ -45,6 +45,8 @@ void TreePrinter::print_tabs() {
 }
 
 void TreePrinter::print_comment(String* comment) {
+    // Pretty-prints a comment so that it wraps to 80 columns and breaks at 
+    // whitespace when it is output.
     if (!comment || comment->string().empty()) {
         return;
     }

@@ -25,18 +25,17 @@
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
 #include "Environment.hpp"
-#include "Feature.hpp"
-#include <vector>
-#include <map>
+#include "BasicBlock.hpp"
+#include <set>
 
-class TypeChecker : public TreeNode::Functor {
+class BasicBlockPrinter : public TreeNode::Functor {
 public:
-	TypeChecker(Environment* environment);
-    typedef Pointer<TypeChecker> Ptr;
+    BasicBlockPrinter(Environment* environment);
+    typedef Pointer<BasicBlockPrinter> Ptr;
 
 private:
-    void operator()(Class* unit);
-    void operator()(Module* unit);
+    void operator()(Module* feature);
+    void operator()(Class* feature);
     void operator()(Formal* formal);
     void operator()(StringLiteral* expression);
     void operator()(IntegerLiteral* expression);
@@ -48,10 +47,10 @@ private:
     void operator()(Dispatch* expression);
     void operator()(Construct* expression);
     void operator()(Identifier* expression);
-    void operator()(Empty* expression);
+    void operator()(Empty* empty);
+    void operator()(Let* statement);
     void operator()(Block* statement);
     void operator()(Simple* statement);
-    void operator()(Let* let);
     void operator()(While* statement);
     void operator()(For* statement);
     void operator()(Conditional* statement);
@@ -65,19 +64,10 @@ private:
     void operator()(Attribute* feature);
     void operator()(Import* feature);
     void operator()(Type* type);
-
-    Type* variable(String* name);
-    void variable(String* name, Type* type);
-    Function* function(String* name);
-    void function(String* name, Function* function);
-    Class* clazz(String* name);
-    void enter_scope();
-    void exit_scope();
+    void operator()(BasicBlock* block);
 
     Environment::Ptr environment_;
-    std::vector<std::map<String::Ptr, Type::Ptr> > variable_;
     Module::Ptr module_;
     Class::Ptr class_;
-    Function::Ptr scope_;
+    std::set<BasicBlock::Ptr> visited_;
 };
-

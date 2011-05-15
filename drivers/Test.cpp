@@ -23,10 +23,13 @@
 #include "Environment.hpp"
 #include "Parser.hpp"
 #include "TypeChecker.hpp"
+#include "BasicBlockPrinter.hpp"
+#include "BasicBlockGenerator.hpp"
 #include "TreePrinter.hpp"
 
 #include <iostream>
 #include <fstream>
+#include <set>
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -35,18 +38,27 @@ int main(int argc, char** argv) {
     }
 
     std::fstream in(argv[1]);
+    std::set<std::string> options;
     std::string line;
     std::getline(in, line);
+    while (!line.empty() && line[0] == '#') {
+        options.insert(line);
+        std::getline(in, line);
+    } 
     
 
 
     Environment::Ptr environment(new Environment());
     Parser::Ptr parser(new Parser(environment));
     parser->input(argv[1]);
-    if (line != "# aptest print_tree off") {
+    if (options.find("# aptest print_tree off") == options.end()) {
         TreePrinter::Ptr printer(new TreePrinter(environment));
     }
     TypeChecker::Ptr checker(new TypeChecker(environment));
+    if (options.find("# aptest print_ir off") == options.end()) {
+        BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(environment));
+        BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(environment));
+    }
     
     return 0;
 }

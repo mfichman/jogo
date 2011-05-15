@@ -38,26 +38,34 @@ public:
 private:
     void operator()(Class* unit);
     void operator()(Module* unit);
+    void operator()(Formal* formal);
     void operator()(StringLiteral* expression);
     void operator()(IntegerLiteral* expression);
+    void operator()(FloatLiteral* expression);
+    void operator()(BooleanLiteral* expression);
     void operator()(Binary* expression);
     void operator()(Unary* expression);
     void operator()(Call* expression);
     void operator()(Dispatch* expression);
+    void operator()(Construct* expression);
     void operator()(Identifier* expression);
-    void operator()(Block* statment);
-    void operator()(Simple* statment);
-    void operator()(While* statment);
-    void operator()(For* statment);
-    void operator()(Conditional* statment);
-    void operator()(Variable* statment);
-    void operator()(Return* statment);
-    void operator()(When* statment);
-    void operator()(Case* statment);
+    void operator()(Empty* expression);
+    void operator()(Block* statement);
+    void operator()(Simple* statement);
+    void operator()(Let* let);
+    void operator()(While* statement);
+    void operator()(For* statement);
+    void operator()(Conditional* statement);
+    void operator()(Variable* statement);
+    void operator()(Return* statement);
+    void operator()(When* statement);
+    void operator()(Case* statement);
+    void operator()(Fork* statement);
+    void operator()(Yield* statement);
     void operator()(Function* feature);
     void operator()(Attribute* feature);
     void operator()(Import* feature);
-
+    void operator()(Type* type);
 
     Operand emit(TreeNode* node) {
         node->operator()(this);
@@ -83,6 +91,11 @@ private:
         block->instr(DIV, ++temp_, t2, t3);    
         return temp_;
     }
+
+    Operand notl(BasicBlock* block, Operand t2) {
+        block->instr(NOTL, ++temp_, t2, 0);
+        return temp_;
+    }       
 
     Operand andl(BasicBlock* block, Operand t2, Operand t3) {
         block->instr(ANDL, ++temp_, t2, t3);    
@@ -130,11 +143,17 @@ private:
     void call(BasicBlock* block, String* name) {
         block->instr(CALL, name, 0, 0);
     }
+        
+    void ret(BasicBlock* block) {
+        block->instr(RET, 0, 0, 0);
+    }
     
     BasicBlock* beqz(BasicBlock* block, Operand t2) {
         block->instr(BEQZ, 0, t2, 0);
         block->next(new BasicBlock);
         block->branch(new BasicBlock);
+        block->next()->label(environment_->name("l" + stringify(++label_)));
+        block->branch()->label(environment_->name("l" + stringify(++label_)));
         return block;
     }
 
@@ -142,12 +161,15 @@ private:
         block->instr(BNEQZ, 0, t2, 0);
         block->next(new BasicBlock);
         block->branch(new BasicBlock);
+        block->next()->label(environment_->name("l" + stringify(++label_)));
+        block->branch()->label(environment_->name("l" + stringify(++label_)));
         return block;
     }
 
     BasicBlock* jump(BasicBlock* block) {
         block->instr(JUMP, 0, 0, 0);
         block->branch(new BasicBlock);
+        block->branch()->label(environment_->name("l" + stringify(++label_)));
         return block->branch();
     }
 
@@ -168,5 +190,6 @@ private:
 
     // Next temporary to use
     Operand temp_;
+    int label_;
 };
 

@@ -1,5 +1,5 @@
+# aptest print_ir off
 import Sub2
-
 
 Import3 < Object {
     var1 = Sub1::Test()

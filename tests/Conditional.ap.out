@@ -67,3 +67,63 @@ Module
                 false: Block
                   child0: Return
                     expression: IntegerLiteral(6)
+Conditional::conditional1:
+    t1 <- pop 
+    t2 <- li 'true'
+    if not t2 goto l2
+l3:
+    t3 <- li '1'
+    push t3
+    ret
+l2:
+    t4 <- li '0'
+    push t4
+    ret
+
+Conditional::conditional2:
+    t1 <- pop 
+    t2 <- li 'true'
+    if not t2 goto l5
+l9:
+    t3 <- li '1'
+    push t3
+    ret
+l5:
+    t4 <- li 'false'
+    if not t4 goto l7
+l8:
+    t5 <- li '2'
+    push t5
+    ret
+l7:
+    t6 <- li '3'
+    push t6
+    ret
+
+Conditional::conditional3:
+    t1 <- pop 
+    t2 <- li 'true'
+    if not t2 goto l11
+l18:
+    t3 <- li '1'
+    push t3
+    ret
+l11:
+    t4 <- li 'true'
+    if not t4 goto l13
+l17:
+    t5 <- li '2'
+    push t5
+    ret
+l13:
+    t6 <- li 'false'
+    if not t6 goto l15
+l16:
+    t7 <- li '4'
+    push t7
+    ret
+l15:
+    t8 <- li '6'
+    push t8
+    ret
+

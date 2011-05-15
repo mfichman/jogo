@@ -64,6 +64,8 @@ class Let;
 
 #include <Pointer.hpp>
 #include <map>
+#include <sstream>
+#include <string>
 
 template <typename K, typename V>
 V query(const std::map<K, V>& map, typename K::Value* str) {
@@ -75,3 +77,9 @@ V query(const std::map<K, V>& map, typename K::Value* str) {
     }
 }
 
+template <typename T>
+std::string stringify(T t) {
+    std::stringstream ss;
+    ss << t;
+    return ss.str();
+}

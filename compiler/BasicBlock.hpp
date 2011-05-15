@@ -29,7 +29,7 @@
 /* Operands for three-address code SSA instructions */
 class Operand {
 public:
-    Operand(String* literal) : literal_(literal) {}
+    Operand(String* literal) : literal_(literal), temporary_(0) {}
     Operand() : temporary_(0) {}
     const Operand& operator++() { temporary_++; return *this; }
     String::Ptr literal() const { return literal_; }
@@ -40,10 +40,19 @@ private:
     int temporary_;
 };
 
+inline std::ostream& operator<<(std::ostream& out, const Operand& op) {
+    if (op.literal()) {
+        out << "'" << op.literal() << "'";
+    } else {
+        out << "t" << op.temporary();
+    }
+    return out;
+}
+
 /* Enumeration of opcodes available to the TAC code */
 enum Opcode { 
     ADD, SUB, MUL, DIV, ANDL, ORL, ANDB, ORB, PUSH, POP, LOAD, STORE, LI,
-    CALL, JUMP, BNE, BEQ, BEQZ, BNEQZ, RET, HALT
+    NOTL, CALL, JUMP, BNE, BEQ, BEQZ, BNEQZ, RET, HALT
 };
 
 
@@ -79,6 +88,16 @@ public:
         return instrs_[index];
     }
     size_t length() const { return instrs_.size(); }
+    bool terminated() const {
+        if (instrs_.empty()) {
+            return false;
+        }
+        Opcode op = instrs_.back().opcode();
+        if (op == RET || op == JUMP || op == HALT) {
+            return true;
+        }
+        return false;
+    }
     void branch(BasicBlock* branch) { branch_ = branch; }
     void next(BasicBlock* branch) { next_ = branch; }
     void label(String* label) { label_ = label; }

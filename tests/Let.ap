@@ -1,3 +1,4 @@
+# aptest print_ir off
 Let < Object {
 
     let1() {

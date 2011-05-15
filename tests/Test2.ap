@@ -1,5 +1,6 @@
-Test2 < Object {
+# aptest print_ir off
 
+Test2 < Object {
 
     foo() {
     }

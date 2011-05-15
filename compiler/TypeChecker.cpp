@@ -36,7 +36,6 @@ TypeChecker::TypeChecker(Environment* environment) :
     if (environment_->errors()) {
         return;
     }
-
     for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
         m(this);
     }    
@@ -94,10 +93,6 @@ void TypeChecker::operator()(Class* feature) {
     // Iterate through all the features and add the functions and variables to
     // the current scope.
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
-            function(func->name(), func);
-            continue;
-        }
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             variable(attr->name(), attr->type());
             continue;
@@ -110,7 +105,6 @@ void TypeChecker::operator()(Class* feature) {
     }
 
     exit_scope();
-    function_.clear();
 }
 
 void TypeChecker::operator()(Formal* formal) {
@@ -524,6 +518,8 @@ void TypeChecker::operator()(Case* statement) {
 void TypeChecker::operator()(Function* feature) {
     Statement::Ptr block = feature->block();
     scope_ = feature;
+
+    enter_scope();
     
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
         Type::Ptr type = f->type();
@@ -548,6 +544,8 @@ void TypeChecker::operator()(Function* feature) {
         cerr << feature->location();
         cerr << "Method '" << feature->name() << "' has no body" << endl;
     }
+
+    exit_scope();
 }
 
 void TypeChecker::operator()(Attribute* feature) {
@@ -606,19 +604,6 @@ Type* TypeChecker::variable(String* name) {
 void TypeChecker::variable(String* name, Type* type) {
     assert(variable_.size());
     variable_.back().insert(make_pair(name, type));
-}
-
-Function* TypeChecker::function(String* name) {
-    map<String::Ptr, Function::Ptr>::iterator i = function_.find(name);
-    if (i != function_.end()) {
-        return i->second;
-    } else {
-        return 0;
-    }
-}
-
-void TypeChecker::function(String* name, Function* function) {
-    function_.insert(make_pair(name, function));
 }
 
 void TypeChecker::enter_scope() {
