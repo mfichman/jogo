@@ -76,6 +76,15 @@ Hash[V] < Object {
         self.buckets = Buffer[Pair[K,V]](7)
     }
 
+    @init(coll Iterable[Pair[K,V]]) {
+        # Initializes the hash map using the values provided by 'coll'
+        self.hasher = DefaultHasher
+        self.buckets = Buffer[Pair[K,V]](7)
+        for i in coll {
+            @insert(key, val)
+        }
+    }
+
     @insert(key K, val V) {
         # Inserts a new element 'val' with key 'key'.  A future lookup using
         # 'key' will return 'val', assuming that 'key' has not been re-mapped
@@ -132,5 +141,15 @@ Hash[V] < Object {
         for pair in old {
             self[pair.first] = pair.second
         }
+    }
+}
+
+
+
+HashIterator < Value {
+    
+
+    @inc() HashIterator {
+        
     }
 }

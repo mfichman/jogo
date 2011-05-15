@@ -45,6 +45,17 @@ Parser::~Parser() {
     yylex_destroy(this->scanner_);   
 }
 
+void Parser::input(const std::string& file) {
+    if (File::is_reg(file)) {
+        Parser::file(file);
+        return;
+    }
+    if (File::is_dir(file)) {
+        Parser::dir(file);
+        return;
+    }
+}
+
 void Parser::file(const std::string& file) {
     // Begin parsing a module file if it doesn't already exist.
 

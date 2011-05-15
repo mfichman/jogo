@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 
     Environment::Ptr environment(new Environment());
     Parser::Ptr parser(new Parser(environment));
-    parser->file(argv[1]);
+    parser->input(argv[1]);
     if (line != "# aptest print_tree off") {
         Printer::Ptr printer(new Printer(environment));
     }
