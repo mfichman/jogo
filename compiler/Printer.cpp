@@ -48,30 +48,48 @@ void Printer::print_comment(String* comment) {
     if (!comment || comment->string().empty()) {
         return;
     }
-
     indent_level_++;
 
-    bool tab = true;
-    int counter = 0;
-
-    for (const char* c = comment->string().c_str(); *c; c++) {
+    std::string str = comment->string();
+    const char* begin = str.c_str();
+    const char* end = str.c_str();
+    int counter = 2 * indent_level_;
+    for (const char* c = str.c_str(); *c; c++) {
         counter++;
-        if (tab) {
+        if (counter > 79 || *c == '\n') {
             print_tabs();
-            tab = false;
-            counter = 2 * indent_level_;
-        }
-        cout << *c;
-        if (*c == '\n') {
-            tab = true;
-        }
-        if (counter >= 79) {
-            cout << endl;
-            tab = true;
-        } 
-    }  
 
-    cout << endl;
+            if (end <= begin) {
+                // Word is longer than the maximum length of the line, so
+                // break the word in half
+                while (*begin && counter > 2 * indent_level_) {
+                    std::cout << *begin++;
+                    counter--;
+                }
+            } else {
+                // Word is shorter than the length of the line, so print to
+                // the last space.
+                while (begin <= end && *begin) {
+                    std::cout << *begin++;
+                }
+            }
+            std::cout << std::endl;
+            counter = 2 * indent_level_;
+            while (isspace(*begin)) {
+                begin++;
+            }
+            counter += c - begin + 1;
+        } 
+        if (!isspace(*c) && isspace(*(c + 1))) {
+            end = c;
+        }
+    }
+    print_tabs();
+    while (*begin) {
+        std::cout << *begin++;
+    }
+    std::cout << std::endl;
+
     indent_level_--;
 }
 

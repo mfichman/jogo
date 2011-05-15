@@ -3,19 +3,19 @@ Module
   feature0: Class
     name: Comment
     comment:
-      This is a class comment for the current class scope.  It can span multiple
-       lines, and all whitespace will be stripped from the beginning of the  com
-      ment block. 
+      This is a class comment for the current class scope.  It can span
+      multiple lines, and all whitespace will be stripped from the beginning of
+      the  comment block. 
     feature0: Function
       name: comment1
       type: Void
       comment:
-        This is a function comment for the current function scope.  It can  span
-         multiple lines, and all whitespace will be stripped from the  beginning
-         of the comment block.  
+        This is a function comment for the current function scope.  It can
+        span multiple lines, and all whitespace will be stripped from the
+        beginning of the comment block.
         
-        All comments until the end of the function or the first non-comment symb
-        ol are included. 
+        All comments until the end of the function or the first non-comment
+        symbol are included. 
       formal0: Formal
         name: self
         type: Self
