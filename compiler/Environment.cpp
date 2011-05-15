@@ -26,14 +26,17 @@
 
 Environment::Environment() :
     root_(new Module(Location(), name(""), this)),
-    void_type_(new Type(Location(), name("Void"), 0, root_, this)),
-    boolean_type_(new Type(Location(), name("Bool"), 0, root_, this)),
-    integer_type_(new Type(Location(), name("Int"), 0, root_, this)),
-    string_type_(new Type(Location(), name("String"), 0, root_, this)),
-    no_type_(new Type(Location(), name("<<notype>>"), 0, root_, this)),
-    float_type_(new Type(Location(), name("Float"), 0, root_, this)),
-    self_type_(new Type(Location(), name("Self"), 0, root_, this)),
+    builtins_(new Module(Location(), name(""), this)),
+    void_type_(new Type(Location(), name("Void"), 0, builtins_, this)),
+    boolean_type_(new Type(Location(), name("Bool"), 0, builtins_, this)),
+    integer_type_(new Type(Location(), name("Int"), 0, builtins_, this)),
+    string_type_(new Type(Location(), name("String"), 0, builtins_, this)),
+    no_type_(new Type(Location(), name("<<notype>>"), 0, builtins_, this)),
+    float_type_(new Type(Location(), name("Float"), 0, builtins_, this)),
+    self_type_(new Type(Location(), name("Self"), 0, builtins_, this)),
     errors_(0) {
+
+    module(root_);
 
     init_boolean();
     init_integer();
@@ -42,7 +45,7 @@ Environment::Environment() :
 }
 
 void Environment::init_boolean() {
-    root_->feature(new Class(Location(), boolean_type_, 0, 0, 0));
+    builtins_->feature(new Class(Location(), boolean_type_, 0, 0, 0));
 }
 
 void Environment::init_integer() {
@@ -71,7 +74,7 @@ void Environment::init_integer() {
     formals->next(new Formal(loc, name("_"), integer_type_));
     clazz->feature(new Function(loc, name("@mod"), formals, integer_type_, 0));
 
-    root_->feature(clazz);
+    builtins_->feature(clazz);
 }
 
 void Environment::init_string() {
@@ -87,11 +90,11 @@ void Environment::init_string() {
     formals = new Formal(loc, name("_"), string_type_);
     clazz->feature(new Function(loc, name("string"), formals, string_type_, 0));
 
-    root_->feature(clazz);
+    builtins_->feature(clazz);
 }
 
 void Environment::init_float() {
-    root_->feature(new Class(Location(), float_type_, 0, 0, 0));
+    builtins_->feature(new Class(Location(), float_type_, 0, 0, 0));
 }
 
 String* Environment::name(const std::string& str) {
@@ -141,6 +144,20 @@ Module* Environment::module(String* scope) {
     } else {
         return i->second;
     }
+}
+
+Module* Environment::unit(String* scope) {
+    // Look up a module by file_name path
+    std::map<String::Ptr, Module::Ptr>::iterator i = unit_.find(scope);
+    if (i == unit_.end()) {
+        return 0;
+    } else {
+        return i->second;
+    }
+}
+
+void Environment::unit(Module* unit) {
+    unit_[unit->name()] = unit;
 }
 
 void Environment::module(Module* module) {

@@ -1,0 +1,30 @@
+import Struct, File, Socket, Algo, Prelude
+
+
+test() {
+    let fd = File::Handle("Hello, world!") {
+    }
+
+    let sd = Socket::Stream("Hello, world!") {
+    }
+
+    sockets = Hash[String, Socket::Stream]()
+    sockets = Hash[String, Socket::Stream]()
+}
+
+
+
+# Import Options:
+# 1. Java-style: FQN or short name, auto-load FQNs, import = alias, not hierarchical
+# 2. Python: No auto-import, import from = alias and insert, import = load, hierarchical
+# 3. Dir-style: Import all files in dir, import = load, pkg name = dirname
+# 4. Mixed-style: Import all files if dir, import single file if name, import = load
+# 5. Haskell-style: Import qualified, import
+# 6. Ruby-style: Import only = filename, namespace must be in class name
+# 7. C++-style: Import only = filename, namespace must be in class name
+
+# 'import qualified' or 'include' = load only (only #include)
+# 'import' = load and insert into current namespace (#include + using)
+# Package name = dir name, file name doesn't matter (ok that there's mult. files)
+# Have compiler skip emitting unused code.  SOLVED.
+# Discover module name by getting 2nd to last path segment. 

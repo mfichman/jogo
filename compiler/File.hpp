@@ -20,15 +20,36 @@
  * IN THE SOFTWARE.
  */  
 
-#include "Location.hpp"
+#pragma once
 
-std::ostream& operator<<(std::ostream& out, const Location& location) {
-    if (location.file_name) {
-        out << location.file_name << ":";
-    }
-    out << location.first_line << ":";
-    out << location.first_column << ": ";
-    return out;
-}
+#include <Object.hpp>
+#include <string>
 
+
+/* Basic file operations and utilites */
+class File : public Object {
+public:
+    class Iterator;
+    static bool is_dir(const std::string& file);
+    static bool is_reg(const std::string& file);
+    static std::string base_name(const std::string& file);
+
+private:
+   
+};
+
+/* Directory iterator object */
+class File::Iterator {
+public:
+    Iterator(const std::string& file);
+    ~Iterator();
+    const Iterator& operator++();
+    std::string operator*() const;
+    operator bool() const;
+    
+    
+private:
+    void* handle_;
+    void* entry_;
+};
 

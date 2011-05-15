@@ -166,46 +166,108 @@ void Module::feature(Feature* feature) {
         functions_[func->name()] = func;
         return;
     }
+    if (Import* import = dynamic_cast<Import*>(feature)) {
+        if (import->scope()->string().empty()) {
+            return;
+        }
+
+        imports_[import->scope()] = import;
+        return;
+    }
 }
 
 Function* Module::function(String* scope, String* name) {
-    // Returns the function with scope "scope" and name "name."  Searches
-    // through imports included in this module to attempt to find the function.
+    // Returns the function with the scope "scope" and name "name."  Searches
+    // through imports included in this module to attempt to find the 
+    // function.
 
-    if (!scope || scope->string() == "") {
-        Function* fn = function(name);
-        if (fn) {
-            return fn;
+    if (scope && scope->string() != "") {
+        // The scope was specified, so load the function using the full scope
+        // specifier.
+        Module* module = environment_->module(scope);
+        return module ? module->function(name) : 0;
+    }
+
+    // Attempt to load the function from the current module
+    Function* fn = function(name);
+
+    // Search the imports for the function in question 
+    std::map<String::Ptr, Import::Ptr>::iterator i = imports_.begin();
+    for (; i != imports_.end(); i++) {
+        if (i->second->is_qualified()) {
+            continue;
         }
-        return environment_->root()->function(name);
+        Module* m = environment_->module(i->second->scope());
+        if (!m) {
+            continue;
+        }
+        Function* f = m->function(name);
+        if (fn && f) {
+            // Ambiguous: more than one function with the same name
+            return 0;
+        }
+        fn = f;
+    }
+    if (fn) {
+        return fn;
     }
 
-    Module* module = this->module(scope);
-    if (!module) {
-        return 0;
+    // Load from the global scope
+    fn = environment_->root()->function(name);
+    if (fn) {
+        return fn;
     }
-    return module->function(name);
+
+    // Load from the builtin scope 
+    return environment_->builtins()->function(name);
 }
 
 Class* Module::clazz(String* scope, String* name) {
     // Returns the class with the scope "scope" and name "name."  Searches
     // through imports included in this module to attempt to find the class.
 
-    if (!scope || scope->string() == "") {
-        Class* cs = clazz(name);
-        if (cs) {
-            return cs;
-        }
-        return environment_->root()->clazz(name);
+    if (scope && scope->string() != "") {
+        // The scope was specified, so load the class using the full scope
+        // specifier.
+        Module* module = environment_->module(scope);
+        return module ? module->clazz(name) : 0;
     }
 
-    Module* module = this->module(scope);
-    if (!module) {
-        return 0;
+    // Attempt to load the class from the current module
+    Class* cs = clazz(name);
+
+    // Search the imports for the class in question 
+    std::map<String::Ptr, Import::Ptr>::iterator i = imports_.begin();
+    for (; i != imports_.end(); i++) {
+        if (i->second->is_qualified()) {
+            continue;
+        }
+        Module* m = environment_->module(i->second->scope());
+        if (!m) {
+            continue;
+        }
+        Class* c = m->clazz(name);
+        if (cs && c) {
+            // Ambiguous: more than one class with the same name
+            return 0;
+        }
+        cs = c;
     }
-    return module->clazz(name);
+    if (cs) {
+        return cs;
+    }
+
+    // Load from the global scope
+    cs = environment_->root()->clazz(name);
+    if (cs) {
+        return cs;
+    }
+
+    // Load from the builtin scope 
+    return environment_->builtins()->clazz(name);
 }
 
+/*
 Module* Module::module(String* scope) {
     // Returns the module with the name "scope."  Searches through imports
     // included in this module to attempt to find the module.
@@ -224,6 +286,7 @@ Module* Module::module(String* scope) {
     }
     return module;
 }
+*/
 
 std::string Import::file_name(String* scope) {
     // Converts a module name to the name of the file that contains the 
@@ -239,45 +302,29 @@ std::string Import::file_name(String* scope) {
         }
     }
 
-    return out + ".ap";
-}
-
-std::string Import::base_name(const std::string& file) {
-    // Returns the last component of a file path, without the .ap extension.
-
-    size_t slash = file.find_last_of('/');
-    size_t dot = file.find_last_of('.');
-
-    if (dot == std::string::npos) {
-        dot = file.size();
-    }
-
-    if (slash == std::string::npos) {
-        slash = 0;
-    } else {
-        slash++;
-    }
-    
-    if (dot < slash) {
-        dot = slash;
-    }
-    
-    return file.substr(slash, dot - slash); // slashdot!!
+    return out;
 }
 
 std::string Import::scope_name(const std::string& file) {
-    // Given the file name, returns the module's scope name
+    // Given the file name, returns the module's scope name.  This is equal
+    // to the directory name with the '/' replaced by '::'.  For example,
+    // 'Foo/Bar.ap' would have scope name 'Foo'.
 
+    size_t pos = file.find_last_of('/');
+    if (pos == string::npos) {
+        return "";
+    }
+    std::string dir = file.substr(0, pos);
     std::string name;
-    for (size_t i = 0; i < file.size(); i++) {
-        if (!isalnum(file[i])) {
-            if (file[i] == '/') {
+    for (size_t i = 0; i < dir.size(); i++) {
+        if (!isalnum(dir[i])) {
+            if (dir[i] == '/') {
                 name += "::";
             } else {
                 return name;
             }
         } else {
-            name += file[i];
+            name += dir[i];
         }
     }
     return name;

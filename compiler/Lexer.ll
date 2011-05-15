@@ -24,6 +24,7 @@
 	parser->column(parser->column() + yyleng);\
 	yylloc->last_column = parser->column() - 1;\
 	yylloc->last_line = yylineno;\
+    yylloc->file_name = parser->file();\
 }
 #define POP_SEPARATOR() {\
     if (1||YY_START == SC_SEPARATOR) {\
@@ -54,10 +55,10 @@ using namespace std;
 import return IMPORT;
 case return CASE;
 when return WHEN;
-public return PUBLIC;
-private return PRIVATE;
-static return STATIC;
-native return NATIVE;
+public yy_push_state(SC_SEPARATOR, yyscanner); return PUBLIC;
+private yy_push_state(SC_SEPARATOR, yyscanner); return PRIVATE;
+static yy_push_state(SC_SEPARATOR, yyscanner); return STATIC;
+native yy_push_state(SC_SEPARATOR, yyscanner); return NATIVE;
 while return WHILE;
 else return ELSE;
 until return UNTIL;

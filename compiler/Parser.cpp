@@ -21,6 +21,7 @@
  */  
 
 #include "Parser.hpp"
+#include "File.hpp"
 
 #include <stdexcept>
 #include <fstream>
@@ -45,13 +46,20 @@ Parser::~Parser() {
 }
 
 void Parser::file(const std::string& file) {
-    String* scope = environment_->name(Import::scope_name(file));
+    // Begin parsing a module file if it doesn't already exist.
 
-    // Begin parsing a module file if it doesn't already exist
-    module_ = environment_->module(scope);
-    if (module_) {
+    String* fs = environment_->string(file);
+    unit_ = environment_->unit(fs);
+    if (unit_) {
         return;
     } else {
+        unit_ = new Module(Location(), fs, environment_);
+        environment_->unit(unit_);
+    }
+
+    String* scope = environment_->name(Import::scope_name(file));
+    module_ = environment_->module(scope);
+    if (!module_) {
         module_ = new Module(Location(), scope, environment_);
         environment_->module(module_);
     }
@@ -59,21 +67,44 @@ void Parser::file(const std::string& file) {
     this->column_ = 1;
     this->input_.close();
     this->input_.open(file.c_str()); 
-	this->file_ = file;
-    if (this->input_.fail() || this->input_.bad()) {
-        environment_->error("Could not find " + file);
-        std::cerr << "Could not find '" + file << "'" << std::endl;
-        return;
-    }
+	this->file_ = new String(file);
 
     // Begin parsing
     yyparse(this, this->scanner_);
 
     // Now parse other modules that depend on the unit that was added
-    for (Feature* f = module_->features(); f; f = f->next()) {
+    for (Feature* f = unit_->features(); f; f = f->next()) {
         if (Import* import = dynamic_cast<Import*>(f)) {
-            Parser::file(import->file_name());
+
+            if (File::is_reg(import->file_name() + ".ap")) {
+                Parser::file(import->file_name() + ".ap");
+                continue;
+            }
+            if (File::is_dir(import->file_name())) {
+                Parser::dir(import->file_name());
+                continue;
+            }
+            environment_->error("Could not find " + import->scope()->string());
+            std::cerr << import->location();
+            std::cerr << "Module '" << import->scope() << "' not found:";
+            std::cerr << std::endl;
+            std::cerr << "    no file '" << import->file_name() << ".ap'";
+            std::cerr << std::endl; 
+            std::cerr << "    no file '" << import->file_name() << "'";
+            std::cerr << std::endl;
         }
+    }
+}
+
+void Parser::dir(const std::string& dir) {
+    // Parses all files in the directory specified by 'dir'.  If 'dir' is not
+    // a directory, then no files are parsed.
+
+    for (File::Iterator i(dir); i; ++i) {
+        std::string name = *i;
+        if (name.length() >= 3 && name.substr(name.length()-4, 2) != ".ap") {
+            Parser::file(dir + "/" + name);
+        } 
     }
 }
 

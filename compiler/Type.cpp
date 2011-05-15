@@ -32,6 +32,7 @@ Type::Type(Location loc, String* qn, Generic* gen, Module* mod, Environment* env
     environment_(env),
     class_(0) {
 
+    // Compute the scope and name of the type by splitting on the '::' token.
     size_t scope_end = qn->string().find_last_of(':');
     if (scope_end == std::string::npos) {
         name_ = qn;
@@ -39,6 +40,11 @@ Type::Type(Location loc, String* qn, Generic* gen, Module* mod, Environment* env
     } else {
         name_ = env->name(qn->string().substr(scope_end + 1));
         scope_ = env->name(qn->string().substr(0, scope_end - 1));
+    }
+
+    // Add an implicit (qualified) import if it doesn't already exist
+    if (!module_->import(scope_) && !scope_->string().empty()) {
+        module_->feature(new Import(loc, scope_, true));
     }
 }
 

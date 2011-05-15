@@ -1,0 +1,14 @@
+# File.ap Return nil from constructor?
+
+Handle < Object {
+    @init(path String)
+    read(buffer Buffer[Byte]) native Int
+    write(buffer Buffer[Byte]) native Int
+    close() native Int
+    seek(pos Int) native
+
+}
+
+Stat < Value {
+    @init(path String)
+}

@@ -27,6 +27,8 @@
 template <typename T>
 class Pointer {
 public:
+    typedef T Value;
+
     Pointer() : object_(0) {}
 
     Pointer(T* object) : object_(object) {

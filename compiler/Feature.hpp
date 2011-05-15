@@ -100,16 +100,17 @@ private:
 /* Class for imports */
 class Import : public Feature {
 public:
-    Import(Location loc, String* scope) :
+    Import(Location loc, String* scope, bool is_qualified) :
         Feature(loc),
         file_name_(file_name(scope)),
-        scope_(scope) {
+        scope_(scope),
+        is_qualified_(is_qualified) {
     }
         
     const std::string& file_name() const { return file_name_; }
     String* scope() const { return scope_; }
+    bool is_qualified() const { return is_qualified_; }
     static std::string file_name(String* name);
-    static std::string base_name(const std::string& file);
     static std::string scope_name(const std::string& file);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Import> Ptr;
@@ -117,6 +118,7 @@ public:
 private:
     std::string file_name_;
     String::Ptr scope_;
+    bool is_qualified_;
 };
 
 /* Represents a class object */
@@ -162,12 +164,11 @@ public:
     }
 
     Feature* features() const { return features_; }
-    Function* function(String* name) { return functions_[name]; }
+    Function* function(String* name) { return query(functions_, name); }
     Function* function(String* scope, String* name);
-    Class* clazz(String* name) { return classes_[name]; }
+    Class* clazz(String* name) { return query(classes_, name); }
     Class* clazz(String* scope, String* name);
-    Module* module(String* scope);
-    Import* import(String* name) { return imports_[name]; }
+    Import* import(String* name) { return query(imports_, name); }
     String* name() const { return name_; }
     void feature(Feature* feature);
     void operator()(Functor* functor) { functor->operator()(this); }

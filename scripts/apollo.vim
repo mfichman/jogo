@@ -16,8 +16,11 @@ syn keyword apTodo contained TODO FIXME XXX
 syn cluster apCommentGroup contains=apTodo
 syn region apComment start="#" end="$" contains=apTodo
 
-syn region apString start=+"+ end=+"+
-syn region apString start=+'+ end=+'+
+syn region apString matchgroup=apStringDelim start=+"+ end=+"+ contains=apInterpolation
+syn region apString matchgroup=apStringDelim start=+'+ end=+'+
+
+syn region apInterpolation matchgroup=apStringDelim start="#{" end="}" contained contains=ALL
+
 
 syn keyword apConstant true false nil self
 
@@ -47,6 +50,7 @@ hi def link apNumber Number
 hi def link apFunction Function
 hi def link apType Structure 
 hi def link apOperator Operator
+hi def link apStringDelim Delimiter
 
 let b:current_syntax = "apollo"
 

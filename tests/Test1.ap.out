@@ -1,5 +1,5 @@
 Module
-  name: Test1
+  name: 
   feature0: Class
     name: Test1
     comment:
@@ -43,6 +43,6 @@ Module
         argument1: IntegerLiteral(1)
         argument2: IntegerLiteral(2)
         argument3: IntegerLiteral(3)
-4:16: Undeclared function '@compl'
-5:15: Undeclared function 'f'
-6:16: Undeclared function 'foo'
+Test1.ap:4:16: Undeclared function '@compl'
+Test1.ap:5:15: Undeclared function 'f'
+Test1.ap:6:16: Undeclared function 'foo'

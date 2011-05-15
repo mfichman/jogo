@@ -45,7 +45,7 @@ void Printer::print_tabs() {
 }
 
 void Printer::print_comment(String* comment) {
-    if (comment->string().empty()) {
+    if (!comment || comment->string().empty()) {
         return;
     }
 

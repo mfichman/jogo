@@ -22,7 +22,9 @@
 
 #pragma once
 
+#include <String.hpp>
 #include <iostream>
+#include <cassert>
 
 class Location {
 public:
@@ -32,6 +34,15 @@ public:
         last_line(0),
         last_column(0) {
     }
+    Location(const Location& copy) {
+
+        file_name = copy.file_name;
+        first_line = copy.first_line;
+        first_column = copy.first_column;
+        last_line = copy.last_line;
+        last_column = copy.last_column;
+    }
+    String::Ptr file_name;
     int first_line;
     int first_column;
     int last_line;

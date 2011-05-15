@@ -529,15 +529,15 @@ void TypeChecker::operator()(Function* feature) {
         if (class_ && class_->is_interface()) {
             cerr << block->location();
             cerr << "Interface method '" << feature->name();
-            cerr << "' has a block" << endl;
+            cerr << "' has a body" << endl;
         }
         block(this); 
     } else if (!class_) {
         cerr << feature->location();
-        cerr << "Function '" << feature->name() << "' has no block" << endl;
+        cerr << "Function '" << feature->name() << "' has no body" << endl;
     } else if (!class_->is_interface()) {
         cerr << feature->location();
-        cerr << "Method '" << feature->name() << "' has no block" << endl;
+        cerr << "Method '" << feature->name() << "' has no body" << endl;
     }
 }
 

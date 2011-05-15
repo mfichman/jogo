@@ -28,6 +28,7 @@ class Expression;
 class StringLiteral;
 class IntegerLiteral;
 class BooleanLiteral;
+class File;
 class Fork;
 class Yield;
 class Formal;
@@ -60,5 +61,16 @@ class Generic;
 class Empty;
 class Let;
 
-#include "Pointer.hpp"
+#include <Pointer.hpp>
+#include <map>
+
+template <typename K, typename V>
+V query(const std::map<K, V>& map, typename K::Value* str) {
+    typename std::map<K, V>::const_iterator i = map.find(str);
+    if (i == map.end()) {
+        return V();
+    } else {
+        return i->second;
+    }
+}
 

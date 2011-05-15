@@ -37,10 +37,12 @@ public:
 
     Environment* environment() const { return environment_; }
     Module* module() const { return module_; }
+    Module* unit() const { return unit_; }
     std::fstream& input() { return input_; }
-	const std::string& file() const { return file_; }
+	String* file() const { return file_; }
     int column() const { return column_; }
 	void file(const std::string& file);
+    void dir(const std::string& dir);
     void column(int column) { column_ = column; }
     void force_separator();
     typedef Pointer<Parser> Ptr;
@@ -48,9 +50,10 @@ public:
 private:
     Environment::Ptr environment_;
     Module::Ptr module_;
+    Module::Ptr unit_;
     int column_;
     std::fstream input_;
-    std::string file_;
+    String::Ptr file_;
     void *scanner_;
 };
 

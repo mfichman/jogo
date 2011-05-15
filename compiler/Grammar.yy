@@ -16,12 +16,21 @@
 int yylex(ParseNode *node, Location *loc, void *scanner);
 void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 
+#define YYLLOC_DEFAULT(current, rhs, n) {\
+    current.first_line = rhs[1].first_line;\
+    current.first_column = rhs[1].first_column;\
+    current.last_line = rhs[n].last_line;\
+    current.last_column = rhs[n].last_column;\
+    current.file_name = parser->file();\
+}
+
 #define ID(X) parser->environment()->name((X))
 // Shortcut, adds an identifier name to the current environment
 
 #define NOTYPE parser->environment()->no_type()
 #define ENV parser->environment()
 #define MODULE parser->module()
+#define UNIT parser->unit()
 
 %}
 
@@ -41,14 +50,14 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %parse-param { void* scanner }
 %lex-param { yyscan_t* scanner }
 
-%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <expression>
-%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <statement>
-%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <string>
-%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <feature>
-%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <formal>
-%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <type>
-%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <generic>
-%destructor { if (!$$->refcount()) delete $$; $$ = 0; } <variable>
+%destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <expression>
+%destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <statement>
+%destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <string>
+%destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <feature>
+%destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <formal>
+%destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <type>
+%destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <generic>
+%destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <variable>
 
 %left '?'
 %left BIT_AND_ASSIGN BIT_OR_ASSIGN BIT_XOR_ASSIGN
@@ -108,29 +117,29 @@ module
     ;
 
 class_name
-    : TYPE '[' generic_list ']' { $$ = new Type(@$, $1, $3, MODULE, ENV); }
-    | TYPE { $$ = new Type(@$, $1, 0, MODULE, ENV); }
+    : TYPE '[' generic_list ']' { $$ = new Type(@$, $1, $3, UNIT, ENV); }
+    | TYPE { $$ = new Type(@$, $1, 0, UNIT, ENV); }
     ;
 
 class
     : class_name '<' type_list '{' comment member_list '}' {
         std::string qn = MODULE->name()->string();
         qn += "::" + $1->name()->string();
-        Type* type = new Type(@$, ID(qn), $1->generics(), MODULE, ENV);
+        Type* type = new Type(@$, ID(qn), $1->generics(), UNIT, ENV);
         delete $1; // Delete the short type name after concat
         $$ = new Class(@$, type, $3, $5, $6);
     }
     ;
 
 function
-    : IDENTIFIER formal_signature return_signature modifiers block {
-        $$ = new Function(@$, $1, $2, $3, $5);
+    : IDENTIFIER formal_signature modifiers return_signature block {
+        $$ = new Function(@$, $1, $2, $4, $5);
     }
     ;
 
 import_list
-    : scope ',' import_list { MODULE->feature(new Import(@$, $1)); }
-    | scope { MODULE->feature(new Import(@$, $1)); }
+    : scope ',' import_list { UNIT->feature(new Import(@$, $1, false)); }
+    | scope { UNIT->feature(new Import(@$, $1, false)); }
     ;
 
 
@@ -168,11 +177,11 @@ method_body
     ;
 
 method
-    : method_name formal_signature return_signature modifiers method_body {
+    : method_name formal_signature modifiers return_signature method_body {
         Type* type = ENV->self_type();
         Formal* self = new Formal(@$, ID("self"), type);
         self->next($2);
-        $$ = new Function(@$, $1, self, $3, $5);
+        $$ = new Function(@$, $1, self, $4, $5);
     }
     ;
 
@@ -218,8 +227,8 @@ type_list
     ;
 
 type
-    : scope '[' generic_list ']' { $$ = new Type(@$, $1, $3, MODULE, ENV); }
-    | scope { $$ = new Type(@$, $1, 0, MODULE, ENV); }
+    : scope '[' generic_list ']' { $$ = new Type(@$, $1, $3, UNIT, ENV); }
+    | scope { $$ = new Type(@$, $1, 0, UNIT, ENV); }
     ;
 
 generic_list

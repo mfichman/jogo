@@ -1,19 +1,8 @@
 Module
-  name: Import2
+  name: 
   feature0: Class
     name: ImportB
     comment:
-  feature1: Import
-    file: Import1.ap
-    scope: Import1
-Module
-  name: Import1
-  feature0: Class
+  feature1: Class
     name: ImportA
     comment:
-  feature1: Import
-    file: Import1.ap
-    scope: Import1
-  feature2: Import
-    file: Import2.ap
-    scope: Import2

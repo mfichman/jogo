@@ -37,9 +37,12 @@ public:
     String* string(const std::string& str);
     Module* module(String* scope);
     Module* modules() const { return modules_; }
+    Module* unit(String* scope);
     Module* root() const { return root_; }
+    Module* builtins() const { return builtins_; }
     int errors() { return errors_; }
     void module(Module* module);
+    void unit(Module* module);
     void error(const std::string& error) { errors_++; }
     const Location& location() const;
     typedef Pointer<Environment> Ptr;
@@ -62,7 +65,9 @@ private:
     std::map<std::string, String::Ptr> number_;
     std::map<std::string, String::Ptr> string_;
     std::map<String::Ptr, Module::Ptr> module_;
+    std::map<String::Ptr, Module::Ptr> unit_;
     Module::Ptr root_;
+    Module::Ptr builtins_;
     Module::Ptr modules_;
     Type::Ptr void_type_;
     Type::Ptr boolean_type_;

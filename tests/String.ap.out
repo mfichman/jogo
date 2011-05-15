@@ -1,5 +1,5 @@
 Module
-  name: String
+  name: 
   feature0: Class
     name: Stringable
     comment:
