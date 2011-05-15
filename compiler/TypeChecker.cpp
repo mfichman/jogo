@@ -126,6 +126,10 @@ void TypeChecker::operator()(IntegerLiteral* expression) {
     expression->type(environment_->integer_type()); 
 }
 
+void TypeChecker::operator()(FloatLiteral* expression) {
+    expression->type(environment_->float_type()); 
+}
+
 void TypeChecker::operator()(BooleanLiteral* expression) {
     expression->type(environment_->boolean_type());
 }

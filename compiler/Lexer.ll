@@ -96,11 +96,24 @@ xor\= return BIT_XOR_ASSIGN;
 \-\- return DECREMENT;
 \:\: return SCOPE;
 ; return SEMICOLON;
+
+[0-9]+\.[0-9]* {
+    String* value = yyextra->environment()->floating(yytext);
+    yylval->expression = new FloatLiteral(*yylloc, value);
+    yy_push_state(SC_SEPARATOR, yyscanner);
+    return FLOAT;
+}
+\.[0-9]+ {
+    String* value = yyextra->environment()->floating(yytext);
+    yylval->expression = new FloatLiteral(*yylloc, value);
+    yy_push_state(SC_SEPARATOR, yyscanner);
+    return FLOAT;
+}
 [0-9]+ {
-	String* value = yyextra->environment()->number(yytext);
+	String* value = yyextra->environment()->integer(yytext);
 	yylval->expression = new IntegerLiteral(*yylloc, value); 
     yy_push_state(SC_SEPARATOR, yyscanner);
-	return NUMBER;
+	return INTEGER;
 }
 (true|false) {
     String* value = yyextra->environment()->name(yytext);

@@ -110,13 +110,26 @@ String* Environment::name(const std::string& str) {
 	}
 }
 
-String* Environment::number(const std::string& str) {
+String* Environment::integer(const std::string& str) {
     // Returns a name if it exists, otherwise, a new one is created.
 
-	std::map<std::string, String::Ptr>::iterator i = number_.find(str);
-	if (i == number_.end()) {
+	std::map<std::string, String::Ptr>::iterator i = integer_.find(str);
+	if (i == integer_.end()) {
 		String* name = new String(str);
-		number_.insert(std::make_pair(str, name));	
+		integer_.insert(std::make_pair(str, name));	
+		return name;
+	} else {
+		return i->second;
+	}
+}
+
+String* Environment::floating(const std::string& str) {
+    // Returns a name if it exists, otherwise, a new one is created.
+
+	std::map<std::string, String::Ptr>::iterator i = floating_.find(str);
+	if (i == floating_.end()) {
+		String* name = new String(str);
+		floating_.insert(std::make_pair(str, name));	
 		return name;
 	} else {
 		return i->second;

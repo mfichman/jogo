@@ -27,6 +27,7 @@ class TreeNode;
 class Expression;
 class StringLiteral;
 class IntegerLiteral;
+class FloatLiteral;
 class BooleanLiteral;
 class File;
 class Fork;

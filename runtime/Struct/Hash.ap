@@ -1,0 +1,136 @@
+# Copyright (c) 2010 Matt Fichman
+#
+# Permission is hereby granted, free of charge, to any person obtaining a 
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation 
+# the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+# and/or sell copies of the Software, and to permit persons to whom the 
+# Software is furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in 
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR 
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+
+Hasher[K] < Interface {
+    # A hashing function, which provides an integer hash for each value passed
+    # to 'hash()'.  The hash function implementation should attempt to 
+    # distribute keys as evenly as possible.  Intended for use with the 'Hash'
+    # class in this module.
+
+    hash(value K) Int
+}
+
+DefaultHasher[K] < Object {
+    # Default hasher.  This hash creates a unique hash code for each reference
+    # object, and hashes value objects by treating the value object as a
+    # binary byte array.  Therefore, value objects that compare equal will
+    # hash to the same bucket using this hasher.
+
+    hash(key K < Object) Int {
+        # Hashes reference types by using their pointer address.
+        return key.address()
+    }
+
+    hash(key K < Value) Int {
+        # Hashes value types by doing a hash over the data bytes.
+        code Int = 0
+        for byte in key.bytes {
+            code ^= byte
+        }
+        return code
+    }
+}
+
+Hash[V] < Object {
+    # Associative array implemented with a hash table.  Stores elements formed
+    # by the combination of a key and a value.  The implementation supports
+    # constant time get and set operations, assuming the hash function is 
+    # distributes elements evenly in the buckets.
+    #
+    # The implementation uses a simple open hashing scheme.  FIXME: Eventually
+    # introduce a scheme with better performance guarantees (perhaps bucket
+    # hashing).
+
+    buckets private Buffer[Pair[K,V]] # Array of hash pair elements
+    hasher readonly Hasher # Hash function
+    count readonly = 0 # Number of non-default elements in the hash
+
+    @init(hasher Hasher) {
+        # Initializes the hash map using the given hasher.  The inital
+        # capacity will be set to 7.
+        self.hasher = hasher
+        self.buckets = Buffer[Pair[K,V]](7)
+    }
+
+    @init() {
+        # Initializes the hash map using the default hasher and the default
+        # capacity (7).
+        self.hasher = DefaultHasher
+        self.buckets = Buffer[Pair[K,V]](7)
+    }
+
+    @insert(key K, val V) {
+        # Inserts a new element 'val' with key 'key'.  A future lookup using
+        # 'key' will return 'val', assuming that 'key' has not been re-mapped
+        # to a new value.
+
+        hash = hasher.hash(key) % buckets.count
+        i = hash
+        while buckets[i].first {
+            i = (i + 1) % buckets.count
+        }
+        if not val and buckets[i].second {
+            count--
+        } else if val and not buckets[i].second {
+            count++
+        }
+        buckets[i].first = key
+        buckets[i].second = val
+
+        if Float(count) > 0.75 * Float(self.capacity) {
+            rehash()
+        }
+    }
+
+    @index(key K) V {
+        # Returns the value corresponding to 'key'.  If 'key' does not match
+        # any key in the hash map, then the default value for 'V' is returned.
+
+        hash = hasher.hash(key) % buckets.count
+        i = hash
+        while buckets[i].first and buckets[i].first != key and i != hash {
+            i = (i + 1) % buckets.count
+        }
+        if buckets[i].first == key {
+            return buckets[i].second
+        } else {
+            return default
+        }
+    }
+
+    capacity?() Int {
+        # Returns the current capacity of the hash bucket array.  The capacity
+        # will be doubled whenever the counter is increased to 75% of the 
+        # capacity.
+        return buckets.count
+    }
+
+    rehash() private Int {
+        # Increases the size of the hash table and copies the keys over to the
+        # new bucket array, if necessary.
+        
+        old = buckets
+        buckets = Buffer[Pair[K,V]](self.capacity * 2)
+        
+        for pair in old {
+            self[pair.first] = pair.second
+        }
+    }
+}

@@ -50,6 +50,7 @@ public:
     virtual void operator()(Formal* formal)=0;
     virtual void operator()(StringLiteral* expression)=0;
     virtual void operator()(IntegerLiteral* expression)=0;
+    virtual void operator()(FloatLiteral* expression)=0;
     virtual void operator()(BooleanLiteral* expression)=0;
     virtual void operator()(Binary* expression)=0;
     virtual void operator()(Unary* expression)=0;

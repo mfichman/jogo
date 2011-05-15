@@ -33,7 +33,8 @@ class Environment : public Object {
 public:
     Environment();
     String* name(const std::string& str);
-    String* number(const std::string& str);
+    String* integer(const std::string& str);
+    String* floating(const std::string& str);
     String* string(const std::string& str);
     Module* module(String* scope);
     Module* modules() const { return modules_; }
@@ -62,7 +63,8 @@ private:
     void init_float();
 
     std::map<std::string, String::Ptr> name_;
-    std::map<std::string, String::Ptr> number_;
+    std::map<std::string, String::Ptr> integer_;
+    std::map<std::string, String::Ptr> floating_;
     std::map<std::string, String::Ptr> string_;
     std::map<String::Ptr, Module::Ptr> module_;
     std::map<String::Ptr, Module::Ptr> unit_;

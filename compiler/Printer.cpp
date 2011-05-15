@@ -147,6 +147,14 @@ void Printer::operator()(IntegerLiteral* expression) {
     indent_level_--;
 }
 
+
+void Printer::operator()(FloatLiteral* expression) {
+    indent_level_++;
+    cout << "FloatLiteral(";
+    cout << expression->value() << ")" << endl;
+    indent_level_--;
+}
+
 void Printer::operator()(BooleanLiteral* expression) {
     indent_level_++;
     cout << "BooleanLiteral(";
