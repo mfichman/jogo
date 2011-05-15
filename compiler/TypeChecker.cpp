@@ -407,7 +407,7 @@ void TypeChecker::operator()(Block* statement) {
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
         if (return_) {
             cerr << s->location();
-            cerr << "Statements after 'return' are illegal";
+            cerr << "Statement is unreachable";
             cerr << endl;
             break;
         } else {

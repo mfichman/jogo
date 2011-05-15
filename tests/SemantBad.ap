@@ -16,7 +16,7 @@ foo() Int {
 }
 
 Bob < Object {
-    foo() Int {
+    bar() Int {
         if true and not false {
             if true {
                 return 9
@@ -32,7 +32,7 @@ Bob < Object {
             }
         }
     }
-    foo() Int {
+    bar() Int {
         if true and not false {
             if true {
                 return 9
@@ -55,4 +55,10 @@ Bob < Object {
 }
 
 Bob < Object {
+}
+
+bar() Int {
+    return 1
+    a Int = 10
+    return a
 }

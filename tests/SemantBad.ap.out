@@ -28,7 +28,7 @@ Module
     name: Bob
     comment:
     feature0: Function
-      name: foo
+      name: bar
       type: Int
       comment:
       formal0: Formal
@@ -64,7 +64,7 @@ Module
                     expression: IntegerLiteral(1)
                 false: Block
     feature1: Function
-      name: foo
+      name: bar
       type: Int
       comment:
       formal0: Formal
@@ -112,9 +112,24 @@ Module
   feature3: Class
     name: Bob
     comment:
+  feature4: Function
+    name: bar
+    type: Int
+    comment:
+    block: Block
+      child0: Return
+        expression: IntegerLiteral(1)
+      child1: Variable
+        name: a
+        type: Int
+        initializer: IntegerLiteral(10)
+      child2: Return
+        expression: Identifier
+          name: a
 SemantBad.ap:3:1: Function 'foo' must return a value
 SemantBad.ap:10:1: Duplicate definition of function 'foo'
-SemantBad.ap:35:5: Duplicate definition of function 'foo'
+SemantBad.ap:35:5: Duplicate definition of function 'bar'
 SemantBad.ap:54:5: Duplicate definition of attribute 'blarg'
-SemantBad.ap:19:5: Function 'foo' must return a value
+SemantBad.ap:19:5: Function 'bar' must return a value
 SemantBad.ap:57:1: Duplicate definition of class 'Bob'
+SemantBad.ap:62:5: Statement is unreachable
