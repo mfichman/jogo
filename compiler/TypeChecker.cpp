@@ -655,13 +655,12 @@ void TypeChecker::operator()(Import* feature) {
 }
 
 void TypeChecker::operator()(Type* type) {
-    if (type == environment_->self_type()) {
+    // Check to make sure that the type has a defined class.  Also, check
+    // all generics that are part of the type to make sure that they resolve.
+    if (type == environment_->self_type() 
+            || type == environment_->void_type()) {
         return;
     }
-    if (type == environment_->void_type()) {
-        return;
-    }
-
     if (!type->clazz()) {
         cerr << type->location();
         cerr << "Undefined type '" << type << "'";
@@ -669,9 +668,9 @@ void TypeChecker::operator()(Type* type) {
         return;
     }
 
+    // Check generics for type resolution
     for (Generic::Ptr g = type->generics(); g; g = g->next()) {
         if (!g->type()->clazz() && !type->equals(environment_->self_type())) {
-
             cerr << type->location() << endl;
             cerr << "Undefined type '" << type << "'";
             cerr << endl;
