@@ -37,7 +37,7 @@ void boot_print_int(Int integer) {
     // Print an integer to stdout.  This function is here only to run initial
     // tests on the compiler, and isn't part of the public API.
 
-    fprintf(stdout, "%lld", integer);
+    fprintf(stdout, "%ld", integer);
     fflush(stdout);
 }
 

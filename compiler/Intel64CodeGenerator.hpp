@@ -44,7 +44,7 @@ private:
     void operator()(BasicBlock* block);
     void emit(const char* instr, Register* r1);
     void emit(const char* instr, Operand r1);
-    void emit(const char* instr, Register* r2, Operand r2);
+    void emit(const char* instr, Register* r1, Operand r2);
     void emit(const char* instr, Operand r1, Register* r2);
     void emit(const char* instr, Operand r1, Operand r2);
     void emit(const char* instr);

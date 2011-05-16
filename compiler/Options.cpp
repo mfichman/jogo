@@ -22,9 +22,11 @@
 
 #include "Options.hpp"
 #include "Environment.hpp"
+#include <cstdlib>
 
 Options::Options(Environment* env, int argc, char** argv) {
-
+    // Parse command line options, and update the environment to match the 
+    // specified options.
     program_name_ = argv[0];
     std::string flag;
     std::vector<std::string> args;
@@ -33,6 +35,8 @@ Options::Options(Environment* env, int argc, char** argv) {
     }
 
     for (int i = 1; i < argc; i++) {
+        // Convert abbreviated flags into the longer descriptive form (e.g., 
+        // convert -p to --path)
         if (argv[i][0] == '-' && argv[i][1] != '-') {
             flag = argv[i] + 1;
             if ("p" == flag) { flag = "path"; }
@@ -52,6 +56,7 @@ Options::Options(Environment* env, int argc, char** argv) {
         }
     
         switch (args.size()) {
+        // Zero-parameter arguments
         case 0:
             if ("help" == flag) {
                 print_usage();
@@ -64,6 +69,7 @@ Options::Options(Environment* env, int argc, char** argv) {
             args.clear();
             flag = "";
             break;
+        // Single-parameter arguments
         case 1:
             if ("path" == flag) {
                 env->include(argv[i]); 
