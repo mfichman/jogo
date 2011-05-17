@@ -79,7 +79,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token INCREMENT DECREMENT
 %token SCOPE LET IN YIELD FORK
 
-%type <feature> member member_list attribute class method function prototype 
+%type <feature> member member_list attribute class method function 
 %type <type> type type_list maybe_type
 %type <name> scope scope_prefix 
 %type <generic> generic generic_list
@@ -158,7 +158,6 @@ member_list
 member
     : attribute { $$ = $1; }
     | method { $$ = $1; }
-    | prototype { $$ = $1; }
     ;
 
 attribute
@@ -196,10 +195,7 @@ method
         self->next($2);
         $$ = new Function(@$, $1, self, $3, $5);
     }
-    ;
-
-prototype
-    : IDENTIFIER formal_signature maybe_type modifiers SEPARATOR {
+    | IDENTIFIER formal_signature maybe_type modifiers SEPARATOR {
         Type* type = parser->environment()->self_type();
         Name* name = parser->environment()->name("self");
         Formal* self = new Formal(@$, name, type);

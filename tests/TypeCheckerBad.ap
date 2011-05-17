@@ -15,7 +15,8 @@ Cycle2 < Interface {
 
 # Type2 is a valid subtype of type1.
 Type1 < Interface {
-    blarg() Int
+    blarg() Int {
+    }
 }
 
 Type2 < Interface {
@@ -35,6 +36,9 @@ Scoped::Illegal < Interface {
 }
 
 Value1 < Value {
+}
+
+free_function() {
 }
 
 TypeCheckerBad < Object {

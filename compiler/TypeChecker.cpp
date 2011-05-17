@@ -523,7 +523,21 @@ void TypeChecker::operator()(Function* feature) {
     
     Type::Ptr type = feature->type();
     type(this);
-    block(this); 
+
+    if (block) {
+        if (class_ && class_->is_interface()) {
+            cerr << block->location();
+            cerr << "Interface method '" << feature->name();
+            cerr << "' has a block" << endl;
+        }
+        block(this); 
+    } else if (!class_) {
+        cerr << feature->location();
+        cerr << "Function '" << feature->name() << "' has no block" << endl;
+    } else if (!class_->is_interface()) {
+        cerr << feature->location();
+        cerr << "Method '" << feature->name() << "' has no block" << endl;
+    }
 }
 
 void TypeChecker::operator()(Attribute* feature) {
