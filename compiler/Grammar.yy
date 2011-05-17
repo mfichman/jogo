@@ -321,7 +321,7 @@ statement
     }
     | UNTIL expression block {
         // TODO: FIX UNTIL
-        Name* op = parser->environment()->name("!");
+        Name* op = parser->environment()->name("not");
         $$ = new While(@$, new Unary(@$, op, $2), $3);
         
     }
@@ -416,7 +416,7 @@ expression
         $1->next($3);
         Environment* env = parser->environment();
         Dispatch* equal = new Dispatch(@$, env->name("@equal"), $1);
-        $$ = new Unary(@$, env->name("!"), equal);
+        $$ = new Unary(@$, env->name("not"), equal);
     }
     | expression COMPARE expression {
         $1->next($3);
@@ -429,7 +429,7 @@ expression
         Dispatch* less = new Dispatch(@$, env->name("@less"), $1); 
         Dispatch* equal = new Dispatch(@$, env->name("@equal"), $1);
         Binary* child = new Binary(@$, env->name("||"), less, equal); 
-        $$ = new Unary(@$, env->name("!"), child); 
+        $$ = new Unary(@$, env->name("not"), child); 
     }
     | expression '<' expression { 
         $1->next($3);
@@ -439,7 +439,7 @@ expression
         $1->next($3);
         Environment* env = parser->environment();
         Dispatch* less = new Dispatch(@$, env->name("@less"), $1);
-        $$ = new Unary(@$, env->name("!"), less); 
+        $$ = new Unary(@$, env->name("not"), less); 
     }
     | expression LESS_OR_EQUAL expression { 
         $1->next($3);
@@ -481,7 +481,7 @@ expression
         $$ = new Dispatch(@$, parser->environment()->name("@modulus"), $1); 
     }
     | NOT expression { 
-        $$ = new Unary(@$, parser->environment()->name("!"), $2); 
+        $$ = new Unary(@$, parser->environment()->name("not"), $2); 
     }
     | '~' expression { 
         $$ = new Dispatch(@$, parser->environment()->name("@complement"), $2); 

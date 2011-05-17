@@ -2,6 +2,8 @@
 # aptest gen_code off
 
 
+# Cycle1 and Cycle2 are type incompatible, because the blarg() function is
+# not covariant (which in turn is because of the foo() function on Cycle2.
 Cycle1 < Interface {
     blarg() Cycle2
 }
@@ -11,6 +13,7 @@ Cycle2 < Interface {
     foo() Int
 }
 
+# Type2 is a valid subtype of type1.
 Type1 < Interface {
     blarg() Int
 }
@@ -21,10 +24,17 @@ Type2 < Interface {
 
 Object1 < Object {
     blarg() Int
+
+    @index(x Type1, y Type1) {
+    }
 }
 
+# Fully-qualified names are not allowed in the class definition.
 Scoped::Illegal < Interface {
     blarg() Int
+}
+
+Value1 < Value {
 }
 
 TypeCheckerBad < Object {
@@ -37,19 +47,18 @@ TypeCheckerBad < Object {
     test_type2(x Type2) {}
     test_object1(x Object1) {}
 
-
     main() {
-        a Int = "Hello, world"
-        b = "Hello, world"
-        b String
-        b Int
+        a Int = "Hello, world" # Incompatible type
+        b = "Hello, world" 
+        b String # Variable redefinition
+        b Int # Variable redefinition, different type
         
-        c Foo
-        c.whatever()
+        c Foo # Defuned class 
+        c.whatever() 
         
-        d = TypeCheckerBad().blarg("Hello, world")
-        d String
-        d = 1
+        d = TypeCheckerBad().blarg("Hello, world") # Assign void
+        d String # Redefine variable
+        d = 1 # OK, because d has no type
 
         cycle1 Cycle1
         cycle2 Cycle2
@@ -57,21 +66,32 @@ TypeCheckerBad < Object {
         type2 Type2
         object1 Object1
 
-        cycle1 = cycle2         
-        type1 = type2
-        object1 = type1
-        type1 = object1
+        cycle1 = cycle2 # Invalid type
+        type1 = type2 # Invalid type
+        object1 = type1 # Invalid type
+        type1 = object1 # OK
         
         e = TypeCheckerBad()
 
-        e.test_cycle1(cycle2) 
-        e.test_cycle1(cycle1)
-        e.test_cycle2(cycle1)
-        e.test_type1(type2)
-        e.test_type1(type1)
-        e.test_type2(type2)
-        e.test_type2(type1)
+        e.missing() # Undefined function
+        e.test_cycle1(cycle2) # Invalid arg
+        e.test_cycle1(cycle1) # OK
+        e.test_cycle2(cycle1) # Invalid arg
+        e.test_type1(type2) # Invalid arg
+        e.test_type1(type1) # OK
+        e.test_type2(type2) # OK
+        e.test_type2(type1) # OK
 
-        Cycle1()
+        Cycle1() # Constructor on an interface
+
+        e.test_cycle1(cycle1, "Hello", 1) # Too many args
+        e.test_cycle1() # Not enough args
+
+        object1[1, 2] # Bad arguments
+
+        f Value1
+        if f {} # Using struct as a bool
+        if f and true {} # Using struct as a bool
+        if not f {} # Using struct as a bool
     }
 }

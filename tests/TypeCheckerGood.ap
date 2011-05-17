@@ -10,9 +10,11 @@ CycleType2 < Interface {
 
 
 TypeChecker < Object {
-
+    @index(x CycleType2, y CycleType2) {
+    }
 
     check1() Int {
+        return 2
     }
 
     check2(bob Int) {
@@ -24,7 +26,22 @@ TypeChecker < Object {
         a = t.check1()
         b = a + 10
 
-        c = CycleType1()
-        c = CycleType2()
+        c CycleType1
+        d CycleType2
+        c = d
+        d = c
+
+        t[c, d]
+
+        e Bool
+        if e and not e {
+        }
+        else if e or e {
+        }
+        else {
+        }
+
+        while e and b {
+        }
     }
 }

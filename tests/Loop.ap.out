@@ -33,5 +33,5 @@ Module
         child0: While
           guard: Unary
             child: BooleanLiteral(false)
-            operation: !
+            operation: not
           block: Block

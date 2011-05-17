@@ -113,10 +113,6 @@ void TypeChecker::operator()(Class* feature) {
     function_.clear();
 }
 
-void TypeChecker::operator()(Empty* expression) {
-    expression->type(environment_->no_type());
-}
-
 void TypeChecker::operator()(Formal* formal) {
     Type::Ptr type = formal->type();
     type(this);
@@ -148,40 +144,39 @@ void TypeChecker::operator()(Binary* expression) {
     left(this);
     right(this);
 
-    if (environment_->name("||") == expression->operation()
-        || environment_->name("&&") == expression->operation()) {
+    if (environment_->name("or") == expression->operation()
+        || environment_->name("and") == expression->operation()) {
 
-        if (!environment_->boolean_type()->equals(left->type()) 
-            || !environment_->boolean_type()->equals(left->type())) {
-
-            cerr << expression->location();
-            cerr << "Operator can only be applied to type ";
-            cerr << environment_->boolean_type();
+        if (left->type()->clazz()->is_value()) {
+            cerr << left->location();
+            cerr << "Value types cannot be converted to 'Bool'";
             cerr << endl;
         }
-        expression->type(environment_->boolean_type());
+        if (right->type()->clazz()->is_value()) {
+            cerr << right->location();
+            cerr << "Value types cannot be converted to 'Bool'";
+            cerr << endl;
+        }
     } else {
         assert(!"Operator not implemented");
-        expression->type(environment_->no_type());
     }
+    expression->type(environment_->boolean_type());
 }
 
 void TypeChecker::operator()(Unary* expression) {
     Expression::Ptr child = expression->child();
     child(this);
 
-    if (environment_->name("!") == expression->operation()) {
-        if (!environment_->boolean_type()->equals(child->type())) {
+    if (environment_->name("not") == expression->operation()) {
+        if (child->type()->clazz()->is_value()) {
             cerr << expression->location();
-            cerr << "Operator '!' must be applied to type ";
-            cerr << environment_->boolean_type();
+            cerr << "Value types cannot be converted to 'Bool'";
             cerr << endl;
         }
-        expression->type(environment_->boolean_type());
     } else {
         assert(!"Operator not implemented");
-        expression->type(environment_->no_type());
     }
+    expression->type(environment_->boolean_type());
 }
 
 void TypeChecker::operator()(Call* expression) {
@@ -365,6 +360,10 @@ void TypeChecker::operator()(Identifier* expression) {
     }
 }
 
+void TypeChecker::operator()(Empty* expression) {
+    expression->type(environment_->no_type());
+}
+
 void TypeChecker::operator()(Block* statement) {
     enter_scope();
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
@@ -406,12 +405,11 @@ void TypeChecker::operator()(Conditional* statement) {
     Statement::Ptr true_branch = statement->true_branch();
     Statement::Ptr false_branch = statement->false_branch();
     guard(this);
-    if (!environment_->boolean_type()->equals(guard->type())) {
-        cerr << statement->location();
-        cerr << "Conditional guard expression must have type '";
-        cerr << environment_->boolean_type() << "'";
+    if (guard->type()->clazz()->is_value()) {
+        cerr << guard->location();
+        cerr << "Value types cannot be converted to 'Bool'";
         cerr << endl;
-    } 
+    }
     true_branch(this);
     false_branch(this);
 }
@@ -420,7 +418,17 @@ void TypeChecker::operator()(Variable* statement) {
     Expression::Ptr initializer = statement->initializer();
     initializer(this);
 
+    if (!statement->type()->equals(environment_->no_type())) {
+        Type::Ptr type = statement->type();
+        type(this);
+        if (!type->clazz()) {
+            variable(statement->identifier(), environment_->no_type());
+            return;
+        }
+    }
+
     Type::Ptr type = variable(statement->identifier());
+
     if (type && !statement->type()->equals(environment_->no_type())) {
         cerr << statement->location();
         cerr << "Duplicate definition of variable '";
@@ -452,6 +460,8 @@ void TypeChecker::operator()(Variable* statement) {
         cerr << statement->identifier() << "'";
         cerr << endl;
         variable(statement->identifier(), environment_->no_type());
+    } else if (!statement->type()->equals(environment_->no_type())) {
+        variable(statement->identifier(), statement->type());
     } else {
         variable(statement->identifier(), initializer->type()); 
     }
