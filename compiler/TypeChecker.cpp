@@ -55,6 +55,28 @@ void TypeChecker::operator()(Class* feature) {
 
     // Check interface/struct/object baseclass and make sure that 
     // disallowed things aren't included.
+    for (Type::Ptr m = feature->mixins(); m; m = m->next()) {
+        if (m->clazz()) {
+            if (feature->is_interface() && !m->clazz()->is_interface()) {
+                cerr << m->location();
+                cerr << "Mix-in for interface '" << feature->name();
+                cerr << "' must be an interface" << endl;
+                break;
+            } else if (feature->is_object() && m->clazz()->is_interface()) {
+                cerr << m->location();
+                cerr << "Mix-in for object type '" << feature->name();
+                cerr << "' cannot be an interface" << endl; 
+                break;
+            } else if (feature->is_value() && !m->clazz()->is_value()) {
+                cerr << m->location();
+                cerr << "Mix-in for value type '" << feature->name();
+                cerr << "' must be a value type" << endl; 
+                break;
+            }
+         
+        }
+    }
+
     if (feature->is_object() && feature->is_interface()) {
         cerr << feature->location();
         cerr << "Class has both object and interface mixins";
@@ -290,6 +312,14 @@ void TypeChecker::operator()(Construct* expression) {
         expression->type(environment_->no_type());
         return;
     }
+    if (clazz->is_interface()) {
+        cerr << expression->location();
+        cerr << "Constructor called for interface type '";
+        cerr << clazz->name() << "'";
+        cerr << endl;
+        expression->type(environment_->no_type());
+        return;
+    }
 
     // Look up the constructor
     Function::Ptr constr = clazz->function(environment_->name("@init"));
@@ -402,6 +432,8 @@ void TypeChecker::operator()(Variable* statement) {
         cerr << initializer->location();
         cerr << "Expression does not conform to type '";
         cerr << type << "'";
+        cerr << " in assignment of '";
+        cerr << statement->identifier() << "'";
         cerr << endl;
         return;
     }
@@ -414,7 +446,13 @@ void TypeChecker::operator()(Variable* statement) {
     }
     if (initializer->type()->equals(environment_->no_type())) {
         variable(statement->identifier(), statement->type()); 
-    } else { 
+    } else if (initializer->type()->equals(environment_->void_type())) {
+        cerr << initializer->location();
+        cerr << "Void value assigned to variable '";
+        cerr << statement->identifier() << "'";
+        cerr << endl;
+        variable(statement->identifier(), environment_->no_type());
+    } else {
         variable(statement->identifier(), initializer->type()); 
     }
 }

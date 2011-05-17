@@ -123,7 +123,22 @@ import_list
 
 class
     : type '<' type_list '{' member_list '}' {
-        $$ = new Class(@$, $1, $3, $5);
+        if (!$1->scope()->string().empty()) {
+            std::cerr << @$ << "Illegal qualified name '";
+            std::cerr << $1;
+            std::cerr << "' in class definition";
+            std::cerr << std::endl;
+            YYERROR;
+        } else {
+            Environment* env = parser->environment();
+            Module* module = parser->module();
+            Name* qn = env->name(module->name()->string() + "::" 
+                + $1->name()->string()); 
+            Type* type = new Type(@$, qn, $1->generics(), module, env);
+            delete $1;
+    
+            $$ = new Class(@$, type, $3, $5);
+        }
     }
     | error {
         $$ = 0;    

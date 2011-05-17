@@ -93,14 +93,14 @@ Function* Class::function(Name* name) const {
 bool Class::subtype(Class* other) const {
     // Returns true if this class is a subtype of 'other.'  A class is a subtype
     // of another class if it implements all methods found in the class.
-    
+
     // Check if this comparison has been done before.  If so, then we don't need
     // to do it again.
     std::map<Class*, bool>::iterator i = subtype_.find(other);
     if (i != subtype_.end()) {
         return i->second;
     }
-    if (!other->is_interface() && !is_interface()) {
+    if (!other->is_interface()) {
         return this == other; 
     }
 

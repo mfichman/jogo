@@ -1,13 +1,42 @@
 # aptest print_tree off
 # aptest gen_code off
 
+
+Cycle1 < Interface {
+    blarg() Cycle2
+}
+
+Cycle2 < Interface {
+    blarg() Cycle1
+    foo() Int
+}
+
+Type1 < Interface {
+    blarg() Int
+}
+
+Type2 < Interface {
+
+}
+
+Object1 < Object {
+    blarg() Int
+}
+
+Scoped::Illegal < Interface {
+    blarg() Int
+}
+
 TypeCheckerBad < Object {
 
-    blarg(blarg Int) {
-    }
+    blarg(blarg Int) {}
+    void() {}
+    test_cycle1(x Cycle1) {}
+    test_cycle2(x Cycle2) {}
+    test_type1(x Type1) {}
+    test_type2(x Type2) {}
+    test_object1(x Object1) {}
 
-    void() {
-    }
 
     main() {
         a Int = "Hello, world"
@@ -21,5 +50,28 @@ TypeCheckerBad < Object {
         d = TypeCheckerBad().blarg("Hello, world")
         d String
         d = 1
+
+        cycle1 Cycle1
+        cycle2 Cycle2
+        type1 Type1
+        type2 Type2
+        object1 Object1
+
+        cycle1 = cycle2         
+        type1 = type2
+        object1 = type1
+        type1 = object1
+        
+        e = TypeCheckerBad()
+
+        e.test_cycle1(cycle2) 
+        e.test_cycle1(cycle1)
+        e.test_cycle2(cycle1)
+        e.test_type1(type2)
+        e.test_type1(type1)
+        e.test_type2(type2)
+        e.test_type2(type1)
+
+        Cycle1()
     }
 }
