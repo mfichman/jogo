@@ -128,6 +128,7 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
 
 [{([,] BEGIN(DOC); return yytext[0];
 [)\]] BEGIN(END); return yytext[0];
+[}] BEGIN(INITIAL); return yytext[0];
 <END>[\n\r] {
     BEGIN(INITIAL); 
     yyget_extra(yyscanner)->column(1); 
