@@ -77,7 +77,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token MULTIPLY_ASSIGN DIVIDE_ASSIGN SUBTRACT_ASSIGN ADD_ASSIGN
 %token MODULUS_ASSIGN BIT_OR_ASSIGN BIT_AND_ASSIGN BIT_XOR_ASSIGN
 %token INCREMENT DECREMENT
-%token SCOPE LET IN YIELD FORK
+%token SCOPE LET IN YIELD FORK COMMENT
 
 %type <feature> member member_list attribute class method function 
 %type <type> type type_list maybe_type
@@ -289,8 +289,15 @@ generic
     ;
 
 block
-    : '{' statement_list '}' { 
-        $$ = new Block(@$, $2); 
+    : '{' comment statement_list '}' { 
+        $$ = new Block(@$, $3); 
+    }
+    ;
+
+comment
+    : COMMENT comment {
+    }
+    | /* empty */ {
     }
     ;
 

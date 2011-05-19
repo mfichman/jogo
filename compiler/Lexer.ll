@@ -37,7 +37,7 @@ using namespace std;
 %option nounput
 %option yylineno
 %option bison-locations
-%s END
+%s END DOC
 
 /* Lexer rules */
 %%
@@ -126,8 +126,7 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
 	return TYPE;
 }
 
-#.*
-[{([,] BEGIN(INITIAL); return yytext[0];
+[{([,] BEGIN(DOC); return yytext[0];
 [)\]] BEGIN(END); return yytext[0];
 <END>[\n\r] {
     BEGIN(INITIAL); 
@@ -137,6 +136,20 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
 <INITIAL>[\n\r] {
     yyget_extra(yyscanner)->column(1);
 }
+<DOC>[\n\r] {
+    yyget_extra(yyscanner)->column(1);
+}
+<DOC>#.* {
+    const char* comment = yytext + 1;    
+    while (isspace(*comment)) {
+        comment++;
+    }
+ 
+    std::cout << comment << std::endl;
+    return COMMENT;
+}
+
+#.*
 [\t ]
 . return yytext[0];
 %%
