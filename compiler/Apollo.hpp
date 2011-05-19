@@ -31,7 +31,7 @@ class BooleanLiteral;
 class Fork;
 class Yield;
 class Formal;
-class Name;
+class String;
 class Binary;
 class Unary;
 class Call;

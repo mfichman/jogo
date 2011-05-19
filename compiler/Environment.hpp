@@ -25,15 +25,15 @@
 #include "Apollo.hpp"
 #include "Object.hpp"
 #include "Feature.hpp"
-#include "Name.hpp"
+#include "String.hpp"
 #include <map>
 
 /* Compilation environment; contains symbol table and compilation units */
 class Environment : public Object {
 public:
     Environment();
-    Name* name(const std::string& str);
-    Module* module(Name* scope);
+    String* name(const std::string& str);
+    Module* module(String* scope);
     Module* modules() const { return modules_; }
     Module* root() const { return root_; }
     int errors() { return errors_; }
@@ -56,8 +56,8 @@ private:
     void init_string();
     void init_float();
 
-    std::map<std::string, Name::Ptr> name_;
-    std::map<Name::Ptr, Module::Ptr> module_;
+    std::map<std::string, String::Ptr> name_;
+    std::map<String::Ptr, Module::Ptr> module_;
     Module::Ptr root_;
     Module::Ptr modules_;
     Type::Ptr void_type_;

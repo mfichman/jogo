@@ -20,7 +20,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 %union { Expression* expression; }
 %union { Statement* statement; }
-%union { Name* name; }
+%union { String* name; }
 %union { Feature* feature; }
 %union { Formal* formal; }
 %union { Type* type; }
@@ -132,7 +132,7 @@ class
         } else {
             Environment* env = parser->environment();
             Module* module = parser->module();
-            Name* qn = env->name(module->name()->string() + "::" 
+            String* qn = env->name(module->name()->string() + "::" 
                 + $1->name()->string()); 
             Type* type = new Type(@$, qn, $1->generics(), module, env);
             delete $1;
@@ -183,21 +183,21 @@ function
 method
     : IDENTIFIER formal_signature maybe_type modifiers block {
         Type* type = parser->environment()->self_type();
-        Name* name = parser->environment()->name("self");
+        String* name = parser->environment()->name("self");
         Formal* self = new Formal(@$, name, type);
         self->next($2);
         $$ = new Function(@$, $1, self, $3, $5);
     }
     | OPERATOR formal_signature maybe_type modifiers block {
         Type* type = parser->environment()->self_type();
-        Name* name = parser->environment()->name("self");
+        String* name = parser->environment()->name("self");
         Formal* self = new Formal(@$, name, type);
         self->next($2);
         $$ = new Function(@$, $1, self, $3, $5);
     }
     | IDENTIFIER formal_signature maybe_type modifiers SEPARATOR {
         Type* type = parser->environment()->self_type();
-        Name* name = parser->environment()->name("self");
+        String* name = parser->environment()->name("self");
         Formal* self = new Formal(@$, name, type);
         self->next($2);
         $$ = new Function(@$, $1, self, $3, 0);
@@ -324,7 +324,7 @@ statement
     }
     | UNTIL expression block {
         // TODO: FIX UNTIL
-        Name* op = parser->environment()->name("not");
+        String* op = parser->environment()->name("not");
         $$ = new While(@$, new Unary(@$, op, $2), $3);
         
     }
@@ -367,7 +367,7 @@ statement
     }
     | expression '.' IDENTIFIER '=' expression SEPARATOR {
         /* Attribute assignment, calls the mutator function */
-        Name* name = parser->environment()->name($3->string() + "=");
+        String* name = parser->environment()->name($3->string() + "=");
         $1->next($5);
         $$ = new Simple(@$, new Dispatch(@$, name, $1));
     }
@@ -506,7 +506,7 @@ expression
         $$ = new Dispatch(@$, $3, $1);
     }
     | FUNCTION formal_signature maybe_type block {
-        //Name* name = parser->environment()->name("@call");
+        //String* name = parser->environment()->name("@call");
         //$$ = new Function(@$, name, $2, $3, $4);
         $$ = new Empty(@$);
         $2 = 0;
@@ -536,7 +536,7 @@ variable_list
         $$->next($3);
     }
     | expression ',' variable_list {
-        Name* name = parser->environment()->name("__unused");
+        String* name = parser->environment()->name("__unused");
         $$ = new Variable(@$, name, parser->environment()->no_type(), $1);
         $$->next($3);
     }
@@ -544,7 +544,7 @@ variable_list
         $$ = $1;
     }
     | expression {
-        Name* name = parser->environment()->name("__unused");
+        String* name = parser->environment()->name("__unused");
         $$ = new Variable(@$, name, parser->environment()->no_type(), $1);
     }
     ;

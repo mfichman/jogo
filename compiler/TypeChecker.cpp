@@ -186,8 +186,8 @@ void TypeChecker::operator()(Call* expression) {
     }
 
     // Look up the function by name in the current context
-    Name::Ptr id = expression->identifier();
-    Name::Ptr scope = expression->module();
+    String::Ptr id = expression->identifier();
+    String::Ptr scope = expression->module();
     Function::Ptr func = module_->function(scope, id);  
     if (!func) {
         cerr << expression->location();
@@ -582,10 +582,10 @@ void TypeChecker::operator()(Type* type) {
     }
 }
 
-Type* TypeChecker::variable(Name* name) {
-    vector<map<Name::Ptr, Type::Ptr> >::reverse_iterator i;
+Type* TypeChecker::variable(String* name) {
+    vector<map<String::Ptr, Type::Ptr> >::reverse_iterator i;
     for (i = variable_.rbegin(); i != variable_.rend(); i++) {
-        map<Name::Ptr, Type::Ptr>::iterator j = i->find(name);        
+        map<String::Ptr, Type::Ptr>::iterator j = i->find(name);        
         if (j != i->end()) {
             return j->second;
         }
@@ -593,13 +593,13 @@ Type* TypeChecker::variable(Name* name) {
     return 0;
 }
 
-void TypeChecker::variable(Name* name, Type* type) {
+void TypeChecker::variable(String* name, Type* type) {
     assert(variable_.size());
     variable_.back().insert(make_pair(name, type));
 }
 
-Function* TypeChecker::function(Name* name) {
-    map<Name::Ptr, Function::Ptr>::iterator i = function_.find(name);
+Function* TypeChecker::function(String* name) {
+    map<String::Ptr, Function::Ptr>::iterator i = function_.find(name);
     if (i != function_.end()) {
         return i->second;
     } else {
@@ -607,12 +607,12 @@ Function* TypeChecker::function(Name* name) {
     }
 }
 
-void TypeChecker::function(Name* name, Function* function) {
+void TypeChecker::function(String* name, Function* function) {
     function_.insert(make_pair(name, function));
 }
 
 void TypeChecker::enter_scope() {
-    variable_.push_back(map<Name::Ptr, Type::Ptr>());
+    variable_.push_back(map<String::Ptr, Type::Ptr>());
 }
 
 void TypeChecker::exit_scope() {

@@ -61,7 +61,7 @@ union ParseNode {
 	Formal* formal;
 	When* when;
 	Feature* feature;
-	Name* name;
+	String* name;
     Type* type;
     Generic* generic;
     Variable* variable;

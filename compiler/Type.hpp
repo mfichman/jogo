@@ -24,7 +24,7 @@
 
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
-#include "Name.hpp"
+#include "String.hpp"
 #include <vector>
 #include <map>
 #include <iostream>
@@ -32,10 +32,10 @@
 /* Type object */
 class Type : public TreeNode {
 public:
-    Type(Location loc, Name* qn, Generic* gen, Module* mod, Environment* env);
+    Type(Location loc, String* qn, Generic* gen, Module* mod, Environment* env);
     Generic* generics() const { return generics_; }
-    Name* name() const { return name_; }
-    Name* scope() const { return scope_; }
+    String* name() const { return name_; }
+    String* scope() const { return scope_; }
     Type* next() const { return next_; }
     Class* clazz() const;
     Module* module() const { return module_; }
@@ -53,8 +53,8 @@ private:
     Pointer<Generic> generics_;
     Module* module_;
     Environment* environment_;
-    Name::Ptr scope_;
-    Name::Ptr name_;
+    String::Ptr scope_;
+    String::Ptr name_;
     Type::Ptr next_;
     Class* class_;
 };

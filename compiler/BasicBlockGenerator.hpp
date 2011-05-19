@@ -124,14 +124,14 @@ private:
         block->instruction(Instruction(Instruction::BEQZ, 0, t2, 0));
     }
 
-    int call(BasicBlock* block, Name* name) {
+    int call(BasicBlock* block, String* name) {
         block->instruction(Instruction(Instruction::CALL, 0, 0, 0));
         block->call_label(name);
         return ++temp_;
     }
 
-    int variable(Name* name);
-    void variable(Name* name, int temporary);
+    int variable(String* name);
+    void variable(String* name, int temporary);
     void enter_scope();
     void exit_scope();
 
@@ -141,7 +141,7 @@ private:
     BasicBlock::Ptr block_;
     
     // Mapping from var to temporary
-    std::vector<std::map<Name::Ptr, int> > variable_;
+    std::vector<std::map<String::Ptr, int> > variable_;
 
     // Next temporary to use
     int temp_;

@@ -28,13 +28,13 @@
 
 class Formal : public TreeNode {
 public:
-	Formal(Location loc, Name* name, Type* type) :
+	Formal(Location loc, String* name, Type* type) :
 		TreeNode(loc),
 		name_(name),
 		type_(type) {
 	}
 
-	Name* name() const { return name_; }
+	String* name() const { return name_; }
 	Type* type() const { return type_; }
     Formal* next() const { return next_; }
 	void next(Formal* next) { next_ = next; }
@@ -42,7 +42,7 @@ public:
 	typedef Pointer<Formal> Ptr;
 
 private:
-	Name::Ptr name_;
+	String::Ptr name_;
 	Type::Ptr type_;
 	Formal::Ptr next_;
 };

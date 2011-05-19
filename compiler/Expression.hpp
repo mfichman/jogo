@@ -24,7 +24,7 @@
 
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
-#include "Name.hpp"
+#include "String.hpp"
 #include "Type.hpp"
 
 /* This file includes interfaces for expression nodes */
@@ -48,65 +48,65 @@ private:
 /* Literal expression (integers, strings, booleans, hashes, etc.) */
 class StringLiteral : public Expression {
 public:
-    StringLiteral(Location loc, Name* value) :
+    StringLiteral(Location loc, String* value) :
         Expression(loc),
         value_(value) {
     }
 
-    Name* value() const { return value_; } 
+    String* value() const { return value_; } 
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr value_;
+    String::Ptr value_;
 };
 
 /* Literal expression (integers, strings, booleans, hashes, etc.) */
 class IntegerLiteral : public Expression {
 public:
-    IntegerLiteral(Location loc, Name* value) :
+    IntegerLiteral(Location loc, String* value) :
         Expression(loc),
         value_(value) {
     }
 
-    Name* value() const { return value_; } 
+    String* value() const { return value_; } 
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr value_;
+    String::Ptr value_;
 };
 
 /* Boolean literal expression */
 class BooleanLiteral : public Expression {
 public:
-    BooleanLiteral(Location loc, Name* value) :
+    BooleanLiteral(Location loc, String* value) :
         Expression(loc),
         value_(value) {
     }
         
-    Name* value() const { return value_; }
+    String* value() const { return value_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr value_;
+    String::Ptr value_;
 };    
 
 /* Simple binary expression */
 class Binary : public Expression {
 public:
-    Binary(Location loc, Name* op, Expression* left, Expression* right) :
+    Binary(Location loc, String* op, Expression* left, Expression* right) :
         Expression(loc),
         operation_(op),
         left_(left),
         right_(right) {
     }
 
-    Name* operation() const { return operation_; }
+    String* operation() const { return operation_; }
     Expression* left() const { return left_; }
     Expression* right() const { return right_; } 
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr operation_;
+    String::Ptr operation_;
     Expression::Ptr left_;
     Expression::Ptr right_;
 };
@@ -114,57 +114,57 @@ private:
 /* Simple unary expression */
 class Unary : public Expression {
 public:
-    Unary(Location loc, Name* op, Expression* child) :
+    Unary(Location loc, String* op, Expression* child) :
         Expression(loc),
         operation_(op),
         child_(child) {
     }
 
-    Name* operation() const { return operation_; }
+    String* operation() const { return operation_; }
     Expression* child() { return child_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr operation_;
+    String::Ptr operation_;
     Expression::Ptr child_;
 };
 
 /* Normal function all */
 class Call : public Expression {
 public:
-    Call(Location loc, Name* module, Name* ident, Expression* args) :
+    Call(Location loc, String* module, String* ident, Expression* args) :
         Expression(loc),
         module_(module),
         identifier_(ident),
         arguments_(args) {
     }
 
-    Name* module() const { return module_; }
-    Name* identifier() const { return identifier_; }
+    String* module() const { return module_; }
+    String* identifier() const { return identifier_; }
     Expression* arguments() const { return arguments_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr module_;
-    Name::Ptr identifier_;
+    String::Ptr module_;
+    String::Ptr identifier_;
     Expression::Ptr arguments_;
 };
 
 /* Object-oriented function call dispatch */
 class Dispatch : public Expression {
 public:
-    Dispatch(Location loc, Name* ident, Expression* args) :
+    Dispatch(Location loc, String* ident, Expression* args) :
         Expression(loc),
         identifier_(ident),
         arguments_(args) {
     }
 
-    Name* identifier() const { return identifier_; }
+    String* identifier() const { return identifier_; }
     Expression* arguments() const { return arguments_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr identifier_;
+    String::Ptr identifier_;
     Expression::Ptr arguments_;
 };
 
@@ -189,16 +189,16 @@ private:
 /* Identifier expression (variable access) */
 class Identifier : public Expression {
 public:
-    Identifier(Location loc, Name* ident) :
+    Identifier(Location loc, String* ident) :
         Expression(loc),
         identifier_(ident) {
     }
 
-    Name* identifier() const { return identifier_; }
+    String* identifier() const { return identifier_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Name::Ptr identifier_;
+    String::Ptr identifier_;
 };
 
 /* Empty expression */

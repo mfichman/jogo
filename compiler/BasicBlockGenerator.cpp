@@ -191,10 +191,10 @@ BasicBlockGenerator::operator()(Import* feature) {
 }
 
 int
-BasicBlockGenerator::variable(Name* name) {
-    vector<map<Name::Ptr, int> >::reverse_iterator i;
+BasicBlockGenerator::variable(String* name) {
+    vector<map<String::Ptr, int> >::reverse_iterator i;
     for (i = variable_.rbegin(); i != variable_.rend(); i++) {
-        map<Name::Ptr, int>::iterator j = i->find(name);        
+        map<String::Ptr, int>::iterator j = i->find(name);        
         if (j != i->end()) {
             return j->second;
         }
@@ -203,14 +203,14 @@ BasicBlockGenerator::variable(Name* name) {
 }
 
 void
-BasicBlockGenerator::variable(Name* name, int temporary) {
+BasicBlockGenerator::variable(String* name, int temporary) {
     assert(variable_.size());
     variable_.back().insert(make_pair(name, temporary));
 }
 
 void
 BasicBlockGenerator::enter_scope() {
-    variable_.push_back(map<Name::Ptr, int>());
+    variable_.push_back(map<String::Ptr, int>());
 }
 
 void

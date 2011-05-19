@@ -82,12 +82,12 @@ void Environment::init_float() {
     root_->feature(new Class(Location(), float_type_, 0, 0));
 }
 
-Name* Environment::name(const std::string& str) {
+String* Environment::name(const std::string& str) {
     // Returns a name if it exists, otherwise, a new one is created.
 
-	std::map<std::string, Name::Ptr>::iterator i = name_.find(str);
+	std::map<std::string, String::Ptr>::iterator i = name_.find(str);
 	if (i == name_.end()) {
-		Name* name = new Name(str);
+		String* name = new String(str);
 		name_.insert(std::make_pair(str, name));	
 		return name;
 	} else {
@@ -95,9 +95,9 @@ Name* Environment::name(const std::string& str) {
 	}
 }
 
-Module* Environment::module(Name* scope) {
+Module* Environment::module(String* scope) {
     // Look up a module by file_name path
-    std::map<Name::Ptr, Module::Ptr>::iterator i = module_.find(scope);
+    std::map<String::Ptr, Module::Ptr>::iterator i = module_.find(scope);
     if (i == module_.end()) {
         return 0;
     } else {

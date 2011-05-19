@@ -80,13 +80,13 @@ void Class::feature(Feature* feature) {
     }
 }
 
-Attribute* Class::attribute(Name* name) const {
-    std::map<Name::Ptr, Attribute::Ptr>::const_iterator i = attributes_.find(name);
+Attribute* Class::attribute(String* name) const {
+    std::map<String::Ptr, Attribute::Ptr>::const_iterator i = attributes_.find(name);
     return (i == attributes_.end()) ? 0 : i->second;
 }
 
-Function* Class::function(Name* name) const {
-    std::map<Name::Ptr, Function::Ptr>::const_iterator i = functions_.find(name);
+Function* Class::function(String* name) const {
+    std::map<String::Ptr, Function::Ptr>::const_iterator i = functions_.find(name);
     return (i == functions_.end()) ? 0 : i->second;
 }
 
@@ -167,7 +167,7 @@ void Module::feature(Feature* feature) {
     }
 }
 
-Function* Module::function(Name* scope, Name* name) {
+Function* Module::function(String* scope, String* name) {
     // Returns the function with scope "scope" and name "name."  Searches
     // through imports included in this module to attempt to find the function.
 
@@ -186,7 +186,7 @@ Function* Module::function(Name* scope, Name* name) {
     return module->function(name);
 }
 
-Class* Module::clazz(Name* scope, Name* name) {
+Class* Module::clazz(String* scope, String* name) {
     // Returns the class with the scope "scope" and name "name."  Searches
     // through imports included in this module to attempt to find the class.
 
@@ -205,16 +205,16 @@ Class* Module::clazz(Name* scope, Name* name) {
     return module->clazz(name);
 }
 
-Module* Module::module(Name* scope) {
+Module* Module::module(String* scope) {
     // Returns the module with the name "scope."  Searches through imports
     // included in this module to attempt to find the module.
 
     Module* module = environment_->module(scope);
 
-    std::map<Name::Ptr, Import::Ptr>::iterator i = imports_.begin();
+    std::map<String::Ptr, Import::Ptr>::iterator i = imports_.begin();
     for (; i != imports_.end(); i++) {
-        Name* is = i->second->scope();
-        Name* mn = environment_->name(scope->string() + is->string());
+        String* is = i->second->scope();
+        String* mn = environment_->name(scope->string() + is->string());
         Module* m = environment_->module(mn);
         if (module && m) {
             // Ambiguous: more than one module that matches this name
@@ -224,7 +224,7 @@ Module* Module::module(Name* scope) {
     return module;
 }
 
-std::string Import::file_name(Name* scope) {
+std::string Import::file_name(String* scope) {
     // Converts a module name to the name of the file that contains the 
     // module.
     const std::string& name = scope->string();

@@ -24,7 +24,7 @@
 
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
-#include "Name.hpp"
+#include "String.hpp"
 #include "Expression.hpp"
 #include "Type.hpp"
 
@@ -115,21 +115,21 @@ private:
 /* For-each loop statement */
 class For : public Statement {
 public:
-    For(Location loc, Name* var, Expression* expr, Statement* block) :
+    For(Location loc, String* var, Expression* expr, Statement* block) :
         Statement(loc),
         variable_(var),
         expression_(expr),
         block_(block) {
     }
 
-    Name* variable() const { return variable_; }
+    String* variable() const { return variable_; }
     Expression* expression() const { return expression_; }
     Statement* block() const { return block_; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<For> Ptr;
 
 private:
-    Name::Ptr variable_;
+    String::Ptr variable_;
     Expression::Ptr expression_;
     Statement::Ptr block_;
 };
@@ -137,21 +137,21 @@ private:
 /* Variable declaration */
 class Variable : public Statement {
 public:
-    Variable(Location loc, Name* ident, Type* type, Expression* expr) :
+    Variable(Location loc, String* ident, Type* type, Expression* expr) :
         Statement(loc),
         identifier_(ident),
 		type_(type),
         initializer_(expr) {
     }
 
-    Name* identifier() const { return identifier_; }
+    String* identifier() const { return identifier_; }
     Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Variable> Ptr;
 
 private:
-    Name::Ptr identifier_;
+    String::Ptr identifier_;
 	Type::Ptr type_;
     Expression::Ptr initializer_;
 };

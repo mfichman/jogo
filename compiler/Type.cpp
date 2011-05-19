@@ -25,7 +25,7 @@
 #include "Environment.hpp"
 #include <cassert>
 
-Type::Type(Location loc, Name* qn, Generic* gen, Module* mod, Environment* env) :
+Type::Type(Location loc, String* qn, Generic* gen, Module* mod, Environment* env) :
     TreeNode(loc),
     generics_(gen),
     module_(mod),

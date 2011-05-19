@@ -65,17 +65,17 @@ private:
     void operator()(Import* feature);
     void operator()(Type* type);
 
-    Type* variable(Name* name);
-    void variable(Name* name, Type* type);
-    Function* function(Name* name);
-    void function(Name* name, Function* function);
-    Class* clazz(Name* name);
+    Type* variable(String* name);
+    void variable(String* name, Type* type);
+    Function* function(String* name);
+    void function(String* name, Function* function);
+    Class* clazz(String* name);
     void enter_scope();
     void exit_scope();
 
     Environment::Ptr environment_;
-    std::vector<std::map<Name::Ptr, Type::Ptr> > variable_;
-    std::map<Name::Ptr, Function::Ptr> function_;
+    std::vector<std::map<String::Ptr, Type::Ptr> > variable_;
+    std::map<String::Ptr, Function::Ptr> function_;
     Module::Ptr module_;
     Class::Ptr class_;
     Function::Ptr scope_;

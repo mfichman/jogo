@@ -45,7 +45,7 @@ Parser::~Parser() {
 }
 
 void Parser::file(const std::string& file) {
-    Name* scope = environment_->name(Import::scope_name(file));
+    String* scope = environment_->name(Import::scope_name(file));
 
     // Begin parsing a module file if it doesn't already exist
     module_ = environment_->module(scope);

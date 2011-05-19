@@ -23,7 +23,7 @@
 #pragma once
 
 #include "Apollo.hpp"
-#include "Name.hpp"
+#include "String.hpp"
 #include <vector>
 
 /* Class for three-address code instructions */
@@ -58,14 +58,14 @@ class BasicBlock : public Object {
 public:
     BasicBlock* branch1() const { return branch1_; }
     BasicBlock* branch2() const { return branch2_; }
-    Name* call_label() const { return call_label_; }
+    String* call_label() const { return call_label_; }
     const Instruction& instruction(size_t index) const { 
         return instructions_[index];
     }
     size_t instruction_count() const { return instructions_.size(); }
     void branch1(BasicBlock* branch) { branch1_ = branch; }
     void branch2(BasicBlock* branch) { branch2_ = branch; }
-    void call_label(Name* label) { call_label_ = label; }
+    void call_label(String* label) { call_label_ = label; }
     void instruction(const Instruction& inst) { 
         instructions_.push_back(inst); 
     }
@@ -75,7 +75,7 @@ private:
     std::vector<Instruction> instructions_;
     BasicBlock::Ptr branch1_;
     BasicBlock::Ptr branch2_;
-    Name::Ptr call_label_;
+    String::Ptr call_label_;
 };
 
 

@@ -86,26 +86,26 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
 \:\: BEGIN(INITIAL); return SCOPE;
 ; BEGIN(INITIAL); return SEMICOLON;
 [0-9]+ {
-	Name* value = yyextra->environment()->name(yytext);
+	String* value = yyextra->environment()->name(yytext);
 	yylval->expression = new IntegerLiteral(*yylloc, value); 
     BEGIN(END);
 	return NUMBER;
 }
 (true|false) {
-    Name* value = yyextra->environment()->name(yytext);
+    String* value = yyextra->environment()->name(yytext);
     yylval->expression = new BooleanLiteral(*yylloc, value);
     BEGIN(END);
     return BOOLEAN;
 }
 \"[^"]*\" {
 	yytext[strlen(yytext)-1] = 0;
-	Name* value = yyextra->environment()->name(yytext);
+	String* value = yyextra->environment()->name(yytext);
 	yylval->expression = new StringLiteral(*yylloc, value);
     BEGIN(END);
 	return STRING;
 }
 \'[^']*\' {
-	Name* value = yyextra->environment()->name(yytext);
+	String* value = yyextra->environment()->name(yytext);
 	yylval->expression = new StringLiteral(*yylloc, value); 
     BEGIN(END);
 	return STRING;
