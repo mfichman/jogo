@@ -2,9 +2,11 @@ Module
   name: Loop
   feature0: Class
     name: Loop
+    comment:
     feature0: Function
       name: loop1
       type: Void
+      comment:
       formal0: Formal
         name: self
         type: Self
@@ -16,6 +18,7 @@ Module
     feature1: Function
       name: loop2
       type: Void
+      comment:
       formal0: Formal
         name: self
         type: Self
@@ -26,6 +29,7 @@ Module
     feature2: Function
       name: loop3
       type: Void
+      comment:
       formal0: Formal
         name: self
         type: Self

@@ -63,6 +63,7 @@ private:
     void operator()(Type* type);
 
     void print_tabs();
+    void print_comment(String* comment);
 
     Environment::Ptr environment_;
     int indent_level_;

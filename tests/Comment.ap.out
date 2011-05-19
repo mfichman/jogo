@@ -1,0 +1,40 @@
+Module
+  name: Comment
+  feature0: Class
+    name: Comment
+    comment:
+      This is a class comment for the current class scope.  It can span multiple
+       lines, and all whitespace will be stripped from the beginning of the  com
+      ment block. 
+    feature0: Function
+      name: comment1
+      type: Void
+      comment:
+        This is a function comment for the current function scope.  It can  span
+         multiple lines, and all whitespace will be stripped from the  beginning
+         of the comment block.  
+        
+        All comments until the end of the function or the first non-comment symb
+        ol are included. 
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+        child0: Conditional
+          guard: BooleanLiteral(true)
+          true: Block
+          false: Block
+    feature1: Function
+      name: comment2
+      type: Void
+      comment:
+        The quick brown fox jumped over the lazy dog. 
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature2: Attribute
+      name: x
+      type: <<notype>>
+      initializer: Construct
+        type: String

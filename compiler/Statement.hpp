@@ -99,16 +99,19 @@ private:
 /* Block statement */
 class Block : public Statement {
 public:
-    Block(Location loc, Statement* children) :
+    Block(Location loc, String* comment, Statement* children) :
         Statement(loc),
+        comment_(comment),
         children_(children) {
     }
     
+    String* comment() const { return comment_; }
     Statement* children() const { return children_; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Block> Ptr;
 
 private:
+    String::Ptr comment_;
     Statement::Ptr children_;
 };
 

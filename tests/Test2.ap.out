@@ -2,9 +2,11 @@ Module
   name: Test2
   feature0: Class
     name: Test2
+    comment:
     feature0: Function
       name: foo
       type: Void
+      comment:
       formal0: Formal
         name: self
         type: Self

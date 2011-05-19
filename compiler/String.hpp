@@ -11,7 +11,7 @@
  * The above copyright notice and this permission notice shall be included in 
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR 
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
@@ -23,49 +23,24 @@
 #pragma once
 
 #include "Apollo.hpp"
-#include "Environment.hpp"
-#include "Feature.hpp"
 #include "Object.hpp"
-#include <fstream>
-#include <set>
+#include <string>
 
-/* Primary parser structure; creates compilation units */
-class Parser : public Object {
+class String : public Object {
 public:
-    Parser(Environment* env);
-    ~Parser();
+    String(const std::string& string) :
+        string_(string) {
+    }
 
-    Environment* environment() const { return environment_; }
-    Module* module() const { return module_; }
-    std::fstream& input() { return input_; }
-	const std::string& file() const { return file_; }
-    int column() const { return column_; }
-	void file(const std::string& file);
-    void column(int column) { column_ = column; }
-    void force_separator();
-    typedef Pointer<Parser> Ptr;
+    const std::string& string() const { return string_; }
+    typedef Pointer<String> Ptr;
 
 private:
-    Environment::Ptr environment_;
-    Module::Ptr module_;
-    int column_;
-    std::fstream input_;
-    std::string file_;
-    void *scanner_;
+    std::string string_;
+
 };
 
-/* Union used by Bison and Flex for actions */
-union ParseNode {
-	Expression* expression;
-	Statement* statement;
-	Formal* formal;
-	When* when;
-	Feature* feature;
-	String* string;
-    Type* type;
-    Generic* generic;
-    Variable* variable;
-	int flag;
-};
-
-
+inline std::ostream& operator<<(std::ostream& out, const String* name) {
+    out << name->string();
+    return out;
+}

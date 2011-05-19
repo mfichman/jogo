@@ -2,6 +2,7 @@ Module
   name: Test1
   feature0: Class
     name: Test1
+    comment:
     feature0: Attribute
       name: bob
       type: Int

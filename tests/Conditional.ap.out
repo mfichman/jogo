@@ -2,9 +2,11 @@ Module
   name: Conditional
   feature0: Class
     name: Conditional
+    comment:
     feature0: Function
       name: conditional1
       type: Int
+      comment:
       formal0: Formal
         name: self
         type: Self
@@ -20,6 +22,7 @@ Module
     feature1: Function
       name: conditional2
       type: Int
+      comment:
       formal0: Formal
         name: self
         type: Self
@@ -40,6 +43,7 @@ Module
     feature2: Function
       name: conditional3
       type: Int
+      comment:
       formal0: Formal
         name: self
         type: Self

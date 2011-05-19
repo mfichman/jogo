@@ -20,7 +20,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 
 %union { Expression* expression; }
 %union { Statement* statement; }
-%union { String* name; }
+%union { String* string; }
 %union { Feature* feature; }
 %union { Formal* formal; }
 %union { Type* type; }
@@ -35,9 +35,8 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %lex-param { yyscan_t* scanner }
 
 %destructor { delete $$; $$ = 0; } <expression>
-%destructor { delete $$; $$ = 0; } <identifier>
 %destructor { delete $$; $$ = 0; } <statement>
-%destructor { delete $$; $$ = 0; } <unit>
+%destructor { delete $$; $$ = 0; } <string>
 %destructor { delete $$; $$ = 0; } <feature>
 %destructor { delete $$; $$ = 0; } <formal>
 %destructor { delete $$; $$ = 0; } <type>
@@ -64,7 +63,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %left '.' '['
 
 /* BISON declarations */
-%token <name> IDENTIFIER TYPE OPERATOR
+%token <string> IDENTIFIER TYPE OPERATOR COMMENT
 %token <expression> STRING NUMBER BOOLEAN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
 %token IMPORT FUNCTION
@@ -77,11 +76,11 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *message);
 %token MULTIPLY_ASSIGN DIVIDE_ASSIGN SUBTRACT_ASSIGN ADD_ASSIGN
 %token MODULUS_ASSIGN BIT_OR_ASSIGN BIT_AND_ASSIGN BIT_XOR_ASSIGN
 %token INCREMENT DECREMENT
-%token SCOPE LET IN YIELD FORK COMMENT
+%token SCOPE LET IN YIELD FORK
 
 %type <feature> member member_list attribute class method function 
 %type <type> type type_list maybe_type
-%type <name> scope scope_prefix 
+%type <string> scope scope_prefix comment 
 %type <generic> generic generic_list
 %type <flag> modifiers
 %type <formal> formal_signature formal formal_list
@@ -135,9 +134,9 @@ class
             String* qn = env->name(module->name()->string() + "::" 
                 + $1->name()->string()); 
             Type* type = new Type(@$, qn, $1->generics(), module, env);
-            delete $1;
+            delete $1; // Delete the short type name after concat
     
-            $$ = new Class(@$, type, $3, $6);
+            $$ = new Class(@$, type, $3, $5, $6);
         }
     }
     | error {
@@ -290,14 +289,21 @@ generic
 
 block
     : '{' comment statement_list '}' { 
-        $$ = new Block(@$, $3); 
+        $$ = new Block(@$, $2, $3); 
     }
     ;
 
 comment
     : COMMENT comment {
+        if ($1->string().empty()) {
+            $$ = new String($1->string() + "\n\n" + $2->string());
+        } else {
+            $$ = new String($1->string() + " " + $2->string());
+        }
+        delete $1;
     }
     | /* empty */ {
+        $$ = new String("");
     }
     ;
 
@@ -333,6 +339,7 @@ statement
     }
     | CASE expression '{' comment when_list '}' {
         $$ = new Case(@$, $2, static_cast<When*>($5));
+        delete $4;
     }
     | RETURN expression SEPARATOR { 
         $$ = new Return(@$, $2);
@@ -378,7 +385,7 @@ statement
 
 conditional
     : IF expression block {
-        $$ = new Conditional(@$, $2, $3, new Block(@$, 0));
+        $$ = new Conditional(@$, $2, $3, new Block(@$, 0, 0));
     }
     | IF expression block ELSE block {
         $$ = new Conditional(@$, $2, $3, $5);

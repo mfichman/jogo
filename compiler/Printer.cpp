@@ -44,6 +44,37 @@ void Printer::print_tabs() {
     }
 }
 
+void Printer::print_comment(String* comment) {
+    if (comment->string().empty()) {
+        return;
+    }
+
+    indent_level_++;
+
+    bool tab = true;
+    int counter = 0;
+
+    for (const char* c = comment->string().c_str(); *c; c++) {
+        counter++;
+        if (tab) {
+            print_tabs();
+            tab = false;
+            counter = 2 * indent_level_;
+        }
+        cout << *c;
+        if (*c == '\n') {
+            tab = true;
+        }
+        if (counter >= 79) {
+            cout << endl;
+            tab = true;
+        } 
+    }  
+
+    cout << endl;
+    indent_level_--;
+}
+
 void Printer::operator()(Module* feature) {
     indent_level_++;
     cout << "Module" << endl;
@@ -61,6 +92,8 @@ void Printer::operator()(Class* feature) {
     indent_level_++; 
     cout << "Class" << endl;
     print_tabs(); cout << "name: " << feature->name() << endl;
+    print_tabs(); cout << "comment:" << endl;
+    print_comment(feature->comment());
     int i = 0;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         print_tabs(); cout << "feature" << i << ": ";
@@ -345,6 +378,13 @@ void Printer::operator()(Function* feature) {
     cout << feature->name() << endl;
     print_tabs(); cout << "type: ";
     cout << feature->type() << endl;
+
+    if (Block* block = dynamic_cast<Block*>(feature->block())) {
+        if (block->comment()) {
+            print_tabs(); cout << "comment:" << endl;
+            print_comment(block->comment());
+        }
+    }
     
     int i = 0;
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {

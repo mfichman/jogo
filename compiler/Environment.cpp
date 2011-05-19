@@ -42,14 +42,14 @@ Environment::Environment() :
 }
 
 void Environment::init_boolean() {
-    root_->feature(new Class(Location(), boolean_type_, 0, 0));
+    root_->feature(new Class(Location(), boolean_type_, 0, 0, 0));
 }
 
 void Environment::init_integer() {
     Location loc;
     Formal::Ptr formals;
 
-    Class::Ptr clazz = new Class(loc, integer_type_, 0, 0);
+    Class::Ptr clazz = new Class(loc, integer_type_, 0, 0, 0);
 
     formals = new Formal(loc, name("_"), integer_type_);
     formals->next(new Formal(loc, name("_"), integer_type_));
@@ -75,11 +75,11 @@ void Environment::init_integer() {
 }
 
 void Environment::init_string() {
-    root_->feature(new Class(Location(), string_type_, 0, 0));
+    root_->feature(new Class(Location(), string_type_, 0, 0, 0));
 }
 
 void Environment::init_float() {
-    root_->feature(new Class(Location(), float_type_, 0, 0));
+    root_->feature(new Class(Location(), float_type_, 0, 0, 0));
 }
 
 String* Environment::name(const std::string& str) {
@@ -89,6 +89,32 @@ String* Environment::name(const std::string& str) {
 	if (i == name_.end()) {
 		String* name = new String(str);
 		name_.insert(std::make_pair(str, name));	
+		return name;
+	} else {
+		return i->second;
+	}
+}
+
+String* Environment::number(const std::string& str) {
+    // Returns a name if it exists, otherwise, a new one is created.
+
+	std::map<std::string, String::Ptr>::iterator i = number_.find(str);
+	if (i == number_.end()) {
+		String* name = new String(str);
+		number_.insert(std::make_pair(str, name));	
+		return name;
+	} else {
+		return i->second;
+	}
+}
+
+String* Environment::string(const std::string& str) {
+    // Returns a name if it exists, otherwise, a new one is created.
+
+	std::map<std::string, String::Ptr>::iterator i = string_.find(str);
+	if (i == string_.end()) {
+		String* name = new String(str);
+		string_.insert(std::make_pair(str, name));	
 		return name;
 	} else {
 		return i->second;

@@ -26,16 +26,17 @@
 
 using namespace std;
 
-Class::Class(Location loc, Type* type, Type* mixins, Feature* features) :
+Class::Class(Location loc, Type* t, Type* mixins, String* cmt, Feature* f) :
     Feature(loc),
-    type_(type),
+    type_(t),
     mixins_(mixins),
-    features_(features),
+    comment_(cmt),
+    features_(f),
     is_object_(false),
     is_value_(false),
     is_interface_(false) {
 
-    for (Feature* feat = features; feat; feat = feat->next()) {
+    for (Feature* feat = features_; feat; feat = feat->next()) {
         if (Attribute* attr = dynamic_cast<Attribute*>(feat)) {
             attributes_[attr->name()] = attr;
             continue;

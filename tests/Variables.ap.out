@@ -2,9 +2,11 @@ Module
   name: Variables
   feature0: Class
     name: Variables
+    comment:
     feature0: Function
       name: variables1
       type: Void
+      comment:
       formal0: Formal
         name: self
         type: Self

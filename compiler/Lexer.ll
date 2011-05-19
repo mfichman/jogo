@@ -86,7 +86,7 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
 \:\: BEGIN(INITIAL); return SCOPE;
 ; BEGIN(INITIAL); return SEMICOLON;
 [0-9]+ {
-	String* value = yyextra->environment()->name(yytext);
+	String* value = yyextra->environment()->number(yytext);
 	yylval->expression = new IntegerLiteral(*yylloc, value); 
     BEGIN(END);
 	return NUMBER;
@@ -99,29 +99,29 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
 }
 \"[^"]*\" {
 	yytext[strlen(yytext)-1] = 0;
-	String* value = yyextra->environment()->name(yytext);
+	String* value = yyextra->environment()->string(yytext);
 	yylval->expression = new StringLiteral(*yylloc, value);
     BEGIN(END);
 	return STRING;
 }
 \'[^']*\' {
-	String* value = yyextra->environment()->name(yytext);
+	String* value = yyextra->environment()->string(yytext);
 	yylval->expression = new StringLiteral(*yylloc, value); 
     BEGIN(END);
 	return STRING;
 }
 @[a-z][a-z]* {
-    yylval->name = yyextra->environment()->name(yytext);
+    yylval->string = yyextra->environment()->name(yytext);
     BEGIN(END); 
     return OPERATOR;
 }
 [a-z][A-Za-z0-9_]*[?!]? {
-	yylval->name = yyextra->environment()->name(yytext);
+	yylval->string = yyextra->environment()->name(yytext);
     BEGIN(END);
 	return IDENTIFIER;
 }
 [A-Z][A-Za-z0-9]* {
-	yylval->name = yyextra->environment()->name(yytext);
+	yylval->string = yyextra->environment()->name(yytext);
     BEGIN(END);
 	return TYPE;
 }
@@ -145,6 +145,7 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
     while (isspace(*comment)) {
         comment++;
     }
+    yylval->string = new String(comment);
     return COMMENT;
 }
 

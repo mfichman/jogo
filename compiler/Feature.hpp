@@ -122,10 +122,11 @@ private:
 /* Represents a class object */
 class Class : public Feature {
 public:
-    Class(Location loc, Type* type, Type* mixins, Feature* features);
+    Class(Location loc, Type* type, Type* mixins, String* cmt, Feature* feat);
     Feature* features() const { return features_; }    
     Attribute* attribute(String* name) const;
     Function* function(String* name) const;
+    String* comment() const { return comment_; }
     Type* type() const { return type_; }
     Type* mixins() const { return mixins_; }
     String* name() const { return type_->name(); }
@@ -143,6 +144,7 @@ private:
     mutable std::map<Class*, bool> subtype_;
     Type::Ptr type_;
     Type::Ptr mixins_;
+    String::Ptr comment_;
     Feature::Ptr features_;
     bool is_object_;
     bool is_value_;
