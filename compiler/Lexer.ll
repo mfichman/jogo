@@ -145,8 +145,6 @@ xor\= BEGIN(INITIAL); return BIT_XOR_ASSIGN;
     while (isspace(*comment)) {
         comment++;
     }
- 
-    std::cout << comment << std::endl;
     return COMMENT;
 }
 

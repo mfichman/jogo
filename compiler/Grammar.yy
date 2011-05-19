@@ -122,7 +122,7 @@ import_list
     ;
 
 class
-    : type '<' type_list '{' member_list '}' {
+    : type '<' type_list '{' comment member_list '}' {
         if (!$1->scope()->string().empty()) {
             std::cerr << @$ << "Illegal qualified name '";
             std::cerr << $1;
@@ -137,7 +137,7 @@ class
             Type* type = new Type(@$, qn, $1->generics(), module, env);
             delete $1;
     
-            $$ = new Class(@$, type, $3, $5);
+            $$ = new Class(@$, type, $3, $6);
         }
     }
     | error {
@@ -331,8 +331,8 @@ statement
     | WHILE expression block {
         $$ = new While(@$, $2, $3);
     }
-    | CASE expression '{' when_list '}' {
-        $$ = new Case(@$, $2, static_cast<When*>($4));
+    | CASE expression '{' comment when_list '}' {
+        $$ = new Case(@$, $2, static_cast<When*>($5));
     }
     | RETURN expression SEPARATOR { 
         $$ = new Return(@$, $2);
