@@ -1,0 +1,13 @@
+{
+    flex/yy_top_state
+    Memcheck:Addr4
+    fun:*yy_top_state*
+}
+
+{
+   osx/stdlib/__cxa_get_globals 
+   Memcheck:Leak
+   fun:malloc
+   fun:__cxa_get_globals
+}
+
