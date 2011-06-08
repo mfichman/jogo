@@ -301,6 +301,11 @@ void BasicBlockGenerator::operator()(Function* feature) {
     
     // Generate code for the body of the function.
     emit(feature->block());
+
+
+    if (feature->type()->equals(environment_->void_type())) {
+        ret(block_); 
+    }
     exit_scope();
 }
 

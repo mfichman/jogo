@@ -1,0 +1,21 @@
+Need a tree expander:
+    refcount in assignment operator expansion
+        (indeed. why not do this right away in the parser?)
+        (option: put 'real node' in tree, but give it an 'expansion' property)
+        (why not do this right in the code generator?)
+    fill in binary logic ops
+        (hrm, no just do it by default)
+        (what about bool primitives?)
+        (no, that's ok, no compare ops for bools)
+    expand binary ops to method calls if not primitive
+        (no, switch on @ + prim type)
+        (also, once 'inlined' functions work, this is OK?)
+        (no, not really because inlined != assembly)
+    convert for loop to while loop (syntactic sugar)
+        (why not do this right away in the parser)
+    
+Want to keep the tree as close as possible to the actual
+parse tree (for refactoring tools to work properly?)
+
+Actually refactoring tools will be fine...as long as the identifier
+locations are kept the same.

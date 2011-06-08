@@ -72,6 +72,13 @@ void TypeChecker::operator()(Class* feature) {
     class_ = feature;
     enter_scope();
 
+    // Make sure that a module with this name doesn't already exist.
+    if (environment_->module(feature->type()->qualified_name())) {
+        cerr << feature->location();
+        cerr << "Type name '" << feature->type()->qualified_name();
+        cerr << "' conflicts with an existing module name" << endl; 
+    }
+
     // Check interface/struct/object baseclass and make sure that 
     // disallowed things aren't included.
     for (Type::Ptr m = feature->mixins(); m; m = m->next()) {

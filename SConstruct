@@ -21,8 +21,8 @@ env.Program('bin/apollo', compiler_sources +  ['build/drivers/Main.cpp'])
 env.Program('bin/test', compiler_sources + ['build/drivers/Test.cpp'])
 #env.Program('bin/asmtest', 'samples/Test.linux.asm')
 
-#if 'check' in COMMAND_LINE_TARGETS:
-env.Command('check', 'bin/test', 'scripts/test')
+if 'check' in COMMAND_LINE_TARGETS:
+    env.Command('check', 'bin/test', 'scripts/test')
 
 if 'test' in COMMAND_LINE_TARGETS:
     env.Command('test', 'bin/test', 'scripts/test --full --verbose')

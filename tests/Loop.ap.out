@@ -1,6 +1,60 @@
 Module
   name: 
   feature0: Class
+    name: Iterator
+    comment:
+    feature0: Function
+      name: value
+      type: String
+      comment:
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+        child0: Return
+          expression: StringLiteral
+            value: Hello, world
+    feature1: Function
+      name: next
+      type: Void
+      comment:
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature2: Function
+      name: more
+      type: Bool
+      comment:
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+        child0: Return
+          expression: BooleanLiteral(true)
+  feature1: Class
+    name: Iterable
+    comment:
+    feature0: Function
+      name: iterator
+      type: Iterator
+      comment:
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+        child0: Return
+          expression: Construct
+            type: Iterator
+  feature2: Function
+    name: test
+    type: Void
+    comment:
+    formal0: Formal
+      name: var
+      type: String
+    block: Block
+  feature3: Class
     name: Loop
     comment:
     feature0: Function
@@ -11,10 +65,38 @@ Module
         name: self
         type: Self
       block: Block
-        child0: For
-          variable: i
-          expression: IntegerLiteral(0)
-          block: Block
+        child0: Let
+          variable0: Variable
+            name: _i
+            type: <<notype>>
+            initializer: Dispatch
+              name: iterator
+              argument0: Construct
+                type: Iterable
+          block: While
+            guard: Dispatch
+              name: more
+              argument0: Identifier
+                name: _i
+            block: Block
+              child0: Variable
+                name: i
+                type: <<notype>>
+                initializer: Dispatch
+                  name: value
+                  argument0: Identifier
+                    name: _i
+              child1: Statement
+                expression: Dispatch
+                  name: next
+                  argument0: Identifier
+                    name: _i
+              child2: Block
+                child0: Statement
+                  expression: Call
+                    name: test
+                    argument0: Identifier
+                      name: i
     feature1: Function
       name: loop2
       type: Void

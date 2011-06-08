@@ -124,7 +124,11 @@ class_name
 class
     : class_name '<' type_list '{' comment member_list '}' {
         std::string qn = MODULE->name()->string();
-        qn += "::" + $1->name()->string();
+        if (qn.empty()) {
+            qn = $1->name()->string();
+        } else {
+            qn += "::" + $1->name()->string();
+        }
         Type* type = new Type(@$, ID(qn), $1->generics(), UNIT, ENV);
         delete $1; // Delete the short type name after concat
         $$ = new Class(@$, type, $3, $5, $6);
@@ -178,8 +182,7 @@ method_body
 
 method
     : method_name formal_signature modifiers return_signature method_body {
-        Type* type = ENV->self_type();
-        Formal* self = new Formal(@$, ID("self"), type);
+        Formal* self = new Formal(@$, ID("self"), ENV->self_type());
         self->next($2);
         $$ = new Function(@$, $1, self, $4, $5);
     }

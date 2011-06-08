@@ -30,7 +30,8 @@ Type::Type(Location loc, String* qn, Generic* gen, Module* mod, Environment* env
     generics_(gen),
     module_(mod),
     environment_(env),
-    class_(0) {
+    class_(0),
+    qualified_name_(qn) {
 
     // Compute the scope and name of the type by splitting on the '::' token.
     size_t scope_end = qn->string().find_last_of(':');

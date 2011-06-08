@@ -34,6 +34,7 @@ class Type : public TreeNode {
 public:
     Type(Location loc, String* qn, Generic* gen, Module* mod, Environment* env);
     Generic* generics() const { return generics_; }
+    String* qualified_name() const { return qualified_name_; }
     String* name() const { return name_; }
     String* scope() const { return scope_; }
     Type* next() const { return next_; }
@@ -57,6 +58,7 @@ private:
     String::Ptr name_;
     Type::Ptr next_;
     Class* class_;
+    String::Ptr qualified_name_;
 };
 
 /* Holder for a generics type parameter */
