@@ -308,7 +308,8 @@ void TypeChecker::operator()(Dispatch* expression) {
     if (!func) {
         cerr << expression->location();
         cerr << "Undeclared function '";
-        cerr << expression->identifier() << "'";
+        cerr << expression->identifier() << "' in class '";
+        cerr << clazz->type() << "'";
         cerr << endl;
         expression->type(environment_->no_type());
         return;
