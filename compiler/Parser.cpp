@@ -123,7 +123,7 @@ void Parser::dir(const std::string& dir) {
 void yyerror(Location* loc, Parser* self, void* scanner, const char* msg) {
 
     self->environment()->error(msg);
-	std::cerr << self->file() << ":" << loc->first_line << ":";
+	std::cerr << self->file()->name() << ":" << loc->first_line << ":";
 	std::cerr << loc->first_column << ": ";
 	std::cerr << (char)toupper(msg[0]) << msg + 1 << std::endl;	
 }

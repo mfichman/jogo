@@ -45,6 +45,13 @@ TypeChecker::TypeChecker(Environment* environment) :
 void TypeChecker::operator()(Module* feature) {
     module_ = feature;
 
+    std::string module_name = feature->name()->string();
+    if (module_name.empty()) {
+        module_name = "root module";
+    } else {
+        module_name = "'" + module_name + "'";
+    }
+
     // Iterate through all functions and classes in the module, and check 
     // their semantics.  Ensure there are no duplicate functions or classes.
     std::set<String::Ptr> features;
@@ -53,14 +60,14 @@ void TypeChecker::operator()(Module* feature) {
             if (features.find(func->name()) != features.end()) {
                 cerr << f->location();
                 cerr << "Duplicate definition of function '";
-                cerr << func->name() << "'" << endl;
+                cerr << func->name() << "' in " << module_name << endl;
             }
             features.insert(func->name());
         } else if (Class::Ptr clazz = dynamic_cast<Class*>(f.pointer())) {
             if (features.find(clazz->name()) != features.end()) {
                 cerr << f->location();
                 cerr << "Duplicate definition of class '";
-                cerr << clazz->name() << "'" << endl;
+                cerr << clazz->name() << "' in " << module_name << endl;
             }
             features.insert(clazz->name());
         }

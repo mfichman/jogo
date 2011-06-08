@@ -127,9 +127,9 @@ Module
         expression: Identifier
           name: a
 SemantBad.ap:3:1: Function 'foo' must return a value
-SemantBad.ap:10:1: Duplicate definition of function 'foo'
+SemantBad.ap:10:1: Duplicate definition of function 'foo' in root module
 SemantBad.ap:35:5: Duplicate definition of function 'bar'
 SemantBad.ap:54:5: Duplicate definition of attribute 'blarg'
 SemantBad.ap:19:5: Function 'bar' must return a value
-SemantBad.ap:57:1: Duplicate definition of class 'Bob'
+SemantBad.ap:57:1: Duplicate definition of class 'Bob' in root module
 SemantBad.ap:62:5: Statement is unreachable
