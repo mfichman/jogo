@@ -59,15 +59,7 @@ void Parser::input(const std::string& file) {
 void Parser::file(const std::string& file) {
     // Begin parsing a module file if it doesn't already exist.
 
-    String* fs = environment_->string(file);
-    unit_ = environment_->unit(fs);
-    if (unit_) {
-        return;
-    } else {
-        unit_ = new Module(Location(), fs, environment_);
-        environment_->unit(unit_);
-    }
-
+    // The module can be loaded from the dir components of the file name
     String* scope = environment_->name(Import::scope_name(file));
     module_ = environment_->module(scope);
     if (!module_) {
@@ -75,16 +67,25 @@ void Parser::file(const std::string& file) {
         environment_->module(module_);
     }
 
+    // Create a file object for this file if it hasn't been parsed yet.
+    String* fs = environment_->string(file);
+    file_ = environment_->file(fs);
+    if (file_) {
+        return;
+    } else {
+        file_ = new File(fs, module_, environment_);
+        environment_->file(file_);
+    }
+
     this->column_ = 1;
     this->input_.close();
     this->input_.open(file.c_str()); 
-	this->file_ = new String(file);
 
     // Begin parsing
     yyparse(this, this->scanner_);
 
     // Now parse other modules that depend on the unit that was added
-    for (Feature* f = unit_->features(); f; f = f->next()) {
+    for (Feature* f = file_->features(); f; f = f->next()) {
         if (Import* import = dynamic_cast<Import*>(f)) {
 
             if (File::is_reg(import->file_name() + ".ap")) {

@@ -32,14 +32,14 @@
 /* Type object */
 class Type : public TreeNode {
 public:
-    Type(Location loc, String* qn, Generic* gen, Module* mod, Environment* env);
+    Type(Location loc, String* qn, Generic* gen, File* file, Environment* env);
     Generic* generics() const { return generics_; }
     String* qualified_name() const { return qualified_name_; }
     String* name() const { return name_; }
     String* scope() const { return scope_; }
     Type* next() const { return next_; }
     Class* clazz() const;
-    Module* module() const { return module_; }
+    File* file() const { return file_; }
     bool equals(Type* other) const;
     bool subtype(Type* other) const;
     bool interface() const;
@@ -52,7 +52,7 @@ public:
     
 private:
     Pointer<Generic> generics_;
-    Module* module_;
+    File* file_;
     Environment* environment_;
     String::Ptr scope_;
     String::Ptr name_;

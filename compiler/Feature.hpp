@@ -154,7 +154,7 @@ private:
     mutable int visited_;
 };
 
-/* Module, contains classes, functions, imports, etc. */
+/* Module, contains classes, functions, etc. */
 class Module : public Feature {
 public:
     Module(Location loc, String* name, Environment* env) :
@@ -165,10 +165,7 @@ public:
 
     Feature* features() const { return features_; }
     Function* function(String* name) { return query(functions_, name); }
-    Function* function(String* scope, String* name);
     Class* clazz(String* name) { return query(classes_, name); }
-    Class* clazz(String* scope, String* name);
-    Import* import(String* name) { return query(imports_, name); }
     String* name() const { return name_; }
     void feature(Feature* feature);
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -177,7 +174,6 @@ public:
 private:
     std::map<String::Ptr, Function::Ptr> functions_;
     std::map<String::Ptr, Class::Ptr> classes_;
-    std::map<String::Ptr, Import::Ptr> imports_;
     String::Ptr name_; 
     Feature::Ptr features_;
     Environment* environment_;

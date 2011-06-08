@@ -37,9 +37,8 @@ public:
 
     Environment* environment() const { return environment_; }
     Module* module() const { return module_; }
-    Module* unit() const { return unit_; }
+	File* file() const { return file_; }
     std::fstream& input() { return input_; }
-	String* file() const { return file_; }
     int column() const { return column_; }
 	void file(const std::string& file);
     void dir(const std::string& dir);
@@ -51,10 +50,9 @@ public:
 private:
     Environment::Ptr environment_;
     Module::Ptr module_;
-    Module::Ptr unit_;
+    File::Ptr file_;
     int column_;
     std::fstream input_;
-    String::Ptr file_;
     void *scanner_;
 };
 

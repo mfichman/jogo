@@ -240,13 +240,8 @@ void TypeChecker::operator()(Call* expression) {
     // be a member of the current module, or of a module that was imported
     // in the current compilation unit.
     String::Ptr id = expression->identifier();
-    String::Ptr scope = expression->module();
-    Function::Ptr func;
-    if (expression->unit()) {
-        func = expression->unit()->function(scope, id);  
-    } else {
-        func = module_->function(scope, id);
-    }
+    String::Ptr scope = expression->scope();
+    Function::Ptr func = expression->file()->function(scope, id);
     if (!func) {
         cerr << expression->location();
         cerr << "Undeclared function '";
@@ -424,7 +419,6 @@ void TypeChecker::operator()(Identifier* expression) {
 }
 
 void TypeChecker::operator()(Empty* expression) {
-    expression->type(environment_->no_type());
 }
 
 void TypeChecker::operator()(Block* statement) {
@@ -488,10 +482,10 @@ void TypeChecker::operator()(Variable* statement) {
     // Ensure that a variable is not duplicated, or re-initialized with a 
     // different type.  This function handles both assignment and variable
     // initialization.
-    Expression::Ptr initializer = statement->initializer();
-    initializer(this);
+    Expression::Ptr init = statement->initializer();
+    init(this);
 
-    if (!statement->type()->equals(environment_->no_type())) {
+    if (statement->type()) {
         Type::Ptr type = statement->type();
         type(this);
         if (!type->clazz()) {
@@ -502,55 +496,49 @@ void TypeChecker::operator()(Variable* statement) {
 
     Type::Ptr type = variable(statement->identifier());
 
-    // The variable was declared with an explicit type, but the variable
-    // already exists.
-    if (type && !statement->type()->equals(environment_->no_type())) {
-        cerr << statement->location();
-        cerr << "Duplicate definition of variable '";
-        cerr << statement->identifier() << "'" << endl;
-        return;
-    }
 
-    // The variable was already declared, but the initializer type is not
-    // compatible with the variable type.
-    if (type && !initializer->type()->subtype(type)) {
-        cerr << initializer->location();
-        cerr << "Expression does not conform to type '";
-        cerr << type << "' in assignment of '";
-        cerr << statement->identifier() << "'" << endl;
-        return;
-    }
-
-    // The variable was declared with an explicit type, and the initializer
-    // does not conform to that type.
-    if (!initializer->type()->subtype(statement->type())) {
-        cerr << initializer->location();
-        cerr << "Expression does not conform to type '";
-        cerr << statement->type() << "'" << endl;
-        return;
-    }
         
-    // Grab the variable type from the explicit type.
-    if (initializer->type()->equals(environment_->no_type())) {
-        variable(statement->identifier(), statement->type()); 
-        return;
-    }
-
     // Attempt to assign void to a variable during initialization.
-    if (initializer->type()->equals(environment_->void_type())) {
-        cerr << initializer->location();
+    if (init->type() && init->type()->equals(environment_->void_type())) {
+        cerr << init->location();
         cerr << "Void value assigned to variable '";
         cerr << statement->identifier() << "'" << endl;
         variable(statement->identifier(), environment_->no_type());
         return;
     }
     
-    // Get the variable type from either the explicit type or the 
-    // initializer.
-    if (!statement->type()->equals(environment_->no_type())) {
+    if (statement->type()) {
+        // The variable was declared with an explicit type, but the variable
+        // already exists.
+        if (type) {
+            cerr << statement->location();
+            cerr << "Duplicate definition of variable '";
+            cerr << statement->identifier() << "'" << endl;
+            return;
+        }
+
+        // The variable was declared with an explicit type, and the init
+        // does not conform to that type.
+        if (init->type() && !init->type()->subtype(statement->type())) {
+            cerr << init->location();
+            cerr << "Expression does not conform to type '";
+            cerr << statement->type() << "'" << endl;
+            return;
+        }
+
         variable(statement->identifier(), statement->type());
+        init->type(statement->type());
     } else {
-        variable(statement->identifier(), initializer->type()); 
+        // The variable was already declared, but the init type is not
+        // compatible with the variable type.
+        if (type && !init->type()->subtype(type)) {
+            cerr << init->location();
+            cerr << "Expression does not conform to type '";
+            cerr << type << "' in assignment of '";
+            cerr << statement->identifier() << "'" << endl;
+            return;
+        }
+        variable(statement->identifier(), init->type()); 
     }
 }
 
@@ -560,9 +548,13 @@ void TypeChecker::operator()(Return* statement) {
         expression(this);
         return_ = expression->type();
     }
+    if (!expression->type()) {
+        expression->type(environment_->void_type());
+        return;
+    }
     if (!expression->type()->subtype(scope_->type())) {
         cerr << statement->location();
-        cerr << "Expression does not conform to return type '";
+        cerr << "Return must conform to type '";
         cerr << scope_->type() << "'";
         cerr << endl;
     }
@@ -659,13 +651,18 @@ void TypeChecker::operator()(Attribute* feature) {
     type(this);
 
     // Make sure that the initializer and the feature type conform.
-    if (!initializer->type()->subtype(feature->type())) {
+    if (initializer->type() && !initializer->type()->subtype(feature->type())) {
         cerr << feature->location();
         cerr << "Expression does not conform to type '";
         cerr << initializer->type() << "'";
         cerr << endl;
     }
-    variable(feature->name(), feature->type());
+
+    if (feature->type()) {
+        variable(feature->name(), feature->type());
+    } else {
+        variable(feature->name(), initializer->type());
+    }
 }
 
 void TypeChecker::operator()(Import* feature) {

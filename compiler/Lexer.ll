@@ -24,7 +24,7 @@
 	parser->column(parser->column() + yyleng);\
 	yylloc->last_column = parser->column() - 1;\
 	yylloc->last_line = yylineno;\
-    yylloc->file_name = parser->file();\
+    yylloc->file_name = parser->file()->name();\
 }
 #define POP_SEPARATOR() {\
     if (1||YY_START == SC_SEPARATOR) {\

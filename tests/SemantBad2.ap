@@ -5,3 +5,25 @@ Sub1 < Object {
 
     foo Sub1::Test
 }
+
+import Sub2
+
+test() Bool {
+# This function should override Sub2::test() which returns Int
+    return 
+}
+
+main() Int {
+    return test()
+}
+
+Test < Object {
+# This class should override Sub2::Test, which has type bob
+    bob() {
+    }
+}
+
+main2() Int {
+    Test().bob()
+    return 0
+}

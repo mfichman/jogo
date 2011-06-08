@@ -21,9 +21,116 @@
  */  
 
 #include <File.hpp>
+#include <String.hpp>
+#include <Feature.hpp>
+#include <Environment.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+
+Function* File::function(String* scope, String* name) {
+    // Returns the function with the scope "scope" and name "name."  Searches
+    // through imports included in this file to attempt to find the function.
+
+    if (scope && scope->string() != "") {
+        // The scope was specified, so load the function using the full scope
+        // specifier.
+        Module* module = environment_->module(scope);
+        return module ? module->function(name) : 0;
+    }
+
+    // Attempt to load the function from the current module
+    Function* fn = module_->function(name);
+    if (fn) {
+        return fn;
+    }
+
+    // Search the imports for the function in question 
+    std::vector<Import::Ptr>::iterator i = imports_.begin();
+    for (; i != imports_.end(); i++) {
+        if ((*i)->is_qualified()) {
+            continue;
+        }
+        Module* m = environment_->module((*i)->scope());
+        if (!m) {
+            continue;
+        }
+        fn = m->function(name);
+        if (fn) {
+            return fn;
+        }
+    }
+
+    // Load from the global scope
+    fn = environment_->root()->function(name);
+    if (fn) {
+        return fn;
+    }
+
+    // Load from the builtin scope 
+    return environment_->builtins()->function(name);
+}
+
+Class* File::clazz(String* scope, String* name) {
+    // Returns the class with the scope "scope" and name "name."  Searches
+    // through imports included in this module to attempt to find the class.
+
+    if (scope && scope->string() != "") {
+        // The scope was specified, so load the class using the full scope
+        // specifier.
+        Module* module = environment_->module(scope);
+        return module ? module->clazz(name) : 0;
+    }
+
+    // Attempt to load the class from the current module
+    Class* cs = module_->clazz(name);
+    if (cs) {
+        return cs;
+    }
+
+    // Search the imports for the class in question 
+    std::vector<Import::Ptr>::iterator i = imports_.begin();
+    for (; i != imports_.end(); i++) {
+        if ((*i)->is_qualified()) {
+            continue;
+        }
+        Module* m = environment_->module((*i)->scope());
+        if (!m) {
+            continue;
+        }
+        cs = m->clazz(name);
+        if (cs) {
+            return cs;
+        }
+    }
+
+    // Load from the global scope
+    cs = environment_->root()->clazz(name);
+    if (cs) {
+        return cs;
+    }
+
+    // Load from the builtin scope 
+    return environment_->builtins()->clazz(name);
+}
+
+void File::feature(Feature* feature) {
+    if (!feature) {
+        return;
+    }
+
+    feature->next(features_);
+    features_ = feature;
+
+    if (Import* import = dynamic_cast<Import*>(feature)) {
+        if (import->scope()->string().empty()) {
+            return;
+        }
+
+        imports_.push_back(import);
+        return;
+    }
+}
 
 bool File::is_dir(const std::string& name) {
     struct stat info;

@@ -1,5 +1,5 @@
 Module
-  name: Sub2
+  name: Sub1
   feature0: Class
     name: Test
     comment:
@@ -10,8 +10,13 @@ Module
     block: Block
       child0: Return
         expression: IntegerLiteral(0)
+  feature2: Function
+    name: bob
+    type: Void
+    comment:
+    block: Block
 Module
-  name: Sub1
+  name: Sub2
   feature0: Class
     name: Test
     comment:

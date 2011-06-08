@@ -5,3 +5,6 @@ Test < Object {
 test() Int {
     return 0
 }
+
+bob() {
+}

@@ -23,19 +23,37 @@
 #pragma once
 
 #include <Object.hpp>
+#include <Feature.hpp>
 #include <string>
-
+#include <vector>
 
 /* Basic file operations and utilites */
 class File : public Object {
 public:
+    File(String* name, Module* module, Environment* env) :
+        name_(name),
+        module_(module),
+        environment_(env) {  
+    }
+
+    Feature* features() const { return features_; }
+    Function* function(String* scope, String* name);
+    Class* clazz(String* scope, String* name);
+    String* name() const { return name_; }
+    void feature(Feature* feature);
+    typedef Pointer<File> Ptr;
+
     class Iterator;
     static bool is_dir(const std::string& file);
     static bool is_reg(const std::string& file);
     static std::string base_name(const std::string& file);
 
 private:
-   
+    Feature::Ptr features_;
+    String::Ptr name_;
+    Module::Ptr module_;
+    Environment* environment_;
+    std::vector<Import::Ptr> imports_; 
 };
 
 /* Directory iterator object */

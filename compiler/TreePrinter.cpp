@@ -212,9 +212,9 @@ void TreePrinter::operator()(Call* expression) {
     cout << "Call" << endl;
     print_tabs(); cout << "name: ";
     cout << expression->identifier() << endl;
-    if (expression->module()) {
+    if (expression->scope()) {
         print_tabs(); cout << "module: ";
-        cout << expression->module() << endl;
+        cout << expression->scope() << endl;
     }
 
     int i = 0;

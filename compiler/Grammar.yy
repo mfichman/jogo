@@ -21,16 +21,15 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
     current.first_column = rhs[1].first_column;\
     current.last_line = rhs[n].last_line;\
     current.last_column = rhs[n].last_column;\
-    current.file_name = parser->file();\
+    current.file_name = parser->file()->name();\
 }
 
 #define ID(X) parser->environment()->name((X))
 // Shortcut, adds an identifier name to the current environment
 
-#define NOTYPE parser->environment()->no_type()
 #define ENV parser->environment()
 #define MODULE parser->module()
-#define UNIT parser->unit()
+#define UNIT parser->file()
 
 %}
 
@@ -163,7 +162,7 @@ attribute
         $$ = new Attribute(@$, $1, $2, $4);
     }
     | IDENTIFIER '=' expression SEPARATOR {
-        $$ = new Attribute(@$, $1, NOTYPE, $3);
+        $$ = new Attribute(@$, $1, 0, $3);
     }
     | IDENTIFIER type SEPARATOR {
         $$ = new Attribute(@$, $1, $2, new Empty(@$));
@@ -280,7 +279,7 @@ statement
 
         // _i = $4.iterator()
         Dispatch* t1 = new Dispatch(@$, ID("iterator"), $4, 0);
-        Variable* t2 = new Variable(@$, ID("_i"), NOTYPE, t1);
+        Variable* t2 = new Variable(@$, ID("_i"), 0, t1);
         
         // _i.more()
         Identifier* t3 = new Identifier(@$, ID("_i"));
@@ -289,7 +288,7 @@ statement
         // $2 = _i.value()
         Identifier* t5 = new Identifier(@$, ID("_i"));
         Dispatch* t6 = new Dispatch(@$, ID("value"), t5, 0); 
-        Variable* t7 = new Variable(@$, $2, NOTYPE, t6); 
+        Variable* t7 = new Variable(@$, $2, 0, t6); 
 
         // i.next()
         Identifier* t8 = new Identifier(@$, ID("_i"));
@@ -456,9 +455,9 @@ call
 variable_list
     : variable ',' variable_list { $1->next($3); $$ = $1; }
     | variable { $$ = $1; }
-    | expression { $$ = new Variable(@$, ID(""), NOTYPE, $1); }
+    | expression { $$ = new Variable(@$, ID(""), 0, $1); }
     | expression ',' variable_list {
-        $$ = new Variable(@$, ID(""), NOTYPE, $1);
+        $$ = new Variable(@$, ID(""), 0, $1);
         $$->next($3);
     }
     ;
@@ -466,7 +465,7 @@ variable_list
 variable
     : IDENTIFIER type { $$ = new Variable(@$, $1, $2, new Empty(@$)); }
     | IDENTIFIER type '=' expression { $$ = new Variable(@$, $1, $2, $4); }
-    | IDENTIFIER '=' expression { $$ = new Variable(@$, $1, NOTYPE, $3); }
+    | IDENTIFIER '=' expression { $$ = new Variable(@$, $1, 0, $3); }
     ;
 
 when_list

@@ -25,10 +25,10 @@
 #include "Environment.hpp"
 #include <cassert>
 
-Type::Type(Location loc, String* qn, Generic* gen, Module* mod, Environment* env) :
+Type::Type(Location loc, String* qn, Generic* gen, File* file, Environment* env) :
     TreeNode(loc),
     generics_(gen),
-    module_(mod),
+    file_(file),
     environment_(env),
     class_(0),
     qualified_name_(qn) {
@@ -44,8 +44,8 @@ Type::Type(Location loc, String* qn, Generic* gen, Module* mod, Environment* env
     }
 
     // Add an implicit (qualified) import if it doesn't already exist
-    if (!module_->import(scope_) && !scope_->string().empty()) {
-        module_->feature(new Import(loc, scope_, true));
+    if (!scope_->string().empty()) {
+        file_->feature(new Import(loc, scope_, true));
     }
 }
 
@@ -97,12 +97,15 @@ Class* Type::clazz() const {
         return class_;
     }
     Type* self = const_cast<Type*>(this);
-    self->class_ = self->module_->clazz(scope_, name_);
+    self->class_ = self->file_->clazz(scope_, name_);
     return self->class_;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const Type* type) {
+    if (!type) {
+        return out << "<<notype>>";
+    }   
     if (type->scope()->string().empty()) {
         out << type->name();
     } else {

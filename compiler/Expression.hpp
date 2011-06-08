@@ -143,23 +143,23 @@ private:
 /* Normal function all */
 class Call : public Expression {
 public:
-    Call(Location loc, Module* u, String* mod, String* id, Expression* args) :
+    Call(Location loc, File* file, String* mod, String* id, Expression* args) :
         Expression(loc),
-        unit_(u),
-        module_(mod),
+        file_(file),
+        scope_(mod),
         identifier_(id),
         arguments_(args) {
     }
 
-    String* module() const { return module_; }
+    String* scope() const { return scope_; }
     String* identifier() const { return identifier_; }
-    Module* unit() const { return unit_; } 
+    File* file() const { return file_; } 
     Expression* arguments() const { return arguments_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    Module* unit_;
-    String::Ptr module_;
+    File* file_;
+    String::Ptr scope_;
     String::Ptr identifier_;
     Expression::Ptr arguments_;
 };

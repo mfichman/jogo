@@ -114,13 +114,8 @@ void BasicBlockGenerator::operator()(Call* expression) {
 
     // Look up the function by name in the current context.
     String::Ptr id = expression->identifier();
-    String::Ptr scope = expression->module();
-    String::Ptr name;
-    if (expression->unit()) {
-        name = expression->unit()->function(scope, id)->name();
-    } else {
-        name = module_->function(scope, id)->name();
-    }
+    String::Ptr scope = expression->scope();
+    String::Ptr name = expression->file()->function(scope, id)->name();
 
     // Insert a call expression, then pop the return value off the stack.
     call(block_, name);

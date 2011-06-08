@@ -26,6 +26,7 @@
 #include "Object.hpp"
 #include "Feature.hpp"
 #include "String.hpp"
+#include "File.hpp"
 #include <map>
 
 /* Compilation environment; contains symbol table and compilation units */
@@ -36,14 +37,14 @@ public:
     String* integer(const std::string& str);
     String* floating(const std::string& str);
     String* string(const std::string& str);
-    Module* module(String* scope);
-    Module* modules() const { return modules_; }
-    Module* unit(String* scope);
     Module* root() const { return root_; }
     Module* builtins() const { return builtins_; }
+    Module* module(String* scope);
+    Module* modules() const { return modules_; }
+    File* file(String* name);
     int errors() { return errors_; }
     void module(Module* module);
-    void unit(Module* module);
+    void file(File* name);
     void error(const std::string& error) { errors_++; }
     const Location& location() const;
     typedef Pointer<Environment> Ptr;
@@ -67,9 +68,10 @@ private:
     std::map<std::string, String::Ptr> floating_;
     std::map<std::string, String::Ptr> string_;
     std::map<String::Ptr, Module::Ptr> module_;
-    std::map<String::Ptr, Module::Ptr> unit_;
+    std::map<String::Ptr, File::Ptr> file_;
     Module::Ptr root_;
     Module::Ptr builtins_;
+    File::Ptr builtin_file_; 
     Module::Ptr modules_;
     Type::Ptr void_type_;
     Type::Ptr boolean_type_;

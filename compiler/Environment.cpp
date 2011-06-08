@@ -27,13 +27,14 @@
 Environment::Environment() :
     root_(new Module(Location(), name(""), this)),
     builtins_(new Module(Location(), name(""), this)),
-    void_type_(new Type(Location(), name("Void"), 0, builtins_, this)),
-    boolean_type_(new Type(Location(), name("Bool"), 0, builtins_, this)),
-    integer_type_(new Type(Location(), name("Int"), 0, builtins_, this)),
-    string_type_(new Type(Location(), name("String"), 0, builtins_, this)),
-    no_type_(new Type(Location(), name("<<notype>>"), 0, builtins_, this)),
-    float_type_(new Type(Location(), name("Float"), 0, builtins_, this)),
-    self_type_(new Type(Location(), name("Self"), 0, builtins_, this)),
+    builtin_file_(new File(0, builtins_, this)),
+    void_type_(new Type(Location(), name("Void"), 0, builtin_file_, this)),
+    boolean_type_(new Type(Location(), name("Bool"), 0, builtin_file_, this)),
+    integer_type_(new Type(Location(), name("Int"), 0, builtin_file_, this)),
+    string_type_(new Type(Location(), name("String"), 0, builtin_file_, this)),
+    no_type_(new Type(Location(), name("<<notype>>"), 0, builtin_file_, this)),
+    float_type_(new Type(Location(), name("Float"), 0, builtin_file_, this)),
+    self_type_(new Type(Location(), name("Self"), 0, builtin_file_, this)),
     errors_(0) {
 
     module(root_);
@@ -159,18 +160,18 @@ Module* Environment::module(String* scope) {
     }
 }
 
-Module* Environment::unit(String* scope) {
+File* Environment::file(String* scope) {
     // Look up a module by file_name path
-    std::map<String::Ptr, Module::Ptr>::iterator i = unit_.find(scope);
-    if (i == unit_.end()) {
+    std::map<String::Ptr, File::Ptr>::iterator i = file_.find(scope);
+    if (i == file_.end()) {
         return 0;
     } else {
         return i->second;
     }
 }
 
-void Environment::unit(Module* unit) {
-    unit_[unit->name()] = unit;
+void Environment::file(File* file) {
+    file_[file->name()] = file;
 }
 
 void Environment::module(Module* module) {
