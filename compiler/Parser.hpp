@@ -45,6 +45,8 @@ public:
     void input(const std::string& file);
     void column(int column) { column_ = column; }
     void force_separator();
+    void recover_line();
+    bool is_recovering();
     typedef Pointer<Parser> Ptr;
 
 private:

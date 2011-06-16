@@ -1,0 +1,33 @@
+Blarg < Object {
+
+    func1() {
+        a = 0
+
+        2001! bb
+        ~` ejd
+        ~3 += 3;
+        @init() {
+        }
+        for x im h {
+            a = 0
+            @
+        }
+        foo[] = 9
+        a = 92
+    }
+
+    Int func3() {
+    }
+
+    func3() {
+        `
+        if a {
+        } 
+    }
+
+    Int a
+    blarg += 39
+    b : Int
+    
+    func() Int {
+}

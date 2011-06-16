@@ -1,0 +1,13 @@
+SyntaxBad.ap:6:13: Syntax error, unexpected '!'
+SyntaxBad.ap:7:10: Syntax error, unexpected BACKTICK
+SyntaxBad.ap:8:12: Syntax error, unexpected ADD_ASSIGN
+SyntaxBad.ap:9:9: Syntax error, unexpected OPERATOR
+SyntaxBad.ap:11:15: Syntax error, unexpected IDENTIFIER, expecting IN
+SyntaxBad.ap:13:13: Syntax error, unexpected $undefined
+SyntaxBad.ap:15:13: Syntax error, unexpected ']'
+SyntaxBad.ap:19:5: Syntax error, unexpected TYPE, expecting IDENTIFIER or OPERATOR or '}'
+SyntaxBad.ap:23:9: Syntax error, unexpected BACKTICK
+SyntaxBad.ap:28:5: Syntax error, unexpected TYPE, expecting IDENTIFIER or OPERATOR or '}'
+SyntaxBad.ap:29:11: Syntax error, unexpected ADD_ASSIGN, expecting '('
+SyntaxBad.ap:30:7: Syntax error, unexpected COLON, expecting '('
+SyntaxBad.ap:34:2: Syntax error, unexpected $end, expecting IDENTIFIER or OPERATOR or '}'

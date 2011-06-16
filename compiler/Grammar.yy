@@ -81,7 +81,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %token <expression> STRING FLOAT INTEGER BOOLEAN SBEGIN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
 %token IMPORT FUNCTION VOID
-%token SEPARATOR SEMICOLON
+%token SEPARATOR SEMICOLON COLON BACKTICK
 %token WHEN CASE WHILE ELSE UNTIL IF DO FOR RETURN
 %token RIGHT_ARROW LEFT_ARROW
 %token EQUAL NOT_EQUAL GREATER_OR_EQUAL LESS_OR_EQUAL
@@ -111,7 +111,9 @@ module
     : class module { MODULE->feature($1); }
     | function module { MODULE->feature($1); }
     | IMPORT import_list SEPARATOR module {}
-    | error module {}
+    | SEPARATOR class module { MODULE->feature($2); }
+    | SEPARATOR function module { MODULE->feature($2); }
+    | SEPARATOR IMPORT import_list SEPARATOR module {}
     | /* empty */ {}
     ;
 
@@ -148,7 +150,6 @@ import_list
 
 member_list
     : member member_list { $$ = $1; $$->next($2); }
-    | error member_list { $$ = $2; }
     | /* empty */ { $$ = 0; }
     ;
 
@@ -167,6 +168,10 @@ attribute
     | IDENTIFIER type SEPARATOR {
         $$ = new Attribute(@$, $1, $2, new Empty(@$));
     }
+    | error SEPARATOR {
+        $$ = new Attribute(@$, ID(""), 0, new Empty(@$));
+        yyerrok;
+    }
     ;
 
 method_name
@@ -184,6 +189,11 @@ method
         Formal* self = new Formal(@$, ID("self"), ENV->self_type());
         self->next($2);
         $$ = new Function(@$, $1, self, $4, $5);
+    }
+    | error block {
+        Formal* self = new Formal(@$, ID("self"), ENV->self_type());
+        $$ = new Function(@$, ID(""), self, 0, $2);
+        yyerrok;
     }
     ;
 
@@ -260,7 +270,6 @@ comment
 
 statement_list
     : statement statement_list { $$ = $1; $$->next($2); }
-    | error statement_list { $$ = $2; }
     | /* empty */ { $$ = 0; }
     ;
 
@@ -313,6 +322,10 @@ statement
         $$ = new Case(@$, $2, static_cast<When*>($5));
         delete $4; // '{' may introduce a comment, but we discard it
     }
+    | error block {
+        $$ = $2;
+        yyerrok;
+    }
     | expression '[' expression_list ']' '=' expression SEPARATOR {
         /* Indexed assignment operator */
         Expression* last = $3;
@@ -328,6 +341,10 @@ statement
         /* Attribute assignment, calls the mutator function */
         $$ = new Simple(@$, new Dispatch(@$, ID($3->string() + "="), $1, $5));
     }
+    | error SEPARATOR {
+        $$ = new Simple(@$, new Empty(@$));
+        yyerrok;
+    } 
     ;
 
 expression_list

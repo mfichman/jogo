@@ -26,16 +26,7 @@
 	yylloc->last_line = yylineno;\
     yylloc->file_name = parser->file()->name();\
 }
-#define POP_SEPARATOR() {\
-    if (1||YY_START == SC_SEPARATOR) {\
-        yy_pop_state(yyscanner);\
-    }\
-}
-#define PUSH_SEPARATOR() {\
-    if (YY_START != SC_SEPARATOR) {\
-        yy_push_state(SC_SEPARATOR, yyscanner);\
-    }\
-}
+#define PUSH_SEPARATOR() yy_push_state(SC_SEPARATOR, yyscanner);
 
 using namespace std;
 
@@ -48,17 +39,17 @@ using namespace std;
 %option yylineno
 %option bison-locations
 %option stack
-%x SC_COMMENT SC_SEPARATOR SC_STRING
+%x SC_COMMENT SC_SEPARATOR SC_STRING 
 
 /* Lexer rules */
 %%
 import return IMPORT;
 case return CASE;
 when return WHEN;
-public yy_push_state(SC_SEPARATOR, yyscanner); return PUBLIC;
-private yy_push_state(SC_SEPARATOR, yyscanner); return PRIVATE;
-static yy_push_state(SC_SEPARATOR, yyscanner); return STATIC;
-native yy_push_state(SC_SEPARATOR, yyscanner); return NATIVE;
+public return PUBLIC;
+private return PRIVATE;
+static return STATIC;
+native return NATIVE;
 while return WHILE;
 else return ELSE;
 until return UNTIL;
@@ -66,7 +57,7 @@ if return IF;
 function return FUNCTION;
 for return FOR;
 let return LET;
-return yy_push_state(SC_SEPARATOR, yyscanner); return RETURN;
+return return RETURN;
 xor return XOR;
 and return AND;
 or return OR;
@@ -97,29 +88,27 @@ xor\= return BIT_XOR_ASSIGN;
 \-\- return DECREMENT;
 \:\: return SCOPE;
 ; return SEMICOLON;
+` return BACKTICK;
+: return COLON;
 
 [0-9]+\.[0-9]* {
     String* value = yyextra->environment()->floating(yytext);
     yylval->expression = new FloatLiteral(*yylloc, value);
-    yy_push_state(SC_SEPARATOR, yyscanner);
     return FLOAT;
 }
 \.[0-9]+ {
     String* value = yyextra->environment()->floating(yytext);
     yylval->expression = new FloatLiteral(*yylloc, value);
-    yy_push_state(SC_SEPARATOR, yyscanner);
     return FLOAT;
 }
 [0-9]+ {
 	String* value = yyextra->environment()->integer(yytext);
 	yylval->expression = new IntegerLiteral(*yylloc, value); 
-    yy_push_state(SC_SEPARATOR, yyscanner);
 	return INTEGER;
 }
 (true|false) {
     String* value = yyextra->environment()->name(yytext);
     yylval->expression = new BooleanLiteral(*yylloc, value);
-    yy_push_state(SC_SEPARATOR, yyscanner);
     return BOOLEAN;
 }
 \" {
@@ -128,22 +117,18 @@ xor\= return BIT_XOR_ASSIGN;
 \'[^']*\' {
 	String* value = yyextra->environment()->string(yytext);
 	yylval->expression = new StringLiteral(*yylloc, value); 
-    yy_push_state(SC_SEPARATOR, yyscanner);
 	return STRING;
 }
 @[a-z][a-z]* {
     yylval->string = yyextra->environment()->name(yytext);
-    yy_push_state(SC_SEPARATOR, yyscanner); 
     return OPERATOR;
 }
 [a-z][A-Za-z0-9_]*[?!]? {
 	yylval->string = yyextra->environment()->name(yytext);
-    yy_push_state(SC_SEPARATOR, yyscanner);
 	return IDENTIFIER;
 }
 [A-Z][A-Za-z0-9]* {
 	yylval->string = yyextra->environment()->name(yytext);
-    yy_push_state(SC_SEPARATOR, yyscanner);
 	return TYPE;
 }
 [{] {
@@ -151,16 +136,19 @@ xor\= return BIT_XOR_ASSIGN;
     return yytext[0];
 }
 [([,] return yytext[0]; 
-[)\]] yy_push_state(SC_SEPARATOR, yyscanner); return yytext[0];
+[)\]] return yytext[0];
 [}] {
     if (yy_top_state(yyscanner) == SC_STRING) {
         yy_pop_state(yyscanner);
     } else {
+        yy_push_state(SC_SEPARATOR, yyscanner);
         return yytext[0];
     }
 }
 [\n\r] {
     yyextra->column(1);
+    yy_push_state(SC_SEPARATOR, yyscanner);
+    return SEPARATOR;
 }
 #.*
 [\t ]
@@ -179,13 +167,11 @@ xor\= return BIT_XOR_ASSIGN;
     yylloc->first_column--;
     yylval->expression = new StringLiteral(*yylloc, value);
     yy_pop_state(yyscanner);
-    yy_push_state(SC_SEPARATOR, yyscanner);
+    //yy_push_state(SC_SEPARATOR, yyscanner);
     return STRING;
 }
 <SC_SEPARATOR>[\n\r] {
-    yy_pop_state(yyscanner);
     yyextra->column(1); 
-    return SEPARATOR;
 }
 <SC_SEPARATOR>#.* 
 <SC_SEPARATOR>[\t ]
@@ -215,8 +201,8 @@ xor\= return BIT_XOR_ASSIGN;
 
 void Parser::force_separator() {
     struct yyguts_t *yyg = (struct yyguts_t *)scanner_;
-    if (YY_START != SC_SEPARATOR) {
-        yy_push_state(SC_SEPARATOR, scanner_);
+    while (SC_SEPARATOR == yy_top_state(scanner_)) {
+        //yy_push_state(SC_SEPARATOR, scanner_);
+        yy_pop_state(scanner_);
     }
 }
-
