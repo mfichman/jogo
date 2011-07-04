@@ -1,21 +1,21 @@
 /*
  * Copyright (c) 2010 Matt Fichman
  *
- * Permission is hereby granted, free of charge, to any person obtaining a 
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation 
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
- * and/or sell copies of the Software, and to permit persons to whom the 
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  * 
- * The above copyright notice and this permission notice shall be included in 
+ * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR 
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */  
@@ -35,15 +35,25 @@
 class Feature : public TreeNode {
 public:
     Feature(Location loc) :
-        TreeNode(loc) {
+        TreeNode(loc),
+        flags_(0) {
     }
+    typedef int Flags;
 
     Feature* next() const { return next_; }
+    Flags flags() const { return flags_; }
+    bool is_private() const { return flags_ & PRIVATE; }
+    bool is_native() const { return flags_& NATIVE; }
     void next(Feature* next) { next_ = next; }
+    void flags(Flags flags) { flags_ = flags; }
     typedef Pointer<Feature> Ptr;
+
+    static const int PRIVATE = 0x1;
+    static const int NATIVE = 0x2;
 
 private:
     Feature::Ptr next_;
+    Flags flags_;
 };
 
 /* Class for instance variables (attributes) of a class or module */
@@ -102,7 +112,7 @@ class Import : public Feature {
 public:
     Import(Location loc, String* scope, bool is_qualified) :
         Feature(loc),
-        file_name_(file_name(scope)),
+        file_name_(file_name(scope->string())),
         scope_(scope),
         is_qualified_(is_qualified) {
     }
@@ -110,7 +120,7 @@ public:
     const std::string& file_name() const { return file_name_; }
     String* scope() const { return scope_; }
     bool is_qualified() const { return is_qualified_; }
-    static std::string file_name(String* name);
+    static std::string file_name(const std::string& scope);
     static std::string scope_name(const std::string& file);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Import> Ptr;

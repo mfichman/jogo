@@ -1,0 +1,6 @@
+OSX: nasm -fmacho test.asm; ld -e start -o test test.o
+Linux: nasm -felf test.asm; ld -e start -o test test.o
+Windows: nasm -fobj test.asm; link ?
+
+EDIT: Just do gcc -m32 test.o one.o two.o three.o ... 
+ld doesn't quite work, and is less forgiving

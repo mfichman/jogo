@@ -1,0 +1,38 @@
+
+SQLCompiler < Object:
+
+    query Query
+    connection Connection
+
+    @init query Query, conn Connection:
+        self.query = query
+        self.conn = conn
+  
+        fork ajax_setup
+    
+    server_request():
+
+        result = HTTP::get("http://www.google.com"
+        HTTP::post("http://www.bob.com", result)
+
+    pre_sql_setup():
+        # Does any necessary class setup immediately prior to introducing SQL.
+        # This is for things that can't necessarily be done in @init because we
+        # might not have all the pieces in place at that time.
+
+        if not self.query.tables:
+            self.query.join(nil, self.query.model.db_table, nil, nil)
+        if not self.query.select and self.query.default_cols and not
+                    self.query.included_inherited models
+            self.query.setup_inherited_models()
+
+        
+    quote_name_unless_alias(name String):
+        # A wrapper around connection.ops.quote_name that does some crazy stuff
+        # for table names.  This avoids the problems with some
+
+        if self.quote_cache.contains(name):
+            return self.quote_cache[name]
+
+    
+        

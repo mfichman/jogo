@@ -41,7 +41,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %union { Type* type; }
 %union { Generic* generic; }
 %union { Variable* variable; }
-%union { int flag; }
+%union { Feature::Flags flag; }
 
 %pure-parser
 %locations
@@ -99,7 +99,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %type <flag> modifiers
 %type <formal> formal_signature formal formal_list
 %type <statement> block when when_list statement statement_list
-%type <statement> conditional method_body
+%type <statement> conditional function_body
 %type <variable> variable variable_list
 %type <expression> call string expression expression_list
 
@@ -137,9 +137,14 @@ class
     ;
 
 function
-    : IDENTIFIER formal_signature modifiers return_signature block {
+    : IDENTIFIER formal_signature modifiers return_signature function_body {
         $$ = new Function(@$, $1, $2, $4, $5);
     }
+    ;
+
+function_body
+    : block { $$ = $1; }
+    | SEPARATOR { $$ = 0; }
     ;
 
 import_list
@@ -179,13 +184,8 @@ method_name
     | OPERATOR { $$ = $1; }
     ;
 
-method_body
-    : block { $$ = $1; }
-    | SEPARATOR { $$ = 0; }
-    ;
-
 method
-    : method_name formal_signature modifiers return_signature method_body {
+    : method_name formal_signature modifiers return_signature function_body {
         Formal* self = new Formal(@$, ID("self"), ENV->self_type());
         self->next($2);
         $$ = new Function(@$, $1, self, $4, $5);
@@ -217,9 +217,9 @@ formal
     ;
 
 modifiers
-    : PRIVATE { $$ = 0; }
-    | PRIVATE NATIVE { $$ = 0; }
-    | NATIVE { $$ = 0; }
+    : PRIVATE { $$ = Feature::PRIVATE; }
+    | PRIVATE NATIVE { $$ = Feature::PRIVATE | Feature::NATIVE; }
+    | NATIVE { $$ = Feature::NATIVE; }
     | /* empty */ { $$ = 0; }
     ;
 

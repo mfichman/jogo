@@ -1,24 +1,27 @@
 VariantDir('build/compiler', 'compiler', duplicate=0)
 VariantDir('build/drivers', 'drivers', duplicate=0)
+VariantDir('build/runtime', 'runtime', duplicate=0)
 
 
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(YACCFLAGS = '--defines=build/compiler/Grammar.hpp')
 env.Append(YACCFLAGS = '--report=all')
 env['AS'] = 'nasm'
+env['RANLIB'] = 'echo'
 env.Append(ASFLAGS = '-felf')
 env.Append(CXXFLAGS = '-g')
 env.Append(CXXFLAGS = '-Wall -Werror -pedantic')
 env.Append(CXXFLAGS = '-Wno-unused')
 env.Append(CXXFLAGS = '-Wno-sign-compare')
-env.Append(CXXFLAGS = '-O0')
 
-compiler_sources = []
-compiler_sources += env.Glob('build/compiler/*.cpp')
+compiler_sources = env.Glob('build/compiler/*.cpp')
 compiler_sources += ['build/compiler/Grammar.yy', 'build/compiler/Lexer.ll'] 
-
 env.Program('bin/apollo', compiler_sources +  ['build/drivers/Main.cpp'])
 env.Program('bin/test', compiler_sources + ['build/drivers/Test.cpp'])
+
+
+library_sources = env.Glob('/build/runtime/*.c') 
+env.StaticLibrary('lib/apollo', library_sources)
 #env.Program('bin/asmtest', 'samples/Test.linux.asm')
 
 if 'check' in COMMAND_LINE_TARGETS:

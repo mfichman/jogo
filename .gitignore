@@ -8,6 +8,7 @@ src/compiler-c/apgrammar.l.c
 src/compiler-c/apgrammar.y.c
 src/compiler-c/apollo
 bin/*
+lib/*
 build/*
 *.orig
 *.output

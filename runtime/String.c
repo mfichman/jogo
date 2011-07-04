@@ -18,18 +18,26 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
- */  
+ */
 
-#pragma once
+#include <stdio.h>
+#include <stdint.h>
 
-class Object {
-public:
-    Object() : refcount_(0) {}
-    virtual ~Object() {}
-    int refcount() { return refcount_; }
-    void refcount(int refcount) { refcount_ = refcount; }    
+typedef int32_t Int;
+typedef void* Ptr;
 
-private:
-    int refcount_;
-};
+
+typedef uint32_t U32;
+typedef uint16_t U16;
+typedef uint8_t U8;
+
+typedef int32_t S32;
+typedef int16_t S16;
+typedef int8_t S8;
+
+typedef struct String {
+    U32 refcount;
+    U32 length;
+    const char data[];
+} String;
 

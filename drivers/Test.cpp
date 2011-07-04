@@ -26,38 +26,39 @@
 #include "BasicBlockPrinter.hpp"
 #include "BasicBlockGenerator.hpp"
 #include "TreePrinter.hpp"
+#include "Options.hpp"
 
 #include <iostream>
 #include <fstream>
 #include <set>
 
 int main(int argc, char** argv) {
-    if (argc != 2) {
+    if (argc < 2) {
         std::cerr << "Illegal argument\n";
         return 1;
     }
 
-    std::fstream in(argv[1]);
-    std::set<std::string> options;
+    std::fstream in((std::string(argv[1]) + ".ap").c_str());
+    std::set<std::string> test_options;
     std::string line;
     std::getline(in, line);
     while (!line.empty() && line[0] == '#') {
-        options.insert(line);
+        test_options.insert(line);
         std::getline(in, line);
     } 
     
+    Environment::Ptr env(new Environment());
+    Options(env, argc, argv);
 
-
-    Environment::Ptr environment(new Environment());
-    Parser::Ptr parser(new Parser(environment));
-    parser->input(argv[1]);
-    if (options.find("# aptest print_tree off") == options.end()) {
-        TreePrinter::Ptr printer(new TreePrinter(environment));
+    Parser::Ptr parser(new Parser(env));
+//    parser->input(argv[1]);
+    if (test_options.find("# aptest print_tree off") == test_options.end()) {
+        TreePrinter::Ptr printer(new TreePrinter(env));
     }
-    TypeChecker::Ptr checker(new TypeChecker(environment));
-    if (options.find("# aptest print_ir off") == options.end()) {
-        BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(environment));
-        BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(environment));
+    TypeChecker::Ptr checker(new TypeChecker(env));
+    if (test_options.find("# aptest print_ir off") == test_options.end()) {
+        BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env));
+        BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
     }
     
     return 0;

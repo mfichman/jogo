@@ -22,14 +22,16 @@ tests.each do |test|
         puts test
     end
 
+    test.sub!(/.ap$/, "")
+
     if options[:full]
         flags = ""
         flags = flags + " --leak-check=full"
         flags = flags + " --suppressions=../scripts/valgrind.supp"
         flags = flags + " --gen-suppressions=all"
-        result = `valgrind #{flags} -q ../bin/test #{test} 2>&1 | diff - #{test}.out`
+        result = `valgrind #{flags} -q ../bin/test #{test} 2>&1 | diff - #{test}.ap.out`
     else
-        result = `../bin/test #{test} 2>&1 | diff - #{test}.out`
+        result = `../bin/test #{test} 2>&1 | diff - #{test}.ap.out`
     end
     if !result.empty? || $? != 0
         (1..79).each { putc '-' }        

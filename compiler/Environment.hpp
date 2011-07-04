@@ -1,21 +1,21 @@
 /*
  * Copyright (c) 2010 Matt Fichman
  *
- * Permission is hereby granted, free of charge, to any person obtaining a 
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation 
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
- * and/or sell copies of the Software, and to permit persons to whom the 
- * Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  * 
- * The above copyright notice and this permission notice shall be included in 
+ * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */  
@@ -42,7 +42,13 @@ public:
     Module* module(String* scope);
     Module* modules() const { return modules_; }
     File* file(String* name);
+    const std::string& include(int index) { return include_[index]; }
+    const std::string& input(int index) { return input_[index]; }
     int errors() { return errors_; }
+    int includes() { return include_.size(); }
+    int inputs() { return input_.size(); }
+    void include(const std::string& path) { include_.push_back(path); }
+    void input(const std::string& path) { input_.push_back(path); }
     void module(Module* module);
     void file(File* name);
     void error(const std::string& error) { errors_++; }
@@ -69,6 +75,8 @@ private:
     std::map<std::string, String::Ptr> string_;
     std::map<String::Ptr, Module::Ptr> module_;
     std::map<String::Ptr, File::Ptr> file_;
+    std::vector<std::string> include_;
+    std::vector<std::string> input_;
     Module::Ptr root_;
     Module::Ptr builtins_;
     File::Ptr builtin_file_; 
