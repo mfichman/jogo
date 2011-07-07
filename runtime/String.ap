@@ -19,24 +19,49 @@
 # SOFTWARE.
 
 String < Object {
-    # Represents character strings.  Strings are immutable, and so the only
-    # way to change a string is to create a new one.
+    # Represents an immutable character string.  New strings can be created
+    # via a substring or concatenation operation on an existing string.
      
-    @init() native 
-    # Initializes a new string.  
+    @index(index Int) native Char {
+        # Returns the character at index index.  If the index refers to a
+        # location beyond the length of the string, then
+    }
+
+    @plus(string String) native String {
+        # Concatenates this string with 'string'.
+    }
+
+    length?() native Int {
+        # Returns the length of the string.
+    }
+
+    slice(begin Int, end Int) native String {
+        # Return a new string containing the elements starting at 'begin' and 
+        # ending at 'end', inclusive.
+    }
+
+    starts_with(string String) native Bool {
+        # Returns true if this string starts with the exact string specified
+        # by 'string'
+        return false
+    }
+
+    ends_with(string String) native Bool {
+        # Returns true if this string ends with the exact string specified by
+        # 'string'
+        return false
+    }
     
-    @index(index Int) Char native
-    # Returns the character at index index.  If the index refers to a location
-    # beyond the length of the string, then
+    uppercase() native String {
+        # Returns an uppercase version of this string.
+    }
 
-    @plus(string String) Char native
-    # Concatenates this string with 'string'.
+    lowercase() native String {
+        # Returns a lowercase version of this string.
+    }
 
-    length?() Int native
-    # Returns the length of the string.
-
-    slice(range Range) String native
+    #slice(range Range) String native
     # Returns a substring using the given range as an index.
 }
 
-print(string String) native;
+print(string String) native

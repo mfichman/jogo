@@ -59,23 +59,23 @@ void Environment::init_integer() {
 
     formals = new Formal(loc, name("_"), integer_type_);
     formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@add"), formals, integer_type_, 0));
+    clazz->feature(new Function(loc, name("@add"), formals, 0, integer_type_, 0));
     
     formals = new Formal(loc, name("_"), integer_type_);
     formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@sub"), formals, integer_type_, 0));
+    clazz->feature(new Function(loc, name("@sub"), formals, 0, integer_type_, 0));
 
     formals = new Formal(loc, name("_"), integer_type_);
     formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@mul"), formals, integer_type_, 0));
+    clazz->feature(new Function(loc, name("@mul"), formals, 0, integer_type_, 0));
 
     formals = new Formal(loc, name("_"), integer_type_);
     formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@div"), formals, integer_type_, 0));
+    clazz->feature(new Function(loc, name("@div"), formals, 0, integer_type_, 0));
 
     formals = new Formal(loc, name("_"), integer_type_);
     formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@mod"), formals, integer_type_, 0));
+    clazz->feature(new Function(loc, name("@mod"), formals, 0, integer_type_, 0));
 
     builtins_->feature(clazz);
 }
@@ -88,10 +88,10 @@ void Environment::init_string() {
 
     formals = new Formal(loc, name("_"), string_type_);
     formals->next(new Formal(loc, name("_"), string_type_));
-    clazz->feature(new Function(loc, name("@add"), formals, string_type_, 0));
+    clazz->feature(new Function(loc, name("@add"), formals, 0, string_type_, 0));
 
     formals = new Formal(loc, name("_"), string_type_);
-    clazz->feature(new Function(loc, name("string"), formals, string_type_, 0));
+    clazz->feature(new Function(loc, name("string"), formals, 0, string_type_, 0));
 
     builtins_->feature(clazz);
 }

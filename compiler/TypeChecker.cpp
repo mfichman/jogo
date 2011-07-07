@@ -603,7 +603,7 @@ void TypeChecker::operator()(Function* feature) {
     // Begin type checking a function.  The formal parameters are type-checked
     // first, followed by the function body.  If the function belongs to an
     // an interface, the function should not have a body.
-    Statement::Ptr block = feature->block();
+    Block::Ptr block = feature->block();
     scope_ = feature;
     enter_scope();
 
@@ -615,29 +615,33 @@ void TypeChecker::operator()(Function* feature) {
     }
     Type::Ptr type = feature->type();
     type(this);
-    
-    // Check the different combinations of prototype/body/no-body, method,
-    // and function.  Prototypes (as in interface definitions) should not 
-    // have a body.
-    if (block && class_ && class_->is_interface()) {
+
+    bool is_interface = class_ && class_->is_interface();
+    bool is_native = feature->is_native();
+
+    // Check the different combinations of prototype/body/no-body, method, and
+    // function.  Prototypes (as in interface definitions) should not have a
+    // body.
+    if (block && is_interface) {
         cerr << block->location();
-        cerr << "Interface method '" << feature->name();
+        cerr << "Interface function '" << feature->name();
         cerr << "' has a body" << endl;
-    } else if (block) {
+    } else if (block && block->children() && is_native) {
+        cerr << feature->location();
+        cerr << "Native function '" << feature->name();
+        cerr << "' has a body" << endl;
+    } else if (block && !is_native) {
         block(this); 
         if (type != environment_->void_type() && !return_) {
             cerr << feature->location();
             cerr << "Function '" << feature->name();
             cerr << "' must return a value" << endl;     
         }
-    } else if (!class_) {
+    } else if (!block && !is_interface && !is_native) {
         cerr << feature->location();
         cerr << "Function '" << feature->name() << "' has no body" << endl;
-    } else if (!class_->is_interface()) {
-        cerr << feature->location();
-        cerr << "Method '" << feature->name() << "' has no body" << endl;
     }
-
+        
     exit_scope();
 }
 

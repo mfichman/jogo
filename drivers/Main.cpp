@@ -24,21 +24,19 @@
 #include "Parser.hpp"
 #include "TypeChecker.hpp"
 #include "TreePrinter.hpp"
+#include "Options.hpp"
 
 #include <iostream>
 
 int main(int argc, char** argv) {
-    if (argc != 2) {
-        std::cerr << "Illegal argument\n";
-        return 1;
-    }
+    Environment::Ptr env(new Environment());
+    Options(env, argc, argv);
 
-    Environment::Ptr environment(new Environment());
-    Parser::Ptr parser(new Parser(environment));
+    Parser::Ptr parser(new Parser(env));
     parser->input(argv[1]);
 
-    TreePrinter::Ptr printer(new TreePrinter(environment));
-    TypeChecker::Ptr checker(new TypeChecker(environment));
+    TreePrinter::Ptr printer(new TreePrinter(env));
+    TypeChecker::Ptr checker(new TypeChecker(env));
 
     return 0;
 }

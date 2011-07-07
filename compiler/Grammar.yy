@@ -41,6 +41,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %union { Type* type; }
 %union { Generic* generic; }
 %union { Variable* variable; }
+%union { Block* block; }
 %union { Feature::Flags flag; }
 
 %pure-parser
@@ -98,8 +99,8 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %type <generic> generic generic_list
 %type <flag> modifiers
 %type <formal> formal_signature formal formal_list
-%type <statement> block when when_list statement statement_list
-%type <statement> conditional function_body
+%type <statement> conditional when when_list statement statement_list
+%type <block> block function_body
 %type <variable> variable variable_list
 %type <expression> call string expression expression_list
 
@@ -138,7 +139,7 @@ class
 
 function
     : IDENTIFIER formal_signature modifiers return_signature function_body {
-        $$ = new Function(@$, $1, $2, $4, $5);
+        $$ = new Function(@$, $1, $2, $3, $4, $5);
     }
     ;
 
@@ -188,11 +189,11 @@ method
     : method_name formal_signature modifiers return_signature function_body {
         Formal* self = new Formal(@$, ID("self"), ENV->self_type());
         self->next($2);
-        $$ = new Function(@$, $1, self, $4, $5);
+        $$ = new Function(@$, $1, self, $3, $4, $5);
     }
     | error block {
         Formal* self = new Formal(@$, ID("self"), ENV->self_type());
-        $$ = new Function(@$, ID(""), self, 0, $2);
+        $$ = new Function(@$, ID(""), self, 0, 0, $2);
         yyerrok;
     }
     ;

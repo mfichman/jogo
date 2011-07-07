@@ -33,10 +33,8 @@
 #include <set>
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        std::cerr << "Illegal argument\n";
-        return 1;
-    }
+    Environment::Ptr env(new Environment());
+    Options(env, argc, argv);
 
     std::fstream in((std::string(argv[1]) + ".ap").c_str());
     std::set<std::string> test_options;
@@ -46,12 +44,8 @@ int main(int argc, char** argv) {
         test_options.insert(line);
         std::getline(in, line);
     } 
-    
-    Environment::Ptr env(new Environment());
-    Options(env, argc, argv);
 
     Parser::Ptr parser(new Parser(env));
-//    parser->input(argv[1]);
     if (test_options.find("# aptest print_tree off") == test_options.end()) {
         TreePrinter::Ptr printer(new TreePrinter(env));
     }

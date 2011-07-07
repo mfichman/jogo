@@ -1,0 +1,6 @@
+
+
+main() Int {
+    print("hello, world!\n")
+    return 0
+}

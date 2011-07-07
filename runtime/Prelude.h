@@ -11,24 +11,26 @@
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
- */  
+ */
 
-#include "Apollo.hpp"
+#include <stdint.h>
 
-class Options {
-public:
-    Options(Environment* env, int argc, char** argv);
+typedef int32_t Int;
+typedef void* Ptr;
 
-private:
-    void print_usage();
-    
-    std::string program_name_;
-};
+typedef uint32_t U32;
+typedef uint16_t U16;
+typedef uint8_t U8;
+
+typedef int32_t S32;
+typedef int16_t S16;
+typedef int8_t S8;
+typedef uint8_t Char;
 

@@ -34,11 +34,12 @@
 /* This file holds interfaces for class features */
 class Feature : public TreeNode {
 public:
-    Feature(Location loc) :
-        TreeNode(loc),
-        flags_(0) {
-    }
     typedef int Flags;
+
+    Feature(Location loc, Flags flags = 0) :
+        TreeNode(loc),
+        flags_(flags) {
+    }
 
     Feature* next() const { return next_; }
     Flags flags() const { return flags_; }
@@ -81,19 +82,19 @@ private:
 /* Class for functions belonging to a class or module */
 class Function : public Feature {
 public:
-    Function(Location loc, String* nm, Formal* fm, Type* ret, Statement* blk) :
-        Feature(loc),
+    Function(Location l, String* nm, Formal* fm, Flags f, Type* r, Block* b) :
+        Feature(l, f),
         name_(nm),
 		formals_(fm),
-		type_(ret),
-        block_(blk),
+		type_(r),
+        block_(b),
         code_(new BasicBlock) {
     }
 
     String* name() const { return name_; }
 	Formal* formals() const { return formals_; }
 	Type* type() const { return type_; }
-    Statement* block() const { return block_; }
+    Block* block() const { return block_; }
     BasicBlock* code() const { return code_; }
     bool covariant(Function* other) const;
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -103,7 +104,7 @@ private:
     String::Ptr name_;
 	Formal::Ptr formals_;
 	Type::Ptr type_;
-    Statement::Ptr block_;
+    Block::Ptr block_;
     BasicBlock::Ptr code_;
 };
 

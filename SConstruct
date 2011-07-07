@@ -13,6 +13,9 @@ env.Append(CXXFLAGS = '-g')
 env.Append(CXXFLAGS = '-Wall -Werror -pedantic')
 env.Append(CXXFLAGS = '-Wno-unused')
 env.Append(CXXFLAGS = '-Wno-sign-compare')
+env.Append(CFLAGS = '-g')
+env.Append(CFLAGS = '-Wall -Werror -pedantic')
+env.Append(CFLAGS = '-std=c99')
 
 compiler_sources = env.Glob('build/compiler/*.cpp')
 compiler_sources += ['build/compiler/Grammar.yy', 'build/compiler/Lexer.ll'] 
@@ -20,7 +23,7 @@ env.Program('bin/apollo', compiler_sources +  ['build/drivers/Main.cpp'])
 env.Program('bin/test', compiler_sources + ['build/drivers/Test.cpp'])
 
 
-library_sources = env.Glob('/build/runtime/*.c') 
+library_sources = env.Glob('build/runtime/*.c') 
 env.StaticLibrary('lib/apollo', library_sources)
 #env.Program('bin/asmtest', 'samples/Test.linux.asm')
 

@@ -44,6 +44,23 @@ tests.each do |test|
     end
 end
 
+tests = Dir.glob('*.rb')
+tests.each do |test|
+    if options[:verbose]
+        puts test
+    end
+    
+    result = `ruby #{test} 2>&1 | diff - #{test}.out`
+    if !result.empty? || $? != 0
+        (1..79).each { putc '-' }
+        puts
+        puts "FAILED TEST: #{test}"
+        (1..79).each { putc '-' }
+        puts
+        puts result
+        failed = true
+    end
+end
 
 
 if failed 

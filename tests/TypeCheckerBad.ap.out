@@ -1,5 +1,5 @@
-TypeCheckerBad.ap:18:17: Interface method 'blarg' has a body
-TypeCheckerBad.ap:27:5: Method 'blarg' has no body
+TypeCheckerBad.ap:18:17: Interface function 'blarg' has a body
+TypeCheckerBad.ap:27:5: Function 'blarg' has no body
 TypeCheckerBad.ap:55:17: Expression does not conform to type 'Int'
 TypeCheckerBad.ap:57:9: Duplicate definition of variable 'b'
 TypeCheckerBad.ap:58:9: Duplicate definition of variable 'b'

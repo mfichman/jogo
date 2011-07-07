@@ -27,3 +27,14 @@ main2() Int {
     Test().bob()
     return 0
 }
+
+native_function1() native {
+    # OK
+}
+
+native_function2() native Int {
+    return 1 # Not OK
+}
+
+native_function3() native # OK
+  

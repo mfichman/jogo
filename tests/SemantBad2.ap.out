@@ -1,3 +1,4 @@
 SemantBad2.ap:4:1: Type name 'Sub1' conflicts with an existing module name
 SemantBad2.ap:11:1: Function 'test' must return a value
 SemantBad2.ap:17:5: Return must conform to type 'Int'
+SemantBad2.ap:35:1: Native function 'native_function2' has a body
