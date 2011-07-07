@@ -24,6 +24,7 @@
 
 typedef int32_t Int;
 typedef void* Ptr;
+typedef int32_t Bool;
 
 typedef uint32_t U32;
 typedef uint16_t U16;

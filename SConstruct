@@ -8,6 +8,8 @@ env.Append(YACCFLAGS = '--defines=build/compiler/Grammar.hpp')
 env.Append(YACCFLAGS = '--report=all')
 env['AS'] = 'nasm'
 env['RANLIB'] = 'echo'
+env['AR'] = 'libtool'
+env['ARFLAGS'] = '-static -o'
 env.Append(ASFLAGS = '-felf')
 env.Append(CXXFLAGS = '-g')
 env.Append(CXXFLAGS = '-Wall -Werror -pedantic')

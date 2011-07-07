@@ -20,6 +20,9 @@
  * IN THE SOFTWARE.
  */
 
+#ifndef APOLLO_STRING_H
+#define APOLLO_STRING_H
+
 #include "Prelude.h"
 
 typedef struct String {
@@ -28,3 +31,11 @@ typedef struct String {
     Int length;
     Char data[];
 } String;
+
+Char String__index(String* self, Int index);
+String* String__plus(String* self, String* string);
+String* String_slice(String* self, Int begin, Int end);
+Int String__length__g(String* self);
+Bool String__equal(String* self, String* string);
+
+#endif

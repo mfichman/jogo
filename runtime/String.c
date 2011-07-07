@@ -51,11 +51,11 @@ String* String__plus(String* self, String* string) {
     // Copy the data from the two strings.  Do this manually to take control
     // of security bugs. 
     Char *c = ret->data;
-    for (int i = 0; i < self->length; i++) {
+    for (Int i = 0; i < self->length; i++) {
         *c++ = self->data[i];
     }    
-    for (int i = 0; i < string->length; i++) {
-        *c++ = self->data[i];
+    for (Int i = 0; i < string->length; i++) {
+        *c++ = string->data[i];
     }
     return ret; 
 }
@@ -80,7 +80,7 @@ String* String_slice(String* self, Int begin, Int end) {
     
     // Copy the data from this string's substring, using range checking.
     Char *c = ret->data;
-    for (int i = begin; i <= end; i++) {
+    for (Int i = begin; i <= end; i++) {
         *c++ = self->data[i];
     } 
     return ret;
@@ -89,6 +89,19 @@ String* String_slice(String* self, Int begin, Int end) {
 Int String__length__g(String* self) {
     // Simply return the length data member.
     return self->length;
+}
+
+Bool String__equal(String* self, String* string) {
+    // Compare the two strings, return true if they are equal.
+    if (self->length != string->length) {
+        return 0;
+    }
+    for (Int i = 0; i < self->length; i++) {
+        if (self->data[i] != string->data[i]) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 void print(String* string) {
