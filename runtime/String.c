@@ -64,8 +64,9 @@ String* String_slice(String* self, Int begin, Int end) {
     // String data is allocated inline using the C "struct hack."  Since 
     // strings are immutable, the string array will never need to be resized,
     // and we get a performance boost from less indirection.
-    end = (end >= self->length) ? self->length - 1 : end;
-    begin = (begin > end) ? end : begin;
+    end = (end > self->length) ? self->length : end;
+    if (begin > end) { begin = end; }
+    if (begin < 0) { begin = 0; }
 
     Int length = end - begin;
     String* ret = malloc(sizeof(String) + length);
@@ -80,13 +81,13 @@ String* String_slice(String* self, Int begin, Int end) {
     
     // Copy the data from this string's substring, using range checking.
     Char *c = ret->data;
-    for (Int i = begin; i <= end; i++) {
+    for (Int i = begin; i < end; i++) {
         *c++ = self->data[i];
     } 
     return ret;
 }
 
-Int String__length__g(String* self) {
+Int String_length__g(String* self) {
     // Simply return the length data member.
     return self->length;
 }

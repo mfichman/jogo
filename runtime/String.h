@@ -35,7 +35,7 @@ typedef struct String {
 Char String__index(String* self, Int index);
 String* String__plus(String* self, String* string);
 String* String_slice(String* self, Int begin, Int end);
-Int String__length__g(String* self);
+Int String_length__g(String* self);
 Bool String__equal(String* self, String* string);
 
 #endif
