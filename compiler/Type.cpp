@@ -92,6 +92,10 @@ bool Type::subtype(Type* other) const {
     return true;
 }
 
+bool Type::is_primitive() const {
+    return is_int() || is_float();
+}
+
 bool Type::is_interface() const {
     return clazz()->is_interface();
 }
@@ -105,11 +109,15 @@ bool Type::is_value() const {
 }
 
 bool Type::is_bool() const {
-    return this->equals(environment_->boolean_type());
+    return this->equals(environment_->bool_type());
 }
 
 bool Type::is_int() const {
-    return this->equals(environment_->integer_type());
+    return this->equals(environment_->int_type());
+}
+
+bool Type::is_float() const {
+    return this->equals(environment_->float_type());
 }
 
 bool Type::is_boolifiable() const {

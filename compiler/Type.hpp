@@ -42,8 +42,10 @@ public:
     File* file() const { return file_; }
     bool equals(Type* other) const;
     bool subtype(Type* other) const;
+    bool is_primitive() const;
     bool is_bool() const;
     bool is_int() const;
+    bool is_float() const;
     bool is_interface() const;
     bool is_object() const;
     bool is_value() const;

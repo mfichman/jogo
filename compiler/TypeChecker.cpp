@@ -35,9 +35,9 @@ TypeChecker::TypeChecker(Environment* environment) :
     environment_(environment) {
 
     operator()(environment_->float_type());
-    operator()(environment_->integer_type());
+    operator()(environment_->int_type());
     operator()(environment_->string_type());
-    operator()(environment_->boolean_type());
+    operator()(environment_->bool_type());
 
     if (environment_->errors()) {
         return;
@@ -174,7 +174,7 @@ void TypeChecker::operator()(StringLiteral* expression) {
 }
 
 void TypeChecker::operator()(IntegerLiteral* expression) {
-    expression->type(environment_->integer_type()); 
+    expression->type(environment_->int_type()); 
 }
 
 void TypeChecker::operator()(FloatLiteral* expression) {
@@ -182,7 +182,7 @@ void TypeChecker::operator()(FloatLiteral* expression) {
 }
 
 void TypeChecker::operator()(BooleanLiteral* expression) {
-    expression->type(environment_->boolean_type());
+    expression->type(environment_->bool_type());
 }
 
 void TypeChecker::operator()(Let* expression) {
@@ -221,7 +221,7 @@ void TypeChecker::operator()(Binary* expression) {
     } else {
         assert(!"Operator not implemented");
     }
-    expression->type(environment_->boolean_type());
+    expression->type(environment_->bool_type());
 }
 
 void TypeChecker::operator()(Unary* expression) {
@@ -238,7 +238,7 @@ void TypeChecker::operator()(Unary* expression) {
     } else {
         assert(!"Operator not implemented");
     }
-    expression->type(environment_->boolean_type());
+    expression->type(environment_->bool_type());
 }
 
 void TypeChecker::operator()(Call* expression) {
@@ -466,10 +466,10 @@ void TypeChecker::operator()(While* statement) {
     guard(this);
     Type* t = guard->type();
     assert(t);
-    if (!environment_->boolean_type()->equals(guard->type())) {
+    if (!environment_->bool_type()->equals(guard->type())) {
         cerr << statement->location();
         cerr << "While statement guard expression must have type '";
-        cerr << environment_->boolean_type() << "'";
+        cerr << environment_->bool_type() << "'";
         cerr << endl;
     }
     block(this);

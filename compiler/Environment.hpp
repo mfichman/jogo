@@ -56,8 +56,8 @@ public:
     typedef Pointer<Environment> Ptr;
 
     Type* void_type() const { return void_type_; }
-    Type* boolean_type() const { return boolean_type_; }
-    Type* integer_type() const { return integer_type_; }
+    Type* bool_type() const { return bool_type_; }
+    Type* int_type() const { return int_type_; }
     Type* string_type() const { return string_type_; }
     Type* no_type() const { return no_type_; }
     Type* float_type() const { return float_type_; }
@@ -77,8 +77,8 @@ private:
     File::Ptr builtin_file_; 
     Module::Ptr modules_;
     Type::Ptr void_type_;
-    Type::Ptr boolean_type_;
-    Type::Ptr integer_type_;
+    Type::Ptr bool_type_;
+    Type::Ptr int_type_;
     Type::Ptr string_type_;
     Type::Ptr no_type_;
     Type::Ptr float_type_;
