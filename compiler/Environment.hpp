@@ -64,11 +64,6 @@ public:
     Type* self_type() const { return self_type_; }
 
 private:
-    void init_integer();
-    void init_boolean();
-    void init_string();
-    void init_float();
-
     std::map<std::string, String::Ptr> name_;
     std::map<std::string, String::Ptr> integer_;
     std::map<std::string, String::Ptr> floating_;

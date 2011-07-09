@@ -20,7 +20,7 @@ int main() {
     assert(String_length__g(str2) == 6);
 
     // Concatenation
-    String* str3 = String__plus(str1, str2);
+    String* str3 = String__add(str1, str2);
     assert(String_length__g(str3) == 12);
     assert(strncmp(str3->data, "hello world!", 12) == 0);
     

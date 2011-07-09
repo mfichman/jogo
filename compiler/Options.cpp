@@ -58,7 +58,11 @@ Options::Options(Environment* env, int argc, char** argv) {
                 exit(0);
             } else if ("assembly" == flag) {
                 assert(!"Flag '--assembly' not implemented");
+            } else {
+                break;
             }
+            args.clear();
+            flag = "";
             break;
         case 1:
             if ("path" == flag) {
@@ -67,10 +71,12 @@ Options::Options(Environment* env, int argc, char** argv) {
                 assert(!"Flag '--output' not implemented");
             } else if ("dump" == flag) {
                 assert(!"Flag '--dump' not implemented");
+            } else {
+                break;
             }
-            break;
-        case 2:
             args.clear();
+            flag = "";
+            break;
         }
     } 
 }

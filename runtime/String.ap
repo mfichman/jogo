@@ -27,7 +27,7 @@ String < Object {
         # location beyond the length of the string, then
     }
 
-    @plus(string String) native String {
+    @add(string String) native String {
         # Concatenates this string with 'string'.
     }
 
@@ -40,13 +40,13 @@ String < Object {
         # ending at 'end', inclusive.
     }
 
-    starts_with(string String) native Bool {
+    starts_with(string String) Bool {
         # Returns true if this string starts with the exact string specified
         # by 'string'
         return false
     }
 
-    ends_with(string String) native Bool {
+    ends_with(string String) Bool {
         # Returns true if this string ends with the exact string specified by
         # 'string'
         return false
@@ -58,6 +58,11 @@ String < Object {
 
     lowercase() native String {
         # Returns a lowercase version of this string.
+    }
+
+    string() String {
+        # return self
+        return "" # FIXME
     }
 
     #slice(range Range) String native

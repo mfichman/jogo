@@ -38,66 +38,10 @@ Environment::Environment() :
     errors_(0) {
 
     include(".");
-
     module(root_);
 
-    init_boolean();
-    init_integer();
-    init_string();
-    init_float();
-}
-
-void Environment::init_boolean() {
-    builtins_->feature(new Class(Location(), boolean_type_, 0, 0, 0));
-}
-
-void Environment::init_integer() {
-    Location loc;
-    Formal::Ptr formals;
-
-    Class::Ptr clazz = new Class(loc, integer_type_, 0, 0, 0);
-
-    formals = new Formal(loc, name("_"), integer_type_);
-    formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@add"), formals, 0, integer_type_, 0));
-    
-    formals = new Formal(loc, name("_"), integer_type_);
-    formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@sub"), formals, 0, integer_type_, 0));
-
-    formals = new Formal(loc, name("_"), integer_type_);
-    formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@mul"), formals, 0, integer_type_, 0));
-
-    formals = new Formal(loc, name("_"), integer_type_);
-    formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@div"), formals, 0, integer_type_, 0));
-
-    formals = new Formal(loc, name("_"), integer_type_);
-    formals->next(new Formal(loc, name("_"), integer_type_));
-    clazz->feature(new Function(loc, name("@mod"), formals, 0, integer_type_, 0));
-
-    builtins_->feature(clazz);
-}
-
-void Environment::init_string() {
-    Location loc;
-    Formal::Ptr formals;
-
-    Class::Ptr clazz = new Class(loc, string_type_, 0, 0, 0);
-
-    formals = new Formal(loc, name("_"), string_type_);
-    formals->next(new Formal(loc, name("_"), string_type_));
-    clazz->feature(new Function(loc, name("@add"), formals, 0, string_type_, 0));
-
-    formals = new Formal(loc, name("_"), string_type_);
-    clazz->feature(new Function(loc, name("string"), formals, 0, string_type_, 0));
-
-    builtins_->feature(clazz);
-}
-
-void Environment::init_float() {
-    builtins_->feature(new Class(Location(), float_type_, 0, 0, 0));
+    input("String");
+    input("Prelude");
 }
 
 String* Environment::name(const std::string& str) {

@@ -34,6 +34,11 @@ using namespace std;
 TypeChecker::TypeChecker(Environment* environment) :
     environment_(environment) {
 
+    operator()(environment_->float_type());
+    operator()(environment_->integer_type());
+    operator()(environment_->string_type());
+    operator()(environment_->boolean_type());
+
     if (environment_->errors()) {
         return;
     }
@@ -90,17 +95,17 @@ void TypeChecker::operator()(Class* feature) {
     // disallowed things aren't included.
     for (Type::Ptr m = feature->mixins(); m; m = m->next()) {
         if (m->clazz()) {
-            if (feature->is_interface() && !m->clazz()->is_interface()) {
+            if (feature->is_interface() && !m->is_interface()) {
                 cerr << m->location();
                 cerr << "Mix-in for interface '" << feature->name();
                 cerr << "' must be an interface" << endl;
                 break;
-            } else if (feature->is_object() && m->clazz()->is_interface()) {
+            } else if (feature->is_object() && m->is_interface()) {
                 cerr << m->location();
                 cerr << "Mix-in for object type '" << feature->name();
                 cerr << "' cannot be an interface" << endl; 
                 break;
-            } else if (feature->is_value() && !m->clazz()->is_value()) {
+            } else if (feature->is_value() && !m->is_value()) {
                 cerr << m->location();
                 cerr << "Mix-in for value type '" << feature->name();
                 cerr << "' must be a value type" << endl; 
@@ -203,12 +208,12 @@ void TypeChecker::operator()(Binary* expression) {
     if (environment_->name("or") == expression->operation()
         || environment_->name("and") == expression->operation()) {
 
-        if (left->type()->clazz()->is_value()) {
+        if (!left->type()->is_boolifiable()) {
             cerr << left->location();
             cerr << "Value types cannot be converted to 'Bool'";
             cerr << endl;
         }
-        if (right->type()->clazz()->is_value()) {
+        if (!right->type()->is_boolifiable()) {
             cerr << right->location();
             cerr << "Value types cannot be converted to 'Bool'";
             cerr << endl;
@@ -225,7 +230,7 @@ void TypeChecker::operator()(Unary* expression) {
     Expression::Ptr child = expression->child();
     child(this);
     if (environment_->name("not") == expression->operation()) {
-        if (child->type()->clazz()->is_value()) {
+        if (!child->type()->is_boolifiable()) {
             cerr << expression->location();
             cerr << "Value types cannot be converted to 'Bool'";
             cerr << endl;
@@ -477,7 +482,7 @@ void TypeChecker::operator()(Conditional* statement) {
     Statement::Ptr true_branch = statement->true_branch();
     Statement::Ptr false_branch = statement->false_branch();
     guard(this);
-    if (guard->type()->clazz()->is_value()) {
+    if (!guard->type()->is_boolifiable()) {
         cerr << guard->location();
         cerr << "Value types cannot be converted to 'Bool'";
         cerr << endl;

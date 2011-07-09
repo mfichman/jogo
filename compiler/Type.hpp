@@ -42,14 +42,16 @@ public:
     File* file() const { return file_; }
     bool equals(Type* other) const;
     bool subtype(Type* other) const;
-    bool interface() const;
-    bool object() const;
-    bool value() const;
+    bool is_bool() const;
+    bool is_int() const;
+    bool is_interface() const;
+    bool is_object() const;
+    bool is_value() const;
+    bool is_boolifiable() const;
     void next(Type* next) { next_ = next; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Type> Ptr;
 
-    
 private:
     Pointer<Generic> generics_;
     File* file_;

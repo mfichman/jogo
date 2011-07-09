@@ -36,9 +36,6 @@ void yyset_extra(Parser*, void*);
 Parser::Parser(Environment* env) :
 	environment_(env) {
 
-    yylex_init(&this->scanner_);
-    yyset_extra(this, this->scanner_);
-
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));
     }
@@ -46,7 +43,6 @@ Parser::Parser(Environment* env) :
 
 Parser::~Parser() {
 
-    yylex_destroy(this->scanner_);   
 }
 
 void Parser::input(const std::string& import) {
@@ -108,7 +104,10 @@ void Parser::file(const std::string& prefix, const std::string& file) {
     this->input_.open(actual_file.c_str()); 
 
     // Begin parsing
+    yylex_init(&this->scanner_);
+    yyset_extra(this, this->scanner_);
     yyparse(this, this->scanner_);
+    yylex_destroy(this->scanner_);   
 
     // Now parse other modules that depend on the unit that was added
     for (Feature* f = file_->features(); f; f = f->next()) {

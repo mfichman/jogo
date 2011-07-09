@@ -39,7 +39,10 @@ BasicBlockPrinter::BasicBlockPrinter(Environment* environment) :
 void BasicBlockPrinter::operator()(Module* feature) {
     module_ = feature;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        f(this);
+        const Location& loc = f->location();
+        if (loc.file_name->string().find("../runtime") != 0) {
+            f(this);
+        }
     } 
 }
 

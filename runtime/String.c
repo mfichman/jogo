@@ -30,7 +30,7 @@ Char String__index(String* self, Int index) {
     return index < self->length ? self->data[index] : '\0';
 }
 
-String* String__plus(String* self, String* string) {
+String* String__add(String* self, String* string) {
     // String data is allocated inline using the C "struct hack."  Since 
     // strings are immutable, the string array will never need to be resized,
     // and we get a performance boost from less indirection.

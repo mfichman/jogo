@@ -49,7 +49,7 @@ tests.each do |test|
         command += "2>&1 | diff - #{tests}.ap.out"
         result = `#{command}`
     else
-        result = `../bin/test #{test} 2>&1 | diff - #{test}.ap.out`
+        result = `../bin/test #{test} -p ../runtime 2>&1 | diff - #{test}.ap.out`
     end
     check(test, result)
 end

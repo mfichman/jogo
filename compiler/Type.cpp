@@ -92,6 +92,30 @@ bool Type::subtype(Type* other) const {
     return true;
 }
 
+bool Type::is_interface() const {
+    return clazz()->is_interface();
+}
+
+bool Type::is_object() const {
+    return clazz()->is_object();
+}
+
+bool Type::is_value() const {
+    return clazz()->is_value();
+}
+
+bool Type::is_bool() const {
+    return this->equals(environment_->boolean_type());
+}
+
+bool Type::is_int() const {
+    return this->equals(environment_->integer_type());
+}
+
+bool Type::is_boolifiable() const {
+    return !is_value() || is_bool() || is_int();
+}
+
 Class* Type::clazz() const {
     if (class_) {
         return class_;

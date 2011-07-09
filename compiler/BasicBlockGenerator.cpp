@@ -61,7 +61,7 @@ void BasicBlockGenerator::operator()(Formal* formal) {
 
 void BasicBlockGenerator::operator()(StringLiteral* expression) {
     // Load a pointer to the string from the string table
-    assert(!"Not implemented");
+    //assert(!"Not implemented");
 }
 
 void BasicBlockGenerator::operator()(IntegerLiteral* expression) {
@@ -260,7 +260,7 @@ void BasicBlockGenerator::operator()(Yield* statament) {
 
 void BasicBlockGenerator::operator()(Function* feature) {
     // If the function is just a prototype, don't emit any code.
-    if (!feature->block()) {
+    if (!feature->block() || feature->is_native()) {
         return;
     }
 

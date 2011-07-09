@@ -101,9 +101,12 @@ void TreePrinter::operator()(Module* feature) {
     print_tabs(); cout << "name: " << feature->name() << endl;
     int i = 0;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        print_tabs(); cout << "feature" << i << ": ";
-        f(this);
-        i++;
+        const Location& loc = f->location();
+        if (loc.file_name->string().find("../runtime") != 0) {
+            print_tabs(); cout << "feature" << i << ": ";
+            f(this);
+            i++;
+        }
     }
     indent_level_--;
 }
@@ -411,7 +414,11 @@ void TreePrinter::operator()(Function* feature) {
         i++;
     }
     print_tabs(); cout << "block: ";
-    block(this);
+    if (block) { 
+        block(this);
+    } else {
+        cout << endl;
+    }
     indent_level_--;
 }
 
