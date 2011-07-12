@@ -31,6 +31,7 @@ class Operand {
 public:
     Operand(String* literal) : literal_(literal), temporary_(0) {}
     Operand() : temporary_(0) {}
+    Operand(int temporary) : temporary_(temporary) {}
     const Operand& operator++() { temporary_++; return *this; }
     String::Ptr literal() const { return literal_; }
     int temporary() const { return temporary_; }
@@ -70,6 +71,9 @@ public:
     Operand first() const { return first_; }
     Operand second() const { return second_; }
     Operand result() const { return result_; }
+    void first(Operand first) { first_ = first; }
+    void second(Operand second) { second_ = second; }
+    void result(Operand result) { result_ = result; }
 
 private:
     Opcode opcode_;
@@ -85,6 +89,9 @@ public:
     BasicBlock* next() const { return next_; }
     String* label() const { return label_; }
     const Instruction& instr(size_t index) const { 
+        return instrs_[index];
+    }
+    Instruction& instr(size_t index) {
         return instrs_[index];
     }
     int instrs() const { return instrs_.size(); }

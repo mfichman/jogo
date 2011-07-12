@@ -54,7 +54,10 @@ void RegisterAllocator::operator()(Function* func) {
 }
 
 void RegisterAllocator::build_graph(BasicBlock* block) {
-    // Build the register interference graph prior to coloring it.
+    // Build the register interference graph.  Each vertex in the graph is a
+    // temporary name.  Each edge represents a conflict between two
+    // temporaries; that is, the temporaries are live at at least one code
+    // point at the same time.
     graph_.clear();
 
     for (int i = 0; i < block->instrs(); i++) {
@@ -160,5 +163,26 @@ void RegisterAllocator::color_graph() {
 }
 
 void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
+    // Loop through all instructions and replace temporaries with real 
+    // allocated registers.
 
+    for (int i = 0; i < block->instrs(); i++) {
+        Instruction& instr = block->instr(i);
+        if (instr.first().temporary()) {
+            instr.first(graph_[instr.first().temporary()].color());
+        }
+        if (instr.second().temporary()) {
+            instr.second(graph_[instr.second().temporary()].color());
+        }
+        if (instr.result().temporary()) {
+            instr.result(graph_[instr.result().temporary()].color());
+        }
+    }
+
+    if (block->next()) {
+        build_graph(block->next());
+    }
+    if (block->branch()) {
+        build_graph(block->next());
+    }
 }
