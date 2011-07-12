@@ -25,6 +25,7 @@
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
 #include "Environment.hpp"
+#include "LivenessAnalyzer.hpp"
 #include "BasicBlock.hpp"
 #include <set>
 
@@ -66,6 +67,7 @@ private:
     void operator()(BasicBlock* block);
 
     Environment::Ptr environment_;
+    LivenessAnalyzer::Ptr liveness_;
     Module::Ptr module_;
     Class::Ptr class_;
     std::set<BasicBlock::Ptr> visited_;

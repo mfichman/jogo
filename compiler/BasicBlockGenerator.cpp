@@ -29,7 +29,6 @@ using namespace std;
 
 BasicBlockGenerator::BasicBlockGenerator(Environment* env) :
     environment_(env),
-    temp_(0),
     label_(0) {
 
     if (environment_->errors()) {
@@ -62,6 +61,7 @@ void BasicBlockGenerator::operator()(Formal* formal) {
 void BasicBlockGenerator::operator()(StringLiteral* expression) {
     // Load a pointer to the string from the string table
     //assert(!"Not implemented");
+    return_ = str(block_, expression->value());
 }
 
 void BasicBlockGenerator::operator()(IntegerLiteral* expression) {
@@ -108,8 +108,12 @@ void BasicBlockGenerator::operator()(Unary* expression) {
 
 void BasicBlockGenerator::operator()(Call* expression) {
     // Push objects in anticipation of the call instruction.
+    std::vector<Operand> args;
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
-        push(block_, emit(a));
+        args.push_back(emit(a));
+    }
+    for (size_t i = 0; i < args.size(); i++) {
+        push(block_, args[i]);
     }
 
     // Look up the function by name in the current context.
@@ -211,31 +215,15 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
 
 void BasicBlockGenerator::operator()(Variable* statement) {
 
-    Operand prev = variable(statement->identifier());
-    if (prev.temporary()) {
-        // Generate code to decrement the reference count if the reference
-        // is non-null.
-        BasicBlock::Ptr pre_dec = bneqz(block_, prev); 
-        
-        // Emit code to decrement the reference count.
-        block_ = pre_dec->branch();
-        Operand refc1 = load(block_, prev /* + offset */);
-        Operand refc2 = sub(block_, refc1, environment_->integer("1"));
-        store(block_, prev /* + offset */, refc2);
-        
-        // Deallocate the object if the refcount dropped below zero.
-        BasicBlock::Ptr pre_dealloc = beqz(block_, refc2);
-        
-        // Emit code to call the destructor.
-        block_ = pre_dealloc->branch();
-        /* TODO: DEALLOCATE */
-        
-        
-        
-        
-    
+    Operand result;
+    if (dynamic_cast<Empty*>(statement->initializer())) {
+        Operand value = emit(statement->initializer());
+        result = mov(block_, value);
+    } else {
+        result = mov(block_, environment_->integer("0")); 
     }
-
+    
+    variable(statement->identifier(), result);
 }
 
 void BasicBlockGenerator::operator()(Return* statement) {

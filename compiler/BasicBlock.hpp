@@ -52,7 +52,7 @@ inline std::ostream& operator<<(std::ostream& out, const Operand& op) {
 /* Enumeration of opcodes available to the TAC code */
 enum Opcode { 
     ADD, SUB, MUL, DIV, ANDL, ORL, ANDB, ORB, PUSH, POP, LOAD, STORE, LI,
-    NOTL, CALL, JUMP, BNE, BEQ, BEQZ, BNEQZ, RET, HALT
+    NOTL, CALL, JUMP, BNE, BEQ, BEQZ, BNEQZ, RET, HALT, STR, MOV
 };
 
 
@@ -87,7 +87,7 @@ public:
     const Instruction& instr(size_t index) const { 
         return instrs_[index];
     }
-    size_t length() const { return instrs_.size(); }
+    int instrs() const { return instrs_.size(); }
     bool terminated() const {
         if (instrs_.empty()) {
             return false;

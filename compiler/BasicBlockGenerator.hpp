@@ -126,8 +126,18 @@ private:
         return temp_;
     }
 
+    Operand str(BasicBlock* block, Operand immediate) {
+        block->instr(STR, ++temp_, immediate, 0);
+        return temp_;
+    }
+
     Operand pop(BasicBlock* block) {
         block->instr(POP, ++temp_, 0, 0);    
+        return temp_;
+    }
+
+    Operand mov(BasicBlock* block, Operand t2) {
+        block->instr(MOV, ++temp_, t2, 0);
         return temp_;
     }
 

@@ -22,64 +22,29 @@
 
 #pragma once
 
-class Object;
-class TreeNode; 
-class Expression;
-class StringLiteral;
-class IntegerLiteral;
-class FloatLiteral;
-class BooleanLiteral;
-class File;
-class Fork;
-class Yield;
-class Formal;
-class String;
-class Binary;
-class Unary;
-class Call;
-class Dispatch;
-class Construct;
-class Identifier;
-class Case;
-class Simple;
-class Block;
-class When;
-class Variable;
-class Until;
-class While;
-class Conditional;
-class Return;
-class Class;
-class Module;
-class Feature;
-class Function;
-class Attribute;
-class Import;
-class Environment;
-class Type;
-class Generic;
-class Empty;
-class Let;
-class LivenessAnalyzer;
-
-#include <Pointer.hpp>
+#include "Apollo.hpp"
+#include "Environment.hpp"
+#include "BasicBlock.hpp"
+#include "Object.hpp"
+#include <set>
 #include <map>
-#include <sstream>
-#include <string>
 
-template <typename K, typename V>
-V query(const std::map<K, V>& map, typename K::Value* str) {
-    typename std::map<K, V>::const_iterator i = map.find(str);
-    if (i == map.end()) {
-        return V();
-    } else {
-        return i->second;
-    }
-}
+/* Computes liveness information for a function */
+class LivenessAnalyzer : public Object {
+public:
+    typedef Pointer<LivenessAnalyzer> Ptr;
 
-template <typename T>
-std::string stringify(T t) {
-    std::stringstream ss;
-    ss << t;
-    return ss.str();
-}
+    bool live(const Instruction& inst, int temporary);
+    std::set<int>& live(const Instruction& inst) {
+        return in_[&inst];  
+    } // Only here for printer
+
+    void operator()(Function* feature);
+
+private:
+    void operator()(BasicBlock* block); 
+
+    bool finished_;
+    std::map<const Instruction*, std::set<int> > in_;
+    std::map<const Instruction*, std::set<int> > out_;
+};
