@@ -175,7 +175,6 @@ void RegisterAllocator::color_graph() {
                 break;
             }
         }
-        std::cout << v->temporary() << " to " << choice << std::endl;
         if (choice) {
             v->color(choice);
         } else {
