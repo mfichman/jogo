@@ -69,7 +69,6 @@ private:
 
     Environment::Ptr environment_;
     LivenessAnalyzer::Ptr liveness_;
-    RegisterAllocator::Ptr allocator_;
     Module::Ptr module_;
     Class::Ptr class_;
     std::set<BasicBlock::Ptr> visited_;

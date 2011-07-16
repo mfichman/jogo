@@ -21,20 +21,32 @@
  */  
 
 #include "RegisterAllocator.hpp"
+#include "Environment.hpp"
 
 using namespace std;
 
-void RegisterVertex::edge_new(int temp) {
-    if (find(out_.begin(), out_.end(), temp) == out_.end()) {
-        out_.push_back(temp);
+
+RegisterAllocator::RegisterAllocator(Environment* env, int registers) :
+    liveness_(new LivenessAnalyzer),
+    registers_(registers) {
+
+    if (env->errors()) {
+        return;
+    }
+    for (Feature::Ptr m = env->modules(); m; m = m->next()) {
+        m(this);
     }
 }
 
-void RegisterVertex::edge_del(int temp) {
-    vector<int>::iterator i = find(out_.begin(), out_.end(), temp);
-    if (i != out_.end()) {
-        *i = out_.back();
-        out_.pop_back();
+void RegisterAllocator::operator()(Class* feature) {
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        f(this);
+    }
+}
+
+void RegisterAllocator::operator()(Module* feature) {
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        f(this);
     }
 }
 
@@ -199,5 +211,19 @@ void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
     }
     if (block->branch()) {
         rewrite_temporaries(block->branch());
+    }
+}
+
+void RegisterVertex::edge_new(int temp) {
+    if (find(out_.begin(), out_.end(), temp) == out_.end()) {
+        out_.push_back(temp);
+    }
+}
+
+void RegisterVertex::edge_del(int temp) {
+    vector<int>::iterator i = find(out_.begin(), out_.end(), temp);
+    if (i != out_.end()) {
+        *i = out_.back();
+        out_.pop_back();
     }
 }

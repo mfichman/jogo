@@ -45,35 +45,35 @@ private:
 class TreeNode::Functor : public Object {
 public:
     virtual ~Functor() {} 
-    virtual void operator()(Class* feature)=0;
-    virtual void operator()(Module* feature)=0;
-    virtual void operator()(Formal* formal)=0;
-    virtual void operator()(StringLiteral* expression)=0;
-    virtual void operator()(IntegerLiteral* expression)=0;
-    virtual void operator()(FloatLiteral* expression)=0;
-    virtual void operator()(BooleanLiteral* expression)=0;
-    virtual void operator()(Binary* expression)=0;
-    virtual void operator()(Unary* expression)=0;
-    virtual void operator()(Call* expression)=0;
-    virtual void operator()(Dispatch* expression)=0;
-    virtual void operator()(Construct* expression)=0;
-    virtual void operator()(Identifier* expression)=0;
-    virtual void operator()(Empty* empty)=0;
-    virtual void operator()(Block* statement)=0;
-    virtual void operator()(Simple* statement)=0;
-    virtual void operator()(While* statement)=0;
-    virtual void operator()(Let* statement)=0;
-    virtual void operator()(Conditional* statement)=0;
-    virtual void operator()(Variable* statement)=0;
-    virtual void operator()(Return* statement)=0;
-    virtual void operator()(When* statement)=0;
-    virtual void operator()(Yield* statement)=0;
-    virtual void operator()(Fork* statement)=0;
-    virtual void operator()(Case* statement)=0;
-    virtual void operator()(Function* feature)=0;
-    virtual void operator()(Attribute* feature)=0;
-    virtual void operator()(Import* feature)=0;
-    virtual void operator()(Type* type)=0;
+    virtual void operator()(Class* feature) {}
+    virtual void operator()(Module* feature) {}
+    virtual void operator()(Formal* formal) {}
+    virtual void operator()(StringLiteral* expression) {}
+    virtual void operator()(IntegerLiteral* expression) {}
+    virtual void operator()(FloatLiteral* expression) {}
+    virtual void operator()(BooleanLiteral* expression) {}
+    virtual void operator()(Binary* expression) {}
+    virtual void operator()(Unary* expression) {}
+    virtual void operator()(Call* expression) {}
+    virtual void operator()(Dispatch* expression) {}
+    virtual void operator()(Construct* expression) {}
+    virtual void operator()(Identifier* expression) {}
+    virtual void operator()(Empty* empty) {}
+    virtual void operator()(Block* statement) {}
+    virtual void operator()(Simple* statement) {}
+    virtual void operator()(While* statement) {}
+    virtual void operator()(Let* statement) {}
+    virtual void operator()(Conditional* statement) {}
+    virtual void operator()(Variable* statement) {}
+    virtual void operator()(Return* statement) {}
+    virtual void operator()(When* statement) {}
+    virtual void operator()(Yield* statement) {}
+    virtual void operator()(Fork* statement) {}
+    virtual void operator()(Case* statement) {}
+    virtual void operator()(Function* feature) {}
+    virtual void operator()(Attribute* feature) {}
+    virtual void operator()(Import* feature) {}
+    virtual void operator()(Type* type) {}
 };
 
 

@@ -50,14 +50,19 @@ private:
 };
 
 /* Register allocator; reduces instructions to sequences */
-class RegisterAllocator : public Object {
+class RegisterAllocator : public TreeNode::Functor {
 public:
     RegisterAllocator(int registers) :
         liveness_(new LivenessAnalyzer),
         registers_(registers) {
     }
+    RegisterAllocator(Environment* env, int registers);
+
     typedef Pointer<RegisterAllocator> Ptr;
+    void operator()(Module* feature);
+    void operator()(Class* feature);
     void operator()(Function* feature);
+
     int spilled() const { return spilled_; }
 
 private:
