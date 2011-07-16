@@ -27,7 +27,8 @@ using namespace std;
 
 BasicBlockPrinter::BasicBlockPrinter(Environment* environment) :
     environment_(environment),
-    liveness_(new LivenessAnalyzer) {
+    liveness_(new LivenessAnalyzer),
+    allocator_(new RegisterAllocator(4)) {
 
     if (environment_->errors()) {
         return;
@@ -56,6 +57,7 @@ void BasicBlockPrinter::operator()(Class* feature) {
 
 void BasicBlockPrinter::operator()(Function* feature) {
     liveness_->operator()(feature);
+    allocator_->operator()(feature); 
 
     BasicBlock::Ptr block = feature->code();
     visited_.clear();

@@ -42,13 +42,16 @@ void RegisterAllocator::operator()(Function* func) {
     // Allocate registers for temporaries in the function.  This allocator
     // uses an optimistic, greedy graph coloring algorithm.
     spilled_ = 0;
+    max_ = 0; // Maximum temporary
+    graph_.clear();
 
     liveness_->operator()(func);
     build_graph(func->code());
     build_stack();
     color_graph();     
 
-    if (spilled_) return;
+    assert(!spilled_);
+    if (spilled_) { return; }
 
     rewrite_temporaries(func->code()); 
 }
@@ -58,7 +61,6 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
     // temporary name.  Each edge represents a conflict between two
     // temporaries; that is, the temporaries are live at at least one code
     // point at the same time.
-    graph_.clear();
 
     for (int i = 0; i < block->instrs(); i++) {
         const Instruction& instr = block->instr(i);
@@ -67,18 +69,26 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
             set<int>::iterator n = m;
             n++;
             for (; n != live.end(); n++) {
-                // Make sure the pair is always ordered the same
-                if (*n < graph_.size()) {
+                if (*n == *m) { continue; }
+
+                if (*n >= graph_.size()) {
                     graph_.resize(*n + 1);
                 }
-                if (*m < graph_.size()) {
+                if (*m >= graph_.size()) {
                     graph_.resize(*m + 1);
                 }
-                graph_[*n].temporary(*n);
-                graph_[*m].temporary(*m);
                 graph_[*n].edge_new(*m);
                 graph_[*m].edge_new(*n);
             }
+        }
+        if (instr.first().temporary() > max_) { 
+            max_ = instr.first().temporary();
+        }
+        if (instr.second().temporary() > max_) {
+            max_ = instr.first().temporary();
+        }
+        if (instr.result().temporary() > max_) {
+            max_ = instr.first().temporary();
         }
     }
 
@@ -86,7 +96,7 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
         build_graph(block->next());
     }
     if (block->branch()) {
-        build_graph(block->next());
+        build_graph(block->branch());
     }
 }
 
@@ -94,13 +104,14 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
 void RegisterAllocator::build_stack() {
     // Make a copy of the graph for the vertex removal.  We need the original
     // graph for the final coloring stage.
-    vector<RegisterVertex> graph = graph_;
     vector<RegisterVertex*> work;
-    stack_.clear();
-
-    for (int i = 0; i < graph.size(); i++) {
-        work.push_back(&graph[i]);    
+    graph_.resize(max_ + 1);
+    for (int i = 1; i < graph_.size(); i++) {
+        graph_[i].temporary(i); // Set the graph temporary values
+        work.push_back(&graph_[i]); 
     }
+    vector<RegisterVertex> graph = graph_;
+    stack_.clear();
 
     while (!work.empty()) {
         // Loop through the whole graph, and find the first vertex with degree
@@ -152,6 +163,7 @@ void RegisterAllocator::color_graph() {
                 break;
             }
         }
+        std::cout << v->temporary() << " to " << choice << std::endl;
         if (choice) {
             v->color(choice);
         } else {
@@ -163,26 +175,29 @@ void RegisterAllocator::color_graph() {
 }
 
 void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
-    // Loop through all instructions and replace temporaries with real 
+    // Loop through all instructions and replace temporaries with real
     // allocated registers.
 
     for (int i = 0; i < block->instrs(); i++) {
         Instruction& instr = block->instr(i);
-        if (instr.first().temporary()) {
-            instr.first(graph_[instr.first().temporary()].color());
+        int first = instr.first().temporary();
+        int second = instr.second().temporary();
+        int result = instr.result().temporary();
+        if (first) {
+            instr.first(graph_[first].color());
         }
-        if (instr.second().temporary()) {
-            instr.second(graph_[instr.second().temporary()].color());
+        if (second) {
+            instr.second(graph_[second].color());
         }
-        if (instr.result().temporary()) {
-            instr.result(graph_[instr.result().temporary()].color());
+        if (result) {
+            instr.result(graph_[result].color());
         }
     }
 
     if (block->next()) {
-        build_graph(block->next());
+        rewrite_temporaries(block->next());
     }
     if (block->branch()) {
-        build_graph(block->next());
+        rewrite_temporaries(block->branch());
     }
 }

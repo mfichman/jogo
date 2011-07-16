@@ -25,6 +25,7 @@
 #include "TypeChecker.hpp"
 #include "BasicBlockPrinter.hpp"
 #include "BasicBlockGenerator.hpp"
+#include "LivenessAnalyzer.hpp"
 #include "TreePrinter.hpp"
 #include "Options.hpp"
 
@@ -50,8 +51,8 @@ int main(int argc, char** argv) {
         TreePrinter::Ptr printer(new TreePrinter(env));
     }
     TypeChecker::Ptr checker(new TypeChecker(env));
+    BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env));
     if (test_options.find("# aptest print_ir off") == test_options.end()) {
-        BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env));
         BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
     }
     

@@ -35,6 +35,7 @@ void LivenessAnalyzer::operator()(Function* feature) {
         finished_ = true;
         operator()(feature->code());
     }
+
 }
 
 void LivenessAnalyzer::operator()(BasicBlock* block) {
@@ -54,8 +55,12 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // in[n] := use[n] U (out[n] - def[n]).  Since the in/out sets can 
         // never decrease in size, don't worry about resetting either of the
         // two sets.
-        finished_ &= !in.insert(instr.first().temporary()).second;
-        finished_ &= !in.insert(instr.second().temporary()).second;
+        if (instr.first().temporary()) {
+            finished_ &= !in.insert(instr.first().temporary()).second;
+        }
+        if (instr.second().temporary()) {
+            finished_ &= !in.insert(instr.second().temporary()).second;
+        }
         
         for (set<int>::iterator j = out.begin(); j != out.end(); j++) {
             if (*j != instr.result().temporary()) {

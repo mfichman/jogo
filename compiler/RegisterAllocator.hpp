@@ -71,6 +71,7 @@ private:
     LivenessAnalyzer::Ptr liveness_;
     int registers_;
     int spilled_;
+    int max_;
 };
 
 

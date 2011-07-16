@@ -23,8 +23,9 @@
 #pragma once
 
 #include "Apollo.hpp"
-#include "TreeNode.hpp"
 #include "Environment.hpp"
+#include "TreeNode.hpp"
+#include "RegisterAllocator.hpp"
 #include "LivenessAnalyzer.hpp"
 #include "BasicBlock.hpp"
 #include <set>
@@ -68,6 +69,7 @@ private:
 
     Environment::Ptr environment_;
     LivenessAnalyzer::Ptr liveness_;
+    RegisterAllocator::Ptr allocator_;
     Module::Ptr module_;
     Class::Ptr class_;
     std::set<BasicBlock::Ptr> visited_;

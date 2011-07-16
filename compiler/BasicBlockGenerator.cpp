@@ -214,16 +214,27 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
 }
 
 void BasicBlockGenerator::operator()(Variable* statement) {
+    // FixMe: This breaks SSA form, because variables are not renamed.  With
+    // this code the way it is, the generator only generates SSA for temporary
+    // expressions.  This limitation is here as a punt on introducing
+    // phi-functions until optimizations are needed, since without
+    // optimizations, SSA is not needed anyway.
 
-    Operand result;
+
+    Operand value;
     if (dynamic_cast<Empty*>(statement->initializer())) {
-        Operand value = emit(statement->initializer());
-        result = mov(block_, value);
+        value = environment_->integer("0");
     } else {
-        result = mov(block_, environment_->integer("0")); 
+        value = emit(statement->initializer());
     }
-    
-    variable(statement->identifier(), result);
+
+    Operand var = variable(statement->identifier());
+    if (!var.temporary()) {
+        var = ++temp_;
+        variable(statement->identifier(), var);
+    }
+
+    block_->instr(MOV, var, value, 0);
 }
 
 void BasicBlockGenerator::operator()(Return* statement) {
