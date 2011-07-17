@@ -17,3 +17,13 @@ Testing
 1. Install [ruby](http://www.ruby-lang.org)
 2. Install [valgrind](http://www.valgrind.org)
 3. Run "scons check" or "scons test"
+
+Compiling a Simple Program
+--------------------------
+
+Right now, the compiler has barely implemented any features, but it can run a "hello world" program, and perhaps a few other programs.  Don't be surprised if the compiler bails out when you try to use loops/functions, etc.  To run the included hello world program, Bootstrap.ap, try these commands:
+
+1. bin/apollo -p tests -p runtime Bootstrap
+2. nasm -fmacho64 out.asm
+3. gcc out.o -lapollo -Llib
+4. ./a.out
