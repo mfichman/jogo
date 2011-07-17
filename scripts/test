@@ -44,9 +44,9 @@ tests.each do |test|
         flags = ""
         flags = flags + " --leak-check=full"
         flags = flags + " --suppressions=../scripts/valgrind.supp"
-        flags = flags + " --gen-suppressions=all"
-        command = "valgrind #{flags} -q ../bin/test #{test} "
-        command += "2>&1 | diff - #{tests}.ap.out"
+        #flags = flags + " --gen-suppressions=all"
+        command = "valgrind #{flags} -q ../bin/test #{test} -p ../runtime "
+        command += "2>&1 | diff - #{test}.ap.out"
         result = `#{command}`
     else
         result = `../bin/test #{test} -p ../runtime 2>&1 | diff - #{test}.ap.out`
