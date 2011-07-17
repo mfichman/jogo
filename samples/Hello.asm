@@ -22,3 +22,4 @@ _main:
 section .data
     msg db "hello, world", 0xa, 0x0
     len equ $-msg
+    dq 88

@@ -1,6 +1,9 @@
 # aptest run_program on
 
+import Boot
+
 main() Int {
-    print("hello, world!\n")
+    boot_print_str("hello, world!\n")
+    boot_print_str("boot it!\n")
     return 0
 }

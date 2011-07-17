@@ -59,8 +59,10 @@ void BasicBlockPrinter::operator()(Function* feature) {
 
     BasicBlock::Ptr block = feature->code();
     visited_.clear();
-    operator()(block);     
-    cout << endl; 
+    if (block->instrs()) {
+        cout << feature->label() << ":" << std::endl;
+        operator()(block);     
+    }
 }
 
 void BasicBlockPrinter::operator()(BasicBlock* block) {
@@ -75,7 +77,7 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         cout << block->label() << ":" << endl;
     }
     for (int i = 0; i < block->instrs(); i++) {
-        Instruction instr = block->instr(i);
+        const Instruction& instr = block->instr(i);
         Operand result = instr.result();
         Operand first = instr.first();
         Operand second = instr.second();

@@ -162,6 +162,7 @@ void TypeChecker::operator()(Class* feature) {
     }
 
     exit_scope();
+    class_ = 0;
 }
 
 void TypeChecker::operator()(Formal* formal) {
@@ -611,6 +612,25 @@ void TypeChecker::operator()(Function* feature) {
     Block::Ptr block = feature->block();
     scope_ = feature;
     enter_scope();
+
+    // Calculate the label name for this function.
+    std::string name = module_->name()->string();
+    if (class_) {
+        if (!name.empty()) {
+            name += "__";
+        }
+        name += class_->name()->string();
+    }
+    if (!name.empty()) {
+        name += "__";
+    }
+    name += feature->name()->string();
+    std::replace(name.begin(), name.end(), ':', '_');
+    if (feature->is_native()) {
+        name = "_" + name;
+    }
+
+    feature->label(environment_->name(name));
 
     // Check all formal parameters.
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {

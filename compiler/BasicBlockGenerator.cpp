@@ -119,7 +119,7 @@ void BasicBlockGenerator::operator()(Call* expression) {
     // Look up the function by name in the current context.
     String::Ptr id = expression->identifier();
     String::Ptr scope = expression->scope();
-    String::Ptr name = expression->file()->function(scope, id)->name();
+    String::Ptr name = expression->file()->function(scope, id)->label();
 
     // Insert a call expression, then pop the return value off the stack.
     call(block_, name);
@@ -167,7 +167,7 @@ void BasicBlockGenerator::operator()(Let* statement) {
 void BasicBlockGenerator::operator()(While* statement) {
     // Emit the guard expression in a new basic block
     BasicBlock::Ptr test = new BasicBlock;
-    test->label(environment_->string("l" + stringify(++label_)));
+    test->label(environment_->name("l" + stringify(++label_)));
     block_->next(test);
     block_ = test;
     Operand guard = emit(statement->guard());
@@ -266,20 +266,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // Reset the temporaries for the function.
     temp_ = Operand();
 
-    std::string name = module_->name()->string();
-    if (class_) {
-        if (!name.empty()) {
-            name += "::";
-        }
-        name += class_->name()->string();
-    }
-    if (!name.empty()) {
-        name += "::";
-    }
-    name += feature->name()->string();
-
     block_ = feature->code();
-    block_->label(environment_->name(name));
     enter_scope();
 
     // Pop the formal parameters off the stack in reverse order, and save them

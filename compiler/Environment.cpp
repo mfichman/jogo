@@ -63,6 +63,8 @@ String* Environment::integer(const std::string& str) {
 	std::map<std::string, String::Ptr>::iterator i = integer_.find(str);
 	if (i == integer_.end()) {
 		String* name = new String(str);
+        name->next(integers_);
+        integers_ = name;
 		integer_.insert(std::make_pair(str, name));	
 		return name;
 	} else {
@@ -76,6 +78,8 @@ String* Environment::floating(const std::string& str) {
 	std::map<std::string, String::Ptr>::iterator i = floating_.find(str);
 	if (i == floating_.end()) {
 		String* name = new String(str);
+        name->next(floats_);
+        floats_ = name;
 		floating_.insert(std::make_pair(str, name));	
 		return name;
 	} else {
@@ -89,6 +93,8 @@ String* Environment::string(const std::string& str) {
 	std::map<std::string, String::Ptr>::iterator i = string_.find(str);
 	if (i == string_.end()) {
 		String* name = new String(str);
+        name->next(strings_);
+        strings_ = name; 
 		string_.insert(std::make_pair(str, name));	
 		return name;
 	} else {

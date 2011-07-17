@@ -67,7 +67,7 @@ Module
                 false: Block
                   child0: Return
                     expression: IntegerLiteral(6)
-Conditional::conditional1:
+Conditional__conditional1:
     t1 <- pop {}
     t2 <- li 'true' {}
     if not t2 goto l2 {t2}
@@ -79,8 +79,7 @@ l2:
     t4 <- li '0' {}
     push t4 {t4}
     ret {}
-
-Conditional::conditional2:
+Conditional__conditional2:
     t1 <- pop {}
     t2 <- li 'true' {}
     if not t2 goto l5 {t2}
@@ -99,8 +98,7 @@ l7:
     t6 <- li '3' {}
     push t6 {t6}
     ret {}
-
-Conditional::conditional3:
+Conditional__conditional3:
     t1 <- pop {}
     t2 <- li 'true' {}
     if not t2 goto l11 {t2}
@@ -126,4 +124,3 @@ l15:
     t8 <- li '6' {}
     push t8 {t8}
     ret {}
-

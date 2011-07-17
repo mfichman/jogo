@@ -37,6 +37,9 @@ public:
     String* integer(const std::string& str);
     String* floating(const std::string& str);
     String* string(const std::string& str);
+    String* integers() const { return integers_; }
+    String* floats() const { return floats_; }
+    String* strings() const { return strings_; }
     Module* root() const { return root_; }
     Module* builtins() const { return builtins_; }
     Module* module(String* scope);
@@ -72,6 +75,9 @@ private:
     std::map<String::Ptr, File::Ptr> file_;
     std::vector<std::string> include_;
     std::vector<std::string> input_;
+    String::Ptr strings_;
+    String::Ptr integers_;
+    String::Ptr floats_;
     Module::Ptr root_;
     Module::Ptr builtins_;
     File::Ptr builtin_file_; 

@@ -22,9 +22,9 @@
 
 #include <stdint.h>
 
-typedef int32_t Int;
+typedef int64_t Int;
 typedef void* Ptr;
-typedef int32_t Bool;
+typedef int64_t Bool;
 
 typedef uint32_t U32;
 typedef uint16_t U16;
@@ -34,4 +34,3 @@ typedef int32_t S32;
 typedef int16_t S16;
 typedef int8_t S8;
 typedef uint8_t Char;
-

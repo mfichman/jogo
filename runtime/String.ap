@@ -40,16 +40,14 @@ String < Object {
         # ending at 'end', inclusive.
     }
 
-    starts_with(string String) Bool {
+    starts_with(string String) native Bool {
         # Returns true if this string starts with the exact string specified
         # by 'string'
-        return false
     }
 
-    ends_with(string String) Bool {
+    ends_with(string String) native Bool {
         # Returns true if this string ends with the exact string specified by
         # 'string'
-        return false
     }
     
     uppercase() native String {
@@ -60,13 +58,12 @@ String < Object {
         # Returns a lowercase version of this string.
     }
 
-    string() String {
+    string() native String {
         # return self
-        return "" # FIXME
+        # FIXME
     }
 
     #slice(range Range) String native
     # Returns a substring using the given range as an index.
 }
 
-print(string String) native

@@ -90,7 +90,7 @@ void Parser::file(const std::string& prefix, const std::string& file) {
 
     // Create a file object for this file if it hasn't been parsed yet.
     std::string actual_file = (prefix == ".") ? file : prefix + "/" + file;
-    String* fs = environment_->string(actual_file);
+    String* fs = environment_->name(actual_file);
     file_ = environment_->file(fs);
     if (file_) {
         return;

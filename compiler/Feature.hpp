@@ -43,10 +43,12 @@ public:
 
     Feature* next() const { return next_; }
     Flags flags() const { return flags_; }
+    String* label() const { return label_; }
     bool is_private() const { return flags_ & PRIVATE; }
     bool is_native() const { return flags_& NATIVE; }
     void next(Feature* next) { next_ = next; }
     void flags(Flags flags) { flags_ = flags; }
+    void label(String* label) { label_ = label; }
     typedef Pointer<Feature> Ptr;
 
     static const int PRIVATE = 0x1;
@@ -55,6 +57,7 @@ public:
 private:
     Feature::Ptr next_;
     Flags flags_;
+    String::Ptr label_;
 };
 
 /* Class for instance variables (attributes) of a class or module */

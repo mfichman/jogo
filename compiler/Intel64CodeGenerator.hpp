@@ -21,3 +21,39 @@
  */  
 
 #pragma once
+
+#include "Apollo.hpp"
+#include "Environment.hpp"
+#include "BasicBlock.hpp"
+#include "Object.hpp"
+#include <iostream>
+#include <fstream>
+#include <set>
+
+/* Generates code for Intel 64 machines */
+class Intel64CodeGenerator : public TreeNode::Functor {
+public:
+    Intel64CodeGenerator(Environment* env);
+    typedef Pointer<Intel64CodeGenerator> Ptr;
+    
+private:
+    void operator()(Class* feature);
+    void operator()(Module* feature);
+    void operator()(Function* function);
+    void operator()(BasicBlock* block);
+    void emit(const char* instr, Operand r1, Operand r2);
+    void emit(const char* instr, Operand r1);
+    void emit(const char* instr);
+    void emit(const char* instr, Operand r1, const char* o2);
+    void emit(const char* instr, String* label);
+    void load(Operand r1, Operand r2);
+    void store(Operand r1, Operand r2);
+    void str(Operand r1, Operand r2);
+    void li(Operand r1, Operand r2);
+
+    Environment::Ptr environment_;
+    static const char* register_[];
+    static int registers_;
+    std::set<BasicBlock::Ptr> visited_;
+    std::ofstream out_;
+};

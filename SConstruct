@@ -10,7 +10,7 @@ env['AS'] = 'nasm'
 env['RANLIB'] = 'echo'
 env['AR'] = 'libtool'
 env['ARFLAGS'] = '-static -o'
-env.Append(ASFLAGS = '-felf')
+env.Append(ASFLAGS = '-felf64')
 env.Append(CXXFLAGS = '-g')
 env.Append(CXXFLAGS = '-Wall -Werror -pedantic')
 env.Append(CXXFLAGS = '-Wno-unused')
@@ -26,6 +26,7 @@ env.Program('bin/test', compiler_sources + ['build/drivers/Test.cpp'])
 
 
 library_sources = env.Glob('build/runtime/*.c') 
+library_sources += env.Glob('build/runtime/*.asm')
 env.StaticLibrary('lib/apollo', library_sources)
 #env.Program('bin/asmtest', 'samples/Test.linux.asm')
 

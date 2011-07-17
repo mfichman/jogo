@@ -26,6 +26,7 @@
 #include "BasicBlockPrinter.hpp"
 #include "BasicBlockGenerator.hpp"
 #include "LivenessAnalyzer.hpp"
+#include "Intel64CodeGenerator.hpp"
 #include "TreePrinter.hpp"
 #include "Options.hpp"
 
@@ -52,11 +53,15 @@ int main(int argc, char** argv) {
     }
     TypeChecker::Ptr checker(new TypeChecker(env));
     BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env));
-    if (test_options.find("# aptest register_alloc on") != test_options.end()) {
-        RegisterAllocator::Ptr alloc(new RegisterAllocator(env, 6));
-    }
     if (test_options.find("# aptest print_ir off") == test_options.end()) {
         BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
+    }
+    if (test_options.find("# aptest run_program on") != test_options.end()) {
+        RegisterAllocator::Ptr alloc(new RegisterAllocator(env, 6));
+        Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));
+        system("nasm -fmacho64 out.asm -o /tmp/out.o");
+        system("gcc -lapollo -L../lib /tmp/out.o -o /tmp/out");
+        system("/tmp/out");
     }
    
     

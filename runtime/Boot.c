@@ -18,33 +18,25 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
- */  
+ */
 
-#pragma once
+#include "String.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "Apollo.hpp"
-#include "Object.hpp"
-#include <string>
-#include <sstream>
+void boot_print_str(String* string) {
+    // Write string to stdout.  This is function is here for convenience's 
+    // sake.  Once a full-fledged IO framework has been written, this function
+    // will really only be useful for simple output.
 
-class String : public Object {
-public:
-    String(const std::string& string) :
-        string_(string) {
-    }
-
-    const std::string& string() const { return string_; }
-    String* next() const { return next_; }
-    void next(String* next) { next_ = next; }
-    typedef Pointer<String> Ptr;
-
-private:
-    std::string string_;
-    String::Ptr next_;
-};
-
-inline std::ostream& operator<<(std::ostream& out, const String* name) {
-    out << name->string();
-    return out;
+    fwrite(string->data, 1, string->length, stdout);
+    fflush(stdout);
 }
 
+void boot_print_int(Int integer) {
+    // Print an integer to stdout.  This function is here only to run initial
+    // tests on the compiler, and isn't part of the public API.
+
+    fprintf(stdout, "%lld", integer);
+    fflush(stdout);
+}
