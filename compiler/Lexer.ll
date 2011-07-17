@@ -115,7 +115,8 @@ xor\= return BIT_XOR_ASSIGN;
     yy_push_state(SC_STRING, yyscanner);
 }
 \'[^']*\' {
-	String* value = yyextra->environment()->string(yytext);
+    yytext[strlen(yytext)-1] = '\0';
+	String* value = yyextra->environment()->string(yytext + 1);
 	yylval->expression = new StringLiteral(*yylloc, value); 
 	return STRING;
 }

@@ -68,7 +68,7 @@ Options::Options(Environment* env, int argc, char** argv) {
             if ("path" == flag) {
                 env->include(argv[i]); 
             } else if ("output" == flag) {
-                assert(!"Flag '--output' not implemented");
+                env->output(argv[i]);
             } else if ("dump" == flag) {
                 assert(!"Flag '--dump' not implemented");
             } else {

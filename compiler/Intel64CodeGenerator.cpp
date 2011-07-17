@@ -30,7 +30,7 @@ int Intel64CodeGenerator::registers_ = sizeof(register_)/sizeof(const char*);
 
 Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
     environment_(env),
-    out_("out.asm") {
+    out_(env->output().c_str()) {
 
     if (environment_->errors()) {
         return;
@@ -219,6 +219,9 @@ void Intel64CodeGenerator::li(Operand r1, Operand r2) {
     out_ << "    mov ";
     out_ << register_[r1.temporary()] << ", ";
     out_ << "int" << (void*)r2.literal().pointer() << std::endl;
+    out_ << "    mov ";
+    out_ << register_[r1.temporary()] << ", [";
+    out_ << register_[r1.temporary()] << "]" << std::endl;
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, Operand r2) {

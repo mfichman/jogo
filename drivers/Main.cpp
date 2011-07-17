@@ -23,6 +23,9 @@
 #include "Environment.hpp"
 #include "Parser.hpp"
 #include "TypeChecker.hpp"
+#include "BasicBlockGenerator.hpp"
+#include "RegisterAllocator.hpp"
+#include "Intel64CodeGenerator.hpp"
 #include "TreePrinter.hpp"
 #include "Options.hpp"
 
@@ -33,10 +36,10 @@ int main(int argc, char** argv) {
     Options(env, argc, argv);
 
     Parser::Ptr parser(new Parser(env));
-    parser->input(argv[1]);
-
-    TreePrinter::Ptr printer(new TreePrinter(env));
     TypeChecker::Ptr checker(new TypeChecker(env));
+    BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env));
+    RegisterAllocator::Ptr alloc(new RegisterAllocator(env, 12));
+    Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));
 
     return 0;
 }

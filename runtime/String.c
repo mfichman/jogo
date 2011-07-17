@@ -105,15 +105,6 @@ Bool String__equal(String* self, String* string) {
     return 1;
 }
 
-void print(String* string) {
-    // Write string to stdout.  This is function is here for convenience's 
-    // sake.  Once a full-fledged IO framework has been written, this function
-    // will really only be useful for simple output.
-
-    fwrite(string->data, 1, string->length, stdout);
-    fflush(stdout);
-}
-
 /*
 String* String__slice(Range range) {
 

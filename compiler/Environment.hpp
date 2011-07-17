@@ -47,11 +47,13 @@ public:
     File* file(String* name);
     const std::string& include(int index) { return include_[index]; }
     const std::string& input(int index) { return input_[index]; }
+    const std::string& output() const { return output_; }
     int errors() { return errors_; }
     int includes() { return include_.size(); }
     int inputs() { return input_.size(); }
     void include(const std::string& path) { include_.push_back(path); }
     void input(const std::string& path) { input_.push_back(path); }
+    void output(const std::string& path) { output_ = path; }
     void module(Module* module);
     void file(File* name);
     void error(const std::string& error) { errors_++; }
@@ -75,6 +77,8 @@ private:
     std::map<String::Ptr, File::Ptr> file_;
     std::vector<std::string> include_;
     std::vector<std::string> input_;
+    std::string output_;
+
     String::Ptr strings_;
     String::Ptr integers_;
     String::Ptr floats_;
