@@ -22,7 +22,7 @@ Testing
 Compiling a Simple Program
 --------------------------
 
-Right now, the compiler has barely any implemented features, but it can run a "hello world" program, and perhaps a few other programs.  Don't be surprised if the compiler bails out for a program that you write.  To run the included hello world program, Bootstrap.ap, try these commands:
+Right now, the compiler has barely any implemented features, but it can run a "hello world" program, and perhaps a few other programs.  Don't be surprised if the compiler bails out while compiling a program that you write.  To run the included hello world program, Bootstrap.ap, try these commands:
 
 1. Install prerequisites (see "Building" and "Testing" above)
 1. bin/apollo -p tests -p runtime Bootstrap
