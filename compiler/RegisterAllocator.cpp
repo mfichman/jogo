@@ -26,9 +26,9 @@
 using namespace std;
 
 
-RegisterAllocator::RegisterAllocator(Environment* env, int registers) :
+RegisterAllocator::RegisterAllocator(Environment* env, Machine* machine) :
     liveness_(new LivenessAnalyzer),
-    registers_(registers) {
+    machine_(machine) {
 
     if (env->errors()) {
         return;
@@ -132,7 +132,7 @@ void RegisterAllocator::build_stack() {
         int index = 0;
 
         for (int i = 0; i < work.size(); i++) {
-            if (work[i]->temporary() && work[i]->edges() < registers_) {  
+            if (work[i]->temporary() && work[i]->edges() < machine_->regs()) {  
                 choice = work[i];
                 index = i;
                 break;
@@ -163,7 +163,7 @@ void RegisterAllocator::color_graph() {
     while (!stack_.empty()) { // Now color the graph using the stack.
         RegisterVertex* v = &graph_[stack_.back()]; 
         int choice = 0;
-        for (int color = 1; color < registers_; color++) {
+        for (int color = 1; color < machine_->regs(); color++) {
             bool ok = true;
             for (int i = 0; i < v->edges(); i++) {
                 if (graph_[v->edge(i)].color() == color) {

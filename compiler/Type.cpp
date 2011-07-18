@@ -124,6 +124,10 @@ bool Type::is_boolifiable() const {
     return !is_value() || is_bool() || is_int();
 }
 
+bool Type::is_void() const {
+    return this->equals(environment_->void_type());
+}
+
 Class* Type::clazz() const {
     if (class_) {
         return class_;

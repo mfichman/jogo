@@ -27,6 +27,7 @@
 #include "RegisterAllocator.hpp"
 #include "Intel64CodeGenerator.hpp"
 #include "TreePrinter.hpp"
+#include "Machine.hpp"
 #include "Options.hpp"
 
 #include <iostream>
@@ -37,8 +38,10 @@ int main(int argc, char** argv) {
 
     Parser::Ptr parser(new Parser(env));
     TypeChecker::Ptr checker(new TypeChecker(env));
+
+    Machine::Ptr machine = Machine::intel64();
     BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env));
-    RegisterAllocator::Ptr alloc(new RegisterAllocator(env, 12));
+    RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
     Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));
 
     return 0;

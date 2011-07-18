@@ -32,14 +32,13 @@
 /* Computes liveness information for a function */
 class LivenessAnalyzer : public Object {
 public:
-    typedef Pointer<LivenessAnalyzer> Ptr;
-
     bool live(const Instruction& inst, int temporary);
     std::set<int>& live(const Instruction& inst) {
         return in_[&inst];  
     } // Only here for printer
 
     void operator()(Function* feature);
+    typedef Pointer<LivenessAnalyzer> Ptr;
 
 private:
     void operator()(BasicBlock* block); 

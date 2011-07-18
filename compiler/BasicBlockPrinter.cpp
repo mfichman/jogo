@@ -95,6 +95,9 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         case DIV:
             cout << result << " <- " << first << " / " << second;
             break; 
+        case EQ:
+            cout << result << " <- " << first << " == " << second;
+            break;
         case ANDL:
             cout << result << " <- " << first << " and " << second;
             break; 

@@ -26,6 +26,7 @@
 #include "Environment.hpp"
 #include "LivenessAnalyzer.hpp"
 #include "BasicBlock.hpp"
+#include "Machine.hpp"
 #include <set>
 
 
@@ -52,11 +53,11 @@ private:
 /* Register allocator; reduces instructions to sequences */
 class RegisterAllocator : public TreeNode::Functor {
 public:
-    RegisterAllocator(int registers) :
+    RegisterAllocator(Machine* machine) :
         liveness_(new LivenessAnalyzer),
-        registers_(registers) {
+        machine_(machine) {
     }
-    RegisterAllocator(Environment* env, int registers);
+    RegisterAllocator(Environment* env, Machine* machine);
 
     typedef Pointer<RegisterAllocator> Ptr;
     void operator()(Module* feature);
@@ -64,6 +65,7 @@ public:
     void operator()(Function* feature);
 
     int spilled() const { return spilled_; }
+    // Returns the spilled temporary, if there was one
 
 private:
     void build_graph(BasicBlock* block);
@@ -74,7 +76,7 @@ private:
     std::vector<RegisterVertex> graph_;
     std::vector<int> stack_;
     LivenessAnalyzer::Ptr liveness_;
-    int registers_;
+    Machine::Ptr machine_;
     int spilled_;
     int max_;
 };

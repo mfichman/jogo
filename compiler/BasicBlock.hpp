@@ -53,7 +53,7 @@ inline std::ostream& operator<<(std::ostream& out, const Operand& op) {
 /* Enumeration of opcodes available to the TAC code */
 enum Opcode { 
     ADD, SUB, MUL, DIV, ANDL, ORL, ANDB, ORB, PUSH, POP, LOAD, STORE, LI,
-    NOTL, CALL, JUMP, BNE, BEQ, BEQZ, BNEQZ, RET, HALT, STR, MOV
+    NOTL, CALL, JUMP, BNE, BEQ, BEQZ, BNEQZ, RET, HALT, STR, MOV, EQ
 };
 
 

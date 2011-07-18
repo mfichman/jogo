@@ -21,22 +21,24 @@
 Int < Value {
 #    @init(float Float) native
     @init(str String) native
-    @add(index Int) native Int
-    @sub(index Int) native Int
-    @mul(index Int) native Int
-    @div(index Int) native Int
-    @mod(index Int) native Int
+    @add(other Int) native Int
+    @sub(other Int) native Int
+    @mul(other Int) native Int
+    @div(other Int) native Int
+    @mod(other Int) native Int
+    @equal(other Int) native Int
     @compl() native Int
 }
 
 Float < Value {
 #    @init(int Int) native
     @init(str String) native
-    @add(index Float) native Float
-    @sub(index Float) native Float
-    @mul(index Float) native Float
-    @div(index Float) native Float
-    @mod(index Float) native Float
+    @add(other Float) native Float
+    @sub(other Float) native Float
+    @mul(other Float) native Float
+    @div(other Float) native Float
+    @mod(other Float) native Float
+    @equal(other Float) native Float
     @compl() native Float
 }
 

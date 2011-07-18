@@ -119,14 +119,54 @@ void BasicBlockGenerator::operator()(Call* expression) {
     // Look up the function by name in the current context.
     String::Ptr id = expression->identifier();
     String::Ptr scope = expression->scope();
-    String::Ptr name = expression->file()->function(scope, id)->label();
+    Function::Ptr func = expression->file()->function(scope, id);
+    String::Ptr name = func->label();
 
     // Insert a call expression, then pop the return value off the stack.
     call(block_, name);
-    return_ = pop(block_);
+    if (!func->type()->is_void()) {
+        return_ = pop(block_);
+    } else {
+        return_ = 0;
+    }
 }
 
 void BasicBlockGenerator::operator()(Dispatch* expression) {
+    // The call expression may actually be an operator, if the type of the
+    // expression is primitive.
+    Type::Ptr type = expression->arguments()->type();
+    String::Ptr id = expression->identifier();
+    if (id->string()[0] == '@' && type->is_primitive()) {
+        emit_operator(expression);
+        return; 
+    }
+
+    if (type->is_interface()) {
+        assert(!"Not implemented");
+    }
+
+    // Push objects in anticipation of the call instruction.
+    std::vector<Operand> args;
+    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
+        args.push_back(emit(a));
+    }
+    for (size_t i = 0; i < args.size(); i++) {
+        push(block_, args[i]);
+    }
+
+    // Look up the function by name in the current context.
+    Expression::Ptr receiver = expression->arguments();
+    Class::Ptr clazz = receiver->type()->clazz();
+    Function::Ptr func = clazz->function(id);
+    String::Ptr name = func->label();
+
+    // Insert a call expression, then pop the return value off the stack.
+    call(block_, name);
+    if (!func->type()->is_void()) {
+        return_ = pop(block_);
+    } else {
+        return_ = 0;
+    }
 }
 
 void BasicBlockGenerator::operator()(Construct* expression) {
@@ -302,6 +342,41 @@ void BasicBlockGenerator::operator()(Type* feature) {
     // Pass
 }
 
+void BasicBlockGenerator::emit_operator(Dispatch* expression) {
+    // FixMe: Replace this with a mini-parser that can read three-address-code
+    // and output it as an inline function.
+    std::string id = expression->identifier()->string();
+
+    std::vector<Operand> args;
+    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
+        args.push_back(emit(a));
+    }
+   
+    if (id == "@add") {
+        assert(args.size() == 2);
+        return_ = add(block_, args[0], args[1]); 
+    } else if (id == "@sub") {
+        assert(args.size() == 2);
+        return_ = sub(block_, args[0], args[1]);
+    } else if (id == "@mul") {
+        assert(args.size() == 2);
+        return_ = mul(block_, args[0], args[1]);
+    } else if (id == "@div") {
+        assert(args.size() == 2);
+        return_ = div(block_, args[0], args[1]);
+    } else if (id == "@mod") {
+        assert(!"Not implemented");
+    //    assert(args.size() == 2);
+    //    return_ = div(block_, args[0], args[1]);
+    } else if (id == "@compl") {
+    //    assert(args.size() == 1);
+        assert(!"Not implemented");
+    } else if (id == "@equal") {
+        assert(args.size() == 2);
+        return_ = eq(block_, args[0], args[1]);
+    }
+}
+
 Operand BasicBlockGenerator::variable(String* name) {
     vector<map<String::Ptr, Operand> >::reverse_iterator i;
     for (i = variable_.rbegin(); i != variable_.rend(); i++) {
@@ -325,5 +400,3 @@ void BasicBlockGenerator::enter_scope() {
 void BasicBlockGenerator::exit_scope() {
     variable_.pop_back();
 }
-
-

@@ -41,11 +41,14 @@ private:
     void operator()(Module* feature);
     void operator()(Function* function);
     void operator()(BasicBlock* block);
+    void emit(const char* instr, const char* o1);
+    void emit(const char* instr, const char* o1, Operand r2);
     void emit(const char* instr, Operand r1, Operand r2);
     void emit(const char* instr, Operand r1);
     void emit(const char* instr);
     void emit(const char* instr, Operand r1, const char* o2);
     void emit(const char* instr, String* label);
+    void arith(const char* instr, Operand res, Operand r1, Operand r2);
     void load(Operand r1, Operand r2);
     void store(Operand r1, Operand r2);
     void str(Operand r1, Operand r2);

@@ -141,6 +141,11 @@ private:
         return temp_;
     }
 
+    Operand eq(BasicBlock* block, Operand t1, Operand t2) {
+        block->instr(EQ, ++temp_, t1, t2);
+        return temp_;
+    }
+
     void push(BasicBlock* block, Operand t2) {
         block->instr(PUSH, 0, t2, 0);    
     }
@@ -186,6 +191,7 @@ private:
     void variable(String* name, Operand temporary);
     void enter_scope();
     void exit_scope();
+    void emit_operator(Dispatch* expression);
 
     Environment::Ptr environment_;
     Class::Ptr class_;

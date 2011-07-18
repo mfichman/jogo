@@ -22,8 +22,10 @@
 
 #include "Intel64CodeGenerator.hpp"
 
+// RAX is reserved for special things
+
 const char* Intel64CodeGenerator::register_[] = {
-    "invalid", "rax", "rbx", "rdi", "rsi", "rdx", "rcx", // x86 registers
+    "invalid", "rdi", "rsi", "rdx", "rcx", // x86 registers
     "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15" // Intel64
 };
 int Intel64CodeGenerator::registers_ = sizeof(register_)/sizeof(const char*);
@@ -129,18 +131,24 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         Operand a1 = instr.first();
         Operand a2 = instr.second();
 
+        //case ADD: emit("mov", res, a1); emit("add", res, a2); break;
         switch (instr.opcode()) {
-        case ADD: emit("mov", res, a1); emit("add", res, a2); break;
-        case SUB: emit("mov", res, a1); emit("sub", res, a2); break;
-        case MUL: emit("mov", res, a1); emit("mul", res, a2); break;
-        case DIV: emit("mov", res, a1); emit("div", res, a2); break;
+        case ADD: arith("add", res, a1, a2); break;
+        case SUB: arith("sub", res, a1, a2); break;
+        case MUL: arith("mul", res, a1, a2); break;
+        case DIV: arith("div", res, a1, a2); break;
+        case EQ: 
+            emit("cmp", a1, a2); 
+            emit("sete", "al"); 
+            emit("movzx", res, "al");
+            break;
         case ANDL: assert(false); break;
         case ORL: emit("mov", res, a1); emit("or", res, a2); break;
         case PUSH: 
             if (i+1 < block->instrs() && block->instr(i+1).opcode() == RET) {
                 emit("mov", Operand(1), a1);
             } else if (pop_count >= 0) {
-                emit("mov", Operand(push_count + 3), a1); 
+                emit("mov", Operand(push_count + 1), a1); 
                 push_count--;
             } else {
                 emit("push", a1);
@@ -150,7 +158,7 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
             if (i && block->instr(i-1).opcode() == CALL) {
                 emit("mov", res, Operand(1));
             } else if (push_count < 6) {
-                emit("mov", res, register_[pop_count + 3]); 
+                emit("mov", res, register_[pop_count + 1]); 
                 pop_count--; 
             } else {
                 emit("pop", res);
@@ -179,12 +187,34 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         }
     }
 
-    if (branch) {
-        operator()(branch);
-    }
     if (next) {
         operator()(next);
     }
+    if (branch) {
+        operator()(branch);
+    }
+}
+
+void Intel64CodeGenerator::arith(const char* instr, Operand res, Operand r1, Operand r2) {
+    
+    if (res.temporary() == r1.temporary()) {
+        // t1 <- t1 - t2
+        emit(instr, r1, r2);
+    } else if (res.temporary() != r2.temporary()) {
+        // t1 <- t2 - t3
+        emit("mov", res, r1); 
+        emit(instr, res, r2);
+    } else if (std::string("add") == instr || std::string("mul") == instr) {
+        // t1 <- t2 + t1
+        emit(instr, r2, r1);
+    } else {
+        
+        // t1 <- t2 - t1
+        emit("mov", "rax", r2); 
+        emit(instr, "rax", r1);
+        emit("mov", r1, "rax");
+    }
+    
 }
 
 void Intel64CodeGenerator::store(Operand r1, Operand r2) {
@@ -222,6 +252,18 @@ void Intel64CodeGenerator::li(Operand r1, Operand r2) {
     out_ << "    mov ";
     out_ << register_[r1.temporary()] << ", [";
     out_ << register_[r1.temporary()] << "]" << std::endl;
+}
+
+void Intel64CodeGenerator::emit(const char* instr, const char* r2) {
+    out_ << "    " << instr << " " << r2 << std::endl;
+}
+
+void Intel64CodeGenerator::emit(const char* instr, const char* r1, Operand r2) {
+    assert(r2.temporary());
+    assert(r2.temporary() < registers_);
+
+    out_ << "    " << instr << " ";
+    out_ << r1 << ", " << register_[r2.temporary()] << std::endl;
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, Operand r2) {

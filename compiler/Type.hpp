@@ -50,6 +50,7 @@ public:
     bool is_object() const;
     bool is_value() const;
     bool is_boolifiable() const;
+    bool is_void() const;
     void next(Type* next) { next_ = next; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Type> Ptr;
