@@ -26,6 +26,7 @@
 #include "Object.hpp"
 #include <vector>
 
+/* Represents a general-purpose register in a machine architecture */
 class Register : public Object {
 public:
     Register(const std::string& name, int id) :
@@ -33,8 +34,8 @@ public:
         id_(id) {
     }
 
-    const std::string& name();
-    int id();
+    const std::string& name() { return name_; }
+    int id() const { return id_; }
     typedef Pointer<Register> Ptr;
 
 private:
@@ -42,8 +43,23 @@ private:
     int id_; 
 };
 
+/* Records the different registers available for a machine */
 class Machine : public Object {
 public:
+    // Note: Caller registers (a.k.a. callee-saved) belong to the caller and
+    // must be saved/restored by the callee if they are used.  To do this,
+    // the register allocator generates a phony "def" at the beinning of the
+    // functionn, and a phony "use" at the end of the function to generate a 
+    // def-use chain. 
+    // 
+    // Note: Callee registers (a.k.a. caller-saved) belong to the callee and
+    // must be saved/restored by the caller if they are to be used.  To do
+    // this, the allocator adds an edge to the interference graph for each
+    // callee register that is live during a CALL instruction.
+    // 
+    // Note: The zero-id register is ALWAYS invalid.  It is not a real
+    // register, and the allocator does not assign temporaries to it.
+    
     Machine();
     Register* caller_reg(int index) const { return caller_reg_[index]; }
     Register* callee_reg(int index) const { return callee_reg_[index]; }
@@ -52,7 +68,7 @@ public:
     int caller_regs() const { return caller_reg_.size(); }
     int callee_regs() const { return callee_reg_.size(); }
     int arg_regs() const { return arg_reg_.size(); }
-    int regs() const { return reg_.size() - 1; }
+    int regs() const { return reg_.size(); }
     void caller_reg(Register* reg) { caller_reg_.push_back(reg); }
     void callee_reg(Register* reg) { callee_reg_.push_back(reg); }
     void arg_reg(Register* reg) { arg_reg_.push_back(reg); }

@@ -74,9 +74,28 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
     // temporaries; that is, the temporaries are live at at least one code
     // point at the same time.
 
+    // Add precolored nodes for callee registers.
+    for (int i = 0; i < machine_->callee_regs(); i++) {
+        precolored_.push_back(RegisterVertex());
+        precolored_.back().color(machine_->callee_reg(i)->id());
+    }
+
+    // Now build the interference graph.
     for (int i = 0; i < block->instrs(); i++) {
         const Instruction& instr = block->instr(i);
         const set<int>& live = liveness_->live(instr);
+
+        // Find out if the instruction is part of the call prologue.  If it
+        // is, then any register that is live at this point interferes with
+        // the callee-owned registers.
+        bool is_call_prologue = false;
+        if (instr.opcode() == CALL) { is_call_prologue = true; }
+        if (instr.opcode() == PUSH && (i+1) < block->instrs()) {
+            const Instruction& next = block->instr(i+1);
+            if (next.opcode() != RET) { is_call_prologue = true; }
+        }
+    
+        // Find all interfering pairs of registers, and add them to the graph.
         for (set<int>::iterator m = live.begin(); m != live.end(); m++) {
             set<int>::iterator n = m;
             n++;
@@ -92,7 +111,23 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
                 graph_[*n].edge_new(*m);
                 graph_[*m].edge_new(*n);
             }
+
+            // If the instruction is a CALL or part of the call prologue, then
+            // add a node between live vars and the callee registers
+            // (caller-saved)
+            if (is_call_prologue) {
+                for (int j = 0; j < machine_->callee_regs(); j++) {
+                    if (*m >= graph_.size()) {
+                        graph_.resize(*m + 1);
+                    }
+                    graph_[*m].edge_new(-i); //Negative numbers are pre-colored
+                }            
+            }
         }
+
+
+        // This is just some record-keeping to find the largest temporary, a
+        // to make sure that every temporary is assigned a register.
         if (instr.first().temporary() > max_) { 
             max_ = instr.first().temporary();
         }
@@ -148,7 +183,11 @@ void RegisterAllocator::build_stack() {
         // Remove the vertex and add the temporary to the coloring stack.
         stack_.push_back(choice->temporary()); 
         for (int i = 0; i < choice->edges(); i++) {
-            graph[choice->edge(i)].edge_del(choice->temporary()); 
+            // Note: If 'other' is not positive, then it's a precolored node.
+            int other = choice->edge(i);
+            if (other > 0) {
+                graph[other].edge_del(choice->temporary()); 
+            }
         } 
         work[index] = work.back();
         work.pop_back();
@@ -165,8 +204,16 @@ void RegisterAllocator::color_graph() {
         int choice = 0;
         for (int color = 1; color < machine_->regs(); color++) {
             bool ok = true;
+            
+            // Check to make sure that the canditate color 'color' does not
+            // interfere with any of the outgoing edges, including precolored
+            // edges (indicated by a negative id)
             for (int i = 0; i < v->edges(); i++) {
-                if (graph_[v->edge(i)].color() == color) {
+                int other = v->edge(i);
+                if (other > 0 && graph_[other].color() == color) {
+                    ok = false;
+                }
+                if (other < 0 && precolored_[-other].color() == color) {
                     ok = false;
                 }
             } 

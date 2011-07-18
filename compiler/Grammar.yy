@@ -44,12 +44,6 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %union { Block* block; }
 %union { Feature::Flags flag; }
 
-%pure-parser
-%locations
-%parse-param { Parser* parser }
-%parse-param { void* scanner }
-%lex-param { yyscan_t* scanner }
-
 %destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <expression>
 %destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <statement>
 %destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <string>
@@ -58,6 +52,12 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <type>
 %destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <generic>
 %destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <variable>
+
+%pure-parser
+%locations
+%parse-param { Parser* parser }
+%parse-param { void* scanner }
+%lex-param { yyscan_t* scanner }
 
 %left '?'
 %left BIT_AND_ASSIGN BIT_OR_ASSIGN BIT_XOR_ASSIGN
