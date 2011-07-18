@@ -85,16 +85,6 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
         const Instruction& instr = block->instr(i);
         const set<int>& live = liveness_->live(instr);
 
-        // Find out if the instruction is part of the call prologue.  If it
-        // is, then any register that is live at this point interferes with
-        // the callee-owned registers.
-        bool is_call_prologue = false;
-        if (instr.opcode() == CALL) { is_call_prologue = true; }
-        if (instr.opcode() == PUSH && (i+1) < block->instrs()) {
-            const Instruction& next = block->instr(i+1);
-            if (next.opcode() != RET) { is_call_prologue = true; }
-        }
-    
         // Find all interfering pairs of registers, and add them to the graph.
         for (set<int>::iterator m = live.begin(); m != live.end(); m++) {
             set<int>::iterator n = m;
@@ -115,7 +105,7 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
             // If the instruction is a CALL or part of the call prologue, then
             // add a node between live vars and the callee registers
             // (caller-saved)
-            if (is_call_prologue) {
+            if (instr.opcode() == CALL || instr.opcode() == PUSHARG) {
                 for (int j = 0; j < machine_->callee_regs(); j++) {
                     if (*m >= graph_.size()) {
                         graph_.resize(*m + 1);

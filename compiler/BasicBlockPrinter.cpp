@@ -110,11 +110,17 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         case ORB:
             cout << result << " <- " << first << " & " << second;
             break; 
-        case PUSH:
-            cout << "push " << first;
+        case PUSHARG:
+            cout << "pusharg " << first;
             break; 
-        case POP:
-            cout << result << " <- " << "pop";
+        case PUSHRET:
+            cout << "pushret " << first;
+            break;
+        case POPARG:
+            cout << result << " <- " << "poparg";
+            break;
+        case POPRET:
+            cout << result << " <- " << "popret";
             break;
         case STORE:
             cout << "store " << first << ", " << second;

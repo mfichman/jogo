@@ -23,15 +23,12 @@
 #include "Intel64CodeGenerator.hpp"
 
 // RAX is reserved for special things
-
-const char* Intel64CodeGenerator::register_[] = {
-    "invalid", "rdi", "rsi", "rdx", "rcx", // x86 registers
-    "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15" // Intel64
-};
-int Intel64CodeGenerator::registers_ = sizeof(register_)/sizeof(const char*);
+static const Register::Ptr AL(new Register("al", 0));
+static const Register::Ptr RAX(new Register("rax", 0));
 
 Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
     environment_(env),
+    machine_(Machine::intel64()),
     out_(env->output().c_str()) {
 
     if (environment_->errors()) {
@@ -42,21 +39,32 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
         out_ << "str" << (void*)s.pointer() << ": " << std::endl;  
         out_ << "    dq 0" << std::endl; // vtable
         out_ << "    dq 1" << std::endl; // reference count
-        out_ << "    dq " << s->string().length() << std::endl;
+        out_ << "    dq " << s->string().length()-1 << std::endl;
         out_ << "    db \"";
 
+        bool needs_unquote = true;
         for (int i = 0; i < s->string().length(); i++) {
             if (s->string()[i] == '\\') { 
                 i++;
                 if (i >= s->string().length()) { return; }
                 if (s->string()[i] == 'n') {
-                    out_ << "\", 0xa, \"";
+                    out_ << "\", 0xa";
+                    if (i+1 < s->string().length()) { 
+                        out_ << "\"";
+                        needs_unquote = true;
+                    } else {
+                        needs_unquote = false;
+                    }
                 }
             } else {
                 out_ << s->string()[i];
             }
         }
-        out_ << "\", 0x0" << std::endl;
+        if (needs_unquote) {
+            out_ << "\"";
+        } else {
+            out_ << ", 0x0" << std::endl;
+        }
     }
 
     for (String::Ptr s = environment_->integers(); s; s = s->next()) {
@@ -117,8 +125,8 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
     }
     visited_.insert(block);
 
-    int pop_count = 6;
-    int push_count = 0;
+    int pop_count = 0;
+    int push_count = -1;
 
     BasicBlock::Ptr branch = block->branch();
     BasicBlock::Ptr next = block->next();
@@ -139,41 +147,44 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case DIV: arith("div", res, a1, a2); break;
         case EQ: 
             emit("cmp", a1, a2); 
-            emit("sete", "al"); 
-            emit("movzx", res, "al");
+            emit("sete", AL); 
+            emit("movzx", res, AL);
             break;
         case ANDL: assert(false); break;
         case ORL: emit("mov", res, a1); emit("or", res, a2); break;
-        case PUSH: 
-            if (i+1 < block->instrs() && block->instr(i+1).opcode() == RET) {
-                emit("mov", Operand(1), a1);
-            } else if (pop_count >= 0) {
-                emit("mov", Operand(push_count + 1), a1); 
-                push_count--;
-            } else {
+        case PUSHARG: 
+            if (push_count < 0) {
+                push_count = 0;
+                for (int j = i+1; j < block->instrs(); j++) {
+                    if (block->instr(j).opcode() == CALL) {
+                        break;
+                    }
+                    push_count++;
+                }
+            }
+            if (push_count >= machine_->arg_regs()) {
                 emit("push", a1);
-            }
-            break;
-        case POP:
-            if (i && block->instr(i-1).opcode() == CALL) {
-                emit("mov", res, Operand(1));
-            } else if (push_count < 6) {
-                emit("mov", res, register_[pop_count + 1]); 
-                pop_count--; 
             } else {
-                emit("pop", res);
+                emit("mov", machine_->arg_reg(push_count), a1);
             }
+            push_count--;
             break;
+        case PUSHRET: emit("mov", RAX, a1); break;
+        case POPARG:
+            if (pop_count >= machine_->arg_regs()) {
+                emit("pop", res);
+            } else {
+                emit("mov", res, machine_->arg_reg(pop_count));
+            }
+            pop_count++;
+            break;
+        case POPRET: emit("mov", res, RAX); break;
         case STORE: store(res, a1); break;
         case LOAD: load(res, a1); break;
         case LI: li(res, a1); break;
         case STR: str(res, a1); break;
         case NOTL: emit("mov", res, a1); emit("not", res); break;
-        case CALL: 
-            emit("call", res);
-            push_count = 0;
-            pop_count = 0;
-            break;
+        case CALL: emit("call", res); push_count = 0; break;
         case JUMP: emit("jmp", branch->label()); break;
         case BNE: emit("cmp", a1, a2); emit("jne", branch->label()); break;
         case BEQ: emit("cmp", a1, a2); emit("jeq", branch->label()); break;
@@ -210,97 +221,105 @@ void Intel64CodeGenerator::arith(const char* instr, Operand res, Operand r1, Ope
     } else {
         
         // t1 <- t2 - t1
-        emit("mov", "rax", r2); 
-        emit(instr, "rax", r1);
-        emit("mov", r1, "rax");
+        emit("mov", RAX, r2); 
+        emit(instr, RAX, r1);
+        emit("mov", r1, RAX);
     }
     
 }
 
 void Intel64CodeGenerator::store(Operand r1, Operand r2) {
     assert(r1.temporary() && r2.temporary());
-    assert(r1.temporary() < registers_);
-    assert(r2.temporary() < registers_);
+    assert(r1.temporary() < machine_->regs());
+    assert(r2.temporary() < machine_->regs());
     out_ << "    mov [";
-    out_ << register_[r1.temporary()] << "], ";
-    out_ << register_[r2.temporary()] << std::endl;
+    out_ << machine_->reg(r1.temporary()) << "], ";
+    out_ << machine_->reg(r2.temporary()) << std::endl;
 }
 
 void Intel64CodeGenerator::load(Operand r1, Operand r2) {
     assert(r1.temporary() && r2.temporary());
-    assert(r1.temporary() < registers_);
-    assert(r2.temporary() < registers_);
+    assert(r1.temporary() < machine_->regs());
+    assert(r2.temporary() < machine_->regs());
     out_ << "    mov ";
-    out_ << register_[r1.temporary()] << ", [";
-    out_ << register_[r2.temporary()] << "]" << std::endl;
+    out_ << machine_->reg(r1.temporary()) << ", [";
+    out_ << machine_->reg(r2.temporary()) << "]" << std::endl;
 }
 
 void Intel64CodeGenerator::str(Operand r1, Operand r2) {
     assert(r1.temporary());
-    assert(r1.temporary() < registers_);
+    assert(r1.temporary() < machine_->regs());
     out_ << "    mov ";
-    out_ << register_[r1.temporary()] << ", ";
+    out_ << machine_->reg(r1.temporary()) << ", ";
     out_ << "str" << (void*)r2.literal().pointer() << std::endl;
 }
 
 void Intel64CodeGenerator::li(Operand r1, Operand r2) {
     assert(r1.temporary());
-    assert(r1.temporary() < registers_);
+    assert(r1.temporary() < machine_->regs());
     out_ << "    mov ";
-    out_ << register_[r1.temporary()] << ", ";
+    out_ << machine_->reg(r1.temporary()) << ", ";
     out_ << "int" << (void*)r2.literal().pointer() << std::endl;
     out_ << "    mov ";
-    out_ << register_[r1.temporary()] << ", [";
-    out_ << register_[r1.temporary()] << "]" << std::endl;
+    out_ << machine_->reg(r1.temporary()) << ", [";
+    out_ << machine_->reg(r1.temporary()) << "]" << std::endl;
 }
 
-void Intel64CodeGenerator::emit(const char* instr, const char* r2) {
+void Intel64CodeGenerator::emit(const char* instr, Register* r2) {
     out_ << "    " << instr << " " << r2 << std::endl;
 }
 
-void Intel64CodeGenerator::emit(const char* instr, const char* r1, Operand r2) {
+void Intel64CodeGenerator::emit(const char* instr, Register* r1, Operand r2) {
     assert(r2.temporary());
-    assert(r2.temporary() < registers_);
+    assert(r2.temporary() < machine_->regs());
 
     out_ << "    " << instr << " ";
-    out_ << r1 << ", " << register_[r2.temporary()] << std::endl;
+    out_ << r1 << ", " << machine_->reg(r2.temporary()) << std::endl;
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, Operand r2) {
     assert(r1.temporary() && r2.temporary());
-    assert(r1.temporary() < registers_);
-    assert(r2.temporary() < registers_);
+    assert(r1.temporary() < machine_->regs());
+    assert(r2.temporary() < machine_->regs());
     
     if (std::string("mov") == instr && r1.temporary() == r2.temporary()) {
         return; // mov a, a
     }
 
     out_ << "    " << instr << " ";
-    out_ << register_[r1.temporary()] << ", ";
+    out_ << machine_->reg(r1.temporary()) << ", ";
     if (r2.temporary()) {
-        out_ << register_[r2.temporary()] << std::endl;
+        out_ << machine_->reg(r2.temporary()) << std::endl;
     } else {
         out_ << "str" << (void*)r2.literal().pointer() << std::endl;
     }
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1) {
-    assert(r1.temporary() < registers_);
+    assert(r1.temporary() < machine_->regs());
     out_ << "    " << instr << " ";
     if (r1.temporary()) {
-        out_ << register_[r1.temporary()] << std::endl;
+        out_ << machine_->reg(r1.temporary()) << std::endl;
     } else {
         out_ << r1.literal() << std::endl;
         // FixMe: Print constant label!
     }
 }
 
-void Intel64CodeGenerator::emit(const char* instr, Operand r1, const char* o2) {
-    assert(r1.temporary() < registers_);
+void Intel64CodeGenerator::emit(const char* instr, Operand r1, Register* o2) {
+    assert(r1.temporary() < machine_->regs());
     assert(r1.temporary());
     out_ << "    " << instr << " ";
-    out_ << register_[r1.temporary()] << ", ";
+    out_ << machine_->reg(r1.temporary()) << ", ";
     out_ << o2 << std::endl;
+}
+
+void Intel64CodeGenerator::emit(const char* instr, Operand r1, const char* imm) {
+    assert(r1.temporary() < machine_->regs());
+    assert(r1.temporary());
+    out_ << "    " << instr << " ";
+    out_ << machine_->reg(r1.temporary()) << ", ";
+    out_ << imm << std::endl;
 }
 
 void Intel64CodeGenerator::emit(const char* instr) {

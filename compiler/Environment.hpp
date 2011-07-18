@@ -57,6 +57,7 @@ public:
     void module(Module* module);
     void file(File* name);
     void error(const std::string& error) { errors_++; }
+    void error() { errors_++; }
     const Location& location() const;
     typedef Pointer<Environment> Ptr;
 

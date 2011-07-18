@@ -131,8 +131,13 @@ private:
         return temp_;
     }
 
-    Operand pop(BasicBlock* block) {
-        block->instr(POP, ++temp_, 0, 0);    
+    Operand poparg(BasicBlock* block) {
+        block->instr(POPARG, ++temp_, 0, 0);    
+        return temp_;
+    }
+    
+    Operand popret(BasicBlock* block) {
+        block->instr(POPRET, ++temp_, 0, 0);
         return temp_;
     }
 
@@ -146,8 +151,12 @@ private:
         return temp_;
     }
 
-    void push(BasicBlock* block, Operand t2) {
-        block->instr(PUSH, 0, t2, 0);    
+    void pusharg(BasicBlock* block, Operand t2) {
+        block->instr(PUSHARG, 0, t2, 0);    
+    }
+
+    void pushret(BasicBlock* block, Operand t2) {
+        block->instr(PUSHRET, 0, t2, 0);
     }
 
     void store(BasicBlock* block, Operand t2, Operand t3) {

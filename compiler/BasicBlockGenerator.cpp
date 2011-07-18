@@ -107,13 +107,14 @@ void BasicBlockGenerator::operator()(Unary* expression) {
 }
 
 void BasicBlockGenerator::operator()(Call* expression) {
-    // Push objects in anticipation of the call instruction.
+    // Push objects in anticipation of the call instruction.  Arguments must
+    // be pushed in reverse order.
     std::vector<Operand> args;
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         args.push_back(emit(a));
     }
-    for (size_t i = 0; i < args.size(); i++) {
-        push(block_, args[i]);
+    for (int i = args.size()-1; i >= 0; i--) {
+        pusharg(block_, args[i]);
     }
 
     // Look up the function by name in the current context.
@@ -125,7 +126,7 @@ void BasicBlockGenerator::operator()(Call* expression) {
     // Insert a call expression, then pop the return value off the stack.
     call(block_, name);
     if (!func->type()->is_void()) {
-        return_ = pop(block_);
+        return_ = popret(block_);
     } else {
         return_ = 0;
     }
@@ -150,8 +151,8 @@ void BasicBlockGenerator::operator()(Dispatch* expression) {
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         args.push_back(emit(a));
     }
-    for (size_t i = 0; i < args.size(); i++) {
-        push(block_, args[i]);
+    for (int i = 0; i < args.size(); i++) {
+        pusharg(block_, args[i]);
     }
 
     // Look up the function by name in the current context.
@@ -163,7 +164,7 @@ void BasicBlockGenerator::operator()(Dispatch* expression) {
     // Insert a call expression, then pop the return value off the stack.
     call(block_, name);
     if (!func->type()->is_void()) {
-        return_ = pop(block_);
+        return_ = popret(block_);
     } else {
         return_ = 0;
     }
@@ -280,7 +281,7 @@ void BasicBlockGenerator::operator()(Variable* statement) {
 void BasicBlockGenerator::operator()(Return* statement) {
     if (!dynamic_cast<Empty*>(statement->expression())) {
         Operand value = emit(statement->expression());
-        push(block_, value);
+        pushret(block_, value);
     }
     ret(block_);
 }
@@ -316,7 +317,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
         formals.push_back(f);
     } 
     while (!formals.empty()) {
-        variable(formals.back()->name(), pop(block_));
+        variable(formals.back()->name(), poparg(block_));
         formals.pop_back();
     }
     

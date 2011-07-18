@@ -56,9 +56,11 @@ int main(int argc, char** argv) {
     if (test_options.find("# aptest print_ir off") == test_options.end()) {
         BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
     }
+    std::cout << std::endl;
     if (test_options.find("# aptest run_program on") != test_options.end()) {
         Machine::Ptr machine = Machine::intel64();
         RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
+        BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
         Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));
         system("nasm -fmacho64 out.asm -o /tmp/out.o");
         system("gcc -lapollo -L../lib /tmp/out.o -o /tmp/out");

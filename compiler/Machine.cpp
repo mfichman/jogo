@@ -35,7 +35,11 @@ Machine::Ptr Machine::intel64() {
     // Creates an Intel64 machine description (a.k.a. AMD64, x86-64, but my
     // dad worked at Intel for 18 years, so in this compiler, we're callin it
     // Intel64!).
-    Machine::Ptr machine(new Machine);
+    static Machine::Ptr machine;
+    
+    if (machine) { return machine; }
+
+    machine = new Machine;
 
     Register::Ptr rbx = machine->reg("rbx"); machine->caller_reg(rbx);
     Register::Ptr rcx = machine->reg("rcx"); machine->callee_reg(rcx);

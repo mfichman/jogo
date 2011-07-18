@@ -43,6 +43,10 @@ private:
     int id_; 
 };
 
+inline std::ostream& operator<<(std::ostream& out, Register* reg) {
+    return out << reg->name();
+}
+
 /* Records the different registers available for a machine */
 class Machine : public Object {
 public:
