@@ -207,7 +207,7 @@ void BasicBlockGenerator::operator()(Let* statement) {
 
 void BasicBlockGenerator::operator()(While* statement) {
     // Emit the guard expression in a new basic block
-    BasicBlock::Ptr test = new BasicBlock;
+    BasicBlock::Ptr test = function_->basic_block();
     test->label(environment_->name("l" + stringify(++label_)));
     block_->next(test);
     block_ = test;
@@ -230,7 +230,37 @@ void BasicBlockGenerator::operator()(While* statement) {
 void BasicBlockGenerator::operator()(Conditional* statement) {
     Operand guard = emit(statement->guard());
     BasicBlock::Ptr pre = bneqz(block_, guard);
+    BasicBlock::Ptr post;
+    BasicBlock::Ptr t;
+    BasicBlock::Ptr f;
+    
+    // Emit the fall-through (false) block here.  If there is no false
+    // branch, then do a fall-through.
+    block_ = pre->next();
+    if (statement->false_branch()) {
+        emit(statement->false_branch());
+        t = block_;
+        post = function_->basic_block(); // Post-fallthrough
+        post->label(environment_->name("l" + stringify(++label_)));
+        if (!block_->terminated()) {
+            block_->next(post);
+        }
+    } else {
+        t = post = block_; 
+    }
 
+    // Emit the branch (true) block here.  Jump to the fall-through block
+    // or the block after the false block.
+    block_ = pre->branch();
+    emit(statement->true_branch());
+    if (t->terminated()) {
+        block_->next(post);
+    } else {
+        jump(post);
+    }
+    block_ = post;
+
+/*
     // Emit the fall-through (true) block here.  Switch the insert block to
     // the 'next' block.
     block_ = pre->next();
@@ -238,7 +268,7 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
     BasicBlock::Ptr t = block_;
 
     // Emit the branch (false) block here.  Switch the insert block to the
-    // 'branch' block.
+    // 'branch' block.dd
     block_ = pre->branch();
     emit(statement->false_branch());
     BasicBlock::Ptr f = block_;
@@ -246,12 +276,13 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
     // Jump to the post block (after the conditional) from the branch block,
     // and fall-through from the true block to the post block.
     if (f->terminated()) {
-        t->next(new BasicBlock);
+        t->next(function_->basic_block());
         t->label(environment_->name("l" + stringify(++label_)));
     } else {
         block_ = jump(block_);
         t->next(block_);
     }
+*/
 }
 
 void BasicBlockGenerator::operator()(Variable* statement) {
@@ -306,7 +337,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
 
     // Reset the temporaries for the function.
     temp_ = Operand();
-
+    function_ = feature;
     block_ = feature->code();
     enter_scope();
 

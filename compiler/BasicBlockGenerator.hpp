@@ -173,8 +173,8 @@ private:
     
     BasicBlock* beqz(BasicBlock* block, Operand t2) {
         block->instr(BEQZ, 0, t2, 0);
-        block->next(new BasicBlock);
-        block->branch(new BasicBlock);
+        block->next(function_->basic_block());
+        block->branch(function_->basic_block());
         block->next()->label(environment_->name("l" + stringify(++label_)));
         block->branch()->label(environment_->name("l" + stringify(++label_)));
         return block;
@@ -182,8 +182,8 @@ private:
 
     BasicBlock* bneqz(BasicBlock* block, Operand t2) {
         block->instr(BNEQZ, 0, t2, 0);
-        block->next(new BasicBlock);
-        block->branch(new BasicBlock);
+        block->next(function_->basic_block());
+        block->branch(function_->basic_block());
         block->next()->label(environment_->name("l" + stringify(++label_)));
         block->branch()->label(environment_->name("l" + stringify(++label_)));
         return block;
@@ -191,7 +191,7 @@ private:
 
     BasicBlock* jump(BasicBlock* block) {
         block->instr(JUMP, 0, 0, 0);
-        block->branch(new BasicBlock);
+        block->branch(function_->basic_block());
         block->branch()->label(environment_->name("l" + stringify(++label_)));
         return block->branch();
     }

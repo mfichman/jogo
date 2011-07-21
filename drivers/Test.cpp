@@ -56,8 +56,8 @@ int main(int argc, char** argv) {
     if (test_options.find("# aptest print_ir off") == test_options.end()) {
         BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
     }
-    std::cout << std::endl;
     if (test_options.find("# aptest run_program on") != test_options.end()) {
+        std::cout << std::endl;
         Machine::Ptr machine = Machine::intel64();
         RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
         BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));

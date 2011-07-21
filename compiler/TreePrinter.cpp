@@ -318,8 +318,10 @@ void TreePrinter::operator()(Conditional* statement) {
     guard(this);
     print_tabs(); cout << "true: ";
     true_branch(this);
-    print_tabs(); cout << "false: ";
-    false_branch(this);
+    if (false_branch) {
+        print_tabs(); cout << "false: ";
+        false_branch(this);
+    }
     indent_level_--;
 }
 

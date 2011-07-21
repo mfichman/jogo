@@ -62,7 +62,6 @@ Module
                 true: Block
                   child0: Return
                     expression: IntegerLiteral(1)
-                false: Block
     feature1: Function
       name: bar
       type: Int

@@ -86,6 +86,7 @@ private:
 /* Class for basic block nodes */
 class BasicBlock : public Object {
 public:
+    BasicBlock() : branch_(0), next_(0) {}
     BasicBlock* branch() const { return branch_; }
     BasicBlock* next() const { return next_; }
     String* label() const { return label_; }
@@ -119,8 +120,8 @@ public:
 
 private:
     std::vector<Instruction> instrs_;
-    BasicBlock::Ptr branch_;
-    BasicBlock::Ptr next_;
+    BasicBlock* branch_;
+    BasicBlock* next_;
     String::Ptr label_;
 };
 

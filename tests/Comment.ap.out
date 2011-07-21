@@ -23,7 +23,6 @@ Module
         child0: Conditional
           guard: BooleanLiteral(true)
           true: Block
-          false: Block
     feature1: Function
       name: comment2
       type: Void

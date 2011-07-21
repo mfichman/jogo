@@ -521,7 +521,11 @@ void TypeChecker::operator()(Conditional* statement) {
         environment_->error();
     }
     true_branch(this);
-    false_branch(this);
+    if (false_branch) {
+        false_branch(this);
+    } else {
+        return_ = 0;
+    }
 }
 
 void TypeChecker::operator()(Variable* statement) {

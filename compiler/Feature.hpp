@@ -99,6 +99,7 @@ public:
 	Type* type() const { return type_; }
     Block* block() const { return block_; }
     BasicBlock* code() const { return code_; }
+    BasicBlock* basic_block();
     bool covariant(Function* other) const;
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
@@ -109,6 +110,7 @@ private:
 	Type::Ptr type_;
     Block::Ptr block_;
     BasicBlock::Ptr code_;
+    std::vector<BasicBlock::Ptr> basic_block_;
 };
 
 /* Class for imports */
