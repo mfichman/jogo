@@ -173,30 +173,22 @@ private:
     
     BasicBlock* beqz(BasicBlock* block, Operand t2) {
         block->instr(BEQZ, 0, t2, 0);
-        block->next(function_->basic_block());
-        block->branch(function_->basic_block());
-        block->next()->label(environment_->name("l" + stringify(++label_)));
-        block->branch()->label(environment_->name("l" + stringify(++label_)));
         return block;
     }
 
     BasicBlock* bneqz(BasicBlock* block, Operand t2) {
         block->instr(BNEQZ, 0, t2, 0);
-        block->next(function_->basic_block());
-        block->branch(function_->basic_block());
-        block->next()->label(environment_->name("l" + stringify(++label_)));
-        block->branch()->label(environment_->name("l" + stringify(++label_)));
         return block;
     }
 
-    BasicBlock* jump(BasicBlock* block) {
+    BasicBlock* jump(BasicBlock* block, BasicBlock* target) {
         block->instr(JUMP, 0, 0, 0);
-        block->branch(function_->basic_block());
-        block->branch()->label(environment_->name("l" + stringify(++label_)));
-        return block->branch();
+        block->branch(target);
+        return block;
     }
 
     Operand variable(String* name);
+    BasicBlock* basic_block();
     void variable(String* name, Operand temporary);
     void enter_scope();
     void exit_scope();

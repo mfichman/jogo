@@ -1,0 +1,96 @@
+Module
+  name: 
+  feature0: Function
+    name: main
+    type: Int
+    comment:
+    block: Block
+      child0: Conditional
+        guard: BooleanLiteral(true)
+        true: Block
+          child0: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: true\n
+        false: Block
+          child0: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: false\n
+      child1: Conditional
+        guard: BooleanLiteral(false)
+        true: Block
+          child0: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: true\n
+        false: Block
+          child0: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: false\n
+      child2: Return
+        expression: IntegerLiteral(0)
+main:
+    t1 <- li 'true' {}
+    if not t1 goto l2 {t1}
+l1:
+    t2 <- str 'true\n' {}
+    pusharg t2 {t2}
+    call '_boot_print_str' {}
+    jump l3 {}
+l2:
+    t3 <- str 'false\n' {}
+    pusharg t3 {t3}
+    call '_boot_print_str' {}
+l3:
+    t4 <- li 'false' {}
+    if not t4 goto l5 {t4}
+l4:
+    t5 <- str 'true\n' {}
+    pusharg t5 {t5}
+    call '_boot_print_str' {}
+    jump l6 {}
+l5:
+    t6 <- str 'false\n' {}
+    pusharg t6 {t6}
+    call '_boot_print_str' {}
+l6:
+    t7 <- li '0' {}
+    pushret t7 {t7}
+    ret {}
+
+main:
+    t1 <- li 'true' {}
+    if not t1 goto l2 {t1}
+l1:
+    t1 <- str 'true\n' {}
+    pusharg t1 {t1}
+    call '_boot_print_str' {}
+    jump l3 {}
+l2:
+    t1 <- str 'false\n' {}
+    pusharg t1 {t1}
+    call '_boot_print_str' {}
+l3:
+    t1 <- li 'false' {}
+    if not t1 goto l5 {t1}
+l4:
+    t1 <- str 'true\n' {}
+    pusharg t1 {t1}
+    call '_boot_print_str' {}
+    jump l6 {}
+l5:
+    t1 <- str 'false\n' {}
+    pusharg t1 {t1}
+    call '_boot_print_str' {}
+l6:
+    t1 <- li '0' {}
+    pushret t1 {t1}
+    ret {}
+true
+false

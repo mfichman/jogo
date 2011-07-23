@@ -229,60 +229,42 @@ void BasicBlockGenerator::operator()(While* statement) {
 
 void BasicBlockGenerator::operator()(Conditional* statement) {
     Operand guard = emit(statement->guard());
-    BasicBlock::Ptr pre = bneqz(block_, guard);
-    BasicBlock::Ptr post;
-    BasicBlock::Ptr t;
-    BasicBlock::Ptr f;
+    BasicBlock::Ptr pre = beqz(block_, guard);
     
-    // Emit the fall-through (false) block here.  If there is no false
-    // branch, then do a fall-through.
-    block_ = pre->next();
+    // Emit the true branch.  The true branch is a fall-through from the
+    // conditional test, with a jump at the end to the post-branch code if the
+    // true branch is not terminated by a terminating instruction.
+    block_ = basic_block();
+    pre->next(block_);
+    emit(statement->true_branch());
+    BasicBlock::Ptr true_out = block_;
+
+    // Emit the false branch, if there is one.  The false branch falls through
+    // to the post-conditional code.  If there is no false branch, then the
+    // pre-conditional code branches straight to the post-conditional code.
+    BasicBlock::Ptr false_out;
     if (statement->false_branch()) {
+        block_ = basic_block();
+        pre->branch(block_);
         emit(statement->false_branch());
-        t = block_;
-        post = function_->basic_block(); // Post-fallthrough
-        post->label(environment_->name("l" + stringify(++label_)));
-        if (!block_->terminated()) {
-            block_->next(post);
-        }
-    } else {
-        t = post = block_; 
+        false_out = block_;
     }
 
-    // Emit the branch (true) block here.  Jump to the fall-through block
-    // or the block after the false block.
-    block_ = pre->branch();
-    emit(statement->true_branch());
-    if (t->terminated()) {
-        block_->next(post);
-    } else {
-        jump(post);
+    if (true_out->terminated() && false_out->terminated()) {
+        return;
     }
+
+    BasicBlock::Ptr post = basic_block();
+    if (!true_out->terminated()) {
+        jump(true_out, post);
+    }
+    if (!statement->false_branch()) {
+        pre->branch(post);
+    } else if (!false_out->terminated()) {
+        false_out->next(post);
+    }
+
     block_ = post;
-
-/*
-    // Emit the fall-through (true) block here.  Switch the insert block to
-    // the 'next' block.
-    block_ = pre->next();
-    emit(statement->true_branch());
-    BasicBlock::Ptr t = block_;
-
-    // Emit the branch (false) block here.  Switch the insert block to the
-    // 'branch' block.dd
-    block_ = pre->branch();
-    emit(statement->false_branch());
-    BasicBlock::Ptr f = block_;
-
-    // Jump to the post block (after the conditional) from the branch block,
-    // and fall-through from the true block to the post block.
-    if (f->terminated()) {
-        t->next(function_->basic_block());
-        t->label(environment_->name("l" + stringify(++label_)));
-    } else {
-        block_ = jump(block_);
-        t->next(block_);
-    }
-*/
 }
 
 void BasicBlockGenerator::operator()(Variable* statement) {
@@ -407,6 +389,12 @@ void BasicBlockGenerator::emit_operator(Dispatch* expression) {
         assert(args.size() == 2);
         return_ = eq(block_, args[0], args[1]);
     }
+}
+
+BasicBlock* BasicBlockGenerator::basic_block() {
+    BasicBlock* block = function_->basic_block();
+    block->label(environment_->name("l" + stringify(++label_)));
+    return block;
 }
 
 Operand BasicBlockGenerator::variable(String* name) {

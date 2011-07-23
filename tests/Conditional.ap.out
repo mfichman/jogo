@@ -71,7 +71,7 @@ Conditional__conditional1:
     t1 <- poparg {}
     t2 <- li 'true' {}
     if not t2 goto l2 {t2}
-l3:
+l1:
     t3 <- li '1' {}
     pushret t3 {t3}
     ret {}
@@ -82,45 +82,45 @@ l2:
 Conditional__conditional2:
     t1 <- poparg {}
     t2 <- li 'true' {}
-    if not t2 goto l5 {t2}
-l9:
+    if not t2 goto l4 {t2}
+l3:
     t3 <- li '1' {}
     pushret t3 {t3}
     ret {}
-l5:
+l4:
     t4 <- li 'false' {}
-    if not t4 goto l7 {t4}
-l8:
+    if not t4 goto l6 {t4}
+l5:
     t5 <- li '2' {}
     pushret t5 {t5}
     ret {}
-l7:
+l6:
     t6 <- li '3' {}
     pushret t6 {t6}
     ret {}
 Conditional__conditional3:
     t1 <- poparg {}
     t2 <- li 'true' {}
-    if not t2 goto l11 {t2}
-l18:
+    if not t2 goto l8 {t2}
+l7:
     t3 <- li '1' {}
     pushret t3 {t3}
     ret {}
-l11:
+l8:
     t4 <- li 'true' {}
-    if not t4 goto l13 {t4}
-l17:
+    if not t4 goto l10 {t4}
+l9:
     t5 <- li '2' {}
     pushret t5 {t5}
     ret {}
-l13:
+l10:
     t6 <- li 'false' {}
-    if not t6 goto l15 {t6}
-l16:
+    if not t6 goto l12 {t6}
+l11:
     t7 <- li '4' {}
     pushret t7 {t7}
     ret {}
-l15:
+l12:
     t8 <- li '6' {}
     pushret t8 {t8}
     ret {}

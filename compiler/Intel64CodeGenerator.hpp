@@ -58,6 +58,5 @@ private:
 
     Environment::Ptr environment_;
     Machine::Ptr machine_;
-    std::set<BasicBlock::Ptr> visited_;
     std::ofstream out_;
 };

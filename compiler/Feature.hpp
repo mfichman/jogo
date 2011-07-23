@@ -90,16 +90,19 @@ public:
         name_(nm),
 		formals_(fm),
 		type_(r),
-        block_(b),
-        code_(new BasicBlock) {
+        block_(b) {
+    
+        basic_block();
     }
 
     String* name() const { return name_; }
 	Formal* formals() const { return formals_; }
 	Type* type() const { return type_; }
     Block* block() const { return block_; }
-    BasicBlock* code() const { return code_; }
+    BasicBlock* code() const { return basic_block_[0]; }
     BasicBlock* basic_block();
+    BasicBlock* basic_block(int index) { return basic_block_[index]; }
+    int basic_blocks() { return basic_block_.size(); }
     bool covariant(Function* other) const;
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
@@ -109,7 +112,6 @@ private:
 	Formal::Ptr formals_;
 	Type::Ptr type_;
     Block::Ptr block_;
-    BasicBlock::Ptr code_;
     std::vector<BasicBlock::Ptr> basic_block_;
 };
 

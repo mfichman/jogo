@@ -1,0 +1,16 @@
+# aptest run_program on
+import Boot
+
+main() Int {
+    if true {
+        boot_print_str("true\n")
+    } else {
+        boot_print_str("false\n")
+    }
+    if false {
+        boot_print_str("true\n")
+    } else {
+        boot_print_str("false\n")
+    }
+    return 0
+}

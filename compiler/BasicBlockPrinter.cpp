@@ -58,19 +58,15 @@ void BasicBlockPrinter::operator()(Function* feature) {
     liveness_->operator()(feature);
 
     BasicBlock::Ptr block = feature->code();
-    visited_.clear();
     if (block->instrs()) {
         cout << feature->label() << ":" << std::endl;
-        operator()(block);     
+        for (int i = 0; i < feature->basic_blocks(); i++) {
+            operator()(feature->basic_block(i));
+        } 
     }
 }
 
 void BasicBlockPrinter::operator()(BasicBlock* block) {
-    if (visited_.find(block) != visited_.end()) {
-        return;
-    }
-    visited_.insert(block);
-
     BasicBlock::Ptr branch = block->branch();
     BasicBlock::Ptr next = block->next();
     if (block->label()) {
@@ -155,11 +151,11 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
             cout << result << " <- " << first;
             break;
         case BEQZ:
-            cout << "if " << first << " goto ";
+            cout << "if not " << first << " goto ";
             cout << branch->label();
             break;
         case BNEQZ:
-            cout << "if not " << first << " goto ";
+            cout << "if " << first << " goto ";
             cout << branch->label();
             break;
         case RET:
@@ -183,12 +179,6 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
             }
         }
         cout << "}" << endl;
-    }
-    if (block->next()) {
-        operator()(block->next());
-    }
-    if (block->branch()) {
-        operator()(block->branch());
     }
 }
 

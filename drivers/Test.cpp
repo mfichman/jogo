@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
         BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
         Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));
         system("nasm -fmacho64 out.asm -o /tmp/out.o");
-        system("gcc -lapollo -L../lib /tmp/out.o -o /tmp/out");
+        system("gcc -Wl,-no_pie -lapollo -L../lib /tmp/out.o -o /tmp/out");
         system("/tmp/out");
     }
    
