@@ -27,13 +27,19 @@ def setup_vim()
         end
     end
 
-    begin    
+    begin
         FileUtils.rm "#{ENV['HOME']}/.vim/syntax/apollo.vim"
     rescue
     end
-
     FileUtils.mkdir_p "#{ENV['HOME']}/.vim/syntax/"
     FileUtils.ln "scripts/apollo.vim", "#{ENV['HOME']}/.vim/syntax/" 
+
+    begin
+        FileUtils.rm "#{ENV['HOME']}/.vim/ftdetect/apollo.vim"
+    rescue
+    end
+    FileUtils.mkdir_p "#{ENV['HOME']}/.vim/ftdetect/"
+    FileUtils.ln "scripts/ftdetect.vim", "#{ENV['HOME']}/.vim/ftdetect/apollo.vim" 
 
     #FileUtils.mkdir_p "#{ENV['HOME']}/.vim/colors/"
     #FileUtils.cp "scripts/molokai.vim", "#{ENV['HOME']}/.vim/colors/"
