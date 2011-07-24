@@ -78,7 +78,6 @@ private:
     LivenessAnalyzer::Ptr liveness_;
     Machine::Ptr machine_;
     int spilled_;
-    int max_;
 };
 
 

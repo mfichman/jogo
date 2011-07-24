@@ -48,7 +48,7 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
         for (int i = 0; i < s->string().length(); i++) {
             if (s->string()[i] == '\\') { 
                 i++;
-                if (i >= s->string().length()) { return; }
+                if (i >= s->string().length()) { break; }
                 if (s->string()[i] == 'n') {
                     out_ << "\", 0xa";
                     if (i+1 < s->string().length()) { 
@@ -63,7 +63,7 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
             }
         }
         if (needs_unquote) {
-            out_ << "\"";
+            out_ << "\", 0x0" << std::endl;
         } else {
             out_ << ", 0x0" << std::endl;
         }
@@ -193,7 +193,7 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case ANDB: emit("mov", res, a1); emit("and", res, a2); break;
         case ORB: emit("mov", res, a1); emit("or", res, a2); break; 
         case RET: emit("leave"); emit("ret"); break;
-        case HALT: break;
+        case NOP: break;
         }
     }
 }
@@ -228,23 +228,17 @@ void Intel64CodeGenerator::literal(Operand literal) {
     // memory address for the literal.
     assert(!literal.temporary());
     String* str = literal.literal();
-    if (str->string() == "false") {
-        out_ << "0";
-    } else if (str->string() == "true") {
-        out_ << "1";
-    } else {
-        std::stringstream ss(str->string());
-        int number;
-        ss >> number;
-        if (ss && ss.rdbuf()->in_avail() == 0) {
-            if(number < MAXIMM) {
-                out_ << str->string();
-            } else {
-                out_ << "[lit" << (void*)str << "]";
-            }
+    std::stringstream ss(str->string());
+    int number;
+    ss >> number;
+    if (ss && ss.rdbuf()->in_avail() == 0) {
+        if(number < MAXIMM) {
+            out_ << str->string();
         } else {
-            out_ << "lit" << (void*)str;
+            out_ << "[lit" << (void*)str << "]";
         }
+    } else {
+        out_ << "lit" << (void*)str;
     }
 }
 
@@ -289,7 +283,7 @@ void Intel64CodeGenerator::emit(const char* instr, Register* r1, Operand r2) {
     out_ << "    " << instr << " " << r1 << ", ";
     if (r2.temporary()) {
         assert(r2.temporary() < machine_->regs());
-        machine_->reg(r2.temporary());
+        out_ << machine_->reg(r2.temporary());
     } else {
         literal(r2);
     }

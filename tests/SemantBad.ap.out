@@ -6,7 +6,7 @@ Module
     comment:
     block: Block
       child0: Conditional
-        guard: BooleanLiteral(true)
+        guard: BooleanLiteral(1)
         true: Block
           child0: Return
             expression: IntegerLiteral(1)
@@ -17,7 +17,7 @@ Module
     comment:
     block: Block
       child0: Conditional
-        guard: BooleanLiteral(true)
+        guard: BooleanLiteral(1)
         true: Block
           child0: Return
             expression: IntegerLiteral(2)
@@ -38,13 +38,13 @@ Module
         child0: Conditional
           guard: Binary
             operation: and
-            left: BooleanLiteral(true)
+            left: BooleanLiteral(1)
             right: Unary
-              child: BooleanLiteral(false)
+              child: BooleanLiteral(0)
               operation: not
           true: Block
             child0: Conditional
-              guard: BooleanLiteral(true)
+              guard: BooleanLiteral(1)
               true: Block
                 child0: Return
                   expression: IntegerLiteral(9)
@@ -52,13 +52,13 @@ Module
             child1: Return
               expression: IntegerLiteral(1)
           false: Conditional
-            guard: BooleanLiteral(true)
+            guard: BooleanLiteral(1)
             true: Block
               child0: Return
                 expression: IntegerLiteral(1)
             false: Block
               child0: Conditional
-                guard: BooleanLiteral(true)
+                guard: BooleanLiteral(1)
                 true: Block
                   child0: Return
                     expression: IntegerLiteral(1)
@@ -73,13 +73,13 @@ Module
         child0: Conditional
           guard: Binary
             operation: and
-            left: BooleanLiteral(true)
+            left: BooleanLiteral(1)
             right: Unary
-              child: BooleanLiteral(false)
+              child: BooleanLiteral(0)
               operation: not
           true: Block
             child0: Conditional
-              guard: BooleanLiteral(true)
+              guard: BooleanLiteral(1)
               true: Block
                 child0: Return
                   expression: IntegerLiteral(9)
@@ -87,13 +87,13 @@ Module
             child1: Return
               expression: IntegerLiteral(1)
           false: Conditional
-            guard: BooleanLiteral(true)
+            guard: BooleanLiteral(1)
             true: Block
               child0: Return
                 expression: IntegerLiteral(1)
             false: Block
               child0: Conditional
-                guard: BooleanLiteral(true)
+                guard: BooleanLiteral(1)
                 true: Block
                   child0: Return
                     expression: IntegerLiteral(1)

@@ -12,7 +12,7 @@ Module
         type: Self
       block: Block
         child0: Conditional
-          guard: BooleanLiteral(true)
+          guard: BooleanLiteral(1)
           true: Block
             child0: Return
               expression: IntegerLiteral(1)
@@ -28,12 +28,12 @@ Module
         type: Self
       block: Block
         child0: Conditional
-          guard: BooleanLiteral(true)
+          guard: BooleanLiteral(1)
           true: Block
             child0: Return
               expression: IntegerLiteral(1)
           false: Conditional
-            guard: BooleanLiteral(false)
+            guard: BooleanLiteral(0)
             true: Block
               child0: Return
                 expression: IntegerLiteral(2)
@@ -49,18 +49,18 @@ Module
         type: Self
       block: Block
         child0: Conditional
-          guard: BooleanLiteral(true)
+          guard: BooleanLiteral(1)
           true: Block
             child0: Return
               expression: IntegerLiteral(1)
           false: Block
             child0: Conditional
-              guard: BooleanLiteral(true)
+              guard: BooleanLiteral(1)
               true: Block
                 child0: Return
                   expression: IntegerLiteral(2)
               false: Conditional
-                guard: BooleanLiteral(false)
+                guard: BooleanLiteral(0)
                 true: Block
                   child0: Return
                     expression: IntegerLiteral(4)
@@ -69,58 +69,50 @@ Module
                     expression: IntegerLiteral(6)
 Conditional__conditional1:
     t1 <- poparg {}
-    t2 <- li 'true' {}
-    if not t2 goto l2 {t2}
+    if not '1' goto l2 {}
 l1:
-    t3 <- li '1' {}
-    pushret t3 {t3}
+    pushret '1' {}
     ret {}
 l2:
-    t4 <- li '0' {}
-    pushret t4 {t4}
+    pushret '0' {}
     ret {}
+l3:
 Conditional__conditional2:
     t1 <- poparg {}
-    t2 <- li 'true' {}
-    if not t2 goto l4 {t2}
-l3:
-    t3 <- li '1' {}
-    pushret t3 {t3}
-    ret {}
+    if not '1' goto l5 {}
 l4:
-    t4 <- li 'false' {}
-    if not t4 goto l6 {t4}
+    pushret '1' {}
+    ret {}
 l5:
-    t5 <- li '2' {}
-    pushret t5 {t5}
-    ret {}
+    if not '0' goto l7 {}
 l6:
-    t6 <- li '3' {}
-    pushret t6 {t6}
+    pushret '2' {}
     ret {}
-Conditional__conditional3:
-    t1 <- poparg {}
-    t2 <- li 'true' {}
-    if not t2 goto l8 {t2}
 l7:
-    t3 <- li '1' {}
-    pushret t3 {t3}
+    pushret '3' {}
     ret {}
 l8:
-    t4 <- li 'true' {}
-    if not t4 goto l10 {t4}
 l9:
-    t5 <- li '2' {}
-    pushret t5 {t5}
-    ret {}
+Conditional__conditional3:
+    t1 <- poparg {}
+    if not '1' goto l11 {}
 l10:
-    t6 <- li 'false' {}
-    if not t6 goto l12 {t6}
+    pushret '1' {}
+    ret {}
 l11:
-    t7 <- li '4' {}
-    pushret t7 {t7}
-    ret {}
+    if not '1' goto l13 {}
 l12:
-    t8 <- li '6' {}
-    pushret t8 {t8}
+    pushret '2' {}
     ret {}
+l13:
+    if not '0' goto l15 {}
+l14:
+    pushret '4' {}
+    ret {}
+l15:
+    pushret '6' {}
+    ret {}
+l16:
+l17:
+l18:
+

@@ -55,7 +55,6 @@ void RegisterAllocator::operator()(Function* func) {
     // Allocate registers for temporaries in the function.  This allocator
     // uses an optimistic, greedy graph coloring algorithm.
     spilled_ = 0;
-    max_ = 0; // Maximum temporary
     graph_.clear();
 
     liveness_->operator()(func);
@@ -66,7 +65,9 @@ void RegisterAllocator::operator()(Function* func) {
     assert(!spilled_);
     if (spilled_) { return; }
 
-    rewrite_temporaries(func->code()); 
+    for (int i = 0; i < func->basic_blocks(); i++) {
+        rewrite_temporaries(func->basic_block(i)); 
+    }
 }
 
 void RegisterAllocator::build_graph(BasicBlock* block) {
@@ -78,24 +79,39 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
     // Now build the interference graph.
     for (int i = 0; i < block->instrs(); i++) {
         const Instruction& instr = block->instr(i);
-        const set<int>& live = liveness_->live(instr);
+        const set<int>& live = liveness_->live_in(instr);
 
-        // Find all interfering pairs of registers, and add them to the graph.
+        // This is just some record-keeping to find the largest temporary, a
+        // to make sure that every temporary is assigned a register.
+        if (instr.first().temporary() >= graph_.size()) { 
+            graph_.resize(instr.first().temporary() + 1);
+        }
+        if (instr.second().temporary() >= graph_.size()) {
+            graph_.resize(instr.second().temporary() + 1);
+        }
+        if (instr.result().temporary() >= graph_.size()) {
+            graph_.resize(instr.result().temporary() + 1);
+        }
+
+        // Find all interfering pairs of temporaries, and add them to the graph.
         for (set<int>::iterator m = live.begin(); m != live.end(); m++) {
             set<int>::iterator n = m;
             n++;
+            if (*m >= graph_.size()) {
+               graph_.resize(*m + 1);
+            }
             for (; n != live.end(); n++) {
                 if (*n == *m) { continue; }
 
                 if (*n >= graph_.size()) {
                     graph_.resize(*n + 1);
                 }
-                if (*m >= graph_.size()) {
-                    graph_.resize(*m + 1);
-                }
                 graph_[*n].edge_new(*m);
                 graph_[*m].edge_new(*n);
             }
+            
+            graph_[*m].edge_new(instr.result().temporary());
+            graph_[instr.result().temporary()].edge_new(*m); 
 
             // If the instruction is a CALL or part of the call prologue, then
             // add an edge between live vars and the callee registers
@@ -109,20 +125,6 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
                     //Negative numbers are pre-colored
                 }            
             }
-
-            // All registers interfere with 
-        }
-
-        // This is just some record-keeping to find the largest temporary, a
-        // to make sure that every temporary is assigned a register.
-        if (instr.first().temporary() > max_) { 
-            max_ = instr.first().temporary();
-        }
-        if (instr.second().temporary() > max_) {
-            max_ = instr.first().temporary();
-        }
-        if (instr.result().temporary() > max_) {
-            max_ = instr.first().temporary();
         }
     }
 
@@ -139,7 +141,6 @@ void RegisterAllocator::build_stack() {
     // Make a copy of the graph for the vertex removal.  We need the original
     // graph for the final coloring stage.
     vector<RegisterVertex*> work;
-    graph_.resize(max_ + 1);
     for (int i = 1; i < graph_.size(); i++) {
         graph_[i].temporary(i); // Set the graph temporary values
         work.push_back(&graph_[i]); 
@@ -240,13 +241,6 @@ void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
         if (result) {
             instr.result(graph_[result].color());
         }
-    }
-
-    if (block->next()) {
-        rewrite_temporaries(block->next());
-    }
-    if (block->branch()) {
-        rewrite_temporaries(block->branch());
     }
 }
 

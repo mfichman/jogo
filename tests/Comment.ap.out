@@ -21,7 +21,7 @@ Module
         type: Self
       block: Block
         child0: Conditional
-          guard: BooleanLiteral(true)
+          guard: BooleanLiteral(1)
           true: Block
     feature1: Function
       name: comment2

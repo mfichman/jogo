@@ -54,7 +54,7 @@ inline std::ostream& operator<<(std::ostream& out, const Operand& op) {
 enum Opcode { 
     ADD, SUB, MUL, DIV, ANDL, ORL, ANDB, ORB, PUSHARG, POPARG, PUSHRET, 
     POPRET, LOAD, STORE, NOTL, CALL, JUMP, BNE, BEQ, BEQZ, BNEQZ, RET, 
-    HALT, MOV, EQ
+    MOV, EQ, NOP
 };
 
 
@@ -72,6 +72,7 @@ public:
     Operand first() const { return first_; }
     Operand second() const { return second_; }
     Operand result() const { return result_; }
+    void opcode(Opcode opcode) { opcode_ = opcode; }
     void first(Operand first) { first_ = first; }
     void second(Operand second) { second_ = second; }
     void result(Operand result) { result_ = result; }
@@ -102,7 +103,7 @@ public:
             return false;
         }
         Opcode op = instrs_.back().opcode();
-        if (op == RET || op == JUMP || op == HALT) {
+        if (op == RET || op == JUMP) {
             return true;
         }
         return false;

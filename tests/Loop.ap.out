@@ -31,7 +31,7 @@ Module
         type: Self
       block: Block
         child0: Return
-          expression: BooleanLiteral(true)
+          expression: BooleanLiteral(1)
   feature1: Class
     name: Iterable
     comment:
@@ -106,5 +106,5 @@ Module
         type: Self
       block: Block
         child0: While
-          guard: BooleanLiteral(true)
+          guard: BooleanLiteral(1)
           block: Block

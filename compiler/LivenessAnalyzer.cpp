@@ -62,12 +62,14 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
             finished_ &= !in.insert(instr.second().temporary()).second;
         }
         
+        // out[n] - def[n]
         for (set<int>::iterator j = out.begin(); j != out.end(); j++) {
             if (*j != instr.result().temporary()) {
                 finished_ &= !in.insert(*j).second;
             }
         }
 
+        // Recompute the 'out' set from the 'in' set of the next instruction.
         if (i == block->instrs()-1) { // Last instruction of the block
             if (block->branch()) {
                 set<int>& s = in_[&block->branch()->instr(0)];

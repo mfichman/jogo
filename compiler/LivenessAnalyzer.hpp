@@ -33,10 +33,13 @@
 class LivenessAnalyzer : public Object {
 public:
     bool live(const Instruction& inst, int temporary);
-    std::set<int>& live(const Instruction& inst) {
+    std::set<int>& live_in(const Instruction& inst) {
         return in_[&inst];  
     } // Only here for printer
-
+    std::set<int>& live_out(const Instruction& inst) {
+        return out_[&inst];
+    }
+    
     void operator()(Function* feature);
     typedef Pointer<LivenessAnalyzer> Ptr;
 

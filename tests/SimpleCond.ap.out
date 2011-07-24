@@ -5,8 +5,17 @@ Module
     type: Int
     comment:
     block: Block
-      child0: Conditional
-        guard: BooleanLiteral(true)
+      child0: Variable
+        name: a
+        type: <<notype>>
+        initializer: BooleanLiteral(1)
+      child1: Variable
+        name: b
+        type: <<notype>>
+        initializer: BooleanLiteral(0)
+      child2: Conditional
+        guard: Identifier
+          name: a
         true: Block
           child0: Statement
             expression: Call
@@ -19,8 +28,9 @@ Module
               name: boot_print_str
               argument0: StringLiteral
                 value: false\n
-      child1: Conditional
-        guard: BooleanLiteral(false)
+      child3: Conditional
+        guard: Identifier
+          name: b
         true: Block
           child0: Statement
             expression: Call
@@ -33,64 +43,55 @@ Module
               name: boot_print_str
               argument0: StringLiteral
                 value: false\n
-      child2: Return
+      child4: Return
         expression: IntegerLiteral(0)
 main:
-    t1 <- li 'true' {}
-    if not t1 goto l2 {t1}
+    t1 <- '1' {}
+    t2 <- '0' {t1}
+    if not t1 goto l2 {t1, t2}
 l1:
-    t2 <- str 'true\n' {}
-    pusharg t2 {t2}
-    call '_boot_print_str' {}
-    jump l3 {}
+    pusharg 'true\n' {t2}
+    call '_boot_print_str' {t2}
+    jump l3 {t2}
 l2:
-    t3 <- str 'false\n' {}
-    pusharg t3 {t3}
-    call '_boot_print_str' {}
+    pusharg 'false\n' {t2}
+    call '_boot_print_str' {t2}
 l3:
-    t4 <- li 'false' {}
-    if not t4 goto l5 {t4}
+    if not t2 goto l5 {t2}
 l4:
-    t5 <- str 'true\n' {}
-    pusharg t5 {t5}
+    pusharg 'true\n' {}
     call '_boot_print_str' {}
     jump l6 {}
 l5:
-    t6 <- str 'false\n' {}
-    pusharg t6 {t6}
+    pusharg 'false\n' {}
     call '_boot_print_str' {}
 l6:
-    t7 <- li '0' {}
-    pushret t7 {t7}
+    pushret '0' {}
     ret {}
 
 main:
-    t1 <- li 'true' {}
-    if not t1 goto l2 {t1}
+    t2 <- '1' {}
+    t1 <- '0' {t2}
+    if not t2 goto l2 {t1, t2}
 l1:
-    t1 <- str 'true\n' {}
-    pusharg t1 {t1}
-    call '_boot_print_str' {}
-    jump l3 {}
+    pusharg 'true\n' {t1}
+    call '_boot_print_str' {t1}
+    jump l3 {t1}
 l2:
-    t1 <- str 'false\n' {}
-    pusharg t1 {t1}
-    call '_boot_print_str' {}
+    pusharg 'false\n' {t1}
+    call '_boot_print_str' {t1}
 l3:
-    t1 <- li 'false' {}
     if not t1 goto l5 {t1}
 l4:
-    t1 <- str 'true\n' {}
-    pusharg t1 {t1}
+    pusharg 'true\n' {}
     call '_boot_print_str' {}
     jump l6 {}
 l5:
-    t1 <- str 'false\n' {}
-    pusharg t1 {t1}
+    pusharg 'false\n' {}
     call '_boot_print_str' {}
 l6:
-    t1 <- li '0' {}
-    pushret t1 {t1}
+    pushret '0' {}
     ret {}
+
 true
 false

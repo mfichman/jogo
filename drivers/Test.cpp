@@ -56,12 +56,15 @@ int main(int argc, char** argv) {
     BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env));
     if (test_options.find("# aptest print_ir off") == test_options.end()) {
         BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
+        std::cout << std::endl;
     }
     if (test_options.find("# aptest run_program on") != test_options.end()) {
-        std::cout << std::endl;
         Machine::Ptr machine = Machine::intel64();
         RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
-        BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
+        if (test_options.find("# aptest print_ir off") == test_options.end()) {
+            BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
+            std::cout << std::endl;
+        }
         Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));
 #if defined(WINDOWS)
         system("nasm -fobj64 out.asm -o /tmp/out.o");

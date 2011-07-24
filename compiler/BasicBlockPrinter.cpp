@@ -74,65 +74,30 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
     }
     for (int i = 0; i < block->instrs(); i++) {
         const Instruction& instr = block->instr(i);
-        Operand result = instr.result();
+        Operand res = instr.result();
         Operand first = instr.first();
         Operand second = instr.second();
         cout << "    ";
         switch (instr.opcode()) {
-        case ADD:
-            cout << result << " <- " << first << " + " << second;
-            break;
-        case SUB:
-            cout << result << " <- " << first << " - " << second;
-            break;
-        case MUL:
-            cout << result << " <- " << first << " * " << second;
-            break; 
-        case DIV:
-            cout << result << " <- " << first << " / " << second;
-            break; 
-        case EQ:
-            cout << result << " <- " << first << " == " << second;
-            break;
-        case ANDL:
-            cout << result << " <- " << first << " and " << second;
-            break; 
-        case ORL:
-            cout << result << " <- " << first << " or " << second;
-            break; 
-        case ANDB:
-            cout << result << " <- " << first << " & " << second;
-            break; 
-        case ORB:
-            cout << result << " <- " << first << " & " << second;
-            break; 
-        case PUSHARG:
-            cout << "pusharg " << first;
-            break; 
-        case PUSHRET:
-            cout << "pushret " << first;
-            break;
-        case POPARG:
-            cout << result << " <- " << "poparg";
-            break;
-        case POPRET:
-            cout << result << " <- " << "popret";
-            break;
-        case STORE:
-            cout << "store " << first << ", " << second;
-            break;
-        case LOAD: 
-            cout << result << " <- " << "load " << first;
-            break;
-        case NOTL:
-            cout << result << " <- not " << first;
-            break;
-        case CALL:
-            cout << "call " << result;
-            break;
-        case JUMP:
-            cout << "jump " << branch->label();
-            break;
+        case NOP: break;
+        case ADD: cout << res << " <- " << first << " + " << second; break;
+        case SUB: cout << res << " <- " << first << " - " << second; break;
+        case MUL: cout << res << " <- " << first << " * " << second; break; 
+        case DIV: cout << res << " <- " << first << " / " << second; break; 
+        case EQ: cout << res << " <- " << first << " == " << second; break;
+        case ANDL: cout << res << " <- " << first << " and " << second; break;
+        case ORL: cout << res << " <- " << first << " or " << second; break; 
+        case ANDB: cout << res << " <- " << first << " & " << second; break; 
+        case ORB: cout << res << " <- " << first << " & " << second; break; 
+        case PUSHARG: cout << "pusharg " << first; break; 
+        case PUSHRET: cout << "pushret " << first; break;
+        case POPARG: cout << res << " <- " << "poparg"; break;
+        case POPRET: cout << res << " <- " << "popret"; break;
+        case STORE: cout << "store " << first << ", " << second; break;
+        case LOAD: cout << res << " <- " << "load " << first; break;
+        case NOTL: cout << res << " <- not " << first; break;
+        case CALL: cout << "call " << res; break;
+        case JUMP: cout << "jump " << branch->label(); break;
         case BNE:
             cout << "if " << first << " != " << second << " goto ";
             cout << branch->label(); 
@@ -141,9 +106,7 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
             cout << "if " << first << " == " << second << " goto ";
             cout << branch->label(); 
             break;
-        case MOV:
-            cout << result << " <- " << first;
-            break;
+        case MOV: cout << res << " <- " << first; break;
         case BEQZ:
             cout << "if not " << first << " goto ";
             cout << branch->label();
@@ -152,16 +115,11 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
             cout << "if " << first << " goto ";
             cout << branch->label();
             break;
-        case RET:
-            cout << "ret";
-            break;
-        case HALT:
-            cout << "halt";
-            break;
+        case RET: cout << "ret"; break;
         }
     
         cout << " {";
-        set<int>& live = liveness_->live(block->instr(i));
+        set<int>& live = liveness_->live_in(block->instr(i));
         for (set<int>::iterator i = live.begin(); i != live.end();) {
             if (*i == 0) {
                 ++i;

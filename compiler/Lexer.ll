@@ -106,8 +106,13 @@ xor\= return BIT_XOR_ASSIGN;
 	yylval->expression = new IntegerLiteral(*yylloc, value); 
 	return INTEGER;
 }
-(true|false) {
-    String* value = yyextra->environment()->name(yytext);
+(true) {
+    String* value = yyextra->environment()->integer("1");
+    yylval->expression = new BooleanLiteral(*yylloc, value);
+    return BOOLEAN;
+}
+(false) {
+    String* value = yyextra->environment()->integer("0");
     yylval->expression = new BooleanLiteral(*yylloc, value);
     return BOOLEAN;
 }
