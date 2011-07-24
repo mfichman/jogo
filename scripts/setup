@@ -5,6 +5,7 @@ require 'set'
 
 def setup_vim()
     options = Set.new
+    FileUtils.touch("#{ENV['HOME']}/.vimrc")
     File.open("#{ENV['HOME']}/.vimrc").each_line do |line|
         options.add(line.strip)
     end
@@ -26,7 +27,11 @@ def setup_vim()
         end
     end
 
-    FileUtils.rm "#{ENV['HOME']}/.vim/syntax/apollo.vim"
+    begin    
+        FileUtils.rm "#{ENV['HOME']}/.vim/syntax/apollo.vim"
+    rescue
+    end
+
     FileUtils.mkdir_p "#{ENV['HOME']}/.vim/syntax/"
     FileUtils.ln "scripts/apollo.vim", "#{ENV['HOME']}/.vim/syntax/" 
 
