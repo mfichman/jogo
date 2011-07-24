@@ -33,6 +33,7 @@
 #include <iostream>
 #include <fstream>
 #include <set>
+#include <cstdlib>
 
 int main(int argc, char** argv) {
     Environment::Ptr env(new Environment());
@@ -62,8 +63,17 @@ int main(int argc, char** argv) {
         RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
         BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
         Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));
+#if defined(WINDOWS)
+        system("nasm -fobj64 out.asm -o /tmp/out.o");
+#elif defined(LINUX)
+        system("nasm -felf64 out.asm -o /tmp/out.o");
+        system("gcc -m64 /tmp/out.o -L../lib -lapollo -o /tmp/out");
+#elif defined(DARWIN)
         system("nasm -fmacho64 out.asm -o /tmp/out.o");
-        system("gcc -Wl,-no_pie -lapollo -L../lib /tmp/out.o -o /tmp/out");
+        system("gcc -Wl,-no_pie -L../lib -lapollo /tmp/out.o -o /tmp/out");
+#else
+#error Unsupported system
+#endif
         system("/tmp/out");
     }
    

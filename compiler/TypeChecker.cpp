@@ -28,6 +28,7 @@
 #include <iostream>
 #include <cassert>
 #include <set>
+#include <algorithm>
 
 using namespace std;
 
@@ -668,9 +669,11 @@ void TypeChecker::operator()(Function* feature) {
     }
     name += feature->name()->string();
     std::replace(name.begin(), name.end(), ':', '_');
+#ifdef DARWIN
     if (feature->is_native()) {
         name = "_" + name;
     }
+#endif
 
     feature->label(environment_->name(name));
 

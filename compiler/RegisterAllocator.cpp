@@ -22,6 +22,7 @@
 
 #include "RegisterAllocator.hpp"
 #include "Environment.hpp"
+#include <algorithm>
 
 using namespace std;
 

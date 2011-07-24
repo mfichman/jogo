@@ -244,7 +244,7 @@ void Intel64CodeGenerator::str(Operand r1, Operand r2) {
     assert(r1.temporary() < machine_->regs());
     out_ << "    mov ";
     out_ << machine_->reg(r1.temporary()) << ", ";
-    out_ << "str" << (void*)r2.literal().pointer() << std::endl;
+    out_ << "lit" << (void*)r2.literal().pointer() << std::endl;
 }
 
 void Intel64CodeGenerator::li(Operand r1, Operand r2) {
@@ -262,7 +262,7 @@ void Intel64CodeGenerator::li(Operand r1, Operand r2) {
     } else {
         out_ << "    mov ";
         out_ << machine_->reg(r1.temporary()) << ", ";
-        out_ << "int" << (void*)r2.literal().pointer() << std::endl;
+        out_ << "lit" << (void*)r2.literal().pointer() << std::endl;
         out_ << "    mov ";
         out_ << machine_->reg(r1.temporary()) << ", [";
         out_ << machine_->reg(r1.temporary()) << "]" << std::endl;
