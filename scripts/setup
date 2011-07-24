@@ -40,8 +40,8 @@ def setup_vim()
     FileUtils.mkdir_p "#{ENV['HOME']}/.vim/ftdetect/"
     FileUtils.ln "scripts/ftdetect.vim", "#{ENV['HOME']}/.vim/ftdetect/apollo.vim" 
 
-    #FileUtils.mkdir_p "#{ENV['HOME']}/.vim/colors/"
-    #FileUtils.cp "scripts/molokai.vim", "#{ENV['HOME']}/.vim/colors/"
+    FileUtils.mkdir_p "#{ENV['HOME']}/.vim/colors/"
+    FileUtils.cp "scripts/molokai.vim", "#{ENV['HOME']}/.vim/colors/"
 end
 
 def setup_deps()
