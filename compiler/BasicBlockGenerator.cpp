@@ -250,10 +250,6 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
         false_out = block_;
     }
 
-    if (true_out->terminated() && false_out->terminated()) {
-        return;
-    }
-
     BasicBlock::Ptr post = basic_block();
     if (!true_out->terminated()) {
         jump(true_out, post);
@@ -323,16 +319,11 @@ void BasicBlockGenerator::operator()(Function* feature) {
     block_ = feature->code();
     enter_scope();
 
-    // Pop the formal parameters off the stack in reverse order, and save them
+    // Pop the formal parameters off the stack in normal order, and save them
     // to a temporary.
-    std::vector<Formal::Ptr> formals;
     for (Formal* f = feature->formals(); f; f = f->next()) {
-        formals.push_back(f);
+        variable(f->name(), poparg(block_));
     } 
-    while (!formals.empty()) {
-        variable(formals.back()->name(), poparg(block_));
-        formals.pop_back();
-    }
     
     // Generate code for the body of the function.
     emit(feature->block());

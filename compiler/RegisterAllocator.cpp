@@ -74,12 +74,6 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
     // temporaries; that is, the temporaries are live at at least one code
     // point at the same time.
 
-    // Add precolored nodes for callee registers.
-    for (int i = 0; i < machine_->callee_regs(); i++) {
-        precolored_.push_back(RegisterVertex());
-        precolored_.back().color(machine_->callee_reg(i)->id());
-    }
-
     // Now build the interference graph.
     for (int i = 0; i < block->instrs(); i++) {
         const Instruction& instr = block->instr(i);
@@ -103,18 +97,20 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
             }
 
             // If the instruction is a CALL or part of the call prologue, then
-            // add a node between live vars and the callee registers
+            // add an edge between live vars and the callee registers
             // (caller-saved)
             if (instr.opcode() == CALL || instr.opcode() == PUSHARG) {
+                if (*m >= graph_.size()) {
+                    graph_.resize(*m + 1);
+                }
                 for (int j = 0; j < machine_->callee_regs(); j++) {
-                    if (*m >= graph_.size()) {
-                        graph_.resize(*m + 1);
-                    }
-                    graph_[*m].edge_new(-i); //Negative numbers are pre-colored
+                    graph_[*m].edge_new(-machine_->callee_reg(j)->id()); 
+                    //Negative numbers are pre-colored
                 }            
             }
-        }
 
+            // All registers interfere with 
+        }
 
         // This is just some record-keeping to find the largest temporary, a
         // to make sure that every temporary is assigned a register.
@@ -168,6 +164,7 @@ void RegisterAllocator::build_stack() {
         // vertex anyway.
         if (!choice) {
             choice = work[0];
+            index = 0;
         }
     
         // Remove the vertex and add the temporary to the coloring stack.
@@ -195,16 +192,18 @@ void RegisterAllocator::color_graph() {
         for (int color = 1; color < machine_->regs(); color++) {
             bool ok = true;
             
-            // Check to make sure that the canditate color 'color' does not
+            // Check to make sure that the candidate color 'color' does not
             // interfere with any of the outgoing edges, including precolored
             // edges (indicated by a negative id)
             for (int i = 0; i < v->edges(); i++) {
                 int other = v->edge(i);
                 if (other > 0 && graph_[other].color() == color) {
                     ok = false;
+                    break;
                 }
-                if (other < 0 && precolored_[-other].color() == color) {
+                if (other < 0 && -other == color) {
                     ok = false;
+                    break;
                 }
             } 
             if (ok) {

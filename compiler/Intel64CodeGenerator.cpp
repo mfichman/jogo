@@ -216,7 +216,7 @@ void Intel64CodeGenerator::arith(const char* instr, Operand res, Operand r1,
         // t1 <- t2 - t1
         emit("mov", RAX, r2); 
         emit(instr, RAX, r1);
-        emit("mov", r1, RAX);
+        emit("mov", res, RAX);
     }
     
 }

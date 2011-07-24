@@ -40,3 +40,9 @@ void boot_print_int(Int integer) {
     fprintf(stdout, "%lld", integer);
     fflush(stdout);
 }
+
+void boot_dummy(int a, int b, int c) {
+    boot_print_int(a);
+    boot_print_int(b);
+    boot_print_int(c);
+}

@@ -74,7 +74,6 @@ private:
     void rewrite_temporaries(BasicBlock* block);
 
     std::vector<RegisterVertex> graph_;
-    std::vector<RegisterVertex> precolored_;
     std::vector<int> stack_;
     LivenessAnalyzer::Ptr liveness_;
     Machine::Ptr machine_;

@@ -20,3 +20,4 @@
 
 boot_print_str(string String) native
 boot_print_int(integer Int) native
+boot_dummy(a Int, b Int, c Int) native
