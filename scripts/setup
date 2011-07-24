@@ -5,6 +5,7 @@ require 'set'
 
 def setup_vim()
     options = Set.new
+    FileUtils.touch("#{ENV['HOME']}/.vimrc")
     File.open("#{ENV['HOME']}/.vimrc").each_line do |line|
         options.add(line.strip)
     end
