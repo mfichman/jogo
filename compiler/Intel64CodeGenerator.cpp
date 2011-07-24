@@ -21,8 +21,10 @@
  */  
 
 #include "Intel64CodeGenerator.hpp"
+#include <sstream>
 
 // RAX is reserved for special things
+static const int MAXIMM = 4096;
 static const Register::Ptr AL(new Register("al", 0));
 static const Register::Ptr RAX(new Register("rax", 0));
 
@@ -36,7 +38,7 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
     }
 
     for (String::Ptr s = environment_->strings(); s; s = s->next()) {
-        out_ << "str" << (void*)s.pointer() << ": " << std::endl;  
+        out_ << "lit" << (void*)s.pointer() << ": " << std::endl;  
         out_ << "    dq 0" << std::endl; // vtable
         out_ << "    dq 1" << std::endl; // reference count
         out_ << "    dq " << s->string().length()-1 << std::endl;
@@ -68,7 +70,7 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
     }
 
     for (String::Ptr s = environment_->integers(); s; s = s->next()) {
-        out_ << "    int" << (void*)s.pointer() << " dq " << s << std::endl;
+        out_ << "    lit" << (void*)s.pointer() << " dq " << s << std::endl;
     }
 
     for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
@@ -187,8 +189,6 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case POPRET: emit("mov", res, RAX); break;
         case STORE: store(res, a1); break;
         case LOAD: load(res, a1); break;
-        case LI: li(res, a1); break;
-        case STR: str(res, a1); break;
         case NOTL: emit("mov", res, a1); emit("not", res); break;
         case ANDB: emit("mov", res, a1); emit("and", res, a2); break;
         case ORB: emit("mov", res, a1); emit("or", res, a2); break; 
@@ -221,106 +221,126 @@ void Intel64CodeGenerator::arith(const char* instr, Operand res, Operand r1,
     
 }
 
-void Intel64CodeGenerator::store(Operand r1, Operand r2) {
-    assert(r1.temporary() && r2.temporary());
-    assert(r1.temporary() < machine_->regs());
-    assert(r2.temporary() < machine_->regs());
-    out_ << "    mov [";
-    out_ << machine_->reg(r1.temporary()) << "], ";
-    out_ << machine_->reg(r2.temporary()) << std::endl;
-}
-
-void Intel64CodeGenerator::load(Operand r1, Operand r2) {
-    assert(r1.temporary() && r2.temporary());
-    assert(r1.temporary() < machine_->regs());
-    assert(r2.temporary() < machine_->regs());
-    out_ << "    mov ";
-    out_ << machine_->reg(r1.temporary()) << ", [";
-    out_ << machine_->reg(r2.temporary()) << "]" << std::endl;
-}
-
-void Intel64CodeGenerator::str(Operand r1, Operand r2) {
-    assert(r1.temporary());
-    assert(r1.temporary() < machine_->regs());
-    out_ << "    mov ";
-    out_ << machine_->reg(r1.temporary()) << ", ";
-    out_ << "lit" << (void*)r2.literal().pointer() << std::endl;
-}
-
-void Intel64CodeGenerator::li(Operand r1, Operand r2) {
-    assert(r1.temporary());
-    assert(r1.temporary() < machine_->regs());
-
-    if (r2.literal()->string() == "false") {
-        out_ << "    mov ";
-        out_ << machine_->reg(r1.temporary()) << ", ";
-        out_ << "0" << std::endl;  
-    } else if (r2.literal()->string() == "true") {
-        out_ << "    mov ";
-        out_ << machine_->reg(r1.temporary()) << ", ";
-        out_ << "1" << std::endl;
+void Intel64CodeGenerator::literal(Operand literal) {
+    // Outputs the correct representation of a literal.  If the literal is a
+    // number, and the length is less than 13 bits, then output the literal
+    // directly in the instruction.  Otherwise, load it from the correct
+    // memory address for the literal.
+    assert(!literal.temporary());
+    String* str = literal.literal();
+    if (str->string() == "false") {
+        out_ << "0";
+    } else if (str->string() == "true") {
+        out_ << "1";
     } else {
-        out_ << "    mov ";
-        out_ << machine_->reg(r1.temporary()) << ", ";
-        out_ << "lit" << (void*)r2.literal().pointer() << std::endl;
-        out_ << "    mov ";
-        out_ << machine_->reg(r1.temporary()) << ", [";
-        out_ << machine_->reg(r1.temporary()) << "]" << std::endl;
+        std::stringstream ss(str->string());
+        int number;
+        ss >> number;
+        if (ss && ss.rdbuf()->in_avail() == 0) {
+            if(number < MAXIMM) {
+                out_ << str->string();
+            } else {
+                out_ << "[lit" << (void*)str << "]";
+            }
+        } else {
+            out_ << "lit" << (void*)str;
+        }
     }
 }
 
+void Intel64CodeGenerator::store(Operand r1, Operand r2) {
+    // Moves the literal or register in r2 into the memory address specified
+    // by register r1. 
+    assert(r1.temporary());
+    assert(r1.temporary() < machine_->regs());
+    out_ << "    mov [";
+    out_ << machine_->reg(r1.temporary()) << "], ";
+    if (r2.temporary()) { // Register
+        assert(r2.temporary() < machine_->regs());
+        out_ << machine_->reg(r2.temporary());
+    } else { // Literal
+        literal(r2);       
+    }
+    out_ << std::endl;
+}
+
+void Intel64CodeGenerator::load(Operand r1, Operand r2) {
+    // Loads the data at memory address r2 into register r1.  If r2 is a 
+    // literal, then an immediate load is done.
+    assert(r1.temporary());
+    assert(r1.temporary() < machine_->regs());
+    out_ << "    mov " << machine_->reg(r1.temporary()) << ", ";
+    if (r2.temporary()) {
+        assert(r2.temporary() < machine_->regs());
+        out_ << "[" << machine_->reg(r2.temporary()) << "]";
+    } else {
+        literal(r2);
+    }
+    out_ << std::endl;
+}
+
 void Intel64CodeGenerator::emit(const char* instr, Register* r2) {
+    // Emits a simple 1-register instruction
     out_ << "    " << instr << " " << r2 << std::endl;
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Register* r1, Operand r2) {
-    assert(r2.temporary());
-    assert(r2.temporary() < machine_->regs());
-
-    out_ << "    " << instr << " ";
-    out_ << r1 << ", " << machine_->reg(r2.temporary()) << std::endl;
+     // Emits an instruction with a possible literal right hand side.
+    out_ << "    " << instr << " " << r1 << ", ";
+    if (r2.temporary()) {
+        assert(r2.temporary() < machine_->regs());
+        machine_->reg(r2.temporary());
+    } else {
+        literal(r2);
+    }
+    out_  << std::endl;
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, Operand r2) {
-    assert(r1.temporary() && r2.temporary());
+    // Emits  an instruction with a register left operand and a possible 
+    // literal right operand.
+    assert(r1.temporary());
     assert(r1.temporary() < machine_->regs());
-    assert(r2.temporary() < machine_->regs());
-    
     if (std::string("mov") == instr && r1.temporary() == r2.temporary()) {
         return; // mov a, a
     }
-
-    out_ << "    " << instr << " ";
-    out_ << machine_->reg(r1.temporary()) << ", ";
+    out_ << "    " << instr << " " << machine_->reg(r1.temporary()) << ", ";
     if (r2.temporary()) {
-        out_ << machine_->reg(r2.temporary()) << std::endl;
+        assert(r2.temporary() < machine_->regs());
+        out_ << machine_->reg(r2.temporary());
     } else {
-        out_ << "str" << (void*)r2.literal().pointer() << std::endl;
+        literal(r2);
     }
+    out_ << std::endl;
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1) {
+    // Emit a single-operand instruction (either literal or register)
     assert(r1.temporary() < machine_->regs());
     out_ << "    " << instr << " ";
     if (r1.temporary()) {
-        out_ << machine_->reg(r1.temporary()) << std::endl;
+        out_ << machine_->reg(r1.temporary());
+    } else if (std::string("call") == instr) {
+        out_ << r1.literal();
     } else {
-        out_ << r1.literal() << std::endl;
-        // FixMe: Print constant label!
+        literal(r1);
     }
+    out_ << std::endl;
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, Register* o2) {
-    assert(r1.temporary() < machine_->regs());
+    // Operation on a register and another register specified directly.
     assert(r1.temporary());
+    assert(r1.temporary() < machine_->regs());
     out_ << "    " << instr << " ";
     out_ << machine_->reg(r1.temporary()) << ", ";
     out_ << o2 << std::endl;
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, const char* imm) {
-    assert(r1.temporary() < machine_->regs());
+    // Instruction that operates on a register r1 and an immediate value. 
     assert(r1.temporary());
+    assert(r1.temporary() < machine_->regs());
     out_ << "    " << instr << " ";
     out_ << machine_->reg(r1.temporary()) << ", ";
     out_ << imm << std::endl;

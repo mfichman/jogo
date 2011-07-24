@@ -9,6 +9,8 @@ _main:
     mov rbp, rsp
     %line 3
 
+    mov rdi, 4096
+
     mov rdi, 1
     %line 4
     mov rsi, msg

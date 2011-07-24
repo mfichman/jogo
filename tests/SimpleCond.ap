@@ -2,14 +2,16 @@
 import Boot
 
 main() Int {
+    a = true
+    b = false
     
     # Test true/false branching with no nesting
-    if true {
+    if a {
         boot_print_str("true\n")
     } else {
         boot_print_str("false\n")
     }
-    if false {
+    if b {
         boot_print_str("true\n")
     } else {
         boot_print_str("false\n")
@@ -17,9 +19,9 @@ main() Int {
 
     # Nested branching test #1
     boot_print_str("1\n")
-    if true {
+    if a {
         boot_print_str("2\n")
-        if true {
+        if a {
             boot_print_str("3\n")
         } else {
             boot_print_str("fail\n")
@@ -33,8 +35,8 @@ main() Int {
     
     # Nested branching test #2
     boot_print_str("6\n")
-    if false {
-        if true {
+    if b {
+        if a {
             boot_print_str("fail\n")
         } else {
             boot_print_str("fail\n")
@@ -42,7 +44,7 @@ main() Int {
         boot_print_str("fail\n")
     } else {
         boot_print_str("7\n")
-        if true {
+        if a {
             boot_print_str("8\n")
         } else {
             boot_print_str("fail\n")

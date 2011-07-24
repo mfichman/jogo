@@ -124,12 +124,6 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         case LOAD: 
             cout << result << " <- " << "load " << first;
             break;
-        case LI:
-            cout << result << " <- " << "li " << first;
-            break;
-        case STR:
-            cout << result << " <- " << "str " << first;
-            break;
         case NOTL:
             cout << result << " <- not " << first;
             break;

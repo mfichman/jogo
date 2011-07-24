@@ -53,8 +53,7 @@ private:
     void arith(const char* instr, Operand res, Operand r1, Operand r2);
     void load(Operand r1, Operand r2);
     void store(Operand r1, Operand r2);
-    void str(Operand r1, Operand r2);
-    void li(Operand r1, Operand r2);
+    void literal(Operand lit);
 
     Environment::Ptr environment_;
     Machine::Ptr machine_;

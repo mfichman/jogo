@@ -121,16 +121,6 @@ private:
         return temp_;
     }
 
-    Operand li(BasicBlock* block, Operand immediate) {
-        block->instr(LI, ++temp_, immediate, 0);
-        return temp_;
-    }
-
-    Operand str(BasicBlock* block, Operand immediate) {
-        block->instr(STR, ++temp_, immediate, 0);
-        return temp_;
-    }
-
     Operand poparg(BasicBlock* block) {
         block->instr(POPARG, ++temp_, 0, 0);    
         return temp_;

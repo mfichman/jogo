@@ -18,14 +18,19 @@ Module
       child2: Return
         expression: IntegerLiteral(0)
 main:
-    t1 <- str 'hello, world!\n' {}
-    pusharg t1 {t1}
-    call '_boot_print_str' {}
-    t2 <- str 'boot it!\n' {}
-    pusharg t2 {t2}
-    call '_boot_print_str' {}
-    t3 <- li '0' {}
-    pushret t3 {t3}
+    pusharg 'hello, world!\n' {}
+    call 'boot_print_str' {}
+    pusharg 'boot it!\n' {}
+    call 'boot_print_str' {}
+    pushret '0' {}
+    ret {}
+
+main:
+    pusharg 'hello, world!\n' {}
+    call 'boot_print_str' {}
+    pusharg 'boot it!\n' {}
+    call 'boot_print_str' {}
+    pushret '0' {}
     ret {}
 hello, world!
 boot it!

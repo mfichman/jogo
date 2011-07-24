@@ -184,7 +184,7 @@ void BasicBlockGenerator::operator()(Identifier* expression) {
 
 void BasicBlockGenerator::operator()(Empty* expression) {
     // Do nothing
-    return_ = li(block_, environment_->integer("0"));
+    return_ = environment_->integer("0");
 }
 
 void BasicBlockGenerator::operator()(Block* statement) {
@@ -211,24 +211,6 @@ void BasicBlockGenerator::operator()(Let* statement) {
 
 void BasicBlockGenerator::operator()(While* statement) {
     // Emit the guard expression in a new basic block
-    BasicBlock::Ptr test = function_->basic_block();
-    test->label(environment_->name("l" + stringify(++label_)));
-    block_->next(test);
-    block_ = test;
-    Operand guard = emit(statement->guard());
-    BasicBlock::Ptr pre = bneqz(block_, guard);
-    
-    // Now generate the loop (true) block.
-    block_ = pre->next();
-    emit(statement->block());
-    
-    // Emit jump back up to the test condition
-    block_->instr(JUMP, 0, 0, 0);
-    block_->branch(test);
-
-    // Now set the pass-through block and continue code with the following
-    // statement.
-    block_ = pre->branch();
 }
 
 void BasicBlockGenerator::operator()(Conditional* statement) {
