@@ -26,13 +26,14 @@
 #include "Environment.hpp"
 #include "BasicBlock.hpp"
 #include "Object.hpp"
+#include "Machine.hpp"
 #include <vector>
 #include <map>
 
 /* Code generator structure; creates basic block flow graphs */
 class BasicBlockGenerator : public TreeNode::Functor {
 public:
-    BasicBlockGenerator(Environment* env);
+    BasicBlockGenerator(Environment* env, Machine* mach);
     typedef Pointer<BasicBlockGenerator> Ptr; 
 
 private:
@@ -121,32 +122,18 @@ private:
         return temp_;
     }
 
-    Operand poparg(BasicBlock* block) {
-        block->instr(POPARG, ++temp_, 0, 0);    
+    Operand pop(BasicBlock* block) {
+        block->instr(POP, ++temp_, 0, 0);    
         return temp_;
     }
     
-    Operand popret(BasicBlock* block) {
-        block->instr(POPRET, ++temp_, 0, 0);
-        return temp_;
-    }
-
-    Operand mov(BasicBlock* block, Operand t2) {
-        block->instr(MOV, ++temp_, t2, 0);
-        return temp_;
-    }
-
     Operand eq(BasicBlock* block, Operand t1, Operand t2) {
         block->instr(EQ, ++temp_, t1, t2);
         return temp_;
     }
 
-    void pusharg(BasicBlock* block, Operand t2) {
-        block->instr(PUSHARG, 0, t2, 0);    
-    }
-
-    void pushret(BasicBlock* block, Operand t2) {
-        block->instr(PUSHRET, 0, t2, 0);
+    void push(BasicBlock* block, Operand t2) {
+        block->instr(PUSH, 0, t2, 0);    
     }
 
     void store(BasicBlock* block, Operand t2, Operand t3) {
@@ -178,13 +165,16 @@ private:
     }
 
     Operand variable(String* name);
+    int stack(String* name);
     BasicBlock* basic_block();
     void variable(String* name, Operand temporary);
+    void stack(String* name, int offset);
     void enter_scope();
     void exit_scope();
     void emit_operator(Dispatch* expression);
 
     Environment::Ptr environment_;
+    Machine::Ptr machine_;
     Class::Ptr class_;
     Module::Ptr module_;
     Function::Ptr function_;
@@ -193,6 +183,7 @@ private:
     
     // Mapping from var to temporary
     std::vector<std::map<String::Ptr, Operand> > variable_;
+    std::map<String::Ptr, int> stack_;
 
     // Next temporary to use
     Operand temp_;

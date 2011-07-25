@@ -48,18 +48,18 @@ int main(int argc, char** argv) {
         std::getline(in, line);
     } 
 
+    Machine::Ptr machine = Machine::intel64();
     Parser::Ptr parser(new Parser(env));
     if (test_options.find("# aptest print_tree off") == test_options.end()) {
         TreePrinter::Ptr printer(new TreePrinter(env));
     }
     TypeChecker::Ptr checker(new TypeChecker(env));
-    BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env));
+    BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env, machine));
     if (test_options.find("# aptest print_ir off") == test_options.end()) {
         BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
         std::cout << std::endl;
     }
     if (test_options.find("# aptest run_program on") != test_options.end()) {
-        Machine::Ptr machine = Machine::intel64();
         RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
         if (test_options.find("# aptest print_ir off") == test_options.end()) {
             BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));

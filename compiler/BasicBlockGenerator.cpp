@@ -27,8 +27,9 @@
 
 using namespace std;
 
-BasicBlockGenerator::BasicBlockGenerator(Environment* env) :
+BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
     environment_(env),
+    machine_(mach),
     label_(0) {
 
     if (environment_->errors()) {
@@ -118,7 +119,13 @@ void BasicBlockGenerator::operator()(Call* expression) {
         args.push_back(emit(a));
     }
     for (int i = args.size()-1; i >= 0; i--) {
-        pusharg(block_, args[i]);
+        if (i >= machine_->arg_regs()) {
+            // Pass the parameter on the stack
+            push(block_, args[i]);
+        } else {
+            // Pass the parameter using a precolored register
+            block_->instr(MOV, -machine_->arg_reg(i)->id(), args[i], 0); 
+        }
     }
 
     // Look up the function by name in the current context.
@@ -130,7 +137,7 @@ void BasicBlockGenerator::operator()(Call* expression) {
     // Insert a call expression, then pop the return value off the stack.
     call(block_, name);
     if (!func->type()->is_void()) {
-        return_ = popret(block_);
+        return_ = pop(block_);
     } else {
         return_ = 0;
     }
@@ -155,8 +162,14 @@ void BasicBlockGenerator::operator()(Dispatch* expression) {
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         args.push_back(emit(a));
     }
-    for (int i = 0; i < args.size(); i++) {
-        pusharg(block_, args[i]);
+    for (int i = args.size()-1; i >= 0; i--) {
+        if (i >= machine_->arg_regs()) {
+            // Pass the parameter on the stack
+            push(block_, args[i]);
+        } else {
+            // Pass the parameter using a precolored register
+            block_->instr(MOV, -machine_->arg_reg(i)->id(), args[i], 0); 
+        }
     }
 
     // Look up the function by name in the current context.
@@ -168,7 +181,7 @@ void BasicBlockGenerator::operator()(Dispatch* expression) {
     // Insert a call expression, then pop the return value off the stack.
     call(block_, name);
     if (!func->type()->is_void()) {
-        return_ = popret(block_);
+        return_ = pop(block_);
     } else {
         return_ = 0;
     }
@@ -276,7 +289,15 @@ void BasicBlockGenerator::operator()(Variable* statement) {
 void BasicBlockGenerator::operator()(Return* statement) {
     if (!dynamic_cast<Empty*>(statement->expression())) {
         Operand value = emit(statement->expression());
-        pushret(block_, value);
+        if (machine_->return_regs()) {
+            // Return the value by register, if the architecture supports
+            // return by register
+            int reg = 0;
+            block_->instr(MOV, -machine_->return_reg(reg)->id(), value, 0); 
+        } else {
+            // Otherwise, return on the stack.
+            push(block_, value);
+        }
     }
     ret(block_);
 }
@@ -303,12 +324,21 @@ void BasicBlockGenerator::operator()(Function* feature) {
     temp_ = Operand();
     function_ = feature;
     block_ = feature->code();
+    stack_.clear();
     enter_scope();
 
     // Pop the formal parameters off the stack in normal order, and save them
     // to a temporary.
+    int index = 0;
     for (Formal* f = feature->formals(); f; f = f->next()) {
-        variable(f->name(), poparg(block_));
+        if (index >= machine_->arg_regs()) {
+            // Variable is passed on the stack
+            stack(f->name(), stack_.size()); 
+        } else {
+            // Variable is passed by register; precolor the temporary for this
+            // formal parameter by using a negative number.
+            variable(f->name(), -machine_->arg_reg(index)->id());
+        }
     } 
     
     // Generate code for the body of the function.
@@ -385,9 +415,23 @@ Operand BasicBlockGenerator::variable(String* name) {
     return Operand();
 }
 
+int BasicBlockGenerator::stack(String* name) {
+    map<String::Ptr, int>::iterator i = stack_.find(name);
+    if (i != stack_.end()) {
+        return i->second;
+    } else {
+        return 0;
+    }
+    
+}
+
 void BasicBlockGenerator::variable(String* name, Operand temporary) {
     assert(variable_.size());
     variable_.back().insert(make_pair(name, temporary));
+}
+
+void BasicBlockGenerator::stack(String* name, int offset) {
+    stack_.insert(make_pair(name, offset));
 }
 
 void BasicBlockGenerator::enter_scope() {

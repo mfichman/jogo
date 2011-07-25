@@ -80,43 +80,60 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
     for (int i = 0; i < block->instrs(); i++) {
         const Instruction& instr = block->instr(i);
         const set<int>& live = liveness_->live_in(instr);
+        int first = instr.first().temporary();
+        int second = instr.second().temporary();
+        int result = instr.result().temporary();
 
         // This is just some record-keeping to find the largest temporary, a
         // to make sure that every temporary is assigned a register.
-        if (instr.first().temporary() >= graph_.size()) { 
-            graph_.resize(instr.first().temporary() + 1);
+        if (first >= graph_.size() && first > 0) { 
+            graph_.resize(first + 1);
         }
-        if (instr.second().temporary() >= graph_.size()) {
-            graph_.resize(instr.second().temporary() + 1);
+        if (second >= graph_.size() && second > 0) {
+            graph_.resize(second + 1);
         }
-        if (instr.result().temporary() >= graph_.size()) {
-            graph_.resize(instr.result().temporary() + 1);
+        if (result >= graph_.size() && result > 0) {
+            graph_.resize(result + 1);
         }
 
         // Find all interfering pairs of temporaries, and add them to the graph.
         for (set<int>::iterator m = live.begin(); m != live.end(); m++) {
             set<int>::iterator n = m;
             n++;
+            if (*m < 0) { continue; } // Operand is precolored, skip.
             if (*m >= graph_.size()) {
                graph_.resize(*m + 1);
             }
+
             for (; n != live.end(); n++) {
                 if (*n == *m) { continue; }
-
-                if (*n >= graph_.size()) {
-                    graph_.resize(*n + 1);
+                if (*n < 0) { // Operand is a precolored register.
+                    graph_[*m].edge_new(*n);
+                } else {
+                    // Add edges between temporary 'n' and temporary 'm' so 
+                    // that they won't be allocated to the same register.
+                    if (*n >= graph_.size()) {
+                        graph_.resize(*n + 1);
+                    }
+                    graph_[*n].edge_new(*m);
+                    graph_[*m].edge_new(*n);
                 }
-                graph_[*n].edge_new(*m);
-                graph_[*m].edge_new(*n);
             }
             
-            graph_[*m].edge_new(instr.result().temporary());
-            graph_[instr.result().temporary()].edge_new(*m); 
+            // Add an edge between the register being written and all of the
+            // registers in the live set.  FIXME: This may not be necessary.
+            // This was added to fix the case where a value was assigned, but
+            // not read (i.e., use-def chain without the use).  Eventually, 
+            // dead code elimination should take care of this.
+            if (result > 0) {
+                graph_[*m].edge_new(result);
+                graph_[result].edge_new(*m); 
+            }
 
             // If the instruction is a CALL or part of the call prologue, then
             // add an edge between live vars and the callee registers
             // (caller-saved)
-            if (instr.opcode() == CALL || instr.opcode() == PUSHARG) {
+            if (instr.opcode() == CALL) {
                 if (*m >= graph_.size()) {
                     graph_.resize(*m + 1);
                 }
@@ -199,10 +216,16 @@ void RegisterAllocator::color_graph() {
             // edges (indicated by a negative id)
             for (int i = 0; i < v->edges(); i++) {
                 int other = v->edge(i);
+
+                // Conflict one: candidate color is the same as the color 
+                // already assigned to another temporary.
                 if (other > 0 && graph_[other].color() == color) {
                     ok = false;
                     break;
                 }
+
+                // Conflict two: candiate color is the same as the color of
+                // a precolored register.
                 if (other < 0 && -other == color) {
                     ok = false;
                     break;
@@ -232,14 +255,17 @@ void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
         int first = instr.first().temporary();
         int second = instr.second().temporary();
         int result = instr.result().temporary();
-        if (first) {
-            instr.first(graph_[first].color());
+        
+        // Note: Negative numbers are used for the colored registers to make 
+        // it clear that coloring has actually been done.
+        if (first > 0) {
+            instr.first(-graph_[first].color());
         }
-        if (second) {
-            instr.second(graph_[second].color());
+        if (second > 0) {
+            instr.second(-graph_[second].color());
         }
-        if (result) {
-            instr.result(graph_[result].color());
+        if (result > 0) {
+            instr.result(-graph_[result].color());
         }
     }
 }

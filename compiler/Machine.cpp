@@ -41,6 +41,7 @@ Machine::Ptr Machine::intel64() {
 
     machine = new Machine;
 
+    Register::Ptr rax = machine->reg("rax"); machine->return_reg(rax);
     Register::Ptr rbx = machine->reg("rbx"); machine->caller_reg(rbx);
     Register::Ptr rcx = machine->reg("rcx"); machine->callee_reg(rcx);
     Register::Ptr rdx = machine->reg("rdx"); machine->callee_reg(rdx);

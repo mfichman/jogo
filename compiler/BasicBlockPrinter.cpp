@@ -79,7 +79,6 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         Operand second = instr.second();
         cout << "    ";
         switch (instr.opcode()) {
-        case NOP: break;
         case ADD: cout << res << " <- " << first << " + " << second; break;
         case SUB: cout << res << " <- " << first << " - " << second; break;
         case MUL: cout << res << " <- " << first << " * " << second; break; 
@@ -89,10 +88,8 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         case ORL: cout << res << " <- " << first << " or " << second; break; 
         case ANDB: cout << res << " <- " << first << " & " << second; break; 
         case ORB: cout << res << " <- " << first << " & " << second; break; 
-        case PUSHARG: cout << "pusharg " << first; break; 
-        case PUSHRET: cout << "pushret " << first; break;
-        case POPARG: cout << res << " <- " << "poparg"; break;
-        case POPRET: cout << res << " <- " << "popret"; break;
+        case PUSH: cout << "push " << first; break; 
+        case POP: cout << res << " <- " << "pop"; break;
         case STORE: cout << "store " << first << ", " << second; break;
         case LOAD: cout << res << " <- " << "load " << first; break;
         case NOTL: cout << res << " <- not " << first; break;
@@ -124,7 +121,11 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
             if (*i == 0) {
                 ++i;
             } else {
-                cout << 't' << *i;
+                if (*i > 0) {
+                    cout << 't' << *i;
+                } else {
+                    cout << 'r' << -*i;
+                }
                 if (++i != live.end()) {
                     cout << ", ";
                 }

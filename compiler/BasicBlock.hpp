@@ -39,22 +39,26 @@ public:
 private:
     String::Ptr literal_;
     int temporary_;
+    // If this is negative, then the operand is pre-assigned to a real machine
+    // register.  Normally, this only hapens for function parameter passing by
+    // register.
 };
 
 inline std::ostream& operator<<(std::ostream& out, const Operand& op) {
     if (op.literal()) {
         out << "'" << op.literal() << "'";
-    } else {
+    } else if (op.temporary() > 0) {
         out << "t" << op.temporary();
+    } else {
+        out << "r" << -op.temporary();
     }
     return out;
 }
 
 /* Enumeration of opcodes available to the TAC code */
 enum Opcode { 
-    ADD, SUB, MUL, DIV, ANDL, ORL, ANDB, ORB, PUSHARG, POPARG, PUSHRET, 
-    POPRET, LOAD, STORE, NOTL, CALL, JUMP, BNE, BEQ, BEQZ, BNEQZ, RET, 
-    MOV, EQ, NOP
+    ADD, SUB, MUL, DIV, ANDL, ORL, ANDB, ORB, PUSH, POP, LOAD, STORE, NOTL,
+    CALL, JUMP, BNE, BEQ, BEQZ, BNEQZ, RET, MOV, EQ
 };
 
 
@@ -72,7 +76,6 @@ public:
     Operand first() const { return first_; }
     Operand second() const { return second_; }
     Operand result() const { return result_; }
-    void opcode(Opcode opcode) { opcode_ = opcode; }
     void first(Operand first) { first_ = first; }
     void second(Operand second) { second_ = second; }
     void result(Operand result) { result_ = result; }

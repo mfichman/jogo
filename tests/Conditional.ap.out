@@ -68,49 +68,46 @@ Module
                   child0: Return
                     expression: IntegerLiteral(6)
 Conditional__conditional1:
-    t1 <- poparg {}
     if not '1' goto l2 {}
 l1:
-    pushret '1' {}
+    r1 <- '1' {}
     ret {}
 l2:
-    pushret '0' {}
+    r1 <- '0' {}
     ret {}
 l3:
 Conditional__conditional2:
-    t1 <- poparg {}
     if not '1' goto l5 {}
 l4:
-    pushret '1' {}
+    r1 <- '1' {}
     ret {}
 l5:
     if not '0' goto l7 {}
 l6:
-    pushret '2' {}
+    r1 <- '2' {}
     ret {}
 l7:
-    pushret '3' {}
+    r1 <- '3' {}
     ret {}
 l8:
 l9:
 Conditional__conditional3:
-    t1 <- poparg {}
     if not '1' goto l11 {}
 l10:
-    pushret '1' {}
+    r1 <- '1' {}
     ret {}
 l11:
     if not '1' goto l13 {}
 l12:
-    pushret '2' {}
+    r1 <- '2' {}
     ret {}
 l13:
     if not '0' goto l15 {}
 l14:
-    pushret '4' {}
+    r1 <- '4' {}
     ret {}
 l15:
-    pushret '6' {}
+    r1 <- '6' {}
     ret {}
 l16:
 l17:

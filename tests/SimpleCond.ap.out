@@ -50,47 +50,47 @@ main:
     t2 <- '0' {t1}
     if not t1 goto l2 {t1, t2}
 l1:
-    pusharg 'true\n' {t2}
+    r5 <- 'true\n' {t2}
     call '_boot_print_str' {t2}
     jump l3 {t2}
 l2:
-    pusharg 'false\n' {t2}
+    r5 <- 'false\n' {t2}
     call '_boot_print_str' {t2}
 l3:
     if not t2 goto l5 {t2}
 l4:
-    pusharg 'true\n' {}
+    r5 <- 'true\n' {}
     call '_boot_print_str' {}
     jump l6 {}
 l5:
-    pusharg 'false\n' {}
+    r5 <- 'false\n' {}
     call '_boot_print_str' {}
 l6:
-    pushret '0' {}
+    r1 <- '0' {}
     ret {}
 
 main:
-    t2 <- '1' {}
-    t1 <- '0' {t2}
-    if not t2 goto l2 {t1, t2}
+    r2 <- '1' {}
+    r1 <- '0' {r2}
+    if not r2 goto l2 {r2, r1}
 l1:
-    pusharg 'true\n' {t1}
-    call '_boot_print_str' {t1}
-    jump l3 {t1}
+    r5 <- 'true\n' {r1}
+    call '_boot_print_str' {r1}
+    jump l3 {r1}
 l2:
-    pusharg 'false\n' {t1}
-    call '_boot_print_str' {t1}
+    r5 <- 'false\n' {r1}
+    call '_boot_print_str' {r1}
 l3:
-    if not t1 goto l5 {t1}
+    if not r1 goto l5 {r1}
 l4:
-    pusharg 'true\n' {}
+    r5 <- 'true\n' {}
     call '_boot_print_str' {}
     jump l6 {}
 l5:
-    pusharg 'false\n' {}
+    r5 <- 'false\n' {}
     call '_boot_print_str' {}
 l6:
-    pushret '0' {}
+    r1 <- '0' {}
     ret {}
 
 true

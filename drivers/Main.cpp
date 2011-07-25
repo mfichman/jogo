@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
     TypeChecker::Ptr checker(new TypeChecker(env));
 
     Machine::Ptr machine = Machine::intel64();
-    BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env));
+    BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env, machine));
     RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
     Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));
 

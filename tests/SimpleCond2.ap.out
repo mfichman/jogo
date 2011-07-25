@@ -1,0 +1,326 @@
+Module
+  name: 
+  feature0: Function
+    name: main
+    type: Int
+    comment:
+    block: Block
+      child0: Variable
+        name: a
+        type: <<notype>>
+        initializer: BooleanLiteral(1)
+      child1: Variable
+        name: b
+        type: <<notype>>
+        initializer: BooleanLiteral(0)
+      child2: Conditional
+        guard: Identifier
+          name: a
+        true: Block
+          child0: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: true\n
+        false: Block
+          child0: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: false\n
+      child3: Conditional
+        guard: Identifier
+          name: b
+        true: Block
+          child0: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: true\n
+        false: Block
+          child0: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: false\n
+      child4: Statement
+        expression: Call
+          name: boot_print_str
+          argument0: StringLiteral
+            value: 1\n
+      child5: Conditional
+        guard: Identifier
+          name: a
+        true: Block
+          child0: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: 2\n
+          child1: Conditional
+            guard: Identifier
+              name: a
+            true: Block
+              child0: Statement
+                expression: Call
+                  name: boot_print_str
+                  argument0: StringLiteral
+                    value: 3\n
+            false: Block
+              child0: Statement
+                expression: Call
+                  name: boot_print_str
+                  argument0: StringLiteral
+                    value: fail\n
+          child2: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: 4\n
+        false: Block
+          child0: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: fail\n
+      child6: Statement
+        expression: Call
+          name: boot_print_str
+          argument0: StringLiteral
+            value: 5\n
+      child7: Statement
+        expression: Call
+          name: boot_print_str
+          argument0: StringLiteral
+            value: 6\n
+      child8: Conditional
+        guard: Identifier
+          name: b
+        true: Block
+          child0: Conditional
+            guard: Identifier
+              name: a
+            true: Block
+              child0: Statement
+                expression: Call
+                  name: boot_print_str
+                  argument0: StringLiteral
+                    value: fail\n
+            false: Block
+              child0: Statement
+                expression: Call
+                  name: boot_print_str
+                  argument0: StringLiteral
+                    value: fail\n
+          child1: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: fail\n
+        false: Block
+          child0: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: 7\n
+          child1: Conditional
+            guard: Identifier
+              name: a
+            true: Block
+              child0: Statement
+                expression: Call
+                  name: boot_print_str
+                  argument0: StringLiteral
+                    value: 8\n
+            false: Block
+              child0: Statement
+                expression: Call
+                  name: boot_print_str
+                  argument0: StringLiteral
+                    value: fail\n
+          child2: Statement
+            expression: Call
+              name: boot_print_str
+              argument0: StringLiteral
+                value: 9\n
+      child9: Statement
+        expression: Call
+          name: boot_print_str
+          argument0: StringLiteral
+            value: 10\n
+      child10: Return
+        expression: IntegerLiteral(0)
+main:
+    t1 <- '1' {}
+    t2 <- '0' {t1}
+    if not t1 goto l2 {t1, t2}
+l1:
+    r5 <- 'true\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+    jump l3 {t1, t2}
+l2:
+    r5 <- 'false\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+l3:
+    if not t2 goto l5 {t1, t2}
+l4:
+    r5 <- 'true\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+    jump l6 {t1, t2}
+l5:
+    r5 <- 'false\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+l6:
+    r5 <- '1\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+    if not t1 goto l11 {t1, t2}
+l7:
+    r5 <- '2\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+    if not t1 goto l9 {t1, t2}
+l8:
+    r5 <- '3\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+    jump l10 {t1, t2}
+l9:
+    r5 <- 'fail\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+l10:
+    r5 <- '4\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+    jump l12 {t1, t2}
+l11:
+    r5 <- 'fail\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+l12:
+    r5 <- '5\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+    r5 <- '6\n' {t1, t2}
+    call '_boot_print_str' {t1, t2}
+    if not t2 goto l17 {t1, t2}
+l13:
+    if not t1 goto l15 {t1}
+l14:
+    r5 <- 'fail\n' {}
+    call '_boot_print_str' {}
+    jump l16 {}
+l15:
+    r5 <- 'fail\n' {}
+    call '_boot_print_str' {}
+l16:
+    r5 <- 'fail\n' {}
+    call '_boot_print_str' {}
+    jump l21 {}
+l17:
+    r5 <- '7\n' {t1}
+    call '_boot_print_str' {t1}
+    if not t1 goto l19 {t1}
+l18:
+    r5 <- '8\n' {}
+    call '_boot_print_str' {}
+    jump l20 {}
+l19:
+    r5 <- 'fail\n' {}
+    call '_boot_print_str' {}
+l20:
+    r5 <- '9\n' {}
+    call '_boot_print_str' {}
+l21:
+    r5 <- '10\n' {}
+    call '_boot_print_str' {}
+    r1 <- '0' {}
+    ret {}
+
+main:
+    r2 <- '1' {}
+    r1 <- '0' {r2}
+    if not r2 goto l2 {r2, r1}
+l1:
+    r5 <- 'true\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+    jump l3 {r2, r1}
+l2:
+    r5 <- 'false\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+l3:
+    if not r1 goto l5 {r2, r1}
+l4:
+    r5 <- 'true\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+    jump l6 {r2, r1}
+l5:
+    r5 <- 'false\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+l6:
+    r5 <- '1\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+    if not r2 goto l11 {r2, r1}
+l7:
+    r5 <- '2\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+    if not r2 goto l9 {r2, r1}
+l8:
+    r5 <- '3\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+    jump l10 {r2, r1}
+l9:
+    r5 <- 'fail\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+l10:
+    r5 <- '4\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+    jump l12 {r2, r1}
+l11:
+    r5 <- 'fail\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+l12:
+    r5 <- '5\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+    r5 <- '6\n' {r2, r1}
+    call '_boot_print_str' {r2, r1}
+    if not r1 goto l17 {r2, r1}
+l13:
+    if not r2 goto l15 {r2}
+l14:
+    r5 <- 'fail\n' {}
+    call '_boot_print_str' {}
+    jump l16 {}
+l15:
+    r5 <- 'fail\n' {}
+    call '_boot_print_str' {}
+l16:
+    r5 <- 'fail\n' {}
+    call '_boot_print_str' {}
+    jump l21 {}
+l17:
+    r5 <- '7\n' {r2}
+    call '_boot_print_str' {r2}
+    if not r2 goto l19 {r2}
+l18:
+    r5 <- '8\n' {}
+    call '_boot_print_str' {}
+    jump l20 {}
+l19:
+    r5 <- 'fail\n' {}
+    call '_boot_print_str' {}
+l20:
+    r5 <- '9\n' {}
+    call '_boot_print_str' {}
+l21:
+    r5 <- '10\n' {}
+    call '_boot_print_str' {}
+    r1 <- '0' {}
+    ret {}
+
+true
+false
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
