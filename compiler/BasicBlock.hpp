@@ -76,15 +76,18 @@ public:
     Operand first() const { return first_; }
     Operand second() const { return second_; }
     Operand result() const { return result_; }
+    int offset() const { return offset_; }
     void first(Operand first) { first_ = first; }
     void second(Operand second) { second_ = second; }
     void result(Operand result) { result_ = result; }
+    void offset(int offset) { offset_ = offset; }
 
 private:
     Opcode opcode_;
     Operand first_;
     Operand second_;
     Operand result_;
+    int offset_;
 };
 
 /* Class for basic block nodes */

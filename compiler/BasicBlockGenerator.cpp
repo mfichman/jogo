@@ -193,6 +193,14 @@ void BasicBlockGenerator::operator()(Construct* expression) {
 void BasicBlockGenerator::operator()(Identifier* expression) {
     // Simply look up the value of the variable as stored previously.
     return_ = variable(expression->identifier());
+    if (!return_.temporary()) {
+        int offset = stack(expression->identifier());
+        return_ = load(block_, 0, offset); 
+        // A load operand of zero means the variable must be loaded relative
+        // to the base pointer.
+
+        variable(expression->identifier(), return_);
+    }
 }
 
 void BasicBlockGenerator::operator()(Empty* expression) {
@@ -337,8 +345,9 @@ void BasicBlockGenerator::operator()(Function* feature) {
         } else {
             // Variable is passed by register; precolor the temporary for this
             // formal parameter by using a negative number.
-            variable(f->name(), -machine_->arg_reg(index)->id());
+            variable(f->name(), mov(block_, -machine_->arg_reg(index)->id()));
         }
+        index++;
     } 
     
     // Generate code for the body of the function.

@@ -9,19 +9,20 @@ func1(a Int, b Int, c Int) {
     boot_print_str("\n")
 }
 
-func2(a Int, b Int, c Int, d Int, e Int, f Int, g Int, h Int, i Int) {
-    boot_print_int(a)
-    boot_print_int(b)
-    boot_print_int(c)
-    boot_print_int(d)
-    boot_print_int(e)
-    boot_print_int(f)
-    boot_print_int(g)
-    boot_print_int(h)
-    boot_print_int(i)
-    boot_print_str("\n")
-}
-
+#
+#func2(a Int, b Int, c Int, d Int, e Int, f Int, g Int, h Int, i Int) {
+#    boot_print_int(a)
+#    boot_print_int(b)
+#    boot_print_int(c)
+#    boot_print_int(d)
+#    boot_print_int(e)
+#    boot_print_int(f)
+#    boot_print_int(g)
+#    boot_print_int(h)
+#    boot_print_int(i)
+#    boot_print_str("\n")
+#}
+#
 main() Int {
     func1(1, 2, 3)
     return 0

@@ -72,6 +72,11 @@ private:
         return return_;
     }
 
+    Operand mov(BasicBlock* block, Operand t2) {
+        block->instr(MOV, ++temp_, t2, 0);
+        return temp_;
+    }
+
     Operand add(BasicBlock* block, Operand t2, Operand t3) {
         block->instr(ADD, ++temp_, t2, t3);
         return temp_;
@@ -117,8 +122,9 @@ private:
         return temp_;
     }
 
-    Operand load(BasicBlock* block, Operand t2) {
+    Operand load(BasicBlock* block, Operand t2, int offset) {
         block->instr(LOAD, ++temp_, t2, 0);    
+        block->instr(block->instrs()-1).offset(offset);
         return temp_;
     }
 
@@ -179,6 +185,8 @@ private:
     Module::Ptr module_;
     Function::Ptr function_;
     BasicBlock::Ptr block_;
+    BasicBlock::Ptr true_;
+    BasicBlock::Ptr false_;
     Operand return_;
     
     // Mapping from var to temporary

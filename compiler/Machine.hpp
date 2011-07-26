@@ -75,11 +75,13 @@ public:
     int arg_regs() const { return arg_reg_.size(); }
     int return_regs() const { return return_reg_.size(); }
     int regs() const { return reg_.size(); }
+    int word_size() const { return word_size_; }
     void caller_reg(Register* reg) { caller_reg_.push_back(reg); }
     void callee_reg(Register* reg) { callee_reg_.push_back(reg); }
     void arg_reg(Register* reg) { arg_reg_.push_back(reg); }
     void return_reg(Register* reg) { return_reg_.push_back(reg); }
     Register* reg(const std::string& name);
+    void word_size(int size) { word_size_ = size; }
     typedef Pointer<Machine> Ptr;
 
     static Machine::Ptr intel64();
@@ -90,5 +92,6 @@ private:
     std::vector<Register::Ptr> arg_reg_;
     std::vector<Register::Ptr> return_reg_;
     std::vector<Register::Ptr> reg_;
+    int word_size_;
 };
 

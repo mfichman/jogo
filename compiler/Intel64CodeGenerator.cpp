@@ -27,6 +27,8 @@
 static const int MAXIMM = 4096;
 static const Register::Ptr AL(new Register("al", 0));
 static const Register::Ptr RAX(new Register("rax", 0));
+static const Register::Ptr ESP(new Register("esp", 0));
+static const Register::Ptr EBP(new Register("ebp", 0));
 
 Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
     environment_(env),
@@ -162,8 +164,8 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case ORL: emit("mov", res, a1); emit("or", res, a2); break;
         case PUSH: emit("push", a1); break;
         case POP: emit("pop", res); break;
-        case STORE: store(res, a1); break;
-        case LOAD: load(res, a1); break;
+        case STORE: store(res, a1, instr.offset()); break;
+        case LOAD: load(res, a1, instr.offset()); break;
         case NOTL: emit("mov", res, a1); emit("not", res); break;
         case ANDB: emit("mov", res, a1); emit("and", res, a2); break;
         case ORB: emit("mov", res, a1); emit("or", res, a2); break; 
@@ -216,23 +218,32 @@ void Intel64CodeGenerator::literal(Operand literal) {
     }
 }
 
-void Intel64CodeGenerator::store(Operand r1, Operand r2) {
+void Intel64CodeGenerator::store(Operand r1, Operand r2, int offset) {
     // Moves the literal or register in r2 into the memory address specified
     // by register r1. 
     assert(r1.temporary());
     assert(-r1.temporary() < machine_->regs());
-    out_ << "    mov [";
-    out_ << machine_->reg(-r1.temporary()) << "], ";
+    out_ << "    mov ";
+    if (r1.temporary()) {
+        // Store to memory address specified by register plus offset.
+        out_ << "[" << machine_->reg(-r1.temporary()) << "+";
+        out_ << offset * machine_->word_size() << "], ";
+    } else {
+        // Store to memory address specified by offset from base pointer.
+        out_ << "[ebp+" << offset * machine_->word_size() << "]";
+    }
+
+
     if (r2.temporary()) { // Register
         assert(-r2.temporary() < machine_->regs());
         out_ << machine_->reg(-r2.temporary());
     } else { // Literal
-        literal(r2);       
+        literal(r2); 
     }
     out_ << std::endl;
 }
 
-void Intel64CodeGenerator::load(Operand r1, Operand r2) {
+void Intel64CodeGenerator::load(Operand r1, Operand r2, int offset) {
     // Loads the data at memory address r2 into register r1.  If r2 is a 
     // literal, then an immediate load is done.
     assert(r1.temporary());
@@ -240,9 +251,15 @@ void Intel64CodeGenerator::load(Operand r1, Operand r2) {
     out_ << "    mov " << machine_->reg(-r1.temporary()) << ", ";
     if (r2.temporary()) {
         assert(-r2.temporary() < machine_->regs());
-        out_ << "[" << machine_->reg(-r2.temporary()) << "]";
-    } else {
+        // Load from memory address specified by register operand plus offset.
+        out_ << "[" << machine_->reg(-r2.temporary()) << "+";
+        out_ << offset * machine_->word_size() << "]";
+    } else if (r2.literal()) {
+        // Load a literal value.
         literal(r2);
+    } else {
+        // Load from memory address specified by offset from the base pointer.
+        out_ << "[rbp+" << offset * machine_->word_size() << "]";
     }
     out_ << std::endl;
 }

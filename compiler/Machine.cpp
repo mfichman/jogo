@@ -24,6 +24,7 @@
 
 Machine::Machine() {
     reg_.push_back(0); // Zeroth temporary name is always null
+    word_size_ = 0;
 }
 
 Register* Machine::reg(const std::string& name) {
@@ -62,6 +63,8 @@ Machine::Ptr Machine::intel64() {
     machine->arg_reg(rcx);
     machine->arg_reg(r8);
     machine->arg_reg(r9);
+
+    machine->word_size(8); // 64 bits = 8 bytes
 
     return machine;
 }
