@@ -24,20 +24,24 @@
 
 #include "Apollo.hpp"
 #include "String.hpp"
+#include "Expression.hpp"
 #include <vector>
 
 /* Operands for three-address code SSA instructions */
 class Operand {
 public:
-    Operand(String* literal) : literal_(literal), temporary_(0) {}
+    Operand(String* label) : label_(label), temporary_(0) {}
+    Operand(Expression* literal) : literal_(literal), temporary_(0) {}
     Operand() : temporary_(0) {}
     Operand(int temporary) : temporary_(temporary) {}
     const Operand& operator++() { temporary_++; return *this; }
-    String::Ptr literal() const { return literal_; }
+    Expression* literal() const { return literal_; }
+    String* label() const { return label_; }
     int temporary() const { return temporary_; }
 
 private:
-    String::Ptr literal_;
+    Expression::Ptr literal_;
+    String::Ptr label_;
     int temporary_;
     // If this is negative, then the operand is pre-assigned to a real machine
     // register.  Normally, this only hapens for function parameter passing by
@@ -45,22 +49,30 @@ private:
 };
 
 inline std::ostream& operator<<(std::ostream& out, const Operand& op) {
-    if (op.literal()) {
-        out << "'" << op.literal() << "'";
-    } else if (op.temporary() > 0) {
-        out << "t" << op.temporary();
-    } else {
-        out << "r" << -op.temporary();
+    if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(op.literal())) {
+        return out << le->value();
     }
-    return out;
+    if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(op.literal())) {
+        return out << le->value();
+    }
+    if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(op.literal())) {
+        return out << le->value();
+    }
+    if (StringLiteral* le = dynamic_cast<StringLiteral*>(op.literal())) {
+        return out << "'" << le->value() << "'";
+    }
+    if (op.temporary() > 0) {
+        return out << "t" << op.temporary();
+    }
+    return out << "r" << -op.temporary();
 }
 
 /* Enumeration of opcodes available to the TAC code */
 enum Opcode { 
-    ADD, SUB, MUL, DIV, ANDL, ORL, ANDB, ORB, PUSH, POP, LOAD, STORE, NOTL,
-    CALL, JUMP, BNE, BEQ, BEQZ, BNEQZ, RET, MOV, EQ
+    MOV, ADD, SUB, MUL, DIV, ANDB, ORB, PUSH, POP, LOAD, STORE, NOTB,
+    CALL, JUMP, BNE, BE, BNZ, BZ, BG, BL, BGE, BLE, RET, NOP
+    // Note: BNE through BLE must be contiguous
 };
-
 
 /* Class for three-address code instructions */
 class Instruction {
@@ -104,12 +116,12 @@ public:
         return instrs_[index];
     }
     int instrs() const { return instrs_.size(); }
-    bool terminated() const {
+    bool is_terminated() const {
         if (instrs_.empty()) {
             return false;
         }
         Opcode op = instrs_.back().opcode();
-        if (op == RET || op == JUMP) {
+        if (op == RET || op == JUMP || (op >= BNE && op <= BLE)) {
             return true;
         }
         return false;
@@ -127,8 +139,8 @@ public:
 
 private:
     std::vector<Instruction> instrs_;
-    BasicBlock* branch_;
-    BasicBlock* next_;
+    BasicBlock::Ptr branch_;
+    BasicBlock::Ptr next_;
     String::Ptr label_;
 };
 

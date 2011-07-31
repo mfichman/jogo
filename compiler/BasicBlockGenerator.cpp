@@ -62,38 +62,63 @@ void BasicBlockGenerator::operator()(Formal* formal) {
 void BasicBlockGenerator::operator()(StringLiteral* expression) {
     // Load a pointer to the string from the string table
     //assert(!"Not implemented");
-    //return_ = str(block_, expression->value());
-    return_ = expression->value();
+    return_ = expression;
 }
 
 void BasicBlockGenerator::operator()(IntegerLiteral* expression) {
     // Load the literal value with load-immediate
-    //return_ = li(block_, expression->value());
-    return_ = expression->value();
+    return_ = expression;
 }
 
 void BasicBlockGenerator::operator()(FloatLiteral* expression) {
     // Load the literal value with load-immediate
-    //return_ = li(block_, expression->value());
-    return_ = expression->value();
+    return_ = expression;
 }
 
 void BasicBlockGenerator::operator()(BooleanLiteral* expression) {
     // Load the literal value with load-immediate
-    //return_ = li(block_, expression->value());
-    return_ = expression->value();
+    return_ = expression;
 }
 
 void BasicBlockGenerator::operator()(Binary* expression) {
     // Emit the left and right expressions, then perform the operation on
     // the two operands, and return the result.
-    Operand left = emit(expression->left());
-    Operand right = emit(expression->right());
 
-    if (environment_->name("or") == expression->operation()) {
-        return_ = orl(block_, left, right);
-    } else if (environment_->name("and") == expression->operation()) {
-        return_ = andl(block_, left, right);
+    // if not
+    // temp = true_
+    // true_ = false_
+    // false_ = true_
+    if (environment_->name("and") == expression->operation()) {
+        BasicBlock::Ptr left_true = basic_block();
+        
+        // Don't use the 'real' true branch; on true we want to emit the    
+        // test for the second side of the and
+        Operand left = emit(expression->left(), left_true, false_);
+        if (!block_->is_terminated()) {
+            bz(left, false_, left_true);
+        }
+        emit(left_true); 
+
+        return_ = emit(expression->right(), true_, false_);
+        //if (!block_->is_terminated()) {
+        //    bz(right, false_, true_);
+        //}
+        
+    } else if (environment_->name("or") == expression->operation()) {
+        BasicBlock::Ptr left_false = basic_block();
+        
+        // Don't use the 'real' false branch; on false we want to emit
+        // the test for the second side of the or
+        Operand left = emit(expression->left(), true_, left_false);
+        if (!block_->is_terminated()) {
+            bnz(left, true_, left_false);
+        }
+        emit(left_false);
+    
+        return_ = emit(expression->right(), true_, false_);
+        //if (!block_->is_terminated()) {
+        //    bz(right, false_, true_);
+        //}
     } else {
         assert(!"Unsupported binary operation");
     }
@@ -105,7 +130,9 @@ void BasicBlockGenerator::operator()(Unary* expression) {
     Operand op = emit(expression->child());
 
     if (environment_->name("not")) {
-        return_ = notl(block_, op); 
+
+
+    
     } else {
         assert(!"Unsupported unary operation");
     }
@@ -121,7 +148,7 @@ void BasicBlockGenerator::operator()(Call* expression) {
     for (int i = args.size()-1; i >= 0; i--) {
         if (i >= machine_->arg_regs()) {
             // Pass the parameter on the stack
-            push(block_, args[i]);
+            push(args[i]);
         } else {
             // Pass the parameter using a precolored register
             block_->instr(MOV, -machine_->arg_reg(i)->id(), args[i], 0); 
@@ -135,9 +162,10 @@ void BasicBlockGenerator::operator()(Call* expression) {
     String::Ptr name = func->label();
 
     // Insert a call expression, then pop the return value off the stack.
-    call(block_, name);
+    call(name);
     if (!func->type()->is_void()) {
-        return_ = pop(block_);
+        int val = 0;
+        return_ = mov(-machine_->return_reg(val)->id());
     } else {
         return_ = 0;
     }
@@ -165,7 +193,7 @@ void BasicBlockGenerator::operator()(Dispatch* expression) {
     for (int i = args.size()-1; i >= 0; i--) {
         if (i >= machine_->arg_regs()) {
             // Pass the parameter on the stack
-            push(block_, args[i]);
+            push(args[i]);
         } else {
             // Pass the parameter using a precolored register
             block_->instr(MOV, -machine_->arg_reg(i)->id(), args[i], 0); 
@@ -179,9 +207,9 @@ void BasicBlockGenerator::operator()(Dispatch* expression) {
     String::Ptr name = func->label();
 
     // Insert a call expression, then pop the return value off the stack.
-    call(block_, name);
+    call(name);
     if (!func->type()->is_void()) {
-        return_ = pop(block_);
+        return_ = pop();
     } else {
         return_ = 0;
     }
@@ -195,7 +223,7 @@ void BasicBlockGenerator::operator()(Identifier* expression) {
     return_ = variable(expression->identifier());
     if (!return_.temporary()) {
         int offset = stack(expression->identifier());
-        return_ = load(block_, 0, offset); 
+        return_ = load(0, offset); 
         // A load operand of zero means the variable must be loaded relative
         // to the base pointer.
 
@@ -235,39 +263,39 @@ void BasicBlockGenerator::operator()(While* statement) {
 }
 
 void BasicBlockGenerator::operator()(Conditional* statement) {
-    Operand guard = emit(statement->guard());
-    BasicBlock::Ptr pre = beqz(block_, guard);
-    
-    // Emit the true branch.  The true branch is a fall-through from the
-    // conditional test, with a jump at the end to the post-branch code if the
-    // true branch is not terminated by a terminating instruction.
-    block_ = basic_block();
-    pre->next(block_);
-    emit(statement->true_branch());
-    BasicBlock::Ptr true_out = block_;
-
-    // Emit the false branch, if there is one.  The false branch falls through
-    // to the post-conditional code.  If there is no false branch, then the
-    // pre-conditional code branches straight to the post-conditional code.
-    BasicBlock::Ptr false_out;
+    // Emit a conditional if/then expression with boolean guard expr.
+    BasicBlock::Ptr then_block = basic_block();
+    BasicBlock::Ptr else_block;
+    BasicBlock::Ptr done_block = basic_block();
     if (statement->false_branch()) {
-        block_ = basic_block();
-        pre->branch(block_);
+        else_block = basic_block();
+    } else {
+        else_block = done_block;
+    }
+
+    // Recursively emit the boolean guard expression.  We need to save the
+    // true and the false block pointers so that the correct code is emitted
+    // on each branch.
+    Operand guard = emit(statement->guard(), then_block, else_block);
+    if (!block_->is_terminated()) {
+        bz(guard, else_block, then_block);
+    }
+
+    // Now emit the true branch; only jump if there is a false branch
+    emit(then_block);
+    emit(statement->true_branch());
+
+    // Emit the false branch if it exists; make sure to insert a jump before
+    // emitting the false branch
+    if (statement->false_branch()) {
+        if (!block_->is_terminated()) {
+            jump(done_block);
+        }
+        emit(else_block);
         emit(statement->false_branch());
-        false_out = block_;
+        // jump(done_block);
     }
-
-    BasicBlock::Ptr post = basic_block();
-    if (!true_out->terminated()) {
-        jump(true_out, post);
-    }
-    if (!statement->false_branch()) {
-        pre->branch(post);
-    } else if (!false_out->terminated()) {
-        false_out->next(post);
-    }
-
-    block_ = post;
+    emit(done_block);
 }
 
 void BasicBlockGenerator::operator()(Variable* statement) {
@@ -304,10 +332,10 @@ void BasicBlockGenerator::operator()(Return* statement) {
             block_->instr(MOV, -machine_->return_reg(reg)->id(), value, 0); 
         } else {
             // Otherwise, return on the stack.
-            push(block_, value);
+            push(value);
         }
     }
-    ret(block_);
+    ret();
 }
 
 void BasicBlockGenerator::operator()(When* statement) {
@@ -331,7 +359,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // Reset the temporaries for the function.
     temp_ = Operand();
     function_ = feature;
-    block_ = feature->code();
+    emit(basic_block());
     stack_.clear();
     enter_scope();
 
@@ -345,7 +373,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
         } else {
             // Variable is passed by register; precolor the temporary for this
             // formal parameter by using a negative number.
-            variable(f->name(), mov(block_, -machine_->arg_reg(index)->id()));
+            variable(f->name(), mov(-machine_->arg_reg(index)->id()));
         }
         index++;
     } 
@@ -355,7 +383,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
 
 
     if (feature->type()->equals(environment_->void_type())) {
-        ret(block_); 
+        ret(); 
     }
     exit_scope();
 }
@@ -384,34 +412,31 @@ void BasicBlockGenerator::emit_operator(Dispatch* expression) {
    
     if (id == "@add") {
         assert(args.size() == 2);
-        return_ = add(block_, args[0], args[1]); 
+        return_ = add(args[0], args[1]); 
     } else if (id == "@sub") {
         assert(args.size() == 2);
-        return_ = sub(block_, args[0], args[1]);
+        return_ = sub(args[0], args[1]);
     } else if (id == "@mul") {
         assert(args.size() == 2);
-        return_ = mul(block_, args[0], args[1]);
+        return_ = mul(args[0], args[1]);
     } else if (id == "@div") {
         assert(args.size() == 2);
-        return_ = div(block_, args[0], args[1]);
+        return_ = div(args[0], args[1]);
     } else if (id == "@mod") {
         assert(!"Not implemented");
-    //    assert(args.size() == 2);
-    //    return_ = div(block_, args[0], args[1]);
     } else if (id == "@compl") {
-    //    assert(args.size() == 1);
         assert(!"Not implemented");
     } else if (id == "@equal") {
-        assert(args.size() == 2);
-        return_ = eq(block_, args[0], args[1]);
+        assert(!"Not implemented");
     }
 }
 
 BasicBlock* BasicBlockGenerator::basic_block() {
-    BasicBlock* block = function_->basic_block();
+    BasicBlock* block = new BasicBlock();
     block->label(environment_->name("l" + stringify(++label_)));
     return block;
 }
+
 
 Operand BasicBlockGenerator::variable(String* name) {
     vector<map<String::Ptr, Operand> >::reverse_iterator i;

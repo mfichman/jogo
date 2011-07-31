@@ -30,7 +30,7 @@ main() Int {
     } else {
         boot_print_str("fail\n")
     }
-   boot_print_str("5\n")
+    boot_print_str("5\n")
 
     
     # Nested branching test #2

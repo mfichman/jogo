@@ -1,34 +1,55 @@
-Conditional < Object {
+# aptest run_program on
+# aptest print_tree off
 
-    conditional1() Int {
-        if true {
-            return 1
-        } else {
-            return 0
-        }
-    }
+import Boot
 
-    conditional2() Int {
-        if true {
-            return 1
-        } else if false {
-            return 2
-        } else {
-            return 3
-        }
+conditional1() Int {
+    a = true
+    if a {
+        boot_print_str("one\n")
+    } else {
+        boot_print_str("X\n")
     }
+    boot_print_str("two\n")
+    return 0
+}
 
-    conditional3() Int {
-        if true {
-            return 1
-        } else {
-            if true {
-                return 2
-            } else if false {
-                return 4
-            } else {
-                return 6
-            }
-        }
+conditional2() Int {
+    a = true
+    b = false
+    if a {
+        boot_print_str("three\n")
+    } else if b {
+        boot_print_str("X\n")
+    } else {
+        boot_print_str("X\n")
     }
+    boot_print_str("four\n")
+    return 0
+}
+
+conditional3() Int {
+    a = true
+    b = false
+    if b {
+        boot_print_str("X\n")
+    } else {
+        if b {
+            boot_print_str("X\n")
+        } else if a {
+            boot_print_str("five\n")
+        } else {
+            boot_print_str("X\n")
+        }
+        boot_print_str("six\n")
+    }
+    boot_print_str("seven\n")
+    return 0
+}
+
+main() Int {
+    conditional1()
+    conditional2()
+    conditional3()
+    return 0
 }

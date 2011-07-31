@@ -91,19 +91,16 @@ public:
 		formals_(fm),
 		type_(r),
         block_(b) {
-    
-        basic_block();
     }
 
     String* name() const { return name_; }
 	Formal* formals() const { return formals_; }
 	Type* type() const { return type_; }
     Block* block() const { return block_; }
-    BasicBlock* code() const { return basic_block_[0]; }
-    BasicBlock* basic_block();
     BasicBlock* basic_block(int index) { return basic_block_[index]; }
     int basic_blocks() { return basic_block_.size(); }
     bool covariant(Function* other) const;
+    void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
 

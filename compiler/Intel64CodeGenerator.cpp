@@ -43,7 +43,7 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
         out_ << "lit" << (void*)s.pointer() << ": " << std::endl;  
         out_ << "    dq 0" << std::endl; // vtable
         out_ << "    dq 1" << std::endl; // reference count
-        out_ << "    dq " << s->string().length()-1 << std::endl;
+        out_ << "    dq " << s->string().length() << std::endl;
         out_ << "    db \"";
 
         bool needs_unquote = true;
@@ -102,10 +102,9 @@ void Intel64CodeGenerator::operator()(Module* feature) {
 }
 
 void Intel64CodeGenerator::operator()(Function* feature) {
-    BasicBlock::Ptr block = feature->code();
     if (feature->is_native()) {
         out_ << "extern " << feature->label() << std::endl;
-    } else if (block->instrs()) {
+    } else if (feature->basic_blocks()) {
         out_ << "global " << feature->label() << std::endl;
         out_ << feature->label() << ":" << std::endl;
         out_ << "    push rbp" << std::endl; 
@@ -146,29 +145,27 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         switch (instr.opcode()) {
         case CALL: emit("call", res); push_count = 0; break;
         case JUMP: emit("jmp", branch->label()); break;
-        case BNE: emit("cmp", a1, a2); emit("jne", branch->label()); break;
-        case BEQ: emit("cmp", a1, a2); emit("je", branch->label()); break;
         case MOV: emit("mov", res, a1); break;
-        case BEQZ: emit("cmp", a1, "0"); emit("je", branch->label()); break;
-        case BNEQZ: emit("cmp", a1, "0"); emit("jne", branch->label()); break; 
+        case BNE: emit("cmp", a1, a2); emit("jne", branch->label()); break;
+        case BE: emit("cmp", a1, a2); emit("je", branch->label()); break;
+        case BZ: emit("cmp", a1, "0"); emit("je", branch->label()); break;
+        case BNZ: emit("cmp", a1, "0"); emit("jne", branch->label()); break; 
+        case BG: emit("cmp", a1, a2); emit("jg", branch->label()); break;
+        case BGE: emit("cmp", a1, a2); emit("jge", branch->label()); break;
+        case BL: emit("cmp", a1, a2); emit("jl", branch->label()); break;
+        case BLE: emit("cmp", a1, a2); emit("jle", branch->label()); break;
         case ADD: arith("add", res, a1, a2); break;
         case SUB: arith("sub", res, a1, a2); break;
         case MUL: arith("mul", res, a1, a2); break;
         case DIV: arith("div", res, a1, a2); break;
-        case EQ: 
-            emit("cmp", a1, a2); 
-            emit("sete", AL); 
-            emit("movzx", res, AL);
-            break;
-        case ANDL: assert(false); break;
-        case ORL: emit("mov", res, a1); emit("or", res, a2); break;
         case PUSH: emit("push", a1); break;
         case POP: emit("pop", res); break;
         case STORE: store(res, a1, instr.offset()); break;
         case LOAD: load(res, a1, instr.offset()); break;
-        case NOTL: emit("mov", res, a1); emit("not", res); break;
+        case NOTB: emit("mov", res, a1); emit("not", res); break;
         case ANDB: emit("mov", res, a1); emit("and", res, a2); break;
         case ORB: emit("mov", res, a1); emit("or", res, a2); break; 
+        case NOP: emit("nop"); break;
         case RET: emit("leave"); emit("ret"); break;
         }
     }
@@ -203,18 +200,29 @@ void Intel64CodeGenerator::literal(Operand literal) {
     // directly in the instruction.  Otherwise, load it from the correct
     // memory address for the literal.
     assert(!literal.temporary());
-    String* str = literal.literal();
-    std::stringstream ss(str->string());
-    int number;
-    ss >> number;
-    if (ss && ss.rdbuf()->in_avail() == 0) {
+    Expression* expr = literal.literal();
+    if (StringLiteral* le = dynamic_cast<StringLiteral*>(expr)) {
+        out_ << "lit" << (void*)le->value();
+        return;
+    }
+    if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(expr)) {
+        out_ << le->value();
+        return;
+    }
+    if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(expr)) {
+        std::stringstream ss(le->value()->string());
+        int number;
+        ss >> number;
         if(number < MAXIMM) {
-            out_ << str->string();
+            out_ << le->value();
         } else {
-            out_ << "[lit" << (void*)str << "]";
+            out_ << "[lit" << (void*)le->value() << "]";
         }
-    } else {
-        out_ << "lit" << (void*)str;
+        return;
+    }
+    if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(expr)) {
+        out_ << "[lit" << (void*)le->value() << "]";
+        return;
     }
 }
 
@@ -306,7 +314,7 @@ void Intel64CodeGenerator::emit(const char* instr, Operand r1) {
     if (r1.temporary()) {
         out_ << machine_->reg(r1.temporary());
     } else if (std::string("call") == instr) {
-        out_ << r1.literal();
+        out_ << r1.label();
     } else {
         literal(r1);
     }

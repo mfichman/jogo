@@ -123,12 +123,6 @@ bool Class::subtype(Class* other) const {
     return true;
 }
 
-BasicBlock* Function::basic_block() {
-    // Allocates a new basic block to be used within the current function.
-    basic_block_.push_back(new BasicBlock);
-    return basic_block_.back();
-}
-
 bool Function::covariant(Function* other) const {
     // Returns true if this function is covariant, i.e., its return type is the
     // same as or a subtype of 'other.'  The arguments must match exactly.

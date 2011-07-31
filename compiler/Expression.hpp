@@ -36,6 +36,7 @@ public:
 	
 	Expression* next() const { return next_; }
     Type* type() const { return type_; }
+    bool is_logic_op() const;
 	void next(Expression* next) { next_ = next; }
     void type(Type* type) { type_ = type; }
     typedef Pointer<Expression> Ptr;

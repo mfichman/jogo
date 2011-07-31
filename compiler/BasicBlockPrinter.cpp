@@ -57,8 +57,7 @@ void BasicBlockPrinter::operator()(Class* feature) {
 void BasicBlockPrinter::operator()(Function* feature) {
     liveness_->operator()(feature);
 
-    BasicBlock::Ptr block = feature->code();
-    if (block->instrs()) {
+    if (feature->basic_blocks()) {
         cout << feature->label() << ":" << std::endl;
         for (int i = 0; i < feature->basic_blocks(); i++) {
             operator()(feature->basic_block(i));
@@ -83,36 +82,50 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         case SUB: cout << res << " <- " << first << " - " << second; break;
         case MUL: cout << res << " <- " << first << " * " << second; break; 
         case DIV: cout << res << " <- " << first << " / " << second; break; 
-        case EQ: cout << res << " <- " << first << " == " << second; break;
-        case ANDL: cout << res << " <- " << first << " and " << second; break;
-        case ORL: cout << res << " <- " << first << " or " << second; break; 
-        case ANDB: cout << res << " <- " << first << " & " << second; break; 
-        case ORB: cout << res << " <- " << first << " & " << second; break; 
+        case ANDB: cout << res << " <- " << first << " & " << second; break;
+        case ORB: cout << res << " <- " << first << " | " << second; break; 
+        case NOTB: cout << res << " <- not " << first; break;
         case PUSH: cout << "push " << first; break; 
         case POP: cout << res << " <- " << "pop"; break;
         case STORE: cout << "store " << first << ", " << second; break;
         case LOAD: cout << res << " <- " << "load " << first; break;
-        case NOTL: cout << res << " <- not " << first; break;
-        case CALL: cout << "call " << res; break;
+        case MOV: cout << res << " <- " << first; break;
+        case CALL: cout << "call " << res.label(); break;
         case JUMP: cout << "jump " << branch->label(); break;
         case BNE:
             cout << "if " << first << " != " << second << " goto ";
             cout << branch->label(); 
             break;
-        case BEQ:
+        case BE:
             cout << "if " << first << " == " << second << " goto ";
             cout << branch->label(); 
             break;
-        case MOV: cout << res << " <- " << first; break;
-        case BEQZ:
+        case BZ:
             cout << "if not " << first << " goto ";
             cout << branch->label();
             break;
-        case BNEQZ:
+        case BNZ:
             cout << "if " << first << " goto ";
             cout << branch->label();
             break;
+        case BG:
+            cout << "if " << first << " > " << second << " goto ";
+            cout << branch->label();
+            break;
+        case BGE:
+            cout << "if " << first << " >= " << second << " goto ";
+            cout << branch->label();
+            break;
+        case BL:
+            cout << "if " << first << " < " << second << " goto ";
+            cout << branch->label();
+            break;
+        case BLE:
+            cout << "if " << first << " <= " << second << "goto ";
+            cout << branch->label();
+            break;
         case RET: cout << "ret"; break;
+        case NOP: break;
         }
     
         cout << " {";

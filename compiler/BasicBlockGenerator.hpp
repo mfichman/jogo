@@ -67,107 +67,145 @@ private:
     void operator()(Import* feature);
     void operator()(Type* type);
 
+    void emit(BasicBlock* block) {
+        block_ = block;
+        function_->basic_block(block);
+    }
+    
+    Operand emit(TreeNode* node, BasicBlock* yes, BasicBlock* no) {
+        BasicBlock* true_save = true_;
+        BasicBlock* false_save = false_;
+        true_ = yes;
+        false_ = no;
+        node->operator()(this);
+        true_ = true_save;
+        false_ = false_save;
+        return return_;
+    }
+
     Operand emit(TreeNode* node) {
         node->operator()(this);
         return return_;
     }
-
-    Operand mov(BasicBlock* block, Operand t2) {
-        block->instr(MOV, ++temp_, t2, 0);
+    
+    Operand mov(Operand t2) {
+        block_->instr(MOV, ++temp_, t2, 0);
         return temp_;
     }
 
-    Operand add(BasicBlock* block, Operand t2, Operand t3) {
-        block->instr(ADD, ++temp_, t2, t3);
+    Operand add(Operand t2, Operand t3) {
+        block_->instr(ADD, ++temp_, t2, t3);
         return temp_;
     }
 
-    Operand sub(BasicBlock* block, Operand t2, Operand t3) {
-        block->instr(SUB, ++temp_, t2, t3);    
+    Operand sub(Operand t2, Operand t3) {
+        block_->instr(SUB, ++temp_, t2, t3);    
         return temp_;
     }
 
-    Operand mul(BasicBlock* block, Operand t2, Operand t3) {
-        block->instr(MUL, ++temp_, t2, t3);    
+    Operand mul(Operand t2, Operand t3) {
+        block_->instr(MUL, ++temp_, t2, t3);    
         return temp_;
     }
 
-    Operand div(BasicBlock* block, Operand t2, Operand t3) {
-        block->instr(DIV, ++temp_, t2, t3);    
+    Operand div(Operand t2, Operand t3) {
+        block_->instr(DIV, ++temp_, t2, t3);    
         return temp_;
     }
 
-    Operand notl(BasicBlock* block, Operand t2) {
-        block->instr(NOTL, ++temp_, t2, 0);
+    Operand notb(Operand t2) {
+        block_->instr(NOTB, ++temp_, t2, 0);
         return temp_;
     }       
 
-    Operand andl(BasicBlock* block, Operand t2, Operand t3) {
-        block->instr(ANDL, ++temp_, t2, t3);    
+    Operand andb(Operand t2, Operand t3) {
+        block_->instr(ANDB, ++temp_, t2, t3);    
         return temp_;
     }
 
-    Operand orl(BasicBlock* block, Operand t2, Operand t3) {
-        block->instr(ORL, ++temp_, t2, t3);    
+    Operand orb(Operand t2, Operand t3) {
+        block_->instr(ORB, ++temp_, t2, t3);    
         return temp_;
     }
 
-    Operand andb(BasicBlock* block, Operand t2, Operand t3) {
-        block->instr(ANDB, ++temp_, t2, t3);    
+    Operand load(Operand t2, int offset) {
+        block_->instr(LOAD, ++temp_, t2, 0);    
+        block_->instr(block_->instrs()-1).offset(offset);
         return temp_;
     }
 
-    Operand orb(BasicBlock* block, Operand t2, Operand t3) {
-        block->instr(ORB, ++temp_, t2, t3);    
-        return temp_;
-    }
-
-    Operand load(BasicBlock* block, Operand t2, int offset) {
-        block->instr(LOAD, ++temp_, t2, 0);    
-        block->instr(block->instrs()-1).offset(offset);
-        return temp_;
-    }
-
-    Operand pop(BasicBlock* block) {
-        block->instr(POP, ++temp_, 0, 0);    
+    Operand pop() {
+        block_->instr(POP, ++temp_, 0, 0);    
         return temp_;
     }
     
-    Operand eq(BasicBlock* block, Operand t1, Operand t2) {
-        block->instr(EQ, ++temp_, t1, t2);
-        return temp_;
+    void push(Operand t2) {
+        block_->instr(PUSH, 0, t2, 0);    
     }
 
-    void push(BasicBlock* block, Operand t2) {
-        block->instr(PUSH, 0, t2, 0);    
+    void store(Operand t2, Operand t3) {
+        block_->instr(STORE, 0, t2, t3);    
     }
 
-    void store(BasicBlock* block, Operand t2, Operand t3) {
-        block->instr(STORE, 0, t2, t3);    
-    }
-
-    void call(BasicBlock* block, String* name) {
-        block->instr(CALL, name, 0, 0);
+    void call(String* name) {
+        block_->instr(CALL, name, 0, 0);
     }
         
-    void ret(BasicBlock* block) {
-        block->instr(RET, 0, 0, 0);
+    void ret() {
+        block_->instr(RET, 0, 0, 0);
     }
     
-    BasicBlock* beqz(BasicBlock* block, Operand t2) {
-        block->instr(BEQZ, 0, t2, 0);
-        return block;
+    void bne(Operand t2, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BNE, 0, t2, 0);
+        block_->branch(branch);
+        block_->next(next);
     }
 
-    BasicBlock* bneqz(BasicBlock* block, Operand t2) {
-        block->instr(BNEQZ, 0, t2, 0);
-        return block;
+    void be(Operand t2, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BE, 0, t2, 0);
+        block_->branch(branch);
+        block_->next(next);
     }
 
-    BasicBlock* jump(BasicBlock* block, BasicBlock* target) {
-        block->instr(JUMP, 0, 0, 0);
-        block->branch(target);
-        return block;
+    void bnz(Operand t2, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BNZ, 0, t2, 0);
+        block_->branch(branch);
+        block_->next(next);
+    }
+
+    void bz(Operand t2, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BZ, 0, t2, 0);
+        block_->branch(branch);
+        block_->next(next);
+    }
+
+    void bg(Operand t2, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BG, 0, t2, 0);
+        block_->branch(branch);
+        block_->next(next);
+    }
+
+    void bl(Operand t2, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BL, 0, t2, 0);
+        block_->branch(branch);
+        block_->next(next);
+    }
+
+    void bge(Operand t2, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BGE, 0, t2, 0);
+        block_->branch(branch);
+        block_->next(next);
+    }
+    
+    void ble(Operand t2, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BLE, 0, t2, 0);
+        block_->branch(branch);
+        block_->next(next);
+    }
+
+    void jump(BasicBlock* target) {
+        block_->instr(JUMP, 0, 0, 0);
+        block_->branch(target);
     }
 
     Operand variable(String* name);

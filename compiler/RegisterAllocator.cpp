@@ -58,7 +58,9 @@ void RegisterAllocator::operator()(Function* func) {
     graph_.clear();
 
     liveness_->operator()(func);
-    build_graph(func->code());
+    for (int i = 0; i < func->basic_blocks(); i++) {
+        build_graph(func->basic_block(i));
+    }
     build_stack();
     color_graph();     
 
@@ -143,13 +145,6 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
                 }            
             }
         }
-    }
-
-    if (block->next()) {
-        build_graph(block->next());
-    }
-    if (block->branch()) {
-        build_graph(block->branch());
     }
 }
 

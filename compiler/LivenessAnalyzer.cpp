@@ -33,7 +33,9 @@ void LivenessAnalyzer::operator()(Function* feature) {
     // fully statisfied.
     while (!finished_) {
         finished_ = true;
-        operator()(feature->code());
+        for (int i = 0; i < feature->basic_blocks(); i++) {
+            operator()(feature->basic_block(i));
+        }
     }
 
 }
@@ -89,13 +91,6 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
                 finished_ &= !out.insert(*j).second;
             } 
         }
-    }
-
-    if (block->branch()) {
-        operator()(block->branch());
-    }
-    if (block->next()) {
-        operator()(block->next());
     }
 }
 
