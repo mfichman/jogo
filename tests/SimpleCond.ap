@@ -1,4 +1,6 @@
 # aptest run_program on
+# aptest print_tree off
+# aptest print_ir off
 import Boot
 
 main() Int {

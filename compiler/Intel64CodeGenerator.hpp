@@ -54,6 +54,7 @@ private:
     void load(Operand r1, Operand r2, int offset);
     void store(Operand r1, Operand r2, int offset);
     void literal(Operand lit);
+    void string(String* string);
 
     Environment::Ptr environment_;
     Machine::Ptr machine_;

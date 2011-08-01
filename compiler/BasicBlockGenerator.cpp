@@ -84,10 +84,6 @@ void BasicBlockGenerator::operator()(Binary* expression) {
     // Emit the left and right expressions, then perform the operation on
     // the two operands, and return the result.
 
-    // if not
-    // temp = true_
-    // true_ = false_
-    // false_ = true_
     if (environment_->name("and") == expression->operation()) {
         BasicBlock::Ptr left_true = basic_block();
         
@@ -100,9 +96,6 @@ void BasicBlockGenerator::operator()(Binary* expression) {
         emit(left_true); 
 
         return_ = emit(expression->right(), true_, false_);
-        //if (!block_->is_terminated()) {
-        //    bz(right, false_, true_);
-        //}
         
     } else if (environment_->name("or") == expression->operation()) {
         BasicBlock::Ptr left_false = basic_block();
@@ -116,9 +109,7 @@ void BasicBlockGenerator::operator()(Binary* expression) {
         emit(left_false);
     
         return_ = emit(expression->right(), true_, false_);
-        //if (!block_->is_terminated()) {
-        //    bz(right, false_, true_);
-        //}
+
     } else {
         assert(!"Unsupported binary operation");
     }
@@ -127,12 +118,11 @@ void BasicBlockGenerator::operator()(Binary* expression) {
 void BasicBlockGenerator::operator()(Unary* expression) {
     // Emit the code for the expression, then perform the operation on the
     // operand and return the result.
-    Operand op = emit(expression->child());
 
     if (environment_->name("not")) {
-
-
-    
+        // Swap the false and true branches while calling the child, since 
+        // the 'not' inverts the conditional 
+        Operand op = emit(expression->child(), false_, true_);
     } else {
         assert(!"Unsupported unary operation");
     }

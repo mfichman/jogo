@@ -1,10 +1,10 @@
 section .text
-    global main
+    global _main
 
 Main.main:
     ret
 
-main:
+_main:
     push len
     push msg
     push 1
@@ -21,6 +21,6 @@ main:
     int 0x80
 
 section .data
-    msg db "hello, world", 0xa
+    msg db "hello, world\n"
     len equ $-msg
 
