@@ -211,7 +211,7 @@ void BasicBlockGenerator::operator()(Construct* expression) {
 void BasicBlockGenerator::operator()(Identifier* expression) {
     // Simply look up the value of the variable as stored previously.
     return_ = variable(expression->identifier());
-    if (!return_.temporary()) {
+    if (!return_.temp()) {
         int offset = stack(expression->identifier());
         return_ = load(0, offset); 
         // A load operand of zero means the variable must be loaded relative
@@ -304,7 +304,7 @@ void BasicBlockGenerator::operator()(Variable* statement) {
     }
 
     Operand var = variable(statement->identifier());
-    if (!var.temporary()) {
+    if (!var.temp()) {
         var = ++temp_;
         variable(statement->identifier(), var);
     }
@@ -449,9 +449,9 @@ int BasicBlockGenerator::stack(String* name) {
     
 }
 
-void BasicBlockGenerator::variable(String* name, Operand temporary) {
+void BasicBlockGenerator::variable(String* name, Operand temp) {
     assert(variable_.size());
-    variable_.back().insert(make_pair(name, temporary));
+    variable_.back().insert(make_pair(name, temp));
 }
 
 void BasicBlockGenerator::stack(String* name, int offset) {

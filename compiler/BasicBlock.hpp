@@ -30,22 +30,27 @@
 /* Operands for three-address code SSA instructions */
 class Operand {
 public:
-    Operand(String* label) : label_(label), temporary_(0) {}
-    Operand(Expression* literal) : literal_(literal), temporary_(0) {}
-    Operand() : temporary_(0) {}
-    Operand(int temporary) : temporary_(temporary) {}
-    const Operand& operator++() { temporary_++; return *this; }
+    Operand(String* label) : label_(label), temp_(0), addr_(0) {}
+    Operand(Expression* literal) : literal_(literal), temp_(0), addr_(0) {}
+    Operand() : temp_(0), addr_(0) {}
+    Operand(int temp) : temp_(temp), addr_(0) {}
+    static Operand addr(int addr) { 
+        Operand out;
+        out.addr_ = addr;
+        return out;
+    }
+
+    const Operand& operator++() { temp_++; return *this; }
     Expression* literal() const { return literal_; }
     String* label() const { return label_; }
-    int temporary() const { return temporary_; }
+    int temp() const { return temp_; }
+    int addr() const { return addr_; }
 
 private:
     Expression::Ptr literal_;
-    String::Ptr label_;
-    int temporary_;
-    // If this is negative, then the operand is pre-assigned to a real machine
-    // register.  Normally, this only hapens for function parameter passing by
-    // register.
+    String::Ptr label_; // FixMe: Should not be necessary...needed for CALL
+    int temp_;
+    int addr_;
 };
 
 inline std::ostream& operator<<(std::ostream& out, const Operand& op) {
@@ -61,10 +66,13 @@ inline std::ostream& operator<<(std::ostream& out, const Operand& op) {
     if (StringLiteral* le = dynamic_cast<StringLiteral*>(op.literal())) {
         return out << "'" << le->value() << "'";
     }
-    if (op.temporary() > 0) {
-        return out << "t" << op.temporary();
+    if (op.addr()) {
+        return out << "mem[" << op.addr() << "]";
     }
-    return out << "r" << -op.temporary();
+    if (op.temp() > 0) {
+        return out << "t" << op.temp();
+    }
+    return out << "r" << -op.temp();
 }
 
 /* Enumeration of opcodes available to the TAC code */
@@ -88,18 +96,15 @@ public:
     Operand first() const { return first_; }
     Operand second() const { return second_; }
     Operand result() const { return result_; }
-    int offset() const { return offset_; }
     void first(Operand first) { first_ = first; }
     void second(Operand second) { second_ = second; }
     void result(Operand result) { result_ = result; }
-    void offset(int offset) { offset_ = offset; }
 
 private:
     Opcode opcode_;
     Operand first_;
     Operand second_;
     Operand result_;
-    int offset_;
 };
 
 /* Class for basic block nodes */
@@ -126,14 +131,15 @@ public:
         }
         return false;
     }
+    void swap(BasicBlock* other) { instrs_.swap(other->instrs_); }
     void branch(BasicBlock* branch) { branch_ = branch; }
     void next(BasicBlock* branch) { next_ = branch; }
     void label(String* label) { label_ = label; }
     void instr(const Instruction& inst) { 
         instrs_.push_back(inst); 
     }
-    void instr(Opcode op, Operand first, Operand second, Operand result) {
-        instrs_.push_back(Instruction(op, first, second, result));
+    void instr(Opcode op, Operand result, Operand first, Operand second) {
+        instrs_.push_back(Instruction(op, result, first, second));
     }
     typedef Pointer<BasicBlock> Ptr; 
 

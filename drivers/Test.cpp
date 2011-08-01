@@ -56,13 +56,13 @@ int main(int argc, char** argv) {
     TypeChecker::Ptr checker(new TypeChecker(env));
     BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env, machine));
     if (test_options.find("# aptest print_ir off") == test_options.end()) {
-        BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
+        BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env, machine));
         std::cout << std::endl;
     }
     if (test_options.find("# aptest run_program on") != test_options.end()) {
         RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
         if (test_options.find("# aptest print_ir off") == test_options.end()) {
-            BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env));
+            BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env, machine));
             std::cout << std::endl;
         }
         Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));

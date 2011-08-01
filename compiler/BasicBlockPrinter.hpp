@@ -32,9 +32,10 @@
 
 class BasicBlockPrinter : public TreeNode::Functor {
 public:
-    BasicBlockPrinter(Environment* environment);
+    BasicBlockPrinter(Environment* env, Machine* mach);
     typedef Pointer<BasicBlockPrinter> Ptr;
 
+    void operator()(Function* feature);
 private:
     void operator()(Module* feature);
     void operator()(Class* feature);
@@ -61,7 +62,6 @@ private:
     void operator()(Case* statement);
     void operator()(Fork* statement);
     void operator()(Yield* statement);
-    void operator()(Function* feature);
     void operator()(Attribute* feature);
     void operator()(Import* feature);
     void operator()(Type* type);

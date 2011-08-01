@@ -27,8 +27,8 @@
 static const int MAXIMM = 4096;
 static const Register::Ptr AL(new Register("al", 0));
 static const Register::Ptr RAX(new Register("rax", 0));
-static const Register::Ptr ESP(new Register("esp", 0));
-static const Register::Ptr EBP(new Register("ebp", 0));
+static const Register::Ptr ESP(new Register("rsp", 0));
+static const Register::Ptr EBP(new Register("rbp", 0));
 
 Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
     environment_(env),
@@ -81,6 +81,10 @@ void Intel64CodeGenerator::operator()(Function* feature) {
         out_ << feature->label() << ":" << std::endl;
         out_ << "    push rbp" << std::endl; 
         out_ << "    mov rbp, rsp" << std::endl;
+        if (feature->stack_vars()) {
+            int stack = feature->stack_vars() * machine_->word_size();
+            out_ << "    sub rsp, " << stack << std::endl;
+        }
         
         for (int i = 0; i < feature->basic_blocks(); i++) {
             operator()(feature->basic_block(i));
@@ -89,19 +93,16 @@ void Intel64CodeGenerator::operator()(Function* feature) {
 }
 
 void Intel64CodeGenerator::operator()(BasicBlock* block) {
-    // Translate a basic block in three-address code into x86.  For most 
-    // operations, this requires a "mov, op" sequence.  PUSH and POP 
-    // instructions are handled specially, since the first 6 parameters to
-    // a function in Intel64 are passed using registers.  The rest are passed
-    // on the stack.
+    // Translate a basic block in three-address code into x86.  For most
+    // operations, this requires a "mov, op" sequence.  PUSH and POP
+    // instructions are handled specially, since the first 6 parameters to a
+    // function in Intel64 are passed using registers.  The rest are passed on
+    // the stack.  
     // FixMe: Different registers are used on Windows vs. Unix
     // FixMe: Remove hardcoded Operand(x) and replace with symbolic reg names.
     // FixMe: Don't hardcode the # of register params.
 
     
-    int pop_count = 0;
-    int push_count = -1;
-
     BasicBlock::Ptr branch = block->branch();
     BasicBlock::Ptr next = block->next();
     if (block->label()) {
@@ -113,9 +114,8 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         Operand a1 = instr.first();
         Operand a2 = instr.second();
 
-        //case ADD: emit("mov", res, a1); emit("add", res, a2); break;
         switch (instr.opcode()) {
-        case CALL: emit("call", res); push_count = 0; break;
+        case CALL: emit("call", res); break;
         case JUMP: emit("jmp", branch->label()); break;
         case MOV: emit("mov", res, a1); break;
         case BNE: emit("cmp", a1, a2); emit("jne", branch->label()); break;
@@ -132,8 +132,8 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case DIV: arith("div", res, a1, a2); break;
         case PUSH: emit("push", a1); break;
         case POP: emit("pop", res); break;
-        case STORE: store(res, a1, instr.offset()); break;
-        case LOAD: load(res, a1, instr.offset()); break;
+        case STORE: store(res, a1); break;
+        case LOAD: load(res, a1); break;
         case NOTB: emit("mov", res, a1); emit("not", res); break;
         case ANDB: emit("mov", res, a1); emit("and", res, a2); break;
         case ORB: emit("mov", res, a1); emit("or", res, a2); break; 
@@ -146,10 +146,10 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
 void Intel64CodeGenerator::arith(const char* instr, Operand res, Operand r1,
         Operand r2) {
     
-    if (res.temporary() == r1.temporary()) {
+    if (res.temp() == r1.temp()) {
         // t1 <- t1 - t2
         emit(instr, r1, r2);
-    } else if (res.temporary() != r2.temporary()) {
+    } else if (res.temp() != r2.temp()) {
         // t1 <- t2 - t3
         emit("mov", res, r1); 
         emit(instr, res, r2);
@@ -171,17 +171,13 @@ void Intel64CodeGenerator::literal(Operand literal) {
     // number, and the length is less than 13 bits, then output the literal
     // directly in the instruction.  Otherwise, load it from the correct
     // memory address for the literal.
-    assert(!literal.temporary());
+    assert(!literal.temp());
     Expression* expr = literal.literal();
     if (StringLiteral* le = dynamic_cast<StringLiteral*>(expr)) {
         out_ << "lit" << (void*)le->value();
-        return;
-    }
-    if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(expr)) {
+    } else if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(expr)) {
         out_ << le->value();
-        return;
-    }
-    if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(expr)) {
+    } else if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(expr)) {
         std::stringstream ss(le->value()->string());
         int number;
         ss >> number;
@@ -190,56 +186,61 @@ void Intel64CodeGenerator::literal(Operand literal) {
         } else {
             out_ << "[lit" << (void*)le->value() << "]";
         }
-        return;
-    }
-    if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(expr)) {
+    } else if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(expr)) {
         out_ << "[lit" << (void*)le->value() << "]";
         return;
     }
 }
 
-void Intel64CodeGenerator::store(Operand r1, Operand r2, int offset) {
+void Intel64CodeGenerator::store(Operand r1, Operand r2) {
     // Moves the literal or register in r2 into the memory address specified
     // by register r1. 
-    assert(r1.temporary());
-    assert(-r1.temporary() < machine_->regs());
     out_ << "    mov ";
-    if (r1.temporary()) {
+    if (r1.temp()) {
+        assert(-r1.temp() < machine_->regs());
         // Store to memory address specified by register plus offset.
-        out_ << "[" << machine_->reg(-r1.temporary()) << "+";
-        out_ << offset * machine_->word_size() << "], ";
+        out_ << "[" << machine_->reg(-r1.temp()) << "+";
+        out_ << r1.addr() * machine_->word_size() << "], ";
     } else {
         // Store to memory address specified by offset from base pointer.
-        out_ << "[ebp+" << offset * machine_->word_size() << "]";
+        if (r1.addr() < 0) {
+            out_ << "[rbp" << r1.addr() * machine_->word_size() << "], ";
+        } else {
+            out_ << "[rbp+" << r1.addr() * machine_->word_size() << "], ";
+        }
     }
 
 
-    if (r2.temporary()) { // Register
-        assert(-r2.temporary() < machine_->regs());
-        out_ << machine_->reg(-r2.temporary());
+    if (r2.temp()) { // Register
+        assert(-r2.temp() < machine_->regs());
+        out_ << machine_->reg(-r2.temp());
     } else { // Literal
         literal(r2); 
     }
     out_ << std::endl;
 }
 
-void Intel64CodeGenerator::load(Operand r1, Operand r2, int offset) {
+void Intel64CodeGenerator::load(Operand r1, Operand r2) {
     // Loads the data at memory address r2 into register r1.  If r2 is a 
     // literal, then an immediate load is done.
-    assert(r1.temporary());
-    assert(-r1.temporary() < machine_->regs());
-    out_ << "    mov " << machine_->reg(-r1.temporary()) << ", ";
-    if (r2.temporary()) {
-        assert(-r2.temporary() < machine_->regs());
+    assert(r1.temp());
+    assert(-r1.temp() < machine_->regs());
+    out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";
+    if (r2.temp()) {
+        assert(-r2.temp() < machine_->regs());
         // Load from memory address specified by register operand plus offset.
-        out_ << "[" << machine_->reg(-r2.temporary()) << "+";
-        out_ << offset * machine_->word_size() << "]";
+        out_ << "[" << machine_->reg(-r2.temp()) << "+";
+        out_ << r2.addr() * machine_->word_size() << "]";
     } else if (r2.literal()) {
         // Load a literal value.
         literal(r2);
     } else {
         // Load from memory address specified by offset from the base pointer.
-        out_ << "[rbp+" << offset * machine_->word_size() << "]";
+        if (r2.addr() < 0) {
+            out_ << "[rbp" << r2.addr() * machine_->word_size() << "]";
+        } else {
+            out_ << "[rbp+" << r2.addr() * machine_->word_size() << "]";
+        }
     }
     out_ << std::endl;
 }
@@ -252,9 +253,9 @@ void Intel64CodeGenerator::emit(const char* instr, Register* r2) {
 void Intel64CodeGenerator::emit(const char* instr, Register* r1, Operand r2) {
      // Emits an instruction with a possible literal right hand side.
     out_ << "    " << instr << " " << r1 << ", ";
-    if (r2.temporary()) {
-        assert(-r2.temporary() < machine_->regs());
-        out_ << machine_->reg(-r2.temporary());
+    if (r2.temp()) {
+        assert(-r2.temp() < machine_->regs());
+        out_ << machine_->reg(-r2.temp());
     } else {
         literal(r2);
     }
@@ -264,15 +265,15 @@ void Intel64CodeGenerator::emit(const char* instr, Register* r1, Operand r2) {
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, Operand r2) {
     // Emits  an instruction with a register left operand and a possible 
     // literal right operand.
-    assert(r1.temporary());
-    assert(r1.temporary() < machine_->regs());
-    if (std::string("mov") == instr && r1.temporary() == r2.temporary()) {
+    assert(r1.temp());
+    assert(r1.temp() < machine_->regs());
+    if (std::string("mov") == instr && r1.temp() == r2.temp()) {
         return; // mov a, a
     }
-    out_ << "    " << instr << " " << machine_->reg(-r1.temporary()) << ", ";
-    if (r2.temporary()) {
-        assert(-r2.temporary() < machine_->regs());
-        out_ << machine_->reg(-r2.temporary());
+    out_ << "    " << instr << " " << machine_->reg(-r1.temp()) << ", ";
+    if (r2.temp()) {
+        assert(-r2.temp() < machine_->regs());
+        out_ << machine_->reg(-r2.temp());
     } else {
         literal(r2);
     }
@@ -281,10 +282,10 @@ void Intel64CodeGenerator::emit(const char* instr, Operand r1, Operand r2) {
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1) {
     // Emit a single-operand instruction (either literal or register)
-    assert(r1.temporary() < machine_->regs());
+    assert(r1.temp() < machine_->regs());
     out_ << "    " << instr << " ";
-    if (r1.temporary()) {
-        out_ << machine_->reg(r1.temporary());
+    if (r1.temp()) {
+        out_ << machine_->reg(r1.temp());
     } else if (std::string("call") == instr) {
         out_ << r1.label();
     } else {
@@ -295,19 +296,19 @@ void Intel64CodeGenerator::emit(const char* instr, Operand r1) {
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, Register* o2) {
     // Operation on a register and another register specified directly.
-    assert(r1.temporary());
-    assert(-r1.temporary() < machine_->regs());
+    assert(r1.temp());
+    assert(-r1.temp() < machine_->regs());
     out_ << "    " << instr << " ";
-    out_ << machine_->reg(-r1.temporary()) << ", ";
+    out_ << machine_->reg(-r1.temp()) << ", ";
     out_ << o2 << std::endl;
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, const char* imm) {
     // Instruction that operates on a register r1 and an immediate value. 
-    assert(r1.temporary());
-    assert(-r1.temporary() < machine_->regs());
+    assert(r1.temp());
+    assert(-r1.temp() < machine_->regs());
     out_ << "    " << instr << " ";
-    out_ << machine_->reg(-r1.temporary()) << ", ";
+    out_ << machine_->reg(-r1.temp()) << ", ";
     out_ << imm << std::endl;
 }
 

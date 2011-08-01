@@ -51,8 +51,8 @@ private:
     void emit(const char* instr, String* label);
     void emit(const char* instr, Operand r1, const char* imm);
     void arith(const char* instr, Operand res, Operand r1, Operand r2);
-    void load(Operand r1, Operand r2, int offset);
-    void store(Operand r1, Operand r2, int offset);
+    void load(Operand r1, Operand r2);
+    void store(Operand r1, Operand r2);
     void literal(Operand lit);
     void string(String* string);
 

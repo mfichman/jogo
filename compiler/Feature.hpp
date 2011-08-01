@@ -90,7 +90,8 @@ public:
         name_(nm),
 		formals_(fm),
 		type_(r),
-        block_(b) {
+        block_(b),
+        stack_vars_(0) {
     }
 
     String* name() const { return name_; }
@@ -99,7 +100,9 @@ public:
     Block* block() const { return block_; }
     BasicBlock* basic_block(int index) { return basic_block_[index]; }
     int basic_blocks() { return basic_block_.size(); }
+    int stack_vars() { return stack_vars_; }
     bool covariant(Function* other) const;
+    void stack_vars_inc() { stack_vars_++; }
     void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
@@ -110,6 +113,7 @@ private:
 	Type::Ptr type_;
     Block::Ptr block_;
     std::vector<BasicBlock::Ptr> basic_block_;
+    int stack_vars_;
 };
 
 /* Class for imports */

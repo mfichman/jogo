@@ -33,20 +33,20 @@
 /* Structure for a register interference graph */
 class RegisterVertex {
 public:
-    RegisterVertex() : temporary_(0), color_(0) {}
+    RegisterVertex() : temp_(0), reg_(0) {}
     
-    void edge_new(int index);
-    void edge_del(int index);
-    void color(int color) { color_ = color; }
-    void temporary(int temp) { temporary_ = temp; }
-    int edge(int index) { return out_[index]; }
-    int edges() const { return out_.size(); }
-    int temporary() const { return temporary_; }
-    int color() const { return color_; }
+    void neighbor_new(int index);
+    void neighbor_del(int index);
+    void reg(int reg) { reg_ = reg; }
+    void temp(int temp) { temp_ = temp; }
+    int neighbor(int index) { return out_[index]; }
+    int neighbors() const { return out_.size(); }
+    int temp() const { return temp_; }
+    int reg() const { return reg_; }
 
 private:
-    int temporary_;
-    int color_;
+    int temp_;
+    int reg_;
     std::vector<int> out_;
 };
 
@@ -54,7 +54,7 @@ private:
 class RegisterAllocator : public TreeNode::Functor {
 public:
     RegisterAllocator(Machine* machine) :
-        liveness_(new LivenessAnalyzer),
+        liveness_(new LivenessAnalyzer(machine)),
         machine_(machine) {
     }
     RegisterAllocator(Environment* env, Machine* machine);
@@ -64,20 +64,19 @@ public:
     void operator()(Class* feature);
     void operator()(Function* feature);
 
-    int spilled() const { return spilled_; }
-    // Returns the spilled temporary, if there was one
-
 private:
     void build_graph(BasicBlock* block);
     void build_stack();
     void color_graph();
     void rewrite_temporaries(BasicBlock* block);
+    void spill_register(Function* func);
 
     std::vector<RegisterVertex> graph_;
     std::vector<int> stack_;
     LivenessAnalyzer::Ptr liveness_;
     Machine::Ptr machine_;
-    int spilled_;
+    bool spill_;
+    std::set<int> spilled_;
 };
 
 

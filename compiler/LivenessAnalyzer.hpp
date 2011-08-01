@@ -25,6 +25,7 @@
 #include "Apollo.hpp"
 #include "Environment.hpp"
 #include "BasicBlock.hpp"
+#include "Machine.hpp"
 #include "Object.hpp"
 #include <set>
 #include <map>
@@ -32,6 +33,7 @@
 /* Computes liveness information for a function */
 class LivenessAnalyzer : public Object {
 public:
+    LivenessAnalyzer(Machine* mach) : machine_(mach) {}
     bool live(const Instruction& inst, int temporary);
     std::set<int>& live_in(const Instruction& inst) {
         return in_[&inst];  
@@ -46,7 +48,9 @@ public:
 private:
     void operator()(BasicBlock* block); 
 
+    Machine::Ptr machine_;
     bool finished_;
+    bool entry_block_;
     std::map<const Instruction*, std::set<int> > in_;
     std::map<const Instruction*, std::set<int> > out_;
 };

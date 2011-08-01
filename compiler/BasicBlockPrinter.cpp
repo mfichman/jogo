@@ -25,9 +25,9 @@
 
 using namespace std;
 
-BasicBlockPrinter::BasicBlockPrinter(Environment* environment) :
-    environment_(environment),
-    liveness_(new LivenessAnalyzer) {
+BasicBlockPrinter::BasicBlockPrinter(Environment* env, Machine* mach) :
+    environment_(env),
+    liveness_(new LivenessAnalyzer(mach)) {
 
     if (environment_->errors()) {
         return;
@@ -87,7 +87,7 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         case NOTB: cout << res << " <- not " << first; break;
         case PUSH: cout << "push " << first; break; 
         case POP: cout << res << " <- " << "pop"; break;
-        case STORE: cout << "store " << first << ", " << second; break;
+        case STORE: cout << "store " << res << ", " << first; break;
         case LOAD: cout << res << " <- " << "load " << first; break;
         case MOV: cout << res << " <- " << first; break;
         case CALL: cout << "call " << res.label(); break;

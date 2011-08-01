@@ -42,21 +42,22 @@ Machine::Ptr Machine::intel64() {
 
     machine = new Machine;
 
-    Register::Ptr rax = machine->reg("rax"); machine->return_reg(rax);
-    Register::Ptr rbx = machine->reg("rbx"); machine->caller_reg(rbx);
-    Register::Ptr rcx = machine->reg("rcx"); machine->callee_reg(rcx);
-    Register::Ptr rdx = machine->reg("rdx"); machine->callee_reg(rdx);
-    Register::Ptr rdi = machine->reg("rdi"); machine->callee_reg(rdi);
-    Register::Ptr rsi = machine->reg("rsi"); machine->callee_reg(rsi);
-    Register::Ptr r8 = machine->reg("r8"); machine->callee_reg(r8);
-    Register::Ptr r9 = machine->reg("r9"); machine->callee_reg(r9);
-    Register::Ptr r10 = machine->reg("r10"); machine->callee_reg(r10);
-    Register::Ptr r11 = machine->reg("r11"); machine->callee_reg(r11);
-    Register::Ptr r12 = machine->reg("r12"); machine->caller_reg(r12);
-    Register::Ptr r13 = machine->reg("r13"); machine->caller_reg(r13);
-    Register::Ptr r14 = machine->reg("r14"); machine->caller_reg(r14);
-    Register::Ptr r15 = machine->reg("r15"); machine->caller_reg(r15);
+    Register::Ptr rax = machine->reg("rax"); machine->callee_reg(rax); //1
+    Register::Ptr rbx = machine->reg("rbx"); machine->caller_reg(rbx); //2
+    Register::Ptr rcx = machine->reg("rcx"); machine->callee_reg(rcx); //3
+    Register::Ptr rdx = machine->reg("rdx"); machine->callee_reg(rdx); //4 
+    Register::Ptr rdi = machine->reg("rdi"); machine->callee_reg(rdi); //5
+    Register::Ptr rsi = machine->reg("rsi"); machine->callee_reg(rsi); //6
+    Register::Ptr r8 = machine->reg("r8"); machine->callee_reg(r8); //7
+    Register::Ptr r9 = machine->reg("r9"); machine->callee_reg(r9); //8
+    Register::Ptr r10 = machine->reg("r10"); machine->callee_reg(r10); //9
+    Register::Ptr r11 = machine->reg("r11"); machine->callee_reg(r11); //10
+    Register::Ptr r12 = machine->reg("r12"); machine->caller_reg(r12); //11
+    Register::Ptr r13 = machine->reg("r13"); machine->caller_reg(r13); //12
+    Register::Ptr r14 = machine->reg("r14"); machine->caller_reg(r14); //13
+    Register::Ptr r15 = machine->reg("r15"); machine->caller_reg(r15); //14
         
+    machine->return_reg(rax);
     machine->arg_reg(rdi);
     machine->arg_reg(rsi);
     machine->arg_reg(rdx);
