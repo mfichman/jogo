@@ -1,0 +1,107 @@
+# aptest run_program on
+# aptest print_tree off
+# aptest print_ir off
+
+import Boot
+
+boolexpr1() {
+    a = true
+    b = false
+
+    if a and a {
+        boot_print_str("1\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if a and b {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("2\n")
+    }
+    
+    if a or b {
+        boot_print_str("3\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if a or a {
+        boot_print_str("4\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if b or a {
+        boot_print_str("5\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if b or b {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("6\n")
+    }
+}
+
+boolexpr2() {
+    a = true
+    b = false
+
+    if (a and a) or b {
+        boot_print_str("7\n")
+    }
+    if (b and b) or a {
+        boot_print_str("8\n")
+    }
+    if (a and b) or a {
+        boot_print_str("9\n")
+    } 
+    if (b and a) or b {
+        boot_print_str("fail\n")
+    }
+    if (a or a) and b {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("10\n")
+    }
+    if (a or b) and a {
+        boot_print_str("11\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+    if (b or b) and a {
+        boot_print_str("fail\n")
+    }
+    if b or b or a {
+        boot_print_str("12\n")
+    }
+    if a and b or a {
+        boot_print_str("13\n")
+    }
+    if (a and b) or a and (b or a) {
+        boot_print_str("14\n")
+    }
+}
+
+boolexpr3() {
+    a = true
+    b = false
+
+    if (a and b) or b {
+        boot_print_str("fail\n")
+    } else if a or b {
+        boot_print_str("15\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+    boot_print_str("16\n")
+}
+
+main() Int {
+    boolexpr1()
+    boolexpr2()
+    boolexpr3()
+    return 0
+}

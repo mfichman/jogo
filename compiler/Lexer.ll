@@ -39,7 +39,8 @@ using namespace std;
 %option yylineno
 %option bison-locations
 %option stack
-%x SC_COMMENT SC_SEPARATOR SC_STRING 
+%x SC_COMMENT SC_SEPARATOR SC_STRING1 SC_ESCAPE1
+%x SC_STRING2 SC_ESCAPE2
 
 /* Lexer rules */
 %%
@@ -117,13 +118,12 @@ xor\= return BIT_XOR_ASSIGN;
     return BOOLEAN;
 }
 \" {
-    yy_push_state(SC_STRING, yyscanner);
+    yyextra->string_start(yylloc->first_column);
+    yy_push_state(SC_STRING1, yyscanner);
 }
-\'[^']*\' {
-    yytext[strlen(yytext)-1] = '\0';
-	String* value = yyextra->environment()->string(yytext + 1);
-	yylval->expression = new StringLiteral(*yylloc, value); 
-	return STRING;
+\' {
+    yyextra->string_start(yylloc->first_column);    
+    yy_push_state(SC_STRING2, yyscanner);
 }
 @[a-z][a-z]* {
     yylval->string = yyextra->environment()->name(yytext);
@@ -144,7 +144,7 @@ xor\= return BIT_XOR_ASSIGN;
 [([,] return yytext[0]; 
 [)\]] return yytext[0];
 [}] {
-    if (yy_top_state(yyscanner) == SC_STRING) {
+    if (yy_top_state(yyscanner) == SC_STRING1) {
         yy_pop_state(yyscanner);
     } else {
         yy_push_state(SC_SEPARATOR, yyscanner);
@@ -159,22 +159,64 @@ xor\= return BIT_XOR_ASSIGN;
 #.*
 [\t ]
 . return yytext[0];
-<SC_STRING>[^"#]*#\{ {
-    yytext[strlen(yytext)-2] = 0;
-    String* value = yyextra->environment()->string(yytext);
-    yylloc->first_column--;
+
+<SC_ESCAPE2>\' {
+    yyextra->string_char(yytext[0]);
+    BEGIN(SC_STRING2);
+}
+<SC_ESCAPE2>. {
+    yyextra->string_char(yytext[0]);
+    BEGIN(SC_STRING2);
+}
+<SC_STRING2>\\ {
+    yyextra->string_char(yytext[0]);
+    BEGIN(SC_ESCAPE2);
+}
+<SC_STRING2>\' {
+	String* value = yyextra->environment()->string(yyextra->string());
+    yyextra->string("");
+    yylloc->first_column = yyextra->string_start();
+	yylval->expression = new StringLiteral(*yylloc, value); 
+    yy_pop_state(yyscanner);
+	return STRING;
+}
+<SC_STRING2>. {
+    yyextra->string_char(yytext[0]);
+}
+<SC_ESCAPE1>\" {
+    yyextra->string_char(yytext[0]);
+    BEGIN(SC_STRING1);
+}
+<SC_ESCAPE1># {
+    yyextra->string_char(yytext[0]);
+    BEGIN(SC_STRING1);
+}
+<SC_ESCAPE1>. {
+    yyextra->string_char(yytext[0]);
+    BEGIN(SC_STRING1);
+}
+<SC_STRING1>\\ {
+    yyextra->string_char(yytext[0]);
+    BEGIN(SC_ESCAPE1);
+}
+<SC_STRING1>#\{ {
+    String* value = yyextra->environment()->string(yyextra->string());
+    yyextra->string("");
+    yylloc->first_column = yyextra->string_start();
     yylval->expression = new StringLiteral(*yylloc, value);
     yy_push_state(INITIAL, yyscanner);
     return SBEGIN;
 }
-<SC_STRING>[^"#]*\" {
-    yytext[strlen(yytext)-1] = 0;
-    String* value = yyextra->environment()->string(yytext);
-    yylloc->first_column--;
+<SC_STRING1>\" {
+    String* value = yyextra->environment()->string(yyextra->string());
+    yyextra->string("");
+    yylloc->first_column = yyextra->string_start();
     yylval->expression = new StringLiteral(*yylloc, value);
     yy_pop_state(yyscanner);
-    //yy_push_state(SC_SEPARATOR, yyscanner);
     return STRING;
+}
+<SC_STRING1>. {
+    yyextra->string_char(yytext[0]);
 }
 <SC_SEPARATOR>[\n\r] {
     yyextra->column(1); 

@@ -16,8 +16,8 @@ syn keyword apTodo contained TODO FIXME XXX
 syn cluster apCommentGroup contains=apTodo
 syn region apComment start="#" end="$" contains=apTodo
 
-syn region apString matchgroup=apStringDelim start=+"+ end=+"+ contains=apInterpolation
-syn region apString matchgroup=apStringDelim start=+'+ end=+'+
+syn region apString matchgroup=apStringDelim start=+"+ skip=+\\\\\|\\"+ end=+"+ contains=apInterpolation
+syn region apString matchgroup=apStringDelim start=+'+ skip=+\\\\\|\\'+ end=+'+
 
 syn region apInterpolation matchgroup=apStringDelim start="#{" end="}" contained contains=ALL
 

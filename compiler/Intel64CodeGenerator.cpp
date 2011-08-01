@@ -353,9 +353,9 @@ void Intel64CodeGenerator::string(String* string) {
                 case 'v': out += "0xb"; break; // vertical tab
                 case 'f': out += "0xc"; break; // form feed
                 case 'r': out += "0xd"; break; // carriage return
-                case '"': out += "0x42"; break; // quote
-                case '\'': out += "0x47"; break; // quote
-                default: out += c; break;
+                case '"': out += "0x22"; break; // quote
+                case '\'': out += "0x27"; break; // quote
+                default: out += std::string("\"") + c + '"'; break;
                 }
             }
             escaped = true;
@@ -370,7 +370,12 @@ void Intel64CodeGenerator::string(String* string) {
         length++;
         first = false;
     }
-    if (!escaped) out += "\"";
+    if (escaped) {
+        if (!first) out += ", ";
+        out += "0x0";
+    } else {
+        out += "\", 0x0";
+    }
 
     out_ << "lit" << (void*)string << ": " << std::endl;  
     out_ << "    dq 0" << std::endl; // vtable

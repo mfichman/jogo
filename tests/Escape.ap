@@ -1,0 +1,15 @@
+# aptest run_program on
+# aptest print_ir off
+
+import Boot
+
+main() Int {
+
+    boot_print_str("\a\b\t\n\v\f\r hello, world!\n")
+    boot_print_str("\x48\x45\x4c\x4c\x4f\x0a hello!\n")
+    boot_print_str("\110\105\114\114\117\012 hello!\n")
+    boot_print_str("\"")
+    boot_print_str("\#")
+    boot_print_str('\'')
+    return 0
+}

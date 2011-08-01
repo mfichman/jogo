@@ -39,10 +39,15 @@ public:
     Module* module() const { return module_; }
 	File* file() const { return file_; }
     std::fstream& input() { return input_; }
+    const std::string& string() const { return string_; }
+    int string_start() { return string_start_; }
     int column() const { return column_; }
     void input(const std::string& file);
     void column(int column) { column_ = column; }
     void force_separator();
+    void string_char(char ch) { string_ += ch; }
+    void string_start(int st) { string_start_ = st; }
+    void string(const std::string& str) { string_ = str; }
     typedef Pointer<Parser> Ptr;
 
 private:
@@ -52,6 +57,8 @@ private:
     int column_;
     std::fstream input_;
     void *scanner_;
+    std::string string_;
+    int string_start_;
 
     void file(const std::string& prefix, const std::string& file);
     void dir(const std::string& prefix, const std::string& dir);
