@@ -82,7 +82,12 @@ void Intel64CodeGenerator::operator()(Function* feature) {
         out_ << "    push rbp" << std::endl; 
         out_ << "    mov rbp, rsp" << std::endl;
         if (feature->stack_vars()) {
+            // Allocate space on the stack; ensure that the stack is aligned
+            // to a 16-byte boundary.
             int stack = feature->stack_vars() * machine_->word_size();
+            if (stack % 16 != 0) {
+                stack += stack % 16;
+            }
             out_ << "    sub rsp, " << stack << std::endl;
         }
         
@@ -239,7 +244,10 @@ void Intel64CodeGenerator::load(Operand r1, Operand r2) {
         if (r2.addr() < 0) {
             out_ << "[rbp" << r2.addr() * machine_->word_size() << "]";
         } else {
-            out_ << "[rbp+" << r2.addr() * machine_->word_size() << "]";
+            out_ << "[rbp+" << (r2.addr()+1) * machine_->word_size() << "]";
+            // Need to add +1.  For Intel64, the stack-pushed parameters start
+            // at rbp+16, and up.  The intermediate languages specifies stack-
+            // pushed parameters using addresses 1..n.
         }
     }
     out_ << std::endl;

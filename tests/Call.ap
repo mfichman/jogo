@@ -1,4 +1,6 @@
 # aptest run_program on
+# aptest print_ir off
+# aptest print_tree off
 
 import Boot
 
@@ -9,21 +11,75 @@ func1(a Int, b Int, c Int) {
     boot_print_str("\n")
 }
 
-#
-#func2(a Int, b Int, c Int, d Int, e Int, f Int, g Int, h Int, i Int) {
-#    boot_print_int(a)
-#    boot_print_int(b)
-#    boot_print_int(c)
-#    boot_print_int(d)
-#    boot_print_int(e)
-#    boot_print_int(f)
-#    boot_print_int(g)
-#    boot_print_int(h)
-#    boot_print_int(i)
-#    boot_print_str("\n")
-#}
-#
+func2(a Int, b Int, c Int, d Int) {
+    boot_print_int(a)
+    boot_print_int(b)
+    boot_print_int(c)
+    boot_print_int(d)
+    boot_print_str("\n")
+}
+
+func3(a Int, b Int, c Int, d Int, e Int) {
+    boot_print_int(a)
+    boot_print_int(b)
+    boot_print_int(c)
+    boot_print_int(d)
+    boot_print_int(e)
+    boot_print_str("\n")
+}
+
+func4(a Int, b Int, c Int, d Int, e Int, f Int) {
+    boot_print_int(a)
+    boot_print_int(b)
+    boot_print_int(c)
+    boot_print_int(d)
+    boot_print_int(e)
+    boot_print_int(f)
+    boot_print_str("\n")
+}
+
+func5(a Int, b Int, c Int, d Int, e Int, f Int, g Int) {
+    boot_print_int(a)
+    boot_print_int(b)
+    boot_print_int(c)
+    boot_print_int(d)
+    boot_print_int(e)
+    boot_print_int(f)
+    boot_print_int(g)
+    boot_print_str("\n")
+}
+
+func6(a Int, b Int, c Int, d Int, e Int, f Int, g Int, h Int) {
+    boot_print_int(a)
+    boot_print_int(b)
+    boot_print_int(c)
+    boot_print_int(d)
+    boot_print_int(e)
+    boot_print_int(f)
+    boot_print_int(g)
+    boot_print_int(h)
+    boot_print_str("\n")
+}
+
+func7(a Int, b Int, c Int, d Int, e Int, f Int, g Int, h Int) {
+    boot_print_int(h)
+    boot_print_int(g)
+    boot_print_int(f)
+    boot_print_int(e)
+    boot_print_int(d)
+    boot_print_int(c)
+    boot_print_int(b)
+    boot_print_int(a)
+    boot_print_str("\n")
+}
+
 main() Int {
     func1(1, 2, 3)
+    func2(1, 2, 3, 4)
+    func3(1, 2, 3, 4, 5)
+    func4(1, 2, 3, 4, 5, 6)
+    func5(1, 2, 3, 4, 5, 6, 7)
+    func6(1, 2, 3, 4, 5, 6, 7, 8)
+    func7(1, 2, 3, 4, 5, 6, 7, 8)
     return 0
 }

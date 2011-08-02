@@ -128,8 +128,7 @@ private:
         return temp_;
     }
 
-    Operand load(Operand t2, int offset) {
-        t2.addr(offset);
+    Operand load(Operand t2) {
         block_->instr(LOAD, ++temp_, t2, 0);    
         return temp_;
     }

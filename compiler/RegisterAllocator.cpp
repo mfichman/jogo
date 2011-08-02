@@ -55,6 +55,8 @@ void RegisterAllocator::operator()(Function* func) {
     // Allocate registers for temporaries in the function.  This allocator
     // uses an optimistic, greedy graph coloring algorithm.
 
+    spilled_.clear();
+
     while (true) {
         spill_ = false;
         graph_.clear();
@@ -272,7 +274,6 @@ void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
         }
     }
 }
-#include <BasicBlockPrinter.hpp>
 
 void RegisterAllocator::spill_register(Function* func) {
     // Select and spill the register or temporary with the greatest number of
@@ -302,8 +303,6 @@ void RegisterAllocator::spill_register(Function* func) {
             }
         }
     }
-
-    std::cout << "spilling " << spilled << std::endl;
 
     spilled_.insert(spilled);
     assert(spilled);
@@ -348,10 +347,6 @@ void RegisterAllocator::spill_register(Function* func) {
         }
         block->swap(repl);  
     } 
-
-    Environment::Ptr env = new Environment;
-    BasicBlockPrinter::Ptr printer = new BasicBlockPrinter(env, machine_);
-    printer->operator()(func);
 }
 
 void RegisterVertex::neighbor_new(int temp) {

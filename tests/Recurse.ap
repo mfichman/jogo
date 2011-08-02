@@ -1,0 +1,21 @@
+# aptest run_program on
+# aptest print_tree off
+# aptest print_ir off
+
+import Boot
+
+
+count_down(n Int) {
+    if (n) {
+        boot_print_int(n)
+        boot_print_str("\n")
+        count_down(n-1)
+    }
+}
+
+main() Int {
+
+    count_down(10)
+    return 0
+    
+}

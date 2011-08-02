@@ -213,7 +213,8 @@ void BasicBlockGenerator::operator()(Identifier* expression) {
     return_ = variable(expression->identifier());
     if (!return_.temp()) {
         int offset = stack(expression->identifier());
-        return_ = load(0, offset); 
+        assert(offset);
+        return_ = load(Operand::addr(offset)); 
         // A load operand of zero means the variable must be loaded relative
         // to the base pointer.
 
@@ -359,7 +360,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     for (Formal* f = feature->formals(); f; f = f->next()) {
         if (index >= machine_->arg_regs()) {
             // Variable is passed on the stack
-            stack(f->name(), stack_.size()); 
+            stack(f->name(), stack_.size()+1); 
         } else {
             // Variable is passed by register; precolor the temporary for this
             // formal parameter by using a negative number.

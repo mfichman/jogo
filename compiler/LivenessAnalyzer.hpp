@@ -49,6 +49,7 @@ private:
     void operator()(BasicBlock* block); 
 
     Machine::Ptr machine_;
+    Function::Ptr function_;
     bool finished_;
     bool entry_block_;
     std::map<const Instruction*, std::set<int> > in_;

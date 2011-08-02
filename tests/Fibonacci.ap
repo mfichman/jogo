@@ -2,37 +2,20 @@
 
 import Boot
 
-#fib(n Int) Int {
-#    if (n == 0) { 
-#        return 0
-#    }
-#    if (n == 1) {
-#        return 1
-#    }
-#    return fib(n-1) + fib(n-2)
-#}
-#
-
-#fib(n Int) {
-#    boot_print_int(n)
-#    if (n == 0) {
-#        return
-#    }
-#    fib(n-1)
-#}
-
-fib(a Int, b Int, c Int) {
-    boot_print_int(c)
-    boot_print_int(a)
-    boot_print_int(b)
+fib(n Int) Int {
+    if (n == 0) { 
+        return 0
+    }
+    if (n == 1) {
+        return 1
+    }
+    return fib(n-1) + fib(n-2)
 }
 
 
 main() Int {
-    #boot_dummy(5, 7, 11)
-    fib(5, 7, 11)
-    boot_print_int(8)
-    boot_print_int(9)
+    x = fib(9)
+    boot_print_int(x)   
     boot_print_str("\n")
     return 0
 }

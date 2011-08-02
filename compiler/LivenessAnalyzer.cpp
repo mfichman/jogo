@@ -28,6 +28,7 @@ void LivenessAnalyzer::operator()(Function* feature) {
     in_.clear();
     out_.clear();
     finished_ = false;
+    function_ = feature;
 
     // Iterate the liveness computation until the all the liveness rules are
     // fully statisfied.
