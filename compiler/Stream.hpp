@@ -32,7 +32,7 @@ public:
         if(file == "-") {
             stream_ = &std::cout;
         } else {
-            stream_ = new std::fstream(file.c_str());
+            stream_ = new std::ofstream(file.c_str());
         }
     }
     ~Stream() {
@@ -40,6 +40,8 @@ public:
             delete stream_;
         }
     }
+
+    void flush() { stream_->flush(); }
 
     typedef Pointer<Stream> Ptr;    
 
@@ -53,7 +55,7 @@ private:
 
 template <typename T>
 Stream::Ptr operator<<(Stream::Ptr str, T object) {
-    //return *str->stream_ << object;
+    *str->stream_ << object;
     return str;
 }
 

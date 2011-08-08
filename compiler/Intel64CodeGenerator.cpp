@@ -43,22 +43,22 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
         string(s);
     }
 
-    out_ << "Hello"; //<< std::endl;
     for (String::Ptr s = environment_->integers(); s; s = s->next()) {
-        out_ << "    lit" << (void*)s.pointer() << " dq " << s << std::endl;
+        out_ << "    lit" << (void*)s.pointer() << " dq " << s << "\n";
     }
 
     for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
         m(this);
     }
 
-    out_ << "global _main" << std::endl;
-    out_ << "_main:" << std::endl;
-    out_ << "    push rbp" << std::endl;
-    out_ << "    mov rbp, rsp" << std::endl;
-    out_ << "    call main" << std::endl;
-    out_ << "    leave" << std::endl;
-    out_ << "    ret" << std::endl;
+    out_ << "global _main\n";
+    out_ << "_main:\n";
+    out_ << "    push rbp\n";
+    out_ << "    mov rbp, rsp\n";
+    out_ << "    call main\n";
+    out_ << "    leave\n";
+    out_ << "    ret\n";
+    out_->flush();
 }
 
 
@@ -76,12 +76,12 @@ void Intel64CodeGenerator::operator()(Module* feature) {
 
 void Intel64CodeGenerator::operator()(Function* feature) {
     if (feature->is_native()) {
-        out_ << "extern " << feature->label() << std::endl;
+        out_ << "extern " << feature->label() << "\n";
     } else if (feature->basic_blocks()) {
-        out_ << "global " << feature->label() << std::endl;
-        out_ << feature->label() << ":" << std::endl;
-        out_ << "    push rbp" << std::endl; 
-        out_ << "    mov rbp, rsp" << std::endl;
+        out_ << "global " << feature->label() << "\n";
+        out_ << feature->label() << ":\n";
+        out_ << "    push rbp\n"; 
+        out_ << "    mov rbp, rsp\n";
         if (feature->stack_vars()) {
             // Allocate space on the stack; ensure that the stack is aligned
             // to a 16-byte boundary.
@@ -89,7 +89,7 @@ void Intel64CodeGenerator::operator()(Function* feature) {
             if (stack % 16 != 0) {
                 stack += stack % 16;
             }
-            out_ << "    sub rsp, " << stack << std::endl;
+            out_ << "    sub rsp, " << stack << "\n";
         }
         
         for (int i = 0; i < feature->basic_blocks(); i++) {
@@ -112,7 +112,7 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
     BasicBlock::Ptr branch = block->branch();
     BasicBlock::Ptr next = block->next();
     if (block->label()) {
-        out_ << block->label() << ":" << std::endl;
+        out_ << block->label() << ":\n";
     }
     for (int i = 0; i < block->instrs(); i++) {
         const Instruction& instr = block->instr(i);
@@ -223,7 +223,7 @@ void Intel64CodeGenerator::store(Operand r1, Operand r2) {
     } else { // Literal
         literal(r2); 
     }
-    out_ << std::endl;
+    out_ << "\n";
 }
 
 void Intel64CodeGenerator::load(Operand r1, Operand r2) {
@@ -251,12 +251,12 @@ void Intel64CodeGenerator::load(Operand r1, Operand r2) {
             // pushed parameters using addresses 1..n.
         }
     }
-    out_ << std::endl;
+    out_ << "\n";
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Register* r2) {
     // Emits a simple 1-register instruction
-    out_ << "    " << instr << " " << r2 << std::endl;
+    out_ << "    " << instr << " " << r2 << "\n";
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Register* r1, Operand r2) {
@@ -268,7 +268,7 @@ void Intel64CodeGenerator::emit(const char* instr, Register* r1, Operand r2) {
     } else {
         literal(r2);
     }
-    out_  << std::endl;
+    out_  << "\n";
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, Operand r2) {
@@ -286,7 +286,7 @@ void Intel64CodeGenerator::emit(const char* instr, Operand r1, Operand r2) {
     } else {
         literal(r2);
     }
-    out_ << std::endl;
+    out_ << "\n";
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1) {
@@ -300,7 +300,7 @@ void Intel64CodeGenerator::emit(const char* instr, Operand r1) {
     } else {
         literal(r1);
     }
-    out_ << std::endl;
+    out_ << "\n";
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, Register* o2) {
@@ -309,7 +309,7 @@ void Intel64CodeGenerator::emit(const char* instr, Operand r1, Register* o2) {
     assert(-r1.temp() < machine_->regs());
     out_ << "    " << instr << " ";
     out_ << machine_->reg(-r1.temp()) << ", ";
-    out_ << o2 << std::endl;
+    out_ << o2 << "\n";
 }
 
 void Intel64CodeGenerator::emit(const char* instr, Operand r1, const char* imm) {
@@ -318,15 +318,15 @@ void Intel64CodeGenerator::emit(const char* instr, Operand r1, const char* imm) 
     assert(-r1.temp() < machine_->regs());
     out_ << "    " << instr << " ";
     out_ << machine_->reg(-r1.temp()) << ", ";
-    out_ << imm << std::endl;
+    out_ << imm << "\n";
 }
 
 void Intel64CodeGenerator::emit(const char* instr) {
-    out_ << "    " << instr << std::endl;
+    out_ << "    " << instr << "\n";
 }
 
 void Intel64CodeGenerator::emit(const char* instr, String* label) {
-    out_ << "    " << instr << " " << label << std::endl;
+    out_ << "    " << instr << " " << label << "\n";
 }
 
 void Intel64CodeGenerator::string(String* string) {
@@ -387,9 +387,9 @@ void Intel64CodeGenerator::string(String* string) {
         out += "\", 0x0";
     }
 
-    out_ << "lit" << (void*)string << ": " << std::endl;  
-    out_ << "    dq 0" << std::endl; // vtable
-    out_ << "    dq 1" << std::endl; // reference count
-    out_ << "    dq " << length << std::endl;
-    out_ << "    db " << out << std::endl;
+    out_ << "lit" << (void*)string << ": \n";  
+    out_ << "    dq 0\n"; // vtable
+    out_ << "    dq 1\n"; // reference count
+    out_ << "    dq " << length << "\n";
+    out_ << "    db " << out << "\n";
 }
