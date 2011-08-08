@@ -15,11 +15,11 @@ def setup_vim()
     options.add "syntax on"
     options.add "set tabstop=4"
     options.add "set expandtab"
-    #options.add "colors molokai"
-    #options.add "set noerrorbells"
-    #options.add "set number"
-    #options.add "set nowrap"
-    #options.add "set t_Co=256"
+    options.add "colors molokai"
+    options.add "set noerrorbells"
+    options.add "set number"
+    options.add "set nowrap"
+    options.add "set t_Co=256"
 
     File.open("#{ENV['HOME']}/.vimrc", "w") do |file|
         options.each do |option|
@@ -49,9 +49,9 @@ def setup_deps()
 
     puts "Installing dependencies"
     if system 'which apt-get'
-        `sudo apt-get install bison flex scons ruby valgrind` 
+        `sudo apt-get install bison flex scons ruby valgrind vim nasm` 
     elsif system 'which yum'
-        `sudo yum install bison flex scons ruby valgrind`
+        `sudo yum install bison flex scons ruby valgrind vim nasm`
     else
         puts "Package manager not supported." 
     end

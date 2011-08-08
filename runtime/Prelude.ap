@@ -47,3 +47,7 @@ Char < Value {
 
 Bool < Value {
 }
+
+exit(code Int) native {
+    # Exits the current process, and sets the process exit code to 'code'.
+}

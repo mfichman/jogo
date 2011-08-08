@@ -23,41 +23,38 @@
 #pragma once
 
 #include "Apollo.hpp"
-#include "Environment.hpp"
-#include "BasicBlock.hpp"
-#include "Object.hpp"
-#include "Machine.hpp"
-#include "Stream.hpp"
 #include <iostream>
 #include <fstream>
-#include <set>
 
-/* Generates code for Intel 64 machines */
-class Intel64CodeGenerator : public TreeNode::Functor {
+class Stream : public Object {
 public:
-    Intel64CodeGenerator(Environment* env);
-    typedef Pointer<Intel64CodeGenerator> Ptr;
-    
-private:
-    void operator()(Class* feature);
-    void operator()(Module* feature);
-    void operator()(Function* function);
-    void operator()(BasicBlock* block);
-    void emit(const char* instr, Register* r1);
-    void emit(const char* instr, Operand r1);
-    void emit(const char* instr, Register* r1, Operand r2);
-    void emit(const char* instr, Operand r1, Register* r2);
-    void emit(const char* instr, Operand r1, Operand r2);
-    void emit(const char* instr);
-    void emit(const char* instr, String* label);
-    void emit(const char* instr, Operand r1, const char* imm);
-    void arith(const char* instr, Operand res, Operand r1, Operand r2);
-    void load(Operand r1, Operand r2);
-    void store(Operand r1, Operand r2);
-    void literal(Operand lit);
-    void string(String* string);
+    Stream(const std::string& file) {
+        if(file == "-") {
+            stream_ = &std::cout;
+        } else {
+            stream_ = new std::fstream(file.c_str());
+        }
+    }
+    ~Stream() {
+        if(stream_ != &std::cout && stream_ != &std::cerr) {
+            delete stream_;
+        }
+    }
 
-    Environment::Ptr environment_;
-    Machine::Ptr machine_;
-    Stream::Ptr out_;
+    typedef Pointer<Stream> Ptr;    
+
+    template <typename T> friend
+    Stream::Ptr operator<<(Stream::Ptr stream, T object);
+    
+
+private:
+    std::ostream* stream_;
 };
+
+template <typename T>
+Stream::Ptr operator<<(Stream::Ptr str, T object) {
+    //return *str->stream_ << object;
+    return str;
+}
+
+

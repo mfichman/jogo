@@ -33,7 +33,7 @@ static const Register::Ptr EBP(new Register("rbp", 0));
 Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
     environment_(env),
     machine_(Machine::intel64()),
-    out_(env->output().c_str()) {
+    out_(new Stream(env->output().c_str())) {
 
     if (environment_->errors()) {
         return;
@@ -43,6 +43,7 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
         string(s);
     }
 
+    out_ << "Hello"; //<< std::endl;
     for (String::Ptr s = environment_->integers(); s; s = s->next()) {
         out_ << "    lit" << (void*)s.pointer() << " dq " << s << std::endl;
     }
