@@ -37,6 +37,8 @@
 
 int main(int argc, char** argv) {
     Environment::Ptr env(new Environment());
+    env->output("out.asm");
+    
     Options(env, argc, argv);
 
     std::fstream in((std::string(argv[1]) + ".ap").c_str());

@@ -25,7 +25,7 @@
 #include <stack>
 
 Environment::Environment() :
-    output_("out.asm"),
+    output_("-"),
     root_(new Module(Location(), name(""), this)),
     builtins_(new Module(Location(), name(""), this)),
     builtin_file_(new File(0, builtins_, this)),

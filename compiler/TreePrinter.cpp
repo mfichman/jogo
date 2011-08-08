@@ -36,6 +36,7 @@ TreePrinter::TreePrinter(Environment* environment) :
     for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
         m(this);
     }    
+    cout.flush();
 }
 
 void TreePrinter::print_tabs() {
@@ -75,7 +76,7 @@ void TreePrinter::print_comment(String* comment) {
                     std::cout << *begin++;
                 }
             }
-            std::cout << std::endl;
+            std::cout << "\n";
             counter = 2 * indent_level_;
             while (isspace(*begin)) {
                 begin++;
@@ -90,15 +91,15 @@ void TreePrinter::print_comment(String* comment) {
     while (*begin) {
         std::cout << *begin++;
     }
-    std::cout << std::endl;
+    std::cout << "\n";
 
     indent_level_--;
 }
 
 void TreePrinter::operator()(Module* feature) {
     indent_level_++;
-    cout << "Module" << endl;
-    print_tabs(); cout << "name: " << feature->name() << endl;
+    cout << "Module\n";
+    print_tabs(); cout << "name: " << feature->name() << "\n";
     int i = 0;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         const Location& loc = f->location();
@@ -113,9 +114,9 @@ void TreePrinter::operator()(Module* feature) {
 
 void TreePrinter::operator()(Class* feature) {
     indent_level_++; 
-    cout << "Class" << endl;
-    print_tabs(); cout << "name: " << feature->name() << endl;
-    print_tabs(); cout << "comment:" << endl;
+    cout << "Class\n";
+    print_tabs(); cout << "name: " << feature->name() << "\n";
+    print_tabs(); cout << "comment:\n";
     print_comment(feature->comment());
     int i = 0;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
@@ -128,27 +129,27 @@ void TreePrinter::operator()(Class* feature) {
 
 void TreePrinter::operator()(Formal* formal) {
     indent_level_++;
-    cout << "Formal" << endl;
+    cout << "Formal\n";
     print_tabs(); cout << "name: ";
-    cout << formal->name() << endl;
+    cout << formal->name() << "\n";
     print_tabs(); cout << "type: ";
-    cout << formal->type() << endl;
+    cout << formal->type() << "\n";
 
     indent_level_--;
 }
 
 void TreePrinter::operator()(StringLiteral* expression) {
     indent_level_++;
-    cout << "StringLiteral" << endl;
+    cout << "StringLiteral\n";
     print_tabs(); cout << "value: ";
-    cout << expression->value() << endl;
+    cout << expression->value() << "\n";
     indent_level_--;
 }
 
 void TreePrinter::operator()(IntegerLiteral* expression) {
     indent_level_++;
     cout << "IntegerLiteral(";
-    cout << expression->value() << ")" << endl;
+    cout << expression->value() << ")\n";
     indent_level_--;
 }
 
@@ -156,14 +157,14 @@ void TreePrinter::operator()(IntegerLiteral* expression) {
 void TreePrinter::operator()(FloatLiteral* expression) {
     indent_level_++;
     cout << "FloatLiteral(";
-    cout << expression->value() << ")" << endl;
+    cout << expression->value() << ")\n";
     indent_level_--;
 }
 
 void TreePrinter::operator()(BooleanLiteral* expression) {
     indent_level_++;
     cout << "BooleanLiteral(";
-    cout << expression->value() << ")" << endl;
+    cout << expression->value() << ")\n";
     indent_level_--;
 }
 
@@ -171,9 +172,9 @@ void TreePrinter::operator()(Binary* expression) {
     indent_level_++;
     Expression::Ptr left = expression->left();
     Expression::Ptr right = expression->right();
-    cout << "Binary" << endl;
+    cout << "Binary\n";
     print_tabs(); cout << "operation: ";
-    cout << expression->operation() << endl;
+    cout << expression->operation() << "\n";
     print_tabs(); cout << "left: ";
     left(this);
     print_tabs(); cout << "right: ";
@@ -184,7 +185,7 @@ void TreePrinter::operator()(Binary* expression) {
 void TreePrinter::operator()(Let* expression) {
     indent_level_++;
     Statement::Ptr block = expression->block();
-    cout << "Let" << endl;
+    cout << "Let\n";
     
     int i = 0;
     for (Statement::Ptr v = expression->variables(); v; v = v->next()) {
@@ -201,23 +202,23 @@ void TreePrinter::operator()(Let* expression) {
 void TreePrinter::operator()(Unary* expression) {
     indent_level_++;
     Expression::Ptr child = expression->child();
-    cout << "Unary" << endl;
+    cout << "Unary\n";
     print_tabs(); cout << "child: ";
     child(this);
     print_tabs(); cout << "operation: ";
-    cout << expression->operation() << endl;
+    cout << expression->operation() << "\n";
     indent_level_--;
 }
 
 void TreePrinter::operator()(Call* expression) {
     indent_level_++;
     Expression::Ptr arguments = expression->arguments();
-    cout << "Call" << endl;
+    cout << "Call\n";
     print_tabs(); cout << "name: ";
-    cout << expression->identifier() << endl;
+    cout << expression->identifier() << "\n";
     if (expression->scope()) {
         print_tabs(); cout << "module: ";
-        cout << expression->scope() << endl;
+        cout << expression->scope() << "\n";
     }
 
     int i = 0;
@@ -232,9 +233,9 @@ void TreePrinter::operator()(Call* expression) {
 void TreePrinter::operator()(Dispatch* expression) {
     indent_level_++;
     Expression::Ptr arguments = expression->arguments();
-    cout << "Dispatch" << endl;
+    cout << "Dispatch\n";
     print_tabs(); cout << "name: ";
-    cout << expression->identifier() << endl;
+    cout << expression->identifier() << "\n";
 
     int i = 0;
     for (Expression::Ptr a = arguments; a; a = a->next()) {
@@ -248,9 +249,9 @@ void TreePrinter::operator()(Dispatch* expression) {
 void TreePrinter::operator()(Construct* expression) {
     indent_level_++;
     Expression::Ptr arguments = expression->arguments();
-    cout << "Construct" << endl;
+    cout << "Construct\n";
     print_tabs(); cout << "type: ";
-    cout << expression->type() << endl;
+    cout << expression->type() << "\n";
 
     int i = 0;
     for (Expression::Ptr a = arguments; a; a = a->next()) {
@@ -263,20 +264,20 @@ void TreePrinter::operator()(Construct* expression) {
 
 void TreePrinter::operator()(Identifier* expression) {
     indent_level_++;
-    cout << "Identifier" << endl;
+    cout << "Identifier\n";
     print_tabs(); cout << "name: ";
-    cout << expression->identifier() << endl;
+    cout << expression->identifier() << "\n";
     indent_level_--; 
 }
 
 void TreePrinter::operator()(Empty* empty) {
-    cout << "Empty" << endl;
+    cout << "Empty\n";
 }
 
 void TreePrinter::operator()(Block* statement) {
     indent_level_++;
     Statement::Ptr children = statement->children();
-    cout << "Block" << endl;
+    cout << "Block\n";
 
     int i = 0;
     for (Statement::Ptr c = children; c; c = c->next()) {
@@ -290,7 +291,7 @@ void TreePrinter::operator()(Block* statement) {
 void TreePrinter::operator()(Simple* statement) {
     indent_level_++;
     Expression::Ptr expression = statement->expression();
-    cout << "Statement" << endl;
+    cout << "Statement\n";
     print_tabs(); cout << "expression: ";
     expression(this);
     indent_level_--;
@@ -300,7 +301,7 @@ void TreePrinter::operator()(While* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
-    cout << "While" << endl;
+    cout << "While\n";
     print_tabs(); cout << "guard: ";
     guard(this);
     print_tabs(); cout << "block: ";
@@ -313,7 +314,7 @@ void TreePrinter::operator()(Conditional* statement) {
     Expression::Ptr guard = statement->guard();
     Statement::Ptr true_branch = statement->true_branch();
     Statement::Ptr false_branch = statement->false_branch();
-    cout << "Conditional" << endl;
+    cout << "Conditional\n";
     print_tabs(); cout << "guard: ";
     guard(this);
     print_tabs(); cout << "true: ";
@@ -328,11 +329,11 @@ void TreePrinter::operator()(Conditional* statement) {
 void TreePrinter::operator()(Variable* statement) {
     indent_level_++;
     Expression::Ptr initializer = statement->initializer();
-    cout << "Variable" << endl;
+    cout << "Variable\n";
     print_tabs(); cout << "name: ";
-    cout << statement->identifier() << endl;
+    cout << statement->identifier() << "\n";
     print_tabs(); cout << "type: ";
-    cout << statement->type() << endl;
+    cout << statement->type() << "\n";
     print_tabs(); cout << "initializer: ";
     initializer(this);
     indent_level_--; 
@@ -341,7 +342,7 @@ void TreePrinter::operator()(Variable* statement) {
 void TreePrinter::operator()(Return* statement) {
     indent_level_++;
     Expression::Ptr expression = statement->expression();
-    cout << "Return" << endl;
+    cout << "Return\n";
     print_tabs(); cout << "expression: "; 
     expression(this);
     indent_level_--;
@@ -351,7 +352,7 @@ void TreePrinter::operator()(When* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
-    cout << "When" << endl;
+    cout << "When\n";
     print_tabs(); cout << "guard: ";
     guard(this);
     print_tabs(); cout << "block: ";
@@ -362,7 +363,7 @@ void TreePrinter::operator()(When* statement) {
 void TreePrinter::operator()(Case* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();
-    cout << "Case" << endl;
+    cout << "Case\n";
     print_tabs(); cout << "guard: ";
     guard(this);
 
@@ -378,7 +379,7 @@ void TreePrinter::operator()(Case* statement) {
 void TreePrinter::operator()(Fork* statement) {
     indent_level_++;
     Expression::Ptr expression = statement->expression();
-    cout << "Fork" << endl;
+    cout << "Fork\n";
     print_tabs(); cout << "expression: ";
     expression(this);
     indent_level_--;
@@ -387,7 +388,7 @@ void TreePrinter::operator()(Fork* statement) {
 void TreePrinter::operator()(Yield* statement) {
     indent_level_++;
     Expression::Ptr expression = statement->expression();
-    cout << "Yield" << endl;
+    cout << "Yield\n";
     print_tabs(); cout << "expression: ";
     expression(this);
     indent_level_--;
@@ -396,15 +397,15 @@ void TreePrinter::operator()(Yield* statement) {
 void TreePrinter::operator()(Function* feature) {
     indent_level_++;
     Statement::Ptr block = feature->block();
-    cout << "Function" << endl;
+    cout << "Function\n";
     print_tabs(); cout << "name: ";
-    cout << feature->name() << endl;
+    cout << feature->name() << "\n";
     print_tabs(); cout << "type: ";
-    cout << feature->type() << endl;
+    cout << feature->type() << "\n";
 
     if (Block* block = dynamic_cast<Block*>(feature->block())) {
         if (block->comment()) {
-            print_tabs(); cout << "comment:" << endl;
+            print_tabs(); cout << "comment:\n";
             print_comment(block->comment());
         }
     }
@@ -419,7 +420,7 @@ void TreePrinter::operator()(Function* feature) {
     if (block) { 
         block(this);
     } else {
-        cout << endl;
+        cout << "\n";
     }
     indent_level_--;
 }
@@ -427,11 +428,11 @@ void TreePrinter::operator()(Function* feature) {
 void TreePrinter::operator()(Attribute* feature) {
     indent_level_++;
     Expression::Ptr initializer = feature->initializer();
-    cout << "Attribute" << endl;
+    cout << "Attribute\n";
     print_tabs(); cout << "name: ";
-    cout << feature->name() << endl;
+    cout << feature->name() << "\n";
     print_tabs(); cout << "type: ";
-    cout << feature->type() << endl;
+    cout << feature->type() << "\n";
     print_tabs(); cout << "initializer: ";
     initializer(this);
     indent_level_--;
@@ -439,14 +440,14 @@ void TreePrinter::operator()(Attribute* feature) {
 
 void TreePrinter::operator()(Import* feature) {
     indent_level_++;
-    cout << "Import" << endl;
+    cout << "Import\n";
     print_tabs(); cout << "file: ";
-    cout << feature->file_name() << endl;
+    cout << feature->file_name() << "\n";
     print_tabs(); cout << "scope: ";
-    cout << feature->scope() << endl;
+    cout << feature->scope() << "\n";
     indent_level_--;
 }
 
 void TreePrinter::operator()(Type* type) {
-    cout << type << endl;
+    cout << type << "\n";
 }
