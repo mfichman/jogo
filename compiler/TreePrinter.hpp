@@ -25,6 +25,7 @@
 #include "Apollo.hpp"
 #include "TreeNode.hpp"
 #include "Environment.hpp"
+#include "Stream.hpp"
 
 class TreePrinter : public TreeNode::Functor {
 public:
@@ -66,6 +67,7 @@ private:
     void print_comment(String* comment);
 
     Environment::Ptr environment_;
+    Stream::Ptr out_;
     int indent_level_;
 };
 

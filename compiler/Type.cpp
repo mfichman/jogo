@@ -138,7 +138,7 @@ Class* Type::clazz() const {
 }
 
 
-std::ostream& operator<<(std::ostream& out, const Type* type) {
+Stream::Ptr operator<<(Stream::Ptr out, const Type* type) {
     if (!type) {
         return out << "<<notype>>";
     }   

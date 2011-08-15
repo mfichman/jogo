@@ -23,7 +23,7 @@
 #pragma once
 
 #include <String.hpp>
-#include <iostream>
+#include <Stream.hpp>
 #include <cassert>
 
 class Location {
@@ -49,4 +49,4 @@ public:
     int last_column;
 };
 
-std::ostream& operator<<(std::ostream& out, const Location& location);
+Stream::Ptr operator<<(Stream::Ptr out, const Location& location);

@@ -26,6 +26,8 @@
 #include "Environment.hpp"
 #include "Feature.hpp"
 #include "Object.hpp"
+#include "String.hpp"
+#include "Stream.hpp"
 #include <fstream>
 #include <set>
 
@@ -54,6 +56,7 @@ private:
     Environment::Ptr environment_;
     Module::Ptr module_;
     File::Ptr file_;
+    Stream::Ptr err_;
     int column_;
     std::fstream input_;
     void *scanner_;
@@ -62,6 +65,7 @@ private:
 
     void file(const std::string& prefix, const std::string& file);
     void dir(const std::string& prefix, const std::string& dir);
+    friend void yyerror(Location* loc, Parser* s, void* scan, const char* m);
 };
 
 /* Union used by Bison and Flex for actions */

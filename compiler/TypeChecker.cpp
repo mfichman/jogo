@@ -33,7 +33,8 @@
 using namespace std;
 
 TypeChecker::TypeChecker(Environment* environment) :
-    environment_(environment) {
+    environment_(environment),
+    err_(Stream::stderr()) {
 
     operator()(environment_->float_type());
     operator()(environment_->int_type());
@@ -46,6 +47,7 @@ TypeChecker::TypeChecker(Environment* environment) :
     for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
         m(this);
     }    
+    err_->flush();
 }
 
 void TypeChecker::operator()(Module* feature) {
@@ -64,17 +66,17 @@ void TypeChecker::operator()(Module* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
             if (features.find(func->name()) != features.end()) {
-                cerr << f->location();
-                cerr << "Duplicate definition of function '";
-                cerr << func->name() << "' in " << module_name << endl;
+                err_ << f->location();
+                err_ << "Duplicate definition of function '";
+                err_ << func->name() << "' in " << module_name << "\n";
                 environment_->error();
             }
             features.insert(func->name());
         } else if (Class::Ptr clazz = dynamic_cast<Class*>(f.pointer())) {
             if (features.find(clazz->name()) != features.end()) {
-                cerr << f->location();
-                cerr << "Duplicate definition of class '";
-                cerr << clazz->name() << "' in " << module_name << endl;
+                err_ << f->location();
+                err_ << "Duplicate definition of class '";
+                err_ << clazz->name() << "' in " << module_name << "\n";
                 environment_->error();
             }
             features.insert(clazz->name());
@@ -89,9 +91,9 @@ void TypeChecker::operator()(Class* feature) {
 
     // Make sure that a module with this name doesn't already exist.
     if (environment_->module(feature->type()->qualified_name())) {
-        cerr << feature->location();
-        cerr << "Type name '" << feature->type()->qualified_name();
-        cerr << "' conflicts with an existing module name" << endl; 
+        err_ << feature->location();
+        err_ << "Type name '" << feature->type()->qualified_name();
+        err_ << "' conflicts with an existing module name\n"; 
         environment_->error();
     }
 
@@ -100,21 +102,21 @@ void TypeChecker::operator()(Class* feature) {
     for (Type::Ptr m = feature->mixins(); m; m = m->next()) {
         if (m->clazz()) {
             if (feature->is_interface() && !m->is_interface()) {
-                cerr << m->location();
-                cerr << "Mix-in for interface '" << feature->name();
-                cerr << "' must be an interface" << endl;
+                err_ << m->location();
+                err_ << "Mix-in for interface '" << feature->name();
+                err_ << "' must be an interface\n";
                 environment_->error();
                 break;
             } else if (feature->is_object() && m->is_interface()) {
-                cerr << m->location();
-                cerr << "Mix-in for object type '" << feature->name();
-                cerr << "' cannot be an interface" << endl; 
+                err_ << m->location();
+                err_ << "Mix-in for object type '" << feature->name();
+                err_ << "' cannot be an interface\n"; 
                 environment_->error();
                 break;
             } else if (feature->is_value() && !m->is_value()) {
-                cerr << m->location();
-                cerr << "Mix-in for value type '" << feature->name();
-                cerr << "' must be a value type" << endl; 
+                err_ << m->location();
+                err_ << "Mix-in for value type '" << feature->name();
+                err_ << "' must be a value type\n"; 
                 environment_->error();
                 break;
             }
@@ -125,19 +127,19 @@ void TypeChecker::operator()(Class* feature) {
     // Check for illegal mixins for the current class.  Certain object types
     // cannot be combined, as below:
     if (feature->is_object() && feature->is_interface()) {
-        cerr << feature->location();
-        cerr << "Class has both object and interface mixins";
-        cerr << endl;    
+        err_ << feature->location();
+        err_ << "Class has both object and interface mixins";
+        err_ << "\n";    
         environment_->error();
     } else if (feature->is_interface() && feature->is_value()) {
-        cerr << feature->location();
-        cerr << "Class has both interfaces and value mixins";
-        cerr << endl;
+        err_ << feature->location();
+        err_ << "Class has both interfaces and value mixins";
+        err_ << "\n";
         environment_->error();
     } else if (feature->is_value() && feature->is_object()) {
-        cerr << feature->location();
-        cerr << "Class has both value and object mixins";
-        cerr << endl;
+        err_ << feature->location();
+        err_ << "Class has both value and object mixins";
+        err_ << "\n";
         environment_->error();
     }
 
@@ -147,9 +149,9 @@ void TypeChecker::operator()(Class* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             if (variable(attr->name())) {
-                cerr << f->location();
-                cerr << "Duplicate definition of attribute '";
-                cerr << attr->name() << "'" << endl;
+                err_ << f->location();
+                err_ << "Duplicate definition of attribute '";
+                err_ << attr->name() << "'\n";
                 environment_->error();
             } else {
                 variable(attr->name(), attr->type());
@@ -158,9 +160,9 @@ void TypeChecker::operator()(Class* feature) {
         }
         if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
             if (features.find(func->name()) != features.end()) {
-                cerr << f->location();
-                cerr << "Duplicate definition of function '";
-                cerr << func->name() << "'" << endl;
+                err_ << f->location();
+                err_ << "Duplicate definition of function '";
+                err_ << func->name() << "'\n";
                 environment_->error();
             }
             features.insert(func->name());
@@ -222,15 +224,15 @@ void TypeChecker::operator()(Binary* expression) {
         || environment_->name("and") == expression->operation()) {
 
         if (!left->type()->is_boolifiable()) {
-            cerr << left->location();
-            cerr << "Value types cannot be converted to 'Bool'";
-            cerr << endl;
+            err_ << left->location();
+            err_ << "Value types cannot be converted to 'Bool'";
+            err_ << "\n";
             environment_->error();
         }
         if (!right->type()->is_boolifiable()) {
-            cerr << right->location();
-            cerr << "Value types cannot be converted to 'Bool'";
-            cerr << endl;
+            err_ << right->location();
+            err_ << "Value types cannot be converted to 'Bool'";
+            err_ << "\n";
             environment_->error();
         }
     } else {
@@ -246,9 +248,9 @@ void TypeChecker::operator()(Unary* expression) {
     child(this);
     if (environment_->name("not") == expression->operation()) {
         if (!child->type()->is_boolifiable()) {
-            cerr << expression->location();
-            cerr << "Value types cannot be converted to 'Bool'";
-            cerr << endl;
+            err_ << expression->location();
+            err_ << "Value types cannot be converted to 'Bool'";
+            err_ << "\n";
             environment_->error();
         }
     } else {
@@ -271,10 +273,10 @@ void TypeChecker::operator()(Call* expression) {
     String::Ptr scope = expression->scope();
     Function::Ptr func = expression->file()->function(scope, id);
     if (!func) {
-        cerr << expression->location();
-        cerr << "Undeclared function '";
-        cerr << expression->identifier() << "'";
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Undeclared function '";
+        err_ << expression->identifier() << "'";
+        err_ << "\n";
         environment_->error();
         expression->type(environment_->no_type());
         return;
@@ -287,27 +289,27 @@ void TypeChecker::operator()(Call* expression) {
     Formal::Ptr formal = func->formals();
     while (arg && formal) {
         if (!arg->type()->subtype(formal->type())) {
-            cerr << arg->location();
-            cerr << "Argument does not conform to type '";
-            cerr << formal->type() << "'";
-            cerr << endl;
+            err_ << arg->location();
+            err_ << "Argument does not conform to type '";
+            err_ << formal->type() << "'";
+            err_ << "\n";
             environment_->error();
         }
         arg = arg->next();
         formal = formal->next();
     }
     if (arg) {
-        cerr << expression->location();
-        cerr << "Too many arguments to function ";
-        cerr << expression->identifier();
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Too many arguments to function ";
+        err_ << expression->identifier();
+        err_ << "\n";
         environment_->error();
     }
     if (formal) {
-        cerr << expression->location();
-        cerr << "Not enough arguments to function ";
-        cerr << expression->identifier();
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Not enough arguments to function ";
+        err_ << expression->identifier();
+        err_ << "\n";
         environment_->error();
     }
 }
@@ -327,10 +329,10 @@ void TypeChecker::operator()(Dispatch* expression) {
     }
     Class::Ptr clazz = receiver->type()->clazz();
     if (!clazz) {
-        cerr << expression->location();
-        cerr << "Undefined class '";
-        cerr << receiver->type() << "'";
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Undefined class '";
+        err_ << receiver->type() << "'";
+        err_ << "\n";
         environment_->error();
         expression->type(environment_->no_type());
         return;
@@ -339,11 +341,11 @@ void TypeChecker::operator()(Dispatch* expression) {
     // Look up the function using the class object.
     Function::Ptr func = clazz->function(expression->identifier()); 
     if (!func) {
-        cerr << expression->location();
-        cerr << "Undeclared function '";
-        cerr << expression->identifier() << "' in class '";
-        cerr << clazz->type() << "'";
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Undeclared function '";
+        err_ << expression->identifier() << "' in class '";
+        err_ << clazz->type() << "'";
+        err_ << "\n";
         environment_->error();
         expression->type(environment_->no_type());
         return;
@@ -359,27 +361,27 @@ void TypeChecker::operator()(Dispatch* expression) {
             ft = receiver->type();
         }
         if (!arg->type()->subtype(ft)) {
-            cerr << arg->location();
-            cerr << "Argument does not conform to type '";
-            cerr << formal->type() << "'";
-            cerr << endl;
+            err_ << arg->location();
+            err_ << "Argument does not conform to type '";
+            err_ << formal->type() << "'";
+            err_ << "\n";
             environment_->error();
         }
         arg = arg->next();
         formal = formal->next();
     }
     if (arg) {
-        cerr << expression->location();
-        cerr << "Too many arguments to function '";
-        cerr << expression->identifier() << "'";
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Too many arguments to function '";
+        err_ << expression->identifier() << "'";
+        err_ << "\n";
         environment_->error();
     }
     if (formal) {
-        cerr << expression->location();
-        cerr << "Not enough arguments to function '";
-        cerr << expression->identifier() << "'";
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Not enough arguments to function '";
+        err_ << expression->identifier() << "'";
+        err_ << "\n";
         environment_->error();
     }
 }
@@ -393,19 +395,19 @@ void TypeChecker::operator()(Construct* expression) {
     // Look up constructor class
     Class::Ptr clazz = expression->type()->clazz(); 
     if (!clazz) {
-        cerr << expression->location();
-        cerr << "Undefined class '";
-        cerr << expression->type() << "'";
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Undefined class '";
+        err_ << expression->type() << "'";
+        err_ << "\n";
         environment_->error();
         expression->type(environment_->no_type());
         return;
     }
     if (clazz->is_interface()) {
-        cerr << expression->location();
-        cerr << "Constructor called for interface type '";
-        cerr << clazz->name() << "'";
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Constructor called for interface type '";
+        err_ << clazz->name() << "'";
+        err_ << "\n";
         environment_->error();
         expression->type(environment_->no_type());
         return;
@@ -419,27 +421,27 @@ void TypeChecker::operator()(Construct* expression) {
     Formal::Ptr formal = constr ? constr->formals() : 0;
     while (arg && formal) {
         if (!arg->type()->subtype(formal->type())) {
-            cerr << arg->location();
-            cerr << "Argument does not conform to type '";
-            cerr << formal->type() << "'";
-            cerr << endl;
+            err_ << arg->location();
+            err_ << "Argument does not conform to type '";
+            err_ << formal->type() << "'";
+            err_ << "\n";
             environment_->error();
         }
         arg = arg->next();
         formal = formal->next();
     } 
     if (arg) {
-        cerr << expression->location();
-        cerr << "Too many arguments to constructor '";
-        cerr << expression->type() << "'";
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Too many arguments to constructor '";
+        err_ << expression->type() << "'";
+        err_ << "\n";
         environment_->error();
     }
     if (formal) {
-        cerr << expression->location();
-        cerr << "Not enough arguments to constructor '";
-        cerr << expression->type() << "'";
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Not enough arguments to constructor '";
+        err_ << expression->type() << "'";
+        err_ << "\n";
         environment_->error();
     }
 }
@@ -450,11 +452,11 @@ void TypeChecker::operator()(Identifier* expression) {
     // prevent further error messages.
     Type::Ptr type = variable(expression->identifier());
     if (!type) {
-        cerr << expression->location();
-        cerr << "Undeclared identifier \"";
-        cerr << expression->identifier();
-        cerr << "\"";
-        cerr << endl;
+        err_ << expression->location();
+        err_ << "Undeclared identifier \"";
+        err_ << expression->identifier();
+        err_ << "\"";
+        err_ << "\n";
         environment_->error();
         expression->type(environment_->no_type());
     } else {
@@ -473,9 +475,9 @@ void TypeChecker::operator()(Block* statement) {
     return_ = 0;
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
         if (return_) {
-            cerr << s->location();
-            cerr << "Statement is unreachable";
-            cerr << endl;
+            err_ << s->location();
+            err_ << "Statement is unreachable";
+            err_ << "\n";
             environment_->error();
             break;
         } else {
@@ -499,10 +501,10 @@ void TypeChecker::operator()(While* statement) {
     Type* t = guard->type();
     assert(t);
     if (!environment_->bool_type()->equals(guard->type())) {
-        cerr << statement->location();
-        cerr << "While statement guard expression must have type '";
-        cerr << environment_->bool_type() << "'";
-        cerr << endl;
+        err_ << statement->location();
+        err_ << "While statement guard expression must have type '";
+        err_ << environment_->bool_type() << "'";
+        err_ << "\n";
         environment_->error();
     }
     block(this);
@@ -516,9 +518,9 @@ void TypeChecker::operator()(Conditional* statement) {
     Statement::Ptr false_branch = statement->false_branch();
     guard(this);
     if (!guard->type()->is_boolifiable()) {
-        cerr << guard->location();
-        cerr << "Value types cannot be converted to 'Bool'";
-        cerr << endl;
+        err_ << guard->location();
+        err_ << "Value types cannot be converted to 'Bool'";
+        err_ << "\n";
         environment_->error();
     }
     true_branch(this);
@@ -551,9 +553,9 @@ void TypeChecker::operator()(Variable* statement) {
         
     // Attempt to assign void to a variable during initialization.
     if (init->type() && init->type()->equals(environment_->void_type())) {
-        cerr << init->location();
-        cerr << "Void value assigned to variable '";
-        cerr << statement->identifier() << "'" << endl;
+        err_ << init->location();
+        err_ << "Void value assigned to variable '";
+        err_ << statement->identifier() << "'\n";
         environment_->error();
         variable(statement->identifier(), environment_->no_type());
         return;
@@ -563,9 +565,9 @@ void TypeChecker::operator()(Variable* statement) {
         // The variable was declared with an explicit type, but the variable
         // already exists.
         if (type) {
-            cerr << statement->location();
-            cerr << "Duplicate definition of variable '";
-            cerr << statement->identifier() << "'" << endl;
+            err_ << statement->location();
+            err_ << "Duplicate definition of variable '";
+            err_ << statement->identifier() << "'\n";
             environment_->error();
             return;
         }
@@ -573,9 +575,9 @@ void TypeChecker::operator()(Variable* statement) {
         // The variable was declared with an explicit type, and the init
         // does not conform to that type.
         if (init->type() && !init->type()->subtype(statement->type())) {
-            cerr << init->location();
-            cerr << "Expression does not conform to type '";
-            cerr << statement->type() << "'" << endl;
+            err_ << init->location();
+            err_ << "Expression does not conform to type '";
+            err_ << statement->type() << "'\n";
             environment_->error();
             return;
         }
@@ -586,10 +588,10 @@ void TypeChecker::operator()(Variable* statement) {
         // The variable was already declared, but the init type is not
         // compatible with the variable type.
         if (type && !init->type()->subtype(type)) {
-            cerr << init->location();
-            cerr << "Expression does not conform to type '";
-            cerr << type << "' in assignment of '";
-            cerr << statement->identifier() << "'" << endl;
+            err_ << init->location();
+            err_ << "Expression does not conform to type '";
+            err_ << type << "' in assignment of '";
+            err_ << statement->identifier() << "'\n";
             environment_->error();
             return;
         }
@@ -608,10 +610,10 @@ void TypeChecker::operator()(Return* statement) {
         return;
     }
     if (!expression->type()->subtype(scope_->type())) {
-        cerr << statement->location();
-        cerr << "Return must conform to type '";
-        cerr << scope_->type() << "'";
-        cerr << endl;
+        err_ << statement->location();
+        err_ << "Return must conform to type '";
+        err_ << scope_->type() << "'";
+        err_ << "\n";
         environment_->error();
     }
 }
@@ -639,10 +641,10 @@ void TypeChecker::operator()(Case* statement) {
         b(this);
         When::Ptr when = static_cast<When*>(b.pointer());
         if (!guard->type()->equals(when->guard()->type())) {
-            cerr << statement->location();
-            cerr << "Case expression does not conform to type '";
-            cerr << guard->type() << "'";
-            cerr << endl;
+            err_ << statement->location();
+            err_ << "Case expression does not conform to type '";
+            err_ << guard->type() << "'";
+            err_ << "\n";
             environment_->error();
         }
     }
@@ -693,26 +695,26 @@ void TypeChecker::operator()(Function* feature) {
     // function.  Prototypes (as in interface definitions) should not have a
     // body.
     if (block && is_interface) {
-        cerr << block->location();
-        cerr << "Interface function '" << feature->name();
-        cerr << "' has a body" << endl;
+        err_ << block->location();
+        err_ << "Interface function '" << feature->name();
+        err_ << "' has a body\n";
         environment_->error();
     } else if (block && block->children() && is_native) {
-        cerr << feature->location();
-        cerr << "Native function '" << feature->name();
-        cerr << "' has a body" << endl;
+        err_ << feature->location();
+        err_ << "Native function '" << feature->name();
+        err_ << "' has a body\n";
         environment_->error();
     } else if (block && !is_native) {
         block(this); 
         if (type != environment_->void_type() && !return_) {
-            cerr << feature->location();
-            cerr << "Function '" << feature->name();
-            cerr << "' must return a value" << endl;     
+            err_ << feature->location();
+            err_ << "Function '" << feature->name();
+            err_ << "' must return a value\n";     
             environment_->error();
         }
     } else if (!block && !is_interface && !is_native) {
-        cerr << feature->location();
-        cerr << "Function '" << feature->name() << "' has no body" << endl;
+        err_ << feature->location();
+        err_ << "Function '" << feature->name() << "' has no body\n";
         environment_->error();
     }
         
@@ -738,10 +740,10 @@ void TypeChecker::operator()(Attribute* feature) {
 
     // Make sure that the initializer and the feature type conform.
     if (initializer->type() && !initializer->type()->subtype(feature->type())) {
-        cerr << feature->location();
-        cerr << "Expression does not conform to type '";
-        cerr << initializer->type() << "'";
-        cerr << endl;
+        err_ << feature->location();
+        err_ << "Expression does not conform to type '";
+        err_ << initializer->type() << "'";
+        err_ << "\n";
         environment_->error();
     }
 
@@ -763,9 +765,9 @@ void TypeChecker::operator()(Type* type) {
         return;
     }
     if (!type->clazz()) {
-        cerr << type->location();
-        cerr << "Undefined type '" << type << "'";
-        cerr << endl;
+        err_ << type->location();
+        err_ << "Undefined type '" << type << "'";
+        err_ << "\n";
         environment_->error();
         return;
     }
@@ -773,9 +775,9 @@ void TypeChecker::operator()(Type* type) {
     // Check generics for type resolution
     for (Generic::Ptr g = type->generics(); g; g = g->next()) {
         if (!g->type()->clazz() && !type->equals(environment_->self_type())) {
-            cerr << type->location() << endl;
-            cerr << "Undefined type '" << type << "'";
-            cerr << endl;
+            err_ << type->location() << "\n";
+            err_ << "Undefined type '" << type << "'";
+            err_ << "\n";
             environment_->error();
         }
     }

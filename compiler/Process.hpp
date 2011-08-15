@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Matt Fichman
+ * Copyright (c) 2010 Matt Fichman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -14,22 +14,24 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */  
 
-#include "Location.hpp"
-#include <iostream>
+#pragma once
 
-Stream::Ptr operator<<(Stream::Ptr out, const Location& location) {
-    if (location.file_name) {
-        out << location.file_name << ":";
-    }
-    out << location.first_line << ":";
-    out << location.first_column << ": ";
-    return out;
-}
+#include "Apollo.hpp"
+#include <vector>
 
+class Process : public Object {
+public:
+    Process(const std::string& command) : command_(command) {} 
+    void arg(const std::string& arg) { arg_.push_back(arg); }
+    int status() const;
 
+private:
+    std::string command_;
+    std::vector<std::string> arg_; 
+};

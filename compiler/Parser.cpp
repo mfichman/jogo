@@ -34,7 +34,8 @@ int yylex_destroy(void*);
 void yyset_extra(Parser*, void*);
 
 Parser::Parser(Environment* env) :
-	environment_(env) {
+	environment_(env),
+    err_(Stream::stderr()) {
 
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));
@@ -80,9 +81,9 @@ void Parser::input(const std::string& import) {
     }
     environment_->error("Could not find " + import);
     //std::cerr << import->location();
-    std::cerr << "Module '" << import << "' not found:" << std::endl;
+    err_ << "Module '" << import << "' not found:\n";
     for (int i = 0; i < tests.size(); i++) {
-        std::cerr << "    no file '" << tests[i] << "'" << std::endl;
+        err_ << "    no file '" << tests[i] << "'\n";
     }
 }
 
@@ -141,7 +142,7 @@ void Parser::dir(const std::string& prefix, const std::string& dir) {
 void yyerror(Location* loc, Parser* self, void* scanner, const char* msg) {
 
     self->environment()->error(msg);
-	std::cerr << self->file()->name() << ":" << loc->first_line << ":";
-	std::cerr << loc->first_column << ": ";
-	std::cerr << (char)toupper(msg[0]) << msg + 1 << std::endl;	
+	self->err_ << self->file()->name() << ":" << loc->first_line << ":";
+	self->err_ << loc->first_column << ": ";
+	self->err_ << (char)toupper(msg[0]) << msg + 1 << "\n";	
 }

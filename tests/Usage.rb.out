@@ -1,6 +1,7 @@
 Usage: ../bin/apollo [OPTIONS] FILE...
 
-   -a, --assembly       Skip link stage and output assembly.
+   -a, --assembly       Compile, but do not assemble or link.
+   -c, --compile        Compile and assemble, but do not link.
    -d, --dump FILE      Dump the AST to FILE.
    -h, --help           Print this help message.
    -l, --library FILE   Generate a shared library and write it to FILE.
@@ -9,7 +10,8 @@ Usage: ../bin/apollo [OPTIONS] FILE...
 
 Usage: ../bin/apollo [OPTIONS] FILE...
 
-   -a, --assembly       Skip link stage and output assembly.
+   -a, --assembly       Compile, but do not assemble or link.
+   -c, --compile        Compile and assemble, but do not link.
    -d, --dump FILE      Dump the AST to FILE.
    -h, --help           Print this help message.
    -l, --library FILE   Generate a shared library and write it to FILE.

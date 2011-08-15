@@ -24,6 +24,7 @@
 
 #include "Apollo.hpp"
 #include "Object.hpp"
+#include "Stream.hpp"
 #include <string>
 #include <sstream>
 
@@ -43,7 +44,7 @@ private:
     String::Ptr next_;
 };
 
-inline std::ostream& operator<<(std::ostream& out, const String* name) {
+inline Stream::Ptr operator<<(Stream::Ptr out, const String* name) {
     out << name->string();
     return out;
 }

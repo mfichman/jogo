@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Matt Fichman
+ * Copyright (c) 2010 Matt Fichman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -20,16 +20,44 @@
  * IN THE SOFTWARE.
  */  
 
-#include "Location.hpp"
-#include <iostream>
+#include "Process.hpp"
+#ifdef WINDOWS
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
-Stream::Ptr operator<<(Stream::Ptr out, const Location& location) {
-    if (location.file_name) {
-        out << location.file_name << ":";
+int Process::status() const {
+    // Runs the process using the specified command and arguments, and returns
+    // the process exit code.
+#ifdef WINDOWS
+    std::string args;
+    for (int i = 0; i < arg_.size(); i++) {
+        args += arg_[i];
     }
-    out << location.first_line << ":";
-    out << location.first_column << ": ";
-    return out;
+    STARTUPINFO sinfo;
+    PROCESS_INFORMATION pinfo;
+    if (!CreateProcess(command_.c_str(), args.c_str(), NULL, NULL, false, 0, 
+            NULL, &sinfo, &pinfo)) {
+        return 1; 
+    }
+    assert(!"Not implemented");
+#else
+    pid_t pid = fork();    
+    if (pid < 0) {
+        return pid; 
+    } else if (pid) {
+        int status;
+        waitpid(pid, &status, 0);
+        return status;
+    } else {
+        std::vector<const char*> arg; 
+        for (int i = 0; i < arg_.size(); i++) {
+            arg.push_back(arg_[i].c_str());
+        }
+        arg.push_back(0);
+        execvp(command_.c_str(), (char**)arg.front());
+        return 0;
+    }
+#endif 
 }
-
-

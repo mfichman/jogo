@@ -28,6 +28,7 @@
 #include "RegisterAllocator.hpp"
 #include "LivenessAnalyzer.hpp"
 #include "BasicBlock.hpp"
+#include "Stream.hpp"
 #include <set>
 
 class BasicBlockPrinter : public TreeNode::Functor {
@@ -68,6 +69,7 @@ private:
     void operator()(BasicBlock* block);
 
     Environment::Ptr environment_;
+    Stream::Ptr out_;
     LivenessAnalyzer::Ptr liveness_;
     Module::Ptr module_;
     Class::Ptr class_;

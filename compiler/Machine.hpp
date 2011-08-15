@@ -24,6 +24,7 @@
 
 #include "Apollo.hpp"
 #include "Object.hpp"
+#include "Stream.hpp"
 #include <vector>
 
 /* Represents a general-purpose register in a machine architecture */
@@ -43,7 +44,7 @@ private:
     int id_; 
 };
 
-inline std::ostream& operator<<(std::ostream& out, Register* reg) {
+inline Stream::Ptr operator<<(Stream::Ptr out, Register* reg) {
     return out << reg->name();
 }
 

@@ -23,40 +23,67 @@
 #pragma once
 
 #include "Apollo.hpp"
-#include <iostream>
-#include <fstream>
+#include <vector>
 
+// Adapter for low-level I/O.  This class is used instead of C++ iostreams
+// because it can support pipe output.
 class Stream : public Object {
 public:
-    Stream(const std::string& file) {
-        if(file == "-") {
-            stream_ = &std::cout;
-        } else {
-            stream_ = new std::ofstream(file.c_str());
-        }
-    }
-    ~Stream() {
-        if(stream_ != &std::cout && stream_ != &std::cerr) {
-            delete stream_;
-        }
-    }
+    Stream(const std::string& file);
+#ifdef WINDOWS
+    Stream(HANDLE fd);
+#else
+    Stream(int fd);
+#endif
+    ~Stream();
 
-    void flush() { stream_->flush(); }
+    static Stream* stdout();
+    static Stream* stderr();
+
+    operator bool() { return error_; }
+    void write(const char* data, int len);
+    void flush();
 
     typedef Pointer<Stream> Ptr;    
 
-    template <typename T> friend
-    Stream::Ptr operator<<(Stream::Ptr stream, T object);
-    
-
 private:
-    std::ostream* stream_;
+    void write_direct(const char* data, int len);
+
+    std::vector<char> buffer_;
+#ifdef WINDOWS
+    HANDLE fd_;
+#else
+    int fd_;
+#endif
+    bool error_;
+    
 };
 
-template <typename T>
-Stream::Ptr operator<<(Stream::Ptr str, T object) {
-    *str->stream_ << object;
-    return str;
+inline Stream::Ptr operator<<(Stream::Ptr s, const char* str) {
+    s->write(str, strlen(str));
+    return s;
 }
 
+inline Stream::Ptr operator<<(Stream::Ptr s, const std::string& str) {
+    s->write(str.c_str(), str.length());
+    return s;
+}
 
+inline Stream::Ptr operator<<(Stream::Ptr s, const void* ptr) {
+    std::stringstream ss;
+    ss << ptr;
+    s << ss.str();
+    return s;
+}
+
+inline Stream::Ptr operator<<(Stream::Ptr s, char val) {
+    s->write(&val, 1);
+    return s;
+}
+
+inline Stream::Ptr operator<<(Stream::Ptr s, int val) {
+    std::stringstream ss;
+    ss << val;
+    s << ss.str();
+    return s;
+}

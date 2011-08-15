@@ -27,6 +27,7 @@ using namespace std;
 
 BasicBlockPrinter::BasicBlockPrinter(Environment* env, Machine* mach) :
     environment_(env),
+    out_(Stream::stdout()),
     liveness_(new LivenessAnalyzer(mach)) {
 
     if (environment_->errors()) {
@@ -35,6 +36,8 @@ BasicBlockPrinter::BasicBlockPrinter(Environment* env, Machine* mach) :
     for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
         m(this);
     }
+
+    out_->flush();
 }
 
 void BasicBlockPrinter::operator()(Module* feature) {
@@ -58,7 +61,7 @@ void BasicBlockPrinter::operator()(Function* feature) {
     liveness_->operator()(feature);
 
     if (feature->basic_blocks()) {
-        cout << feature->label() << ":" << std::endl;
+        out_ << feature->label() << ":\n";
         for (int i = 0; i < feature->basic_blocks(); i++) {
             operator()(feature->basic_block(i));
         } 
@@ -69,82 +72,82 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
     BasicBlock::Ptr branch = block->branch();
     BasicBlock::Ptr next = block->next();
     if (block->label()) {
-        cout << block->label() << ":" << endl;
+        out_ << block->label() << ":\n";
     }
     for (int i = 0; i < block->instrs(); i++) {
         const Instruction& instr = block->instr(i);
         Operand res = instr.result();
         Operand first = instr.first();
         Operand second = instr.second();
-        cout << "    ";
+        out_ << "    ";
         switch (instr.opcode()) {
-        case ADD: cout << res << " <- " << first << " + " << second; break;
-        case SUB: cout << res << " <- " << first << " - " << second; break;
-        case MUL: cout << res << " <- " << first << " * " << second; break; 
-        case DIV: cout << res << " <- " << first << " / " << second; break; 
-        case ANDB: cout << res << " <- " << first << " & " << second; break;
-        case ORB: cout << res << " <- " << first << " | " << second; break; 
-        case NOTB: cout << res << " <- not " << first; break;
-        case PUSH: cout << "push " << first; break; 
-        case POP: cout << res << " <- " << "pop"; break;
-        case STORE: cout << "store " << res << ", " << first; break;
-        case LOAD: cout << res << " <- " << "load " << first; break;
-        case MOV: cout << res << " <- " << first; break;
-        case CALL: cout << "call " << res.label(); break;
-        case JUMP: cout << "jump " << branch->label(); break;
+        case ADD: out_ << res << " <- " << first << " + " << second; break;
+        case SUB: out_ << res << " <- " << first << " - " << second; break;
+        case MUL: out_ << res << " <- " << first << " * " << second; break; 
+        case DIV: out_ << res << " <- " << first << " / " << second; break; 
+        case ANDB: out_ << res << " <- " << first << " & " << second; break;
+        case ORB: out_ << res << " <- " << first << " | " << second; break; 
+        case NOTB: out_ << res << " <- not " << first; break;
+        case PUSH: out_ << "push " << first; break; 
+        case POP: out_ << res << " <- " << "pop"; break;
+        case STORE: out_ << "store " << res << ", " << first; break;
+        case LOAD: out_ << res << " <- " << "load " << first; break;
+        case MOV: out_ << res << " <- " << first; break;
+        case CALL: out_ << "call " << res.label(); break;
+        case JUMP: out_ << "jump " << branch->label(); break;
         case BNE:
-            cout << "if " << first << " != " << second << " goto ";
-            cout << branch->label(); 
+            out_ << "if " << first << " != " << second << " goto ";
+            out_ << branch->label(); 
             break;
         case BE:
-            cout << "if " << first << " == " << second << " goto ";
-            cout << branch->label(); 
+            out_ << "if " << first << " == " << second << " goto ";
+            out_ << branch->label(); 
             break;
         case BZ:
-            cout << "if not " << first << " goto ";
-            cout << branch->label();
+            out_ << "if not " << first << " goto ";
+            out_ << branch->label();
             break;
         case BNZ:
-            cout << "if " << first << " goto ";
-            cout << branch->label();
+            out_ << "if " << first << " goto ";
+            out_ << branch->label();
             break;
         case BG:
-            cout << "if " << first << " > " << second << " goto ";
-            cout << branch->label();
+            out_ << "if " << first << " > " << second << " goto ";
+            out_ << branch->label();
             break;
         case BGE:
-            cout << "if " << first << " >= " << second << " goto ";
-            cout << branch->label();
+            out_ << "if " << first << " >= " << second << " goto ";
+            out_ << branch->label();
             break;
         case BL:
-            cout << "if " << first << " < " << second << " goto ";
-            cout << branch->label();
+            out_ << "if " << first << " < " << second << " goto ";
+            out_ << branch->label();
             break;
         case BLE:
-            cout << "if " << first << " <= " << second << "goto ";
-            cout << branch->label();
+            out_ << "if " << first << " <= " << second << "goto ";
+            out_ << branch->label();
             break;
-        case RET: cout << "ret"; break;
+        case RET: out_ << "ret"; break;
         case NOP: break;
         }
     
-        cout << " {";
+        out_ << " {";
         set<int>& live = liveness_->live_in(block->instr(i));
         for (set<int>::iterator i = live.begin(); i != live.end();) {
             if (*i == 0) {
                 ++i;
             } else {
                 if (*i > 0) {
-                    cout << 't' << *i;
+                    out_ << 't' << *i;
                 } else {
-                    cout << 'r' << -*i;
+                    out_ << 'r' << -*i;
                 }
                 if (++i != live.end()) {
-                    cout << ", ";
+                    out_ << ", ";
                 }
             }
         }
-        cout << "}" << endl;
+        out_ << "}\n";
     }
 }
 

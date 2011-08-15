@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Matt Fichman
+ * Copyright (c) 2010 Matt Fichman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -20,16 +20,26 @@
  * IN THE SOFTWARE.
  */  
 
-#include "Location.hpp"
-#include <iostream>
+#include "BasicBlock.hpp"
 
-Stream::Ptr operator<<(Stream::Ptr out, const Location& location) {
-    if (location.file_name) {
-        out << location.file_name << ":";
+Stream::Ptr operator<<(Stream::Ptr out, const Operand& op) {
+    if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(op.literal())) {
+        return out << le->value();
     }
-    out << location.first_line << ":";
-    out << location.first_column << ": ";
-    return out;
+    if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(op.literal())) {
+        return out << le->value();
+    }
+    if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(op.literal())) {
+        return out << le->value();
+    }
+    if (StringLiteral* le = dynamic_cast<StringLiteral*>(op.literal())) {
+        return out << "'" << le->value() << "'";
+    }
+    if (op.addr()) {
+        return out << "mem[" << op.addr() << "]";
+    }
+    if (op.temp() > 0) {
+        return out << "t" << op.temp();
+    }
+    return out << "r" << -op.temp();
 }
-
-

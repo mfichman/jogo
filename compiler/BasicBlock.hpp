@@ -53,27 +53,7 @@ private:
     int addr_;
 };
 
-inline std::ostream& operator<<(std::ostream& out, const Operand& op) {
-    if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(op.literal())) {
-        return out << le->value();
-    }
-    if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(op.literal())) {
-        return out << le->value();
-    }
-    if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(op.literal())) {
-        return out << le->value();
-    }
-    if (StringLiteral* le = dynamic_cast<StringLiteral*>(op.literal())) {
-        return out << "'" << le->value() << "'";
-    }
-    if (op.addr()) {
-        return out << "mem[" << op.addr() << "]";
-    }
-    if (op.temp() > 0) {
-        return out << "t" << op.temp();
-    }
-    return out << "r" << -op.temp();
-}
+Stream::Ptr operator<<(Stream::Ptr out, const Operand& op);
 
 /* Enumeration of opcodes available to the TAC code */
 enum Opcode { 

@@ -11,4 +11,3 @@ SyntaxBad.ap:28:5: Syntax error, unexpected TYPE, expecting IDENTIFIER or OPERAT
 SyntaxBad.ap:29:11: Syntax error, unexpected ADD_ASSIGN, expecting '('
 SyntaxBad.ap:30:7: Syntax error, unexpected COLON, expecting '('
 SyntaxBad.ap:34:2: Syntax error, unexpected $end, expecting IDENTIFIER or OPERATOR or '}'
-

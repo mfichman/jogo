@@ -22,7 +22,7 @@
 
 #include "Apollo.hpp"
 
-class Options {
+class Options : public Object {
 public:
     Options(Environment* env, int argc, char** argv);
 

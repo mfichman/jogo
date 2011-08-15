@@ -74,6 +74,7 @@ private:
     void exit_scope();
 
     Environment::Ptr environment_;
+    Stream::Ptr err_;
     std::vector<std::map<String::Ptr, Type::Ptr> > variable_;
     Module::Ptr module_;
     Class::Ptr class_;
