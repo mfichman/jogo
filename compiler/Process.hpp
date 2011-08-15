@@ -23,15 +23,31 @@
 #pragma once
 
 #include "Apollo.hpp"
+#include "Stream.hpp"
 #include <vector>
+#ifdef WINDOWS
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 class Process : public Object {
 public:
-    Process(const std::string& command) : command_(command) {} 
+    Process(const std::string& command);
     void arg(const std::string& arg) { arg_.push_back(arg); }
-    int status() const;
+    int status();
+    Stream::Ptr pipe();
 
 private:
-    std::string command_;
+    void exec();
+
     std::vector<std::string> arg_; 
+    Stream::Ptr pipe_;
+#ifdef WINDOWS
+    HANDLE proc_;
+    HANDLE thread_;
+#else
+    pid_t pid_;
+#endif
+    std::string command_;
 };

@@ -21,16 +21,43 @@
  */  
 
 #include "Process.hpp"
+
+Process::Process(const std::string& command) : 
 #ifdef WINDOWS
-#include <windows.h>
+    proc_(0),
+    handle_(0),
 #else
-#include <unistd.h>
+    pid_(0),
+#endif  
+    command_(command) {
+
+}
+
+int Process::status() { 
+    // Returns the process exit status, after waiting for the process to 
+    // finish executing.
+    exec();
+#ifdef WINDOWS
+    assert(!"Not implemented");
+#else
+    int status;
+    waitpid(pid_, &status, 0);
+    return WEXITSTATUS(status);
 #endif
 
-int Process::status() const {
+}
+
+Stream::Ptr Process::pipe() {
+    exec();
+    return pipe_;
+}
+
+void Process::exec() {
     // Runs the process using the specified command and arguments, and returns
     // the process exit code.
 #ifdef WINDOWS
+    if (proc_) { return; }
+
     std::string args;
     for (int i = 0; i < arg_.size(); i++) {
         args += arg_[i];
@@ -43,21 +70,31 @@ int Process::status() const {
     }
     assert(!"Not implemented");
 #else
-    pid_t pid = fork();    
-    if (pid < 0) {
-        return pid; 
-    } else if (pid) {
-        int status;
-        waitpid(pid, &status, 0);
-        return status;
-    } else {
+    if (pid_) { return; }
+    
+    int fd[2]; // fd[0] = read end, fd[1] = write end
+    ::pipe(fd);
+
+    pid_ = fork();    
+        
+    if (pid_ == 0) {
+        // Child process, run exec to spawn the external command
+        close(fd[1]);
+        dup2(fd[0], 0);
+
         std::vector<const char*> arg; 
         for (int i = 0; i < arg_.size(); i++) {
             arg.push_back(arg_[i].c_str());
         }
         arg.push_back(0);
         execvp(command_.c_str(), (char**)arg.front());
-        return 0;
+        // Should never get here
+        exit(1);
+
+    } else if (pid_ > 0) {
+        // Parent process, set up the pipe
+        close(fd[0]);
+        pipe_ = new Stream(fd[1]);
     }
 #endif 
 }
