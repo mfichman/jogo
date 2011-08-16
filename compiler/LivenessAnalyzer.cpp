@@ -47,11 +47,11 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
     // partly based on the notes found here, with slight optimizations: 
     // http://www.classes.cs.uchicago.edu/archive/2004/spring/22620-1/docs/liveness.pdf 
     if (block->round() > round_) { return; }
+    block->round_inc();
 
     if (block->next()) { operator()(block->next()); }
     if (block->branch()) { operator()(block->branch()); }
     
-    block->round_inc();
 
     for (int i = block->instrs()-1; i >= 0; i--) {
         // Note: We iterate through the list of instructions backwards, since

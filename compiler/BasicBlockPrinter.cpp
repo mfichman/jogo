@@ -132,8 +132,8 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         }
     
         out_ << " {";
-        set<int>& live = liveness_->live_in(block->instr(i));
-        for (set<int>::iterator i = live.begin(); i != live.end();) {
+        const set<int>& live = liveness_->live_in(block->instr(i));
+        for (set<int>::const_iterator i = live.begin(); i != live.end();) {
             if (*i == 0) {
                 ++i;
             } else {

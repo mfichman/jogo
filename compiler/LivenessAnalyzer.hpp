@@ -27,7 +27,7 @@
 #include "BasicBlock.hpp"
 #include "Machine.hpp"
 #include "Object.hpp"
-#include <bitset>
+#include <set>
 #include <map>
 
 #define APOLLO_MAX_REG 32
@@ -38,12 +38,10 @@ public:
     LivenessAnalyzer(Machine* mach) : machine_(mach) {}
     bool live(const Instruction& inst, int temporary);
 
-    typedef std::bitset<APOLLO_MAX_REG> Set;
-
-    const Set& live_in(const Instruction& inst) {
+    const std::set<int>& live_in(const Instruction& inst) {
         return in_[&inst];  
     } // Only here for printer
-    const Set& live_out(const Instruction& inst) {
+    const std::set<int>& live_out(const Instruction& inst) {
         return out_[&inst];
     }
     
@@ -57,7 +55,7 @@ private:
     Function::Ptr function_;
     bool finished_;
     bool entry_block_;
-    std::map<const Instruction*, Set > in_;
-    std::map<const Instruction*, Set > out_;
+    std::map<const Instruction*, std::set<int> > in_;
+    std::map<const Instruction*, std::set<int> > out_;
     int round_;
 };
