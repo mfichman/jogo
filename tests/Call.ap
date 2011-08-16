@@ -1,5 +1,5 @@
 # aptest run_program on
-# kaptest print_ir off
+# aptest print_ir off
 # aptest print_tree off
 
 import Boot
