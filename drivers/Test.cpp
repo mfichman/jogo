@@ -37,7 +37,8 @@
 
 int main(int argc, char** argv) {
     Environment::Ptr env(new Environment());
-    env->output("out.asm");
+    //env->output(tmpnam(NULL));
+    env->output("/tmp/out.asm");
     
     Options(env, argc, argv);
 
@@ -66,14 +67,29 @@ int main(int argc, char** argv) {
             BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env, machine));
         }
         Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));
+
+        std::stringstream ss;
+        std::string ofile = tmpnam(NULL);
 #if defined(WINDOWS)
-        system("nasm -fobj64 out.asm -o /tmp/out.o");
+        ss << "nasm -fobj64 " << env->output() << " -o " << ofile; 
+        system(ss.str().c_str());
 #elif defined(LINUX)
-        system("nasm -felf64 out.asm -o /tmp/out.o");
-        system("gcc -m64 /tmp/out.o -L../lib -lapollo -o /tmp/out");
+        ss << "nasm -felf64 " << env->output() << " -o " << ofile; 
+        system(ss.str().c_str());
+        ss.str("");
+        ss << "gcc -m64 -L../lib -lapollo " << ofile << " -o /tmp/out";
+        system(ss.str().c_str());
+        unlink(ofile.c_str());
+        //unlink(env->output().c_str());
 #elif defined(DARWIN)
-        system("nasm -fmacho64 out.asm -o /tmp/out.o");
-        system("gcc -Wl,-no_pie -L../lib -lapollo /tmp/out.o -o /tmp/out");
+        ss << "nasm -fmacho64 " << env->output() << " -o " << ofile;
+        system(ss.str().c_str());
+        ss.str("");
+        ss << "gcc -L../lib -lapollo " << ofile << " -o /tmp/out";
+        system(ss.str().c_str());
+        unlink(ofile.c_str());
+        //unlink(env->output().c_str());
+        //system("gcc -Wl,-no_pie -L../lib -lapollo /tmp/out.o -o /tmp/out");
 #else
 #error Unsupported system
 #endif

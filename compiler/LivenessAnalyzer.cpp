@@ -31,8 +31,6 @@ void LivenessAnalyzer::operator()(Function* feature) {
     finished_ = false;
     function_ = feature;
 
-    int start = feature->basic_block(0)->round();
-
     // Iterate the liveness computation until the all the liveness rules are
     // fully statisfied.
     while (!finished_) {
@@ -87,17 +85,17 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // never decrease in size, don't worry about resetting either of the
         // two sets.
         if (instr.first().temp()) {
-            !in.insert(instr.first().temp()).second;
+            finished_ &= !in.insert(instr.first().temp()).second;
         }
         if (instr.second().temp()) {
-            !in.insert(instr.second().temp()).second;
+            finished_ &= !in.insert(instr.second().temp()).second;
         }
 
         // If this is the first instruction of the function, then we need to
         // add all the registers belonging to the caller to the def[n] set.
         if (block == function_->basic_block(0) && i == 0) {
             for (int k = 0; k < machine_->caller_regs(); k++) {
-                !in.insert(-machine_->caller_reg(k)->id()).second;
+                finished_ &= !in.insert(-machine_->caller_reg(k)->id()).second;
             }
         }
 
@@ -105,7 +103,7 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // belonging to the caller to the use[n] set.
         if (instr.opcode() == RET) {
             for (int k = 0; k < machine_->caller_regs(); k++) {
-                !in.insert(-machine_->caller_reg(k)->id()).second;
+                finished_ &= !in.insert(-machine_->caller_reg(k)->id()).second;
             }
         }
 
@@ -113,7 +111,7 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // use[n] set.
         if (instr.opcode() == CALL) {
             for (int k = 0; k < machine_->arg_regs(); k++) {
-                !in.insert(-machine_->arg_reg(k)->id()).second;
+                finished_ &= !in.insert(-machine_->arg_reg(k)->id()).second;
             }
         }
 
@@ -122,7 +120,7 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
             if (*j != instr.result().temp()) {
                 // In/out sets can never decrease in size, don't worry about
                 // removing def[n] temporaries from the set
-                !in.insert(*j).second;
+                finished_ &= !in.insert(*j).second;
             }
         }
 
