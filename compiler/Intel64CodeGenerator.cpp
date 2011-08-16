@@ -177,11 +177,16 @@ void Intel64CodeGenerator::literal(Operand literal) {
     // number, and the length is less than 13 bits, then output the literal
     // directly in the instruction.  Otherwise, load it from the correct
     // memory address for the literal.
+
     assert(!literal.temp());
     Expression* expr = literal.literal();
-    if (StringLiteral* le = dynamic_cast<StringLiteral*>(expr)) {
-        out_ << "lit" << (void*)le->value();
-    } else if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(expr)) {
+
+    assert(!dynamic_cast<StringLiteral*>(expr));
+    // String literals can't be loaded immediately due to the requirement for
+    // RIP-relative addressing on 64-bit systems.  Instead, the address to the
+    // string must be loaded using LEA first (i.e., LOAD in the IR language).
+
+    if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(expr)) {
         out_ << le->value();
     } else if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(expr)) {
         std::stringstream ss(le->value()->string());
@@ -190,10 +195,10 @@ void Intel64CodeGenerator::literal(Operand literal) {
         if(number < MAXIMM) {
             out_ << le->value();
         } else {
-            out_ << "[lit" << (void*)le->value() << "]";
+            out_ << "[rel lit" << (void*)le->value() << "]";
         }
     } else if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(expr)) {
-        out_ << "[lit" << (void*)le->value() << "]";
+        out_ << "[rel lit" << (void*)le->value() << "]";
         return;
     }
 }
@@ -231,17 +236,43 @@ void Intel64CodeGenerator::load(Operand r1, Operand r2) {
     // literal, then an immediate load is done.
     assert(r1.temp());
     assert(-r1.temp() < machine_->regs());
-    out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";
     if (r2.temp()) {
+        out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";
         assert(-r2.temp() < machine_->regs());
         // Load from memory address specified by register operand plus offset.
         out_ << "[" << machine_->reg(-r2.temp()) << "+";
         out_ << r2.addr() * machine_->word_size() << "]";
     } else if (r2.literal()) {
-        // Load a literal value.
-        literal(r2);
+        // Outputs the correct representation of a literal.  If the literal is a
+        // number, and the length is less than 13 bits, then output the literal
+        // directly in the instruction.  Otherwise, load it from the correct
+        // memory address for the literal.
+        Expression* expr = r2.literal();
+        if (StringLiteral* le = dynamic_cast<StringLiteral*>(expr)) {
+            out_ << "    lea " << machine_->reg(-r1.temp()) << ", ";
+            out_ << "[rel lit" << (void*)le->value() << "]";
+        } else if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(expr)) {
+            out_ << "    mov " << machine_->reg(-r1.temp()) << ", "; 
+            out_ << le->value();
+        } else if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(expr)) {
+            std::stringstream ss(le->value()->string());
+            int number;
+            ss >> number;
+            if(number < MAXIMM) {
+                out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";
+                out_ << le->value();
+            } else {
+                out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";
+                out_ << "[rel lit" << (void*)le->value() << "]";
+            }
+        } else if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(expr)) {
+            out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";
+            out_ << "[rel lit" << (void*)le->value() << "]";
+            return;
+        }
     } else {
         // Load from memory address specified by offset from the base pointer.
+        out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";
         if (r2.addr() < 0) {
             out_ << "[rbp" << r2.addr() * machine_->word_size() << "]";
         } else {
@@ -294,7 +325,7 @@ void Intel64CodeGenerator::emit(const char* instr, Operand r1) {
     assert(r1.temp() < machine_->regs());
     out_ << "    " << instr << " ";
     if (r1.temp()) {
-        out_ << machine_->reg(r1.temp());
+        out_ << machine_->reg(-r1.temp());
     } else if (std::string("call") == instr) {
         out_ << r1.label();
     } else {

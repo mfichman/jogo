@@ -25,29 +25,57 @@
 using namespace std;
 
 void LivenessAnalyzer::operator()(Function* feature) {
+    if (!feature->basic_blocks()) { return; }
     in_.clear();
     out_.clear();
     finished_ = false;
     function_ = feature;
 
+    int start = feature->basic_block(0)->round();
+
+    std::cout << "BEGIN ****************" << std::endl;
+
     // Iterate the liveness computation until the all the liveness rules are
     // fully statisfied.
     while (!finished_) {
         finished_ = true;
-        entry_block_ = true;
-        for (int i = 0; i < feature->basic_blocks(); i++) {
-            operator()(feature->basic_block(i));
-            entry_block_ = false;
-        }
-    }
+        round_ = feature->basic_block(0)->round();
+        operator()(feature->basic_block(0));
 
+    BasicBlock* block = feature->basic_block(0);
+    for (int i = 0; i < block->instrs(); i++) {
+        std::cout << "IN { ";
+        const Instruction& instr = block->instr(i);
+        set<int>& in = in_[&instr];
+        for (set<int>::iterator i = in.begin(); i != in.end(); i++) {
+            std::cout << *i << " ";
+        }
+        std::cout << "}"; 
+        std::cout << "     OUT { ";
+        set<int>& out = out_[&instr];
+        for (set<int>::iterator i = out.begin(); i != out.end(); i++) {
+            std::cout << *i << " ";
+        }
+        std::cout << "}" << std::endl;
+
+    }
+    std::cout << " --------------" << std::endl;
+
+    }
+    std::cout << feature->name()->string() << " Rounds: " << round_ - start << std::endl;
 }
 
 void LivenessAnalyzer::operator()(BasicBlock* block) {
     // Compute liveness information for the basic block.  This algorithm is 
     // partly based on the notes found here, with slight optimizations: 
     // http://www.classes.cs.uchicago.edu/archive/2004/spring/22620-1/docs/liveness.pdf 
+    if (block->round() > round_) { return; }
+
+    if (block->branch()) { operator()(block->branch()); }
+    if (block->next()) { operator()(block->next()); }
     
+    block->round_inc();
+
     for (int i = block->instrs()-1; i >= 0; i--) {
         // Note: We iterate through the list of instructions backwards, since
         // liveness analysis is a reverse type of analysis - that is, we 
@@ -70,7 +98,7 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
       
         // If this is the first instruction of the function, then we need to
         // add all the registers belonging to the caller to the def[n] set.
-        if (entry_block_ && i == 0) {
+        if (block == function_->basic_block(0) && i == 0) {
             for (int k = 0; k < machine_->caller_regs(); k++) {
                 finished_ &= !in.insert(-machine_->caller_reg(k)->id()).second;
             }
@@ -81,6 +109,14 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         if (instr.opcode() == RET) {
             for (int k = 0; k < machine_->caller_regs(); k++) {
                 finished_ &= !out.insert(-machine_->caller_reg(k)->id()).second;
+            }
+        }
+
+        // If the instruction is a call instruction, add all arg registers to the
+        // use[n] set.
+        if (instr.opcode() == CALL) {
+            for (int k = 0; k < machine_->arg_regs(); k++) {
+                finished_ &= !out.insert(-machine_->arg_reg(k)->id()).second;
             }
         }
         

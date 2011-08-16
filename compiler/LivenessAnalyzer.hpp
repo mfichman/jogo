@@ -54,4 +54,5 @@ private:
     bool entry_block_;
     std::map<const Instruction*, std::set<int> > in_;
     std::map<const Instruction*, std::set<int> > out_;
+    int round_;
 };

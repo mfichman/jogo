@@ -90,16 +90,13 @@ private:
 /* Class for basic block nodes */
 class BasicBlock : public Object {
 public:
-    BasicBlock() : branch_(0), next_(0) {}
+    BasicBlock() : branch_(0), next_(0), round_(0) {}
     BasicBlock* branch() const { return branch_; }
     BasicBlock* next() const { return next_; }
     String* label() const { return label_; }
-    const Instruction& instr(size_t index) const { 
-        return instrs_[index];
-    }
-    Instruction& instr(size_t index) {
-        return instrs_[index];
-    }
+    const Instruction& instr(size_t index) const { return instrs_[index]; }
+    Instruction& instr(size_t index) { return instrs_[index]; }
+    int round() const { return round_; }
     int instrs() const { return instrs_.size(); }
     bool is_terminated() const {
         if (instrs_.empty()) {
@@ -121,6 +118,7 @@ public:
     void instr(Opcode op, Operand result, Operand first, Operand second) {
         instrs_.push_back(Instruction(op, result, first, second));
     }
+    void round_inc() { round_++; }
     typedef Pointer<BasicBlock> Ptr; 
 
 private:
@@ -128,6 +126,7 @@ private:
     BasicBlock::Ptr branch_;
     BasicBlock::Ptr next_;
     String::Ptr label_;
+    int round_;
 };
 
 

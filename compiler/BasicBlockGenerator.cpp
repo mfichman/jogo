@@ -60,24 +60,24 @@ void BasicBlockGenerator::operator()(Formal* formal) {
 }
 
 void BasicBlockGenerator::operator()(StringLiteral* expression) {
-    // Load a pointer to the string from the string table
-    //assert(!"Not implemented");
-    return_ = expression;
+    // Load a pointer to the string from the string table.  Strings must
+    // always be loaded first, since they are specified by address.
+    return_ = load(expression);
 }
 
 void BasicBlockGenerator::operator()(IntegerLiteral* expression) {
     // Load the literal value with load-immediate
-    return_ = expression;
+    return_ = load(expression);
 }
 
 void BasicBlockGenerator::operator()(FloatLiteral* expression) {
     // Load the literal value with load-immediate
-    return_ = expression;
+    return_ = load(expression);
 }
 
 void BasicBlockGenerator::operator()(BooleanLiteral* expression) {
     // Load the literal value with load-immediate
-    return_ = expression;
+    return_ = load(expression);
 }
 
 void BasicBlockGenerator::operator()(Binary* expression) {
