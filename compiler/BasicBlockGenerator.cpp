@@ -251,6 +251,25 @@ void BasicBlockGenerator::operator()(Let* statement) {
 
 void BasicBlockGenerator::operator()(While* statement) {
     // Emit the guard expression in a new basic block
+    BasicBlock::Ptr guard_block = basic_block();
+    BasicBlock::Ptr body_block = basic_block();
+    BasicBlock::Ptr done_block = basic_block();
+
+    emit(guard_block);
+
+    // Recursively emit the boolean guard expression.  
+    Operand guard = emit(statement->guard(), body_block, done_block, false);
+    if (!block_->is_terminated()) {
+        bz(guard, done_block, body_block);
+    }
+
+    // Now emit the body of the loop
+    emit(body_block);
+    emit(statement->block());
+
+    // Jump back up to re-evaluate the guard expression
+    jump(guard_block);
+    emit(done_block);    
 }
 
 void BasicBlockGenerator::operator()(Conditional* statement) {
@@ -264,7 +283,7 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
         else_block = done_block;
     }
 
-    // Recursively emit the boolean guard expression.  We need to save the
+    // Recursively emit the boolean guard expression.  We need to pass the
     // true and the false block pointers so that the correct code is emitted
     // on each branch.
     Operand guard = emit(statement->guard(), then_block, else_block, false);
@@ -272,7 +291,7 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
         bz(guard, else_block, then_block);
     }
 
-    // Now emit the true branch; only jump if there is a false branch
+    // Now emit the true branch of the conditional
     emit(then_block);
     emit(statement->true_branch());
 
@@ -350,6 +369,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // Reset the temporaries for the function.
     temp_ = Operand();
     function_ = feature;
+    block_ = 0;
     emit(basic_block());
     stack_.clear();
     enter_scope();

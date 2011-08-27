@@ -30,18 +30,22 @@
 /* Represents a general-purpose register in a machine architecture */
 class Register : public Object {
 public:
-    Register(const std::string& name, int id) :
+    Register(const std::string& name, int id, bool allocatable) :
         name_(name),
-        id_(id) {
+        id_(id),
+        allocatable_(allocatable) {
     }
 
     const std::string& name() { return name_; }
     int id() const { return id_; }
+    bool allocatable() const { return allocatable_; }
     typedef Pointer<Register> Ptr;
 
 private:
     std::string name_;
     int id_; 
+    bool special_;
+    bool allocatable_;
 };
 
 inline Stream::Ptr operator<<(Stream::Ptr out, Register* reg) {
@@ -84,7 +88,7 @@ public:
     void callee_reg(Register* reg) { callee_reg_.push_back(reg); }
     void arg_reg(Register* reg) { arg_reg_.push_back(reg); }
     void return_reg(Register* reg) { return_reg_.push_back(reg); }
-    Register* reg(const std::string& name);
+    Register* reg(const std::string& name, bool allocatable=true);
     void word_size(int size) { word_size_ = size; }
     typedef Pointer<Machine> Ptr;
 

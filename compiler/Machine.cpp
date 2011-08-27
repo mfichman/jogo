@@ -27,8 +27,8 @@ Machine::Machine() {
     word_size_ = 0;
 }
 
-Register* Machine::reg(const std::string& name) {
-    reg_.push_back(new Register(name, reg_.size()));
+Register* Machine::reg(const std::string& name, bool allocatable) {
+    reg_.push_back(new Register(name, reg_.size(), allocatable));
     return reg_.back();
 }
 
@@ -42,7 +42,7 @@ Machine::Ptr Machine::intel64() {
 
     machine = new Machine;
 
-    Register::Ptr rax = machine->reg("rax"); machine->callee_reg(rax); //1
+    Register::Ptr rax = machine->reg("rax", false); machine->callee_reg(rax); //1
     Register::Ptr rbx = machine->reg("rbx"); machine->caller_reg(rbx); //2
     Register::Ptr rcx = machine->reg("rcx"); machine->callee_reg(rcx); //3
     Register::Ptr rdx = machine->reg("rdx"); machine->callee_reg(rdx); //4 

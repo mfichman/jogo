@@ -38,6 +38,7 @@ void LivenessAnalyzer::operator()(Function* feature) {
         round_ = feature->basic_block(0)->round();
         operator()(feature->basic_block(0));
     }
+    //std::cout << feature->name()->string() << ", " << round_ << std::endl;
 }
 
 void LivenessAnalyzer::operator()(BasicBlock* block) {
@@ -47,8 +48,20 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
     if (block->round() > round_) { return; }
     block->round_inc();
 
+/*
+    std::cout << block->label()->string() << " -> ";
+    if (block->next()) { 
+        std::cout << block->next()->label()->string() << ", ";
+    }
+    if (block->branch()) { 
+        std::cout << block->branch()->label()->string();
+    }
+    std::cout << std::endl;
+*/
     if (block->next()) { operator()(block->next()); }
     if (block->branch()) { operator()(block->branch()); }
+
+    //std::cout << block->label()->string()  << std::endl;
     
 
     for (int i = block->instrs()-1; i >= 0; i--) {
@@ -124,7 +137,14 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
             }
         }
 
+/*
+        for (set<int>::iterator i = in.begin(); i != in.end(); i++) {
+            std::cout << *i << ", ";
+        }
+        std::cout << std::endl;
+*/
     }
+  //  std::cout << std::endl;
 }
 
 bool LivenessAnalyzer::live(const Instruction& inst, int temp) {

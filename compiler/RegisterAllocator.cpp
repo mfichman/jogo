@@ -214,6 +214,10 @@ void RegisterAllocator::color_graph() {
         int choice = 0;
         
         for (int reg = 1; reg < machine_->regs(); reg++) {
+            if (!machine_->reg(reg)->allocatable()) {
+                continue;
+            }
+
             bool ok = true;
             
             // Check to make sure that the candidate color 'color' does not

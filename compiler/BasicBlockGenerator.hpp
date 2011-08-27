@@ -68,6 +68,9 @@ private:
     void operator()(Type* type);
 
     void emit(BasicBlock* block) {
+        if (block_) {
+            block_->next(block);
+        }
         block_ = block;
         function_->basic_block(block);
     }

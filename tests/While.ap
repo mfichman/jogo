@@ -1,0 +1,16 @@
+# aptest run_program on
+# aptest print_tree off
+# aptest print_ir off
+
+import Boot
+
+main() Int {
+    i = 10
+
+    while i != 0 {
+        boot_print_int(i)
+        boot_print_str("\n")
+        i = i-1
+    }
+    return 0
+}
