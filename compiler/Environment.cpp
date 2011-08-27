@@ -26,6 +26,8 @@
 
 Environment::Environment() :
     output_("-"),
+    link_(true),
+    assemble_(true),
     root_(new Module(Location(), name(""), this)),
     builtins_(new Module(Location(), name(""), this)),
     builtin_file_(new File(0, builtins_, this)),

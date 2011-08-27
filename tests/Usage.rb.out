@@ -4,7 +4,7 @@ Usage: ../bin/apollo [OPTIONS] FILE...
    -c, --compile        Compile and assemble, but do not link.
    -d, --dump FILE      Dump the AST to FILE.
    -h, --help           Print this help message.
-   -l, --library FILE   Generate a shared library and write it to FILE.
+   -l, --library LIB    Compile and link with library LIB.
    -o, --output FILE    Write compiler output to FILE.
    -p, --path DIR       Add the directory DIR to the source search path.
 
@@ -14,7 +14,7 @@ Usage: ../bin/apollo [OPTIONS] FILE...
    -c, --compile        Compile and assemble, but do not link.
    -d, --dump FILE      Dump the AST to FILE.
    -h, --help           Print this help message.
-   -l, --library FILE   Generate a shared library and write it to FILE.
+   -l, --library LIB    Compile and link with library LIB.
    -o, --output FILE    Write compiler output to FILE.
    -p, --path DIR       Add the directory DIR to the source search path.
 

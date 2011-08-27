@@ -69,9 +69,10 @@ Options::Options(Environment* env, int argc, char** argv) {
                 print_usage();
                 exit(0);
             } else if ("assembly" == flag) {
-                assert(!"Flag '--assembly' not implemented");
+                env->assemble(false);
+                env->link(false);
             } else if ("compile" == flag) {
-                assert(!"Flag '--compile' not implemented");
+                env->link(false);
             } else {
                 break;
             }
@@ -107,7 +108,7 @@ void Options::print_usage() {
     out << "   -c, --compile        Compile and assemble, but do not link.\n";
     out << "   -d, --dump FILE      Dump the AST to FILE.\n";
     out << "   -h, --help           Print this help message.\n";
-    out << "   -l, --library FILE   Generate a shared library and write it to FILE.\n";
+    out << "   -l, --library LIB    Compile and link with library LIB.\n";
     out << "   -o, --output FILE    Write compiler output to FILE.\n";
     out << "   -p, --path DIR       Add the directory DIR to the source search path.\n";
     out << "\n";

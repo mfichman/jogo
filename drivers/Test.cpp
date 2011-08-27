@@ -66,7 +66,8 @@ int main(int argc, char** argv) {
         if (test_options.find("# aptest print_ir off") == test_options.end()) {
             BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env, machine));
         }
-        Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));
+        Intel64CodeGenerator::Ptr codegen(
+            new Intel64CodeGenerator(env, "/tmp/out.asm"));
 
         std::stringstream ss;
         std::string ofile = tmpnam(NULL);

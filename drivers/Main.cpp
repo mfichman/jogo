@@ -36,13 +36,46 @@ int main(int argc, char** argv) {
     Environment::Ptr env(new Environment());
     Options(env, argc, argv);
 
+    // Run the compiler.  Output to a temporary file if the compiler will
+    // continue on to another stage; otherwise, output the file directly.
+    std::string asm_file = env->assemble() ? tmpnam(0) : env->output();
     Parser::Ptr parser(new Parser(env));
     TypeChecker::Ptr checker(new TypeChecker(env));
+    if (env->errors()) { return 0; }
 
     Machine::Ptr machine = Machine::intel64();
     BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env, machine));
     RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
-    Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env));
+    Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env, asm_file));
+
+    if (!env->assemble()||env->errors()) { return 0; }
+
+    // Run the assembler.  Output to a non-temp file if the compiler will stop
+    // at the assembly stage
+    std::string obj_file = env->link() ? tmpnam(0) : env->output();
+    std::stringstream ss;
+#if defined(WINDOWS)
+    ss << "nasm -fobj64 " << asm_file << " -o " << obj_file;
+#elif defined(LINUX)
+    ss << "nasm -felf64 " << asm_file << " -o " << obj_file;
+#elif defined(DARWIN)
+    ss << "nasm -fmacho64 " << asm_file << " -o " << obj_file;
+#endif 
+    system(ss.str().c_str());
+    ss.str("");
+
+    if (!env->link()) { return 0; }
+
+    // Run the linker.  Always output to the given output file name.
+    std::string exe_file = env->output();
+#if defined(WINDOWS)    
+    ss << "link.exe " << obj_file << " /OUT:" << exe_file;
+#elif defined(LINUX)
+    ss << "gcc -m64 -lapollo " << obj_file << " -o " << exe_file;
+#elif defined(DARWIN)
+    ss << "gcc -Llib -lapollo " << obj_file << " -o " << exe_file;
+#endif
+    system(ss.str().c_str());
 
     return 0;
 }
