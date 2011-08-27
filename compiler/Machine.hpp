@@ -44,7 +44,6 @@ public:
 private:
     std::string name_;
     int id_; 
-    bool special_;
     bool allocatable_;
 };
 
@@ -58,7 +57,7 @@ public:
     // Note: Caller registers (a.k.a. callee-saved) belong to the caller and
     // must be saved/restored by the callee if they are used.  To do this,
     // the register allocator generates a phony "def" at the beinning of the
-    // functionn, and a phony "use" at the end of the function to generate a 
+    // function, and a phony "use" at the end of the function to generate a 
     // def-use chain. 
     // 
     // Note: Callee registers (a.k.a. caller-saved) belong to the callee and

@@ -42,7 +42,7 @@ Machine::Ptr Machine::intel64() {
 
     machine = new Machine;
 
-    Register::Ptr rax = machine->reg("rax", false); machine->callee_reg(rax); //1
+    Register::Ptr rax = machine->reg("rax"); machine->callee_reg(rax); //1
     Register::Ptr rbx = machine->reg("rbx"); machine->caller_reg(rbx); //2
     Register::Ptr rcx = machine->reg("rcx"); machine->callee_reg(rcx); //3
     Register::Ptr rdx = machine->reg("rdx"); machine->callee_reg(rdx); //4 
@@ -50,7 +50,7 @@ Machine::Ptr Machine::intel64() {
     Register::Ptr rsi = machine->reg("rsi"); machine->callee_reg(rsi); //6
     Register::Ptr r8 = machine->reg("r8"); machine->callee_reg(r8); //7
     Register::Ptr r9 = machine->reg("r9"); machine->callee_reg(r9); //8
-    Register::Ptr r10 = machine->reg("r10"); machine->callee_reg(r10); //9
+    Register::Ptr r10 = machine->reg("r10"); machine->callee_reg(r10);//9
     Register::Ptr r11 = machine->reg("r11"); machine->callee_reg(r11); //10
     Register::Ptr r12 = machine->reg("r12"); machine->caller_reg(r12); //11
     Register::Ptr r13 = machine->reg("r13"); machine->caller_reg(r13); //12

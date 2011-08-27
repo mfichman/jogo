@@ -23,10 +23,7 @@
 #include "Intel64CodeGenerator.hpp"
 #include <sstream>
 
-// RAX is reserved for special things
 static const int MAXIMM = 4096;
-static const Register::Ptr AL(new Register("al", 0, false));
-static const Register::Ptr RAX(new Register("rax", 0, false));
 static const Register::Ptr ESP(new Register("rsp", 0, false));
 static const Register::Ptr EBP(new Register("rbp", 0, false));
 
@@ -165,9 +162,11 @@ void Intel64CodeGenerator::arith(const char* instr, Operand res, Operand r1,
     } else {
         
         // t1 <- t2 - t1
-        emit("mov", RAX, r2); 
-        emit(instr, RAX, r1);
-        emit("mov", res, RAX);
+        emit("push", r2);
+        emit(instr, r2, r1);
+        emit("mov", r1, r2);
+        emit("pop", r2);        
+
     }
     
 }
