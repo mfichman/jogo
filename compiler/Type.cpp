@@ -121,7 +121,11 @@ bool Type::is_float() const {
 }
 
 bool Type::is_boolifiable() const {
-    return !is_value() || is_bool() || is_int();
+    if (this->equals(environment_->no_type())) {
+        return true;
+    } else {
+        return !is_value() || is_bool() || is_int();
+    }
 }
 
 bool Type::is_void() const {

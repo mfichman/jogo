@@ -1,4 +1,6 @@
 # aptest run_program on
+# aptest print_tree off
+# aptest print_ir off
 
 import Boot
 
@@ -14,6 +16,33 @@ fib(n Int) Int {
 
 
 main() Int {
+    x = fib(0)
+    boot_print_int(x)   
+    boot_print_str("\n")
+    x = fib(1)
+    boot_print_int(x)   
+    boot_print_str("\n")
+    x = fib(2)
+    boot_print_int(x)   
+    boot_print_str("\n")
+    x = fib(3)
+    boot_print_int(x)   
+    boot_print_str("\n")
+    x = fib(4)
+    boot_print_int(x)   
+    boot_print_str("\n")
+    x = fib(5)
+    boot_print_int(x)   
+    boot_print_str("\n")
+    x = fib(6)
+    boot_print_int(x)   
+    boot_print_str("\n")
+    x = fib(7)
+    boot_print_int(x)   
+    boot_print_str("\n")
+    x = fib(8)
+    boot_print_int(x)   
+    boot_print_str("\n")
     x = fib(9)
     boot_print_int(x)   
     boot_print_str("\n")

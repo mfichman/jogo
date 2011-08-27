@@ -89,26 +89,26 @@ void BasicBlockGenerator::operator()(Binary* expression) {
         
         // Don't use the 'real' true branch; on true we want to emit the    
         // test for the second side of the and
-        Operand left = emit(expression->left(), left_true, false_);
+        Operand left = emit(expression->left(), left_true, false_, false);
         if (!block_->is_terminated()) {
             bz(left, false_, left_true);
         }
         emit(left_true); 
 
-        return_ = emit(expression->right(), true_, false_);
+        return_ = emit(expression->right(), true_, false_, invert_branch_);
         
     } else if (environment_->name("or") == expression->operation()) {
         BasicBlock::Ptr left_false = basic_block();
         
         // Don't use the 'real' false branch; on false we want to emit
         // the test for the second side of the or
-        Operand left = emit(expression->left(), true_, left_false);
+        Operand left = emit(expression->left(), true_, left_false, true);
         if (!block_->is_terminated()) {
             bnz(left, true_, left_false);
         }
         emit(left_false);
     
-        return_ = emit(expression->right(), true_, false_);
+        return_ = emit(expression->right(), true_, false_, invert_branch_);
 
     } else {
         assert(!"Unsupported binary operation");
@@ -122,7 +122,7 @@ void BasicBlockGenerator::operator()(Unary* expression) {
     if (environment_->name("not")) {
         // Swap the false and true branches while calling the child, since 
         // the 'not' inverts the conditional 
-        Operand op = emit(expression->child(), false_, true_);
+        Operand op = emit(expression->child(), false_, true_, !invert_branch_);
     } else {
         assert(!"Unsupported unary operation");
     }
@@ -267,7 +267,7 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
     // Recursively emit the boolean guard expression.  We need to save the
     // true and the false block pointers so that the correct code is emitted
     // on each branch.
-    Operand guard = emit(statement->guard(), then_block, else_block);
+    Operand guard = emit(statement->guard(), then_block, else_block, false);
     if (!block_->is_terminated()) {
         bz(guard, else_block, then_block);
     }
@@ -418,7 +418,17 @@ void BasicBlockGenerator::emit_operator(Dispatch* expression) {
     } else if (id == "@compl") {
         assert(!"Not implemented");
     } else if (id == "@equal") {
-        assert(!"Not implemented");
+        if (invert_branch_) {
+            be(args[0], args[1], true_, false_);
+        } else {
+            bne(args[0], args[1], false_, true_);
+        }
+    } else if (id == "@less") {
+        if (invert_branch_) {
+            bl(args[0], args[1], true_, false_);
+        } else {
+            bge(args[0], args[1], false_, true_);
+        } 
     }
 }
 

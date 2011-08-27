@@ -72,14 +72,17 @@ private:
         function_->basic_block(block);
     }
     
-    Operand emit(TreeNode* node, BasicBlock* yes, BasicBlock* no) {
+    Operand emit(TreeNode* node, BasicBlock* yes, BasicBlock* no, bool inv) {
         BasicBlock* true_save = true_;
         BasicBlock* false_save = false_;
+        bool invert_branch_save_ = invert_branch_;
         true_ = yes;
         false_ = no;
+        invert_branch_ = inv;
         node->operator()(this);
         true_ = true_save;
         false_ = false_save;
+        invert_branch_ = invert_branch_save_;
         return return_;
     }
 
@@ -154,14 +157,14 @@ private:
         block_->instr(RET, 0, 0, 0);
     }
     
-    void bne(Operand t2, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BNE, 0, t2, 0);
+    void bne(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BNE, 0, t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
 
-    void be(Operand t2, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BE, 0, t2, 0);
+    void be(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BE, 0, t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
@@ -178,26 +181,26 @@ private:
         block_->next(next);
     }
 
-    void bg(Operand t2, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BG, 0, t2, 0);
+    void bg(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BG, 0, t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
 
-    void bl(Operand t2, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BL, 0, t2, 0);
+    void bl(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BL, 0, t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
 
-    void bge(Operand t2, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BGE, 0, t2, 0);
+    void bge(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BGE, 0, t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
     
-    void ble(Operand t2, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BLE, 0, t2, 0);
+    void ble(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
+        block_->instr(BLE, 0, t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
@@ -233,5 +236,7 @@ private:
     // Next temporary to use
     Operand temp_;
     int label_;
+    Opcode branch_op_;
+    bool invert_branch_;
 };
 

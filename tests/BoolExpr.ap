@@ -99,9 +99,145 @@ boolexpr3() {
     boot_print_str("16\n")
 }
 
+boolexpr4() {
+    a = 1
+    b = 1
+    c = 2
+
+    if a == b {
+        boot_print_str("17\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+    if a != b {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("18\n")
+    }
+    if a == c {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("19\n")
+    }
+    if a != c {
+        boot_print_str("20\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+}
+
+boolexpr5() {
+    a = 1
+    b = 1
+    c = 2
+    d = false
+
+    if a < b {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("21\n")
+    }
+    if a < c {
+        boot_print_str("22\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if c or a < b {
+        boot_print_str("23\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if d or a < b {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("24\n")
+    }
+
+    if c or a < c {
+        boot_print_str("25\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+   
+    if d or a < c {
+        boot_print_str("26\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+    
+    if c and a < b {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("27\n")
+    }
+
+    if d and a < b {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("28\n")
+    }
+
+    if c and a < c {
+        boot_print_str("29\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if d and a < c {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("30\n")
+    }
+}
+
+boolexpr6() {
+    a = 1
+    b = 1
+    c = 2
+
+    if a <= b {
+        boot_print_str("31\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+    if c <= a {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("32\n")
+    }
+
+    if a > b {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("33\n")
+    }
+    if c > b {
+        boot_print_str("34\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+    
+    if a >= b {
+        boot_print_str("35\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+    if b >= c {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("36\n")
+    }
+    
+}
+
 main() Int {
     boolexpr1()
     boolexpr2()
     boolexpr3()
+    boolexpr4()
+    boolexpr5()
+    boolexpr6()
     return 0
 }
