@@ -109,7 +109,7 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
     BasicBlock::Ptr branch = block->branch();
     BasicBlock::Ptr next = block->next();
     if (block->label()) {
-        out_ << block->label() << ":\n";
+        out_ << "." << block->label() << ":\n";
     }
     for (int i = 0; i < block->instrs(); i++) {
         const Instruction& instr = block->instr(i);
@@ -356,7 +356,7 @@ void Intel64CodeGenerator::emit(const char* instr) {
 }
 
 void Intel64CodeGenerator::emit(const char* instr, String* label) {
-    out_ << "    " << instr << " " << label << "\n";
+    out_ << "    " << instr << " ." << label << "\n";
 }
 
 void Intel64CodeGenerator::string(String* string) {
