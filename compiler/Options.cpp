@@ -67,6 +67,8 @@ Options::Options(Environment* env, int argc, char** argv) {
             if ("help" == flag) {
                 print_usage();
                 exit(0);
+            } else if ("optimize" == flag) {
+                env->optimize(true);
             } else if ("assembly" == flag) {
                 env->assemble(false);
                 env->link(false);

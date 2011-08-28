@@ -39,6 +39,7 @@ Environment::Environment() :
     dump_ast_(false),
     dump_ir_(false),
     dump_liveness_(false),
+    optimize_(false),
     link_(true),
     assemble_(true),
     errors_(0) {

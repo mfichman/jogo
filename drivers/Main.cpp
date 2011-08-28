@@ -27,6 +27,7 @@
 #include "RegisterAllocator.hpp"
 #include "Intel64CodeGenerator.hpp"
 #include "BasicBlockPrinter.hpp"
+#include "DeadCodeEliminator.hpp"
 #include "TreePrinter.hpp"
 #include "Machine.hpp"
 #include "Options.hpp"
@@ -52,10 +53,13 @@ int main(int argc, char** argv) {
 
     Machine::Ptr machine = Machine::intel64();
     BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env, machine));
+    if (env->optimize()) {
+        DeadCodeEliminator::Ptr opt(new DeadCodeEliminator(env, machine));
+    }
     RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
     if (env->dump_ir()) {
         Stream::Ptr out(new Stream(env->output()));
-        BasicBlockPrinter::Ptr print(new BasicBlockPrinter(env, machine));
+        BasicBlockPrinter::Ptr print(new BasicBlockPrinter(env, machine, out));
         return 0;
     } 
 
