@@ -93,6 +93,7 @@ public:
     Operand second() const { return second_; }
     Operand result() const { return result_; }
     Liveness* liveness() const { return liveness_; }
+    void opcode(Opcode opcode) { opcode_ = opcode; }
     void first(Operand first) { first_ = first; }
     void second(Operand second) { second_ = second; }
     void result(Operand result) { result_ = result; }

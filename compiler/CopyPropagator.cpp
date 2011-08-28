@@ -51,6 +51,7 @@ void CopyPropagator::operator()(Function* feature) {
 
 void CopyPropagator::operator()(BasicBlock* block) {
     std::map<int, Operand> eq;
+    std::map<int, Operand> lit;
 
     for (int i = 0; i < block->instrs(); i++) {
         // Loop through all instructions in the block, looking for an recording
@@ -63,11 +64,19 @@ void CopyPropagator::operator()(BasicBlock* block) {
         std::map<int, Operand>::iterator j;
 
         // Check to see if any of the operands have aliases.
-        if (first && (j = eq.find(first)) != eq.end()) {
-            instr.first(j->second);
+        if (first) {
+            if (MOV == instr.opcode() && (j = lit.find(first)) != lit.end()) {
+                instr.first(j->second);
+                instr.opcode(LOAD);
+            }
+            if ((j = eq.find(first)) != eq.end()) {
+                instr.first(j->second);
+            }
         }
-        if (second && (j = eq.find(second)) != eq.end()) {
-            instr.second(j->second);
+        if (second) {
+            if ((j = eq.find(second)) != eq.end()) {
+                instr.second(j->second);
+            }
         }
 
         // If the instruction is a MOV, then insert the LHS as an alias for the
@@ -81,6 +90,10 @@ void CopyPropagator::operator()(BasicBlock* block) {
             }
             eq[result] = rhs;
         } 
+        if (LOAD == instr.opcode()) {
+            int result = instr.result().temp();
+            lit[result] = instr.first();
+        }
     }
 }
 
