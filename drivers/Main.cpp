@@ -28,6 +28,7 @@
 #include "Intel64CodeGenerator.hpp"
 #include "BasicBlockPrinter.hpp"
 #include "DeadCodeEliminator.hpp"
+#include "CopyPropagator.hpp"
 #include "TreePrinter.hpp"
 #include "Machine.hpp"
 #include "Options.hpp"
@@ -54,6 +55,7 @@ int main(int argc, char** argv) {
     Machine::Ptr machine = Machine::intel64();
     BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env, machine));
     if (env->optimize()) {
+        CopyPropagator::Ptr copy(new CopyPropagator(env));
         DeadCodeEliminator::Ptr opt(new DeadCodeEliminator(env, machine));
     }
     RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));

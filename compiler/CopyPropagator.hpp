@@ -26,17 +26,14 @@
 #include "LivenessAnalyzer.hpp"
 #include "Object.hpp"
 
-/* Eliminates dead code from functions */
-class DeadCodeEliminator : public TreeNode::Functor {
+/* Propagates copies (MOV) throughout a basic block */
+class CopyPropagator : public TreeNode::Functor {
 public:
-    DeadCodeEliminator(Environment* env, Machine* mach);
-    
-    typedef Pointer<DeadCodeEliminator> Ptr; 
+    CopyPropagator(Environment* env);
+
+    typedef Pointer<CopyPropagator> Ptr;
     void operator()(Module* feature);
     void operator()(Class* feature);
     void operator()(Function* feature);
-    
-private:
     void operator()(BasicBlock* block);
-    LivenessAnalyzer::Ptr liveness_;
 };
