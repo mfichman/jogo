@@ -25,16 +25,16 @@
 
 using namespace std;
 
-TreePrinter::TreePrinter(Environment* environment) :
-    environment_(environment),
-    out_(Stream::stdout()),
+TreePrinter::TreePrinter(Environment* env, Stream* out) :
+    env_(env),
+    out_(out),
     indent_level_(0) {
 
-    if (environment_->errors()) {
+    if (env_->errors()) {
         return;
     }
 
-    for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
+    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
         m(this);
     }    
     out_->flush();

@@ -25,15 +25,15 @@
 
 using namespace std;
 
-BasicBlockPrinter::BasicBlockPrinter(Environment* env, Machine* mach) :
-    environment_(env),
-    out_(Stream::stdout()),
-    liveness_(new LivenessAnalyzer(mach)) {
+BasicBlockPrinter::BasicBlockPrinter(Environment* e, Machine* m, Stream* o) :
+    env_(e),
+    out_(o),
+    liveness_(new LivenessAnalyzer(m)) {
 
-    if (environment_->errors()) {
+    if (env_->errors()) {
         return;
     }
-    for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
+    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
         m(this);
     }
 
@@ -131,23 +131,26 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         case NOP: break;
         }
     
-        out_ << " {";
-        const set<int>& live = liveness_->live_in(block->instr(i));
-        for (set<int>::const_iterator i = live.begin(); i != live.end();) {
-            if (*i == 0) {
-                ++i;
-            } else {
-                if (*i > 0) {
-                    out_ << 't' << *i;
-                } else {
-                    out_ << 'r' << -*i;
-                }
-                if (++i != live.end()) {
-                    out_ << ", ";
-                }
-            }
+        if (env_->dump_liveness()) {
+           out_ << " {";
+           const set<int>& live = instr.liveness()->in();
+           for (set<int>::const_iterator i = live.begin(); i != live.end();) {
+               if (*i == 0) {
+                   ++i;
+               } else {
+                   if (*i > 0) {
+                       out_ << 't' << *i;
+                   } else {
+                       out_ << 'r' << -*i;
+                   }
+                   if (++i != live.end()) {
+                       out_ << ", ";
+                   }
+               }
+           }
+           out_ << "}";
         }
-        out_ << "}\n";
+        out_ << "\n";
     }
 }
 

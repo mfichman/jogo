@@ -45,7 +45,6 @@ Options::Options(Environment* env, int argc, char** argv) {
             if ("p" == flag) { flag = "path"; }
             else if ("a" == flag) { flag = "assembly"; }
             else if ("c" == flag) { flag = "compile"; }
-            else if ("d" == flag) { flag = "dump"; }
             else if ("l" == flag) { flag = "library"; }
             else if ("o" == flag) { flag = "output"; }
             else if ("h" == flag) { flag = "help"; }
@@ -73,6 +72,12 @@ Options::Options(Environment* env, int argc, char** argv) {
                 env->link(false);
             } else if ("compile" == flag) {
                 env->link(false);
+            } else if ("dump-ir" == flag) {
+                env->dump_ir(true);
+            } else if ("dump-ast" == flag) {
+                env->dump_ast(true);
+            } else if ("dump-liveness" == flag) {
+                env->dump_liveness(true);
             } else {
                 break;
             }
@@ -85,8 +90,6 @@ Options::Options(Environment* env, int argc, char** argv) {
                 env->include(argv[i]); 
             } else if ("output" == flag) {
                 env->output(argv[i]);
-            } else if ("dump" == flag) {
-                assert(!"Flag '--dump' not implemented");
             } else if ("library" == flag) {
                 assert(!"Flag '--library' not implemented");
             } else {
@@ -106,11 +109,13 @@ void Options::print_usage() {
     out << "Usage: " << program_name_ << " [OPTIONS] FILE...\n\n";
     out << "   -a, --assembly       Compile, but do not assemble or link.\n";
     out << "   -c, --compile        Compile and assemble, but do not link.\n";
-    out << "   -d, --dump FILE      Dump the AST to FILE.\n";
     out << "   -h, --help           Print this help message.\n";
     out << "   -l, --library LIB    Compile and link with library LIB.\n";
     out << "   -o, --output FILE    Write compiler output to FILE.\n";
     out << "   -p, --path DIR       Add the directory DIR to the source search path.\n";
+    out << "   --dump-ir            Output the intermediate representation.\n";
+    out << "   --dump-ast           Output the abstract syntax tree.\n";
+    out << "   --dump-liveness      Display liveness info when outputing the IR.\n";
     out << "\n";
     out->flush();
     exit(0);

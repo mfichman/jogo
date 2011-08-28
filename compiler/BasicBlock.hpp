@@ -26,6 +26,7 @@
 #include "String.hpp"
 #include "Expression.hpp"
 #include <vector>
+#include <set>
 
 /* Operands for three-address code SSA instructions */
 class Operand {
@@ -62,6 +63,20 @@ enum Opcode {
     // Note: BNE through BLE must be contiguous
 };
 
+/* Class for liveness information related to the instruction */
+class Liveness : public Object {
+public:
+    const std::set<int>& in() const { return in_; }
+    const std::set<int>& out() const { return out_; }
+    std::set<int>& in() { return in_; }
+    std::set<int>& out() { return out_; }
+    typedef Pointer<Liveness> Ptr;
+
+private:
+    std::set<int> in_; // Live variables on incoming edge
+    std::set<int> out_; // Live variables on outgoing edge
+};
+
 /* Class for three-address code instructions */
 class Instruction {
 public:
@@ -69,13 +84,15 @@ public:
         opcode_(op),
         first_(first),
         second_(second),
-        result_(result) {
+        result_(result),
+        liveness_(new Liveness) {
     }
 
     Opcode opcode() const { return opcode_; }
     Operand first() const { return first_; }
     Operand second() const { return second_; }
     Operand result() const { return result_; }
+    Liveness* liveness() const { return liveness_; }
     void first(Operand first) { first_ = first; }
     void second(Operand second) { second_ = second; }
     void result(Operand result) { result_ = result; }
@@ -85,6 +102,7 @@ private:
     Operand first_;
     Operand second_;
     Operand result_;
+    Liveness::Ptr liveness_;
 };
 
 /* Class for basic block nodes */

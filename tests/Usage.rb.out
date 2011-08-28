@@ -2,19 +2,23 @@ Usage: ../bin/apollo [OPTIONS] FILE...
 
    -a, --assembly       Compile, but do not assemble or link.
    -c, --compile        Compile and assemble, but do not link.
-   -d, --dump FILE      Dump the AST to FILE.
    -h, --help           Print this help message.
    -l, --library LIB    Compile and link with library LIB.
    -o, --output FILE    Write compiler output to FILE.
    -p, --path DIR       Add the directory DIR to the source search path.
+   --dump-ir            Output the intermediate representation.
+   --dump-ast           Output the abstract syntax tree.
+   --dump-liveness      Display liveness info when outputing the IR.
 
 Usage: ../bin/apollo [OPTIONS] FILE...
 
    -a, --assembly       Compile, but do not assemble or link.
    -c, --compile        Compile and assemble, but do not link.
-   -d, --dump FILE      Dump the AST to FILE.
    -h, --help           Print this help message.
    -l, --library LIB    Compile and link with library LIB.
    -o, --output FILE    Write compiler output to FILE.
    -p, --path DIR       Add the directory DIR to the source search path.
+   --dump-ir            Output the intermediate representation.
+   --dump-ast           Output the abstract syntax tree.
+   --dump-liveness      Display liveness info when outputing the IR.
 

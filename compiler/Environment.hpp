@@ -48,14 +48,21 @@ public:
     const std::string& include(int index) { return include_[index]; }
     const std::string& input(int index) { return input_[index]; }
     const std::string& output() const { return output_; }
-    bool link() { return link_; }
-    bool assemble() { return assemble_; }
+    bool link() const { return link_; }
+    bool assemble() const { return assemble_; }
+    bool dump_ir() const { return dump_ir_; }
+    bool dump_liveness() const { return dump_liveness_; }
+    bool dump_ast() const { return dump_ast_; }
+    
     int errors() { return errors_; }
     int includes() { return include_.size(); }
     int inputs() { return input_.size(); }
     void include(const std::string& path) { include_.push_back(path); }
     void input(const std::string& path) { input_.push_back(path); }
     void output(const std::string& path) { output_ = path; }
+    void dump_ir(bool dump) { dump_ir_ = dump; }
+    void dump_liveness(bool dump) { dump_liveness_ = dump; }
+    void dump_ast(bool dump) { dump_ast_ = dump; }
     void link(bool link) { link_ = link; }
     void assemble(bool assemble) { assemble_ = assemble; }
     void module(Module* module);
@@ -82,9 +89,6 @@ private:
     std::map<String::Ptr, File::Ptr> file_;
     std::vector<std::string> include_;
     std::vector<std::string> input_;
-    std::string output_;
-    bool link_;
-    bool assemble_;
 
     String::Ptr strings_;
     String::Ptr integers_;
@@ -100,6 +104,14 @@ private:
     Type::Ptr no_type_;
     Type::Ptr float_type_;
     Type::Ptr self_type_;
+
+    std::string output_;
+    bool dump_ast_;
+    bool dump_ir_;
+    bool dump_liveness_;
+    bool link_;
+    bool assemble_;
+
     int errors_;
 };
 

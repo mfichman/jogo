@@ -27,11 +27,10 @@ static const int MAXIMM = 4096;
 static const Register::Ptr ESP(new Register("rsp", 0, false));
 static const Register::Ptr EBP(new Register("rbp", 0, false));
 
-Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, 
-        const std::string& file) :
+Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
     environment_(env),
     machine_(Machine::intel64()),
-    out_(new Stream(file)) {
+    out_(out) {
 
     if (environment_->errors()) {
         return;

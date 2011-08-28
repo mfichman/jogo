@@ -1,6 +1,6 @@
 .PHONY:
 all:
-	scons
+	scons -j 16
 
 .PHONY:
 clean:

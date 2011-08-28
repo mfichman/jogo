@@ -187,9 +187,13 @@ method_name
 
 method
     : method_name formal_signature modifiers return_signature function_body {
-        Formal* self = new Formal(@$, ID("self"), ENV->self_type());
-        self->next($2);
-        $$ = new Function(@$, $1, self, $3, $4, $5);
+        if ($1->string() != "@init") {
+            Formal* self = new Formal(@$, ID("self"), ENV->self_type());
+            self->next($2);
+            $$ = new Function(@$, $1, self, $3, $4, $5);
+        } else {
+            $$ = new Function(@$, $1, $2, $3, $4, $5);
+        }
     }
     | error block {
         Formal* self = new Formal(@$, ID("self"), ENV->self_type());

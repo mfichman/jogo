@@ -26,6 +26,7 @@
 #include "BasicBlockGenerator.hpp"
 #include "RegisterAllocator.hpp"
 #include "Intel64CodeGenerator.hpp"
+#include "BasicBlockPrinter.hpp"
 #include "TreePrinter.hpp"
 #include "Machine.hpp"
 #include "Options.hpp"
@@ -33,21 +34,34 @@
 #include <iostream>
 
 int main(int argc, char** argv) {
+    // Create a new empty environment to store the AST and symbols tables, and
+    // set the options for compilation.
     Environment::Ptr env(new Environment());
     Options(env, argc, argv);
 
     // Run the compiler.  Output to a temporary file if the compiler will
     // continue on to another stage; otherwise, output the file directly.
-    std::string asm_file = env->assemble() ? tmpnam(0) : env->output();
     Parser::Ptr parser(new Parser(env));
     SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
     if (env->errors()) { return 0; }
+    if (env->dump_ast()) {
+        Stream::Ptr out(new Stream(env->output()));
+        TreePrinter::Ptr print(new TreePrinter(env, out));
+        return 0;
+    } 
 
     Machine::Ptr machine = Machine::intel64();
     BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env, machine));
     RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
-    Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env, asm_file));
+    if (env->dump_ir()) {
+        Stream::Ptr out(new Stream(env->output()));
+        BasicBlockPrinter::Ptr print(new BasicBlockPrinter(env, machine));
+        return 0;
+    } 
 
+    std::string asm_file = env->assemble() ? tmpnam(0) : env->output();
+    Stream::Ptr out(new Stream(asm_file));
+    Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env, out));
     if (!env->assemble()||env->errors()) { return 0; }
 
     // Run the assembler.  Output to a non-temp file if the compiler will stop

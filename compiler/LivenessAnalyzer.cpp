@@ -26,9 +26,8 @@ using namespace std;
 
 void LivenessAnalyzer::operator()(Function* feature) {
     if (!feature->basic_blocks()) { return; }
-    in_.clear();
-    out_.clear();
     finished_ = false;
+    reset_ = true;
     function_ = feature;
 
     // Iterate the liveness computation until the all the liveness rules are
@@ -37,6 +36,7 @@ void LivenessAnalyzer::operator()(Function* feature) {
         finished_ = true;
         round_ = feature->basic_block(0)->round();
         operator()(feature->basic_block(0));
+        reset_ = false;
     }
     //std::cout << feature->name()->string() << ", " << round_ << std::endl;
 }
@@ -47,6 +47,14 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
     // http://www.classes.cs.uchicago.edu/archive/2004/spring/22620-1/docs/liveness.pdf 
     if (block->round() > round_) { return; }
     block->round_inc();
+
+    if (reset_) {
+        for (int i = 0; i < block->instrs(); i++) {
+            const Instruction& instr = block->instr(i);
+            instr.liveness()->in().clear();
+            instr.liveness()->out().clear();
+        }
+    }
 
 /*
     std::cout << block->label()->string() << " -> ";
@@ -70,25 +78,25 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // propagate liveness information from the use of a temporary back to
         // its last write.
         const Instruction& instr = block->instr(i);
-        set<int>& in = in_[&instr];
-        set<int>& out = out_[&instr];
+        set<int>& in = instr.liveness()->in();
+        set<int>& out = instr.liveness()->out();
 
         // Recompute the 'out' set from the 'in' set of the next instruction(s).
         if (i == block->instrs()-1) { // Last instruction of the block
-            if (block->branch()) {
-                set<int>& s = in_[&block->branch()->instr(0)];
+            if (block->branch() && block->branch()->instrs()) {
+                set<int>& s = block->branch()->instr(0).liveness()->in();
                 for (set<int>::iterator j = s.begin(); j != s.end(); j++) {
                     finished_ &= !out.insert(*j).second;        
                 }
             } 
-            if (block->next()) {
-                set<int>& s = in_[&block->next()->instr(0)];
+            if (block->next() && block->next()->instrs()) {
+                set<int>& s = block->next()->instr(0).liveness()->in();
                 for (set<int>::iterator j = s.begin(); j != s.end(); j++) {
                     finished_ &= !out.insert(*j).second;        
                 }
             } 
         } else { // Get the 'in' set from the next instruction
-            set<int>& s = in_[&block->instr(i + 1)];
+            set<int>& s = block->instr(i+1).liveness()->in();
             for (set<int>::iterator j = s.begin(); j != s.end(); j++) {
                 finished_ &= !out.insert(*j).second;
             } 
@@ -145,12 +153,6 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
 */
     }
   //  std::cout << std::endl;
-}
-
-bool LivenessAnalyzer::live(const Instruction& inst, int temp) {
-    std::set<int>& in = in_[&inst];
-    std::set<int>::iterator i = in.find(temp);
-    return (i == in.end()) ? false : true;
 }
 
 

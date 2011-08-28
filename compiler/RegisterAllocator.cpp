@@ -88,7 +88,7 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
     // Now build the interference graph.
     for (int i = 0; i < block->instrs(); i++) {
         const Instruction& instr = block->instr(i);
-        const set<int>& live = liveness_->live_in(instr);
+        const set<int>& live = instr.liveness()->in();
         int first = instr.first().temp();
         int second = instr.second().temp();
         int result = instr.result().temp();

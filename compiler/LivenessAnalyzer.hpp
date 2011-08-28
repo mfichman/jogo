@@ -30,20 +30,10 @@
 #include <set>
 #include <map>
 
-#define APOLLO_MAX_REG 32
-
 /* Computes liveness information for a function */
 class LivenessAnalyzer : public Object {
 public:
     LivenessAnalyzer(Machine* mach) : machine_(mach) {}
-    bool live(const Instruction& inst, int temporary);
-
-    const std::set<int>& live_in(const Instruction& inst) {
-        return in_[&inst];  
-    } // Only here for printer
-    const std::set<int>& live_out(const Instruction& inst) {
-        return out_[&inst];
-    }
     
     void operator()(Function* feature);
     typedef Pointer<LivenessAnalyzer> Ptr;
@@ -55,7 +45,6 @@ private:
     Function::Ptr function_;
     bool finished_;
     bool entry_block_;
-    std::map<const Instruction*, std::set<int> > in_;
-    std::map<const Instruction*, std::set<int> > out_;
+    bool reset_;
     int round_;
 };

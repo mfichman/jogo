@@ -29,7 +29,7 @@
 
 class TreePrinter : public TreeNode::Functor {
 public:
-    TreePrinter(Environment* environment);
+    TreePrinter(Environment* environment, Stream* out=Stream::stdout());
     typedef Pointer<TreePrinter> Ptr;
 
 private:
@@ -66,7 +66,7 @@ private:
     void print_tabs();
     void print_comment(String* comment);
 
-    Environment::Ptr environment_;
+    Environment::Ptr env_;
     Stream::Ptr out_;
     int indent_level_;
 };
