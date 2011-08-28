@@ -47,5 +47,11 @@ int main() {
     assert('\0' == String__index(str3, 12));
     assert('\0' == String__index(str3, 209));
 
+    // Int -> String
+    String* str = Int_str__g(1234);
+    assert(strncmp(str->data, "1234", 4) == 0);
+    str = Int_str__g(-1234567890);
+    assert(strncmp(str->data, "-1234567890", 11) == 0);
+
     return 0;
 }

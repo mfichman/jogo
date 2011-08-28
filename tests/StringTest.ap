@@ -1,7 +1,7 @@
 # aptest print_ir off
 
 Stringable < Object {
-    string() String {
+    str?() String {
         return "is"
     }
 }

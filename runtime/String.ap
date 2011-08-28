@@ -31,13 +31,29 @@ String < Object {
         # Concatenates this string with 'string'.
     }
 
+    @equal(string String) native String {
+        # Returns true if this string is equal to 'string'.
+    }
+
     length?() native Int {
         # Returns the length of the string.
     }
 
     slice(begin Int, end Int) native String {
         # Return a new string containing the elements starting at 'begin' and 
-        # ending at 'end', inclusive.
+        # ending at the character before 'end'.
+    }
+
+    prefix(end Int) String {
+        # Return a new string containing elements starting at the beginning of
+        # the string and ending at the character before 'end'.
+        return self.slice(0, end)
+    }
+
+    suffix(begin Int) String {
+        # Return a new string containing elements starting at 'begin' and 
+        # continuing to the end fo this string.
+        return self.slice(begin, self.length)
     }
 
     starts_with(string String) native Bool {
@@ -50,17 +66,16 @@ String < Object {
         # 'string'
     }
     
-    uppercase() native String {
+    uppercase?() native String {
         # Returns an uppercase version of this string.
     }
 
-    lowercase() native String {
+    lowercase?() native String {
         # Returns a lowercase version of this string.
     }
 
-    string() native String {
-        # return self
-        # FIXME
+    str?() String {
+        return self
     }
 
     #slice(range Range) String native

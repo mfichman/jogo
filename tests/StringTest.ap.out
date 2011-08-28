@@ -4,7 +4,7 @@ Module
     name: Stringable
     comment:
     feature0: Function
-      name: string
+      name: str?
       type: String
       comment:
       formal0: Formal
@@ -29,7 +29,7 @@ Module
             argument0: StringLiteral
               value: what 
             argument1: Dispatch
-              name: string
+              name: str?
               argument0: Construct
                 type: Stringable
           argument1: StringLiteral
@@ -44,7 +44,7 @@ Module
             argument0: StringLiteral
               value: what 
             argument1: Dispatch
-              name: string
+              name: str?
               argument0: Dispatch
                 name: @add
                 argument0: Dispatch
@@ -52,7 +52,7 @@ Module
                   argument0: StringLiteral
                     value: what 
                   argument1: Dispatch
-                    name: string
+                    name: str?
                     argument0: Construct
                       type: Stringable
                 argument1: StringLiteral
@@ -69,7 +69,7 @@ Module
             argument0: StringLiteral
               value: what 
             argument1: Dispatch
-              name: string
+              name: str?
               argument0: Construct
                 type: Stringable
           argument1: Dispatch
@@ -79,7 +79,7 @@ Module
               argument0: StringLiteral
                 value:  up what 
               argument1: Dispatch
-                name: string
+                name: str?
                 argument0: Construct
                   type: Stringable
             argument1: StringLiteral

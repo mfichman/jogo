@@ -20,6 +20,9 @@
  * IN THE SOFTWARE.
  */
 
+#ifndef APOLLO_PRELUDE_H
+#define APOLLO_PRELUDE_H
+
 #include <stdint.h>
 
 typedef int64_t Int;
@@ -34,3 +37,7 @@ typedef int32_t S32;
 typedef int16_t S16;
 typedef int8_t S8;
 typedef uint8_t Char;
+
+typedef double Float;
+
+#endif

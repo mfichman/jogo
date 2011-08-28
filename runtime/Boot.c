@@ -45,6 +45,14 @@ void boot_print_int(Int integer) {
     fflush(stdout);
 }
 
+void boot_print_char(Char character) {
+    // Print a character to stdout.  This function is not part of the public 
+    // API for the Apollo library.
+
+    fputc(character, stdout);
+    fflush(stdout);
+}
+
 void boot_dummy(int a, int b, int c) {
     boot_print_int(a);
     boot_print_int(b);

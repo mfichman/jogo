@@ -199,7 +199,8 @@ void BasicBlockGenerator::operator()(Dispatch* expression) {
     // Insert a call expression, then pop the return value off the stack.
     call(name);
     if (!func->type()->is_void()) {
-        return_ = pop();
+        int val = 0;
+        return_ = mov(-machine_->return_reg(val)->id());
     } else {
         return_ = 0;
     }

@@ -327,12 +327,14 @@ void TypeChecker::operator()(Dispatch* expression) {
         expression->type(environment_->no_type());
         return;
     }
+    if (receiver->type()->is_self()) {
+        receiver->type(class_->type());
+    }
     Class::Ptr clazz = receiver->type()->clazz();
     if (!clazz) {
         err_ << expression->location();
         err_ << "Undefined class '";
-        err_ << receiver->type() << "'";
-        err_ << "\n";
+        err_ << receiver->type() << "'\n";
         environment_->error();
         expression->type(environment_->no_type());
         return;
@@ -609,6 +611,9 @@ void TypeChecker::operator()(Return* statement) {
         expression->type(environment_->void_type());
         return;
     }
+    if (expression->type()->is_self()) {
+        expression->type(class_->type());
+    }
     if (!expression->type()->subtype(scope_->type())) {
         err_ << statement->location();
         err_ << "Return must conform to type '";
@@ -662,22 +667,38 @@ void TypeChecker::operator()(Function* feature) {
     std::string name = module_->name()->string();
     if (class_) {
         if (!name.empty()) {
-            name += "__";
+            name += "_";
         }
         name += class_->name()->string();
     }
     if (!name.empty()) {
-        name += "__";
+        name += "_";
     }
     name += feature->name()->string();
-    std::replace(name.begin(), name.end(), ':', '_');
+
+    std::string label;
+    label.reserve(name.length());
+    for (int i = 0; i < name.length(); i++) {
+        if (name[i] == '@') {
+            label += '_';
+        } else if (name[i] == '?') {
+            label += "__g";
+        } else if (name[i] == '!') {
+            label += "__s";
+        } else if (name[i] == ':') {
+            label += "_";
+            i++;
+        } else {
+            label += name[i];
+        }
+    }
 #ifdef DARWIN
     if (feature->is_native()) {
-        name = "_" + name;
+        label = "_" + label;
     }
 #endif
 
-    feature->label(environment_->name(name));
+    feature->label(environment_->name(label));
 
     // Check all formal parameters.
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {

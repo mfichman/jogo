@@ -37,5 +37,9 @@ String* String__add(String* self, String* string);
 String* String_slice(String* self, Int begin, Int end);
 Int String_length__g(String* self);
 Bool String__equal(String* self, String* string);
+String* String_uppercase__g(String* self);
+String* String_lowercase__g(String* self);
+String* Int_str__g(Int self);
+String* Float_str__g(Float self);
 
 #endif

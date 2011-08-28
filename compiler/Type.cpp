@@ -112,6 +112,10 @@ bool Type::is_bool() const {
     return this->equals(environment_->bool_type());
 }
 
+bool Type::is_self() const {
+    return this->equals(environment_->self_type());
+}
+
 bool Type::is_int() const {
     return this->equals(environment_->int_type());
 }

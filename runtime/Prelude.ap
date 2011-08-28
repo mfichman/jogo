@@ -29,6 +29,7 @@ Int < Value {
     @equal(other Int) native Bool
     @less(other Int) native Bool
     @compl() native Int
+    str?() native String
 }
 
 Float < Value {
@@ -42,6 +43,7 @@ Float < Value {
     @equal(other Float) native Bool
     @less(other Int) native Bool
     @compl() native Float
+    str?() native String
 }
 
 Char < Value {

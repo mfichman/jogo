@@ -363,6 +363,7 @@ expression
     | expression '%' expression { $$ = new Dispatch(@$, ID("@mod"), $1, $3); } 
     | NOT expression { $$ = new Unary(@$, ID("not"), $2); }
     | '~' expression { $$ = new Dispatch(@$, ID("@compl"), $2, 0); } 
+    | '-' expression %prec '*' { $$ = new Dispatch(@$, ID("@neg"), $2, 0); }
     | call { $$ = $1; }
     | '(' expression ')' { $$ = $2; } 
     | string { $$ = $1; }
@@ -418,7 +419,7 @@ expression
         $$ = new Dispatch(@$, ID("@index"), $1, $3);
     }
     | expression '.' IDENTIFIER { 
-        $$ = new Dispatch(@$, $3, $1, 0);
+        $$ = new Dispatch(@$, ID($3->string() + "?"), $1, 0);
     }
     | expression '.' IDENTIFIER '(' expression_list ')' {
         $$ = new Dispatch(@$, $3, $1, $5);
@@ -440,7 +441,7 @@ expression
 
 string
     : SBEGIN expression string {
-        Dispatch* string = new Dispatch(@$, ID("string"), $2, 0);
+        Dispatch* string = new Dispatch(@$, ID("str?"), $2, 0);
         Dispatch* concat = new Dispatch(@$, ID("@add"), $1, string);
         $$ = new Dispatch(@$, ID("@add"), concat, $3);
     }
