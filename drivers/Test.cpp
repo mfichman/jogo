@@ -22,7 +22,7 @@
 
 #include "Environment.hpp"
 #include "Parser.hpp"
-#include "TypeChecker.hpp"
+#include "SemanticAnalyzer.hpp"
 #include "BasicBlockPrinter.hpp"
 #include "BasicBlockGenerator.hpp"
 #include "LivenessAnalyzer.hpp"
@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
     if (test_options.find("# aptest print_tree off") == test_options.end()) {
         TreePrinter::Ptr printer(new TreePrinter(env));
     }
-    TypeChecker::Ptr checker(new TypeChecker(env));
+    SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
     BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env, machine));
     if (test_options.find("# aptest print_ir off") == test_options.end()) {
         BasicBlockPrinter::Ptr printer(new BasicBlockPrinter(env, machine));

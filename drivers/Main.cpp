@@ -22,7 +22,7 @@
 
 #include "Environment.hpp"
 #include "Parser.hpp"
-#include "TypeChecker.hpp"
+#include "SemanticAnalyzer.hpp"
 #include "BasicBlockGenerator.hpp"
 #include "RegisterAllocator.hpp"
 #include "Intel64CodeGenerator.hpp"
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
     // continue on to another stage; otherwise, output the file directly.
     std::string asm_file = env->assemble() ? tmpnam(0) : env->output();
     Parser::Ptr parser(new Parser(env));
-    TypeChecker::Ptr checker(new TypeChecker(env));
+    SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
     if (env->errors()) { return 0; }
 
     Machine::Ptr machine = Machine::intel64();
