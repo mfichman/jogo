@@ -363,7 +363,19 @@ expression
     | expression '%' expression { $$ = new Dispatch(@$, ID("@mod"), $1, $3); } 
     | NOT expression { $$ = new Unary(@$, ID("not"), $2); }
     | '~' expression { $$ = new Dispatch(@$, ID("@compl"), $2, 0); } 
-    | '-' expression %prec '*' { $$ = new Dispatch(@$, ID("@neg"), $2, 0); }
+    | '-' expression %prec '*' { 
+        if (IntegerLiteral* lit = dynamic_cast<IntegerLiteral*>($2)) {
+            String* val = ENV->integer("-" + lit->value()->string());
+            $$ = new IntegerLiteral(@$, val);
+            delete $2;
+        } else if (FloatLiteral* lit = dynamic_cast<FloatLiteral*>($2)) {
+            String* val = ENV->floating("-" + lit->value()->string());
+            $$ = new FloatLiteral(@$, val);
+            delete $2;
+        } else {
+            $$ = new Dispatch(@$, ID("@neg"), $2, 0); 
+        }
+    }
     | call { $$ = $1; }
     | '(' expression ')' { $$ = $2; } 
     | string { $$ = $1; }
