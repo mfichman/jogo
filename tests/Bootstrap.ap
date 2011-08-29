@@ -1,5 +1,3 @@
-# aptest run_program on
-# aptest print_ir off
 
 import Boot
 

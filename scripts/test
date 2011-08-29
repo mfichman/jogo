@@ -40,17 +40,35 @@ tests.each do |test|
 
     test.sub!(/.ap$/, "")
 
-    if @options[:full]
-        flags = ""
-        flags = flags + " --leak-check=full"
-        flags = flags + " --suppressions=../scripts/valgrind.supp"
-        #flags = flags + " --gen-suppressions=all"
-        command = "valgrind #{flags} -q ../bin/test #{test} -p ../runtime "
-        command += "2>&1 | diff - #{test}.ap.out"
-        result = `#{command}`
-    else
-        result = `../bin/test #{test} -p ../runtime 2>&1 | diff - #{test}.ap.out`
+    flags = ""
+    run = false
+    File.open(test+".ap") do |file|
+        file.each_line do |line|
+            case line
+            when /^# aptest print_ast on/ 
+                flags += " --dump-ast"
+            when /^# aptest print_ir on/ 
+                flags += " --dump-ir"
+            end
+        end
     end
+    if flags.empty?
+        flags += "-o /tmp/out" 
+        run = true
+    end
+
+    command = "../bin/apollo #{test} -p ../runtime #{flags} &> /tmp/diff"
+    if @options[:full]
+        valgrind = "valgrind -q --leak-check=full"
+        valgrind = valgrind + "--suppressions=../scripts/valgrind.supp" 
+        #valgrind = valgrind + " --gen-suppressions=all"
+        command = valgrind + " " + command;    
+    end
+    `#{command}`
+    if run and $?.success?
+        `/tmp/out >> /tmp/diff 2>&1`
+    end
+    result = `diff /tmp/diff #{test}.ap.out` 
     check(test, result)
 end
 @total += tests.length

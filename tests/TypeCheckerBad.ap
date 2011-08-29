@@ -1,6 +1,6 @@
-# aptest print_tree off
-# aptest gen_code off
-# aptest print_ir off
+# Filler
+# Filler
+# Filler
 
 # Cycle1 and Cycle2 are type incompatible, because the blarg() function is
 # not covariant (which in turn is because of the foo() function on Cycle2.

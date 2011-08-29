@@ -1,5 +1,4 @@
-# aptest print_tree off
-# aptest print_ir off
+# aptest print_ast on
 
 CycleType1 < Interface {
     check1() CycleType2

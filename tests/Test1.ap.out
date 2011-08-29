@@ -1,3 +1,5 @@
+Test1.ap:7:15: Undeclared function 'f'
+Test1.ap:8:16: Undeclared function 'foo' in class 'Int'
 Module
   name: 
   feature0: Class
@@ -43,5 +45,3 @@ Module
         argument1: IntegerLiteral(1)
         argument2: IntegerLiteral(2)
         argument3: IntegerLiteral(3)
-Test1.ap:7:15: Undeclared function 'f'
-Test1.ap:8:16: Undeclared function 'foo' in class 'Int'

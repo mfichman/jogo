@@ -45,12 +45,12 @@ int main(int argc, char** argv) {
     // continue on to another stage; otherwise, output the file directly.
     Parser::Ptr parser(new Parser(env));
     SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
-    if (env->errors()) { return 0; }
     if (env->dump_ast()) {
         Stream::Ptr out(new Stream(env->output()));
         TreePrinter::Ptr print(new TreePrinter(env, out));
-        return 0;
+        return env->errors() ? 0 : 1;
     } 
+    if (env->errors()) { return 1; }
 
     Machine::Ptr machine = Machine::intel64();
     BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env, machine));
@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
     std::string asm_file = env->assemble() ? tmpnam(0) : env->output();
     Stream::Ptr out(new Stream(asm_file));
     Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env, out));
-    if (!env->assemble()||env->errors()) { return 0; }
+    if (!env->assemble()) { return 0; }
 
     // Run the assembler.  Output to a non-temp file if the compiler will stop
     // at the assembly stage
@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
 #elif defined(LINUX)
     ss << "gcc -m64 -lapollo " << obj_file << " -o " << exe_file;
 #elif defined(DARWIN)
-    ss << "gcc -Llib -lapollo " << obj_file << " -o " << exe_file;
+    ss << "gcc -L../lib -lapollo " << obj_file << " -o " << exe_file;
 #endif
     system(ss.str().c_str());
 

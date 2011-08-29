@@ -1,21 +1,2 @@
-Module
-  name: 
-  feature0: Function
-    name: main
-    type: Int
-    comment:
-    block: Block
-      child0: Statement
-        expression: Call
-          name: boot_print_str
-          argument0: StringLiteral
-            value: hello, world!\n
-      child1: Statement
-        expression: Call
-          name: boot_print_str
-          argument0: StringLiteral
-            value: boot it!\n
-      child2: Return
-        expression: IntegerLiteral(0)
 hello, world!
 boot it!

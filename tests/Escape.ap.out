@@ -1,42 +1,3 @@
-Module
-  name: 
-  feature0: Function
-    name: main
-    type: Int
-    comment:
-    block: Block
-      child0: Statement
-        expression: Call
-          name: boot_print_str
-          argument0: StringLiteral
-            value: \a\b\t\n\v\f\r hello, world!\n
-      child1: Statement
-        expression: Call
-          name: boot_print_str
-          argument0: StringLiteral
-            value: \x48\x45\x4c\x4c\x4f\x0a hello!\n
-      child2: Statement
-        expression: Call
-          name: boot_print_str
-          argument0: StringLiteral
-            value: \110\105\114\114\117\012 hello!\n
-      child3: Statement
-        expression: Call
-          name: boot_print_str
-          argument0: StringLiteral
-            value: \"
-      child4: Statement
-        expression: Call
-          name: boot_print_str
-          argument0: StringLiteral
-            value: \#
-      child5: Statement
-        expression: Call
-          name: boot_print_str
-          argument0: StringLiteral
-            value: \'
-      child6: Return
-        expression: IntegerLiteral(0)
 	
  hello, world!
 HELLO

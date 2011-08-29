@@ -30,10 +30,6 @@ TreePrinter::TreePrinter(Environment* env, Stream* out) :
     out_(out),
     indent_level_(0) {
 
-    if (env_->errors()) {
-        return;
-    }
-
     for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
         m(this);
     }    
