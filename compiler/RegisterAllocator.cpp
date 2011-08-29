@@ -261,20 +261,22 @@ void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
 
     for (int i = 0; i < block->instrs(); i++) {
         Instruction& instr = block->instr(i);
-        int first = instr.first().temp();
-        int second = instr.second().temp();
-        int result = instr.result().temp();
+        Operand first = instr.first();
+        Operand second = instr.second();
+        Operand result = instr.result();
         
         // Note: Negative numbers are used for the colored registers to make 
         // it clear that coloring has actually been done.
-        if (first > 0) {
-            instr.first(-graph_[first].reg());
+        if (first.temp() > 0) {
+            int reg = -graph_[first.temp()].reg();
+            instr.first(Operand::addr(reg, first.addr()));
         }
-        if (second > 0) {
-            instr.second(-graph_[second].reg());
+        if (second.temp() > 0) {
+            int reg = -graph_[second.temp()].reg();
+            instr.second(Operand::addr(reg, second.addr()));
         }
-        if (result > 0) {
-            instr.result(-graph_[result].reg());
+        if (result.temp() > 0) {
+            instr.result(-graph_[result.temp()].reg());
         }
     }
 }
@@ -330,10 +332,10 @@ void RegisterAllocator::spill_register(Function* func) {
             const Instruction& instr = block->instr(j);
             // Insert load if necessary for spilled register
             if (instr.first().temp() == spilled) {
-                repl->instr(LOAD, instr.first(), Operand::addr(addr), 0); 
+                repl->instr(LOAD, instr.first().temp(), Operand::addr(addr), 0); 
             }
             if (instr.second().temp() == spilled) {
-                repl->instr(LOAD, instr.second(), Operand::addr(addr), 0);
+                repl->instr(LOAD, instr.second().temp(), Operand::addr(addr), 0);
             } 
             
             // Insert a load before returns for caller regs
@@ -345,7 +347,8 @@ void RegisterAllocator::spill_register(Function* func) {
             repl->instr(instr);
             // Insert store if necessary for spilled register
             if (instr.result().temp() == spilled) {
-                repl->instr(STORE, Operand::addr(addr), instr.result(), 0);
+                int result = instr.result().temp();
+                repl->instr(STORE, Operand::addr(addr), result, 0);
             } 
 
         }

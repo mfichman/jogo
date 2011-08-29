@@ -35,6 +35,15 @@ Stream::Ptr operator<<(Stream::Ptr out, const Operand& op) {
     if (StringLiteral* le = dynamic_cast<StringLiteral*>(op.literal())) {
         return out << "'" << le->value() << "'";
     }
+    if (op.addr() && op.temp()) {
+        out << "mem[";
+        if (op.temp() > 0) {
+            out << "t" << op.temp();
+        } else {
+            out << "r" << -op.temp();
+        }   
+        return out << "+" << op.addr() << "]";
+    }
     if (op.addr()) {
         return out << "mem[" << op.addr() << "]";
     }

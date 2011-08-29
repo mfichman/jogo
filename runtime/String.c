@@ -25,6 +25,12 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+void String__destroy(String* self) {
+    printf("Destroying string!");
+    fflush(stdout);
+    free(self);
+}
+
 Char String__index(String* self, Int index) {
     // All index operations are checked.  If the index is off the end of the
     // string, then return the NUL character.

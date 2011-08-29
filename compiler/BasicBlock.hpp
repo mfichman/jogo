@@ -40,6 +40,12 @@ public:
         out.addr_ = addr;
         return out;
     }
+    static Operand addr(int temp, int addr) {
+        Operand out;
+        out.addr_ = addr;
+        out.temp_ = temp;
+        return out;
+    }
 
     const Operand& operator++() { temp_++; return *this; }
     Expression* literal() const { return literal_; }

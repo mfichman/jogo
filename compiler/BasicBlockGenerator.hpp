@@ -214,15 +214,19 @@ private:
     }
 
     Operand variable(String* name);
-    int stack(String* name);
+    Type* type(String* name);
     BasicBlock* basic_block();
-    void variable(String* name, Operand temporary);
+    int stack(String* name);
+    void variable(String* name, Operand temporary, Type* type);
     void stack(String* name, int offset);
     void enter_scope();
     void exit_scope();
     void emit_operator(Dispatch* expression);
 
-    Environment::Ptr environment_;
+    typedef std::pair<Operand, Type::Ptr> VarInfo;
+    void emit_refcount_check(const VarInfo& temp);
+
+    Environment::Ptr env_;
     Machine::Ptr machine_;
     Class::Ptr class_;
     Module::Ptr module_;
@@ -233,7 +237,8 @@ private:
     Operand return_;
     
     // Mapping from var to temporary
-    std::vector<std::map<String::Ptr, Operand> > variable_;
+    std::vector<std::map<String::Ptr, VarInfo> > variable_;
+    std::vector<std::map<String::Ptr, Type::Ptr> > type_;
     std::map<String::Ptr, int> stack_;
 
     // Next temporary to use

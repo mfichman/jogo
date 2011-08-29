@@ -233,7 +233,7 @@ void Intel64CodeGenerator::store(Operand r1, Operand r2) {
 void Intel64CodeGenerator::load(Operand r1, Operand r2) {
     // Loads the data at memory address r2 into register r1.  If r2 is a 
     // literal, then an immediate load is done.
-    assert(r1.temp());
+    assert(r1.temp() < 0);
     assert(-r1.temp() < machine_->regs());
     if (r2.temp()) {
         out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";

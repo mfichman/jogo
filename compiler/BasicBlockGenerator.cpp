@@ -28,14 +28,14 @@
 using namespace std;
 
 BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
-    environment_(env),
+    env_(env),
     machine_(mach),
     label_(0) {
 
-    if (environment_->errors()) {
+    if (env_->errors()) {
         return;
     }
-    for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
+    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
         m(this);
     }    
 }
@@ -59,80 +59,80 @@ void BasicBlockGenerator::operator()(Module* feature) {
 void BasicBlockGenerator::operator()(Formal* formal) {
 }
 
-void BasicBlockGenerator::operator()(StringLiteral* expression) {
+void BasicBlockGenerator::operator()(StringLiteral* expr) {
     // Load a pointer to the string from the string table.  Strings must
     // always be loaded first, since they are specified by address.
-    return_ = load(expression);
+    return_ = load(expr);
 }
 
-void BasicBlockGenerator::operator()(IntegerLiteral* expression) {
+void BasicBlockGenerator::operator()(IntegerLiteral* expr) {
     // Load the literal value with load-immediate
-    return_ = load(expression);
+    return_ = load(expr);
 }
 
-void BasicBlockGenerator::operator()(FloatLiteral* expression) {
+void BasicBlockGenerator::operator()(FloatLiteral* expr) {
     // Load the literal value with load-immediate
-    return_ = load(expression);
+    return_ = load(expr);
 }
 
-void BasicBlockGenerator::operator()(BooleanLiteral* expression) {
+void BasicBlockGenerator::operator()(BooleanLiteral* expr) {
     // Load the literal value with load-immediate
-    return_ = load(expression);
+    return_ = load(expr);
 }
 
-void BasicBlockGenerator::operator()(Binary* expression) {
-    // Emit the left and right expressions, then perform the operation on
+void BasicBlockGenerator::operator()(Binary* expr) {
+    // Emit the left and right exprs, then perform the operation on
     // the two operands, and return the result.
 
-    if (environment_->name("and") == expression->operation()) {
+    if (env_->name("and") == expr->operation()) {
         BasicBlock::Ptr left_true = basic_block();
         
         // Don't use the 'real' true branch; on true we want to emit the    
         // test for the second side of the and
-        Operand left = emit(expression->left(), left_true, false_, false);
+        Operand left = emit(expr->left(), left_true, false_, false);
         if (!block_->is_terminated()) {
             bz(left, false_, left_true);
         }
         emit(left_true); 
 
-        return_ = emit(expression->right(), true_, false_, invert_branch_);
+        return_ = emit(expr->right(), true_, false_, invert_branch_);
         
-    } else if (environment_->name("or") == expression->operation()) {
+    } else if (env_->name("or") == expr->operation()) {
         BasicBlock::Ptr left_false = basic_block();
         
         // Don't use the 'real' false branch; on false we want to emit
         // the test for the second side of the or
-        Operand left = emit(expression->left(), true_, left_false, true);
+        Operand left = emit(expr->left(), true_, left_false, true);
         if (!block_->is_terminated()) {
             bnz(left, true_, left_false);
         }
         emit(left_false);
     
-        return_ = emit(expression->right(), true_, false_, invert_branch_);
+        return_ = emit(expr->right(), true_, false_, invert_branch_);
 
     } else {
         assert(!"Unsupported binary operation");
     }
 }
 
-void BasicBlockGenerator::operator()(Unary* expression) {
+void BasicBlockGenerator::operator()(Unary* expr) {
     // Emit the code for the expression, then perform the operation on the
     // operand and return the result.
 
-    if (environment_->name("not")) {
+    if (env_->name("not")) {
         // Swap the false and true branches while calling the child, since 
         // the 'not' inverts the conditional 
-        Operand op = emit(expression->child(), false_, true_, !invert_branch_);
+        Operand op = emit(expr->child(), false_, true_, !invert_branch_);
     } else {
         assert(!"Unsupported unary operation");
     }
 }
 
-void BasicBlockGenerator::operator()(Call* expression) {
+void BasicBlockGenerator::operator()(Call* expr) {
     // Push objects in anticipation of the call instruction.  Arguments must
     // be pushed in reverse order.
     std::vector<Operand> args;
-    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
+    for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         args.push_back(emit(a));
     }
     for (int i = args.size()-1; i >= 0; i--) {
@@ -146,9 +146,9 @@ void BasicBlockGenerator::operator()(Call* expression) {
     }
 
     // Look up the function by name in the current context.
-    String::Ptr id = expression->identifier();
-    String::Ptr scope = expression->scope();
-    Function::Ptr func = expression->file()->function(scope, id);
+    String::Ptr id = expr->identifier();
+    String::Ptr scope = expr->scope();
+    Function::Ptr func = expr->file()->function(scope, id);
     String::Ptr name = func->label();
 
     // Insert a call expression, then pop the return value off the stack.
@@ -161,13 +161,13 @@ void BasicBlockGenerator::operator()(Call* expression) {
     }
 }
 
-void BasicBlockGenerator::operator()(Dispatch* expression) {
+void BasicBlockGenerator::operator()(Dispatch* expr) {
     // The call expression may actually be an operator, if the type of the
     // expression is primitive.
-    Type::Ptr type = expression->arguments()->type();
-    String::Ptr id = expression->identifier();
+    Type::Ptr type = expr->arguments()->type();
+    String::Ptr id = expr->identifier();
     if (id->string()[0] == '@' && type->is_primitive()) {
-        emit_operator(expression);
+        emit_operator(expr);
         return; 
     }
 
@@ -177,7 +177,7 @@ void BasicBlockGenerator::operator()(Dispatch* expression) {
 
     // Push objects in anticipation of the call instruction.
     std::vector<Operand> args;
-    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
+    for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         args.push_back(emit(a));
     }
     for (int i = args.size()-1; i >= 0; i--) {
@@ -191,13 +191,12 @@ void BasicBlockGenerator::operator()(Dispatch* expression) {
     }
 
     // Look up the function by name in the current context.
-    Expression::Ptr receiver = expression->arguments();
+    Expression::Ptr receiver = expr->arguments();
     Class::Ptr clazz = receiver->type()->clazz();
     Function::Ptr func = clazz->function(id);
-    String::Ptr name = func->label();
 
     // Insert a call expression, then pop the return value off the stack.
-    call(name);
+    call(func->label());
     if (!func->type()->is_void()) {
         int val = 0;
         return_ = mov(-machine_->return_reg(val)->id());
@@ -206,37 +205,42 @@ void BasicBlockGenerator::operator()(Dispatch* expression) {
     }
 }
 
-void BasicBlockGenerator::operator()(Construct* expression) {
+void BasicBlockGenerator::operator()(Construct* expr) {
 }
 
-void BasicBlockGenerator::operator()(Identifier* expression) {
+void BasicBlockGenerator::operator()(Identifier* expr) {
     // Simply look up the value of the variable as stored previously.
-    return_ = variable(expression->identifier());
+    return_ = variable(expr->identifier());
     if (!return_.temp()) {
-        int offset = stack(expression->identifier());
+        // Variable can't be found in a temporary; it must be an argument 
+        // passed on the stack.
+
+        int offset = stack(expr->identifier());
         assert(offset);
         return_ = load(Operand::addr(offset)); 
         // A load operand of zero means the variable must be loaded relative
         // to the base pointer.
 
-        variable(expression->identifier(), return_);
+        variable(expr->identifier(), return_, 0);
     }
 }
 
-void BasicBlockGenerator::operator()(Empty* expression) {
+void BasicBlockGenerator::operator()(Empty* expr) {
     // Do nothing
-    return_ = environment_->integer("0");
+    return_ = env_->integer("0");
 }
 
 void BasicBlockGenerator::operator()(Block* statement) {
+    enter_scope();
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
     }
+    exit_scope();
 }
 
 void BasicBlockGenerator::operator()(Simple* statement) {
-    Expression::Ptr expression = statement->expression();
-    expression(this);
+    Expression::Ptr expr = statement->expression();
+    expr(this);
 }
 
 void BasicBlockGenerator::operator()(Let* statement) {
@@ -319,7 +323,7 @@ void BasicBlockGenerator::operator()(Variable* statement) {
 
     Operand value;
     if (dynamic_cast<Empty*>(statement->initializer())) {
-        value = environment_->integer("0");
+        value = env_->integer("0");
     } else {
         value = emit(statement->initializer());
     }
@@ -327,7 +331,8 @@ void BasicBlockGenerator::operator()(Variable* statement) {
     Operand var = variable(statement->identifier());
     if (!var.temp()) {
         var = ++temp_;
-        variable(statement->identifier(), var);
+        Type::Ptr type = statement->initializer()->type();
+        variable(statement->identifier(), var, type);
     }
 
     block_->instr(MOV, var, value, 0);
@@ -385,7 +390,8 @@ void BasicBlockGenerator::operator()(Function* feature) {
         } else {
             // Variable is passed by register; precolor the temporary for this
             // formal parameter by using a negative number.
-            variable(f->name(), mov(-machine_->arg_reg(index)->id()));
+            int reg = -machine_->arg_reg(index)->id();
+            variable(f->name(), mov(reg), 0);
         }
         index++;
     } 
@@ -393,11 +399,10 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // Generate code for the body of the function.
     emit(feature->block());
 
-
-    if (feature->type()->equals(environment_->void_type())) {
+    exit_scope();
+    if (feature->type()->equals(env_->void_type())) {
         ret(); 
     }
-    exit_scope();
 }
 
 void BasicBlockGenerator::operator()(Attribute* feature) {
@@ -412,13 +417,13 @@ void BasicBlockGenerator::operator()(Type* feature) {
     // Pass
 }
 
-void BasicBlockGenerator::emit_operator(Dispatch* expression) {
+void BasicBlockGenerator::emit_operator(Dispatch* expr) {
     // FixMe: Replace this with a mini-parser that can read three-address-code
     // and output it as an inline function.
-    std::string id = expression->identifier()->string();
+    std::string id = expr->identifier()->string();
 
     std::vector<Operand> args;
-    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
+    for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         args.push_back(emit(a));
     }
    
@@ -455,17 +460,17 @@ void BasicBlockGenerator::emit_operator(Dispatch* expression) {
 
 BasicBlock* BasicBlockGenerator::basic_block() {
     BasicBlock* block = new BasicBlock();
-    block->label(environment_->name("l" + stringify(++label_)));
+    block->label(env_->name("l" + stringify(++label_)));
     return block;
 }
 
 
 Operand BasicBlockGenerator::variable(String* name) {
-    vector<map<String::Ptr, Operand> >::reverse_iterator i;
+    vector<map<String::Ptr, VarInfo> >::reverse_iterator i;
     for (i = variable_.rbegin(); i != variable_.rend(); i++) {
-        map<String::Ptr, Operand>::iterator j = i->find(name);        
+        map<String::Ptr, VarInfo>::iterator j = i->find(name);        
         if (j != i->end()) {
-            return j->second;
+            return j->second.first;
         }
     }
     return Operand();
@@ -481,9 +486,9 @@ int BasicBlockGenerator::stack(String* name) {
     
 }
 
-void BasicBlockGenerator::variable(String* name, Operand temp) {
+void BasicBlockGenerator::variable(String* name, Operand temp, Type* type) {
     assert(variable_.size());
-    variable_.back().insert(make_pair(name, temp));
+    variable_.back().insert(make_pair(name, VarInfo(temp, type)));
 }
 
 void BasicBlockGenerator::stack(String* name, int offset) {
@@ -491,9 +496,70 @@ void BasicBlockGenerator::stack(String* name, int offset) {
 }
 
 void BasicBlockGenerator::enter_scope() {
-    variable_.push_back(map<String::Ptr, Operand>());
+    variable_.push_back(map<String::Ptr, VarInfo>());
 }
 
 void BasicBlockGenerator::exit_scope() {
+    // Pops the symbol table for this scope off the stack, and inserts code
+    // to perform cleanup at the end of the scope.
+    if (variable_.size() > 1) {
+        map<String::Ptr, VarInfo>& var = variable_.back();
+        map<String::Ptr, VarInfo>::iterator i;
+        for (i = var.begin(); i != var.end(); i++) {
+            Type::Ptr type = i->second.second;
+            if (!type || type->is_primitive()) {
+                continue;
+            } else if (type->is_value()) {
+                std::cerr << type->name()->string() << std::endl;
+                assert(!"Need to figure out how to do value types");
+                // Call destructor!
+            } else {
+                // Emit a branch to check the variable's reference count and
+                // free it if necessary.
+                emit_refcount_check(i->second);               
+            }
+        }
+
+    }
     variable_.pop_back();
 }
+
+void BasicBlockGenerator::emit_refcount_check(const VarInfo& info) {
+    // Emit code to decrement the reference count for the object specified
+    // by 'temp', then 
+    int temp = info.first.temp();
+    Operand count;
+
+    // count = object->count + 1
+    count = load(Operand::addr(temp, 1));
+    IntegerLiteral::Ptr one(new IntegerLiteral(Location(), env_->integer("1")));
+    count = sub(count, load(one.pointer()));
+    
+    // if (count == 0) { free(); }
+    BasicBlock::Ptr then_block = basic_block();
+    BasicBlock::Ptr done_block = basic_block();
+    bnz(count, done_block, then_block);
+    
+    // TODO: Need to disallow assignments to function parameters...
+    emit(then_block);    
+    
+    Class::Ptr clazz = info.second->clazz(); 
+    Function::Ptr func = clazz->function(env_->name("@destroy"));
+    if (!func) {
+        assert(!"No destructor found!");
+    }
+    
+    // Insert a call expression to call the destructor.  
+    if (machine_->arg_regs()) {
+        int val = 0;
+        block_->instr(MOV, -machine_->arg_reg(val)->id(), temp, 0);
+    } else {
+        push(temp);
+    }
+    call(func->label());
+    emit(done_block);
+}
+
+
+
+

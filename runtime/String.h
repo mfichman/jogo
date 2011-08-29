@@ -27,11 +27,12 @@
 
 typedef struct String {
     Ptr _vtable;
-    U32 _refcount;
+    U64 _refcount;
     Int length;
     Char data[];
 } String;
 
+void String__destroy(String* self);
 Char String__index(String* self, Int index);
 String* String__add(String* self, String* string);
 String* String_slice(String* self, Int begin, Int end);

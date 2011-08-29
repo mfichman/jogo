@@ -93,7 +93,7 @@ bool Type::subtype(Type* other) const {
 }
 
 bool Type::is_primitive() const {
-    return is_int() || is_float();
+    return is_int() || is_float() || is_bool();
 }
 
 bool Type::is_interface() const {
