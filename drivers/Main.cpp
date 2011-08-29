@@ -73,6 +73,7 @@ int main(int argc, char** argv) {
     // Run the assembler.  Output to a non-temp file if the compiler will stop
     // at the assembly stage
     std::string obj_file = env->link() ? tmpnam(0) : env->output();
+    
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << "nasm -fobj64 " << asm_file << " -o " << obj_file;
@@ -87,9 +88,9 @@ int main(int argc, char** argv) {
     if (!env->link()) { return 0; }
 
     // Run the linker.  Always output to the given output file name.
-    std::string exe_file = env->output();
+    std::string exe_file = env->output() == "-" ? "out" : env->output();
 #if defined(WINDOWS)    
-    ss << "link.exe " << obj_file << " /OUT:" << exe_file;
+    ss << "link.exe " << obj_file << " /OUT:" << exe_file << ".exe";
 #elif defined(LINUX)
     ss << "gcc -m64 " << obj_file << " -o " << exe_file;
 #elif defined(DARWIN)
