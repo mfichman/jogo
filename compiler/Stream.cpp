@@ -63,6 +63,13 @@ Stream::Stream(const std::string& file) : error_(false) {
     }
 }
 
+Stream::Stream(int fd) : error_(false) {
+    // Creates an output stream that writes to a fixed file descriptor.
+    buffer_.reserve(1024);
+    fd_ = fd;
+	 	
+}
+
 Stream::~Stream() {
     // Flush the remaining buffer, and then close the stream if it isn't a
     // standard input/output/error stream.

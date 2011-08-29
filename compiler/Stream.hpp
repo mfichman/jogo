@@ -22,8 +22,10 @@
 
 #pragma once
 #include "Apollo.hpp"
-#include <windows.h>
 #include <vector>
+#ifdef WINDOWS
+#include <windows.h>
+#endif
 
 // Adapter for low-level I/O.  This class is used instead of C++ iostreams
 // because it can support pipe output.

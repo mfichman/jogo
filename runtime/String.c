@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-/*
 
 Char String__index(String* self, Int index) {
     // All index operations are checked.  If the index is off the end of the
@@ -183,4 +182,3 @@ String* Float_str__g(Float self) {
     abort();
 }
 
-*/
