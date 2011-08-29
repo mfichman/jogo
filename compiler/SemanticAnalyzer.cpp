@@ -34,7 +34,7 @@ using namespace std;
 
 SemanticAnalyzer::SemanticAnalyzer(Environment* environment) :
     environment_(environment),
-    err_(Stream::stderr()) {
+    err_(Stream::sterr()) {
 
     operator()(environment_->float_type());
     operator()(environment_->int_type());

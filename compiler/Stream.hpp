@@ -21,8 +21,8 @@
  */  
 
 #pragma once
-
 #include "Apollo.hpp"
+#include <windows.h>
 #include <vector>
 
 // Adapter for low-level I/O.  This class is used instead of C++ iostreams
@@ -37,8 +37,8 @@ public:
 #endif
     ~Stream();
 
-    static Stream* stdout();
-    static Stream* stderr();
+    static Stream* stout();
+    static Stream* sterr();
 
     operator bool() { return error_; }
     void write(const char* data, int len);

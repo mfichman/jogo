@@ -26,7 +26,13 @@
 #include <Environment.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef WINDOWS
+#define stat _stat
+#define S_ISDIR(x) ((x) & _S_IFDIR)
+#define S_ISREG(x) ((x) & _S_IFREG)
+#else
 #include <dirent.h>
+#endif
 
 Function* File::function(String* scope, String* name) {
     // Returns the function with the scope "scope" and name "name."  Searches
@@ -194,24 +200,47 @@ std::string File::base_name(const std::string& file) {
 }
 
 File::Iterator::Iterator(const std::string& file) :
+#ifdef WINDOWS
+    handle_(FindFirstFile(file.c_str(), &data_)) {
+#else
     handle_(opendir(file.c_str())),
     entry_(handle_ ? readdir((DIR*)handle_) : 0) {
+#endif
 }
 
 File::Iterator::~Iterator() {
+#ifdef WINDOWS
+    FindClose(handle_);
+#else
     closedir((DIR*)handle_);
+#endif
 }
 
 const File::Iterator& File::Iterator::operator++() {
+#ifdef WINDOWS
+    if (!FindNextFile(handle_, &data_)) {
+        FindClose(handle_);
+        handle_ = INVALID_HANDLE_VALUE;
+    }
+#else
     entry_ = handle_ ? readdir((DIR*)handle_) : 0;
+#endif
     return *this;
 }
 
 std::string File::Iterator::operator*() const {
+#ifdef WINDOWS
+    return std::string(data_.cFileName);
+#else
     return std::string(((dirent*)entry_)->d_name);
+#endif
 }
 
 File::Iterator::operator bool() const {
+#ifdef WINDOWS
+    return handle_ != INVALID_HANDLE_VALUE;
+#else
     return entry_ != 0;
+#endif
 }
 

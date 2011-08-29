@@ -30,7 +30,7 @@ Options::Options(Environment* env, int argc, char** argv) {
     // specified options.
 
     program_name_ = argv[0];
-    Stream::Ptr err = Stream::stderr();
+    Stream::Ptr err = Stream::sterr();
     std::string flag;
     std::vector<std::string> args;
     if (argc < 2) {
@@ -107,7 +107,7 @@ Options::Options(Environment* env, int argc, char** argv) {
 }
 
 void Options::print_usage() {
-    Stream::Ptr out = Stream::stdout();
+    Stream::Ptr out = Stream::stout();
     out << "Usage: " << program_name_ << " [OPTIONS] FILE...\n\n";
     out << "   -a, --assembly       Compile, but do not assemble or link.\n";
     out << "   -c, --compile        Compile and assemble, but do not link.\n";

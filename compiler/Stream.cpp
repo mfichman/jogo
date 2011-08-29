@@ -63,12 +63,6 @@ Stream::Stream(const std::string& file) : error_(false) {
     }
 }
 
-Stream::Stream(int fd) : error_(false) {
-    // Creates an output stream that writes to a fixed file descriptor.
-    buffer_.reserve(1024);
-    fd_ = fd;
-}
-
 Stream::~Stream() {
     // Flush the remaining buffer, and then close the stream if it isn't a
     // standard input/output/error stream.
@@ -82,22 +76,22 @@ Stream::~Stream() {
 #endif
 }
 
-Stream* Stream::stderr() {
+Stream* Stream::sterr() {
 #ifdef WINDOWS
-    static Stream::Ptr stderr = new Stream(GetStdHandle(STD_ERROR_HANDLE));
+    static Stream::Ptr sterr = new Stream(GetStdHandle(STD_ERROR_HANDLE));
 #else
-    static Stream::Ptr stderr = new Stream(2);
+    static Stream::Ptr sterr = new Stream(2);
 #endif
-    return stderr;
+    return sterr;
 }
 
-Stream* Stream::stdout() {
+Stream* Stream::stout() {
 #ifdef WINDOWS
-    static Stream::Ptr stdout = new Stream(GetStdHandle(STD_OUTPUT_HANDLE));
+    static Stream::Ptr stout = new Stream(GetStdHandle(STD_OUTPUT_HANDLE));
 #else
-    static Stream::Ptr stdout = new Stream(1);
+    static Stream::Ptr stout = new Stream(1);
 #endif
-    return stdout;
+    return stout;
 }
 
 void Stream::write(const char* data, int len) {
@@ -120,18 +114,18 @@ void Stream::write_direct(const char* data, int len) {
     int offset = 0;
     do {
 #ifdef WINDOWS
-        int written;
+        DWORD written;
         if (!WriteFile(fd_, data, len, &written, 0)) {
             error_ = true;
             return;
         }
 #else
         int written = ::write(fd_, data+offset, len-offset);
-#endif
         if (written < 0) {
             error_ = true;
             return;
         }
+#endif
         offset += written;
     } while(offset < len);
 }

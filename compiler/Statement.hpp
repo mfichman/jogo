@@ -27,6 +27,7 @@
 #include "String.hpp"
 #include "Expression.hpp"
 #include "Type.hpp"
+#undef Yield
 
 /* This file includes interfaces for statement nodes */
 class Statement : public TreeNode {

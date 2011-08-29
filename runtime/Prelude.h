@@ -26,7 +26,6 @@
 #include <stdint.h>
 
 typedef int64_t Int;
-typedef void* Ptr;
 typedef int64_t Bool;
 
 typedef uint32_t U32;
@@ -36,8 +35,9 @@ typedef uint8_t U8;
 typedef int32_t S32;
 typedef int16_t S16;
 typedef int8_t S8;
-typedef uint8_t Char;
 
+typedef uint8_t Char;
+typedef void* Ptr;
 typedef double Float;
 
 #endif

@@ -35,7 +35,7 @@
 /* Generates code for Intel 64 machines */
 class Intel64CodeGenerator : public TreeNode::Functor {
 public:
-    Intel64CodeGenerator(Environment* env, Stream* out=Stream::stdout());
+    Intel64CodeGenerator(Environment* env, Stream* out=Stream::stout());
     typedef Pointer<Intel64CodeGenerator> Ptr;
     
 private:

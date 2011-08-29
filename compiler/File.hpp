@@ -68,7 +68,12 @@ public:
     
     
 private:
+#ifdef WINDOWS
+    HANDLE handle_;
+    WIN32_FIND_DATA data_;
+#else
     void* handle_;
     void* entry_;
+#endif
 };
 

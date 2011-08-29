@@ -35,7 +35,7 @@ void yyset_extra(Parser*, void*);
 
 Parser::Parser(Environment* env) :
 	environment_(env),
-    err_(Stream::stderr()) {
+    err_(Stream::sterr()) {
 
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));

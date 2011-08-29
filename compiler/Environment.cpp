@@ -25,16 +25,6 @@
 #include <stack>
 
 Environment::Environment() :
-    root_(new Module(Location(), name(""), this)),
-    builtins_(new Module(Location(), name(""), this)),
-    builtin_file_(new File(0, builtins_, this)),
-    void_type_(new Type(Location(), name("Void"), 0, builtin_file_, this)),
-    bool_type_(new Type(Location(), name("Bool"), 0, builtin_file_, this)),
-    int_type_(new Type(Location(), name("Int"), 0, builtin_file_, this)),
-    string_type_(new Type(Location(), name("String"), 0, builtin_file_, this)),
-    no_type_(new Type(Location(), name("<<notype>>"), 0, builtin_file_, this)),
-    float_type_(new Type(Location(), name("Float"), 0, builtin_file_, this)),
-    self_type_(new Type(Location(), name("Self"), 0, builtin_file_, this)),
     output_("-"),
     dump_ast_(false),
     dump_ir_(false),
@@ -43,6 +33,17 @@ Environment::Environment() :
     link_(true),
     assemble_(true),
     errors_(0) {
+
+    root_ = new Module(Location(), name(""), this);
+    builtins_ = new Module(Location(), name(""), this);
+    builtin_file_ = new File(0, builtins_, this);
+    void_type_ = new Type(Location(), name("Void"), 0, builtin_file_, this);
+    bool_type_ = new Type(Location(), name("Bool"), 0, builtin_file_, this);
+    int_type_ = new Type(Location(), name("Int"), 0, builtin_file_, this);
+    string_type_ = new Type(Location(), name("String"), 0, builtin_file_, this);
+    no_type_ = new Type(Location(), name("<<notype>>"), 0, builtin_file_, this);
+    float_type_ = new Type(Location(), name("Float"), 0, builtin_file_, this);
+    self_type_ = new Type(Location(), name("Self"), 0, builtin_file_, this);
 
     module(root_);
 
