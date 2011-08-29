@@ -33,7 +33,6 @@ env.Append(CFLAGS = '-Wall -Werror -pedantic -std=c99 -m64')
 compiler_sources = env.Glob('build/compiler/*.cpp')
 compiler_sources += ['build/compiler/Grammar.yy', 'build/compiler/Lexer.ll'] 
 env.Program('bin/apollo', compiler_sources +  ['build/drivers/Main.cpp'])
-env.Program('bin/test', compiler_sources + ['build/drivers/Test.cpp'])
 
 
 library_sources = env.Glob('build/runtime/*.c') 

@@ -91,10 +91,27 @@ int main(int argc, char** argv) {
 #if defined(WINDOWS)    
     ss << "link.exe " << obj_file << " /OUT:" << exe_file;
 #elif defined(LINUX)
-    ss << "gcc -m64 -lapollo " << obj_file << " -o " << exe_file;
+    ss << "gcc -m64 " << obj_file << " -o " << exe_file;
 #elif defined(DARWIN)
-    ss << "gcc -L../lib -lapollo " << obj_file << " -o " << exe_file;
+    ss << "gcc " << obj_file << " -o " << exe_file;
 #endif
+    for (int i = 0; i < env->libs(); i++) {
+#ifdef WINDOWS
+        ss << env->lib(i) << ".lib";
+#else
+        ss << " -l" << env->lib(i);
+#endif
+    }
+    for (int i = 0; i < env->includes(); i++) {
+        if (File::is_dir(env->include(i))) {
+#ifdef WINDOWS
+            ss << "/L:" << env->include(i);
+#else
+            ss << " -L" << env->include(i);  
+#endif
+        }
+    }
+
     system(ss.str().c_str());
 
     return 0;

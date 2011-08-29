@@ -46,6 +46,7 @@ public:
     class Iterator;
     static bool is_dir(const std::string& file);
     static bool is_reg(const std::string& file);
+    static bool is_native_lib(const std::string& file);
     static std::string base_name(const std::string& file);
 
 private:

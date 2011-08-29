@@ -44,12 +44,12 @@ Environment::Environment() :
     assemble_(true),
     errors_(0) {
 
-    include(".");
-    include("./runtime");
     module(root_);
 
+    include(".");
     input("String");
     input("Prelude");
+    lib("apollo");
 }
 
 String* Environment::name(const std::string& str) {

@@ -150,6 +150,26 @@ bool File::is_reg(const std::string& name) {
     } 
 }
 
+bool File::is_native_lib(const std::string& name) {
+#ifdef WINDOWS
+    if (!name.compare(name.length()-2, std::string::npos, ".lib")) {
+        return true;
+    }
+    if (!name.compare(name.length()-2, std::string::npos, ".dll")) {
+        return true;
+    }
+#else
+    if (!name.compare(name.length()-2, std::string::npos, ".a")) {
+        return true;
+    }
+    if (!name.compare(name.length()-3, std::string::npos, ".so")) {
+        return true;
+    }
+#endif
+
+    return false;
+}
+
 std::string File::base_name(const std::string& file) {
     // Returns the last component of a file path, without the .ap extension.
 

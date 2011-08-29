@@ -93,7 +93,7 @@ Options::Options(Environment* env, int argc, char** argv) {
             } else if ("output" == flag) {
                 env->output(argv[i]);
             } else if ("library" == flag) {
-                assert(!"Flag '--library' not implemented");
+                env->lib(argv[i]);
             } else {
                 break;
             }

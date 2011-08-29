@@ -57,7 +57,8 @@ tests.each do |test|
         run = true
     end
 
-    command = "../bin/apollo #{test} -p ../runtime #{flags} &> /tmp/diff"
+    command = "../bin/apollo #{test} -p ../runtime -p ../lib "
+    command = command + "#{flags} &> /tmp/diff"
     if @options[:full]
         valgrind = "valgrind -q --leak-check=full"
         valgrind = valgrind + "--suppressions=../scripts/valgrind.supp" 

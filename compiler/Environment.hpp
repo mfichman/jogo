@@ -47,6 +47,7 @@ public:
     File* file(String* name);
     const std::string& include(int index) { return include_[index]; }
     const std::string& input(int index) { return input_[index]; }
+    const std::string& lib(int index) { return lib_[index]; }
     const std::string& output() const { return output_; }
     bool optimize() const { return optimize_; }
     bool link() const { return link_; }
@@ -58,8 +59,10 @@ public:
     int errors() { return errors_; }
     int includes() { return include_.size(); }
     int inputs() { return input_.size(); }
+    int libs() { return lib_.size(); }
     void include(const std::string& path) { include_.push_back(path); }
     void input(const std::string& path) { input_.push_back(path); }
+    void lib(const std::string& path) { lib_.push_back(path); }
     void output(const std::string& path) { output_ = path; }
     void dump_ir(bool dump) { dump_ir_ = dump; }
     void dump_liveness(bool dump) { dump_liveness_ = dump; }
@@ -91,6 +94,7 @@ private:
     std::map<String::Ptr, File::Ptr> file_;
     std::vector<std::string> include_;
     std::vector<std::string> input_;
+    std::vector<std::string> lib_;
 
     String::Ptr strings_;
     String::Ptr integers_;
