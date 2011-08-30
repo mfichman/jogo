@@ -1,8 +1,11 @@
+import os
+
 VariantDir('build/compiler', 'compiler', duplicate=0)
 VariantDir('build/drivers', 'drivers', duplicate=0)
 VariantDir('build/runtime', 'runtime', duplicate=0)
 
 env = Environment(CPPPATH = ['build/compiler'])
+env.Append(ENV = os.environ)
 env.Append(YACCFLAGS = '--defines=build/compiler/Grammar.hpp')
 env.Append(YACCFLAGS = '--report=all')
 env['AS'] = 'nasm'
@@ -52,7 +55,7 @@ env.StaticLibrary('lib/apollo', library_sources)
 #env.Program('bin/asmtest', 'samples/Test.linux.asm')
 
 if 'check' in COMMAND_LINE_TARGETS:
-    env.Command('check', 'bin/test', 'scripts/test')
+    env.Command('check', 'bin/apollo', 'scripts/test --verbose')
 
 if 'test' in COMMAND_LINE_TARGETS:
-    env.Command('test', 'bin/test', 'scripts/test --full --verbose')
+    env.Command('test', 'bin/apollo', 'scripts/test --full --verbose')

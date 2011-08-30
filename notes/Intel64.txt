@@ -1,0 +1,8 @@
+Caller regs (callee-preserved): rbx, r12, r13, r14, r15
+Callee regs (caller-preserved): rcx, rdx, rsi, rdi, r8, r9, r10, r11
+Argument registers: rdi, rsi, rdx, rcx, r8, r9
+
+
+Special regs: rax (setne), rsp, rbp (stack manip):s
+
+Available: rbx, rcx, rdx, rdi, rsi, r8, r9, r10 r11, r12, r13, r14, r15
