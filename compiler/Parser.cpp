@@ -37,6 +37,9 @@ Parser::Parser(Environment* env) :
 	environment_(env),
     err_(Stream::sterr()) {
 
+    input("String");
+    input("Prelude");
+
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));
     }

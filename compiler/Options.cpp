@@ -33,9 +33,6 @@ Options::Options(Environment* env, int argc, char** argv) {
     Stream::Ptr err = Stream::sterr();
     std::string flag;
     std::vector<std::string> args;
-    if (argc < 2) {
-        exit(0);
-    }
 
     for (int i = 1; i < argc; i++) {
         // Convert abbreviated flags into the longer descriptive form (e.g., 
@@ -106,6 +103,13 @@ Options::Options(Environment* env, int argc, char** argv) {
         }
     } 
 
+    if (!env->inputs()) {
+        print_usage();
+        err << "No input files.\n\n";
+        err->flush(); 
+        exit(1);
+    }
+
     err->flush();
 }
 
@@ -124,5 +128,4 @@ void Options::print_usage() {
     out << "   --dump-liveness      Display liveness info when outputing the IR.\n";
     out << "\n";
     out->flush();
-    exit(0);
 }

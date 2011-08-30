@@ -49,8 +49,6 @@ Environment::Environment() :
     module(root_);
 
     include(".");
-    input("String");
-    input("Prelude");
     lib("apollo");
 }
 

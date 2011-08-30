@@ -82,12 +82,13 @@ int main(int argc, char** argv) {
 #elif defined(DARWIN)
     ss << "nasm -fmacho64 " << asm_file << " -o " << obj_file;
 #endif 
-    system(ss.str().c_str());
+    if (system(ss.str().c_str())) { return 1; }
+    remove(asm_file.c_str());
     if (!env->link()) { return 0; }
 
     // Run the linker.  Always output to the given output file name.
     std::string exe_file = env->execute() ? tmpnam(0) : env->output();
-    if (env->output() == "-") {
+    if (exe_file == "-") {
         exe_file = "out";
     }
     ss.str("");
@@ -114,7 +115,8 @@ int main(int argc, char** argv) {
 #endif
         }
     }
-    system(ss.str().c_str());
+    if (system(ss.str().c_str())) { return 1; }
+    remove(obj_file.c_str());
     if (!env->execute()) { return 0; }
 
     // Run the program, if the -e flag was specified.
@@ -122,7 +124,9 @@ int main(int argc, char** argv) {
 #ifdef WINDOWS
     ss << exe_file;
 #else
-    ss << "./" << exe_file;
+    ss << exe_file;
 #endif
-    return system(ss.str().c_str());
+    int ret = system(ss.str().c_str());
+    remove(exe_file.c_str());
+    return ret;
 }
