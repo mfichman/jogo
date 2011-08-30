@@ -148,8 +148,8 @@ public:
 
 private:
     std::vector<Instruction> instrs_;
-    BasicBlock::Ptr branch_;
-    BasicBlock::Ptr next_;
+    BasicBlock* branch_;
+    BasicBlock* next_;
     String::Ptr label_;
     int round_;
 };
