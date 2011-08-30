@@ -34,6 +34,7 @@
 #include "Options.hpp"
 
 #include <iostream>
+#include <cstdlib>
 
 int main(int argc, char** argv) {
     // Create a new empty environment to store the AST and symbols tables, and

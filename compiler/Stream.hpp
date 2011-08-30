@@ -23,6 +23,7 @@
 #pragma once
 #include "Apollo.hpp"
 #include <vector>
+#include <cstring>
 #ifdef WINDOWS
 #include <windows.h>
 #endif
