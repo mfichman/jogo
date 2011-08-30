@@ -52,6 +52,7 @@ public:
     bool optimize() const { return optimize_; }
     bool link() const { return link_; }
     bool assemble() const { return assemble_; }
+    bool execute() const { return execute_; }
     bool dump_ir() const { return dump_ir_; }
     bool dump_liveness() const { return dump_liveness_; }
     bool dump_ast() const { return dump_ast_; }
@@ -70,6 +71,7 @@ public:
     void optimize(bool optimize) { optimize_ = optimize; }
     void link(bool link) { link_ = link; }
     void assemble(bool assemble) { assemble_ = assemble; }
+    void execute(bool execute) { execute_ = execute; }
     void module(Module* module);
     void file(File* name);
     void error(const std::string& error) { errors_++; }
@@ -83,6 +85,7 @@ public:
     Type* string_type() const { return string_type_; }
     Type* no_type() const { return no_type_; }
     Type* float_type() const { return float_type_; }
+    Type* char_type() const { return char_type_; }
     Type* self_type() const { return self_type_; }
 
 private:
@@ -109,6 +112,7 @@ private:
     Type::Ptr string_type_;
     Type::Ptr no_type_;
     Type::Ptr float_type_;
+    Type::Ptr char_type_;
     Type::Ptr self_type_;
 
     std::string output_;
@@ -118,6 +122,7 @@ private:
     bool optimize_;
     bool link_;
     bool assemble_;
+    bool execute_;
 
     int errors_;
 };

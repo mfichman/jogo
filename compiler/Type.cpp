@@ -93,7 +93,7 @@ bool Type::subtype(Type* other) const {
 }
 
 bool Type::is_primitive() const {
-    return is_int() || is_float() || is_bool();
+    return is_int() || is_float() || is_bool() || is_char();
 }
 
 bool Type::is_interface() const {
@@ -106,6 +106,10 @@ bool Type::is_object() const {
 
 bool Type::is_value() const {
     return clazz()->is_value();
+}
+
+bool Type::is_char() const {
+    return this->equals(environment_->char_type());
 }
 
 bool Type::is_bool() const {

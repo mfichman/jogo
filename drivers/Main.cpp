@@ -74,7 +74,6 @@ int main(int argc, char** argv) {
     // Run the assembler.  Output to a non-temp file if the compiler will stop
     // at the assembly stage
     std::string obj_file = env->link() ? tmpnam(0) : env->output();
-    
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << "nasm -fobj64 " << asm_file << " -o " << obj_file;
@@ -84,12 +83,14 @@ int main(int argc, char** argv) {
     ss << "nasm -fmacho64 " << asm_file << " -o " << obj_file;
 #endif 
     system(ss.str().c_str());
-    ss.str("");
-
     if (!env->link()) { return 0; }
 
     // Run the linker.  Always output to the given output file name.
-    std::string exe_file = env->output() == "-" ? "out" : env->output();
+    std::string exe_file = env->execute() ? tmpnam(0) : env->output();
+    if (env->output() == "-") {
+        exe_file = "out";
+    }
+    ss.str("");
 #if defined(WINDOWS)    
     ss << "link.exe " << obj_file << " /OUT:" << exe_file << ".exe";
 #elif defined(LINUX)
@@ -113,8 +114,15 @@ int main(int argc, char** argv) {
 #endif
         }
     }
-
     system(ss.str().c_str());
+    if (!env->execute()) { return 0; }
 
-    return 0;
+    // Run the program, if the -e flag was specified.
+    ss.str("");
+#ifdef WINDOWS
+    ss << exe_file;
+#else
+    ss << "./" << exe_file;
+#endif
+    return system(ss.str().c_str());
 }

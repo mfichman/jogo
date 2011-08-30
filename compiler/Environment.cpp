@@ -43,6 +43,7 @@ Environment::Environment() :
     string_type_ = new Type(Location(), name("String"), 0, builtin_file_, this);
     no_type_ = new Type(Location(), name("<<notype>>"), 0, builtin_file_, this);
     float_type_ = new Type(Location(), name("Float"), 0, builtin_file_, this);
+    char_type_ = new Type(Location(), name("Char"), 0, builtin_file_, this);
     self_type_ = new Type(Location(), name("Self"), 0, builtin_file_, this);
 
     module(root_);

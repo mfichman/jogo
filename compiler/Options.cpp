@@ -47,6 +47,7 @@ Options::Options(Environment* env, int argc, char** argv) {
             else if ("c" == flag) { flag = "compile"; }
             else if ("l" == flag) { flag = "library"; }
             else if ("o" == flag) { flag = "output"; }
+            else if ("e" == flag) { flag = "execute"; }
             else if ("h" == flag) { flag = "help"; }
             else {
                 err << "Unknown flag '" << argv[i] << "'\n";
@@ -80,6 +81,8 @@ Options::Options(Environment* env, int argc, char** argv) {
                 env->dump_ast(true);
             } else if ("dump-liveness" == flag) {
                 env->dump_liveness(true);
+            } else if ("execute" == flag) {
+                env->execute(true);
             } else {
                 break;
             }
@@ -111,10 +114,11 @@ void Options::print_usage() {
     out << "Usage: " << program_name_ << " [OPTIONS] FILE...\n\n";
     out << "   -a, --assembly       Compile, but do not assemble or link.\n";
     out << "   -c, --compile        Compile and assemble, but do not link.\n";
-    out << "   -h, --help           Print this help message.\n";
+    out << "   -e, --execute        Execute program as a script.\n";
     out << "   -l, --library LIB    Compile and link with library LIB.\n";
     out << "   -o, --output FILE    Write compiler output to FILE.\n";
     out << "   -p, --path DIR       Add the directory DIR to the source search path.\n";
+    out << "   -h, --help           Print this help message.\n";
     out << "   --dump-ir            Output the intermediate representation.\n";
     out << "   --dump-ast           Output the abstract syntax tree.\n";
     out << "   --dump-liveness      Display liveness info when outputing the IR.\n";

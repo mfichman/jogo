@@ -51,6 +51,7 @@ public:
     bool is_value() const;
     bool is_boolifiable() const;
     bool is_void() const;
+    bool is_char() const;
     bool is_self() const;
     void next(Type* next) { next_ = next; }
     void operator()(Functor* functor) { functor->operator()(this); }
