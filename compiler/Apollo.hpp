@@ -44,7 +44,7 @@ class Case;
 class Simple;
 class Block;
 class When;
-class Variable;
+class Assignment;
 class Until;
 class While;
 class Conditional;

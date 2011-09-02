@@ -42,4 +42,9 @@ typedef uint8_t Char;
 typedef void* Ptr;
 typedef double Float;
 
+typedef struct Object {
+    Ptr _vtable;
+    U64 _refcount; 
+} Object;
+
 #endif

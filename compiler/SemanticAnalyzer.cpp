@@ -533,7 +533,7 @@ void SemanticAnalyzer::operator()(Conditional* statement) {
     }
 }
 
-void SemanticAnalyzer::operator()(Variable* statement) {
+void SemanticAnalyzer::operator()(Assignment* statement) {
     // Ensure that a variable is not duplicated, or re-initialized with a 
     // different type.  This function handles both assignment and variable
     // initialization.

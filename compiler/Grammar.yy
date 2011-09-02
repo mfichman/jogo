@@ -40,7 +40,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %union { Formal* formal; }
 %union { Type* type; }
 %union { Generic* generic; }
-%union { Variable* variable; }
+%union { Assignment* assignment; }
 %union { Block* block; }
 %union { Feature::Flags flag; }
 
@@ -51,7 +51,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <formal>
 %destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <type>
 %destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <generic>
-%destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <variable>
+%destructor { if ($$ && !$$->refcount()) delete $$; $$ = 0; } <assignment>
 
 %pure-parser
 %locations
@@ -101,7 +101,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %type <formal> formal_signature formal formal_list
 %type <statement> conditional when when_list statement statement_list
 %type <block> block function_body
-%type <variable> variable variable_list
+%type <assignment> assignment assignment_list
 %type <expression> call string expression expression_list
 
 
@@ -279,13 +279,13 @@ statement_list
     ;
 
 statement
-    : LET variable_list block { $$ = new Let(@$, $2, $3); }
+    : LET assignment_list block { $$ = new Let(@$, $2, $3); }
     | WHILE expression block { $$ = new While(@$, $2, $3); }
     | RETURN expression SEPARATOR { $$ = new Return(@$, $2); }
     | RETURN SEPARATOR { $$ = new Return(@$, new Empty(@$)); }
     | YIELD expression SEPARATOR { $$ = new Yield(@$, $2); }
     | FORK call SEPARATOR { $$ = new Fork(@$, $2); }
-    | variable SEPARATOR { $$ = $1; }
+    | assignment SEPARATOR { $$ = $1; }
     | expression SEPARATOR { $$ = new Simple(@$, $1); }
     | conditional { $$ = $1; }
     | FOR IDENTIFIER IN expression block { 
@@ -293,7 +293,7 @@ statement
 
         // _i = $4.iterator()
         Dispatch* t1 = new Dispatch(@$, ID("iterator"), $4, 0);
-        Variable* t2 = new Variable(@$, ID("_i"), 0, t1);
+        Assignment* t2 = new Assignment(@$, ID("_i"), 0, t1);
         
         // _i.more()
         Identifier* t3 = new Identifier(@$, ID("_i"));
@@ -302,7 +302,7 @@ statement
         // $2 = _i.value()
         Identifier* t5 = new Identifier(@$, ID("_i"));
         Dispatch* t6 = new Dispatch(@$, ID("value"), t5, 0); 
-        Variable* t7 = new Variable(@$, $2, 0, t6); 
+        Assignment* t7 = new Assignment(@$, $2, 0, t6); 
 
         // i.next()
         Identifier* t8 = new Identifier(@$, ID("_i"));
@@ -487,20 +487,20 @@ call
     } 
     ; 
 
-variable_list
-    : variable ',' variable_list { $1->next($3); $$ = $1; }
-    | variable { $$ = $1; }
-    | expression { $$ = new Variable(@$, ID(""), 0, $1); }
-    | expression ',' variable_list {
-        $$ = new Variable(@$, ID(""), 0, $1);
+assignment_list
+    : assignment ',' assignment_list { $1->next($3); $$ = $1; }
+    | assignment { $$ = $1; }
+    | expression { $$ = new Assignment(@$, ID(""), 0, $1); }
+    | expression ',' assignment_list {
+        $$ = new Assignment(@$, ID(""), 0, $1);
         $$->next($3);
     }
     ;
 
-variable
-    : IDENTIFIER type { $$ = new Variable(@$, $1, $2, new Empty(@$)); }
-    | IDENTIFIER type '=' expression { $$ = new Variable(@$, $1, $2, $4); }
-    | IDENTIFIER '=' expression { $$ = new Variable(@$, $1, 0, $3); }
+assignment
+    : IDENTIFIER type { $$ = new Assignment(@$, $1, $2, new Empty(@$)); }
+    | IDENTIFIER type '=' expression { $$ = new Assignment(@$, $1, $2, $4); }
+    | IDENTIFIER '=' expression { $$ = new Assignment(@$, $1, 0, $3); }
     ;
 
 when_list

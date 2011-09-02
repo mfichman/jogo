@@ -323,10 +323,10 @@ void TreePrinter::operator()(Conditional* statement) {
     indent_level_--;
 }
 
-void TreePrinter::operator()(Variable* statement) {
+void TreePrinter::operator()(Assignment* statement) {
     indent_level_++;
     Expression::Ptr initializer = statement->initializer();
-    out_ << "Variable\n";
+    out_ << "Assignment\n";
     print_tabs(); out_ << "name: ";
     out_ << statement->identifier() << "\n";
     print_tabs(); out_ << "type: ";

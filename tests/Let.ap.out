@@ -12,11 +12,11 @@ Module
         type: Self
       block: Block
         child0: Let
-          variable0: Variable
+          variable0: Assignment
             name: a
             type: Int
             initializer: IntegerLiteral(0)
-          variable1: Variable
+          variable1: Assignment
             name: b
             type: Int
             initializer: Empty

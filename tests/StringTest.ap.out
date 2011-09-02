@@ -19,7 +19,7 @@ Module
     type: Int
     comment:
     block: Block
-      child0: Variable
+      child0: Assignment
         name: bob
         type: <<notype>>
         initializer: Dispatch
@@ -34,7 +34,7 @@ Module
                 type: Stringable
           argument1: StringLiteral
             value:  up
-      child1: Variable
+      child1: Assignment
         name: bob
         type: <<notype>>
         initializer: Dispatch
@@ -59,7 +59,7 @@ Module
                   value:  up
           argument1: StringLiteral
             value:  up
-      child2: Variable
+      child2: Assignment
         name: bob
         type: <<notype>>
         initializer: Dispatch

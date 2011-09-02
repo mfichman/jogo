@@ -78,7 +78,7 @@ union ParseNode {
 	String* string;
     Type* type;
     Generic* generic;
-    Variable* variable;
+    Assignment* assignment;
     Block* block;
 	Feature::Flags flag;
 };

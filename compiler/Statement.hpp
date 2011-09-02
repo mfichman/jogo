@@ -117,9 +117,9 @@ private:
 };
 
 /* Variable declaration */
-class Variable : public Statement {
+class Assignment : public Statement {
 public:
-    Variable(Location loc, String* ident, Type* type, Expression* expr) :
+    Assignment(Location loc, String* ident, Type* type, Expression* expr) :
         Statement(loc),
         identifier_(ident),
 		type_(type),
@@ -130,7 +130,7 @@ public:
     Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
     void operator()(Functor* functor) { functor->operator()(this); }
-    typedef Pointer<Variable> Ptr;
+    typedef Pointer<Assignment> Ptr;
 
 private:
     String::Ptr identifier_;
@@ -198,19 +198,19 @@ private:
 /* Let statement */
 class Let : public Statement {
 public:
-    Let(Location loc, Variable* variables, Statement* block) :
+    Let(Location loc, Assignment* variables, Statement* block) :
         Statement(loc),
         variables_(variables),
         block_(block) {
     }
 
-    Variable* variables() const { return variables_; }
+    Assignment* variables() const { return variables_; }
     Statement* block() const { return block_; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Let> Ptr;
 
 private:
-    Variable::Ptr variables_;
+    Assignment::Ptr variables_;
     Statement::Ptr block_;
 };
 

@@ -30,6 +30,52 @@
 #include <vector>
 #include <map>
 
+/* Variable structure, used to store info about assigned vars in a scope */
+class Variable : public Object {
+public:
+    Variable(Operand op, Type* type) :
+        operand_(op),
+        type_(type) {
+    }
+
+    Operand operand() const { return operand_; }
+    Type* type() const { return type_; }
+    typedef Pointer<Variable> Ptr;
+
+private:
+    Operand operand_;
+    Type::Ptr type_; 
+};
+
+/* Scope structure for recording end-of-scope cleanup info */
+class Scope : public Object {
+public:
+    Scope(BasicBlock* cleanup) : cleanup_(cleanup) {}
+
+    void variable(String* name, Variable* variable) { 
+        variable_[name] = variable; 
+    }
+    Variable* variable(String* name) const { 
+        std::map<String::Ptr, Variable::Ptr>::const_iterator i;
+        i = variable_.find(name);
+        if (i == variable_.end()) {
+            return 0;
+        } else {
+            return i->second;
+        }
+    }
+    int variables() const { 
+        return variable_.size(); 
+    }
+
+    typedef Pointer<Scope> Ptr;
+
+private:
+    friend class BasicBlockGenerator;
+    BasicBlock* cleanup_; // Block for inserting stack cleanup code
+    std::map<String::Ptr, Variable::Ptr> variable_;
+};
+
 /* Code generator structure; creates basic block flow graphs */
 class BasicBlockGenerator : public TreeNode::Functor {
 public:
@@ -56,7 +102,7 @@ private:
     void operator()(Let* let);
     void operator()(While* statement);
     void operator()(Conditional* statement);
-    void operator()(Variable* statement);
+    void operator()(Assignment* statement);
     void operator()(Return* statement);
     void operator()(When* statement);
     void operator()(Case* statement);
@@ -213,18 +259,18 @@ private:
         block_->branch(target);
     }
 
-    Operand variable(String* name);
-    Type* type(String* name);
     BasicBlock* basic_block();
     int stack(String* name);
-    void variable(String* name, Operand temporary, Type* type);
+
+    Variable* variable(String* name);
+    void variable(String* name, Variable* var);
     void stack(String* name, int offset);
     void enter_scope();
     void exit_scope();
     void emit_operator(Dispatch* expression);
-
-    typedef std::pair<Operand, Type::Ptr> VarInfo;
-    void emit_refcount_check(const VarInfo& temp);
+    void emit_scope_end(Scope* scope);
+    void emit_refcount_inc(Variable* var);
+    void emit_refcount_dec(Variable* var);
 
     Environment::Ptr env_;
     Machine::Ptr machine_;
@@ -237,8 +283,7 @@ private:
     Operand return_;
     
     // Mapping from var to temporary
-    std::vector<std::map<String::Ptr, VarInfo> > variable_;
-    std::vector<std::map<String::Ptr, Type::Ptr> > type_;
+    std::vector<Scope::Ptr> scope_;
     std::map<String::Ptr, int> stack_;
 
     // Next temporary to use

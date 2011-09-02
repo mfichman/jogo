@@ -66,7 +66,7 @@ Module
         type: Self
       block: Block
         child0: Let
-          variable0: Variable
+          variable0: Assignment
             name: _i
             type: <<notype>>
             initializer: Dispatch
@@ -79,7 +79,7 @@ Module
               argument0: Identifier
                 name: _i
             block: Block
-              child0: Variable
+              child0: Assignment
                 name: i
                 type: <<notype>>
                 initializer: Dispatch

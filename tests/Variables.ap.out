@@ -11,11 +11,11 @@ Module
         name: self
         type: Self
       block: Block
-        child0: Variable
+        child0: Assignment
           name: one
           type: Int
           initializer: Empty
-        child1: Variable
+        child1: Assignment
           name: two
           type: Int
           initializer: IntegerLiteral(0)

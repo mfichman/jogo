@@ -54,7 +54,7 @@ private:
     void operator()(Let* let);
     void operator()(While* statement);
     void operator()(Conditional* statement);
-    void operator()(Variable* statement);
+    void operator()(Assignment* statement);
     void operator()(Return* statement);
     void operator()(When* statement);
     void operator()(Case* statement);

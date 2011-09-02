@@ -36,36 +36,10 @@ public:
     BasicBlockPrinter(Environment* e, Machine* m, Stream* o=Stream::stout());
     typedef Pointer<BasicBlockPrinter> Ptr;
 
-    void operator()(Function* feature);
 private:
     void operator()(Module* feature);
     void operator()(Class* feature);
-    void operator()(Formal* formal);
-    void operator()(StringLiteral* expression);
-    void operator()(IntegerLiteral* expression);
-    void operator()(FloatLiteral* expression);
-    void operator()(BooleanLiteral* expression);
-    void operator()(Binary* expression);
-    void operator()(Unary* expression);
-    void operator()(Call* expression);
-    void operator()(Dispatch* expression);
-    void operator()(Construct* expression);
-    void operator()(Identifier* expression);
-    void operator()(Empty* empty);
-    void operator()(Let* statement);
-    void operator()(Block* statement);
-    void operator()(Simple* statement);
-    void operator()(While* statement);
-    void operator()(Conditional* statement);
-    void operator()(Variable* statement);
-    void operator()(Return* statement);
-    void operator()(When* statement);
-    void operator()(Case* statement);
-    void operator()(Fork* statement);
-    void operator()(Yield* statement);
-    void operator()(Attribute* feature);
-    void operator()(Import* feature);
-    void operator()(Type* type);
+    void operator()(Function* feature);
     void operator()(BasicBlock* block);
 
     Environment::Ptr env_;

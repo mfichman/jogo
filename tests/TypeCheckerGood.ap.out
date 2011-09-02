@@ -66,7 +66,7 @@ Module
         name: self
         type: Self
       block: Block
-        child0: Variable
+        child0: Assignment
           name: t
           type: <<notype>>
           initializer: Construct
@@ -80,14 +80,14 @@ Module
               name: check1
               argument0: Identifier
                 name: t
-        child2: Variable
+        child2: Assignment
           name: a
           type: <<notype>>
           initializer: Dispatch
             name: check1
             argument0: Identifier
               name: t
-        child3: Variable
+        child3: Assignment
           name: b
           type: <<notype>>
           initializer: Dispatch
@@ -95,20 +95,20 @@ Module
             argument0: Identifier
               name: a
             argument1: IntegerLiteral(10)
-        child4: Variable
+        child4: Assignment
           name: c
           type: CycleType1
           initializer: Empty
-        child5: Variable
+        child5: Assignment
           name: d
           type: CycleType2
           initializer: Empty
-        child6: Variable
+        child6: Assignment
           name: c
           type: <<notype>>
           initializer: Identifier
             name: d
-        child7: Variable
+        child7: Assignment
           name: d
           type: <<notype>>
           initializer: Identifier
@@ -122,7 +122,7 @@ Module
               name: c
             argument2: Identifier
               name: d
-        child9: Variable
+        child9: Assignment
           name: e
           type: Bool
           initializer: Empty

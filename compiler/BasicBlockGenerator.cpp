@@ -210,8 +210,10 @@ void BasicBlockGenerator::operator()(Construct* expr) {
 
 void BasicBlockGenerator::operator()(Identifier* expr) {
     // Simply look up the value of the variable as stored previously.
-    return_ = variable(expr->identifier());
-    if (!return_.temp()) {
+    Variable* var = variable(expr->identifier());
+    if (var) {
+        return_ = var->operand();
+    } else {
         // Variable can't be found in a temporary; it must be an argument 
         // passed on the stack.
 
@@ -221,7 +223,7 @@ void BasicBlockGenerator::operator()(Identifier* expr) {
         // A load operand of zero means the variable must be loaded relative
         // to the base pointer.
 
-        variable(expr->identifier(), return_, 0);
+        variable(expr->identifier(), new Variable(return_, 0));
     }
 }
 
@@ -313,13 +315,12 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
     emit(done_block);
 }
 
-void BasicBlockGenerator::operator()(Variable* statement) {
+void BasicBlockGenerator::operator()(Assignment* statement) {
     // FixMe: This breaks SSA form, because variables are not renamed.  With
     // this code the way it is, the generator only generates SSA for temporary
     // expressions.  This limitation is here as a punt on introducing
     // phi-functions until optimizations are needed, since without
     // optimizations, SSA is not needed anyway.
-
 
     Operand value;
     if (dynamic_cast<Empty*>(statement->initializer())) {
@@ -328,14 +329,14 @@ void BasicBlockGenerator::operator()(Variable* statement) {
         value = emit(statement->initializer());
     }
 
-    Operand var = variable(statement->identifier());
-    if (!var.temp()) {
-        var = ++temp_;
+    Variable::Ptr var = variable(statement->identifier());
+    if (!var) {
         Type::Ptr type = statement->initializer()->type();
-        variable(statement->identifier(), var, type);
+        var = new Variable(++temp_, type);
+        variable(statement->identifier(), var);
     }
 
-    block_->instr(MOV, var, value, 0);
+    block_->instr(MOV, var->operand(), value, 0);
 }
 
 void BasicBlockGenerator::operator()(Return* statement) {
@@ -391,13 +392,14 @@ void BasicBlockGenerator::operator()(Function* feature) {
             // Variable is passed by register; precolor the temporary for this
             // formal parameter by using a negative number.
             int reg = -machine_->arg_reg(index)->id();
-            variable(f->name(), mov(reg), 0);
+            variable(f->name(), new Variable(mov(reg), 0));
         }
         index++;
     } 
 
     String* exit = env_->name("_exit");
-    variable(exit, load(new BooleanLiteral(Location(), env_->integer("1"))), 0); 
+    BooleanLiteral* lit = new BooleanLiteral(Location(), env_->integer("1"));
+    variable(exit, new Variable(load(lit), 0)); 
     
     // Generate code for the body of the function.
     emit(feature->block());
@@ -468,15 +470,17 @@ BasicBlock* BasicBlockGenerator::basic_block() {
 }
 
 
-Operand BasicBlockGenerator::variable(String* name) {
-    vector<map<String::Ptr, VarInfo> >::reverse_iterator i;
-    for (i = variable_.rbegin(); i != variable_.rend(); i++) {
-        map<String::Ptr, VarInfo>::iterator j = i->find(name);        
-        if (j != i->end()) {
-            return j->second.first;
+Variable* BasicBlockGenerator::variable(String* name) {
+    // Look up the variable, starting in the current scope and continuing up
+    // the scope stack.
+    vector<Scope::Ptr>::reverse_iterator i;
+    for (i = scope_.rbegin(); i != scope_.rend(); i++) {
+        Variable* var = (*i)->variable(name);
+        if (var) {
+            return var;
         }
     }
-    return Operand();
+    return 0;
 }
 
 int BasicBlockGenerator::stack(String* name) {
@@ -489,9 +493,9 @@ int BasicBlockGenerator::stack(String* name) {
     
 }
 
-void BasicBlockGenerator::variable(String* name, Operand temp, Type* type) {
-    assert(variable_.size());
-    variable_.back().insert(make_pair(name, VarInfo(temp, type)));
+void BasicBlockGenerator::variable(String* name, Variable* var) {
+    assert(scope_.size());
+    scope_.back()->variable(name, var);
 }
 
 void BasicBlockGenerator::stack(String* name, int offset) {
@@ -499,17 +503,17 @@ void BasicBlockGenerator::stack(String* name, int offset) {
 }
 
 void BasicBlockGenerator::enter_scope() {
-    variable_.push_back(map<String::Ptr, VarInfo>());
+    scope_.push_back(new Scope(0));
 }
 
 void BasicBlockGenerator::exit_scope() {
     // Pops the symbol table for this scope off the stack, and inserts code
     // to perform cleanup at the end of the scope.
-    if (variable_.size() > 1) {
-        map<String::Ptr, VarInfo>& var = variable_.back();
-        map<String::Ptr, VarInfo>::iterator i;
-        for (i = var.begin(); i != var.end(); i++) {
-            Type::Ptr type = i->second.second;
+    if (scope_.size() > 1) {
+        Scope::Ptr scope = scope_.back();
+        map<String::Ptr, Variable::Ptr>::iterator i;
+        for (i = scope->variable_.begin(); i != scope->variable_.end(); i++) {
+            Type::Ptr type = i->second->type();
             if (!type || type->is_primitive()) {
                 continue;
             } else if (type->is_value()) {
@@ -519,17 +523,48 @@ void BasicBlockGenerator::exit_scope() {
             } else {
                 // Emit a branch to check the variable's reference count and
                 // free it if necessary.
-                emit_refcount_check(i->second);               
+                emit_refcount_dec(i->second);               
             }
         }
 
     }
-    variable_.pop_back();
+    scope_.pop_back();
 }
 
+void BasicBlockGenerator::emit_refcount_inc(Variable* var) {
+    // Emit code to increment the reference count for the object specified
+    // by 'temp'
+    int temp = var->operand().temp();
+
+    // Insert a call expression to call the refcount_dec function 
+    if (machine_->arg_regs()) {
+        int val = 0;
+        block_->instr(MOV, -machine_->arg_reg(val)->id(), temp, 0);
+    } else {
+        push(temp);
+    }
+    call(env_->name("_Object_refcount_inc"));
+}
+
+void BasicBlockGenerator::emit_refcount_dec(Variable* var) {
+    // Emit code to decrement the reference count for the object specified
+    // by 'temp'
+    int temp = var->operand().temp();
+
+    // Insert a call expression to call the refcount_dec function 
+    if (machine_->arg_regs()) {
+        int val = 0;
+        block_->instr(MOV, -machine_->arg_reg(val)->id(), temp, 0);
+    } else {
+        push(temp);
+    }
+    call(env_->name("_Object_refcount_dec"));
+}
+
+/*
 void BasicBlockGenerator::emit_refcount_check(const VarInfo& info) {
     // Emit code to decrement the reference count for the object specified
-    // by 'temp', then 
+    // by 'temp'
     int temp = info.first.temp();
     Operand count;
 
@@ -562,7 +597,6 @@ void BasicBlockGenerator::emit_refcount_check(const VarInfo& info) {
     call(func->label());
     emit(done_block);
 }
-
-
+*/
 
 
