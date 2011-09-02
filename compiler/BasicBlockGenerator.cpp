@@ -395,6 +395,9 @@ void BasicBlockGenerator::operator()(Function* feature) {
         }
         index++;
     } 
+
+    String* exit = env_->name("_exit");
+    variable(exit, load(new BooleanLiteral(Location(), env_->integer("1"))), 0); 
     
     // Generate code for the body of the function.
     emit(feature->block());
