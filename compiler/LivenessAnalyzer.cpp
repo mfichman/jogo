@@ -126,6 +126,9 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
             for (int k = 0; k < machine_->caller_regs(); k++) {
                 finished_ &= !in.insert(-machine_->caller_reg(k)->id()).second;
             }
+            for (int k = 0; k < machine_->return_regs(); k++) {
+                finished_ &= !in.insert(-machine_->return_reg(k)->id()).second;
+            }
         }
 
         // If the instruction is a call instruction, add all arg registers to the
