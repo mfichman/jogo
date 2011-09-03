@@ -550,8 +550,6 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
     }
 
     Type::Ptr type = variable(statement->identifier());
-
-
         
     // Attempt to assign void to a variable during initialization.
     if (init->type() && init->type()->equals(environment_->void_type())) {
@@ -598,6 +596,7 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
             return;
         }
         variable(statement->identifier(), init->type()); 
+        statement->type(init->type());
     }
 }
 

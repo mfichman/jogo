@@ -42,7 +42,7 @@ BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
 
 void BasicBlockGenerator::operator()(Class* feature) {
     class_ = feature;
-    enter_scope();
+    enter_scope(0);
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
@@ -233,7 +233,7 @@ void BasicBlockGenerator::operator()(Empty* expr) {
 }
 
 void BasicBlockGenerator::operator()(Block* statement) {
-    enter_scope();
+    enter_scope(basic_block());
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
     }
@@ -248,7 +248,7 @@ void BasicBlockGenerator::operator()(Simple* statement) {
 void BasicBlockGenerator::operator()(Let* statement) {
     // Enter a new scope, then emit code for initializing all the let
     // variables, and initialize code for the body.
-    enter_scope();
+    enter_scope(basic_block());
     for (Statement::Ptr v = statement->variables(); v; v = v->next()) {
         emit(v);
     } 
@@ -329,30 +329,30 @@ void BasicBlockGenerator::operator()(Assignment* statement) {
         value = emit(statement->initializer());
     }
 
+    Type::Ptr type = statement->type(); 
     Variable::Ptr var = variable(statement->identifier());
     if (!var) {
         Type::Ptr type = statement->initializer()->type();
         var = new Variable(++temp_, type);
         variable(statement->identifier(), var);
+    } else if (!type->is_value()) {
+        emit_refcount_dec(var);
     }
-
     block_->instr(MOV, var->operand(), value, 0);
+    if (!type->is_value()) {
+        emit_refcount_inc(var);
+    }
 }
 
 void BasicBlockGenerator::operator()(Return* statement) {
     if (!dynamic_cast<Empty*>(statement->expression())) {
+        // Don't actually return right away; store the result in a pseudo-var
+        // and return it after cleanup.
         Operand value = emit(statement->expression());
-        if (machine_->return_regs()) {
-            // Return the value by register, if the architecture supports
-            // return by register
-            int reg = 0;
-            block_->instr(MOV, -machine_->return_reg(reg)->id(), value, 0); 
-        } else {
-            // Otherwise, return on the stack.
-            push(value);
-        }
+        Type::Ptr type = statement->expression()->type();
+        scope_.back()->return_val(new Variable(value, type));
     }
-    ret();
+    scope_.back()->has_return(true);
 }
 
 void BasicBlockGenerator::operator()(When* statement) {
@@ -379,7 +379,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     block_ = 0;
     emit(basic_block());
     stack_.clear();
-    enter_scope();
+    enter_scope(basic_block());
 
     // Pop the formal parameters off the stack in normal order, and save them
     // to a temporary.
@@ -396,17 +396,13 @@ void BasicBlockGenerator::operator()(Function* feature) {
         }
         index++;
     } 
-
-    String* exit = env_->name("_exit");
-    BooleanLiteral* lit = new BooleanLiteral(Location(), env_->integer("1"));
-    variable(exit, new Variable(load(lit), 0)); 
     
     // Generate code for the body of the function.
     emit(feature->block());
-
     exit_scope();
-    if (feature->type()->equals(env_->void_type())) {
-        ret(); 
+
+    if(feature->type()->is_void()) {
+        emit_return();
     }
 }
 
@@ -463,9 +459,14 @@ void BasicBlockGenerator::emit_operator(Dispatch* expr) {
     }
 }
 
+void debug4() { }
+
 BasicBlock* BasicBlockGenerator::basic_block() {
     BasicBlock* block = new BasicBlock();
     block->label(env_->name("l" + stringify(++label_)));
+    if (block->label()->string() == "l7") {
+        debug4();
+    }
     return block;
 }
 
@@ -502,33 +503,70 @@ void BasicBlockGenerator::stack(String* name, int offset) {
     stack_.insert(make_pair(name, offset));
 }
 
-void BasicBlockGenerator::enter_scope() {
-    scope_.push_back(new Scope(0));
+void BasicBlockGenerator::enter_scope(BasicBlock* cleanup) {
+    scope_.push_back(new Scope(cleanup));
 }
 
 void BasicBlockGenerator::exit_scope() {
     // Pops the symbol table for this scope off the stack, and inserts code
     // to perform cleanup at the end of the scope.
-    if (scope_.size() > 1) {
-        Scope::Ptr scope = scope_.back();
-        map<String::Ptr, Variable::Ptr>::iterator i;
-        for (i = scope->variable_.begin(); i != scope->variable_.end(); i++) {
-            Type::Ptr type = i->second->type();
-            if (!type || type->is_primitive()) {
-                continue;
-            } else if (type->is_value()) {
-                std::cerr << type->name()->string() << std::endl;
-                assert(!"Need to figure out how to do value types");
-                // Call destructor!
-            } else {
-                // Emit a branch to check the variable's reference count and
-                // free it if necessary.
-                emit_refcount_dec(i->second);               
-            }
-        }
+    Scope::Ptr scope = scope_.back();
 
+    map<String::Ptr, Variable::Ptr>::iterator i;
+    for (i = scope->variable_.begin(); i != scope->variable_.end(); i++) {
+        emit_var_cleanup(i->second);
     }
+
+    if (!scope->has_return()) {
+        scope_.pop_back();
+        return;
+    }
+
+    // Search backwards through the vector and clean up variables in the 
+    // containing scope.
+    for (int j = scope_.size()-2; j > 1; j--) {
+        Scope::Ptr s = scope_[j];
+        for (i = s->variable_.begin(); i != s->variable_.end(); i++) {
+            emit_var_cleanup(i->second);
+        }
+    }
+
+    emit_return();
     scope_.pop_back();
+}
+
+void BasicBlockGenerator::emit_var_cleanup(Variable* var) {
+    Type::Ptr type = var->type();
+    if (type && !type->is_primitive()) {
+        if (type->is_value()) {
+            std::cerr << type->name()->string() << std::endl;
+            assert(!"Need to figure out how to do value types");
+            // Call destructor!
+        } else {
+            // Emit a branch to check the variable's reference count and
+            // free it if necessary.
+            emit_refcount_dec(var);               
+        }
+    }
+}
+
+void BasicBlockGenerator::emit_return() {
+    // Emit an actual return.  Emit code to return the value saved in the var
+    // '_ret' if the variable has been set.
+    if (!scope_.empty() && scope_.back()->return_val()) {
+        Variable::Ptr return_val = scope_.back()->return_val();
+        if (machine_->return_regs()) {
+            // Return the value by register, if the architecture supports return
+            // by register
+            int index = 0;
+            int reg = -machine_->return_reg(index)->id();
+            block_->instr(MOV, reg, return_val->operand(), 0); 
+        } else {
+            // Otherwise, return on the stack.
+            push(return_val->operand());
+        }
+    }
+    ret();
 }
 
 void BasicBlockGenerator::emit_refcount_inc(Variable* var) {
@@ -543,7 +581,7 @@ void BasicBlockGenerator::emit_refcount_inc(Variable* var) {
     } else {
         push(temp);
     }
-    call(env_->name("_Object_refcount_inc"));
+    call(env_->name("_Object__refcount_inc"));
 }
 
 void BasicBlockGenerator::emit_refcount_dec(Variable* var) {
@@ -558,7 +596,7 @@ void BasicBlockGenerator::emit_refcount_dec(Variable* var) {
     } else {
         push(temp);
     }
-    call(env_->name("_Object_refcount_dec"));
+    call(env_->name("_Object__refcount_dec"));
 }
 
 /*

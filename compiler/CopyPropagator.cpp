@@ -54,7 +54,7 @@ void CopyPropagator::operator()(BasicBlock* block) {
     std::map<int, Operand> lit;
 
     for (int i = 0; i < block->instrs(); i++) {
-        // Loop through all instructions in the block, looking for an recording
+        // Loop through all instructions in the block, looking for and recording
         // any aliases caused by move instructions.  Substitute aliases for the
         // originally copied value.  NOTE:  This assumes that the code is in
         // SSA form.
@@ -66,29 +66,39 @@ void CopyPropagator::operator()(BasicBlock* block) {
         // Check to see if any of the operands have aliases.
         if (first) {
             if (MOV == instr.opcode() && (j = lit.find(first)) != lit.end()) {
+                // If the RHS of a MOV can be replaced by a literal, then
+                // morph it into a load for that literal
                 instr.first(j->second);
                 instr.opcode(LOAD);
             }
             if ((j = eq.find(first)) != eq.end()) {
+                // If the RHS has an alias to a non-precolored register, then
+                // substitute that alias.
                 instr.first(j->second);
             }
         }
         if (second) {
             if ((j = eq.find(second)) != eq.end()) {
+                // If the RHS (second arg) has an alias to a non-precolored 
+                // register, then substitute that alias.
                 instr.second(j->second);
             }
         }
 
-        // If the instruction is a MOV, then insert the LHS as an alias for the
-        // RHS.  Make sure to use the RHS's alias that if the RHS itself has an
-        // alias.
+        // If the instruction is a MOV, mark the LHS as an alias of the RHS
         if (MOV == instr.opcode()) {
             int result = instr.result().temp();
             Operand rhs = instr.first();
             if (rhs.temp() && (j = eq.find(rhs.temp())) != eq.end()) {
-                rhs = j->second;
+                // If the RHS has an alias, use that instead, but only if it's
+                // not a machine reg
+                if (j->second.temp() > 0) {
+                    rhs = j->second;
+                }
             }
-            eq[result] = rhs;
+            if (rhs.temp() > 0) {
+                eq[result] = rhs;
+            }
         } 
         if (LOAD == instr.opcode()) {
             int result = instr.result().temp();

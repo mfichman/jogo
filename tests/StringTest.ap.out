@@ -21,7 +21,7 @@ Module
     block: Block
       child0: Assignment
         name: bob
-        type: <<notype>>
+        type: String
         initializer: Dispatch
           name: @add
           argument0: Dispatch
@@ -36,7 +36,7 @@ Module
             value:  up
       child1: Assignment
         name: bob
-        type: <<notype>>
+        type: String
         initializer: Dispatch
           name: @add
           argument0: Dispatch
@@ -61,7 +61,7 @@ Module
             value:  up
       child2: Assignment
         name: bob
-        type: <<notype>>
+        type: String
         initializer: Dispatch
           name: @add
           argument0: Dispatch

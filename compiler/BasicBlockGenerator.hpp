@@ -50,7 +50,7 @@ private:
 /* Scope structure for recording end-of-scope cleanup info */
 class Scope : public Object {
 public:
-    Scope(BasicBlock* cleanup) : cleanup_(cleanup) {}
+    Scope(BasicBlock* cleanup) : cleanup_(cleanup), has_return_(0) {}
 
     void variable(String* name, Variable* variable) { 
         variable_[name] = variable; 
@@ -64,15 +64,20 @@ public:
             return i->second;
         }
     }
-    int variables() const { 
-        return variable_.size(); 
-    }
+    void return_val(Variable* var) { return_val_ = var; }
+    void has_return(bool ret) { has_return_ = ret; }
+    int variables() const { return variable_.size(); }
+    BasicBlock* cleanup() const { return cleanup_; }
+    Variable* return_val() const { return return_val_; }
+    bool has_return() const { return has_return_; }
 
     typedef Pointer<Scope> Ptr;
 
 private:
     friend class BasicBlockGenerator;
-    BasicBlock* cleanup_; // Block for inserting stack cleanup code
+    BasicBlock::Ptr cleanup_; // Block for inserting stack cleanup code
+    bool has_return_;
+    Variable::Ptr return_val_;
     std::map<String::Ptr, Variable::Ptr> variable_;
 };
 
@@ -265,12 +270,13 @@ private:
     Variable* variable(String* name);
     void variable(String* name, Variable* var);
     void stack(String* name, int offset);
-    void enter_scope();
+    void enter_scope(BasicBlock* cleanup);
     void exit_scope();
     void emit_operator(Dispatch* expression);
-    void emit_scope_end(Scope* scope);
+    void emit_var_cleanup(Variable* var);
     void emit_refcount_inc(Variable* var);
     void emit_refcount_dec(Variable* var);
+    void emit_return();
 
     Environment::Ptr env_;
     Machine::Ptr machine_;

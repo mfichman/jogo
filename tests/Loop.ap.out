@@ -68,7 +68,7 @@ Module
         child0: Let
           variable0: Assignment
             name: _i
-            type: <<notype>>
+            type: Iterator
             initializer: Dispatch
               name: iterator
               argument0: Construct
@@ -81,7 +81,7 @@ Module
             block: Block
               child0: Assignment
                 name: i
-                type: <<notype>>
+                type: String
                 initializer: Dispatch
                   name: value
                   argument0: Identifier

@@ -59,6 +59,10 @@ int main(int argc, char** argv) {
         CopyPropagator::Ptr copy(new CopyPropagator(env));
         DeadCodeEliminator::Ptr opt(new DeadCodeEliminator(env, machine));
     }
+    if (env->dump_ir()) {
+        Stream::Ptr out(new Stream(env->output()));
+        BasicBlockPrinter::Ptr print(new BasicBlockPrinter(env, machine, out));
+    } 
     RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
     if (env->dump_ir()) {
         Stream::Ptr out(new Stream(env->output()));

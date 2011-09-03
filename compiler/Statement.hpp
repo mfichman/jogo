@@ -129,6 +129,7 @@ public:
     String* identifier() const { return identifier_; }
     Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
+    void type(Type* type) { type_ = type; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Assignment> Ptr;
 

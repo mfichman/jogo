@@ -35,15 +35,19 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
     if (environment_->errors()) {
         return;
     }
-
+    
+    out_ << "default rel\n";
+    out_ << "section .data\n";
     for (String::Ptr s = environment_->strings(); s; s = s->next()) {
         string(s);
     }
-
     for (String::Ptr s = environment_->integers(); s; s = s->next()) {
         out_ << "    lit" << (void*)s.pointer() << " dq " << s << "\n";
     }
 
+    out_ << "section .text\n";
+    out_ << "extern _Object__refcount_dec\n";
+    out_ << "extern _Object__refcount_inc\n";
     for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
         m(this);
     }
@@ -194,10 +198,10 @@ void Intel64CodeGenerator::literal(Operand literal) {
         if(number < MAXIMM) {
             out_ << le->value();
         } else {
-            out_ << "[rel lit" << (void*)le->value() << "]";
+            out_ << "[lit" << (void*)le->value() << "]";
         }
     } else if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(expr)) {
-        out_ << "[rel lit" << (void*)le->value() << "]";
+        out_ << "[lit" << (void*)le->value() << "]";
         return;
     }
 }
@@ -249,7 +253,7 @@ void Intel64CodeGenerator::load(Operand r1, Operand r2) {
         Expression* expr = r2.literal();
         if (StringLiteral* le = dynamic_cast<StringLiteral*>(expr)) {
             out_ << "    lea " << machine_->reg(-r1.temp()) << ", ";
-            out_ << "[rel lit" << (void*)le->value() << "]";
+            out_ << "[lit" << (void*)le->value() << "]";
         } else if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(expr)) {
             out_ << "    mov " << machine_->reg(-r1.temp()) << ", "; 
             out_ << le->value();
@@ -262,11 +266,11 @@ void Intel64CodeGenerator::load(Operand r1, Operand r2) {
                 out_ << le->value();
             } else {
                 out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";
-                out_ << "[rel lit" << (void*)le->value() << "]";
+                out_ << "[lit" << (void*)le->value() << "]";
             }
         } else if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(expr)) {
             out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";
-            out_ << "[rel lit" << (void*)le->value() << "]";
+            out_ << "[lit" << (void*)le->value() << "]";
             return;
         }
     } else {
@@ -417,6 +421,7 @@ void Intel64CodeGenerator::string(String* string) {
         out += "\", 0x0";
     }
 
+    out_ << "align 8\n";
     out_ << "lit" << (void*)string << ": \n";  
     out_ << "    dq 0\n"; // vtable
     out_ << "    dq 1\n"; // reference count

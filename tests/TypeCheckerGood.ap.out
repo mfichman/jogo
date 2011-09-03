@@ -68,7 +68,7 @@ Module
       block: Block
         child0: Assignment
           name: t
-          type: <<notype>>
+          type: TypeChecker
           initializer: Construct
             type: TypeChecker
         child1: Statement
@@ -82,14 +82,14 @@ Module
                 name: t
         child2: Assignment
           name: a
-          type: <<notype>>
+          type: Int
           initializer: Dispatch
             name: check1
             argument0: Identifier
               name: t
         child3: Assignment
           name: b
-          type: <<notype>>
+          type: Int
           initializer: Dispatch
             name: @add
             argument0: Identifier
@@ -105,12 +105,12 @@ Module
           initializer: Empty
         child6: Assignment
           name: c
-          type: <<notype>>
+          type: CycleType2
           initializer: Identifier
             name: d
         child7: Assignment
           name: d
-          type: <<notype>>
+          type: CycleType1
           initializer: Identifier
             name: c
         child8: Statement
