@@ -263,7 +263,7 @@ void BasicBlockGenerator::operator()(Identifier* expr) {
 
 void BasicBlockGenerator::operator()(Empty* expr) {
     // Do nothing
-    return_ = env_->integer("0");
+    return_ = load(env_->integer("0"));
 }
 
 void BasicBlockGenerator::operator()(Block* statement) {
@@ -801,17 +801,33 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
     // Emits the memory alloc/vtable setup for the class.  FIXME: Eventually,
     // move to a prototype & copy type approach for initializing variables
     // FIXME: Run variable initializers here
-    if (class_->is_object()) {
-       String::Ptr one = env_->integer("1");
-       String::Ptr size = env_->integer(stringify(class_->size()));
-       emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
-       emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
-       call(env_->name("_calloc"));        
-       Operand self = emit_pop_ret(); 
-       variable(new Variable(env_->name("self"), self, 0)); 
-       Operand vtable = Operand::addr(self.temp(), 0);
-       Operand label = load(env_->name("_"+class_->name()->string()+"__vtable"));
-       store(vtable, label);
+    if (!class_->is_object()) { return; }
+
+    String::Ptr one = env_->integer("1");
+    String::Ptr size = env_->integer(stringify(class_->size()));
+    emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
+    emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
+    call(env_->name("_calloc"));        
+    Operand self = emit_pop_ret(); 
+    variable(new Variable(env_->name("self"), self, 0)); 
+    Operand vtable = Operand::addr(self.temp(), 0);
+    Operand label = load(env_->name("_"+class_->name()->string()+"__vtable"));
+    store(vtable, label);
+    
+    // Emit initializer code for initialized attributes
+    for (Feature::Ptr f = class_->features(); f; f = f->next()) {
+        if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
+            if (!attr->initializer()) {
+                continue;
+            }
+            if (dynamic_cast<Empty*>(attr->initializer())) {
+                continue;
+            }
+            Operand value = emit(attr->initializer());
+            Operand addr = Operand::addr(self.temp(), attr->slot()+2);
+            // +2 is for vtable and refcount slots
+            store(addr, value);
+        }
     }
 }
 

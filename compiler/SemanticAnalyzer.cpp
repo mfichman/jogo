@@ -166,21 +166,16 @@ void SemanticAnalyzer::operator()(Class* feature) {
         env_->error();
     }
 
-    // Iterate through all the features and add the functions and variables in
-    // the current scope.
-    std::set<String::Ptr> features;
+    // Iterate through all the features and make sure there are no duplicates
+    // in the current scope.
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
-            if (variable(attr->name())) {
-                err_ << f->location();
-                err_ << "Duplicate definition of attribute '";
-                err_ << attr->name() << "'\n";
-                env_->error();
-            } else {
-                variable(attr->name(), attr->type());
-            }
-            continue;
+            attr(this);
         }
+    }
+
+    std::set<String::Ptr> features;
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
             if (features.find(func->name()) != features.end()) {
                 err_ << f->location();
@@ -189,13 +184,8 @@ void SemanticAnalyzer::operator()(Class* feature) {
                 env_->error();
             }
             features.insert(func->name());
-            continue;
+            func(this);
         }
-    }
-
-    // Now type-check all the sub-features.
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        f(this); // lol
     }
 
     exit_scope();
@@ -767,6 +757,13 @@ void SemanticAnalyzer::operator()(Function* feature) {
 void SemanticAnalyzer::operator()(Attribute* feature) {
     // Select a slot for this attribute.
     feature->slot(slot_++);
+
+    if (variable(feature->name())) {
+        err_ << feature->location();
+        err_ << "Duplicate definition of attribute '";
+        err_ << feature->name() << "'\n";
+        env_->error();
+    }
 
     // Make sure that the attribute type conforms to the declared type of
     // the attribute, if there is one.

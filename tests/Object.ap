@@ -2,6 +2,7 @@ import Boot
 
 TestObject < Object {
 
+    initialized = 137
     bar Int
     baz Bool
 
@@ -17,6 +18,10 @@ TestObject < Object {
     baz?() Bool {
         ret baz
     }
+
+    initialized?() Int {
+        ret initialized
+    }
 }
 
 main() Int {
@@ -29,5 +34,7 @@ main() Int {
     } else {
         boot_print_str("false\n")
     }
+    boot_print_int(test.initialized) 
+    boot_print_str("\n")
     ret 0
 }
