@@ -325,7 +325,7 @@ void RegisterAllocator::spill_register(Function* func) {
         // If this is the first block, and we're spilling a caller register,
         // then add a store
         if (i == 0 && is_caller_reg) {
-            repl->instr(STORE, Operand::addr(addr), spilled, 0);
+            repl->instr(STORE, 0, Operand::addr(addr), spilled);
         }
 
         for (int j = 0; j < block->instrs(); j++) {
@@ -348,7 +348,7 @@ void RegisterAllocator::spill_register(Function* func) {
             // Insert store if necessary for spilled register
             if (instr.result().temp() == spilled) {
                 int result = instr.result().temp();
-                repl->instr(STORE, Operand::addr(addr), result, 0);
+                repl->instr(STORE, 0, Operand::addr(addr), result);
             } 
 
         }

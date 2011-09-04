@@ -34,7 +34,8 @@ Class::Class(Location loc, Type* t, Type* mixins, String* cmt, Feature* f) :
     features_(f),
     is_object_(false),
     is_value_(false),
-    is_interface_(false) {
+    is_interface_(false),
+    size_(0) {
 
     for (Feature* feat = features_; feat; feat = feat->next()) {
         if (Attribute* attr = dynamic_cast<Attribute*>(feat)) {

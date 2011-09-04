@@ -1,0 +1,31 @@
+
+import Boot
+
+Ctor1 < Object {
+
+    @init() {
+        boot_print_str("1\n")
+    }
+
+    @destroy() {
+        boot_print_str("4\n")
+    }
+}
+
+Ctor2 < Object {
+    @init(int Int) {
+        boot_print_int(int)
+        boot_print_str("\n")
+    }
+    @destroy() {
+        boot_print_str("3\n")
+    }
+}
+
+main() Int {
+
+    b = Ctor1()
+    c = Ctor2(2)
+    
+    return 0
+}

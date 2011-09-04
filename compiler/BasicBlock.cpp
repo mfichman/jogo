@@ -23,6 +23,9 @@
 #include "BasicBlock.hpp"
 
 Stream::Ptr operator<<(Stream::Ptr out, const Operand& op) {
+    if (op.label()) {
+        return out << op.label();
+    }
     if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(op.literal())) {
         return out << le->value();
     }

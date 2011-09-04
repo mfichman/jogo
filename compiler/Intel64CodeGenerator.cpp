@@ -28,28 +28,29 @@ static const Register::Ptr ESP(new Register("rsp", 0, false));
 static const Register::Ptr EBP(new Register("rbp", 0, false));
 
 Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
-    environment_(env),
+    env_(env),
     machine_(Machine::intel64()),
     out_(out) {
 
-    if (environment_->errors()) {
+    if (env_->errors()) {
         return;
     }
     
     out_ << "default rel\n";
     out_ << "section .data\n";
-    for (String::Ptr s = environment_->strings(); s; s = s->next()) {
+    for (String::Ptr s = env_->strings(); s; s = s->next()) {
         string(s);
     }
-    for (String::Ptr s = environment_->integers(); s; s = s->next()) {
+    for (String::Ptr s = env_->integers(); s; s = s->next()) {
         out_ << "    lit" << (void*)s.pointer() << " dq " << s << "\n";
     }
 
     out_ << "section .text\n";
+    out_ << "extern _calloc\n";
     out_ << "extern _Object__dispatch\n";
     out_ << "extern _Object__refcount_dec\n";
     out_ << "extern _Object__refcount_inc\n";
-    for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
+    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
         m(this);
     }
 
@@ -77,12 +78,13 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     // immutable.
 
     if (feature->is_object()) {
-        std::string name = feature->name()->string();
+        String::Ptr name = feature->name();
+        Function::Ptr dtor = feature->function(env_->name("@destroy"));
         out_ << "section .text\n";
         out_ << "align 8\n";
         out_ << "global _" << name << "__vtable\n";
         out_ << "_" << name << "__vtable:\n";
-        out_ << "    dq 0\n"; // FixMe: destructor here
+        out_ << "    dq " << dtor->label() << "\n"; 
         out_ << "    dq " << feature->jump1s() << "\n";
         for (int i = 0; i < feature->jump1s(); i++) {
             out_ << "    dq " << feature->jump1(i) << "\n";
@@ -174,7 +176,7 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case DIV: arith("div", res, a1, a2); break;
         case PUSH: emit("push", a1); break;
         case POP: emit("pop", res); break;
-        case STORE: store(res, a1); break;
+        case STORE: store(a1, a2); break;
         case LOAD: load(res, a1); break;
         case NOTB: emit("mov", res, a1); emit("not", res); break;
         case ANDB: emit("mov", res, a1); emit("and", res, a2); break;
@@ -244,7 +246,10 @@ void Intel64CodeGenerator::literal(Operand literal) {
 void Intel64CodeGenerator::store(Operand r1, Operand r2) {
     // Moves the literal or register in r2 into the memory address specified
     // by register r1. 
+    assert(!r2.label());
+
     out_ << "    mov ";
+
     if (r1.temp()) {
         assert(-r1.temp() < machine_->regs());
         // Store to memory address specified by register plus offset.
@@ -258,7 +263,6 @@ void Intel64CodeGenerator::store(Operand r1, Operand r2) {
             out_ << "[rbp+" << r1.addr() * machine_->word_size() << "], ";
         }
     }
-
 
     if (r2.temp()) { // Register
         assert(-r2.temp() < machine_->regs());
@@ -274,7 +278,11 @@ void Intel64CodeGenerator::load(Operand r1, Operand r2) {
     // literal, then an immediate load is done.
     assert(r1.temp() < 0);
     assert(-r1.temp() < machine_->regs());
-    if (r2.temp()) {
+    if (r2.label()) {
+        out_ << "    lea " << machine_->reg(-r1.temp()) << ", ";
+        out_ << "[" << r2.label()->string() << "]";
+    }
+    else if (r2.temp()) {
         out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";
         assert(-r2.temp() < machine_->regs());
         // Load from memory address specified by register operand plus offset.

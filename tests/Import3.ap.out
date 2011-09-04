@@ -34,33 +34,33 @@ Module
     comment:
     feature0: Attribute
       name: var1
-      type: <<notype>>
+      type: Sub1::Test
       initializer: Construct
         type: Sub1::Test
     feature1: Attribute
       name: var2
-      type: <<notype>>
+      type: Int
       initializer: Call
         name: test
         module: Sub1
     feature2: Attribute
       name: var3
-      type: <<notype>>
+      type: Sub2::Test
       initializer: Construct
         type: Sub2::Test
     feature3: Attribute
       name: var4
-      type: <<notype>>
+      type: Int
       initializer: Call
         name: test
         module: Sub2
     feature4: Attribute
       name: var5
-      type: <<notype>>
+      type: Test
       initializer: Construct
         type: Test
     feature5: Attribute
       name: var6
-      type: <<notype>>
+      type: Int
       initializer: Call
         name: test

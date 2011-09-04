@@ -750,7 +750,8 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     // No explicitly declared type, but the initializer can be used to infer
     // the type.
     if (!feature->type()) {
-        variable(feature->name(), feature->initializer()->type());     
+        variable(feature->name(), initializer->type());     
+        feature->type(initializer->type());
         return;
     }
 
@@ -767,11 +768,7 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
         environment_->error();
     }
 
-    if (feature->type()) {
-        variable(feature->name(), feature->type());
-    } else {
-        variable(feature->name(), initializer->type());
-    }
+    variable(feature->name(), feature->type());
 }
 
 void SemanticAnalyzer::operator()(Import* feature) {

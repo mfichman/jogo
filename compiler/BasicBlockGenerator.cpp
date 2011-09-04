@@ -24,8 +24,6 @@
 #include <cassert>
 #include <algorithm>
 
-#define REFCOUNT_OFFSET 0
-
 using namespace std;
 
 BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
@@ -60,7 +58,9 @@ void BasicBlockGenerator::operator()(Class* feature) {
     // Output intermediate-level code for the class given by 'feature'.  
     // This function also sets up the vtable for the class.
     class_ = feature;
-    enter_scope(0);
+    calculate_size(feature);
+
+    enter_scope();
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
@@ -68,88 +68,7 @@ void BasicBlockGenerator::operator()(Class* feature) {
 
     if (!feature->is_object()) { return; }
 
-    // Generate the Pearson perfect hash that will be used for vtable lookups.
-    // FixMe: This is extremely haggard, because I couldn't find an algorithm
-    // for generating the Pearson hash permutation algorithm.  Supposedly,
-    // there is such an algorithm, but I couldn't find any literature on it.  
-    // This brute-force method of ensuring no collisions may fail in some 
-    // cases, which is a serious problem.
-    
-    // Initially set the size of the hash table to the number of functions.
-    // The size of the table will grow to prevent collisions.
-    int n = 0;
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
-            if (func->name()->string() != "@destroy") {
-                n++;
-            }
-        }
-    }
-    if (!n) { return; }
-    n *= 2;
-
-    // Step 1: Place all keys into buckets using a simple hash.  There will
-    // be collisions, but they will be resolved in steps 2-3.
-    vector<JumpBucket> bucket(n);
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
-            if (func->name()->string() != "@destroy") {
-                uint64_t hash = fnv_hash(0, func->name()) % n;
-                bucket[hash].push_back(func);
-            }
-        }
-    }
-
-    // Step 2: Sort buckets and process the ones with the most items first.
-    sort(bucket.begin(), bucket.end(), SortJumpBuckets()); 
-    
-    // Step 3: Attempt to place items in the buckets into empty slots in the
-    // second jump table, starting with the largest buckets first.
-    vector<Function::Ptr> value(n);
-    vector<Function::Ptr> slots;
-    for (int i = 0; i < bucket.size(); i++) {
-        if (bucket[i].size() <= 0) { break; }
-        int d = 1; 
-retry:
-        // Try to place all the values into empty value slots in the second
-        // jump table.  If that doesn't work, then increment the hash mixing
-        // value "d"
-        slots = value;
-        for (int j = 0; j < bucket[i].size(); j++) {
-            uint64_t hash = fnv_hash(d, bucket[i][j]->name()) % n;
-            if (slots[hash]) {
-                d++;
-                goto retry;
-            } else {
-                slots[hash] = bucket[i][j];
-            }
-        }
-
-        // Success! Record the d-value (i.e., hash mixing value) for the 
-        // current bucket, and continue.
-        uint64_t hash = fnv_hash(0, bucket[i][0]->name()) % n;
-        feature->jump1(hash, d);
-        value = slots;
-    }
-    for (int i = 0; i < value.size(); i++) {
-        feature->jump2(i, value[i]);
-    }
-/*
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
-            if (func->name()->string() == "@destroy") { continue; }
-            std::cout << func->name()->string() << std::endl;
-            uint64_t hash1 = fnv_hash(0, func->name());
-            uint64_t d = feature->jump1(hash1 % n);
-            uint64_t hash2 = fnv_hash(d, func->name());
-            std::cout << "   n: " << n << std::endl;
-            std::cout << "   hash1 %n: " << hash1 % n << std::endl;
-            std::cout << "   hash1: " << hash1 << std::endl;
-            std::cout << "   d: " << d << std::endl;
-            std::cout << "   hash2: " << hash2 << std::endl;
-        }
-    }
-*/
+    emit_vtable(feature);
 }
 
 void BasicBlockGenerator::operator()(Module* feature) {
@@ -311,6 +230,24 @@ void BasicBlockGenerator::operator()(Dispatch* expr) {
 }
 
 void BasicBlockGenerator::operator()(Construct* expr) {
+    // Push objects in anticipation of the call instruction.  Arguments must
+    // be pushed in reverse order.
+    vector<Operand> args;
+    for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
+        args.push_back(emit(a));
+    }
+    for (int i = args.size()-1; i >= 0; i--) {
+        emit_push_arg(i, args[i]);
+    }
+
+    // Look up the function by name in the current context.
+    String::Ptr id = env_->name("@init");
+    Class::Ptr clazz = expr->type()->clazz();
+    Function::Ptr func = clazz->function(id);
+
+    // Insert a call expression, then pop the return value off the stack.
+    call(func->label());
+    return_ = emit_pop_ret();
 }
 
 void BasicBlockGenerator::operator()(Identifier* expr) {
@@ -328,7 +265,7 @@ void BasicBlockGenerator::operator()(Identifier* expr) {
         // A load operand of zero means the variable must be loaded relative
         // to the base pointer.
 
-        variable(expr->identifier(), new Variable(return_, 0));
+        variable(new Variable(expr->identifier(), return_, 0));
     }
 }
 
@@ -338,7 +275,7 @@ void BasicBlockGenerator::operator()(Empty* expr) {
 }
 
 void BasicBlockGenerator::operator()(Block* statement) {
-    enter_scope(basic_block());
+    enter_scope();
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
     }
@@ -353,7 +290,7 @@ void BasicBlockGenerator::operator()(Simple* statement) {
 void BasicBlockGenerator::operator()(Let* statement) {
     // Enter a new scope, then emit code for initializing all the let
     // variables, and initialize code for the body.
-    enter_scope(basic_block());
+    enter_scope();
     for (Statement::Ptr v = statement->variables(); v; v = v->next()) {
         emit(v);
     } 
@@ -427,19 +364,20 @@ void BasicBlockGenerator::operator()(Assignment* statement) {
     // phi-functions until optimizations are needed, since without
     // optimizations, SSA is not needed anyway.
 
+    Expression::Ptr init = statement->initializer();
     Operand value;
-    if (dynamic_cast<Empty*>(statement->initializer())) {
+    if (dynamic_cast<Empty*>(init.pointer())) {
         value = env_->integer("0");
     } else {
-        value = emit(statement->initializer());
+        value = emit(init);
     }
 
     Type::Ptr type = statement->type(); 
     Variable::Ptr var = variable(statement->identifier());
     if (!var) {
-        Type::Ptr type = statement->initializer()->type();
-        var = new Variable(++temp_, type);
-        variable(statement->identifier(), var);
+        Type::Ptr type = init->type();
+        var = new Variable(statement->identifier(), ++temp_, type);
+        variable(var);
     } else if (!type->is_value()) {
         emit_refcount_dec(var);
     }
@@ -453,9 +391,7 @@ void BasicBlockGenerator::operator()(Return* statement) {
     if (!dynamic_cast<Empty*>(statement->expression())) {
         // Don't actually return right away; store the result in a pseudo-var
         // and return it after cleanup.
-        Operand value = emit(statement->expression());
-        Type::Ptr type = statement->expression()->type();
-        scope_.back()->return_val(new Variable(value, type));
+        scope_.back()->return_val(emit(statement->expression()));
     }
     scope_.back()->has_return(true);
 }
@@ -484,7 +420,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     block_ = 0;
     emit(basic_block());
     stack_.clear();
-    enter_scope(basic_block());
+    enter_scope();
 
     // Pop the formal parameters off the stack in normal order, and save them
     // to a temporary.
@@ -497,18 +433,24 @@ void BasicBlockGenerator::operator()(Function* feature) {
             // Variable is passed by register; precolor the temporary for this
             // formal parameter by using a negative number.
             int reg = -machine_->arg_reg(index)->id();
-            variable(f->name(), new Variable(mov(reg), 0));
+            variable(new Variable(f->name(), mov(reg), 0));
         }
         index++;
     } 
-    
+
+    // Set up the 'self' variable with the constructor, if necessary; this 
+    // allocates the memory for the object using calloc so that all of the
+    // fields are initialized to zero.
+    if (feature->name()->string() == "@init") {
+        emit_ctor_preamble(feature);
+    }
+
     // Generate code for the body of the function.
     emit(feature->block());
-    exit_scope();
-
-    if(feature->type()->is_void()) {
+    if (feature->type()->is_void() || function_->name()->string() == "@init") {
         emit_return();
     }
+    exit_scope();
 }
 
 void BasicBlockGenerator::operator()(Attribute* feature) {
@@ -599,17 +541,17 @@ int BasicBlockGenerator::stack(String* name) {
     
 }
 
-void BasicBlockGenerator::variable(String* name, Variable* var) {
+void BasicBlockGenerator::variable(Variable* var) {
     assert(scope_.size());
-    scope_.back()->variable(name, var);
+    scope_.back()->variable(var);
 }
 
 void BasicBlockGenerator::stack(String* name, int offset) {
     stack_.insert(make_pair(name, offset));
 }
 
-void BasicBlockGenerator::enter_scope(BasicBlock* cleanup) {
-    scope_.push_back(new Scope(cleanup));
+void BasicBlockGenerator::enter_scope() {
+    scope_.push_back(new Scope);
 }
 
 void BasicBlockGenerator::exit_scope() {
@@ -617,9 +559,9 @@ void BasicBlockGenerator::exit_scope() {
     // to perform cleanup at the end of the scope.
     Scope::Ptr scope = scope_.back();
 
-    map<String::Ptr, Variable::Ptr>::iterator i;
-    for (i = scope->variable_.begin(); i != scope->variable_.end(); i++) {
-        emit_var_cleanup(i->second);
+    // Remove variables in reverse order!
+    for (int i = scope->variables()-1; i >= 0; i--) { 
+        emit_var_cleanup(scope->variable(i));
     }
 
     if (!scope->has_return()) {
@@ -631,8 +573,8 @@ void BasicBlockGenerator::exit_scope() {
     // containing scope.
     for (int j = scope_.size()-2; j > 1; j--) {
         Scope::Ptr s = scope_[j];
-        for (i = s->variable_.begin(); i != s->variable_.end(); i++) {
-            emit_var_cleanup(i->second);
+        for (int i = s->variables()-1; i >= 0; i--) {
+            emit_var_cleanup(scope->variable(i));
         }
     }
 
@@ -658,17 +600,20 @@ void BasicBlockGenerator::emit_var_cleanup(Variable* var) {
 void BasicBlockGenerator::emit_return() {
     // Emit an actual return.  Emit code to return the value saved in the var
     // '_ret' if the variable has been set.
-    if (!scope_.empty() && scope_.back()->return_val()) {
-        Variable::Ptr return_val = scope_.back()->return_val();
+    Operand retval = scope_.back()->return_val();
+    if (function_->name()->string() == "@init") {
+        retval = variable(env_->name("self"))->operand();
+    }
+    if (!scope_.empty() && retval.temp()) {
         if (machine_->return_regs()) {
             // Return the value by register, if the architecture supports return
             // by register
             int index = 0;
             int reg = -machine_->return_reg(index)->id();
-            block_->instr(MOV, reg, return_val->operand(), 0); 
+            block_->instr(MOV, reg, retval, 0); 
         } else {
             // Otherwise, return on the stack.
-            push(return_val->operand());
+            push(retval);
         }
     }
     ret();
@@ -719,6 +664,123 @@ Operand BasicBlockGenerator::emit_pop_ret() {
         int val = 0;
         return mov(-machine_->return_reg(val)->id());
     }
+}
+
+void BasicBlockGenerator::emit_vtable(Class* feature) {
+    // Generate the Pearson perfect hash that will be used for vtable lookups.
+    // FixMe: This is extremely haggard, because I couldn't find an algorithm
+    // for generating the Pearson hash permutation algorithm.  Supposedly,
+    // there is such an algorithm, but I couldn't find any literature on it.  
+    // This brute-force method of ensuring no collisions may fail in some 
+    // cases, which is a serious problem.
+    
+    // Initially set the size of the hash table to the number of functions.
+    // The size of the table will grow to prevent collisions.
+    int n = 0;
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+            if (func->name()->string() != "@destroy") {
+                n++;
+            }
+        }
+    }
+    if (!n) { return; }
+    n *= 2;
+
+    // Step 1: Place all keys into buckets using a simple hash.  There will
+    // be collisions, but they will be resolved in steps 2-3.
+    vector<JumpBucket> bucket(n);
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+            if (func->name()->string() != "@destroy") {
+                uint64_t hash = fnv_hash(0, func->name()) % n;
+                bucket[hash].push_back(func);
+            }
+        }
+    }
+
+    // Step 2: Sort buckets and process the ones with the most items first.
+    sort(bucket.begin(), bucket.end(), SortJumpBuckets()); 
+    
+    // Step 3: Attempt to place items in the buckets into empty slots in the
+    // second jump table, starting with the largest buckets first.
+    vector<Function::Ptr> value(n);
+    vector<Function::Ptr> slots;
+    for (int i = 0; i < bucket.size(); i++) {
+        if (bucket[i].size() <= 0) { break; }
+        int d = 1; 
+retry:
+        // Try to place all the values into empty value slots in the second
+        // jump table.  If that doesn't work, then increment the hash mixing
+        // value "d"
+        slots = value;
+        for (int j = 0; j < bucket[i].size(); j++) {
+            uint64_t hash = fnv_hash(d, bucket[i][j]->name()) % n;
+            if (slots[hash]) {
+                d++;
+                goto retry;
+            } else {
+                slots[hash] = bucket[i][j];
+            }
+        }
+
+        // Success! Record the d-value (i.e., hash mixing value) for the 
+        // current bucket, and continue.
+        uint64_t hash = fnv_hash(0, bucket[i][0]->name()) % n;
+        feature->jump1(hash, d);
+        value = slots;
+    }
+    for (int i = 0; i < value.size(); i++) {
+        feature->jump2(i, value[i]);
+    }
+/*
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+            if (func->name()->string() == "@destroy") { continue; }
+            std::cout << func->name()->string() << std::endl;
+            uint64_t hash1 = fnv_hash(0, func->name());
+            uint64_t d = feature->jump1(hash1 % n);
+            uint64_t hash2 = fnv_hash(d, func->name());
+            std::cout << "   n: " << n << std::endl;
+            std::cout << "   hash1 %n: " << hash1 % n << std::endl;
+            std::cout << "   hash1: " << hash1 << std::endl;
+            std::cout << "   d: " << d << std::endl;
+            std::cout << "   hash2: " << hash2 << std::endl;
+        }
+    }
+*/
+}
+
+void BasicBlockGenerator::calculate_size(Class* feature) {
+    // Calculate the memory footprint of the given class.
+    int size = 2 * machine_->word_size(); // Size of refcount + vtable pointer
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
+            Type::Ptr type = attr->type();
+            if (type->is_value() && !type->is_primitive()) {
+                // FIXME: Handle complex value types larger than an Int
+                assert(!"Value types not supported");    
+            } 
+            size += machine_->word_size();
+        }
+    }
+    feature->size(size);
+}
+
+void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
+    // Emits the memory alloc/vtable setup for the class.  FIXME: Eventually,
+    // move to a prototype & copy type approach for initializing variables
+    // FIXME: Run variable initializers here
+    String::Ptr one = env_->integer("1");
+    String::Ptr size = env_->integer(stringify(class_->size()));
+    emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
+    emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
+    call(env_->name("_calloc"));        
+    Operand self = emit_pop_ret(); 
+    variable(new Variable(env_->name("self"), self, 0)); 
+    Operand vtable = Operand::addr(self.temp(), 0);
+    Operand label = load(env_->name("_"+class_->name()->string()+"__vtable"));
+    store(vtable, label);
 }
 
 /*

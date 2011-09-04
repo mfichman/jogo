@@ -57,7 +57,7 @@ private:
     void literal(Operand lit);
     void string(String* string);
 
-    Environment::Ptr environment_;
+    Environment::Ptr env_;
     Machine::Ptr machine_;
     Stream::Ptr out_;
 };

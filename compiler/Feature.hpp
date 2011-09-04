@@ -74,6 +74,7 @@ public:
     String* name() const { return name_; }
 	Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
+    void type(Type* type) { type_ = type; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Attribute> Ptr;
 
@@ -158,11 +159,13 @@ public:
     bool subtype(Class* other) const;
     int jump1(int index) const { return jump1_[index]; }
     Function* jump2(int index) const { return jump2_[index]; } 
+    int size() const { return size_; }
     int jump1s() const { return jump1_.size(); }
     int jump2s() const { return jump2_.size(); }
     void feature(Feature* feature);
     void jump1(int index, int d);
     void jump2(int index, Function* func);
+    void size(int size) { size_ = size; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Class> Ptr;
 
@@ -179,7 +182,7 @@ private:
     bool is_object_;
     bool is_value_;
     bool is_interface_;
-    mutable int visited_;
+    int size_;
 };
 
 /* Module, contains classes, functions, etc. */
