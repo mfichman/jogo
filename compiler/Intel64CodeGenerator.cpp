@@ -47,6 +47,7 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
 
     out_ << "section .text\n";
     out_ << "extern _calloc\n";
+    out_ << "extern _free\n";
     out_ << "extern _Object__dispatch\n";
     out_ << "extern _Object__refcount_dec\n";
     out_ << "extern _Object__refcount_inc\n";

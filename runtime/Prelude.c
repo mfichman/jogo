@@ -50,7 +50,6 @@ void Object__refcount_dec(Object* obj) {
             typedef void (*Destructor)(Object* obj);  
             Destructor dtor = ((Destructor*)obj->_vtable)[0];
             dtor(obj);
-            free(obj);
         } 
     }
 }

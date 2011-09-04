@@ -27,11 +27,6 @@
 
 extern Ptr String__vtable;
 
-void String__destroy(String* self) {
-    fprintf(stderr, "Destroying string!");
-    fflush(stderr);
-}
-
 Char String__index(String* self, Int index) {
     // All index operations are checked.  If the index is off the end of the
     // string, then return the NUL character.

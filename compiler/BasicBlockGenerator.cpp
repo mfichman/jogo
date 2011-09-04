@@ -426,13 +426,13 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // Set up the 'self' variable with the constructor, if necessary; this 
     // allocates the memory for the object using calloc so that all of the
     // fields are initialized to zero.
-    if (feature->name()->string() == "@init") {
+    if (feature->is_constructor()) {
         emit_ctor_preamble(feature);
     }
 
     // Generate code for the body of the function.
     emit(feature->block());
-    if (feature->type()->is_void() || function_->name()->string() == "@init") {
+    if (feature->type()->is_void() || function_->is_constructor()) {
         emit_return();
     }
     exit_scope();
@@ -586,9 +586,15 @@ void BasicBlockGenerator::emit_return() {
     // Emit an actual return.  Emit code to return the value saved in the var
     // '_ret' if the variable has been set.
     Operand retval = scope_.back()->return_val();
-    if (function_->name()->string() == "@init") {
+    if (function_->is_constructor()) {
         retval = variable(env_->name("self"))->operand();
     }
+    if (function_->is_destructor() && class_->is_object()) {
+        // If this is the destructor, then call free() to release memory
+        emit_push_arg(0, variable(env_->name("self"))->operand());
+        call(env_->name("_free"));
+    }
+
     if (!scope_.empty() && retval.temp()) {
         if (machine_->return_regs()) {
             // Return the value by register, if the architecture supports return
@@ -771,16 +777,18 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
     // Emits the memory alloc/vtable setup for the class.  FIXME: Eventually,
     // move to a prototype & copy type approach for initializing variables
     // FIXME: Run variable initializers here
-    String::Ptr one = env_->integer("1");
-    String::Ptr size = env_->integer(stringify(class_->size()));
-    emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
-    emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
-    call(env_->name("_calloc"));        
-    Operand self = emit_pop_ret(); 
-    variable(new Variable(env_->name("self"), self, 0)); 
-    Operand vtable = Operand::addr(self.temp(), 0);
-    Operand label = load(env_->name("_"+class_->name()->string()+"__vtable"));
-    store(vtable, label);
+    if (class_->is_object()) {
+       String::Ptr one = env_->integer("1");
+       String::Ptr size = env_->integer(stringify(class_->size()));
+       emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
+       emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
+       call(env_->name("_calloc"));        
+       Operand self = emit_pop_ret(); 
+       variable(new Variable(env_->name("self"), self, 0)); 
+       Operand vtable = Operand::addr(self.temp(), 0);
+       Operand label = load(env_->name("_"+class_->name()->string()+"__vtable"));
+       store(vtable, label);
+    }
 }
 
 /*

@@ -22,11 +22,6 @@ String < Object {
     # Represents an immutable character string.  New strings can be created
     # via a substring or concatenation operation on an existing string.
 
-    @destroy() native {
-        # FIXME: String shouldn't need an explict constructor; it should be
-        # generated automatically by the compiler.
-    }
-     
     @index(index Int) native Char {
         # Returns the character at index index.  If the index refers to a
         # location beyond the length of the string, then

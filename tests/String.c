@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Hack to make sure that the 'String__vtable' symbol is defined. 
+U64 String__vtable;
+
 String* String__init(const Char* literal) {
     String* ret = malloc(sizeof(String) + strlen(literal) + 1);
     ret->_vtable = 0;
