@@ -91,7 +91,6 @@ xor\= return BIT_XOR_ASSIGN;
 \:\: return SCOPE;
 ; return SEMICOLON;
 ` return BACKTICK;
-: return COLON;
 
 [0-9]+\.[0-9]* {
     String* value = yyextra->environment()->floating(yytext);
@@ -137,6 +136,10 @@ xor\= return BIT_XOR_ASSIGN;
 [A-Z][A-Za-z0-9]* {
 	yylval->string = yyextra->environment()->name(yytext);
 	return TYPE;
+}
+\:[a-z][a-z0-9_]* {
+    yylval->string = yyextra->environment()->name(yytext);
+    return TYPEVAR;
 }
 [{] {
     yy_push_state(SC_COMMENT, yyscanner);

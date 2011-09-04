@@ -53,6 +53,7 @@ public:
     bool is_void() const;
     bool is_char() const;
     bool is_self() const;
+    bool is_variable() const;
     void next(Type* next) { next_ = next; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Type> Ptr;

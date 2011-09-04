@@ -33,18 +33,24 @@ Type::Type(Location loc, String* qn, Generic* gen, File* file, Environment* env)
     class_(0),
     qualified_name_(qn) {
 
-    // Compute the scope and name of the type by splitting on the '::' token.
-    size_t scope_end = qn->string().find_last_of(':');
-    if (scope_end == std::string::npos) {
+    
+    if (qn->string()[0] != ':') {
+       // Compute the scope and name of the type by splitting on the '::' token.
+       size_t scope_end = qn->string().find_last_of(':');
+       if (scope_end == std::string::npos) {
+           name_ = qn;
+           scope_ = environment_->name("");
+       } else {
+           name_ = env->name(qn->string().substr(scope_end + 1));
+           scope_ = env->name(qn->string().substr(0, scope_end - 1));
+       }
+    } else {
         name_ = qn;
         scope_ = environment_->name("");
-    } else {
-        name_ = env->name(qn->string().substr(scope_end + 1));
-        scope_ = env->name(qn->string().substr(0, scope_end - 1));
     }
 
     // Add an implicit (qualified) import if it doesn't already exist
-    if (!scope_->string().empty()) {
+    if (!scope_->string().empty() && !is_variable()) {
         file_->feature(new Import(loc, scope_, true));
     }
 }
@@ -90,6 +96,10 @@ bool Type::subtype(Type* other) const {
     }
     /* TODO: Need to fill out template parameters */
     return true;
+}
+
+bool Type::is_variable() const {
+    return !name_->string().empty() && name_->string()[0] == ':';
 }
 
 bool Type::is_primitive() const {

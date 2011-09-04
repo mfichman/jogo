@@ -78,11 +78,11 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %left '.' '['
 
 /* BISON declarations */
-%token <string> IDENTIFIER TYPE OPERATOR COMMENT
+%token <string> IDENTIFIER TYPE OPERATOR COMMENT TYPEVAR
 %token <expression> STRING FLOAT INTEGER BOOLEAN SBEGIN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE
 %token IMPORT FUNCTION VOID
-%token SEPARATOR SEMICOLON COLON BACKTICK
+%token SEPARATOR SEMICOLON BACKTICK
 %token WHEN CASE WHILE ELSE UNTIL IF DO FOR RETURN
 %token RIGHT_ARROW LEFT_ARROW
 %token EQUAL NOT_EQUAL GREATER_OR_EQUAL LESS_OR_EQUAL
@@ -246,6 +246,7 @@ type_list
 type
     : scope '[' generic_list ']' { $$ = new Type(@$, $1, $3, UNIT, ENV); }
     | scope { $$ = new Type(@$, $1, 0, UNIT, ENV); }
+    | TYPEVAR { $$ = new Type(@$, $1, 0, UNIT, ENV); }
     ;
 
 generic_list
