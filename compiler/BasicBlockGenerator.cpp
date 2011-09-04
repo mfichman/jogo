@@ -54,6 +54,7 @@ void BasicBlockGenerator::operator()(Class* feature) {
     if (!feature->is_object()) { return; }
 
     emit_vtable(feature);
+    class_ = 0;
 }
 
 void BasicBlockGenerator::operator()(Module* feature) {
@@ -199,7 +200,7 @@ void BasicBlockGenerator::operator()(Dispatch* expr) {
     }
 
     if (type->is_interface()) {
-        // Dynami dispatch: call the function pointer.
+        // Dynamic dispatch: call the function pointer.
         call(fnptr);
     } else {
         // Static dispatch: insert a call expression, then pop the return value
@@ -237,20 +238,26 @@ void BasicBlockGenerator::operator()(Construct* expr) {
 
 void BasicBlockGenerator::operator()(Identifier* expr) {
     // Simply look up the value of the variable as stored previously.
-    Variable* var = variable(expr->identifier());
+    String::Ptr id = expr->identifier();
+    Variable::Ptr var = variable(id);
+    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
     if (var) {
         return_ = var->operand();
+    } else if (attr) {
+        Variable::Ptr self = variable(env_->name("self"));
+        return_ = load(Operand::addr(self->operand().temp(), attr->slot()+2));
+        // +2 is for refcount, vtable slots
     } else {
         // Variable can't be found in a temporary; it must be an argument 
         // passed on the stack.
 
-        int offset = stack(expr->identifier());
+        int offset = stack(id);
         assert(offset);
         return_ = load(Operand::addr(offset)); 
         // A load operand of zero means the variable must be loaded relative
         // to the base pointer.
 
-        variable(new Variable(expr->identifier(), return_, 0));
+        variable(new Variable(id, return_, 0));
     }
 }
 
@@ -357,18 +364,35 @@ void BasicBlockGenerator::operator()(Assignment* statement) {
         value = emit(init);
     }
 
+    String::Ptr id = statement->identifier();
     Type::Ptr type = statement->type(); 
-    Variable::Ptr var = variable(statement->identifier());
-    if (!var) {
-        Type::Ptr type = init->type();
-        var = new Variable(statement->identifier(), ++temp_, type);
+    Variable::Ptr var = variable(id);
+    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
+
+    if (var) {
+        // Assignment to a local var that has already been initialized once in
+        // the current scope.
+        if (!type->is_value()) {
+            emit_refcount_dec(var);
+        }
+        block_->instr(MOV, var->operand(), value, 0);
+        if (!type->is_value()) {
+            emit_refcount_inc(var);
+        }
+    } else if (attr) {
+        // Assignment to an attribute within a class
+        Variable::Ptr self = variable(env_->name("self"));
+        Operand addr = Operand::addr(self->operand().temp(), attr->slot()+2);  
+        // +2 is for vtable and refcount
+        store(addr, value);
+    } else {
+        // Assignment to a local var that has not yet been initialized in the
+        // current scope.
+        Variable::Ptr var = new Variable(id, mov(value), init->type());
         variable(var);
-    } else if (!type->is_value()) {
-        emit_refcount_dec(var);
-    }
-    block_->instr(MOV, var->operand(), value, 0);
-    if (!type->is_value()) {
-        emit_refcount_inc(var);
+        if (!type->is_value()) {
+            emit_refcount_inc(var);
+        }
     }
 }
 
@@ -691,7 +715,7 @@ void BasicBlockGenerator::emit_vtable(Class* feature) {
         }
     }
     if (!n) { return; }
-    n *= 2;
+    n = max(10, n * 2);
 
     // Step 1: Place all keys into buckets using a simple hash.  There will
     // be collisions, but they will be resolved in steps 2-3.

@@ -68,13 +68,16 @@ public:
         Feature(loc),
         name_(name),
 		type_(type),
-        initializer_(init) {
+        initializer_(init),
+        slot_(0) {
     }
 
     String* name() const { return name_; }
 	Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
+    int slot() const { return slot_; }
     void type(Type* type) { type_ = type; }
+    void slot(int slot) { slot_ = slot; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Attribute> Ptr;
 
@@ -82,6 +85,7 @@ private:
 	String::Ptr name_;
     Type::Ptr type_;
     Expression::Ptr initializer_;
+    int slot_;
 };
 
 /* Class for functions belonging to a class or module */

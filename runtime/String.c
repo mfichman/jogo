@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-extern Ptr String__vtable;
+Ptr String__vtable;
 
 Char String__index(String* self, Int index) {
     // All index operations are checked.  If the index is off the end of the

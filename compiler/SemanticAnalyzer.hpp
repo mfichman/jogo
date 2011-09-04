@@ -80,5 +80,6 @@ private:
     Class::Ptr class_;
     Function::Ptr scope_;
     Type::Ptr return_; // Return value of the current block
+    int slot_;
 };
 

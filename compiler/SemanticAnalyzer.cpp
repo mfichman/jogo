@@ -87,6 +87,7 @@ void SemanticAnalyzer::operator()(Module* feature) {
 
 void SemanticAnalyzer::operator()(Class* feature) {
     class_ = feature;
+    slot_ = 0;
     enter_scope();
 
     // Make sure that a module with this name doesn't already exist.
@@ -764,6 +765,9 @@ void SemanticAnalyzer::operator()(Function* feature) {
 }
 
 void SemanticAnalyzer::operator()(Attribute* feature) {
+    // Select a slot for this attribute.
+    feature->slot(slot_++);
+
     // Make sure that the attribute type conforms to the declared type of
     // the attribute, if there is one.
     Expression::Ptr initializer = feature->initializer();
