@@ -65,7 +65,17 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
 
 
 void Intel64CodeGenerator::operator()(Class* feature) {
-    // Output the class vtable
+    // Output the class dispatch table for calling methods with dynamic
+    // dispatch.  The format is as follows: 
+    //
+    //     vtable[0] is the destructor
+    //     vtable[1] is the number of 'slots' in the vtable (n)
+    //     vtable[2..n+1] are the hash mixing values
+    //     vtable[2n+2..2n+1] are the actual method pointers
+    //
+    // The table is output in the .text section because it should be 
+    // immutable.
+
     if (feature->is_object()) {
         std::string name = feature->name()->string();
         out_ << "section .text\n";
@@ -78,8 +88,12 @@ void Intel64CodeGenerator::operator()(Class* feature) {
             out_ << "    dq " << feature->jump1(i) << "\n";
         } 
         for (int i = 0; i < feature->jump2s(); i++) {
-            String::Ptr label = feature->jump2(i)->label();
-            out_ << "    dq " << label << "\n";
+            if (feature->jump2(i)) {
+                String::Ptr label = feature->jump2(i)->label();
+                out_ << "    dq " << label << "\n";
+            } else {
+                out_ << "    dq 0\n";
+            }
         }
     }
 

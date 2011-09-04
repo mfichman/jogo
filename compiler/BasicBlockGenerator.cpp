@@ -86,6 +86,7 @@ void BasicBlockGenerator::operator()(Class* feature) {
         }
     }
     if (!n) { return; }
+    n *= 2;
 
     // Step 1: Place all keys into buckets using a simple hash.  There will
     // be collisions, but they will be resolved in steps 2-3.
