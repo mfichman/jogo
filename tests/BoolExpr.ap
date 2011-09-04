@@ -235,5 +235,5 @@ main() Int {
     boolexpr4()
     boolexpr5()
     boolexpr6()
-    return 0
+    ret 0
 }

@@ -29,6 +29,7 @@
 #include "Formal.hpp"
 #include "Type.hpp"
 #include "BasicBlock.hpp"
+#include <vector>
 
 
 /* This file holds interfaces for class features */
@@ -155,13 +156,21 @@ public:
     bool is_value() const { return is_value_; }
     bool is_interface() const { return is_interface_; }
     bool subtype(Class* other) const;
+    int jump1(int index) const { return jump1_[index]; }
+    Function* jump2(int index) const { return jump2_[index]; } 
+    int jump1s() const { return jump1_.size(); }
+    int jump2s() const { return jump2_.size(); }
     void feature(Feature* feature);
+    void jump1(int index, int d);
+    void jump2(int index, Function* func);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Class> Ptr;
 
 private:
     std::map<String::Ptr, Attribute::Ptr> attributes_;
     std::map<String::Ptr, Function::Ptr> functions_;
+    std::vector<int> jump1_;
+    std::vector<Function::Ptr> jump2_;
     mutable std::map<Class*, bool> subtype_;
     Type::Ptr type_;
     Type::Ptr mixins_;

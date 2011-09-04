@@ -61,15 +61,15 @@ String < Object {
         return self.slice(begin, self.length)
     }
 
-    starts_with(string String) native Bool {
+    #starts_with(string String) native Bool {
         # Returns true if this string starts with the exact string specified
         # by 'string'
-    }
+    #}
 
-    ends_with(string String) native Bool {
+    #ends_with(string String) native Bool {
         # Returns true if this string ends with the exact string specified by
         # 'string'
-    }
+    #}
     
     uppercase?() native String {
         # Returns an uppercase version of this string.

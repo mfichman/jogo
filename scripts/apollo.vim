@@ -6,7 +6,7 @@
 " Release Coordinator: Matt Fichman <matt.fichman@gmail.com>
 
 syn keyword apKeyword import case when public private static native while
-syn keyword apKeyword if for let return xor and or in else until pass not
+syn keyword apKeyword if for let ret return xor and or in else until pass not
 syn keyword apKeyword lambda function break attr readonly type def fork
 
 syn keyword apKeyword class struct interface yield 

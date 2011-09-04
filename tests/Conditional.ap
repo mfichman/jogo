@@ -9,7 +9,7 @@ conditional1() Int {
         boot_print_str("X\n")
     }
     boot_print_str("two\n")
-    return 0
+    ret 0
 }
 
 conditional2() Int {
@@ -23,7 +23,7 @@ conditional2() Int {
         boot_print_str("X\n")
     }
     boot_print_str("four\n")
-    return 0
+    ret 0
 }
 
 conditional3() Int {
@@ -42,12 +42,12 @@ conditional3() Int {
         boot_print_str("six\n")
     }
     boot_print_str("seven\n")
-    return 0
+    ret 0
 }
 
 main() Int {
     conditional1()
     conditional2()
     conditional3()
-    return 0
+    ret 0
 }

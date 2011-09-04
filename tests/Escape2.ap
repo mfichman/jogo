@@ -10,5 +10,5 @@ main() Int {
     boot_print_str("\"")
     boot_print_str("\#")
     boot_print_str('\'')
-    return 0
+    ret 0
 }

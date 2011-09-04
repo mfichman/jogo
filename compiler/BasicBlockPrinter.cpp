@@ -93,7 +93,13 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         case STORE: out_ << "store " << res << ", " << first; break;
         case LOAD: out_ << res << " <- " << "load " << first; break;
         case MOV: out_ << res << " <- " << first; break;
-        case CALL: out_ << "call " << res.label(); break;
+        case CALL: out_ << "call ";
+            if (first.label()) {
+                out_ << first.label();
+            } else {
+                out_ << first;
+            }
+            break;
         case JUMP: out_ << "jump " << branch->label(); break;
         case BNE:
             out_ << "if " << first << " != " << second << " goto ";

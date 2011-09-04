@@ -17,5 +17,5 @@ main() Int {
         boot_print_str("false\n")
     }
 
-    return 0
+    ret 0
 }

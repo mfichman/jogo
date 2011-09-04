@@ -3,12 +3,12 @@ import Boot
 
 fib(n Int) Int {
     if n == 0 { 
-        return 0
+        ret 0
     }
     if n == 1 {
-        return 1
+        ret 1
     }
-    return fib(n-1) + fib(n-2)
+    ret fib(n-1) + fib(n-2)
 }
 
 
@@ -43,5 +43,5 @@ main() Int {
     x = fib(9)
     boot_print_int(x)   
     boot_print_str("\n")
-    return 0
+    ret 0
 }

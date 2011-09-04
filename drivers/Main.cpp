@@ -101,7 +101,8 @@ int main(int argc, char** argv) {
 #elif defined(LINUX)
     ss << "gcc -m64 " << obj_file << " -o " << exe_file;
 #elif defined(DARWIN)
-    ss << "gcc " << obj_file << " -o " << exe_file;
+    ss << "gcc -Wl,-no_pie " << obj_file << " -o " << exe_file;
+    // FIXME: Remove dynamic-no-pic once rel addressing is fixed
 #endif
     for (int i = 0; i < env->libs(); i++) {
 #ifdef WINDOWS

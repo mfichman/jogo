@@ -2,16 +2,16 @@
 
 foo() Int {
     if true {
-        return 1
+        ret 1
     } else {
     }
 }
 
 foo() Int {
     if true {
-        return 2
+        ret 2
     } else {
-        return 3
+        ret 3
     }
 }
 
@@ -19,34 +19,34 @@ Bob < Object {
     bar() Int {
         if true and not false {
             if true {
-                return 9
+                ret 9
             } else {
                 
             }
-            return 1
+            ret 1
         } else if true {
-            return 1
+            ret 1
         } else {
             if true {
-                return 1
+                ret 1
             }
         }
     }
     bar() Int {
         if true and not false {
             if true {
-                return 9
+                ret 9
             } else {
                 
             }
-            return 1
+            ret 1
         } else if true {
-            return 1
+            ret 1
         } else {
             if true {
-                return 1
+                ret 1
             } else {
-                return 99
+                ret 99
             }
         }
     }
@@ -58,7 +58,7 @@ Bob < Object {
 }
 
 bar() Int {
-    return 1
+    ret 1
     a Int = 10
-    return a
+    ret a
 }

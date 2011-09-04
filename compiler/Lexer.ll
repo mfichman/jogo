@@ -59,6 +59,7 @@ function return FUNCTION;
 for return FOR;
 let return LET;
 return return RETURN;
+ret return RETURN;
 xor return XOR;
 and return AND;
 or return OR;

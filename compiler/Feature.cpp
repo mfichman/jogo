@@ -63,6 +63,20 @@ Class::Class(Location loc, Type* t, Type* mixins, String* cmt, Feature* f) :
     }
 }
 
+void Class::jump1(int index, int d) {
+    if (index >= jump1_.size()) {
+        jump1_.resize(index+1);
+    }
+    jump1_[index] = d; 
+}
+
+void Class::jump2(int index, Function* func) {
+    if (index >= jump2_.size()) {
+        jump2_.resize(index+1);
+    }
+    jump2_[index] = func; 
+}
+
 void Class::feature(Feature* feature) {
     if (!feature) {
         return;

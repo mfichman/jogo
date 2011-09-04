@@ -9,12 +9,12 @@ Sub1 < Object {
 import Sub2
 
 test() Bool {
-# This function should override Sub2::test() which returns Int
-    return 
+# This function should override Sub2::test() which rets Int
+    ret 
 }
 
 main() Int {
-    return test()
+    ret test()
 }
 
 Test < Object {
@@ -25,7 +25,7 @@ Test < Object {
 
 main2() Int {
     Test().bob()
-    return 0
+    ret 0
 }
 
 native_function1() native {
@@ -33,7 +33,7 @@ native_function1() native {
 }
 
 native_function2() native Int {
-    return 1 # Not OK
+    ret 1 # Not OK
 }
 
 native_function3() native # OK

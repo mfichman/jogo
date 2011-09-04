@@ -2,7 +2,7 @@
 
 Stringable < Object {
     str?() String {
-        return "is"
+        ret "is"
     }
 }
 
@@ -10,5 +10,5 @@ main() Int {
     bob = "what #{Stringable()} up"
     bob = "what #{ "what #{Stringable()} up"} up"
     bob = "what #{Stringable()} up what #{Stringable()} up"
-    return 0
+    ret 0
 }

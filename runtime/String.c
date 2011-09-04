@@ -25,10 +25,11 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+extern Ptr String__vtable;
+
 void String__destroy(String* self) {
-    printf("Destroying string!");
-    fflush(stdout);
-    free(self);
+    fprintf(stderr, "Destroying string!");
+    fflush(stderr);
 }
 
 Char String__index(String* self, Int index) {
@@ -47,8 +48,8 @@ String* String__add(String* self, String* string) {
     // copy this from a static location)
     String* ret = malloc(sizeof(String) + self->length + string->length + 1); 
     if (!ret) {
-        printf("Out of memory");
-        fflush(stdout);
+        fprintf(stderr, "Out of memory");
+        fflush(stderr);
         abort();
     }
     ret->_vtable = self->_vtable;
@@ -79,8 +80,8 @@ String* String_slice(String* self, Int begin, Int end) {
     Int length = end - begin;
     String* ret = malloc(sizeof(String) + length + 1);
     if (!ret) {
-        printf("Out of memory");
-        fflush(stdout);
+        fprintf(stderr, "Out of memory");
+        fflush(stderr);
         abort();
     }
     ret->_vtable = self->_vtable;
@@ -160,12 +161,11 @@ String* Int_str__g(Int self) {
 
     String* ret = malloc(sizeof(String) + length + 1); 
     if (!ret) {
-        printf("Out of memory");
-        fflush(stdout);
+        fprintf(stderr, "Out of memory");
+        fflush(stderr);
         abort();
     }
-    //ret->_vtable = String__vtable 
-    ret->_vtable = 0;
+    ret->_vtable = String__vtable;
     ret->_refcount = 1;
     ret->length = length;
     

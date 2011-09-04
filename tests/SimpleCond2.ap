@@ -53,5 +53,5 @@ main() Int {
     boot_print_str("10\n")
     
 
-    return 0
+    ret 0
 }

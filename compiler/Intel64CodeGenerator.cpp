@@ -46,6 +46,7 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
     }
 
     out_ << "section .text\n";
+    out_ << "extern _Object__dispatch\n";
     out_ << "extern _Object__refcount_dec\n";
     out_ << "extern _Object__refcount_inc\n";
     for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
@@ -64,6 +65,26 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
 
 
 void Intel64CodeGenerator::operator()(Class* feature) {
+    // Output the class vtable
+    if (feature->is_object()) {
+        std::string name = feature->name()->string();
+        out_ << "section .text\n";
+        out_ << "align 8\n";
+        out_ << "global _" << name << "__vtable\n";
+        out_ << "_" << name << "__vtable:\n";
+        out_ << "    dq 0\n"; // FixMe: destructor here
+        out_ << "    dq " << feature->jump1s() << "\n";
+        for (int i = 0; i < feature->jump1s(); i++) {
+            out_ << "    dq " << feature->jump1(i) << "\n";
+        } 
+        for (int i = 0; i < feature->jump2s(); i++) {
+            String::Ptr label = feature->jump2(i)->label();
+            out_ << "    dq " << label << "\n";
+        }
+    }
+
+    // Now output the function defs
+    out_ << "section .text\n";
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
@@ -88,7 +109,7 @@ void Intel64CodeGenerator::operator()(Function* feature) {
             // to a 16-byte boundary.
             int stack = feature->stack_vars() * machine_->word_size();
             if (stack % 16 != 0) {
-                stack += stack % 16;
+                stack += 16 - (stack % 16);
             }
             out_ << "    sub rsp, " << stack << "\n";
         }
@@ -122,7 +143,7 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         Operand a2 = instr.second();
 
         switch (instr.opcode()) {
-        case CALL: emit("call", res); break;
+        case CALL: emit("call", a1); break;
         case JUMP: emit("jmp", branch->label()); break;
         case MOV: emit("mov", res, a1); break;
         case BNE: emit("cmp", a1, a2); emit("jne", branch->label()); break;
@@ -423,7 +444,7 @@ void Intel64CodeGenerator::string(String* string) {
 
     out_ << "align 8\n";
     out_ << "lit" << (void*)string << ": \n";  
-    out_ << "    dq 0\n"; // vtable
+    out_ << "    dq _String__vtable\n"; // vtable
     out_ << "    dq 1\n"; // reference count
     out_ << "    dq " << length << "\n";
     out_ << "    db " << out << "\n";

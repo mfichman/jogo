@@ -22,6 +22,7 @@
 
 #include "BasicBlockGenerator.hpp"
 #include <cassert>
+#include <algorithm>
 
 #define REFCOUNT_OFFSET 0
 
@@ -40,13 +41,114 @@ BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
     }    
 }
 
+uint64_t fnv_hash(uint64_t hash, String* str) {
+    const string& name = str->string();
+    for (int i = 0; i < name.length(); ++i) {
+        hash = ((hash * 0x01000193) ^ name[i]);
+    }
+    return hash;
+}
+
+typedef vector<Function::Ptr> JumpBucket;
+struct SortJumpBuckets {
+    bool operator()(const JumpBucket& a, const JumpBucket& b) {
+        return a.size() > b.size();
+    }
+};
+
 void BasicBlockGenerator::operator()(Class* feature) {
+    // Output intermediate-level code for the class given by 'feature'.  
+    // This function also sets up the vtable for the class.
     class_ = feature;
     enter_scope(0);
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
     exit_scope();
+
+    if (!feature->is_object()) { return; }
+
+    // Generate the Pearson perfect hash that will be used for vtable lookups.
+    // FixMe: This is extremely haggard, because I couldn't find an algorithm
+    // for generating the Pearson hash permutation algorithm.  Supposedly,
+    // there is such an algorithm, but I couldn't find any literature on it.  
+    // This brute-force method of ensuring no collisions may fail in some 
+    // cases, which is a serious problem.
+    
+    // Initially set the size of the hash table to the number of functions.
+    // The size of the table will grow to prevent collisions.
+    int n = 0;
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+            if (func->name()->string() != "@destroy") {
+                n++;
+            }
+        }
+    }
+    if (!n) { return; }
+
+    // Step 1: Place all keys into buckets using a simple hash.  There will
+    // be collisions, but they will be resolved in steps 2-3.
+    vector<JumpBucket> bucket(n);
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+            if (func->name()->string() != "@destroy") {
+                uint64_t hash = fnv_hash(0, func->name()) % n;
+                bucket[hash].push_back(func);
+            }
+        }
+    }
+
+    // Step 2: Sort buckets and process the ones with the most items first.
+    sort(bucket.begin(), bucket.end(), SortJumpBuckets()); 
+    
+    // Step 3: Attempt to place items in the buckets into empty slots in the
+    // second jump table, starting with the largest buckets first.
+    vector<Function::Ptr> value(n);
+    vector<Function::Ptr> slots;
+    for (int i = 0; i < bucket.size(); i++) {
+        if (bucket[i].size() <= 0) { break; }
+        int d = 1; 
+retry:
+        // Try to place all the values into empty value slots in the second
+        // jump table.  If that doesn't work, then increment the hash mixing
+        // value "d"
+        slots = value;
+        for (int j = 0; j < bucket[i].size(); j++) {
+            uint64_t hash = fnv_hash(d, bucket[i][j]->name()) % n;
+            if (slots[hash]) {
+                d++;
+                goto retry;
+            } else {
+                slots[hash] = bucket[i][j];
+            }
+        }
+
+        // Success! Record the d-value (i.e., hash mixing value) for the 
+        // current bucket, and continue.
+        uint64_t hash = fnv_hash(0, bucket[i][0]->name()) % n;
+        feature->jump1(hash, d);
+        value = slots;
+    }
+    for (int i = 0; i < value.size(); i++) {
+        feature->jump2(i, value[i]);
+    }
+/*
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+            if (func->name()->string() == "@destroy") { continue; }
+            std::cout << func->name()->string() << std::endl;
+            uint64_t hash1 = fnv_hash(0, func->name());
+            uint64_t d = feature->jump1(hash1 % n);
+            uint64_t hash2 = fnv_hash(d, func->name());
+            std::cout << "   n: " << n << std::endl;
+            std::cout << "   hash1 %n: " << hash1 % n << std::endl;
+            std::cout << "   hash1: " << hash1 << std::endl;
+            std::cout << "   d: " << d << std::endl;
+            std::cout << "   hash2: " << hash2 << std::endl;
+        }
+    }
+*/
 }
 
 void BasicBlockGenerator::operator()(Module* feature) {
@@ -57,6 +159,7 @@ void BasicBlockGenerator::operator()(Module* feature) {
 }
 
 void BasicBlockGenerator::operator()(Formal* formal) {
+    
 }
 
 void BasicBlockGenerator::operator()(StringLiteral* expr) {
@@ -131,31 +234,23 @@ void BasicBlockGenerator::operator()(Unary* expr) {
 void BasicBlockGenerator::operator()(Call* expr) {
     // Push objects in anticipation of the call instruction.  Arguments must
     // be pushed in reverse order.
-    std::vector<Operand> args;
+    vector<Operand> args;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         args.push_back(emit(a));
     }
     for (int i = args.size()-1; i >= 0; i--) {
-        if (i >= machine_->arg_regs()) {
-            // Pass the parameter on the stack
-            push(args[i]);
-        } else {
-            // Pass the parameter using a precolored register
-            block_->instr(MOV, -machine_->arg_reg(i)->id(), args[i], 0); 
-        }
+        emit_push_arg(i, args[i]);
     }
 
     // Look up the function by name in the current context.
     String::Ptr id = expr->identifier();
     String::Ptr scope = expr->scope();
     Function::Ptr func = expr->file()->function(scope, id);
-    String::Ptr name = func->label();
 
     // Insert a call expression, then pop the return value off the stack.
-    call(name);
+    call(func->label());
     if (!func->type()->is_void()) {
-        int val = 0;
-        return_ = mov(-machine_->return_reg(val)->id());
+        return_ = emit_pop_ret();
     } else {
         return_ = 0;
     }
@@ -171,23 +266,10 @@ void BasicBlockGenerator::operator()(Dispatch* expr) {
         return; 
     }
 
-    if (type->is_interface()) {
-        assert(!"Not implemented");
-    }
-
     // Push objects in anticipation of the call instruction.
-    std::vector<Operand> args;
+    vector<Operand> args;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         args.push_back(emit(a));
-    }
-    for (int i = args.size()-1; i >= 0; i--) {
-        if (i >= machine_->arg_regs()) {
-            // Pass the parameter on the stack
-            push(args[i]);
-        } else {
-            // Pass the parameter using a precolored register
-            block_->instr(MOV, -machine_->arg_reg(i)->id(), args[i], 0); 
-        }
     }
 
     // Look up the function by name in the current context.
@@ -195,11 +277,33 @@ void BasicBlockGenerator::operator()(Dispatch* expr) {
     Class::Ptr clazz = receiver->type()->clazz();
     Function::Ptr func = clazz->function(id);
 
-    // Insert a call expression, then pop the return value off the stack.
-    call(func->label());
+    Operand fnptr;
+    if (type->is_interface()) { 
+        // Dynamic dispatch: call the object dispatch function with the
+        // receiver and function name as arguments.
+        
+        String::Ptr name = env_->string(func->name()->string());
+        emit_push_arg(1, load(new StringLiteral(Location(), name)));
+        emit_push_arg(0, args[0]); // Receiver
+        call(env_->name("_Object__dispatch"));
+        fnptr = emit_pop_ret();
+    }
+
+    for (int i = args.size()-1; i >= 0; i--) {
+        emit_push_arg(i, args[i]);
+    }
+
+    if (type->is_interface()) {
+        // Dynami dispatch: call the function pointer.
+        call(fnptr);
+    } else {
+        // Static dispatch: insert a call expression, then pop the return value
+        // off the stack.
+        call(func->label());
+    }
+
     if (!func->type()->is_void()) {
-        int val = 0;
-        return_ = mov(-machine_->return_reg(val)->id());
+        return_ = emit_pop_ret();
     } else {
         return_ = 0;
     }
@@ -421,9 +525,9 @@ void BasicBlockGenerator::operator()(Type* feature) {
 void BasicBlockGenerator::emit_operator(Dispatch* expr) {
     // FixMe: Replace this with a mini-parser that can read three-address-code
     // and output it as an inline function.
-    std::string id = expr->identifier()->string();
+    string id = expr->identifier()->string();
 
-    std::vector<Operand> args;
+    vector<Operand> args;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         args.push_back(emit(a));
     }
@@ -539,7 +643,7 @@ void BasicBlockGenerator::emit_var_cleanup(Variable* var) {
     Type::Ptr type = var->type();
     if (type && !type->is_primitive()) {
         if (type->is_value()) {
-            std::cerr << type->name()->string() << std::endl;
+            cerr << type->name()->string() << endl;
             assert(!"Need to figure out how to do value types");
             // Call destructor!
         } else {
@@ -597,6 +701,23 @@ void BasicBlockGenerator::emit_refcount_dec(Variable* var) {
         push(temp);
     }
     call(env_->name("_Object__refcount_dec"));
+}
+
+void BasicBlockGenerator::emit_push_arg(int i, Operand op) {
+    if (i >= machine_->arg_regs()) {
+        push(op);
+    } else {
+        block_->instr(MOV, -machine_->arg_reg(i)->id(), op, 0);
+    }        
+}
+
+Operand BasicBlockGenerator::emit_pop_ret() {
+    if (0 >= machine_->return_regs()) {
+        return pop();
+    } else {
+        int val = 0;
+        return mov(-machine_->return_reg(val)->id());
+    }
 }
 
 /*

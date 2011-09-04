@@ -203,10 +203,10 @@ private:
         block_->instr(STORE, 0, t2, t3);    
     }
 
-    void call(String* name) {
-        block_->instr(CALL, name, 0, 0);
+    void call(Operand func) {
+        block_->instr(CALL, 0, func, 0);
     }
-        
+    
     void ret() {
         block_->instr(RET, 0, 0, 0);
     }
@@ -277,6 +277,8 @@ private:
     void emit_refcount_inc(Variable* var);
     void emit_refcount_dec(Variable* var);
     void emit_return();
+    void emit_push_arg(int i, Operand arg);
+    Operand emit_pop_ret();
 
     Environment::Ptr env_;
     Machine::Ptr machine_;
