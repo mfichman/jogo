@@ -1,0 +1,46 @@
+
+
+Map[:k, :v] < Object {
+
+    local = :k("hello, world!")
+    nonlocal = :v("hello, world!")
+}
+
+    # Whatever functions, ops, etc. that :a uses, add that to an interface
+    # Make sure that whatever is subst for :a implements that interface
+
+map(iter Iter[:a], fn Func[:a,:b]) Iter[:b] {
+    ret func() :b {
+        ret fn(iter())
+    }
+}
+
+filter(iter Iter[:a], fn Func[:a,Bool]) Iter[:b] {
+
+    ret func() :b {
+        while true {
+            val = iter()
+            if !val {
+                ret nil
+            } else if fn(val) {
+                ret val
+            }
+        }
+        ret nil
+    }
+}
+
+fold(iter Iter[:a], init :b, fn Func[:b,:a,:b]) :b {
+    accum = init
+    for val in iter {
+        accum = fn(accum, val)
+    }
+    ret accum
+}
+
+apply(iter Iter[:a], fn Func[:a]) {
+    for val in iter {
+        fn(val)
+    }
+}
+

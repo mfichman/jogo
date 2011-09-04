@@ -90,6 +90,7 @@ xor\= return BIT_XOR_ASSIGN;
 \-\- return DECREMENT;
 \:\: return SCOPE;
 ; return SEMICOLON;
+: return COLON;
 ` return BACKTICK;
 
 [0-9]+\.[0-9]* {
