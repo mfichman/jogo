@@ -4,6 +4,17 @@ Module
     name: Iterator
     comment:
     feature0: Function
+      name: @init
+      type: Void
+      block: Block
+    feature1: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature2: Function
       name: value
       type: String
       comment:
@@ -14,7 +25,7 @@ Module
         child0: Return
           expression: StringLiteral
             value: Hello, world
-    feature1: Function
+    feature3: Function
       name: next
       type: Void
       comment:
@@ -22,7 +33,7 @@ Module
         name: self
         type: Self
       block: Block
-    feature2: Function
+    feature4: Function
       name: more
       type: Bool
       comment:
@@ -36,6 +47,17 @@ Module
     name: Iterable
     comment:
     feature0: Function
+      name: @init
+      type: Void
+      block: Block
+    feature1: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature2: Function
       name: iterator
       type: Iterator
       comment:
@@ -58,6 +80,17 @@ Module
     name: Loop
     comment:
     feature0: Function
+      name: @init
+      type: Void
+      block: Block
+    feature1: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature2: Function
       name: loop1
       type: Void
       comment:
@@ -97,7 +130,7 @@ Module
                     name: test
                     argument0: Identifier
                       name: i
-    feature1: Function
+    feature3: Function
       name: loop2
       type: Void
       comment:

@@ -73,7 +73,7 @@ private:
     void enter_scope();
     void exit_scope();
 
-    Environment::Ptr environment_;
+    Environment::Ptr env_;
     Stream::Ptr err_;
     std::vector<std::map<String::Ptr, Type::Ptr> > variable_;
     Module::Ptr module_;

@@ -482,8 +482,12 @@ call
     | type '(' ')' { $$ = new Construct(@$, $1, 0); }
     | IDENTIFIER '(' expression_list ')' { $$ = new Call(@$, UNIT, 0, $1, $3); }
     | IDENTIFIER '(' ')' { $$ = new Call(@$, UNIT, 0, $1, 0); }
-    | scope_list IDENTIFIER '(' ')' { $$ = new Call(@$, UNIT, $1, $2, 0); }
+    | scope_list IDENTIFIER '(' ')' { 
+        UNIT->feature(new Import(@$, $1, true));
+        $$ = new Call(@$, UNIT, $1, $2, 0); 
+    }
     | scope_list IDENTIFIER '(' expression_list ')' {
+        UNIT->feature(new Import(@$, $1, true));
         $$ = new Call(@$, UNIT, $1, $2, $4);
     } 
     ; 

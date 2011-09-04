@@ -24,6 +24,17 @@ Module
     name: TypeChecker
     comment:
     feature0: Function
+      name: @init
+      type: Void
+      block: Block
+    feature1: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature2: Function
       name: @index
       type: Void
       comment:
@@ -37,7 +48,7 @@ Module
         name: y
         type: CycleType2
       block: Block
-    feature1: Function
+    feature3: Function
       name: check1
       type: Int
       comment:
@@ -47,7 +58,7 @@ Module
       block: Block
         child0: Return
           expression: IntegerLiteral(2)
-    feature2: Function
+    feature4: Function
       name: check2
       type: Void
       comment:
@@ -58,7 +69,7 @@ Module
         name: bob
         type: Int
       block: Block
-    feature3: Function
+    feature5: Function
       name: main
       type: Void
       comment:

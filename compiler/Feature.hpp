@@ -104,6 +104,8 @@ public:
     int basic_blocks() { return basic_block_.size(); }
     int stack_vars() { return stack_vars_; }
     bool covariant(Function* other) const;
+    bool is_constructor() const { return name()->string() == "@init"; }
+    bool is_destructor() const { return name()->string() == "@destroy"; }
     void stack_vars_inc() { stack_vars_++; }
     void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
     void operator()(Functor* functor) { functor->operator()(this); }

@@ -33,18 +33,18 @@
 using namespace std;
 
 SemanticAnalyzer::SemanticAnalyzer(Environment* environment) :
-    environment_(environment),
+    env_(environment),
     err_(Stream::sterr()) {
 
-    operator()(environment_->float_type());
-    operator()(environment_->int_type());
-    operator()(environment_->string_type());
-    operator()(environment_->bool_type());
+    operator()(env_->float_type());
+    operator()(env_->int_type());
+    operator()(env_->string_type());
+    operator()(env_->bool_type());
 
-    if (environment_->errors()) {
+    if (env_->errors()) {
         return;
     }
-    for (Feature::Ptr m = environment_->modules(); m; m = m->next()) {
+    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
         m(this);
     }    
     err_->flush();
@@ -69,7 +69,7 @@ void SemanticAnalyzer::operator()(Module* feature) {
                 err_ << f->location();
                 err_ << "Duplicate definition of function '";
                 err_ << func->name() << "' in " << module_name << "\n";
-                environment_->error();
+                env_->error();
             }
             features.insert(func->name());
         } else if (Class::Ptr clazz = dynamic_cast<Class*>(f.pointer())) {
@@ -77,7 +77,7 @@ void SemanticAnalyzer::operator()(Module* feature) {
                 err_ << f->location();
                 err_ << "Duplicate definition of class '";
                 err_ << clazz->name() << "' in " << module_name << "\n";
-                environment_->error();
+                env_->error();
             }
             features.insert(clazz->name());
         }
@@ -90,11 +90,33 @@ void SemanticAnalyzer::operator()(Class* feature) {
     enter_scope();
 
     // Make sure that a module with this name doesn't already exist.
-    if (environment_->module(feature->type()->qualified_name())) {
+    if (env_->module(feature->type()->qualified_name())) {
         err_ << feature->location();
         err_ << "Type name '" << feature->type()->qualified_name();
         err_ << "' conflicts with an existing module name\n"; 
-        environment_->error();
+        env_->error();
+    }
+
+    if (!feature->is_interface() && !feature->type()->is_primitive()) {
+        // Check for a destructor, and generate one if it isn't present
+        if (!feature->function(env_->name("@destroy"))) {
+            String::Ptr nm = env_->name("@destroy");
+            Type::Ptr st = env_->self_type();
+            Type::Ptr vt = env_->void_type();
+            Location loc;
+            Block::Ptr block(new Block(loc, 0, 0));
+            Formal::Ptr self(new Formal(loc, env_->name("self"), st));
+            feature->feature(new Function(loc, nm, self, 0, vt, block));
+        }
+    
+        // Check for a constructor, and generate one if it isn't present
+        if (!feature->function(env_->name("@init"))) {
+            String::Ptr nm = env_->name("@init");
+            Type::Ptr vt = env_->void_type();
+            Location loc;
+            Block::Ptr block(new Block(loc, 0, 0));
+            feature->feature(new Function(loc, nm, 0, 0, vt, block));
+        }
     }
 
     // Check interface/struct/object baseclass and make sure that 
@@ -105,19 +127,19 @@ void SemanticAnalyzer::operator()(Class* feature) {
                 err_ << m->location();
                 err_ << "Mix-in for interface '" << feature->name();
                 err_ << "' must be an interface\n";
-                environment_->error();
+                env_->error();
                 break;
             } else if (feature->is_object() && m->is_interface()) {
                 err_ << m->location();
                 err_ << "Mix-in for object type '" << feature->name();
                 err_ << "' cannot be an interface\n"; 
-                environment_->error();
+                env_->error();
                 break;
             } else if (feature->is_value() && !m->is_value()) {
                 err_ << m->location();
                 err_ << "Mix-in for value type '" << feature->name();
                 err_ << "' must be a value type\n"; 
-                environment_->error();
+                env_->error();
                 break;
             }
          
@@ -130,17 +152,17 @@ void SemanticAnalyzer::operator()(Class* feature) {
         err_ << feature->location();
         err_ << "Class has both object and interface mixins";
         err_ << "\n";    
-        environment_->error();
+        env_->error();
     } else if (feature->is_interface() && feature->is_value()) {
         err_ << feature->location();
         err_ << "Class has both interfaces and value mixins";
         err_ << "\n";
-        environment_->error();
+        env_->error();
     } else if (feature->is_value() && feature->is_object()) {
         err_ << feature->location();
         err_ << "Class has both value and object mixins";
         err_ << "\n";
-        environment_->error();
+        env_->error();
     }
 
     // Iterate through all the features and add the functions and variables in
@@ -152,7 +174,7 @@ void SemanticAnalyzer::operator()(Class* feature) {
                 err_ << f->location();
                 err_ << "Duplicate definition of attribute '";
                 err_ << attr->name() << "'\n";
-                environment_->error();
+                env_->error();
             } else {
                 variable(attr->name(), attr->type());
             }
@@ -163,7 +185,7 @@ void SemanticAnalyzer::operator()(Class* feature) {
                 err_ << f->location();
                 err_ << "Duplicate definition of function '";
                 err_ << func->name() << "'\n";
-                environment_->error();
+                env_->error();
             }
             features.insert(func->name());
             continue;
@@ -185,19 +207,19 @@ void SemanticAnalyzer::operator()(Formal* formal) {
 }
 
 void SemanticAnalyzer::operator()(StringLiteral* expression) {
-    expression->type(environment_->string_type()); 
+    expression->type(env_->string_type()); 
 }
 
 void SemanticAnalyzer::operator()(IntegerLiteral* expression) {
-    expression->type(environment_->int_type()); 
+    expression->type(env_->int_type()); 
 }
 
 void SemanticAnalyzer::operator()(FloatLiteral* expression) {
-    expression->type(environment_->float_type()); 
+    expression->type(env_->float_type()); 
 }
 
 void SemanticAnalyzer::operator()(BooleanLiteral* expression) {
-    expression->type(environment_->bool_type());
+    expression->type(env_->bool_type());
 }
 
 void SemanticAnalyzer::operator()(Let* expression) {
@@ -220,25 +242,25 @@ void SemanticAnalyzer::operator()(Binary* expression) {
     left(this);
     right(this);
 
-    if (environment_->name("or") == expression->operation()
-        || environment_->name("and") == expression->operation()) {
+    if (env_->name("or") == expression->operation()
+        || env_->name("and") == expression->operation()) {
 
         if (!left->type()->is_boolifiable()) {
             err_ << left->location();
             err_ << "Value types cannot be converted to 'Bool'";
             err_ << "\n";
-            environment_->error();
+            env_->error();
         }
         if (!right->type()->is_boolifiable()) {
             err_ << right->location();
             err_ << "Value types cannot be converted to 'Bool'";
             err_ << "\n";
-            environment_->error();
+            env_->error();
         }
     } else {
         assert(!"Operator not implemented");
     }
-    expression->type(environment_->bool_type());
+    expression->type(env_->bool_type());
 }
 
 void SemanticAnalyzer::operator()(Unary* expression) {
@@ -246,17 +268,17 @@ void SemanticAnalyzer::operator()(Unary* expression) {
     // operations, which cannot be overloaded as methods.
     Expression::Ptr child = expression->child();
     child(this);
-    if (environment_->name("not") == expression->operation()) {
+    if (env_->name("not") == expression->operation()) {
         if (!child->type()->is_boolifiable()) {
             err_ << expression->location();
             err_ << "Value types cannot be converted to 'Bool'";
             err_ << "\n";
-            environment_->error();
+            env_->error();
         }
     } else {
         assert(!"Operator not implemented");
     }
-    expression->type(environment_->bool_type());
+    expression->type(env_->bool_type());
 }
 
 void SemanticAnalyzer::operator()(Call* expression) {
@@ -277,8 +299,8 @@ void SemanticAnalyzer::operator()(Call* expression) {
         err_ << "Undeclared function '";
         err_ << expression->identifier() << "'";
         err_ << "\n";
-        environment_->error();
-        expression->type(environment_->no_type());
+        env_->error();
+        expression->type(env_->no_type());
         return;
     }
     expression->type(func->type());
@@ -293,7 +315,7 @@ void SemanticAnalyzer::operator()(Call* expression) {
             err_ << "Argument does not conform to type '";
             err_ << formal->type() << "'";
             err_ << "\n";
-            environment_->error();
+            env_->error();
         }
         arg = arg->next();
         formal = formal->next();
@@ -303,14 +325,14 @@ void SemanticAnalyzer::operator()(Call* expression) {
         err_ << "Too many arguments to function ";
         err_ << expression->identifier();
         err_ << "\n";
-        environment_->error();
+        env_->error();
     }
     if (formal) {
         err_ << expression->location();
         err_ << "Not enough arguments to function ";
         err_ << expression->identifier();
         err_ << "\n";
-        environment_->error();
+        env_->error();
     }
 }
 
@@ -323,8 +345,8 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
 
     // Get the class associated with the receiver (always the first argument)
     Expression::Ptr receiver = expression->arguments();
-    if (receiver->type() == environment_->no_type()) {
-        expression->type(environment_->no_type());
+    if (receiver->type() == env_->no_type()) {
+        expression->type(env_->no_type());
         return;
     }
     if (receiver->type()->is_self()) {
@@ -335,8 +357,8 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
         err_ << expression->location();
         err_ << "Undefined class '";
         err_ << receiver->type() << "'\n";
-        environment_->error();
-        expression->type(environment_->no_type());
+        env_->error();
+        expression->type(env_->no_type());
         return;
     }
     
@@ -348,8 +370,8 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
         err_ << expression->identifier() << "' in class '";
         err_ << clazz->type() << "'";
         err_ << "\n";
-        environment_->error();
-        expression->type(environment_->no_type());
+        env_->error();
+        expression->type(env_->no_type());
         return;
     } 
     expression->type(func->type());
@@ -359,7 +381,7 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
     Formal::Ptr formal = func->formals();
     while (arg && formal) {
         Type::Ptr ft = formal->type();
-        if (formal->type() == environment_->self_type()) {
+        if (formal->type() == env_->self_type()) {
             ft = receiver->type();
         }
         if (!arg->type()->subtype(ft)) {
@@ -367,7 +389,7 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
             err_ << "Argument does not conform to type '";
             err_ << formal->type() << "'";
             err_ << "\n";
-            environment_->error();
+            env_->error();
         }
         arg = arg->next();
         formal = formal->next();
@@ -377,14 +399,14 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
         err_ << "Too many arguments to function '";
         err_ << expression->identifier() << "'";
         err_ << "\n";
-        environment_->error();
+        env_->error();
     }
     if (formal) {
         err_ << expression->location();
         err_ << "Not enough arguments to function '";
         err_ << expression->identifier() << "'";
         err_ << "\n";
-        environment_->error();
+        env_->error();
     }
 }
 
@@ -401,8 +423,8 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         err_ << "Undefined class '";
         err_ << expression->type() << "'";
         err_ << "\n";
-        environment_->error();
-        expression->type(environment_->no_type());
+        env_->error();
+        expression->type(env_->no_type());
         return;
     }
     if (clazz->is_interface()) {
@@ -410,13 +432,13 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         err_ << "Constructor called for interface type '";
         err_ << clazz->name() << "'";
         err_ << "\n";
-        environment_->error();
-        expression->type(environment_->no_type());
+        env_->error();
+        expression->type(env_->no_type());
         return;
     }
 
     // Look up the constructor using the class object.
-    Function::Ptr constr = clazz->function(environment_->name("@init"));
+    Function::Ptr constr = clazz->function(env_->name("@init"));
 
     // Check arguments types versus formal parameter types
     Expression::Ptr arg = expression->arguments();
@@ -427,7 +449,7 @@ void SemanticAnalyzer::operator()(Construct* expression) {
             err_ << "Argument does not conform to type '";
             err_ << formal->type() << "'";
             err_ << "\n";
-            environment_->error();
+            env_->error();
         }
         arg = arg->next();
         formal = formal->next();
@@ -437,14 +459,14 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         err_ << "Too many arguments to constructor '";
         err_ << expression->type() << "'";
         err_ << "\n";
-        environment_->error();
+        env_->error();
     }
     if (formal) {
         err_ << expression->location();
         err_ << "Not enough arguments to constructor '";
         err_ << expression->type() << "'";
         err_ << "\n";
-        environment_->error();
+        env_->error();
     }
 }
 
@@ -459,8 +481,8 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
         err_ << expression->identifier();
         err_ << "\"";
         err_ << "\n";
-        environment_->error();
-        expression->type(environment_->no_type());
+        env_->error();
+        expression->type(env_->no_type());
     } else {
         expression->type(type);
     }
@@ -480,7 +502,7 @@ void SemanticAnalyzer::operator()(Block* statement) {
             err_ << s->location();
             err_ << "Statement is unreachable";
             err_ << "\n";
-            environment_->error();
+            env_->error();
             break;
         } else {
             s(this);
@@ -502,12 +524,12 @@ void SemanticAnalyzer::operator()(While* statement) {
     guard(this);
     Type* t = guard->type();
     assert(t);
-    if (!environment_->bool_type()->equals(guard->type())) {
+    if (!env_->bool_type()->equals(guard->type())) {
         err_ << statement->location();
         err_ << "While statement guard expression must have type '";
-        err_ << environment_->bool_type() << "'";
+        err_ << env_->bool_type() << "'";
         err_ << "\n";
-        environment_->error();
+        env_->error();
     }
     block(this);
 }
@@ -523,7 +545,7 @@ void SemanticAnalyzer::operator()(Conditional* statement) {
         err_ << guard->location();
         err_ << "Value types cannot be converted to 'Bool'";
         err_ << "\n";
-        environment_->error();
+        env_->error();
     }
     true_branch(this);
     if (false_branch) {
@@ -544,7 +566,7 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
         Type::Ptr type = statement->type();
         type(this);
         if (!type->clazz()) {
-            variable(statement->identifier(), environment_->no_type());
+            variable(statement->identifier(), env_->no_type());
             return;
         }
     }
@@ -552,12 +574,12 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
     Type::Ptr type = variable(statement->identifier());
         
     // Attempt to assign void to a variable during initialization.
-    if (init->type() && init->type()->equals(environment_->void_type())) {
+    if (init->type() && init->type()->equals(env_->void_type())) {
         err_ << init->location();
         err_ << "Void value assigned to variable '";
         err_ << statement->identifier() << "'\n";
-        environment_->error();
-        variable(statement->identifier(), environment_->no_type());
+        env_->error();
+        variable(statement->identifier(), env_->no_type());
         return;
     }
     
@@ -568,7 +590,7 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
             err_ << statement->location();
             err_ << "Duplicate definition of variable '";
             err_ << statement->identifier() << "'\n";
-            environment_->error();
+            env_->error();
             return;
         }
 
@@ -578,7 +600,7 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
             err_ << init->location();
             err_ << "Expression does not conform to type '";
             err_ << statement->type() << "'\n";
-            environment_->error();
+            env_->error();
             return;
         }
 
@@ -592,7 +614,7 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
             err_ << "Expression does not conform to type '";
             err_ << type << "' in assignment of '";
             err_ << statement->identifier() << "'\n";
-            environment_->error();
+            env_->error();
             return;
         }
         variable(statement->identifier(), init->type()); 
@@ -607,7 +629,7 @@ void SemanticAnalyzer::operator()(Return* statement) {
         return_ = expression->type();
     }
     if (!expression->type()) {
-        expression->type(environment_->void_type());
+        expression->type(env_->void_type());
         return;
     }
     if (expression->type()->is_self()) {
@@ -618,7 +640,7 @@ void SemanticAnalyzer::operator()(Return* statement) {
         err_ << "Return must conform to type '";
         err_ << scope_->type() << "'";
         err_ << "\n";
-        environment_->error();
+        env_->error();
     }
 }
 
@@ -649,7 +671,7 @@ void SemanticAnalyzer::operator()(Case* statement) {
             err_ << "Case expression does not conform to type '";
             err_ << guard->type() << "'";
             err_ << "\n";
-            environment_->error();
+            env_->error();
         }
     }
 }
@@ -697,7 +719,7 @@ void SemanticAnalyzer::operator()(Function* feature) {
     }
 #endif
 
-    feature->label(environment_->name(label));
+    feature->label(env_->name(label));
 
     // Check all formal parameters.
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
@@ -718,24 +740,24 @@ void SemanticAnalyzer::operator()(Function* feature) {
         err_ << block->location();
         err_ << "Interface function '" << feature->name();
         err_ << "' has a body\n";
-        environment_->error();
+        env_->error();
     } else if (block && block->children() && is_native) {
         err_ << feature->location();
         err_ << "Native function '" << feature->name();
         err_ << "' has a body\n";
-        environment_->error();
+        env_->error();
     } else if (block && !is_native) {
         block(this); 
-        if (type != environment_->void_type() && !return_) {
+        if (type != env_->void_type() && !return_) {
             err_ << feature->location();
             err_ << "Function '" << feature->name();
             err_ << "' must return a value\n";     
-            environment_->error();
+            env_->error();
         }
     } else if (!block && !is_interface && !is_native) {
         err_ << feature->location();
         err_ << "Function '" << feature->name() << "' has no body\n";
-        environment_->error();
+        env_->error();
     }
         
     exit_scope();
@@ -765,7 +787,7 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
         err_ << "Expression does not conform to type '";
         err_ << initializer->type() << "'";
         err_ << "\n";
-        environment_->error();
+        env_->error();
     }
 
     variable(feature->name(), feature->type());
@@ -777,25 +799,25 @@ void SemanticAnalyzer::operator()(Import* feature) {
 void SemanticAnalyzer::operator()(Type* type) {
     // Check to make sure that the type has a defined class.  Also, check
     // all generics that are part of the type to make sure that they resolve.
-    if (type == environment_->self_type() || type == environment_->no_type() 
-            || type == environment_->void_type()) {
+    if (type == env_->self_type() || type == env_->no_type() 
+            || type == env_->void_type()) {
         return;
     }
     if (!type->clazz()) {
         err_ << type->location();
         err_ << "Undefined type '" << type << "'";
         err_ << "\n";
-        environment_->error();
+        env_->error();
         return;
     }
 
     // Check generics for type resolution
     for (Generic::Ptr g = type->generics(); g; g = g->next()) {
-        if (!g->type()->clazz() && !type->equals(environment_->self_type())) {
+        if (!g->type()->clazz() && !type->equals(env_->self_type())) {
             err_ << type->location() << "\n";
             err_ << "Undefined type '" << type << "'";
             err_ << "\n";
-            environment_->error();
+            env_->error();
         }
     }
 }

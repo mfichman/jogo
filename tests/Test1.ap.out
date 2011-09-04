@@ -5,7 +5,18 @@ Module
   feature0: Class
     name: Test1
     comment:
-    feature0: Attribute
+    feature0: Function
+      name: @init
+      type: Void
+      block: Block
+    feature1: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature2: Attribute
       name: bob
       type: Int
       initializer: Dispatch
@@ -21,13 +32,13 @@ Module
           name: @mul
           argument0: IntegerLiteral(29)
           argument1: IntegerLiteral(28)
-    feature1: Attribute
+    feature3: Attribute
       name: bill
       type: Int
       initializer: Dispatch
         name: @compl
         argument0: IntegerLiteral(929)
-    feature2: Attribute
+    feature4: Attribute
       name: jim
       type: Int
       initializer: Call
@@ -35,7 +46,7 @@ Module
         argument0: IntegerLiteral(99)
         argument1: IntegerLiteral(19)
         argument2: IntegerLiteral(2)
-    feature3: Attribute
+    feature5: Attribute
       name: mike
       type: Int
       initializer: Dispatch

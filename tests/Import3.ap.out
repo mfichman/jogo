@@ -3,6 +3,17 @@ Module
   feature0: Class
     name: Test
     comment:
+    feature0: Function
+      name: @init
+      type: Void
+      block: Block
+    feature1: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
   feature1: Function
     name: test
     type: Int
@@ -20,6 +31,17 @@ Module
   feature0: Class
     name: Test
     comment:
+    feature0: Function
+      name: @init
+      type: Void
+      block: Block
+    feature1: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
   feature1: Function
     name: test
     type: Int
@@ -32,34 +54,45 @@ Module
   feature0: Class
     name: Import3
     comment:
-    feature0: Attribute
+    feature0: Function
+      name: @init
+      type: Void
+      block: Block
+    feature1: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature2: Attribute
       name: var1
       type: Sub1::Test
       initializer: Construct
         type: Sub1::Test
-    feature1: Attribute
+    feature3: Attribute
       name: var2
       type: Int
       initializer: Call
         name: test
         module: Sub1
-    feature2: Attribute
+    feature4: Attribute
       name: var3
       type: Sub2::Test
       initializer: Construct
         type: Sub2::Test
-    feature3: Attribute
+    feature5: Attribute
       name: var4
       type: Int
       initializer: Call
         name: test
         module: Sub2
-    feature4: Attribute
+    feature6: Attribute
       name: var5
       type: Test
       initializer: Construct
         type: Test
-    feature5: Attribute
+    feature7: Attribute
       name: var6
       type: Int
       initializer: Call

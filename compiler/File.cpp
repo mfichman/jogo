@@ -212,7 +212,7 @@ File::Iterator::~Iterator() {
 #ifdef WINDOWS
     FindClose(handle_);
 #else
-    closedir((DIR*)handle_);
+    if (handle_) { closedir((DIR*)handle_); }
 #endif
 }
 

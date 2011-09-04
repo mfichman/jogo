@@ -136,7 +136,11 @@ void Parser::dir(const std::string& prefix, const std::string& dir) {
 
     for (File::Iterator i(dir); i; ++i) {
         std::string name = *i;
-        if (name.length() >= 3 && name.substr(name.length()-4, 2) != ".ap") {
+        const std::string ext = ".ap";
+        if (name.length() <= ext.length()) {
+            continue;
+        }
+        if (!name.compare(name.length() - ext.length(), ext.length(), ext)) {
             file(prefix, dir + "/" + name);
         } 
     }

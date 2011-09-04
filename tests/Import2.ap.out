@@ -3,6 +3,28 @@ Module
   feature0: Class
     name: ImportA
     comment:
+    feature0: Function
+      name: @init
+      type: Void
+      block: Block
+    feature1: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
   feature1: Class
     name: ImportB
     comment:
+    feature0: Function
+      name: @init
+      type: Void
+      block: Block
+    feature1: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block

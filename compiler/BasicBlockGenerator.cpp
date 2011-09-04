@@ -39,21 +39,6 @@ BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
     }    
 }
 
-uint64_t fnv_hash(uint64_t hash, String* str) {
-    const string& name = str->string();
-    for (int i = 0; i < name.length(); ++i) {
-        hash = ((hash * 0x01000193) ^ name[i]);
-    }
-    return hash;
-}
-
-typedef vector<Function::Ptr> JumpBucket;
-struct SortJumpBuckets {
-    bool operator()(const JumpBucket& a, const JumpBucket& b) {
-        return a.size() > b.size();
-    }
-};
-
 void BasicBlockGenerator::operator()(Class* feature) {
     // Output intermediate-level code for the class given by 'feature'.  
     // This function also sets up the vtable for the class.
@@ -666,6 +651,21 @@ Operand BasicBlockGenerator::emit_pop_ret() {
     }
 }
 
+uint64_t fnv_hash(uint64_t hash, String* str) {
+    const string& name = str->string();
+    for (int i = 0; i < name.length(); ++i) {
+        hash = ((hash * 0x01000193) ^ name[i]);
+    }
+    return hash;
+}
+
+typedef vector<Function::Ptr> JumpBucket;
+struct SortJumpBuckets {
+    bool operator()(const JumpBucket& a, const JumpBucket& b) {
+        return a.size() > b.size();
+    }
+};
+
 void BasicBlockGenerator::emit_vtable(Class* feature) {
     // Generate the Pearson perfect hash that will be used for vtable lookups.
     // FixMe: This is extremely haggard, because I couldn't find an algorithm
@@ -679,7 +679,7 @@ void BasicBlockGenerator::emit_vtable(Class* feature) {
     int n = 0;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
-            if (func->name()->string() != "@destroy") {
+            if (!func->is_constructor() && !func->is_destructor()) {
                 n++;
             }
         }
@@ -692,7 +692,7 @@ void BasicBlockGenerator::emit_vtable(Class* feature) {
     vector<JumpBucket> bucket(n);
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
-            if (func->name()->string() != "@destroy") {
+            if (!func->is_constructor() && !func->is_destructor()) {
                 uint64_t hash = fnv_hash(0, func->name()) % n;
                 bucket[hash].push_back(func);
             }
