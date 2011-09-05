@@ -384,12 +384,12 @@ void BasicBlockGenerator::operator()(Assignment* statement) {
         Variable::Ptr self = variable(env_->name("self"));
         Operand addr = Operand::addr(self->operand().temp(), attr->slot()+2);  
         Operand old = load(addr);
-        if (!type->is_value()) {
+        if (!type->is_value() && !attr->is_weak()) {
             emit_refcount_dec(old);
         } 
         // +2 is for vtable and refcount
         store(addr, value);
-        if (!type->is_value()) {
+        if (!type->is_value() && !attr->is_weak()) {
             emit_refcount_inc(value);
         }
     } else {
