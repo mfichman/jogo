@@ -29,5 +29,5 @@ Blarg < Object {
     blarg += 39
     b : Int
     
-    func() Int {
+    func2() Int {
 }

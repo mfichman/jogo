@@ -80,7 +80,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 /* BISON declarations */
 %token <string> IDENTIFIER TYPE OPERATOR COMMENT TYPEVAR
 %token <expression> STRING FLOAT INTEGER BOOLEAN SBEGIN 
-%token <flag> PUBLIC PRIVATE STATIC NATIVE
+%token <flag> PUBLIC PRIVATE STATIC NATIVE WEAK IMMUTABLE
 %token IMPORT FUNCTION VOID
 %token SEPARATOR COLON SEMICOLON BACKTICK
 %token WHEN CASE WHILE ELSE UNTIL IF DO FOR RETURN
@@ -94,11 +94,11 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %token SCOPE LET IN YIELD FORK
 
 %type <feature> member member_list attribute class method function 
-%type <type> type type_list return_signature class_name
-%type <string> scope scope_list comment method_name 
+%type <type> type type_list return_sig class_name
+%type <string> scope scope_prefix comment method_name 
 %type <generic> generic generic_list
-%type <flag> modifiers
-%type <formal> formal_signature formal formal_list
+%type <flag> method_flags function_flags attribute_flags
+%type <formal> formal_sig formal formal_list
 %type <statement> conditional when when_list statement statement_list
 %type <block> block function_body
 %type <assignment> assignment assignment_list
@@ -111,10 +111,10 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 module
     : class module { MODULE->feature($1); }
     | function module { MODULE->feature($1); }
-    | IMPORT import_list SEPARATOR module {}
+    | IMPORT import SEPARATOR module {}
     | SEPARATOR class module { MODULE->feature($2); }
     | SEPARATOR function module { MODULE->feature($2); }
-    | SEPARATOR IMPORT import_list SEPARATOR module {}
+    | SEPARATOR IMPORT import SEPARATOR module {}
     | /* empty */ {}
     ;
 
@@ -137,19 +137,24 @@ class
     }
     ;
 
-function
-    : IDENTIFIER formal_signature modifiers return_signature function_body {
-        $$ = new Function(@$, $1, $2, $3, $4, $5);
-    }
-    ;
-
 function_body
     : block { $$ = $1; }
     | SEPARATOR { $$ = 0; }
     ;
 
-import_list
-    : scope ',' import_list { UNIT->feature(new Import(@$, $1, false)); }
+function_flags
+    : NATIVE { $$= Feature::NATIVE; }
+    | /* empty */ { $$ = 0; }
+    ;
+
+function
+    : IDENTIFIER formal_sig function_flags return_sig function_body {
+        $$ = new Function(@$, $1, $2, $3, $4, $5);
+    }
+    ;
+
+import
+    : scope ',' import { UNIT->feature(new Import(@$, $1, false)); }
     | scope { UNIT->feature(new Import(@$, $1, false)); }
     ;
 
@@ -164,18 +169,25 @@ member
     | method { $$ = $1; }
     ;
 
+attribute_flags
+    : IMMUTABLE { $$ = Feature::IMMUTABLE; }
+    | WEAK IMMUTABLE { $$ = Feature::WEAK | Feature::IMMUTABLE; }
+    | WEAK { $$ = Feature::WEAK; }
+    | /* empty */ { $$ = 0; }
+    ;
+
 attribute
-    : IDENTIFIER type '=' expression SEPARATOR {
-        $$ = new Attribute(@$, $1, $2, $4);
+    : IDENTIFIER attribute_flags type '=' expression SEPARATOR {
+        $$ = new Attribute(@$, $1, $2, $3, $5);
     }
-    | IDENTIFIER '=' expression SEPARATOR {
-        $$ = new Attribute(@$, $1, 0, $3);
+    | IDENTIFIER attribute_flags '=' expression SEPARATOR {
+        $$ = new Attribute(@$, $1, $2, 0, $4);
     }
-    | IDENTIFIER type SEPARATOR {
-        $$ = new Attribute(@$, $1, $2, new Empty(@$));
+    | IDENTIFIER attribute_flags type SEPARATOR {
+        $$ = new Attribute(@$, $1, $2, $3, new Empty(@$));
     }
     | error SEPARATOR {
-        $$ = new Attribute(@$, ID(""), 0, new Empty(@$));
+        $$ = new Attribute(@$, ID(""), 0, 0, new Empty(@$));
         yyerrok;
     }
     ;
@@ -185,8 +197,15 @@ method_name
     | OPERATOR { $$ = $1; }
     ;
 
+method_flags
+    : PRIVATE { $$ = Feature::PRIVATE; }
+    | PRIVATE NATIVE { $$ = Feature::PRIVATE | Feature::NATIVE; }
+    | NATIVE { $$ = Feature::NATIVE; }
+    | /* empty */ { $$ = 0; }
+    ;
+
 method
-    : method_name formal_signature modifiers return_signature function_body {
+    : method_name formal_sig method_flags return_sig function_body {
         if ($1->string() != "@init") {
             Formal* self = new Formal(@$, ID("self"), ENV->self_type());
             self->next($2);
@@ -202,12 +221,12 @@ method
     }
     ;
 
-return_signature
+return_sig
     : /* empty */ { $$ = ENV->void_type(); }
     | type { $$ = $1; }
     ;
 
-formal_signature
+formal_sig
     : '(' formal_list ')' { $$ = $2; }
     | '(' ')' { $$ = 0; }
     ;
@@ -221,15 +240,9 @@ formal
     : IDENTIFIER type { $$ = new Formal(@$, $1, $2); }
     ;
 
-modifiers
-    : PRIVATE { $$ = Feature::PRIVATE; }
-    | PRIVATE NATIVE { $$ = Feature::PRIVATE | Feature::NATIVE; }
-    | NATIVE { $$ = Feature::NATIVE; }
-    | /* empty */ { $$ = 0; }
-    ;
 
-scope_list
-    : TYPE SCOPE scope_list { $$ = ID($1->string() + "::" + $3->string()); }
+scope_prefix
+    : TYPE SCOPE scope_prefix { $$ = ID($1->string() + "::" + $3->string()); }
     | TYPE SCOPE { $$ = $1; }
     ;
 
@@ -317,7 +330,7 @@ statement
          
         $$ = new Let(@$, t2, t10);
     }
-    | IDENTIFIER formal_signature return_signature block {
+    | IDENTIFIER formal_sig return_sig block {
         $$ = new Simple(@$, new Empty(@$));
         $1 = 0;
         $2 = 0;
@@ -444,7 +457,7 @@ expression
     | expression '.' IDENTIFIER '(' ')' {
         $$ = new Dispatch(@$, $3, $1, 0);
     }
-    | FUNCTION formal_signature return_signature block {
+    | FUNCTION formal_sig return_sig block {
         // anonymous function!
         //String* name = ID("@call");
         //$$ = new Function(@$, name, $2, $3, $4);
@@ -482,11 +495,11 @@ call
     | type '(' ')' { $$ = new Construct(@$, $1, 0); }
     | IDENTIFIER '(' expression_list ')' { $$ = new Call(@$, UNIT, 0, $1, $3); }
     | IDENTIFIER '(' ')' { $$ = new Call(@$, UNIT, 0, $1, 0); }
-    | scope_list IDENTIFIER '(' ')' { 
+    | scope_prefix IDENTIFIER '(' ')' { 
         UNIT->feature(new Import(@$, $1, true));
         $$ = new Call(@$, UNIT, $1, $2, 0); 
     }
-    | scope_list IDENTIFIER '(' expression_list ')' {
+    | scope_prefix IDENTIFIER '(' expression_list ')' {
         UNIT->feature(new Import(@$, $1, true));
         $$ = new Call(@$, UNIT, $1, $2, $4);
     } 

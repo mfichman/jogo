@@ -373,25 +373,32 @@ void BasicBlockGenerator::operator()(Assignment* statement) {
         // Assignment to a local var that has already been initialized once in
         // the current scope.
         if (!type->is_value()) {
-            emit_refcount_dec(var);
+            emit_refcount_dec(var->operand());
         }
         block_->instr(MOV, var->operand(), value, 0);
         if (!type->is_value()) {
-            emit_refcount_inc(var);
+            emit_refcount_inc(var->operand());
         }
     } else if (attr) {
         // Assignment to an attribute within a class
         Variable::Ptr self = variable(env_->name("self"));
         Operand addr = Operand::addr(self->operand().temp(), attr->slot()+2);  
+        Operand old = load(addr);
+        if (!type->is_value()) {
+            emit_refcount_dec(old);
+        } 
         // +2 is for vtable and refcount
         store(addr, value);
+        if (!type->is_value()) {
+            emit_refcount_inc(value);
+        }
     } else {
         // Assignment to a local var that has not yet been initialized in the
         // current scope.
         Variable::Ptr var = new Variable(id, mov(value), init->type());
         variable(var);
         if (!type->is_value()) {
-            emit_refcount_inc(var);
+            emit_refcount_inc(var->operand());
         }
     }
 }
@@ -601,7 +608,7 @@ void BasicBlockGenerator::emit_var_cleanup(Variable* var) {
         } else {
             // Emit a branch to check the variable's reference count and
             // free it if necessary.
-            emit_refcount_dec(var);               
+            emit_refcount_dec(var->operand());               
         }
     }
 }
@@ -634,10 +641,10 @@ void BasicBlockGenerator::emit_return() {
     ret();
 }
 
-void BasicBlockGenerator::emit_refcount_inc(Variable* var) {
+void BasicBlockGenerator::emit_refcount_inc(Operand var) {
     // Emit code to increment the reference count for the object specified
     // by 'temp'
-    int temp = var->operand().temp();
+    int temp = var.temp();
 
     // Insert a call expression to call the refcount_dec function 
     if (machine_->arg_regs()) {
@@ -649,10 +656,10 @@ void BasicBlockGenerator::emit_refcount_inc(Variable* var) {
     call(env_->name("_Object__refcount_inc"));
 }
 
-void BasicBlockGenerator::emit_refcount_dec(Variable* var) {
+void BasicBlockGenerator::emit_refcount_dec(Operand var) {
     // Emit code to decrement the reference count for the object specified
     // by 'temp'
-    int temp = var->operand().temp();
+    int temp = var.temp();
 
     // Insert a call expression to call the refcount_dec function 
     if (machine_->arg_regs()) {
@@ -827,6 +834,9 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
             Operand addr = Operand::addr(self.temp(), attr->slot()+2);
             // +2 is for vtable and refcount slots
             store(addr, value);
+            if (!attr->initializer()->type()->is_value()) {
+                emit_refcount_inc(value);
+            }
         }
     }
 }

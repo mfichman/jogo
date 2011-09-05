@@ -46,7 +46,9 @@ public:
     Flags flags() const { return flags_; }
     String* label() const { return label_; }
     bool is_private() const { return flags_ & PRIVATE; }
-    bool is_native() const { return flags_& NATIVE; }
+    bool is_native() const { return flags_ & NATIVE; }
+    bool is_weak() const { return flags_ & WEAK; }
+    bool is_immutable() const { return flags_ & IMMUTABLE; }
     void next(Feature* next) { next_ = next; }
     void flags(Flags flags) { flags_ = flags; }
     void label(String* label) { label_ = label; }
@@ -54,6 +56,8 @@ public:
 
     static const int PRIVATE = 0x1;
     static const int NATIVE = 0x2;
+    static const int WEAK = 0x4;
+    static const int IMMUTABLE = 0x8;
 
 private:
     Feature::Ptr next_;
@@ -64,10 +68,10 @@ private:
 /* Class for instance variables (attributes) of a class or module */
 class Attribute : public Feature {
 public:
-    Attribute(Location loc, String* name, Type* type, Expression* init) :
-        Feature(loc),
-        name_(name),
-		type_(type),
+    Attribute(Location loc, String* nm, Flags f, Type* t, Expression* init) :
+        Feature(loc, f),
+        name_(nm),
+		type_(t),
         initializer_(init),
         slot_(0) {
     }

@@ -278,8 +278,8 @@ private:
     void exit_scope();
     void emit_operator(Dispatch* expression);
     void emit_var_cleanup(Variable* var);
-    void emit_refcount_inc(Variable* var);
-    void emit_refcount_dec(Variable* var);
+    void emit_refcount_inc(Operand var);
+    void emit_refcount_dec(Operand var);
     void emit_vtable(Class* clazz);
     void emit_return();
     void emit_push_arg(int i, Operand arg);
