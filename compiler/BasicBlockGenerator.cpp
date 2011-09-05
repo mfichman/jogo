@@ -191,7 +191,7 @@ void BasicBlockGenerator::operator()(Dispatch* expr) {
         String::Ptr name = env_->string(func->name()->string());
         emit_push_arg(1, load(new StringLiteral(Location(), name)));
         emit_push_arg(0, args[0]); // Receiver
-        call(env_->name("_Object__dispatch"));
+        call(env_->name("Object__dispatch"));
         fnptr = emit_pop_ret();
     }
 
@@ -618,7 +618,7 @@ void BasicBlockGenerator::emit_return() {
     if (function_->is_destructor() && class_->is_object()) {
         // If this is the destructor, then call free() to release memory
         emit_push_arg(0, variable(env_->name("self"))->operand());
-        call(env_->name("_free"));
+        call(env_->name("free"));
     }
 
     if (!scope_.empty() && retval.temp()) {
@@ -648,7 +648,7 @@ void BasicBlockGenerator::emit_refcount_inc(Operand var) {
     } else {
         push(temp);
     }
-    call(env_->name("_Object__refcount_inc"));
+    call(env_->name("Object__refcount_inc"));
 }
 
 void BasicBlockGenerator::emit_refcount_dec(Operand var) {
@@ -663,7 +663,7 @@ void BasicBlockGenerator::emit_refcount_dec(Operand var) {
     } else {
         push(temp);
     }
-    call(env_->name("_Object__refcount_dec"));
+    call(env_->name("Object__refcount_dec"));
 }
 
 void BasicBlockGenerator::emit_push_arg(int i, Operand op) {
@@ -809,11 +809,11 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
     String::Ptr size = env_->integer(stringify(class_->size()));
     emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
     emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
-    call(env_->name("_calloc"));        
+    call(env_->name("calloc"));        
     Operand self = emit_pop_ret(); 
     variable(new Variable(env_->name("self"), self, 0)); 
     Operand vtable = Operand::addr(self.temp(), 0);
-    Operand label = load(env_->name("_"+class_->name()->string()+"__vtable"));
+    Operand label = load(env_->name(class_->name()->string()+"__vtable"));
     store(vtable, label);
     
     // Emit initializer code for initialized attributes

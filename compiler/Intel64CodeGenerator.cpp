@@ -39,7 +39,7 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
     out_ << "default rel\n";
     out_ << "section .data\n";
     for (String::Ptr s = env_->strings(); s; s = s->next()) {
-        string(s);
+        emit_string(s);
     }
     for (String::Ptr s = env_->integers(); s; s = s->next()) {
         out_ << "    lit" << (void*)s.pointer() << " dq " << s << "\n";
@@ -55,13 +55,6 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
         m(this);
     }
 
-    out_ << "global _main\n";
-    out_ << "_main:\n";
-    out_ << "    push rbp\n";
-    out_ << "    mov rbp, rsp\n";
-    out_ << "    call main\n";
-    out_ << "    leave\n";
-    out_ << "    ret\n";
     out_->flush();
 }
 
@@ -85,15 +78,18 @@ void Intel64CodeGenerator::operator()(Class* feature) {
         out_ << "align 8\n";
         out_ << "global _" << name << "__vtable\n";
         out_ << "_" << name << "__vtable:\n";
-        out_ << "    dq " << dtor->label() << "\n"; 
+        out_ << "    dq ";
+        emit_label(dtor->label());
+        out_ << "\n"; 
         out_ << "    dq " << feature->jump1s() << "\n";
         for (int i = 0; i < feature->jump1s(); i++) {
             out_ << "    dq " << feature->jump1(i) << "\n";
         } 
         for (int i = 0; i < feature->jump2s(); i++) {
             if (feature->jump2(i)) {
-                String::Ptr label = feature->jump2(i)->label();
-                out_ << "    dq " << label << "\n";
+                out_ << "    dq ";
+                emit_label(feature->jump2(i)->label());
+                out_ << "\n";
             } else {
                 out_ << "    dq 0\n";
             }
@@ -114,11 +110,18 @@ void Intel64CodeGenerator::operator()(Module* feature) {
 }
 
 void Intel64CodeGenerator::operator()(Function* feature) {
+
+
     if (feature->is_native()) {
-        out_ << "extern " << feature->label() << "\n";
+        out_ << "extern ";
+        emit_label(feature->label());
+        out_ << "\n";
     } else if (feature->basic_blocks()) {
-        out_ << "global " << feature->label() << "\n";
-        out_ << feature->label() << ":\n";
+        out_ << "global ";
+        emit_label(feature->label());
+        out_ << "\n";
+        emit_label(feature->label());
+        out_ << ":\n";
         out_ << "    push rbp\n"; 
         out_ << "    mov rbp, rsp\n";
         if (feature->stack_vars()) {
@@ -171,14 +174,14 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case BGE: emit("cmp", a1, a2); emit("jge", branch->label()); break;
         case BL: emit("cmp", a1, a2); emit("jl", branch->label()); break;
         case BLE: emit("cmp", a1, a2); emit("jle", branch->label()); break;
-        case ADD: arith("add", res, a1, a2); break;
-        case SUB: arith("sub", res, a1, a2); break;
-        case MUL: arith("mul", res, a1, a2); break;
-        case DIV: arith("div", res, a1, a2); break;
+        case ADD: emit_arith("add", res, a1, a2); break;
+        case SUB: emit_arith("sub", res, a1, a2); break;
+        case MUL: emit_arith("mul", res, a1, a2); break;
+        case DIV: emit_arith("div", res, a1, a2); break;
         case PUSH: emit("push", a1); break;
         case POP: emit("pop", res); break;
-        case STORE: store(a1, a2); break;
-        case LOAD: load(res, a1); break;
+        case STORE: emit_store(a1, a2); break;
+        case LOAD: emit_load(res, a1); break;
         case NOTB: emit("mov", res, a1); emit("not", res); break;
         case ANDB: emit("mov", res, a1); emit("and", res, a2); break;
         case ORB: emit("mov", res, a1); emit("or", res, a2); break; 
@@ -188,8 +191,8 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
     }
 }
 
-void Intel64CodeGenerator::arith(const char* instr, Operand res, Operand r1,
-        Operand r2) {
+void Intel64CodeGenerator::emit_arith(const char* instr, Operand res, 
+        Operand r1, Operand r2) {
     
     if (res.temp() == r1.temp()) {
         // t1 <- t1 - t2
@@ -213,7 +216,7 @@ void Intel64CodeGenerator::arith(const char* instr, Operand res, Operand r1,
     
 }
 
-void Intel64CodeGenerator::literal(Operand literal) {
+void Intel64CodeGenerator::emit_literal(Operand literal) {
     // Outputs the correct representation of a literal.  If the literal is a
     // number, and the length is less than 13 bits, then output the literal
     // directly in the instruction.  Otherwise, load it from the correct
@@ -244,7 +247,7 @@ void Intel64CodeGenerator::literal(Operand literal) {
     }
 }
 
-void Intel64CodeGenerator::store(Operand r1, Operand r2) {
+void Intel64CodeGenerator::emit_store(Operand r1, Operand r2) {
     // Moves the literal or register in r2 into the memory address specified
     // by register r1. 
     assert(!r2.label());
@@ -269,19 +272,21 @@ void Intel64CodeGenerator::store(Operand r1, Operand r2) {
         assert(-r2.temp() < machine_->regs());
         out_ << machine_->reg(-r2.temp());
     } else { // Literal
-        literal(r2); 
+        emit_literal(r2); 
     }
     out_ << "\n";
 }
 
-void Intel64CodeGenerator::load(Operand r1, Operand r2) {
+void Intel64CodeGenerator::emit_load(Operand r1, Operand r2) {
     // Loads the data at memory address r2 into register r1.  If r2 is a 
     // literal, then an immediate load is done.
     assert(r1.temp() < 0);
     assert(-r1.temp() < machine_->regs());
     if (r2.label()) {
         out_ << "    lea " << machine_->reg(-r1.temp()) << ", ";
-        out_ << "[" << r2.label()->string() << "]";
+        out_ << "[";
+        emit_label(r2.label());
+        out_ << "]";
     }
     else if (r2.temp()) {
         out_ << "    mov " << machine_->reg(-r1.temp()) << ", ";
@@ -344,7 +349,7 @@ void Intel64CodeGenerator::emit(const char* instr, Register* r1, Operand r2) {
         assert(-r2.temp() < machine_->regs());
         out_ << machine_->reg(-r2.temp());
     } else {
-        literal(r2);
+        emit_literal(r2);
     }
     out_  << "\n";
 }
@@ -362,7 +367,7 @@ void Intel64CodeGenerator::emit(const char* instr, Operand r1, Operand r2) {
         assert(-r2.temp() < machine_->regs());
         out_ << machine_->reg(-r2.temp());
     } else {
-        literal(r2);
+        emit_literal(r2);
     }
     out_ << "\n";
 }
@@ -374,9 +379,9 @@ void Intel64CodeGenerator::emit(const char* instr, Operand r1) {
     if (r1.temp()) {
         out_ << machine_->reg(-r1.temp());
     } else if (std::string("call") == instr) {
-        out_ << r1.label();
+        emit_label(r1.label());
     } else {
-        literal(r1);
+        emit_literal(r1);
     }
     out_ << "\n";
 }
@@ -407,15 +412,16 @@ void Intel64CodeGenerator::emit(const char* instr, String* label) {
     out_ << "    " << instr << " ." << label << "\n";
 }
 
-void Intel64CodeGenerator::string(String* string) {
+void Intel64CodeGenerator::emit_string(String* string) {
     // Output a string literal, and correctly process escape sequences.
 
+    std::string in = string->string();
     std::string out;
     int length = 0;
     bool escaped = true;
     bool first = true;
-    for (int i = 0; i < string->string().length(); i++) {
-        char c = string->string()[i];
+    for (int i = 0; i < in.length(); i++) {
+        char c = in[i];
         if (c == '\\') {
             // Output escape sequences.  For NASM, the actual hex codes must
             // be output for non-visible characters; there is no escape
@@ -423,14 +429,14 @@ void Intel64CodeGenerator::string(String* string) {
             if (!escaped) out += "\"";
             if (!first) out += ", ";
 
-            c = string->string()[++i];
+            c = in[++i];
             if (isdigit(c)) { // Octal code
-                char c2 = string->string()[++i];
-                char c3 = string->string()[++i]; 
+                char c2 = in[++i];
+                char c3 = in[++i]; 
                 out += std::string("0o") + c + c2 + c3;
             } else if (c == 'x') { // Hexadecimal code
-                char c1 = string->string()[++i];
-                char c2 = string->string()[++i];
+                char c1 = in[++i];
+                char c2 = in[++i];
                 out += std::string("0x") + c1 + c2;
             } else {
                 switch (c) {
@@ -471,4 +477,13 @@ void Intel64CodeGenerator::string(String* string) {
     out_ << "    dq 1\n"; // reference count
     out_ << "    dq " << length << "\n";
     out_ << "    db " << out << "\n";
+}
+
+void Intel64CodeGenerator::emit_label(String* label) {
+#ifdef DARWIN
+    out_ << "_" << label;
+#else
+    out_ << label;
+#endif   
+
 }

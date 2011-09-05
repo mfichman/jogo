@@ -689,11 +689,6 @@ void SemanticAnalyzer::operator()(Function* feature) {
             label += name[i];
         }
     }
-#ifdef DARWIN
-    if (feature->is_native()) {
-        label = "_" + label;
-    }
-#endif
 
     feature->label(env_->name(label));
 

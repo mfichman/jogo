@@ -51,11 +51,12 @@ private:
     void emit(const char* instr);
     void emit(const char* instr, String* label);
     void emit(const char* instr, Operand r1, const char* imm);
-    void arith(const char* instr, Operand res, Operand r1, Operand r2);
-    void load(Operand r1, Operand r2);
-    void store(Operand r1, Operand r2);
-    void literal(Operand lit);
-    void string(String* string);
+    void emit_arith(const char* instr, Operand res, Operand r1, Operand r2);
+    void emit_load(Operand r1, Operand r2);
+    void emit_store(Operand r1, Operand r2);
+    void emit_literal(Operand lit);
+    void emit_string(String* string);
+    void emit_label(String* string);
 
     Environment::Ptr env_;
     Machine::Ptr machine_;
