@@ -252,7 +252,7 @@ void Intel64CodeGenerator::emit_store(Operand r1, Operand r2) {
     // by register r1. 
     assert(!r2.label());
 
-    out_ << "    mov ";
+    out_ << "    mov qword ";
 
     if (r1.temp()) {
         assert(-r1.temp() < machine_->regs());

@@ -284,6 +284,7 @@ private:
     void emit_return();
     void emit_push_arg(int i, Operand arg);
     void emit_ctor_preamble(Function* func);
+    void emit_free_temps();
     void calculate_size(Class* clazz);
     Operand emit_pop_ret();
 
@@ -297,14 +298,20 @@ private:
     BasicBlock::Ptr false_;
     Operand return_;
     
-    // Mapping from var to temporary
     std::vector<Scope::Ptr> scope_;
+    // Mapping from var to temporary
+
     std::map<String::Ptr, int> stack_;
+    // Mapping from a variable to a stack location
 
     // Next temporary to use
     Operand temp_;
     int label_;
     Opcode branch_op_;
     bool invert_branch_;
+    bool invert_guard_;
+
+    std::vector<Operand> object_temp_; 
+    // Temporaries to free at end of statement
 };
 

@@ -100,8 +100,13 @@ void BasicBlockGenerator::operator()(Binary* expr) {
         // test for the second side of the and
         Operand left = emit(expr->left(), left_true, false_, false);
         if (!block_->is_terminated()) {
-            bz(left, false_, left_true);
+            if (invert_guard_) {
+                bnz(left, false_, left_true);
+            } else {
+                bz(left, false_, left_true);
+            }
         }
+        invert_guard_ = false;
         emit(left_true); 
 
         return_ = emit(expr->right(), true_, false_, invert_branch_);
@@ -113,10 +118,15 @@ void BasicBlockGenerator::operator()(Binary* expr) {
         // the test for the second side of the or
         Operand left = emit(expr->left(), true_, left_false, true);
         if (!block_->is_terminated()) {
-            bnz(left, true_, left_false);
+            if (invert_guard_) {
+                bz(left, true_, left_false);
+            } else {
+                bnz(left, true_, left_false);
+            }
         }
+        invert_guard_ = false;
         emit(left_false);
-    
+         
         return_ = emit(expr->right(), true_, false_, invert_branch_);
 
     } else {
@@ -132,6 +142,7 @@ void BasicBlockGenerator::operator()(Unary* expr) {
         // Swap the false and true branches while calling the child, since 
         // the 'not' inverts the conditional 
         Operand op = emit(expr->child(), false_, true_, !invert_branch_);
+        invert_guard_ = !invert_guard_;
     } else {
         assert(!"Unsupported unary operation");
     }
@@ -157,6 +168,9 @@ void BasicBlockGenerator::operator()(Call* expr) {
     call(func->label());
     if (!func->type()->is_void()) {
         return_ = emit_pop_ret();
+        if (!func->type()->is_value()) {
+            object_temp_.push_back(return_);
+        }
     } else {
         return_ = 0;
     }
@@ -210,6 +224,9 @@ void BasicBlockGenerator::operator()(Dispatch* expr) {
 
     if (!func->type()->is_void()) {
         return_ = emit_pop_ret();
+        if (!func->type()->is_value()) {
+            object_temp_.push_back(return_);
+        }
     } else {
         return_ = 0;
     }
@@ -234,6 +251,9 @@ void BasicBlockGenerator::operator()(Construct* expr) {
     // Insert a call expression, then pop the return value off the stack.
     call(func->label());
     return_ = emit_pop_ret();
+    if (!expr->type()->is_value()) {
+        object_temp_.push_back(return_);
+    }
 }
 
 void BasicBlockGenerator::operator()(Identifier* expr) {
@@ -277,6 +297,7 @@ void BasicBlockGenerator::operator()(Block* statement) {
 void BasicBlockGenerator::operator()(Simple* statement) {
     Expression::Ptr expr = statement->expression();
     expr(this);
+    emit_free_temps();
 }
 
 void BasicBlockGenerator::operator()(Let* statement) {
@@ -292,16 +313,27 @@ void BasicBlockGenerator::operator()(Let* statement) {
 
 void BasicBlockGenerator::operator()(While* statement) {
     // Emit the guard expression in a new basic block
-    BasicBlock::Ptr guard_block = basic_block();
     BasicBlock::Ptr body_block = basic_block();
     BasicBlock::Ptr done_block = basic_block();
 
-    emit(guard_block);
+    BasicBlock::Ptr guard_block;
+    if (block_->instrs()) {
+        guard_block = basic_block();
+        emit(guard_block);
+    } else {
+        guard_block = block_;
+    }
 
     // Recursively emit the boolean guard expression.  
+    invert_guard_ = false;
     Operand guard = emit(statement->guard(), body_block, done_block, false);
+    emit_free_temps();
     if (!block_->is_terminated()) {
-        bz(guard, done_block, body_block);
+        if (invert_guard_) {
+            bnz(guard, done_block, body_block);
+        } else {
+            bz(guard, done_block, body_block);
+        }
     }
 
     // Now emit the body of the loop
@@ -327,9 +359,15 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
     // Recursively emit the boolean guard expression.  We need to pass the
     // true and the false block pointers so that the correct code is emitted
     // on each branch.
+    invert_guard_ = false;
     Operand guard = emit(statement->guard(), then_block, else_block, false);
+    emit_free_temps();
     if (!block_->is_terminated()) {
-        bz(guard, else_block, then_block);
+        if (invert_guard_) {
+            bnz(guard, else_block, then_block);
+        } else {
+            bz(guard, else_block, then_block);
+        }
     }
 
     // Now emit the true branch of the conditional
@@ -401,27 +439,48 @@ void BasicBlockGenerator::operator()(Assignment* statement) {
             emit_refcount_inc(var->operand());
         }
     }
+
+    emit_free_temps();
 }
 
 void BasicBlockGenerator::operator()(Return* statement) {
-    if (!dynamic_cast<Empty*>(statement->expression())) {
+    Expression::Ptr expr = statement->expression();
+    if (!dynamic_cast<Empty*>(expr.pointer())) {
         // Don't actually return right away; store the result in a pseudo-var
         // and return it after cleanup.
-        scope_.back()->return_val(emit(statement->expression()));
+        Operand ret = emit(expr);
+        scope_.back()->return_val(ret);
+
+        // Increment the refcount of the returned value if it is an object. 
+        // The refcount must be incremented so that the object won't be freed
+        // before the function returns.  It is the caller's responsibility to
+        // correctly free the returned object.
+        if (!expr->type()->is_value()) {
+            emit_refcount_inc(ret);
+        }
     }
     scope_.back()->has_return(true);
+    emit_free_temps();
 }
 
 void BasicBlockGenerator::operator()(When* statement) {
+    assert(!"Not implemented");
+    emit_free_temps();
 }
 
 void BasicBlockGenerator::operator()(Case* statement) {
+    assert(!"Not implemented");
+    emit_free_temps();
 }
 
 void BasicBlockGenerator::operator()(Fork* statement) {
+    assert(!"Not implemented");
+    emit_free_temps();
 }
 
 void BasicBlockGenerator::operator()(Yield* statament) {
+    assert(!"Not implemented");
+    emit_free_temps();
 }
 
 void BasicBlockGenerator::operator()(Function* feature) {
@@ -805,35 +864,58 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
     // FIXME: Run variable initializers here
     if (!class_->is_object()) { return; }
 
+    // Allocate the memory for the new object by calling calloc with the size
+    // of the object.
     String::Ptr one = env_->integer("1");
     String::Ptr size = env_->integer(stringify(class_->size()));
     emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
     emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
     call(env_->name("calloc"));        
+
+    // Obtain a pointer to the 'self' object, and store it in the 'self'
+    // variable.
     Operand self = emit_pop_ret(); 
     variable(new Variable(env_->name("self"), self, 0)); 
+    
+    // Initialize the vtable pointer
     Operand vtable = Operand::addr(self.temp(), 0);
     Operand label = load(env_->name(class_->name()->string()+"__vtable"));
     store(vtable, label);
+
+    // Make sure that the refcount starts out at 1, otherwise the object may
+    // be freed before the end of the constructor.
+    Operand refcount = Operand::addr(self.temp(), 1);
+    store(refcount, new IntegerLiteral(Location(), one));
     
     // Emit initializer code for initialized attributes
     for (Feature::Ptr f = class_->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
-            if (!attr->initializer()) {
+            Expression::Ptr init = attr->initializer();
+            if (!init) {
                 continue;
             }
-            if (dynamic_cast<Empty*>(attr->initializer())) {
+            if (dynamic_cast<Empty*>(init.pointer())) {
                 continue;
             }
-            Operand value = emit(attr->initializer());
+            Operand value = emit(init);
             Operand addr = Operand::addr(self.temp(), attr->slot()+2);
             // +2 is for vtable and refcount slots
             store(addr, value);
-            if (!attr->initializer()->type()->is_value()) {
+            if (!init->type()->is_value()) {
                 emit_refcount_inc(value);
             }
+            emit_free_temps();
         }
     }
+}
+
+void BasicBlockGenerator::emit_free_temps() {
+    // Free all object temporaries that were used to evaluate the expression by
+    // decrementing their refcount.
+    for (int i = 0; i < object_temp_.size(); i++) {
+        emit_refcount_dec(object_temp_[i]);
+    }
+    object_temp_.clear();
 }
 
 /*

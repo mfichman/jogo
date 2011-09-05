@@ -579,7 +579,6 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
         }
 
         variable(statement->identifier(), statement->type());
-        init->type(statement->type());
     } else {
         // The variable was already declared, but the init type is not
         // compatible with the variable type.

@@ -228,6 +228,76 @@ boolexpr6() {
     
 }
 
+boolexpr7() {
+    a = 1
+    b = 0
+
+    if not 1 {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("37\n")
+    }
+
+    if not (a and b) {
+        boot_print_str("38\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if not (a and not b) {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("39\n")
+    }
+    if a and not b {
+        boot_print_str("40\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if not not a {
+        boot_print_str("41\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if not (not a and not b) {
+        boot_print_str("42\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if not a and not b {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("43\n")
+    }
+
+    if not a or b {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("44\n")
+    }
+
+    if not a or not b {
+        boot_print_str("45\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+
+    if not (not a or not b) {
+        boot_print_str("fail\n")
+    } else {
+        boot_print_str("46\n")
+    }
+
+    if not ((not a or b) and (a and not b)) {
+        boot_print_str("47\n")
+    } else {
+        boot_print_str("fail\n")
+    }
+}
+
 main() Int {
     boolexpr1()
     boolexpr2()
@@ -235,5 +305,6 @@ main() Int {
     boolexpr4()
     boolexpr5()
     boolexpr6()
+    boolexpr7()
     ret 0
 }
