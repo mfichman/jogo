@@ -18,10 +18,6 @@ TestObject < Object {
     baz?() Bool {
         ret baz
     }
-
-    initialized?() Int {
-        ret initialized
-    }
 }
 
 main() Int {
@@ -36,5 +32,9 @@ main() Int {
     }
     boot_print_int(test.initialized) 
     boot_print_str("\n")
+    test.initialized = 2910
+    boot_print_int(test.initialized) 
+    boot_print_str("\n")
+    
     ret 0
 }

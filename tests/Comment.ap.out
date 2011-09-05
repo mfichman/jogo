@@ -7,17 +7,42 @@ Module
       multiple lines, and all whitespace will be stripped from the beginning of
       the  comment block. 
     feature0: Function
+      name: x?
+      type: String
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+        child0: Return
+          expression: Identifier
+            name: x
+    feature1: Function
+      name: x=
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      formal1: Formal
+        name: _arg0
+        type: String
+      block: Block
+        child0: Assignment
+          name: x
+          type: String
+          initializer: Identifier
+            name: _arg0
+    feature2: Function
       name: @init
       type: Void
       block: Block
-    feature1: Function
+    feature3: Function
       name: @destroy
       type: Void
       formal0: Formal
         name: self
         type: Self
       block: Block
-    feature2: Function
+    feature4: Function
       name: comment1
       type: Void
       comment:
@@ -34,7 +59,7 @@ Module
         child0: Conditional
           guard: BooleanLiteral(1)
           true: Block
-    feature3: Function
+    feature5: Function
       name: comment2
       type: Void
       comment:
@@ -43,7 +68,7 @@ Module
         name: self
         type: Self
       block: Block
-    feature4: Attribute
+    feature6: Attribute
       name: x
       type: String
       initializer: Construct

@@ -99,25 +99,8 @@ void SemanticAnalyzer::operator()(Class* feature) {
     }
 
     if (!feature->is_interface() && !feature->type()->is_primitive()) {
-        // Check for a destructor, and generate one if it isn't present
-        if (!feature->function(env_->name("@destroy"))) {
-            String::Ptr nm = env_->name("@destroy");
-            Type::Ptr st = env_->self_type();
-            Type::Ptr vt = env_->void_type();
-            Location loc;
-            Block::Ptr block(new Block(loc, 0, 0));
-            Formal::Ptr self(new Formal(loc, env_->name("self"), st));
-            feature->feature(new Function(loc, nm, self, 0, vt, block));
-        }
-    
-        // Check for a constructor, and generate one if it isn't present
-        if (!feature->function(env_->name("@init"))) {
-            String::Ptr nm = env_->name("@init");
-            Type::Ptr vt = env_->void_type();
-            Location loc;
-            Block::Ptr block(new Block(loc, 0, 0));
-            feature->feature(new Function(loc, nm, 0, 0, vt, block));
-        }
+        gen_destructor();
+        gen_constructor(); 
     }
 
     // Check interface/struct/object baseclass and make sure that 
@@ -696,6 +679,8 @@ void SemanticAnalyzer::operator()(Function* feature) {
         } else if (name[i] == '?') {
             label += "__g";
         } else if (name[i] == '!') {
+            label += "__w";
+        } else if (name[i] == '=') {
             label += "__s";
         } else if (name[i] == ':') {
             label += "_";
@@ -770,11 +755,14 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     Expression::Ptr initializer = feature->initializer();
     initializer(this);
 
+
     // No explicitly declared type, but the initializer can be used to infer
     // the type.
     if (!feature->type()) {
         variable(feature->name(), initializer->type());     
         feature->type(initializer->type());
+        gen_mutator(feature);
+        gen_accessor(feature);
         return;
     }
 
@@ -792,6 +780,8 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     }
 
     variable(feature->name(), feature->type());
+    gen_mutator(feature);
+    gen_accessor(feature);
 }
 
 void SemanticAnalyzer::operator()(Import* feature) {
@@ -847,3 +837,60 @@ void SemanticAnalyzer::exit_scope() {
     variable_.pop_back();
 }
 
+void SemanticAnalyzer::gen_constructor() {
+    // Check for a constructor, and generate one if it isn't present
+    if (!class_->function(env_->name("@init"))) {
+        String::Ptr nm = env_->name("@init");
+        Type::Ptr vt = env_->void_type();
+        Location loc;
+        Block::Ptr block(new Block(loc, 0, 0));
+        class_->feature(new Function(loc, nm, 0, 0, vt, block));
+    }
+}
+
+void SemanticAnalyzer::gen_destructor() {
+    // Check for a destructor, and generate one if it isn't present
+    if (!class_->function(env_->name("@destroy"))) {
+        String::Ptr nm = env_->name("@destroy");
+        Type::Ptr st = env_->self_type();
+        Type::Ptr vt = env_->void_type();
+        Location loc;
+        Block::Ptr block(new Block(loc, 0, 0));
+        Formal::Ptr self(new Formal(loc, env_->name("self"), st));
+        class_->feature(new Function(loc, nm, self, 0, vt, block));
+    }
+}
+
+void SemanticAnalyzer::gen_accessor(Attribute* feature) {
+    // Insert a setter for the attribute if it doesn't already exist
+    String::Ptr get = env_->name(feature->name()->string()+"?");
+    if (!class_->function(get) && !feature->is_private()) {
+        Location loc;
+        Identifier::Ptr attr(new Identifier(loc, feature->name()));
+        Return::Ptr ret(new Return(loc, attr)); 
+        Block::Ptr block(new Block(loc, 0, ret));
+        Type::Ptr st = env_->self_type();
+        Type::Ptr ft = feature->type();
+        Formal::Ptr self(new Formal(loc, env_->name("self"), st));
+        class_->feature(new Function(loc, get, self, 0, ft, block));
+    }
+}
+
+void SemanticAnalyzer::gen_mutator(Attribute* feature) {
+    // Insert a getter for the attribute if it doesn't already exist
+    String::Ptr set = env_->name(feature->name()->string()+"=");
+    if (!class_->function(set) && !feature->is_immutable()
+            && !feature->is_private()) {
+        Location loc;
+        Identifier::Ptr val(new Identifier(loc, env_->name("_arg0"))); 
+        Assignment::Ptr assign(new Assignment(loc, feature->name(), 0, val)); 
+        Block::Ptr block(new Block(loc, 0, assign));
+        Type::Ptr st = env_->self_type();
+        Type::Ptr vt = env_->void_type();
+        Type::Ptr ft = feature->type();
+        Formal::Ptr self(new Formal(loc, env_->name("self"), st));
+        Formal::Ptr arg(new Formal(loc, env_->name("_arg0"), ft));
+        self->next(arg);
+        class_->feature(new Function(loc, set, self, 0, vt, block));
+    }
+}

@@ -522,14 +522,9 @@ void BasicBlockGenerator::emit_operator(Dispatch* expr) {
     }
 }
 
-void debug4() { }
-
 BasicBlock* BasicBlockGenerator::basic_block() {
     BasicBlock* block = new BasicBlock();
     block->label(env_->name("l" + stringify(++label_)));
-    if (block->label()->string() == "l7") {
-        debug4();
-    }
     return block;
 }
 

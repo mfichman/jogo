@@ -72,6 +72,10 @@ private:
     Class* clazz(String* name);
     void enter_scope();
     void exit_scope();
+    void gen_mutator(Attribute* feature);
+    void gen_accessor(Attribute* feature);
+    void gen_constructor();
+    void gen_destructor();
 
     Environment::Ptr env_;
     Stream::Ptr err_;

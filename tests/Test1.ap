@@ -2,8 +2,8 @@
 
 Test1 < Object {
 
-    bob Int = 0 + 19 + 29 + 29 * 28
-    bill Int = ~929
-    jim Int = f(99, 19, 2)
-    mike Int = jim.foo(1, 2, 3)
+    bob private Int = 0 + 19 + 29 + 29 * 28
+    bill private Int = ~929
+    jim private Int = f(99, 19, 2)
+    mike private Int = jim.foo(1, 2, 3)
 }

@@ -2,10 +2,10 @@
 import Sub2
 
 Import3 < Object {
-    var1 = Sub1::Test()
-    var2 = Sub1::test()
-    var3 = Sub2::Test()
-    var4 = Sub2::test()
-    var5 = Test()
-    var6 = test()
+    var1 private = Sub1::Test()
+    var2 private = Sub1::test()
+    var3 private = Sub2::Test()
+    var4 private = Sub2::test()
+    var5 private = Test()
+    var6 private = test()
 }

@@ -50,8 +50,8 @@ Bob < Object {
             }
         }
     }
-    blarg Int
-    blarg Bool
+    blarg private Int
+    blarg private Bool
 }
 
 Bob < Object {

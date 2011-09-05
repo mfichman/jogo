@@ -1,5 +1,5 @@
-Test1.ap:7:15: Undeclared function 'f'
-Test1.ap:8:16: Undeclared function 'foo' in class 'Int'
+Test1.ap:7:23: Undeclared function 'f'
+Test1.ap:8:24: Undeclared function 'foo' in class 'Int'
 Module
   name: 
   feature0: Class

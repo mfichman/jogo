@@ -173,6 +173,8 @@ attribute_flags
     : IMMUTABLE { $$ = Feature::IMMUTABLE; }
     | WEAK IMMUTABLE { $$ = Feature::WEAK | Feature::IMMUTABLE; }
     | WEAK { $$ = Feature::WEAK; }
+    | PRIVATE WEAK { $$ = Feature::WEAK | Feature::PRIVATE; }
+    | PRIVATE { $$ = Feature::PRIVATE; }
     | /* empty */ { $$ = 0; }
     ;
 
