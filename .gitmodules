@@ -1,0 +1,6 @@
+[submodule "apollo.wiki"]
+	path = apollo.wiki
+	url = ../apollo.wiki/
+[submodule "wiki"]
+	path = wiki
+	url = ../apollo.wiki/
