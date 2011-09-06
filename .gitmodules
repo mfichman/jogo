@@ -1,6 +1,3 @@
-[submodule "apollo.wiki"]
-	path = apollo.wiki
-	url = ../apollo.wiki/
 [submodule "wiki"]
 	path = wiki
-	url = ../apollo.wiki/
+	url = git@github.com:mfichman/apollo.wiki.git
