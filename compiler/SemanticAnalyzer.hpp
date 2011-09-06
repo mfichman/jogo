@@ -26,6 +26,7 @@
 #include "TreeNode.hpp"
 #include "Environment.hpp"
 #include "Feature.hpp"
+#include "Scope.hpp"
 #include <vector>
 #include <map>
 
@@ -65,11 +66,11 @@ private:
     void operator()(Import* feature);
     void operator()(Type* type);
 
-    Type* variable(String* name);
-    void variable(String* name, Type* type);
     Function* function(String* name);
-    void function(String* name, Function* function);
     Class* clazz(String* name);
+    Variable* variable(String* name);
+    void function(String* name, Function* function);
+    void variable(Variable* var);
     void enter_scope();
     void exit_scope();
     void gen_mutator(Attribute* feature);
@@ -79,11 +80,11 @@ private:
 
     Environment::Ptr env_;
     Stream::Ptr err_;
-    std::vector<std::map<String::Ptr, Type::Ptr> > variable_;
     Module::Ptr module_;
     Class::Ptr class_;
-    Function::Ptr scope_;
+    Function::Ptr function_;
     Type::Ptr return_; // Return value of the current block
+    std::vector<Scope::Ptr> scope_;
     int slot_;
 };
 

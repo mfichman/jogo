@@ -456,7 +456,7 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
     // Determine the type of the identifier from the variable store.  If the
     // variable is undeclared, set the type of the expression to no-type to
     // prevent further error messages.
-    Type::Ptr type = variable(expression->identifier());
+    Type::Ptr type = variable(expression->identifier())->type();
     if (!type) {
         err_ << expression->location();
         err_ << "Undeclared identifier \"";
@@ -541,6 +541,7 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
     // Ensure that a variable is not duplicated, or re-initialized with a 
     // different type.  This function handles both assignment and variable
     // initialization.
+    String::Ptr id = statement->identifier();
     Expression::Ptr init = statement->initializer();
     init(this);
 
@@ -548,20 +549,28 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
         Type::Ptr type = statement->type();
         type(this);
         if (!type->clazz()) {
-            variable(statement->identifier(), env_->no_type());
+            variable(new Variable(id, 0, env_->no_type()));
             return;
         }
     }
 
-    Type::Ptr type = variable(statement->identifier());
+    Variable::Ptr var = variable(id);
+    Type::Ptr type = var ? var->type() : 0;
+
+    // Attempt to assign to an immutable var, usually a param
+    if (var && var->is_immutable()) {
+        err_ << statement->location();
+        err_ << "Value assigned to immutable parameter '" << id << "'\n"; 
+        env_->error();
+        return;
+    }
         
     // Attempt to assign void to a variable during initialization.
     if (init->type() && init->type()->equals(env_->void_type())) {
         err_ << init->location();
-        err_ << "Void value assigned to variable '";
-        err_ << statement->identifier() << "'\n";
+        err_ << "Void value assigned to variable '" << id << "'\n";
         env_->error();
-        variable(statement->identifier(), env_->no_type());
+        variable(new Variable(id, 0, env_->no_type()));
         return;
     }
     
@@ -570,8 +579,7 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
         // already exists.
         if (type) {
             err_ << statement->location();
-            err_ << "Duplicate definition of variable '";
-            err_ << statement->identifier() << "'\n";
+            err_ << "Duplicate definition of variable '" << id << "'\n";
             env_->error();
             return;
         }
@@ -586,19 +594,18 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
             return;
         }
 
-        variable(statement->identifier(), statement->type());
+        variable(new Variable(id, 0, statement->type()));
     } else {
         // The variable was already declared, but the init type is not
         // compatible with the variable type.
         if (type && !init->type()->subtype(type)) {
             err_ << init->location();
             err_ << "Expression does not conform to type '";
-            err_ << type << "' in assignment of '";
-            err_ << statement->identifier() << "'\n";
+            err_ << type << "' in assignment of '" << id << "'\n";
             env_->error();
             return;
         }
-        variable(statement->identifier(), init->type()); 
+        variable(new Variable(id, 0, init->type())); 
         statement->type(init->type());
     }
 }
@@ -616,10 +623,10 @@ void SemanticAnalyzer::operator()(Return* statement) {
     if (expression->type()->is_self()) {
         expression->type(class_->type());
     }
-    if (!expression->type()->subtype(scope_->type())) {
+    if (!expression->type()->subtype(function_->type())) {
         err_ << statement->location();
         err_ << "Return must conform to type '";
-        err_ << scope_->type() << "'";
+        err_ << function_->type() << "'";
         err_ << "\n";
         env_->error();
     }
@@ -662,7 +669,7 @@ void SemanticAnalyzer::operator()(Function* feature) {
     // first, followed by the function body.  If the function belongs to an
     // an interface, the function should not have a body.
     Block::Ptr block = feature->block();
-    scope_ = feature;
+    function_ = feature;
     enter_scope();
 
     // Calculate the label name for this function.
@@ -703,7 +710,7 @@ void SemanticAnalyzer::operator()(Function* feature) {
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
         Type::Ptr type = f->type();
         type(this);
-        variable(f->name(), f->type());
+        variable(new Variable(f->name(), 0, f->type(), true));
     }
     Type::Ptr type = feature->type();
     type(this);
@@ -761,7 +768,7 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     // No explicitly declared type, but the initializer can be used to infer
     // the type.
     if (!feature->type()) {
-        variable(feature->name(), initializer->type());     
+        variable(new Variable(feature->name(), 0, initializer->type()));     
         feature->type(initializer->type());
         gen_mutator(feature);
         gen_accessor(feature);
@@ -781,7 +788,7 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
         env_->error();
     }
 
-    variable(feature->name(), feature->type());
+    variable(new Variable(feature->name(), 0, feature->type()));
     gen_mutator(feature);
     gen_accessor(feature);
 }
@@ -815,28 +822,30 @@ void SemanticAnalyzer::operator()(Type* type) {
     }
 }
 
-Type* SemanticAnalyzer::variable(String* name) {
-    vector<map<String::Ptr, Type::Ptr> >::reverse_iterator i;
-    for (i = variable_.rbegin(); i != variable_.rend(); i++) {
-        map<String::Ptr, Type::Ptr>::iterator j = i->find(name);        
-        if (j != i->end()) {
-            return j->second;
+Variable* SemanticAnalyzer::variable(String* name) {
+    // Look up the variable, starting in the current scope and continuing up
+    // the scope stack.
+    vector<Scope::Ptr>::reverse_iterator i;
+    for (i = scope_.rbegin(); i != scope_.rend(); i++) {
+        Variable* var = (*i)->variable(name);
+        if (var) {
+            return var;
         }
     }
     return 0;
 }
 
-void SemanticAnalyzer::variable(String* name, Type* type) {
-    assert(variable_.size());
-    variable_.back().insert(make_pair(name, type));
+void SemanticAnalyzer::variable(Variable* var) {
+    assert(scope_.size());
+    scope_.back()->variable(var);
 }
 
 void SemanticAnalyzer::enter_scope() {
-    variable_.push_back(map<String::Ptr, Type::Ptr>());
+    scope_.push_back(new Scope);
 }
 
 void SemanticAnalyzer::exit_scope() {
-    variable_.pop_back();
+    scope_.pop_back();
 }
 
 void SemanticAnalyzer::gen_constructor() {

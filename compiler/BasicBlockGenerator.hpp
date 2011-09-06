@@ -27,63 +27,10 @@
 #include "BasicBlock.hpp"
 #include "Object.hpp"
 #include "Machine.hpp"
+#include "Scope.hpp"
 #include <vector>
 #include <map>
 
-/* Variable structure, used to store info about assigned vars in a scope */
-class Variable : public Object {
-public:
-    Variable(String* name, Operand op, Type* type) :
-        name_(name),
-        operand_(op),
-        type_(type) {
-    }
-
-    String* name() const { return name_; }
-    Operand operand() const { return operand_; }
-    Type* type() const { return type_; }
-    typedef Pointer<Variable> Ptr;
-
-private:
-    String::Ptr name_;
-    Operand operand_;
-    Type::Ptr type_; 
-};
-
-/* Scope structure for recording end-of-scope cleanup info */
-class Scope : public Object {
-public:
-    Scope() : has_return_(0) {}
-
-    void variable(Variable* variable) { 
-        variable_.push_back(variable);
-    }
-    Variable* variable(String* name) const { 
-        for (int i = 0; i < variable_.size(); i++) {
-            if (variable_[i]->name() == name) {
-                return variable_[i];
-            }
-        }
-        return 0;
-    }
-    Variable* variable(int index) const {
-        return variable_[index];
-    }
-    void return_val(Operand val) { return_val_ = val; }
-    void has_return(bool ret) { has_return_ = ret; }
-    int variables() const { return variable_.size(); }
-    BasicBlock* cleanup() const { return cleanup_; }
-    Operand return_val() const { return return_val_; }
-    bool has_return() const { return has_return_; }
-
-    typedef Pointer<Scope> Ptr;
-
-private:
-    BasicBlock::Ptr cleanup_; // Block for inserting stack cleanup code
-    bool has_return_;
-    Operand return_val_;
-    std::vector<Variable::Ptr> variable_;
-};
 
 /* Code generator structure; creates basic block flow graphs */
 class BasicBlockGenerator : public TreeNode::Functor {

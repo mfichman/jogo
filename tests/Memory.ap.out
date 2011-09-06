@@ -19,6 +19,16 @@ alloc: 11
 free: 11
 alloc: 12
 free: 12
+alloc: 13
+alloc: 14
+free: 13
+alloc: 15
 free: 5
+free: 14
+alloc: 16
+alloc: 17
+free: 17
+free: 16
+free: 15
 free: 4
 free: 3

@@ -62,3 +62,7 @@ bar() Int {
     a Int = 10
     ret a
 }
+
+assign(a Int) {
+    a = 10
+}

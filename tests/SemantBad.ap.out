@@ -5,6 +5,7 @@ SemantBad.ap:19:5: Function 'bar' must return a value
 SemantBad.ap:35:5: Duplicate definition of function 'bar'
 SemantBad.ap:57:1: Duplicate definition of class 'Bob' in root module
 SemantBad.ap:62:5: Statement is unreachable
+SemantBad.ap:67:5: Value assigned to immutable parameter 'a'
 Module
   name: 
   feature0: Function
@@ -154,3 +155,15 @@ Module
       child2: Return
         expression: Identifier
           name: a
+  feature5: Function
+    name: assign
+    type: Void
+    comment:
+    formal0: Formal
+      name: a
+      type: Int
+    block: Block
+      child0: Assignment
+        name: a
+        type: <<notype>>
+        initializer: IntegerLiteral(10)
