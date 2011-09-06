@@ -560,7 +560,7 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
     // Attempt to assign to an immutable var, usually a param
     if (var && var->is_immutable()) {
         err_ << statement->location();
-        err_ << "Value assigned to immutable parameter '" << id << "'\n"; 
+        err_ << "Value assigned to formal parameter '" << id << "'\n"; 
         env_->error();
         return;
     }
