@@ -284,6 +284,7 @@ private:
     void emit_return();
     void emit_push_arg(int i, Operand arg);
     void emit_ctor_preamble(Function* func);
+    void emit_dtor_epilog(Function* func);
     void emit_free_temps();
     void calculate_size(Class* clazz);
     Operand emit_pop_ret();

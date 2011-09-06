@@ -264,8 +264,8 @@ void BasicBlockGenerator::operator()(Identifier* expr) {
     if (var) {
         return_ = var->operand();
     } else if (attr) {
-        Variable::Ptr self = variable(env_->name("self"));
-        return_ = load(Operand::addr(self->operand().temp(), attr->slot()+2));
+        Operand self = variable(env_->name("self"))->operand();
+        return_ = load(Operand::addr(self.temp(), attr->slot()+2));
         // +2 is for refcount, vtable slots
     } else {
         // Variable can't be found in a temporary; it must be an argument 
@@ -692,6 +692,9 @@ void BasicBlockGenerator::emit_return() {
             push(retval);
         }
     }
+    if (function_->is_destructor()) {
+        emit_dtor_epilog(function_);
+    }
     ret();
 }
 
@@ -907,6 +910,21 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
             emit_free_temps();
         }
     }
+}
+
+void BasicBlockGenerator::emit_dtor_epilog(Function* feature) {
+    // Free all of the attributes, and call destructors.
+    for (Feature::Ptr f = class_->features(); f; f = f->next()) {
+        if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
+            if (!attr->type()->is_value() && !attr->is_weak()) {
+                Operand self = variable(env_->name("self"))->operand();
+                Operand val = load(Operand::addr(self.temp(), attr->slot()+2));
+                emit_refcount_dec(val);
+                // +2 is for refcount, vtable slots
+            }
+        }
+    } 
+
 }
 
 void BasicBlockGenerator::emit_free_temps() {
