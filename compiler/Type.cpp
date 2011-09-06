@@ -103,7 +103,7 @@ bool Type::is_variable() const {
 }
 
 bool Type::is_primitive() const {
-    return is_int() || is_float() || is_bool() || is_char();
+    return is_int() || is_float() || is_bool() || is_char() || is_byte();
 }
 
 bool Type::is_interface() const {
@@ -116,6 +116,10 @@ bool Type::is_object() const {
 
 bool Type::is_value() const {
     return clazz()->is_value();
+}
+
+bool Type::is_byte() const {
+    return this->equals(environment_->byte_type());
 }
 
 bool Type::is_char() const {

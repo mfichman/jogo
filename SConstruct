@@ -49,8 +49,8 @@ compiler_sources = env.Glob('build/compiler/*.cpp') + [parser, lexer]
 env.Program('bin/apollo', compiler_sources +  ['build/drivers/Main.cpp'])
 
 
-library_sources = env.Glob('build/runtime/*.c') 
-library_sources += env.Glob('build/runtime/*.asm')
+library_sources = env.Glob('build/runtime/*/*.c') 
+library_sources += env.Glob('build/runtime/*.c')
 env.StaticLibrary('lib/apollo', library_sources)
 #env.Program('bin/asmtest', 'samples/Test.linux.asm')
 

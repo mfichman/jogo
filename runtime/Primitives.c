@@ -20,31 +20,50 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_PRELUDE_H
-#define APOLLO_PRELUDE_H
+#include "Primitives.h"
+#include "String.h"
+#include <stdlib.h>
+#include <stdio.h>
 
-#include <stdint.h>
+String Int_str__g(Int self) {
+    // Converts an integer into a string, by first calculating the amount of
+    // space needed for the string, and then copying the characters into the
+    // string.
+    Int length = 0;
+    Int val = self;
 
-typedef int64_t Int;
-typedef int64_t Bool;
+    if (self < 0) { length++; }
+    while (val) { 
+        val /= 10; 
+        length++;
+    }
 
-typedef uint64_t U64;
-typedef uint32_t U32;
-typedef uint16_t U16;
-typedef uint8_t U8;
+    String ret = malloc(sizeof(String) + length + 1); 
+    if (!ret) {
+        fprintf(stderr, "Out of memory");
+        fflush(stderr);
+        abort();
+    }
+    ret->_vtable = String__vtable;
+    ret->_refcount = 1;
+    ret->length = length;
+    
+    // Now copy over the characters for each decimal place
+    Char *c = ret->data + ret->length - 1;
+    val = self < 0 ? -self : self;
+    while (val) {
+        *c-- = (val % 10) + '0';
+        val /= 10;
+    }
+    if (self < 0) { 
+        *c-- = '-';
+        val = -val;
+    }
+    ret->data[ret->length] = '\0'; // Add nul-terminator for C usage
+    return ret;
+}
 
-typedef int64_t S64;
-typedef int32_t S32;
-typedef int16_t S16;
-typedef int8_t S8;
+String Float_str__g(Float self) {
+    abort();
+}
 
-typedef uint8_t Char;
-typedef void* Ptr;
-typedef double Float;
-
-typedef struct Object {
-    Ptr _vtable;
-    U64 _refcount; 
-} Object;
-
-#endif

@@ -1,0 +1,61 @@
+# Copyright (c) 2010 Matt Fichman
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+Buffer < Object {
+    # Container for a static array of bytes.  This class is implemented using 
+    # the 'C struct hack', so allocating a buffer of a certain size will 
+    # allocate a contiguous block of memory for this object.  As such, the
+    # actual runtime size of this object depends on the capacity value passed
+    # to the constructor.
+    
+    capacity immutable Int
+    # Returns the capacity of this buffer.
+
+    begin Int
+    # Returns the index of first valid byte in this buffer.
+
+    end Int
+    # Returns the index after the last valid byte in this buffer.
+
+    @init(size Int) native {
+        # Creates a new buffer with capacity for 'size' bytes.
+    }
+
+    @insert(index Int, byte Byte) native {
+        # Sets the byte at 'index' to 'byte'.
+    }
+
+    @index(index Int) native Byte {
+        # Returns the byte at 'index'. 
+    }
+
+    begin=(value Int) {
+        # Sets the index of the first byte stored in this buffer.  Note that
+        # this does not change the capacity.  Setting this value to a number
+        # greater than the capacity or 'end' results in 'begin' being set to
+        # the minimum of those two values.
+        begin = value.min(capacity).min(end).max(0)
+    }
+
+    end=(value Int) {
+        # Sets the index following the last byte stored in this buffer.
+        end = value.min(capacity+1).max(begin).max(0)
+    }
+}

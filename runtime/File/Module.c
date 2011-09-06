@@ -20,41 +20,37 @@
  * IN THE SOFTWARE.
  */
 
-#include "String.h"
-#include <stdio.h>
-#include <stdlib.h>
-
-void boot_print_str(String string) {
-    // Write string to stdout.  This is function is here for convenience's 
-    // sake.  Once a full-fledged IO framework has been written, this function
-    // will really only be useful for simple output.
-
-    fwrite(string->data, 1, string->length, stdout);
-    fflush(stdout);
-}
-
-void boot_print_int(Int integer) {
-    // Print an integer to stdout.  This function is here only to run initial
-    // tests on the compiler, and isn't part of the public API.
-
-#ifdef DARWIN
-    fprintf(stdout, "%lld", integer);
-#else
-    fprintf(stdout, "%ld", integer);    
+#include "Module.h"
+#include "../String.h"
+#include <string.h>
+#ifndef WINDOWS
+#include <unistd.h>
+#include <fcntl.h>
 #endif
-    fflush(stdout);
-}
 
-void boot_print_char(Char character) {
-    // Print a character to stdout.  This function is not part of the public 
-    // API for the Apollo library.
+File_Stream File_open(String path, String mode) {
 
-    fputc(character, stdout);
-    fflush(stdout);
-}
+#ifndef WINDOWS
+    Int flags = 0;
+    if (!strncmp(mode->data, "r", 1)) {
+        flags = O_RDONLY;
+    } else if (!strncmp(mode->data, "w", 1)) {
+        flags = O_WRONLY|O_CREAT;
+    } else if (!strncmp(mode->data, "a", 1)) {
+        flags = O_WRONLY|O_APPEND|O_CREAT; 
+    } else if (!strncmp(mode->data, "r+", 2)) {
+        flags = O_RDWR;
+    } else if (!strncmp(mode->data, "w+", 2)) {
+        flags = O_RDWR|O_CREAT;
+    } else if (!strncmp(mode->data, "a+", 2)) {
+        flags = O_RDWR|O_APPEND|O_CREAT;
+    }
 
-void boot_dummy(int a, int b, int c) {
-    boot_print_int(a);
-    boot_print_int(b);
-    boot_print_int(c);
+    Int ret = open(path->data, flags, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+    if (ret == -1) {
+        return 0;
+    } else {
+        return File_Stream__init(ret);
+    }
+#endif
 }

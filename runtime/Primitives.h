@@ -20,41 +20,33 @@
  * IN THE SOFTWARE.
  */
 
-#include "String.h"
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef APOLLO_PRIMITIVES_H
+#define APOLLO_PRIMITIVES_H
 
-void boot_print_str(String string) {
-    // Write string to stdout.  This is function is here for convenience's 
-    // sake.  Once a full-fledged IO framework has been written, this function
-    // will really only be useful for simple output.
+#include <stdint.h>
 
-    fwrite(string->data, 1, string->length, stdout);
-    fflush(stdout);
-}
+typedef int64_t Int;
+typedef int64_t Bool;
 
-void boot_print_int(Int integer) {
-    // Print an integer to stdout.  This function is here only to run initial
-    // tests on the compiler, and isn't part of the public API.
+typedef uint64_t U64;
+typedef uint32_t U32;
+typedef uint16_t U16;
+typedef uint8_t U8;
 
-#ifdef DARWIN
-    fprintf(stdout, "%lld", integer);
-#else
-    fprintf(stdout, "%ld", integer);    
+typedef int64_t S64;
+typedef int32_t S32;
+typedef int16_t S16;
+typedef int8_t S8;
+
+typedef char Char;
+typedef uint8_t Byte;
+typedef void* Ptr;
+typedef double Float;
+
+typedef struct String* String;
+typedef struct Object* Object;
+
+String Int_str__g(Int self);
+String Foat_str__g(Float self);
+
 #endif
-    fflush(stdout);
-}
-
-void boot_print_char(Char character) {
-    // Print a character to stdout.  This function is not part of the public 
-    // API for the Apollo library.
-
-    fputc(character, stdout);
-    fflush(stdout);
-}
-
-void boot_dummy(int a, int b, int c) {
-    boot_print_int(a);
-    boot_print_int(b);
-    boot_print_int(c);
-}

@@ -52,6 +52,7 @@ public:
     bool is_boolifiable() const;
     bool is_void() const;
     bool is_char() const;
+    bool is_byte() const;
     bool is_self() const;
     bool is_variable() const;
     void next(Type* next) { next_ = next; }

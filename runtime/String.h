@@ -23,24 +23,23 @@
 #ifndef APOLLO_STRING_H
 #define APOLLO_STRING_H
 
-#include "Prelude.h"
+#include "Primitives.h"
 
-typedef struct String {
+struct String {
     Ptr _vtable;
     U64 _refcount;
     Int length;
     Char data[];
-} String;
+};
 
-void String__destroy(String* self);
-Char String__index(String* self, Int index);
-String* String__add(String* self, String* string);
-String* String_slice(String* self, Int begin, Int end);
-Int String_length__g(String* self);
-Bool String__equal(String* self, String* string);
-String* String_uppercase__g(String* self);
-String* String_lowercase__g(String* self);
-String* Int_str__g(Int self);
-String* Float_str__g(Float self);
+void String__destroy(String self);
+Char String__index(String self, Int index);
+String String__add(String self, String string);
+String String_slice(String self, Int begin, Int end);
+Int String_length__g(String self);
+Bool String__equal(String self, String string);
+String String_uppercase__g(String self);
+String String_lowercase__g(String self);
+extern Ptr String__vtable;
 
 #endif

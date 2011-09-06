@@ -20,41 +20,30 @@
  * IN THE SOFTWARE.
  */
 
-#include "String.h"
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef APOLLO_FILE_STREAM_H
+#define APOLLO_FILE_STREAM_H
 
-void boot_print_str(String string) {
-    // Write string to stdout.  This is function is here for convenience's 
-    // sake.  Once a full-fledged IO framework has been written, this function
-    // will really only be useful for simple output.
+#include "../Primitives.h"
+#include "../Buffer.h"
 
-    fwrite(string->data, 1, string->length, stdout);
-    fflush(stdout);
-}
+typedef struct File_Stream* File_Stream;
+struct File_Stream {
+    Ptr _vtable;
+    U64 _refcount;
+    Int handle;
+    Buffer read_buf;
+    Buffer write_buf;
+    Int flags;
+};
 
-void boot_print_int(Int integer) {
-    // Print an integer to stdout.  This function is here only to run initial
-    // tests on the compiler, and isn't part of the public API.
+File_Stream File_Stream__init(Int handle);
+void File_Stream_read(File_Stream self, Buffer buffer);
+void File_Stream_write(File_Stream self, Buffer buffer);
+Char File_Stream_get(File_Stream self);
+void File_Stream_put(File_Stream self, Char ch);
+String File_Stream_scan(File_Stream self, Char ch);
+void File_Stream_print(File_Stream self, String str);
+void File_Stream_flush(File_Stream self);
+void File_Stream_close(File_Stream self);
 
-#ifdef DARWIN
-    fprintf(stdout, "%lld", integer);
-#else
-    fprintf(stdout, "%ld", integer);    
 #endif
-    fflush(stdout);
-}
-
-void boot_print_char(Char character) {
-    // Print a character to stdout.  This function is not part of the public 
-    // API for the Apollo library.
-
-    fputc(character, stdout);
-    fflush(stdout);
-}
-
-void boot_dummy(int a, int b, int c) {
-    boot_print_int(a);
-    boot_print_int(b);
-    boot_print_int(c);
-}

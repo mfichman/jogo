@@ -34,11 +34,11 @@ int yylex_destroy(void*);
 void yyset_extra(Parser*, void*);
 
 Parser::Parser(Environment* env) :
-	environment_(env),
+	env_(env),
     err_(Stream::sterr()) {
 
+    input("Primitives");
     input("String");
-    input("Prelude");
 
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));
@@ -58,8 +58,8 @@ void Parser::input(const std::string& import) {
     std::string file = Import::file_name(import); 
     std::vector<std::string> tests;
 
-    for (int i = 0; i < environment_->includes(); i++) {
-        const std::string& prefix = environment_->include(i);
+    for (int i = 0; i < env_->includes(); i++) {
+        const std::string& prefix = env_->include(i);
         const std::string ext = ".ap";
         if (file.compare(file.length() - ext.length(), ext.length(), ext)) {
             if (File::is_reg(prefix + "/" + file + ".ap")) {
@@ -82,7 +82,7 @@ void Parser::input(const std::string& import) {
         tests.push_back(prefix + "/" + file + ".ap");
         tests.push_back(prefix + "/" + file);
     }
-    environment_->error("Could not find " + import);
+    env_->error("Could not find " + import);
     //std::cerr << import->location();
     err_ << "Module '" << import << "' not found:\n";
     for (int i = 0; i < tests.size(); i++) {
@@ -93,23 +93,24 @@ void Parser::input(const std::string& import) {
 void Parser::file(const std::string& prefix, const std::string& file) {
     // Begin parsing a module file if it doesn't already exist.
 
+
     // The module can be loaded from the dir components of the file name
-    String* scope = environment_->name(Import::scope_name(file));
-    module_ = environment_->module(scope);
+    String* scope = env_->name(Import::scope_name(file));
+    module_ = env_->module(scope);
     if (!module_) {
-        module_ = new Module(Location(), scope, environment_);
-        environment_->module(module_);
+        module_ = new Module(Location(), scope, env_);
+        env_->module(module_);
     }
 
     // Create a file object for this file if it hasn't been parsed yet.
     std::string actual_file = (prefix == ".") ? file : prefix + "/" + file;
-    String* fs = environment_->name(actual_file);
-    file_ = environment_->file(fs);
+    String* fs = env_->name(actual_file);
+    file_ = env_->file(fs);
     if (file_) {
         return;
     } else {
-        file_ = new File(fs, module_, environment_);
-        environment_->file(file_);
+        file_ = new File(fs, module_, env_);
+        env_->file(file_);
     }
 
     this->column_ = 1;
@@ -134,7 +135,7 @@ void Parser::dir(const std::string& prefix, const std::string& dir) {
     // Parses all files in the directory specified by 'dir'.  If 'dir' is not
     // a directory, then no files are parsed.
 
-    for (File::Iterator i(dir); i; ++i) {
+    for (File::Iterator i(prefix + "/" + dir); i; ++i) {
         std::string name = *i;
         const std::string ext = ".ap";
         if (name.length() <= ext.length()) {

@@ -25,15 +25,13 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-Ptr String__vtable;
-
-Char String__index(String* self, Int index) {
+Char String__index(String self, Int index) {
     // All index operations are checked.  If the index is off the end of the
     // string, then return the NUL character.
     return index < self->length ? self->data[index] : '\0';
 }
 
-String* String__add(String* self, String* string) {
+String String__add(String self, String string) {
     // String data is allocated inline using the C "struct hack."  Since 
     // strings are immutable, the string array will never need to be resized,
     // and we get a performance boost from less indirection.
@@ -41,7 +39,8 @@ String* String__add(String* self, String* string) {
     // We have to manually initialize the string, because of the string 
     // optimization.  Copy the vtable from another string (FixMe: eventually
     // copy this from a static location)
-    String* ret = malloc(sizeof(String) + self->length + string->length + 1); 
+    Int length = self->length + string->length;
+    String ret = malloc(sizeof(struct String) + length + 1); 
     if (!ret) {
         fprintf(stderr, "Out of memory");
         fflush(stderr);
@@ -49,7 +48,7 @@ String* String__add(String* self, String* string) {
     }
     ret->_vtable = self->_vtable;
     ret->_refcount = 1;
-    ret->length = self->length + string->length;
+    ret->length = length;
 
     // Copy the data from the two strings.  Do this manually to take control
     // of security bugs. 
@@ -64,7 +63,7 @@ String* String__add(String* self, String* string) {
     return ret; 
 }
 
-String* String_slice(String* self, Int begin, Int end) {
+String String_slice(String self, Int begin, Int end) {
     // String data is allocated inline using the C "struct hack."  Since 
     // strings are immutable, the string array will never need to be resized,
     // and we get a performance boost from less indirection.
@@ -73,7 +72,7 @@ String* String_slice(String* self, Int begin, Int end) {
     if (begin < 0) { begin = 0; }
 
     Int length = end - begin;
-    String* ret = malloc(sizeof(String) + length + 1);
+    String ret = malloc(sizeof(struct String) + length + 1);
     if (!ret) {
         fprintf(stderr, "Out of memory");
         fflush(stderr);
@@ -92,12 +91,12 @@ String* String_slice(String* self, Int begin, Int end) {
     return ret;
 }
 
-Int String_length__g(String* self) {
+Int String_length__g(String self) {
     // Simply return the length data member.
     return self->length;
 }
 
-Bool String__equal(String* self, String* string) {
+Bool String__equal(String self, String string) {
     // Compare the two strings, return true if they are equal.
     if (self == string) {
         return 1;
@@ -113,9 +112,9 @@ Bool String__equal(String* self, String* string) {
     return 1;
 }
 
-String* String_uppercase__g(String* self) {
+String String_uppercase__g(String self) {
     // Create a new string with all lowercase letters replaced by uppercase
-    String* ret = malloc(sizeof(String) + self->length + 1);
+    String ret = malloc(sizeof(struct String) + self->length + 1);
     ret->length = self->length;
 
     Char *c = ret->data;
@@ -127,9 +126,9 @@ String* String_uppercase__g(String* self) {
     return ret;
 }
 
-String* String_lowercase__g(String* self) {
+String String_lowercase__g(String self) {
     // Create a new string with all uppercase letters replaced by lowercase
-    String* ret = malloc(sizeof(String) + self->length + 1);
+    String ret = malloc(sizeof(struct String) + self->length + 1);
     ret->length = self->length;
 
     Char *c = ret->data;
@@ -140,46 +139,3 @@ String* String_lowercase__g(String* self) {
     ret->data[ret->length] = '\0'; // Add nul-terminator for C usage
     return ret;
 }
-
-String* Int_str__g(Int self) {
-    // Converts an integer into a string, by first calculating the amount of
-    // space needed for the string, and then copying the characters into the
-    // string.
-    Int length = 0;
-    Int val = self;
-
-    if (self < 0) { length++; }
-    while (val) { 
-        val /= 10; 
-        length++;
-    }
-
-    String* ret = malloc(sizeof(String) + length + 1); 
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
-    ret->_vtable = String__vtable;
-    ret->_refcount = 1;
-    ret->length = length;
-    
-    // Now copy over the characters for each decimal place
-    Char *c = ret->data + ret->length - 1;
-    val = self < 0 ? -self : self;
-    while (val) {
-        *c-- = (val % 10) + '0';
-        val /= 10;
-    }
-    if (self < 0) { 
-        *c-- = '-';
-        val = -val;
-    }
-    ret->data[ret->length] = '\0'; // Add nul-terminator for C usage
-    return ret;
-}
-
-String* Float_str__g(Float self) {
-    abort();
-}
-

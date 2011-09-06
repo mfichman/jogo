@@ -1,0 +1,12 @@
+
+
+main() Int {
+    
+    let file = File::Stream(1) {
+        file.print('hello world\n')
+    }
+    #let file = File::open('File.txt', 'w') {
+    #    file.print('hello world') 
+    #}
+    ret 0
+}

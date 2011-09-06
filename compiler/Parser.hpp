@@ -37,7 +37,7 @@ public:
     Parser(Environment* env);
     ~Parser();
 
-    Environment* environment() const { return environment_; }
+    Environment* environment() const { return env_; }
     Module* module() const { return module_; }
 	File* file() const { return file_; }
     std::fstream& input() { return input_; }
@@ -53,7 +53,7 @@ public:
     typedef Pointer<Parser> Ptr;
 
 private:
-    Environment::Ptr environment_;
+    Environment::Ptr env_;
     Module::Ptr module_;
     File::Ptr file_;
     Stream::Ptr err_;

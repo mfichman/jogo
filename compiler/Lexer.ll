@@ -132,7 +132,7 @@ xor\= return BIT_XOR_ASSIGN;
     yylval->string = yyextra->environment()->name(yytext);
     return OPERATOR;
 }
-[a-z][A-Za-z0-9_]*[?!]? {
+[a-z][A-Za-z0-9_]*[?!=]? {
 	yylval->string = yyextra->environment()->name(yytext);
 	return IDENTIFIER;
 }

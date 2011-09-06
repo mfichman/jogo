@@ -30,6 +30,22 @@ Int < Value {
     @less(other Int) native Bool
     @compl() native Int
     str?() native String
+
+    max(other Int) Int {
+        if other > self {
+            ret other
+        } else {
+            ret self
+        }
+    }
+
+    min(other Int) Int {
+        if other < self {
+            ret other
+        } else {
+            ret self
+        }
+    }
 }
 
 Float < Value {
@@ -41,9 +57,25 @@ Float < Value {
     @div(other Float) native Float
     @mod(other Float) native Float
     @equal(other Float) native Bool
-    @less(other Int) native Bool
+    @less(other Float) native Bool
     @compl() native Float
     str?() native String
+
+    max(other Float) Float {
+        if other > self {
+            ret other
+        } else {
+            ret self
+        }
+    }
+
+    min(other Float) Float {
+        if other < self {
+            ret other
+        } else {
+            ret self
+        }
+    } 
 }
 
 Char < Value {
@@ -52,6 +84,6 @@ Char < Value {
 Bool < Value {
 }
 
-exit(code Int) native {
-    # Exits the current process, and sets the process exit code to 'code'.
+Byte < Value {
 }
+

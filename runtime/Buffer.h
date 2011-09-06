@@ -20,41 +20,25 @@
  * IN THE SOFTWARE.
  */
 
-#include "String.h"
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef APOLLO_BUFFER_H
+#define APOLLO_BUFFER_H
 
-void boot_print_str(String string) {
-    // Write string to stdout.  This is function is here for convenience's 
-    // sake.  Once a full-fledged IO framework has been written, this function
-    // will really only be useful for simple output.
+#include "Primitives.h"
 
-    fwrite(string->data, 1, string->length, stdout);
-    fflush(stdout);
-}
 
-void boot_print_int(Int integer) {
-    // Print an integer to stdout.  This function is here only to run initial
-    // tests on the compiler, and isn't part of the public API.
+typedef struct Buffer* Buffer;
+struct Buffer {
+    Ptr _vtable;
+    U64 _refcount;
+    Int capacity;
+    Int begin;
+    Int end;
+    Byte data[];    
+};
 
-#ifdef DARWIN
-    fprintf(stdout, "%lld", integer);
-#else
-    fprintf(stdout, "%ld", integer);    
+Buffer Buffer__init(Int capacity);
+Byte Buffer__index(Buffer self, Int index);
+void Buffer__insert(Buffer self, Int index, Byte byte);
+extern Ptr Buffer__vtable;
+
 #endif
-    fflush(stdout);
-}
-
-void boot_print_char(Char character) {
-    // Print a character to stdout.  This function is not part of the public 
-    // API for the Apollo library.
-
-    fputc(character, stdout);
-    fflush(stdout);
-}
-
-void boot_dummy(int a, int b, int c) {
-    boot_print_int(a);
-    boot_print_int(b);
-    boot_print_int(c);
-}

@@ -20,41 +20,39 @@
  * IN THE SOFTWARE.
  */
 
-#include "String.h"
-#include <stdio.h>
+#include "Buffer.h"
 #include <stdlib.h>
+#include <stdio.h>
 
-void boot_print_str(String string) {
-    // Write string to stdout.  This is function is here for convenience's 
-    // sake.  Once a full-fledged IO framework has been written, this function
-    // will really only be useful for simple output.
 
-    fwrite(string->data, 1, string->length, stdout);
-    fflush(stdout);
+Buffer Buffer__init(Int capacity) {
+    Buffer ret = calloc(sizeof(struct Buffer) + capacity, 1);
+    if (!ret) {
+        fprintf(stderr, "Out of memory");
+        fflush(stderr);
+        abort();
+    }
+    ret->_vtable = Buffer__vtable;
+    ret->_refcount = 1;
+    ret->capacity = capacity;
+    ret->begin = 0;
+    ret->end = 0;
+    return ret; 
 }
 
-void boot_print_int(Int integer) {
-    // Print an integer to stdout.  This function is here only to run initial
-    // tests on the compiler, and isn't part of the public API.
-
-#ifdef DARWIN
-    fprintf(stdout, "%lld", integer);
-#else
-    fprintf(stdout, "%ld", integer);    
-#endif
-    fflush(stdout);
+Byte Buffer__index(Buffer self, Int index) {
+    if (index < self->begin || index >= self->end) {
+        return 0;
+    } else {
+        return self->data[self->begin+index];
+    }
 }
 
-void boot_print_char(Char character) {
-    // Print a character to stdout.  This function is not part of the public 
-    // API for the Apollo library.
-
-    fputc(character, stdout);
-    fflush(stdout);
+void Buffer__insert(Buffer self, Int index, Byte byte) {
+    if (index < self->begin || index >= self->end) {
+        return;
+    } else {
+        self->data[index] = byte;
+    }
 }
 
-void boot_dummy(int a, int b, int c) {
-    boot_print_int(a);
-    boot_print_int(b);
-    boot_print_int(c);
-}

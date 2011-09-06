@@ -20,41 +20,13 @@
  * IN THE SOFTWARE.
  */
 
-#include "String.h"
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef APOLLO_FILE_MODULE_H
+#define APOLLO_FILE_MODULE_H
 
-void boot_print_str(String string) {
-    // Write string to stdout.  This is function is here for convenience's 
-    // sake.  Once a full-fledged IO framework has been written, this function
-    // will really only be useful for simple output.
+#include "../Primitives.h"
+#include "Stream.h"
 
-    fwrite(string->data, 1, string->length, stdout);
-    fflush(stdout);
-}
+File_Stream File_open(String path, String mode);
 
-void boot_print_int(Int integer) {
-    // Print an integer to stdout.  This function is here only to run initial
-    // tests on the compiler, and isn't part of the public API.
 
-#ifdef DARWIN
-    fprintf(stdout, "%lld", integer);
-#else
-    fprintf(stdout, "%ld", integer);    
 #endif
-    fflush(stdout);
-}
-
-void boot_print_char(Char character) {
-    // Print a character to stdout.  This function is not part of the public 
-    // API for the Apollo library.
-
-    fputc(character, stdout);
-    fflush(stdout);
-}
-
-void boot_dummy(int a, int b, int c) {
-    boot_print_int(a);
-    boot_print_int(b);
-    boot_print_int(c);
-}

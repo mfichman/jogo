@@ -284,7 +284,11 @@ void SemanticAnalyzer::operator()(Call* expression) {
     Expression::Ptr arg = expression->arguments(); 
     Formal::Ptr formal = func->formals();
     while (arg && formal) {
-        if (!arg->type()->subtype(formal->type())) {
+        Type::Ptr at = arg->type();
+        if (arg->type() == env_->self_type()) {
+            at = class_->type(); 
+        }
+        if (!at->subtype(formal->type())) {
             err_ << arg->location();
             err_ << "Argument does not conform to type '";
             err_ << formal->type() << "'";
@@ -358,7 +362,11 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
         if (formal->type() == env_->self_type()) {
             ft = receiver->type();
         }
-        if (!arg->type()->subtype(ft)) {
+        Type::Ptr at = arg->type();
+        if (arg->type() == env_->self_type()) {
+            at = class_->type(); 
+        }
+        if (!at->subtype(ft)) {
             err_ << arg->location();
             err_ << "Argument does not conform to type '";
             err_ << formal->type() << "'";
