@@ -31,7 +31,8 @@ Type::Type(Location loc, String* qn, Generic* gen, File* file, Environment* env)
     file_(file),
     environment_(env),
     class_(0),
-    qualified_name_(qn) {
+    qualified_name_(qn),
+    is_no_type_(false) {
 
     
     if (qn->string()[0] != ':') {
@@ -50,9 +51,26 @@ Type::Type(Location loc, String* qn, Generic* gen, File* file, Environment* env)
     }
 
     // Add an implicit (qualified) import if it doesn't already exist
-    if (!scope_->string().empty() && !is_variable()) {
+    if (!scope_->string().empty() && !is_generic()) {
         file_->feature(new Import(loc, scope_, true));
     }
+}
+
+Type* Type::generic(String* name) const {
+    // Returns the generic with type 'name'.  This method works by looking
+    // through the generic class definition and returning the type that is
+    // bound to generic 'name' in the current instantiation of the type.
+    Generic::Ptr gen1 = generics();
+    Generic::Ptr gen2 = clazz()->type()->generics();
+
+    while (gen1 && gen2) {
+        if (gen2->type()->name() == name) {
+            return gen1->type();
+        }
+        gen1 = gen1->next();
+        gen2 = gen2->next();
+    }
+    return 0;
 }
 
 bool Type::equals(Type* other) const {
@@ -79,10 +97,10 @@ bool Type::equals(Type* other) const {
 }
 
 bool Type::subtype(Type* other) const {
-    if (this == environment_->no_type()) {
+    if (is_no_type()) {
         return true;
     }
-    if (other == environment_->no_type()) {
+    if (other->is_no_type()) {
         return true;
     }
     if (this->equals(other)) {
@@ -98,7 +116,11 @@ bool Type::subtype(Type* other) const {
     return true;
 }
 
-bool Type::is_variable() const {
+bool Type::is_no_type() const {
+    return is_no_type_ || this == environment_->no_type();
+}
+
+bool Type::is_generic() const {
     return !name_->string().empty() && name_->string()[0] == ':';
 }
 
@@ -115,7 +137,7 @@ bool Type::is_object() const {
 }
 
 bool Type::is_value() const {
-    return clazz()->is_value();
+    return !is_generic() && clazz()->is_value();
 }
 
 bool Type::is_byte() const {
@@ -143,7 +165,7 @@ bool Type::is_float() const {
 }
 
 bool Type::is_boolifiable() const {
-    if (this->equals(environment_->no_type())) {
+    if (is_no_type()) {
         return true;
     } else {
         return !is_value() || is_bool() || is_int();

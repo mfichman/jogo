@@ -1,0 +1,22 @@
+
+import Boot
+
+
+Container[:a] < Object {
+    value :a
+
+    @init(param :a) {
+        value = param
+    }
+}
+
+main() Int {
+
+    value = "hello world\n"
+    container = Container[String](value)
+    boot_print_str(container.value)
+    container.value = "goodbye world\n"
+    boot_print_str(container.value)
+    
+    ret 0
+}

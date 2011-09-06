@@ -66,3 +66,11 @@ bar() Int {
 assign(a Int) {
     a = 10
 }
+
+Container[:a] < Object {
+    value :b
+
+    bar(val :b) :b {
+        ret 0
+    }
+}

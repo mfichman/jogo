@@ -6,6 +6,9 @@ SemantBad.ap:35:5: Duplicate definition of function 'bar'
 SemantBad.ap:57:1: Duplicate definition of class 'Bob' in root module
 SemantBad.ap:62:5: Statement is unreachable
 SemantBad.ap:67:5: Value assigned to formal parameter 'a'
+SemantBad.ap:71:11: Undeclared generic type ':b'
+SemantBad.ap:73:13: Undeclared generic type ':b'
+SemantBad.ap:73:17: Undeclared generic type ':b'
 Module
   name: 
   feature0: Function
@@ -167,3 +170,59 @@ Module
         name: a
         type: <<notype>>
         initializer: IntegerLiteral(10)
+  feature6: Class
+    name: Container
+    comment:
+    feature0: Function
+      name: value?
+      type: :b
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+        child0: Return
+          expression: Identifier
+            name: value
+    feature1: Function
+      name: value=
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      formal1: Formal
+        name: _arg0
+        type: :b
+      block: Block
+        child0: Assignment
+          name: value
+          type: :b
+          initializer: Identifier
+            name: _arg0
+    feature2: Function
+      name: @init
+      type: Void
+      block: Block
+    feature3: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature4: Attribute
+      name: value
+      type: :b
+      initializer: Empty
+    feature5: Function
+      name: bar
+      type: :b
+      comment:
+      formal0: Formal
+        name: self
+        type: Self
+      formal1: Formal
+        name: val
+        type: :b
+      block: Block
+        child0: Return
+          expression: IntegerLiteral(0)

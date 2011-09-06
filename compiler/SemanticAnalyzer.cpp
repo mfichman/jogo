@@ -323,7 +323,7 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
 
     // Get the class associated with the receiver (always the first argument)
     Expression::Ptr receiver = expression->arguments();
-    if (receiver->type() == env_->no_type()) {
+    if (receiver->type()->is_no_type()) {
         expression->type(env_->no_type());
         return;
     }
@@ -333,44 +333,57 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
     Class::Ptr clazz = receiver->type()->clazz();
     if (!clazz) {
         err_ << expression->location();
-        err_ << "Undefined class '";
-        err_ << receiver->type() << "'\n";
+        err_ << "Undefined class '" << receiver->type() << "'\n";
         env_->error();
         expression->type(env_->no_type());
         return;
     }
     
     // Look up the function using the class object.
-    Function::Ptr func = clazz->function(expression->identifier()); 
+    String::Ptr id = expression->identifier();
+    Function::Ptr func = clazz->function(id); 
     if (!func) {
         err_ << expression->location();
-        err_ << "Undeclared function '";
-        err_ << expression->identifier() << "' in class '";
-        err_ << clazz->type() << "'";
-        err_ << "\n";
+        err_ << "Undeclared function '" << id << "' in class '";
+        err_ << clazz->type() << "'\n";
         env_->error();
         expression->type(env_->no_type());
         return;
     } 
-    expression->type(func->type());
+
+    // Set the type of the expression to the return type of the function.
+    // Look up the return type in the receiver if it is a generic.
+    Type::Ptr rt = func->type();
+    if (rt->is_generic()) {
+        expression->type(receiver->type()->generic(rt->name()));
+    } else {
+        expression->type(rt);
+    }
 
     // Check argument types versus formal parameter types
     Expression::Ptr arg = expression->arguments();
     Formal::Ptr formal = func->formals();
     while (arg && formal) {
+        // Get the formal type.  If the type is 'self', then the formal
+        // parameter is the type of the receiver.  If the type is a generic,
+        // then look up the actual type from the class' definition.
         Type::Ptr ft = formal->type();
-        if (formal->type() == env_->self_type()) {
+        if (ft == env_->self_type()) {
             ft = receiver->type();
         }
+        if (ft->is_generic()) {
+            ft = receiver->type()->generic(ft->name());
+        }
+
+        // Get the actual type.  If the actual type is equal to 'self', then
+        // get the type from the current class context.
         Type::Ptr at = arg->type();
         if (arg->type() == env_->self_type()) {
             at = class_->type(); 
         }
         if (!at->subtype(ft)) {
             err_ << arg->location();
-            err_ << "Argument does not conform to type '";
-            err_ << formal->type() << "'";
-            err_ << "\n";
+            err_ << "Argument does not conform to type '" << ft << "'\n";
             env_->error();
         }
         arg = arg->next();
@@ -378,16 +391,12 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
     }
     if (arg) {
         err_ << expression->location();
-        err_ << "Too many arguments to function '";
-        err_ << expression->identifier() << "'";
-        err_ << "\n";
+        err_ << "Too many arguments to function '" << id << "'\n";
         env_->error();
     }
     if (formal) {
         err_ << expression->location();
-        err_ << "Not enough arguments to function '";
-        err_ << expression->identifier() << "'";
-        err_ << "\n";
+        err_ << "Not enough arguments to function '" << id << "'\n";
         env_->error();
     }
 }
@@ -398,22 +407,19 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         a(this); 
     }
 
+    Type::Ptr type = expression->type();
+    type(this);
+
     // Look up constructor class
-    Class::Ptr clazz = expression->type()->clazz(); 
+    Class::Ptr clazz = type->clazz(); 
     if (!clazz) {
-        err_ << expression->location();
-        err_ << "Undefined class '";
-        err_ << expression->type() << "'";
-        err_ << "\n";
-        env_->error();
         expression->type(env_->no_type());
         return;
     }
     if (clazz->is_interface()) {
         err_ << expression->location();
         err_ << "Constructor called for interface type '";
-        err_ << clazz->name() << "'";
-        err_ << "\n";
+        err_ << clazz->name() << "'\n";
         env_->error();
         expression->type(env_->no_type());
         return;
@@ -426,11 +432,17 @@ void SemanticAnalyzer::operator()(Construct* expression) {
     Expression::Ptr arg = expression->arguments();
     Formal::Ptr formal = constr ? constr->formals() : 0;
     while (arg && formal) {
-        if (!arg->type()->subtype(formal->type())) {
+        // Get the formal type.  If the type is a generic, then look up the
+        // actual type from the class' definition.
+        Type::Ptr ft = formal->type();
+        if (ft->is_generic()) {
+            ft = type->generic(ft->name());
+        }
+
+        if (!arg->type()->subtype(ft)) {
             err_ << arg->location();
             err_ << "Argument does not conform to type '";
-            err_ << formal->type() << "'";
-            err_ << "\n";
+            err_ << formal->type() << "'\n";
             env_->error();
         }
         arg = arg->next();
@@ -439,15 +451,13 @@ void SemanticAnalyzer::operator()(Construct* expression) {
     if (arg) {
         err_ << expression->location();
         err_ << "Too many arguments to constructor '";
-        err_ << expression->type() << "'";
-        err_ << "\n";
+        err_ << expression->type() << "'\n";
         env_->error();
     }
     if (formal) {
         err_ << expression->location();
         err_ << "Not enough arguments to constructor '";
-        err_ << expression->type() << "'";
-        err_ << "\n";
+        err_ << expression->type() << "'\n";
         env_->error();
     }
 }
@@ -459,10 +469,7 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
     Type::Ptr type = variable(expression->identifier())->type();
     if (!type) {
         err_ << expression->location();
-        err_ << "Undeclared identifier \"";
-        err_ << expression->identifier();
-        err_ << "\"";
-        err_ << "\n";
+        err_ << "Undeclared identifier '" << expression->identifier() << "'\n";
         env_->error();
         expression->type(env_->no_type());
     } else {
@@ -482,8 +489,7 @@ void SemanticAnalyzer::operator()(Block* statement) {
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
         if (return_) {
             err_ << s->location();
-            err_ << "Statement is unreachable";
-            err_ << "\n";
+            err_ << "Statement is unreachable\n";
             env_->error();
             break;
         } else {
@@ -799,24 +805,42 @@ void SemanticAnalyzer::operator()(Import* feature) {
 void SemanticAnalyzer::operator()(Type* type) {
     // Check to make sure that the type has a defined class.  Also, check
     // all generics that are part of the type to make sure that they resolve.
-    if (type == env_->self_type() || type == env_->no_type() 
-            || type == env_->void_type()) {
+    if (type->is_self() || type->is_no_type() || type->is_void()) {
         return;
     }
+
+    if (type->is_generic() && class_) {
+        Type::Ptr ct = class_->type();
+        for (Generic::Ptr gen = ct->generics(); gen; gen = gen->next()) {
+            if (gen->type()->name() == type->name()) {
+                return;
+            } 
+        }
+        err_ << type->location();
+        err_ << "Undeclared generic type '" << type->name() << "'\n";
+        env_->error();
+        type->is_no_type(true);
+        return;
+    }
+
     if (!type->clazz()) {
         err_ << type->location();
-        err_ << "Undefined type '" << type << "'";
-        err_ << "\n";
+        err_ << "Undefined type '" << type << "'\n";
         env_->error();
+        type->is_no_type(true);
         return;
     }
 
     // Check generics for type resolution
     for (Generic::Ptr g = type->generics(); g; g = g->next()) {
         if (!g->type()->clazz() && !type->equals(env_->self_type())) {
-            err_ << type->location() << "\n";
-            err_ << "Undefined type '" << type << "'";
-            err_ << "\n";
+            err_ << type->location();
+            err_ << "Undefined type '" << type << "'\n";
+            env_->error();
+        }
+        if (g->type()->is_value()) {
+            err_ << type->location();
+            err_ << "Primitives and value types cannot be used in generics\n";
             env_->error();
         }
     }
