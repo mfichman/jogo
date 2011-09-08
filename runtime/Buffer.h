@@ -39,6 +39,6 @@ struct Buffer {
 Buffer Buffer__init(Int capacity);
 Byte Buffer__index(Buffer self, Int index);
 void Buffer__insert(Buffer self, Int index, Byte byte);
-extern Ptr Buffer__vtable;
+extern void Buffer__vtable();
 
 #endif

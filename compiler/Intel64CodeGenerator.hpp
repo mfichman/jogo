@@ -57,6 +57,7 @@ private:
     void emit_literal(Operand lit);
     void emit_string(String* string);
     void emit_label(String* string);
+    void emit_label(const std::string& string);
 
     Environment::Ptr env_;
     Machine::Ptr machine_;

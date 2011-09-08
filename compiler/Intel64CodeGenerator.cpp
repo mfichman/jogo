@@ -46,11 +46,11 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
     }
 
     out_ << "section .text\n";
-    out_ << "extern _calloc\n";
-    out_ << "extern _free\n";
-    out_ << "extern _Object__dispatch\n";
-    out_ << "extern _Object__refcount_dec\n";
-    out_ << "extern _Object__refcount_inc\n";
+    out_ << "extern "; emit_label("calloc"); out_ << "\n";
+    out_ << "extern "; emit_label("free"); out_ << "\n";
+    out_ << "extern "; emit_label("Object__dispatch"); out_ << "\n";
+    out_ << "extern "; emit_label("Object__refcount_dec"); out_ << "\n";
+    out_ << "extern "; emit_label("Object__refcount_inc"); out_ << "\n";
     for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
         m(this);
     }
@@ -70,14 +70,14 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     //
     // The table is output in the .text section because it should be 
     // immutable.
-
     if (feature->is_object()) {
         String::Ptr name = feature->name();
         Function::Ptr dtor = feature->function(env_->name("@destroy"));
-        out_ << "section .text\n";
-        out_ << "align 8\n";
-        out_ << "global _" << name << "__vtable\n";
-        out_ << "_" << name << "__vtable:\n";
+        out_ << "global ";
+        emit_label(name->string()+"__vtable");
+        out_ << "\n";
+        emit_label(name->string()+"__vtable");
+        out_ << ":\n";
         out_ << "    dq ";
         emit_label(dtor->label());
         out_ << "\n"; 
@@ -97,7 +97,6 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     }
 
     // Now output the function defs
-    out_ << "section .text\n";
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
@@ -110,8 +109,8 @@ void Intel64CodeGenerator::operator()(Module* feature) {
 }
 
 void Intel64CodeGenerator::operator()(Function* feature) {
-
-
+    // Emit a function, or an extern declaration if the function is native or
+    // belongs to a different output file.
     if (feature->is_native()) {
         out_ << "extern ";
         emit_label(feature->label());
@@ -125,8 +124,8 @@ void Intel64CodeGenerator::operator()(Function* feature) {
         out_ << "    push rbp\n"; 
         out_ << "    mov rbp, rsp\n";
         if (feature->stack_vars()) {
-            // Allocate space on the stack; ensure that the stack is aligned
-            // to a 16-byte boundary.
+            // Allocate space on the stack; ensure that the stack is aligned to
+            // a 16-byte boundary.
             int stack = feature->stack_vars() * machine_->word_size();
             if (stack % 16 != 0) {
                 stack += 16 - (stack % 16);
@@ -137,7 +136,12 @@ void Intel64CodeGenerator::operator()(Function* feature) {
         for (int i = 0; i < feature->basic_blocks(); i++) {
             operator()(feature->basic_block(i));
         }
+        // Make sure that the text section is gets re-aligned at the end of the
+        // function, because the instruction stream can cause it be become
+        // unaligned.
+        out_ << "    align 8\n";
     }
+
 }
 
 void Intel64CodeGenerator::operator()(BasicBlock* block) {
@@ -471,12 +475,22 @@ void Intel64CodeGenerator::emit_string(String* string) {
         out += "\", 0x0";
     }
 
-    out_ << "align 8\n";
     out_ << "lit" << (void*)string << ": \n";  
-    out_ << "    dq _String__vtable\n"; // vtable
+    out_ << "    dq ";
+    emit_label("String__vtable");
+    out_ << "\n"; // vtable
     out_ << "    dq 1\n"; // reference count
     out_ << "    dq " << length << "\n";
     out_ << "    db " << out << "\n";
+    out_ << "    align 8\n";
+}
+
+void Intel64CodeGenerator::emit_label(const std::string& label) {
+#ifdef DARWIN
+    out_ << "_" << label;
+#else
+    out_ << label;
+#endif   
 }
 
 void Intel64CodeGenerator::emit_label(String* label) {

@@ -5,7 +5,7 @@
 #include <string.h>
 
 // Hack to make sure that the 'String__vtable' symbol is defined. 
-Ptr String__vtable;
+void String__vtable() {};
 
 String String__init(const Char* literal) {
     String ret = malloc(sizeof(struct String) + strlen(literal) + 1);

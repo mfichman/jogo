@@ -32,7 +32,6 @@ struct String {
     Char data[];
 };
 
-void String__destroy(String self);
 Char String__index(String self, Int index);
 String String__add(String self, String string);
 String String_slice(String self, Int begin, Int end);
@@ -40,6 +39,6 @@ Int String_length__g(String self);
 Bool String__equal(String self, String string);
 String String_uppercase__g(String self);
 String String_lowercase__g(String self);
-extern Ptr String__vtable;
+extern void String__vtable();
 
 #endif

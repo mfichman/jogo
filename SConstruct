@@ -33,7 +33,7 @@ if env['PLATFORM'] != "win32":
     env.Append(CXXFLAGS = '-Wno-unused')
     env.Append(CXXFLAGS = '-Wno-sign-compare')
     env.Append(CFLAGS = '-g')
-    env.Append(CFLAGS = '-Wall -Werror -pedantic -std=c99 -m64')
+    env.Append(CFLAGS = '-Wall -Werror -std=c99 -m64')
 
 
 #bison = Builder(action='bison --defines $SOURCE -o $TARGET')

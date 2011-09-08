@@ -32,14 +32,14 @@
 // _vtable[2..n+1] = Jump table 1 (hash mixing values) 
 // _vtable[n+2..2n+1] = Method pointers
 
-void Object__refcount_inc(String obj) {
+void Object__refcount_inc(Object obj) {
      // Increment the object's refcount;
     if (obj) {
         obj->_refcount++;
     }
 }
 
-void Object__refcount_dec(String obj) {
+void Object__refcount_dec(Object obj) {
     // Decrement the object's refcount if the object is non-null.  Free the 
     // object if the refcount is below 0
     if (obj) {
@@ -47,14 +47,14 @@ void Object__refcount_dec(String obj) {
         if (obj->_refcount <= 0) {
             // The second entry in the vtable is always the destructor. Call
             // the destructor and then release the memory.
-            typedef void (*Destructor)(String obj);  
+            typedef void (*Destructor)(Object obj);  
             Destructor dtor = ((Destructor*)obj->_vtable)[0];
             dtor(obj);
         } 
     }
 }
 
-Ptr Object__dispatch(String obj, String id) {
+Ptr Object__dispatch(Object obj, String id) {
     // Dispatch using the vtable to the correct method implementation.
     // FixMe: Investigate a more efficient way to do this; possibly using some
     // form of caching.  The method dispatch performance penalty is only

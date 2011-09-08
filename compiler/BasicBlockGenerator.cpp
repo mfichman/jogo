@@ -23,6 +23,7 @@
 #include "BasicBlockGenerator.hpp"
 #include <cassert>
 #include <algorithm>
+#include <stdint.h>
 
 using namespace std;
 
@@ -674,12 +675,6 @@ void BasicBlockGenerator::emit_return() {
     if (function_->is_constructor()) {
         retval = variable(env_->name("self"))->operand();
     }
-    if (function_->is_destructor() && class_->is_object()) {
-        // If this is the destructor, then call free() to release memory
-        emit_push_arg(0, variable(env_->name("self"))->operand());
-        call(env_->name("free"));
-    }
-
     if (!scope_.empty() && retval.temp()) {
         if (machine_->return_regs()) {
             // Return the value by register, if the architecture supports return
@@ -692,9 +687,14 @@ void BasicBlockGenerator::emit_return() {
             push(retval);
         }
     }
+    
+    // If this is the destructor, then release all the pointers held by the
+    // object, and then call free() to release memory if the object was
+    // dynamically allocated.
     if (function_->is_destructor()) {
         emit_dtor_epilog(function_);
     }
+    
     ret();
 }
 
@@ -803,7 +803,7 @@ void BasicBlockGenerator::emit_vtable(Class* feature) {
     for (int i = 0; i < bucket.size(); i++) {
         if (bucket[i].size() <= 0) { break; }
         int d = 1; 
-retry:
+    retry:
         // Try to place all the values into empty value slots in the second
         // jump table.  If that doesn't work, then increment the hash mixing
         // value "d"
@@ -865,31 +865,38 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
     // Emits the memory alloc/vtable setup for the class.  FIXME: Eventually,
     // move to a prototype & copy type approach for initializing variables
     // FIXME: Run variable initializers here
-    if (!class_->is_object()) { return; }
 
     // Allocate the memory for the new object by calling calloc with the size
     // of the object.
-    String::Ptr one = env_->integer("1");
-    String::Ptr size = env_->integer(stringify(class_->size()));
-    emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
-    emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
-    call(env_->name("calloc"));        
+    Operand self;
+    if (class_->is_object()) {
+       String::Ptr one = env_->integer("1");
+       String::Ptr size = env_->integer(stringify(class_->size()));
+       emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
+       emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
+       call(env_->name("calloc"));        
 
-    // Obtain a pointer to the 'self' object, and store it in the 'self'
-    // variable.
-    Operand self = emit_pop_ret(); 
-    variable(new Variable(env_->name("self"), self, 0)); 
+       // Obtain a pointer to the 'self' object, and store it in the 'self'
+       // variable.
+       self = emit_pop_ret(); 
+       variable(new Variable(env_->name("self"), self, 0)); 
+       
+       // Initialize the vtable pointer
+       Operand vtable = Operand::addr(self.temp(), 0);
+       Operand label = load(env_->name(class_->name()->string()+"__vtable"));
+       store(vtable, label);
+        
+        // Make sure that the refcount starts out at 1, otherwise the object may
+        // be freed before the end of the constructor.
+        Operand refcount = Operand::addr(self.temp(), 1);
+        store(refcount, new IntegerLiteral(Location(), one));
     
-    // Initialize the vtable pointer
-    Operand vtable = Operand::addr(self.temp(), 0);
-    Operand label = load(env_->name(class_->name()->string()+"__vtable"));
-    store(vtable, label);
+    } else {
+        // FIXME: Implement ctor for value types; need to pass in the 'self'
+        // pointer for value type ctors.
+        assert(!"Not implemented");
+    }
 
-    // Make sure that the refcount starts out at 1, otherwise the object may
-    // be freed before the end of the constructor.
-    Operand refcount = Operand::addr(self.temp(), 1);
-    store(refcount, new IntegerLiteral(Location(), one));
-    
     // Emit initializer code for initialized attributes
     for (Feature::Ptr f = class_->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
@@ -914,17 +921,27 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
 
 void BasicBlockGenerator::emit_dtor_epilog(Function* feature) {
     // Free all of the attributes, and call destructors.
+    std::vector<Attribute::Ptr> attrs;
     for (Feature::Ptr f = class_->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             if (!attr->type()->is_value() && !attr->is_weak()) {
-                Operand self = variable(env_->name("self"))->operand();
-                Operand val = load(Operand::addr(self.temp(), attr->slot()+2));
-                emit_refcount_dec(val);
-                // +2 is for refcount, vtable slots
+                attrs.push_back(attr);
             }
         }
     } 
 
+    // The attributes need to be released in the reverse order
+    for (int i = attrs.size()-1; i >= 0; i--) {
+        Operand self = variable(env_->name("self"))->operand();
+        Operand val = load(Operand::addr(self.temp(), attrs[i]->slot()+2));
+        emit_refcount_dec(val);
+        // +2 is for refcount, vtable slots
+    }
+
+    if (class_->is_object()) {
+        emit_push_arg(0, variable(env_->name("self"))->operand());
+        call(env_->name("free"));
+    }
 }
 
 void BasicBlockGenerator::emit_free_temps() {
@@ -935,43 +952,4 @@ void BasicBlockGenerator::emit_free_temps() {
     }
     object_temp_.clear();
 }
-
-/*
-void BasicBlockGenerator::emit_refcount_check(const VarInfo& info) {
-    // Emit code to decrement the reference count for the object specified
-    // by 'temp'
-    int temp = info.first.temp();
-    Operand count;
-
-    // count = object->count + 1
-    count = load(Operand::addr(temp, 1));
-    IntegerLiteral::Ptr one(new IntegerLiteral(Location(), env_->integer("1")));
-    count = sub(count, load(one.pointer()));
-    
-    // if (count == 0) { free(); }
-    BasicBlock::Ptr then_block = basic_block();
-    BasicBlock::Ptr done_block = basic_block();
-    bnz(count, done_block, then_block);
-    
-    // TODO: Need to disallow assignments to function parameters...
-    emit(then_block);    
-    
-    Class::Ptr clazz = info.second->clazz(); 
-    Function::Ptr func = clazz->function(env_->name("@destroy"));
-    if (!func) {
-        assert(!"No destructor found!");
-    }
-    
-    // Insert a call expression to call the destructor.  
-    if (machine_->arg_regs()) {
-        int val = 0;
-        block_->instr(MOV, -machine_->arg_reg(val)->id(), temp, 0);
-    } else {
-        push(temp);
-    }
-    call(func->label());
-    emit(done_block);
-}
-*/
-
 

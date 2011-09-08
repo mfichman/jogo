@@ -26,6 +26,7 @@
 #ifndef WINDOWS
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #endif
 
 File_Stream File_open(String path, String mode) {
