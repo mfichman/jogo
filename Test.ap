@@ -1,0 +1,16 @@
+import Boot
+Object1 < Object{ 
+
+    @init() native {}
+
+    @destroy() {
+        boot_print_str("hello\n")
+    }
+
+}
+
+main() Int {
+
+    o = Object1()
+    ret 0
+}
