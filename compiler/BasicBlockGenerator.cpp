@@ -457,10 +457,12 @@ void BasicBlockGenerator::operator()(Return* statement) {
         Operand ret = emit(expr);
         scope_.back()->return_val(ret);
 
-        // Increment the refcount of the returned value if it is an object. 
+        // Increment the refcount of the returned value if it is an object.
         // The refcount must be incremented so that the object won't be freed
         // before the function returns.  It is the caller's responsibility to
-        // correctly free the returned object.
+        // correctly free the returned object.  Note: for a constructor, the
+        // refcount is simply already initialized to 1.  This code isn't called
+        // because a constructor doesn't actually have a 'return' for 'self'.
         if (!expr->type()->is_value()) {
             emit_refcount_inc(ret);
         }

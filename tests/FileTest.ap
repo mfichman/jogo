@@ -23,7 +23,7 @@ main() Int {
 
     stdout.print(array[1])
     stdout.print(array[90])
-    # bug: stdout.print(array.last)
+    stdout.print(array.last)
 
     stdout.put('c'c)
     stdout.put('h'c)

@@ -60,6 +60,9 @@ Object Array__index(Array self, Int index) {
     if (index < 0 || index >= self->capacity) {
         return 0;
     } else {
+        // Need to increment the refcount here; the code generator normally
+        // does this automatically.
+        Object__refcount_inc(self->data[index]);
         return self->data[index];
     }
 }
@@ -69,7 +72,7 @@ void Array__insert(Array self, Int index, Object obj) {
         return;
     }
 
-    if (index > self->capacity) {
+    if (index >= self->capacity) {
         if (self->capacity*2 > index+1) {
             self->capacity *= 2;
         } else {
@@ -87,7 +90,7 @@ void Array__insert(Array self, Int index, Object obj) {
         free(self->data);   
         self->data = temp;
     }
-    if (index > self->count) {
+    if (index >= self->count) {
         self->count = index+1;
     }
 
