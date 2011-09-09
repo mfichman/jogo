@@ -103,6 +103,12 @@ bool Type::subtype(Type* other) const {
     if (other->is_no_type()) {
         return true;
     }
+    if (!other->is_value() && is_nil_type()) {
+        return true;
+    }
+    if (other->is_nil_type() && !is_value()) {
+        return true;
+    }
     if (this->equals(other)) {
         return true;
     }
@@ -118,6 +124,10 @@ bool Type::subtype(Type* other) const {
 
 bool Type::is_no_type() const {
     return is_no_type_ || this == environment_->no_type();
+}
+
+bool Type::is_nil_type() const {
+    return this == environment_->nil_type();
 }
 
 bool Type::is_generic() const {

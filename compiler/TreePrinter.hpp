@@ -37,6 +37,7 @@ private:
     void operator()(Class* feature);
     void operator()(Formal* formal);
     void operator()(StringLiteral* expression);
+    void operator()(NilLiteral* expression);
     void operator()(IntegerLiteral* expression);
     void operator()(FloatLiteral* expression);
     void operator()(BooleanLiteral* expression);

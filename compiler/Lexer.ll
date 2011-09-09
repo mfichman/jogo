@@ -120,6 +120,10 @@ xor\= return BIT_XOR_ASSIGN;
     yylval->expression = new BooleanLiteral(*yylloc, value);
     return BOOLEAN;
 }
+(nil) {
+    yylval->expression = new NilLiteral(*yylloc);
+    return INTEGER;
+}
 \" {
     yyextra->string_start(yylloc->first_column);
     yy_push_state(SC_STRING1, yyscanner);

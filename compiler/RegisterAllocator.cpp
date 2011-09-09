@@ -268,12 +268,12 @@ void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
         // Note: Negative numbers are used for the colored registers to make 
         // it clear that coloring has actually been done.
         if (first.temp() > 0) {
-            int reg = -graph_[first.temp()].reg();
-            instr.first(Operand::addr(reg, first.addr()));
+            first.temp(-graph_[first.temp()].reg());
+            instr.first(first);
         }
         if (second.temp() > 0) {
-            int reg = -graph_[second.temp()].reg();
-            instr.second(Operand::addr(reg, second.addr()));
+            second.temp(-graph_[second.temp()].reg());
+            instr.second(second);
         }
         if (result.temp() > 0) {
             instr.result(-graph_[result.temp()].reg());

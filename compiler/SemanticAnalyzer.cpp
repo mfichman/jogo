@@ -180,6 +180,10 @@ void SemanticAnalyzer::operator()(Formal* formal) {
     type(this);
 }
 
+void SemanticAnalyzer::operator()(NilLiteral* expression) {
+    expression->type(env_->nil_type());
+}
+
 void SemanticAnalyzer::operator()(StringLiteral* expression) {
     expression->type(env_->string_type()); 
 }
@@ -466,14 +470,14 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
     // Determine the type of the identifier from the variable store.  If the
     // variable is undeclared, set the type of the expression to no-type to
     // prevent further error messages.
-    Type::Ptr type = variable(expression->identifier())->type();
-    if (!type) {
+    Variable::Ptr var = variable(expression->identifier());
+    if (!var) {
         err_ << expression->location();
         err_ << "Undeclared identifier '" << expression->identifier() << "'\n";
         env_->error();
         expression->type(env_->no_type());
     } else {
-        expression->type(type);
+        expression->type(var->type());
     }
 }
 
@@ -712,12 +716,16 @@ void SemanticAnalyzer::operator()(Function* feature) {
 
     feature->label(env_->name(label));
 
-    // Check all formal parameters.
+    // Check all formal parameters, and add them as local variables
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
         Type::Ptr type = f->type();
         type(this);
         variable(new Variable(f->name(), 0, f->type(), true));
     }
+    if (feature->is_constructor()) {
+        variable(new Variable(env_->name("self"), 0, env_->self_type(), true));
+    }
+
     Type::Ptr type = feature->type();
     type(this);
 

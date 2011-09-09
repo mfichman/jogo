@@ -31,19 +31,31 @@
 /* Operands for three-address code SSA instructions */
 class Operand {
 public:
-    Operand(String* label) : label_(label), temp_(0), addr_(0) {}
-    Operand(Expression* literal) : literal_(literal), temp_(0), addr_(0) {}
-    Operand() : temp_(0), addr_(0) {}
-    Operand(int temp) : temp_(temp), addr_(0) {}
+    Operand(String* label) 
+        : label_(label), temp_(0), addr_(0), indirect_(false) {
+    }
+    Operand(Expression* literal) 
+        : literal_(literal), temp_(0), addr_(0), indirect_(false) {
+    }
+    Operand() 
+        : temp_(0), addr_(0), indirect_(false) {
+    }
+    Operand(int temp) 
+        : temp_(temp), addr_(0), indirect_(false) {
+    }
+
     static Operand addr(int addr) { 
         Operand out;
         out.addr_ = addr;
+        out.indirect_ = true;
         return out;
     }
+
     static Operand addr(int temp, int addr) {
         Operand out;
         out.addr_ = addr;
         out.temp_ = temp;
+        out.indirect_ = true;
         return out;
     }
 
@@ -52,12 +64,15 @@ public:
     String* label() const { return label_; }
     int temp() const { return temp_; }
     int addr() const { return addr_; }
+    bool indirect() const { return indirect_; }
+    void temp(int temp) { temp_ = temp; }
 
 private:
     Expression::Ptr literal_;
     String::Ptr label_; // FixMe: Should not be necessary...needed for CALL
     int temp_;
     int addr_;
+    bool indirect_;
 };
 
 Stream::Ptr operator<<(Stream::Ptr out, const Operand& op);

@@ -57,6 +57,7 @@ public:
     bool is_self() const;
     bool is_generic() const;
     bool is_no_type() const;
+    bool is_nil_type() const;
     void is_no_type(bool flag) { is_no_type_ = flag; }
     void next(Type* next) { next_ = next; }
     void operator()(Functor* functor) { functor->operator()(this); }

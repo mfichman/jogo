@@ -43,23 +43,26 @@ private:
     void operator()(Module* feature);
     void operator()(Function* function);
     void operator()(BasicBlock* block);
-    void emit(const char* instr, Register* r1);
+    void emit_string(String* string);
     void emit(const char* instr, Operand r1);
-    void emit(const char* instr, Register* r1, Operand r2);
-    void emit(const char* instr, Operand r1, Register* r2);
     void emit(const char* instr, Operand r1, Operand r2);
     void emit(const char* instr);
-    void emit(const char* instr, String* label);
-    void emit(const char* instr, Operand r1, const char* imm);
-    void emit_arith(const char* instr, Operand res, Operand r1, Operand r2);
+    void emit(const char* instr, Operand r1, const char* label);
+
+
+    void emit_arith(const Instruction& instr);
     void emit_load(Operand r1, Operand r2);
     void emit_store(Operand r1, Operand r2);
+
+    void emit_operand(Operand op);
+    void emit_register(Operand op);
+    void emit_addr(Operand addr);
     void emit_literal(Operand lit);
-    void emit_string(String* string);
-    void emit_label(String* string);
+    void emit_label(Operand string);
     void emit_label(const std::string& string);
 
     Environment::Ptr env_;
     Machine::Ptr machine_;
     Stream::Ptr out_;
+    Opcode opcode_;
 };

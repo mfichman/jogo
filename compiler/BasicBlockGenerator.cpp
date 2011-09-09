@@ -75,6 +75,10 @@ void BasicBlockGenerator::operator()(StringLiteral* expr) {
     return_ = load(expr);
 }
 
+void BasicBlockGenerator::operator()(NilLiteral* expr) {
+    return_ = load(expr);
+}
+
 void BasicBlockGenerator::operator()(IntegerLiteral* expr) {
     // Load the literal value with load-immediate
     return_ = load(expr);
@@ -491,7 +495,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     }
 
     // Reset the temporaries for the function.
-    temp_ = Operand();
+    temp_ = 0;
     function_ = feature;
     block_ = 0;
     emit(basic_block());
@@ -584,7 +588,7 @@ void BasicBlockGenerator::emit_operator(Dispatch* expr) {
 
 BasicBlock* BasicBlockGenerator::basic_block() {
     BasicBlock* block = new BasicBlock();
-    block->label(env_->name("l" + stringify(++label_)));
+    block->label(env_->name(".l" + stringify(++label_)));
     return block;
 }
 
@@ -870,21 +874,21 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
     // of the object.
     Operand self;
     if (class_->is_object()) {
-       String::Ptr one = env_->integer("1");
-       String::Ptr size = env_->integer(stringify(class_->size()));
-       emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
-       emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
-       call(env_->name("calloc"));        
-
-       // Obtain a pointer to the 'self' object, and store it in the 'self'
-       // variable.
-       self = emit_pop_ret(); 
-       variable(new Variable(env_->name("self"), self, 0)); 
+        String::Ptr one = env_->integer("1");
+        String::Ptr size = env_->integer(stringify(class_->size()));
+        emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
+        emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
+        call(env_->name("calloc"));        
+ 
+        // Obtain a pointer to the 'self' object, and store it in the 'self'
+        // variable.
+        self = emit_pop_ret(); 
+        variable(new Variable(env_->name("self"), self, 0)); 
        
-       // Initialize the vtable pointer
-       Operand vtable = Operand::addr(self.temp(), 0);
-       Operand label = load(env_->name(class_->name()->string()+"__vtable"));
-       store(vtable, label);
+        // Initialize the vtable pointer
+        Operand vtable = Operand::addr(self.temp(), 0);
+        Operand label = load(env_->name(class_->name()->string()+"__vtable"));
+        store(vtable, label);
         
         // Make sure that the refcount starts out at 1, otherwise the object may
         // be freed before the end of the constructor.

@@ -21,8 +21,15 @@
  */
 
 #include "String.h"
+#include "Object.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+void boot_print_ptr(Object object) {
+    // Writes a pointer value to stdout, and then flushes it.
+    fprintf(stdout, "%p, vtable: %p", object, object->_vtable);
+    fflush(stdout);
+}
 
 void boot_print_str(String string) {
     // Write string to stdout.  This is function is here for convenience's 

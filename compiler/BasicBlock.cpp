@@ -23,6 +23,7 @@
 #include "BasicBlock.hpp"
 
 Stream::Ptr operator<<(Stream::Ptr out, const Operand& op) {
+    if (op.indirect()) { out << "*"; }
     if (op.label()) {
         return out << op.label();
     }

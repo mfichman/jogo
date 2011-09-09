@@ -143,13 +143,18 @@ void TreePrinter::operator()(StringLiteral* expression) {
     indent_level_--;
 }
 
+void TreePrinter::operator()(NilLiteral* expression) {
+    indent_level_++;
+    out_ << "nil\n";
+    indent_level_--;
+}
+
 void TreePrinter::operator()(IntegerLiteral* expression) {
     indent_level_++;
     out_ << "IntegerLiteral(";
     out_ << expression->value() << ")\n";
     indent_level_--;
 }
-
 
 void TreePrinter::operator()(FloatLiteral* expression) {
     indent_level_++;

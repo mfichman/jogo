@@ -48,7 +48,7 @@ void Object__refcount_dec(Object obj) {
             // The second entry in the vtable is always the destructor. Call
             // the destructor and then release the memory.
             typedef void (*Destructor)(Object obj);  
-            Destructor dtor = ((Destructor*)obj->_vtable)[0];
+            Destructor dtor = ((Ptr*)obj->_vtable)[0];
             dtor(obj);
         } 
     }

@@ -41,6 +41,7 @@ Environment::Environment() :
     bool_type_ = new Type(Location(), name("Bool"), 0, builtin_file_, this);
     int_type_ = new Type(Location(), name("Int"), 0, builtin_file_, this);
     string_type_ = new Type(Location(), name("String"), 0, builtin_file_, this);
+    nil_type_ = new Type(Location(), name("Nil"), 0, builtin_file_, this);
     no_type_ = new Type(Location(), name("<<notype>>"), 0, builtin_file_, this);
     float_type_ = new Type(Location(), name("Float"), 0, builtin_file_, this);
     char_type_ = new Type(Location(), name("Char"), 0, builtin_file_, this);

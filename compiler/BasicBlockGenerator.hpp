@@ -43,6 +43,7 @@ private:
     void operator()(Module* unit);
     void operator()(Formal* formal);
     void operator()(StringLiteral* expression);
+    void operator()(NilLiteral* expression);
     void operator()(IntegerLiteral* expression);
     void operator()(FloatLiteral* expression);
     void operator()(BooleanLiteral* expression);
@@ -150,8 +151,8 @@ private:
         block_->instr(PUSH, 0, t2, 0);    
     }
 
-    void store(Operand t2, Operand t3) {
-        block_->instr(STORE, 0, t2, t3);    
+    void store(Operand addr, Operand value) {
+        block_->instr(STORE, 0, addr, value);    
     }
 
     void call(Operand func) {
@@ -252,12 +253,12 @@ private:
     std::map<String::Ptr, int> stack_;
     // Mapping from a variable to a stack location
 
-    // Next temporary to use
-    Operand temp_;
-    int label_;
     Opcode branch_op_;
     bool invert_branch_;
     bool invert_guard_;
+    // Next temporary to use
+    int temp_;
+    int label_;
 
     std::vector<Operand> object_temp_; 
     // Temporaries to free at end of statement

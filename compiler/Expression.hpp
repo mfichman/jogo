@@ -75,6 +75,15 @@ private:
 };
 
 /* Literal expression (integers, strings, booleans, hashes, etc.) */
+class NilLiteral : public Expression {
+public:
+    NilLiteral(Location loc) : Expression(loc) {}
+
+private:
+    void operator()(Functor* functor) { functor->operator()(this); }
+};
+
+/* Literal expression (integers, strings, booleans, hashes, etc.) */
 class FloatLiteral : public Expression {
 public:
     FloatLiteral(Location loc, String* value) :

@@ -19,9 +19,6 @@ Counter < Object {
     }
 }
 
-Empty < Interface {
-}
-
 StrongReference < Object {
     obj Empty
     num Int

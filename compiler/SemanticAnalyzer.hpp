@@ -40,6 +40,7 @@ private:
     void operator()(Module* unit);
     void operator()(Formal* formal);
     void operator()(StringLiteral* expression);
+    void operator()(NilLiteral* expression);
     void operator()(IntegerLiteral* expression);
     void operator()(FloatLiteral* expression);
     void operator()(BooleanLiteral* expression);
