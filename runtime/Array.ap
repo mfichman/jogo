@@ -19,7 +19,11 @@
 # SOFTWARE.
 
 Array[:a] < Object {
-    # Dynamic array implementation.
+    # An array is an integer-indexed, dynamically resizable container.  Items
+    # can be accessed by their index in linear time.  Every index in the array
+    # is considered valid, with empty indices returning nil.  The 'count'
+    # property is simply the greatest index of any element in the array, plus
+    # one.
 
     capacity immutable Int
     # Returns the capacity of this array. 
@@ -27,8 +31,10 @@ Array[:a] < Object {
     count immutable Int
     # Returns the number of elements in this array.
 
-    @init(size Int) native {
-        # Creates a new buffer with capacity for 'size' elements.
+    @init(capacity Int) native {
+        # Creates a new buffer with capacity for 'size' elements.  Regardless
+        # of the initial capacity, the number of elements in the array will
+        # always be zero after construction.
     }
 
     @destroy() native {
@@ -36,20 +42,145 @@ Array[:a] < Object {
     }
 
     @index(index Int) native :a {
-        # Returns the element at 'index'. 
+        # Returns the element at 'index'.  If 'index' is greater than 'count',
+        # this function return nil. 
     }
 
     @insert(index Int, element :a) native {
-        # Sets the element at 'index' to 'element'.
+        # Sets the element at 'index' to 'element'.  If 'index' is greater than
+        # 'count', then the array will be resized to accomodate 'index'.
+    }
+
+    @plus(other Array[:a]) Array {
+        # Concatenates this array with 'other', and returns the result
+        out = Array[:a](count+other.count)
+        i = 0
+        while i < count {
+            out[i] = self[i]
+            i = i+1
+        }
+        j = 0
+        while j < other.count {
+            out[i] = other[j]
+            j = j+1
+            i = i+1
+        }
+        ret out
+    }
+
+    count=(count Int) {
+        # Sets the number of elements in the array.  If 'count' is greater than
+        # the size of the array, then the size of the array is increased, with
+        # new array buckets being set to nil.  If 'count' is less than the size
+        # of the array, then the size of the array is reduced, and elements
+        # belonging to removed buckets are freed.
+    }
+
+    capacity=(capacity Int) {
+        # Reserves at least storage for at least 'capacity' elements.  If
+        # 'capacity' is smaller than the current capacity, the array will
+        # shrink to the number of elements in the array.  Setting capacity to a
+        # value less than 'count' will result in 'capacity' being set equal to
+        # 'count'.
+    }
+
+    shift(element :a) {
+        # Adds 'element' to the beginning of the array, and shifts all other    
+        # elements up by one index.
+        i = count
+        while i > 0 {
+            self[i] = self[i-1]
+        }
+        self[0] = element
+    }
+
+    unshift() :a {
+        # Removes the first element from the array, and shifts all other 
+        # elements down by one index.
+        out = self[0]
+        i = 0
+        while i < count {
+            self[i] = self[i+1]
+            i = i+1
+        }
+        ret out
     }
 
     push(element :a) {
+        # Adds 'element' to the end of the array.
         self[count] = element
     }
 
     pop() :a {
+        # Removes the element at the end of the array, and reduces the count.
         element = self[count-1]
         count = count-1
         ret element
     }
+
+    first?() :a {
+        # Returns the element at index 0
+        ret self[0]
+    }
+
+    last?() :a {
+        # Returns the last element in the array.
+        ret self[count-1]
+    }
+
+    prefix(end Int) Array[:a] {
+        # Returns a new array containing all of the elements from the beginning
+        # of the array to the element before 'end'
+        out = Array[:a](end.max(8))
+        i = 0
+        while i < end and i < count {
+            out[i] = self[i]
+            i = i+1
+        }
+        ret out
+    }
+
+    suffix(begin Int) Array[:a] {
+        # Returns a new array containing elements starting at 'begin' and
+        # continuing to the end of this string.
+        out = Array[:a]((count-begin).max(8))
+        i = begin
+        while i < count {
+            out[i] = self[i]
+            i = i+1
+        }
+        ret out
+    }
+
+    slice(begin Int, end Int) Array[:a] {
+        # Returns a new array containing the elements starting at 'begin' and
+        # ending at the element before 'end'. 
+        out = Array[:a]((end-begin).max(8))
+        stop = end.max(begin)
+        i = begin
+        while i < end {
+            out[i] = self[i]
+            i = i+1
+        }
+        ret out
+    }
+
+    compact!() {
+        # Removes any nil elements in the array, and shifts the remaining
+        # elements down into a contiguous block.
+        last = 0
+        i = 0
+        while i < count {
+            element = self[i]
+            if i != last and element {
+                element = self[last]
+                last = last+1
+            }
+            i = i+1
+        }
+    }
+
+    #str?() native String {
+        # Returns a string representation of this array.
+    #}
 }

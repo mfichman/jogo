@@ -40,19 +40,19 @@ String < Object {
     }
 
     slice(begin Int, end Int) native String {
-        # Return a new string containing the elements starting at 'begin' and 
+        # Returns a new string containing the elements starting at 'begin' and 
         # ending at the character before 'end'.
     }
 
     prefix(end Int) String {
-        # Return a new string containing elements starting at the beginning of
+        # Returns a new string containing elements starting at the beginning of
         # the string and ending at the character before 'end'.
         return self.slice(0, end)
     }
 
     suffix(begin Int) String {
         # Return a new string containing elements starting at 'begin' and 
-        # continuing to the end fo this string.
+        # continuing to the end of this string.
         return self.slice(begin, self.length)
     }
 

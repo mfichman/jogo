@@ -19,9 +19,11 @@ main() Int {
     array = Array[String](10)
     array[1] = "bob"
     array[90] = "bill"
+    array.push("bilbo")
 
     stdout.print(array[1])
     stdout.print(array[90])
+    # bug: stdout.print(array.last)
 
     stdout.put('c'c)
     stdout.put('h'c)

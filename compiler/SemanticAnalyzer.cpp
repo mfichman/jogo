@@ -849,11 +849,8 @@ void SemanticAnalyzer::operator()(Type* type) {
 
     // Check generics for type resolution
     for (Generic::Ptr g = type->generics(); g; g = g->next()) {
-        if (!g->type()->clazz() && !type->equals(env_->self_type())) {
-            err_ << type->location();
-            err_ << "Undefined type '" << type << "'\n";
-            env_->error();
-        }
+        Type::Ptr gen = g->type();
+        gen(this);
         if (g->type()->is_value()) {
             err_ << type->location();
             err_ << "Primitives and value types cannot be used in generics\n";
