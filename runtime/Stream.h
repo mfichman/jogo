@@ -20,38 +20,31 @@
  * IN THE SOFTWARE.
  */
 
-#include "Module.h"
-#include "../String.h"
-#include <string.h>
-#ifndef WINDOWS
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
+#ifndef APOLLO_STREAM_H
+#define APOLLO_STREAM_H
+
+#include "Primitives.h"
+#include "Buffer.h"
+
+typedef struct Stream* Stream;
+struct Stream {
+    Ptr _vtable;
+    U64 _refcount;
+    Int handle;
+    Buffer read_buf;
+    Buffer write_buf;
+    Int flags;
+};
+
+Stream Stream__init(Int handle);
+void Stream_read(Stream self, Buffer buffer);
+void Stream_write(Stream self, Buffer buffer);
+Int Stream_get(Stream self);
+Int Stream_peek(Stream self);
+void Stream_put(Stream self, Char ch);
+String Stream_scan(Stream self, String delim);
+void Stream_print(Stream self, String str);
+void Stream_flush(Stream self);
+void Stream_close(Stream self);
+
 #endif
-
-Stream File_open(String path, String mode) {
-
-#ifndef WINDOWS
-    Int flags = 0;
-    if (!strncmp(mode->data, "r", 1)) {
-        flags = O_RDONLY;
-    } else if (!strncmp(mode->data, "w", 1)) {
-        flags = O_WRONLY|O_CREAT;
-    } else if (!strncmp(mode->data, "a", 1)) {
-        flags = O_WRONLY|O_APPEND|O_CREAT; 
-    } else if (!strncmp(mode->data, "r+", 2)) {
-        flags = O_RDWR;
-    } else if (!strncmp(mode->data, "w+", 2)) {
-        flags = O_RDWR|O_CREAT;
-    } else if (!strncmp(mode->data, "a+", 2)) {
-        flags = O_RDWR|O_APPEND|O_CREAT;
-    }
-
-    Int ret = open(path->data, flags, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-    if (ret == -1) {
-        return 0;
-    } else {
-        return Stream__init(ret);
-    }
-#endif
-}

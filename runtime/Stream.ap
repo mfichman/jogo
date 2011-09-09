@@ -66,7 +66,7 @@ Stream < Object {
         # to be written to the output stream until 'flush()' is called.
     }
     
-    scan(char Char) native String {
+    scan(delim String) native String {
         # Reads all characters up to and including the first instance of
         # 'char'.  Returns a string containing the characters read.
     }
@@ -75,6 +75,11 @@ Stream < Object {
         # Writes the characters in 'string' to the file.  The string is not
         # guaranteed to be written to the output stream until 'flush()' is
         # called.
+    }
+    
+    peek() native Char {
+        # Reads a character, but does not remove it from the internal buffer.
+        # Call 'get' to read the next character and remove it.
     }
 
     flush() native {

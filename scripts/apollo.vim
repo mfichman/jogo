@@ -18,11 +18,12 @@ syn region apComment start="#" end="$" contains=apTodo
 
 syn region apString matchgroup=apStringDelim start=+"+ skip=+\\\\\|\\"+ end=+"+ contains=apInterpolation
 syn region apString matchgroup=apStringDelim start=+'+ skip=+\\\\\|\\'+ end=+'+
+syn match apString "\'.\'c"
 
 syn region apInterpolation matchgroup=apStringDelim start="#{" end="}" contained contains=ALL
 
 
-syn keyword apConstant true false nil self
+syn keyword apConstant true false nil self eof
 
 
 "syn keyword apFunction @init @destroy @add @subtract @divide @mulitply

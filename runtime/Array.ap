@@ -1,0 +1,55 @@
+# Copyright (c) 2010 Matt Fichman
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+Array[:a] < Object {
+    # Dynamic array implementation.
+
+    capacity immutable Int
+    # Returns the capacity of this array. 
+
+    count immutable Int
+    # Returns the number of elements in this array.
+
+    @init(size Int) native {
+        # Creates a new buffer with capacity for 'size' elements.
+    }
+
+    @destroy() native {
+        # Releases memory used by the array.
+    }
+
+    @index(index Int) native :a {
+        # Returns the element at 'index'. 
+    }
+
+    @insert(index Int, element :a) native {
+        # Sets the element at 'index' to 'element'.
+    }
+
+    push(element :a) {
+        self[count] = element
+    }
+
+    pop() :a {
+        element = self[count-1]
+        count = count-1
+        ret element
+    }
+}

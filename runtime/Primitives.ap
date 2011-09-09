@@ -79,6 +79,16 @@ Float < Value {
 }
 
 Char < Value {
+    @init(str String) native
+    @add(other Char) native Char
+    @sub(other Char) native Char
+    @mul(other Char) native Char
+    @div(other Char) native Char
+    @mod(other Char) native Char
+    @equal(other Char) native Bool
+    @less(other Char) native Bool
+    @compl() native Char
+    str?() native String
 }
 
 Bool < Value {

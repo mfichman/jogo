@@ -20,30 +20,25 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_FILE_STREAM_H
-#define APOLLO_FILE_STREAM_H
+#ifndef APOLLO_BUFFER_H
+#define APOLLO_BUFFER_H
 
-#include "../Primitives.h"
-#include "../Buffer.h"
+#include "Primitives.h"
 
-typedef struct File_Stream* File_Stream;
-struct File_Stream {
+
+typedef struct Array* Array;
+struct Array {
     Ptr _vtable;
     U64 _refcount;
-    Int handle;
-    Buffer read_buf;
-    Buffer write_buf;
-    Int flags;
+    Int capacity;
+    Int count;
+    Object* data;    
 };
 
-File_Stream File_Stream__init(Int handle);
-void File_Stream_read(File_Stream self, Buffer buffer);
-void File_Stream_write(File_Stream self, Buffer buffer);
-Char File_Stream_get(File_Stream self);
-void File_Stream_put(File_Stream self, Char ch);
-String File_Stream_scan(File_Stream self, Char ch);
-void File_Stream_print(File_Stream self, String str);
-void File_Stream_flush(File_Stream self);
-void File_Stream_close(File_Stream self);
+Array Array__init(Int capacity);
+void Array__destroy(Array self);
+Object Array__index(Array self, Int index);
+void Array__insert(Array self, Int index, Object obj);
+extern void Array__vtable();
 
 #endif

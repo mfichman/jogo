@@ -73,6 +73,7 @@ void BasicBlockGenerator::operator()(StringLiteral* expr) {
     // Load a pointer to the string from the string table.  Strings must
     // always be loaded first, since they are specified by address.
     return_ = load(expr);
+    emit_refcount_inc(return_);
 }
 
 void BasicBlockGenerator::operator()(NilLiteral* expr) {

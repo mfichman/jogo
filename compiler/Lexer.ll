@@ -98,32 +98,50 @@ xor\= return BIT_XOR_ASSIGN;
 [0-9]+\.[0-9]* {
     String* value = yyextra->environment()->floating(yytext);
     yylval->expression = new FloatLiteral(*yylloc, value);
-    return FLOAT;
+    return LITERAL;
 }
 \.[0-9]+ {
     String* value = yyextra->environment()->floating(yytext);
     yylval->expression = new FloatLiteral(*yylloc, value);
-    return FLOAT;
+    return LITERAL;
 }
 [0-9]+ {
 	String* value = yyextra->environment()->integer(yytext);
 	yylval->expression = new IntegerLiteral(*yylloc, value); 
-	return INTEGER;
+	return LITERAL;
+}
+\'.\'c {
+    assert("Fix escapes" && yytext[0] != '\\');
+    int code = yytext[1];
+    String* value = yyextra->environment()->integer(stringify(code));
+    Type* type = yyextra->environment()->char_type();
+    yylval->expression = new IntegerLiteral(*yylloc, value);
+    yylval->expression->type(type);
+    return LITERAL;
 }
 (true) {
     String* value = yyextra->environment()->integer("1");
     yylval->expression = new BooleanLiteral(*yylloc, value);
-    return BOOLEAN;
+    return LITERAL;
 }
 (false) {
     String* value = yyextra->environment()->integer("0");
     yylval->expression = new BooleanLiteral(*yylloc, value);
-    return BOOLEAN;
+    return LITERAL;
 }
 (nil) {
     yylval->expression = new NilLiteral(*yylloc);
-    return INTEGER;
+    return LITERAL;
 }
+(eof) {
+    Type* type = yyextra->environment()->char_type();
+    String* value = yyextra->environment()->integer("-1");
+    yylval->expression = new IntegerLiteral(*yylloc, value);
+    yylval->expression->type(type);
+    return LITERAL;
+}
+    
+    
 \" {
     yyextra->string_start(yylloc->first_column);
     yy_push_state(SC_STRING1, yyscanner);

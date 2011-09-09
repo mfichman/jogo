@@ -39,6 +39,7 @@ Parser::Parser(Environment* env) :
 
     input("Primitives");
     input("String");
+    input("Stream");
 
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));

@@ -1,12 +1,38 @@
 
+import Array
 
 main() Int {
-    
-    let file = File::Stream(1) {
-        file.print('hello world\n')
+    # Write a message to standard output
+    stdout = Stream(1)
+    stdout.print('hello world\n')
+
+    # Read in a message from a file using scan()
+    let file = File::open('FileTest.txt', 'r') {
+        hello = file.scan('\n')
+        stdout.print("#{hello}\n")    
+        while eof != file.peek() {
+            stdout.put('*'c)
+            stdout.put(file.get())
+        }
     }
-    #let file = File::open('File.txt', 'w') {
-    #    file.print('hello world') 
-    #}
+
+    array = Array[String](10)
+    array[1] = "bob"
+    array[90] = "bill"
+
+    stdout.print(array[1])
+    stdout.print(array[90])
+
+    stdout.put('c'c)
+    stdout.put('h'c)
+    stdout.put('a'c)
+    stdout.put('r'c)
+    stdout.print('\n')
+
+#    stdout.flush()
+#    stdin = Stream(0)
+#    msg = stdin.scan('\n')
+#    stdout.print(msg)
+    
     ret 0
 }

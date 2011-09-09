@@ -30,4 +30,7 @@ struct Object {
     U64 _refcount; 
 };
 
+void Object__refcount_inc(Object obj);
+void Object__refcount_dec(Object obj);
+
 #endif

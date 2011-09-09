@@ -79,7 +79,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 
 /* BISON declarations */
 %token <string> IDENTIFIER TYPE OPERATOR COMMENT TYPEVAR
-%token <expression> STRING FLOAT INTEGER BOOLEAN SBEGIN 
+%token <expression> STRING LITERAL SBEGIN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE WEAK IMMUTABLE
 %token IMPORT FUNCTION VOID
 %token SEPARATOR COLON SEMICOLON BACKTICK
@@ -399,9 +399,7 @@ expression
     | call { $$ = $1; }
     | '(' expression ')' { $$ = $2; } 
     | string { $$ = $1; }
-    | INTEGER { $$ = $1; }
-    | FLOAT { $$ = $1; }
-    | BOOLEAN { $$ = $1; }
+    | LITERAL { $$ = $1; }
     | IDENTIFIER { $$ = new Identifier(@$, $1); }
     | expression OR expression { $$ = new Binary(@$, ID("or"), $1, $3); }
     | expression AND expression { $$ = new Binary(@$, ID("and"), $1, $3); }

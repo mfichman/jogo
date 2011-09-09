@@ -181,19 +181,27 @@ void SemanticAnalyzer::operator()(Formal* formal) {
 }
 
 void SemanticAnalyzer::operator()(NilLiteral* expression) {
-    expression->type(env_->nil_type());
+    if (!expression->type()) {
+        expression->type(env_->nil_type());
+    }
 }
 
 void SemanticAnalyzer::operator()(StringLiteral* expression) {
-    expression->type(env_->string_type()); 
+    if (!expression->type()) {
+        expression->type(env_->string_type()); 
+    }
 }
 
 void SemanticAnalyzer::operator()(IntegerLiteral* expression) {
-    expression->type(env_->int_type()); 
+    if (!expression->type()) {
+        expression->type(env_->int_type()); 
+    }
 }
 
 void SemanticAnalyzer::operator()(FloatLiteral* expression) {
-    expression->type(env_->float_type()); 
+    if (!expression->type()) {
+        expression->type(env_->float_type()); 
+    } 
 }
 
 void SemanticAnalyzer::operator()(BooleanLiteral* expression) {
