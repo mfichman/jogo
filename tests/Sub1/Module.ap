@@ -3,7 +3,7 @@ Test < Object {
 }
 
 test() Int {
-    return 0
+    ret 0
 }
 
 bob() {

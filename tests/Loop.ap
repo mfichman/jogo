@@ -3,20 +3,20 @@
 
 Iterator < Object {
     value() String {
-        return "Hello, world"
+        ret "Hello, world"
     }
 
     next() {
     }
     
     more() Bool {
-        return true
+        ret true
     }    
 }
 
 Iterable < Object {
     iterator() Iterator {
-        return Iterator()
+        ret Iterator()
     }
 }
 

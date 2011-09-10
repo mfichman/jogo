@@ -27,5 +27,5 @@ main() Int {
     b = Ctor1()
     c = Ctor2(2)
     
-    return 0
+    ret 0
 }

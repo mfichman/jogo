@@ -47,13 +47,13 @@ String < Object {
     prefix(end Int) String {
         # Returns a new string containing elements starting at the beginning of
         # the string and ending at the character before 'end'.
-        return self.slice(0, end)
+        ret self.slice(0, end)
     }
 
     suffix(begin Int) String {
         # Return a new string containing elements starting at 'begin' and 
         # continuing to the end of this string.
-        return self.slice(begin, self.length)
+        ret self.slice(begin, self.length)
     }
 
     #starts_with(string String) native Bool {
@@ -75,7 +75,7 @@ String < Object {
     }
 
     str?() String {
-        return self
+        ret self
     }
 
     #slice(range Range) String native
