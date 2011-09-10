@@ -148,6 +148,12 @@ public:
         }
         return false;
     }
+    bool is_ret() const {
+        if (instrs_.empty()) {
+            return false;
+        }
+        return instrs_.back().opcode() == RET;
+    }
     void swap(BasicBlock* other) { instrs_.swap(other->instrs_); }
     void branch(BasicBlock* branch) { branch_ = branch; }
     void next(BasicBlock* branch) { next_ = branch; }

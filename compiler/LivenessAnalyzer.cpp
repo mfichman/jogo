@@ -66,8 +66,10 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
     }
     std::cout << std::endl;
 */
-    if (block->next()) { operator()(block->next()); }
-    if (block->branch()) { operator()(block->branch()); }
+    if (!block->is_ret()) {
+        if (block->next()) { operator()(block->next()); }
+        if (block->branch()) { operator()(block->branch()); }
+    }
 
     //std::cout << block->label()->string()  << std::endl;
     
@@ -82,24 +84,30 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         set<int>& out = instr.liveness()->out();
 
         // Recompute the 'out' set from the 'in' set of the next instruction(s).
-        if (i == block->instrs()-1) { // Last instruction of the block
-            if (block->branch() && block->branch()->instrs()) {
-                set<int>& s = block->branch()->instr(0).liveness()->in();
+        // Last instruction of the block
+        if (RET != instr.opcode()) {
+            if (i == block->instrs()-1) { 
+                // Last instruction of the block, so get the next instruction 
+                // the first instruction of the following block.
+                if (block->branch() && block->branch()->instrs()) {
+                    set<int>& s = block->branch()->instr(0).liveness()->in();
+                    for (set<int>::iterator j = s.begin(); j != s.end(); j++) {
+                        finished_ &= !out.insert(*j).second;        
+                    }
+                } 
+                if (block->next() && block->next()->instrs()) {
+                    set<int>& s = block->next()->instr(0).liveness()->in();
+                    for (set<int>::iterator j = s.begin(); j != s.end(); j++) {
+                        finished_ &= !out.insert(*j).second;        
+                    }
+                } 
+            } else { 
+                // Get the 'in' set from the next instruction in this block.
+                set<int>& s = block->instr(i+1).liveness()->in();
                 for (set<int>::iterator j = s.begin(); j != s.end(); j++) {
-                    finished_ &= !out.insert(*j).second;        
-                }
-            } 
-            if (block->next() && block->next()->instrs()) {
-                set<int>& s = block->next()->instr(0).liveness()->in();
-                for (set<int>::iterator j = s.begin(); j != s.end(); j++) {
-                    finished_ &= !out.insert(*j).second;        
-                }
-            } 
-        } else { // Get the 'in' set from the next instruction
-            set<int>& s = block->instr(i+1).liveness()->in();
-            for (set<int>::iterator j = s.begin(); j != s.end(); j++) {
-                finished_ &= !out.insert(*j).second;
-            } 
+                    finished_ &= !out.insert(*j).second;
+                } 
+            }
         }
 
         // in[n] := use[n] U (out[n] - def[n]).  Since the in/out sets can 

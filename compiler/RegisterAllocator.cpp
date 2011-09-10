@@ -212,7 +212,7 @@ void RegisterAllocator::color_graph() {
     while (!stack_.empty()) { // Now color the graph using the stack.
         RegisterVertex* v = &graph_[stack_.back()]; 
         int choice = 0;
-        
+
         for (int reg = 1; reg < machine_->regs(); reg++) {
             if (!machine_->reg(reg)->allocatable()) {
                 continue;
@@ -234,7 +234,7 @@ void RegisterAllocator::color_graph() {
                 }
 
                 // Conflict two: candiate color is the same as the color of
-                // a precolored register.
+                // a precolored register that matches.
                 if (other < 0 && -other == reg) {
                     ok = false;
                     break;
@@ -288,15 +288,16 @@ void RegisterAllocator::spill_register(Function* func) {
     int max_neighbors = 0;
     bool is_caller_reg = false;
 
-    // Attempt to spill a caller register first.
-    for (int i = 0; i < machine_->caller_regs(); i++) {
-        int reg = -machine_->caller_reg(i)->id();
-        set<int>::iterator m = spilled_.find(reg);
-        if (m == spilled_.end()) {
-            spilled = reg;
-            is_caller_reg = true;
-            break;
-        } 
+    if (!spilled) {
+       for (int i = 0; i < machine_->caller_regs(); i++) {
+           int reg = -machine_->caller_reg(i)->id();
+           set<int>::iterator m = spilled_.find(reg);
+           if (m == spilled_.end()) {
+               spilled = reg;
+               is_caller_reg = true;
+               break;
+           } 
+       }
     }
 
     if (!spilled) {

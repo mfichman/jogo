@@ -215,8 +215,12 @@ void Intel64CodeGenerator::emit_arith(const Instruction& inst) {
     } else if (inst.opcode() == ADD || inst.opcode() == MUL) {
         // t1 <- t2 + t1
         emit(instr, r2, r1);
+    } else if (inst.opcode() == SUB) {
+        // t1 <- t2 - t1 goes to t1 <- -t1 + t2; t1 <- -t1 
+        emit("neg", r1);
+        emit("add", r1, r2);
     } else {
-        // t1 <- t2 - t1
+        // t1 <- t2 / t1 
         emit("push", r2);
         emit(instr, r2, r1);
         emit("mov", r1, r2);
