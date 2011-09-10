@@ -1,0 +1,79 @@
+# Copyright (c) 2010 Matt Fichman
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+Hash[:k,:v] < Object {
+    # A hash is a dynamically-resizable container that uses arbitrary keys.
+    # The key ':k' can be any object with the 'hash' method defined.  Hashes
+    # provide efficient lookup and deletion (amortized constant) assuming a
+    # good hash function.  Worst case lookup is linear with respect to the
+    # number of objects in the hash.
+
+    capacity immutable Int
+    # Returns the current capacity of the hash.
+
+    count immutable Int
+    # Returns the number of items in the hash.
+    
+    @init() native {
+        # Creates a new hash with zero elements.
+    }
+
+    @destroy() {
+        # Releases memory used by the hash, and decrements all the refcounts on
+        # objects held by the hash
+        i = 0
+        while i < count {
+            self.insert(i, nil) 
+            i = i+1
+        }
+    }
+
+    @index(key :k) native :v {
+        # Returns the element associated with 'key'.  Returns nil if there is
+        # no element associated with 'key'.
+        i = key.hash % capacity
+        ret self.index(i)
+    }
+
+    @insert(key :k, value :v) native {
+        # Inserts 'value' into the hash map with key 'key'.  The key can be
+        # used to retrieve the value later.
+        i = key.hash % capacity
+        self.insert(i, value) 
+    }
+
+    @add(other Hash[:a]) Hash[:a] {
+        # Returns a new hash that is the union over the keys in this hash and
+        # 'other'.  If there is a key present in both hashes, the associated
+        # value in this hash takes takes precedence over the associated value
+        # in 'other'.
+        new = Hash[:a]()
+        
+    
+    }
+    
+    index(index Int) private native :v {
+        # Returns the value at index 'index' in the hash bucket array.
+    }
+
+    insert(index Int, value :v) private native {
+        # Sets the value at index 'index' in the hash bucket array to 'value'.
+    }
+}

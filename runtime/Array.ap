@@ -18,8 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import Boot
-
 Array[:a] < Object {
     # An array is an integer-indexed, dynamically resizable container.  Items
     # can be accessed by their index in linear time.  Every index in the array
@@ -27,10 +25,10 @@ Array[:a] < Object {
     # property is simply the greatest index of any element in the array, plus
     # one.
 
-    capacity immutable Int
+    capacity Int
     # Returns the capacity of this array. 
 
-    count immutable Int
+    count Int
     # Returns the number of elements in this array.
 
     @init(capacity Int) native {

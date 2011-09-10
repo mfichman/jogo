@@ -47,7 +47,6 @@ Array Array__init(Int capacity) {
 }
 
 void Array__destroy(Array self) {
-
     for (Int i = 0; i < self->count; ++i) {
         Object__refcount_dec(self->data[i]);
     }

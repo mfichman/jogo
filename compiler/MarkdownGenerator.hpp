@@ -18,26 +18,26 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
- */
+ */  
 
-#ifndef APOLLO_BUFFER_H
-#define APOLLO_BUFFER_H
+#pragma once
 
-#include "Primitives.h"
+#include "Apollo.hpp"
+#include "TreeNode.hpp"
+#include "Environment.hpp"
+#include "String.hpp"
 
-typedef struct Array* Array;
-struct Array {
-    Ptr _vtable;
-    U64 _refcount;
-    Int capacity;
-    Int count;
-    Object* data;    
+class MarkdownGenerator : public TreeNode::Functor {
+public:
+    MarkdownGenerator(Environment* env);
+    typedef Pointer<MarkdownGenerator> Ptr;
+
+private:
+    void operator()(Module* feature);
+    void operator()(Class* feature);
+    void operator()(Function* feature);
+    void operator()(Type* type);
+
+    Environment::Ptr env_;
+    Stream::Ptr out_;
 };
-
-Array Array__init(Int capacity);
-void Array__destroy(Array self);
-Object Array__index(Array self, Int index);
-void Array__insert(Array self, Int index, Object obj);
-extern void Array__vtable();
-
-#endif

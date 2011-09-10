@@ -47,6 +47,7 @@ lexer = "build/compiler/Lexer.ll"
 
 compiler_sources = env.Glob('build/compiler/*.cpp') + [parser, lexer]
 env.Program('bin/apollo', compiler_sources +  ['build/drivers/Main.cpp'])
+env.Program('bin/apdoc', compiler_sources + ['build/drivers/Doc.cpp'])
 
 
 library_sources = env.Glob('build/runtime/*/*.c') 

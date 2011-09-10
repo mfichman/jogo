@@ -20,13 +20,13 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_BUFFER_H
-#define APOLLO_BUFFER_H
+#ifndef APOLLO_HASH_H
+#define APOLLO_HASH_H
 
-#include "Primitives.h"
+#include "Primitives.h";
 
-typedef struct Array* Array;
-struct Array {
+typedef struct Hash* Hash;
+struct Hash {
     Ptr _vtable;
     U64 _refcount;
     Int capacity;
@@ -34,10 +34,10 @@ struct Array {
     Object* data;    
 };
 
-Array Array__init(Int capacity);
-void Array__destroy(Array self);
-Object Array__index(Array self, Int index);
-void Array__insert(Array self, Int index, Object obj);
-extern void Array__vtable();
+Hash Hash__init(Int capacity);
+void Hash__destroy(Hash self);
+Object Hash__index(Hash self, Int index);
+void Hash__insert(Hash self, Int index, Object obj);
+extern void Hash__vtable();
 
 #endif

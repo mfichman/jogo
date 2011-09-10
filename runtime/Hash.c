@@ -20,24 +20,41 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_BUFFER_H
-#define APOLLO_BUFFER_H
+#include "Hash.h"
+#include "Object.h"
+#include <stdlib.h>
+#include <stdio.h>
 
-#include "Primitives.h"
+Hash Hash__init(Int capacity) {
+    Hash ret = calloc(sizeof(struct Hash), 1);
+    if (!ret) {
+        fprintf(stderr, "Out of memory");
+        fflush(stderr);
+        abort();
+    }
+    ret->_vtable = Hash__vtable;
+    ret->_refcount = 1;
+    ret->data = calloc(sizeof(Object), capacity);
+    if (!ret->data) {
+        fprintf(stderr, "Out of memory");
+        fflush(stderr);
+        abort();
+    }
+    ret->capacity = capacity;
+    ret->count = 0;
+    return ret; 
+}
 
-typedef struct Array* Array;
-struct Array {
-    Ptr _vtable;
-    U64 _refcount;
-    Int capacity;
-    Int count;
-    Object* data;    
-};
+void Hash__destroy(Hash self) {
+    for (Int i = 0; i < self->count; ++i) {
+        Object__refcount_dec(self->data[i]);
+    }
+    free(self->data);
+    free(self);
+}
 
-Array Array__init(Int capacity);
-void Array__destroy(Array self);
-Object Array__index(Array self, Int index);
-void Array__insert(Array self, Int index, Object obj);
-extern void Array__vtable();
-
-#endif
+Object Hash__bucket(Hash self, Int index) {
+    Object ret = self->data[index];
+    Object__refcount_inc(ret);
+    return ret;
+}
