@@ -24,6 +24,7 @@ main() Int {
     stdout.print(array[1])
     stdout.print(array[90])
     stdout.print(array.last)
+    stdout.print(array.pop())
 
     stdout.put('c'c)
     stdout.put('h'c)

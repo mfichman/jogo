@@ -37,8 +37,11 @@ String Int_str__g(Int self) {
         val /= 10; 
         length++;
     }
+    if (self == 0) {
+        length++;
+    }
 
-    String ret = malloc(sizeof(String) + length + 1); 
+    String ret = malloc(sizeof(struct String) + length + 1); 
     if (!ret) {
         fprintf(stderr, "Out of memory");
         fflush(stderr);
@@ -51,6 +54,9 @@ String Int_str__g(Int self) {
     // Now copy over the characters for each decimal place
     Char *c = ret->data + ret->length - 1;
     val = self < 0 ? -self : self;
+    if (!val) {
+        *c-- = '0';
+    }
     while (val) {
         *c-- = (val % 10) + '0';
         val /= 10;

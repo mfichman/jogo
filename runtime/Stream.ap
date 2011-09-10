@@ -21,7 +21,9 @@
 import Buffer
 
 Stream < Object {
-    # This object is used to perform buffered character I/O on a file.
+    # This object is used to perform buffered character I/O on a file.  It can
+    # be used to read from any device or input that the OS supports for the
+    # underlying handle type, including sockets, files, pipes, etc.
 
     handle immutable Int
     # Opaque handle to the underlying file descriptor.
@@ -91,4 +93,12 @@ Stream < Object {
         # Calls 'flush()' then closes the file descriptor, so that no more
         # characters may be read or written.
     }
+}
+
+println(str String) native {
+    # Prints 'str' to standard output, and flushes the output.
+}
+
+print(str String) native {
+    # Prints 'str' to standard output.  Does not flush the output.
 }

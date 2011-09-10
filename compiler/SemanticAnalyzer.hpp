@@ -67,10 +67,7 @@ private:
     void operator()(Import* feature);
     void operator()(Type* type);
 
-    Function* function(String* name);
-    Class* clazz(String* name);
     Variable* variable(String* name);
-    void function(String* name, Function* function);
     void variable(Variable* var);
     void enter_scope();
     void exit_scope();
@@ -78,6 +75,7 @@ private:
     void gen_accessor(Attribute* feature);
     void gen_constructor();
     void gen_destructor();
+    Type* fix_generics(Type* parent, Type* type);
 
     Environment::Ptr env_;
     Stream::Ptr err_;

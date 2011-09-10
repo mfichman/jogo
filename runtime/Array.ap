@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import Boot
+
 Array[:a] < Object {
     # An array is an integer-indexed, dynamically resizable container.  Items
     # can be accessed by their index in linear time.  Every index in the array
@@ -51,7 +53,7 @@ Array[:a] < Object {
         # 'count', then the array will be resized to accomodate 'index'.
     }
 
-    @plus(other Array[:a]) Array {
+    @add(other Array[:a]) Array[:a] {
         # Concatenates this array with 'other', and returns the result
         out = Array[:a](count+other.count)
         i = 0
@@ -90,6 +92,7 @@ Array[:a] < Object {
         i = count
         while i > 0 {
             self[i] = self[i-1]
+            i = i-1 
         }
         self[0] = element
     }
@@ -103,6 +106,7 @@ Array[:a] < Object {
             self[i] = self[i+1]
             i = i+1
         }
+        count = count-1
         ret out
     }
 
@@ -131,35 +135,26 @@ Array[:a] < Object {
     prefix(end Int) Array[:a] {
         # Returns a new array containing all of the elements from the beginning
         # of the array to the element before 'end'
-        out = Array[:a](end.max(8))
-        i = 0
-        while i < end and i < count {
-            out[i] = self[i]
-            i = i+1
-        }
-        ret out
+        
+        ret self.slice(0, end)
     }
 
     suffix(begin Int) Array[:a] {
         # Returns a new array containing elements starting at 'begin' and
         # continuing to the end of this string.
-        out = Array[:a]((count-begin).max(8))
-        i = begin
-        while i < count {
-            out[i] = self[i]
-            i = i+1
-        }
-        ret out
+        ret self.slice(begin, count)
     }
 
     slice(begin Int, end Int) Array[:a] {
         # Returns a new array containing the elements starting at 'begin' and
         # ending at the element before 'end'. 
-        out = Array[:a]((end-begin).max(8))
-        stop = end.max(begin)
-        i = begin
-        while i < end {
-            out[i] = self[i]
+        end2 = end.min(count)
+        begin2 = begin.min(end2).max(0) 
+
+        out = Array[:a]((end2-begin2).max(8))
+        i = begin2
+        while i < end2 {
+            out.push(self[i])
             i = i+1
         }
         ret out
@@ -173,11 +168,12 @@ Array[:a] < Object {
         while i < count {
             element = self[i]
             if i != last and element {
-                element = self[last]
+                self[last] = element
                 last = last+1
             }
             i = i+1
         }
+        count = last
     }
 
     #str?() native String {

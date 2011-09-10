@@ -171,3 +171,23 @@ void Stream_close(Stream self) {
 #endif 
 }
 
+void println(String str) {
+    // FIXME: Use Apollo streams
+    if (str) {
+        fwrite(str->data, str->length, 1, stdout);
+    } else {
+        fwrite("nil", 3, 1, stdout);
+    }
+    fwrite("\n", 1, 1, stdout);
+    fflush(stdout);
+}
+
+void print(String str) {
+    // FIXME: Use Apollo streams
+    if (str) {
+        fwrite(str->data, str->length, 1, stdout);
+    } else {
+        fwrite("nil", 3, 1, stdout);
+    }
+    fflush(stdout);
+}

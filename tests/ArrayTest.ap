@@ -1,0 +1,174 @@
+# This file tests the built-in Array type.
+
+import Array
+
+test_insert_index() {
+    arr = Array[String](10)
+    arr[0] = 'batman'
+    arr[4] = 'joker'
+
+    println(arr[0])
+    println(arr[4])
+
+    arr[50] = 'mr. freeze'
+    
+    println(arr[50])
+    println("#{arr.count}")
+}
+
+test_concat() {
+    arr1 = Array[String](10)
+    arr1[0] = 'riddle'
+    arr1[1] = 'me'
+    arr2 = Array[String](10)
+    arr2[0] = 'this'
+    arr2[1] = 'batman!'
+ 
+    arr3 = arr1+arr2
+    println(arr3[0])
+    println(arr3[1])
+    println(arr3[2])
+    println(arr3[3])
+}
+
+test_count() {
+    arr1 = Array[String](10)
+    println("#{arr1.count}") 
+    
+    arr1[0] = 'one'
+    println("#{arr1.count}")
+
+    arr1[1] = 'two'
+    println("#{arr1.count}")
+
+    arr1[40] = 'three'
+    println("#{arr1.count}")
+}
+
+test_shift_unshift() {
+    arr = Array[String](10)
+    arr.shift('3')
+    arr.shift('2')
+    arr.shift('1')
+
+    println(arr[0])
+    println(arr[1])
+    println(arr[2])
+    
+    println(arr.unshift())
+    println(arr.unshift())
+    println(arr.unshift())
+    println(arr.unshift())
+}
+
+
+test_push_pop() {
+    arr = Array[String](10)
+    arr.push('3')
+    arr.push('2')
+    arr.push('1')
+
+    println(arr[0])
+    println(arr[1])
+    println(arr[2])
+
+    println(arr.pop())
+    println(arr.pop())
+    println(arr.pop())
+    println(arr.pop())
+}
+
+test_first_last() {
+    arr = Array[String](10)
+
+    arr[0] = 'hello'
+    arr[29] = 'goodbye'
+
+    println(arr.first)
+    println(arr.last)
+}
+
+test_prefix_suffix() {
+    arr = Array[String](10)
+    arr.push('cogito')
+    arr.push('ergo')
+    arr.push('sum')
+    arr.push('in')
+    arr.push('vino')
+    arr.push('vertias')
+
+    arr1 = arr.prefix(3)
+    arr2 = arr.suffix(3)
+
+    println(arr1[0])
+    println(arr1[1])
+    println(arr1[2])
+    println("#{arr1.count}")
+
+    println(arr2[0])
+    println(arr2[1])
+    println(arr2[2])
+    println("#{arr2.count}")
+}
+
+test_slice() {
+    arr = Array[String](10)
+    arr.push('cogito')
+    arr.push('ergo')
+    arr.push('sum')
+    arr.push('in')
+    arr.push('vino')
+    arr.push('vertias')
+
+    arr2 = arr.slice(-1, 2)
+    println(arr2[0])
+    println(arr2[1])
+    println("#{arr2.count}")
+    
+    arr2 = arr.slice(-1, 20)
+    println(arr2[0])
+    println(arr2[1])
+    println(arr2[2])
+    println(arr2[3])
+    println(arr2[4])
+    println(arr2[5])
+    println("#{arr2.count}")
+
+    arr2 = arr.slice(2, 4)
+    println(arr2[0])
+    println(arr2[1])
+    println("#{arr2.count}")
+}
+
+test_compact() {
+    arr = Array[String](10)
+
+    arr[2] = 'hello'
+    arr[7] = 'world'
+    arr[8] = nil
+    
+
+    arr.compact!()
+    println(arr[0])
+    println(arr[1])
+    println("#{arr.count}")
+    
+}
+
+test_str?() {
+
+}
+
+main() Int {
+    test_insert_index()
+    test_concat()
+    test_count()
+    test_shift_unshift()
+    test_push_pop()
+    test_first_last()
+    test_prefix_suffix()
+    test_slice()
+    test_compact()
+    test_str?()
+    ret 0
+}

@@ -57,7 +57,7 @@ void Array__destroy(Array self) {
 }
 
 Object Array__index(Array self, Int index) {
-    if (index < 0 || index >= self->capacity) {
+    if (index < 0 || index >= self->count) {
         return 0;
     } else {
         // Need to increment the refcount here; the code generator normally

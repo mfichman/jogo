@@ -199,6 +199,17 @@ std::string File::base_name(const std::string& file) {
     return file.substr(slash, dot - slash); // slashdot!!
 }
 
+std::string File::ext(const std::string& file) {
+    // Returns the component after the last '.'
+
+    size_t dot = file.find_last_of('.');
+    if (dot == std::string::npos) {
+        return "";
+    } else {    
+        return file.substr(dot);
+    }
+}
+
 File::Iterator::Iterator(const std::string& file) :
 #ifdef WINDOWS
     handle_(FindFirstFile(file.c_str(), &data_)) {

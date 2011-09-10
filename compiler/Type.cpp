@@ -70,7 +70,7 @@ Type* Type::generic(String* name) const {
         gen1 = gen1->next();
         gen2 = gen2->next();
     }
-    return 0;
+    assert(!"not found");
 }
 
 bool Type::equals(Type* other) const {

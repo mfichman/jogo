@@ -290,6 +290,7 @@ void SemanticAnalyzer::operator()(Call* expression) {
         return;
     }
     expression->type(func->type());
+    // FIXME: Look up generics for function
     
     // Check argument types versus formal parameter types.  Check the arity
     // of the function as well.
@@ -327,7 +328,6 @@ void SemanticAnalyzer::operator()(Call* expression) {
 }
 
 void SemanticAnalyzer::operator()(Dispatch* expression) {
-
     // Evaluate types of argument expressions and the receiver
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         a(this);
@@ -365,12 +365,7 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
 
     // Set the type of the expression to the return type of the function.
     // Look up the return type in the receiver if it is a generic.
-    Type::Ptr rt = func->type();
-    if (rt->is_generic()) {
-        expression->type(receiver->type()->generic(rt->name()));
-    } else {
-        expression->type(rt);
-    }
+    expression->type(fix_generics(receiver->type(), func->type()));
 
     // Check argument types versus formal parameter types
     Expression::Ptr arg = expression->arguments();
@@ -941,4 +936,37 @@ void SemanticAnalyzer::gen_mutator(Attribute* feature) {
         self->next(arg);
         class_->feature(new Function(loc, set, self, 0, vt, block));
     }
+}
+
+Type* SemanticAnalyzer::fix_generics(Type* parent, Type* type) {
+    // Resolves a generic type (e.g., :a) by looking up the actual type in the
+    // container type 'parent'.  For example, if 'parent' is Array[String], and
+    // :a is the first type parameter of array, this function would return
+    // 'String'.  This function recursively substitutes generics, so List[:a]
+    // would return List[String] if the 'parent' type is Array.
+    if (type->is_generic()) {
+        return parent->generic(type->name());
+    }
+    if (!type->generics()) {
+        return type;
+    }
+
+    // Iterate through all the generics in this type, and replace them with     
+    // the resolved generic type.
+    Generic::Ptr first;
+    Generic::Ptr last;
+
+    for (Generic::Ptr g = type->generics(); g; g = g->next()) {
+        Type::Ptr t = fix_generics(parent, g->type());
+        Generic::Ptr gen(new Generic(t));
+        if (!first) {
+            first = gen;
+            last = gen;
+        } else {
+            last->next(gen);
+            last = gen;
+        }
+    } 
+    String* qn = type->qualified_name();
+    return new Type(type->location(), qn, first, type->file(), env_);
 }

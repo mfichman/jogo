@@ -61,8 +61,7 @@ void Parser::input(const std::string& import) {
 
     for (int i = 0; i < env_->includes(); i++) {
         const std::string& prefix = env_->include(i);
-        const std::string ext = ".ap";
-        if (file.compare(file.length() - ext.length(), ext.length(), ext)) {
+        if (File::ext(file) != ".ap") {
             if (File::is_reg(prefix + "/" + file + ".ap")) {
                 std::vector<std::string>().swap(tests);
                 Parser::file(prefix, file + ".ap");

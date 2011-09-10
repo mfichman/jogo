@@ -48,6 +48,7 @@ public:
     static bool is_reg(const std::string& file);
     static bool is_native_lib(const std::string& file);
     static std::string base_name(const std::string& file);
+    static std::string ext(const std::string& file);
 
 private:
     Feature::Ptr features_;
