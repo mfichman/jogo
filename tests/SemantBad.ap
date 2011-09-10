@@ -74,3 +74,15 @@ Container[:a] < Object {
         ret 0
     }
 }
+
+
+One[:a] < Object {
+
+    one One[String,String]
+}
+
+Two[:a,:b] < Object {
+    two Two[String]
+    three Two
+}
+

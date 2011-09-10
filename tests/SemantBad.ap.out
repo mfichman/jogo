@@ -9,6 +9,9 @@ SemantBad.ap:67:5: Value assigned to formal parameter 'a'
 SemantBad.ap:71:11: Undeclared generic type ':b'
 SemantBad.ap:73:13: Undeclared generic type ':b'
 SemantBad.ap:73:17: Undeclared generic type ':b'
+SemantBad.ap:81:9: Too many arguments for type 'One'
+SemantBad.ap:85:9: Not enough arguments for type 'Two'
+SemantBad.ap:86:11: Not enough arguments for type 'Two'
 Module
   name: 
   feature0: Function
@@ -226,3 +229,118 @@ Module
       block: Block
         child0: Return
           expression: IntegerLiteral(0)
+  feature7: Class
+    name: One
+    comment:
+    feature0: Function
+      name: one?
+      type: One[String,String]
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+        child0: Return
+          expression: Identifier
+            name: one
+    feature1: Function
+      name: one=
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      formal1: Formal
+        name: _arg0
+        type: One[String,String]
+      block: Block
+        child0: Assignment
+          name: one
+          type: One[String,String]
+          initializer: Identifier
+            name: _arg0
+    feature2: Function
+      name: @init
+      type: Void
+      block: Block
+    feature3: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature4: Attribute
+      name: one
+      type: One[String,String]
+      initializer: Empty
+  feature8: Class
+    name: Two
+    comment:
+    feature0: Function
+      name: three?
+      type: Two
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+        child0: Return
+          expression: Identifier
+            name: three
+    feature1: Function
+      name: three=
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      formal1: Formal
+        name: _arg0
+        type: Two
+      block: Block
+        child0: Assignment
+          name: three
+          type: Two
+          initializer: Identifier
+            name: _arg0
+    feature2: Function
+      name: two?
+      type: Two[String]
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+        child0: Return
+          expression: Identifier
+            name: two
+    feature3: Function
+      name: two=
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      formal1: Formal
+        name: _arg0
+        type: Two[String]
+      block: Block
+        child0: Assignment
+          name: two
+          type: Two[String]
+          initializer: Identifier
+            name: _arg0
+    feature4: Function
+      name: @init
+      type: Void
+      block: Block
+    feature5: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature6: Attribute
+      name: two
+      type: Two[String]
+      initializer: Empty
+    feature7: Attribute
+      name: three
+      type: Two
+      initializer: Empty

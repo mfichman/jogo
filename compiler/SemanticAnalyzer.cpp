@@ -282,9 +282,7 @@ void SemanticAnalyzer::operator()(Call* expression) {
     Function::Ptr func = expression->file()->function(scope, id);
     if (!func) {
         err_ << expression->location();
-        err_ << "Undeclared function '";
-        err_ << expression->identifier() << "'";
-        err_ << "\n";
+        err_ << "Undeclared function '" << id << "'\n";
         env_->error();
         expression->type(env_->no_type());
         return;
@@ -304,8 +302,7 @@ void SemanticAnalyzer::operator()(Call* expression) {
         if (!at->subtype(formal->type())) {
             err_ << arg->location();
             err_ << "Argument does not conform to type '";
-            err_ << formal->type() << "'";
-            err_ << "\n";
+            err_ << formal->type() << "'\n";
             env_->error();
         }
         arg = arg->next();
@@ -313,16 +310,12 @@ void SemanticAnalyzer::operator()(Call* expression) {
     }
     if (arg) {
         err_ << expression->location();
-        err_ << "Too many arguments to function ";
-        err_ << expression->identifier();
-        err_ << "\n";
+        err_ << "Too many arguments to function '" << id << "'\n";
         env_->error();
     }
     if (formal) {
         err_ << expression->location();
-        err_ << "Not enough arguments to function ";
-        err_ << expression->identifier();
-        err_ << "\n";
+        err_ << "Not enough arguments to function '" << id << "'\n";
         env_->error();
     }
 }
@@ -457,14 +450,12 @@ void SemanticAnalyzer::operator()(Construct* expression) {
     } 
     if (arg) {
         err_ << expression->location();
-        err_ << "Too many arguments to constructor '";
-        err_ << expression->type() << "'\n";
+        err_ << "Too many arguments to constructor '" << type << "'\n";
         env_->error();
     }
     if (formal) {
         err_ << expression->location();
-        err_ << "Not enough arguments to constructor '";
-        err_ << expression->type() << "'\n";
+        err_ << "Not enough arguments to constructor '" << type << "'\n";
         env_->error();
     }
 }
@@ -851,6 +842,24 @@ void SemanticAnalyzer::operator()(Type* type) {
             err_ << "Primitives and value types cannot be used in generics\n";
             env_->error();
         }
+    }
+    Generic::Ptr arg = type->generics();
+    Generic::Ptr formal = type->clazz()->type()->generics();
+    while (arg && formal) {
+        arg = arg->next();
+        formal = formal->next();
+    }
+    if (arg) {
+        err_ << type->location();
+        err_ << "Too many arguments for type '" << type->name() << "'\n";
+        env_->error();
+        type->is_no_type(true);
+    }
+    if (formal) {
+        err_ << type->location();
+        err_ << "Not enough arguments for type '" << type->name() << "'\n";
+        env_->error();
+        type->is_no_type(true);
     }
 }
 
