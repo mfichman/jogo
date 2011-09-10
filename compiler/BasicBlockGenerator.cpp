@@ -807,6 +807,7 @@ void BasicBlockGenerator::emit_vtable(Class* feature) {
     // second jump table, starting with the largest buckets first.
     vector<Function::Ptr> value(n);
     vector<Function::Ptr> slots;
+    feature->jump1(n-1, 0);
     for (int i = 0; i < bucket.size(); i++) {
         if (bucket[i].size() <= 0) { break; }
         int d = 1; 
@@ -837,7 +838,9 @@ void BasicBlockGenerator::emit_vtable(Class* feature) {
 /*
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
-            if (func->name()->string() == "@destroy") { continue; }
+            if (func->is_destructor() || func->is_constructor()) { 
+                continue; 
+            }
             std::cout << func->name()->string() << std::endl;
             uint64_t hash1 = fnv_hash(0, func->name());
             uint64_t d = feature->jump1(hash1 % n);
@@ -849,6 +852,8 @@ void BasicBlockGenerator::emit_vtable(Class* feature) {
             std::cout << "   hash2: " << hash2 << std::endl;
         }
     }
+    std::cout << feature->jump1s() << std::endl;
+    std::cout << feature->jump2s() << std::endl;
 */
 }
 

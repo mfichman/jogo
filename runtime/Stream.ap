@@ -78,6 +78,18 @@ Stream < Object {
         # guaranteed to be written to the output stream until 'flush()' is
         # called.
     }
+
+    scanln() String {
+        # Reads in a line up to the ending '\n'
+        ret self.scan('\n')
+    }
+
+    println(string String) {
+        # Prints a string followed by '\n', and flushes the output.
+        self.print(string)
+        self.put('\n'c)
+        self.flush()
+    }
     
     peek() native Char {
         # Reads a character, but does not remove it from the internal buffer.

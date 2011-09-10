@@ -78,7 +78,20 @@ String < Object {
         ret self
     }
 
-    #slice(range Range) String native
-    # Returns a substring using the given range as an index.
+    int?() native Int {
+        # Converts the string into an integer.  If the string is not a valid 
+        # number, then zero is returned.
+    }
+
+    float?() native Float {    
+        # Converts the float into an integer.  If the float is not a valid
+        # number, then zero is returned.
+    }
+
+    char?() Char {
+        # Converts the string to a character by returning the first character
+        # in the string.
+        ret self[0]
+    }
 }
 

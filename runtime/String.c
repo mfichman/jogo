@@ -23,6 +23,7 @@
 #include "String.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <ctype.h>
 
 Char String__index(String self, Int index) {
@@ -139,3 +140,27 @@ String String_lowercase__g(String self) {
     ret->data[ret->length] = '\0'; // Add nul-terminator for C usage
     return ret;
 }
+
+Int String_int__g(String self) {
+    // Converts a base-10 representation of a string into an integer.
+    if (self->length <= 0) {
+        return 0;
+    }
+    Int ret = 0;
+    Int neg = 0;
+    for (Char* c = self->data; *c; c++) {
+        if (*c == '-' && c == self->data) {
+            neg = 1;
+        } else if (isdigit(*c)) {
+            ret = ret * 10 + *c - '0';
+        } else {
+            return 0;
+        }
+    }    
+    return neg ? -ret : ret;
+}
+
+Int String_float__g(String self) {
+    assert(!"Not supported");
+}
+

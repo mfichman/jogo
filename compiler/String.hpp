@@ -39,6 +39,8 @@ public:
     void next(String* next) { next_ = next; }
     typedef Pointer<String> Ptr;
 
+    static char escape(const std::string& code);
+
 private:
     std::string string_;
     String::Ptr next_;

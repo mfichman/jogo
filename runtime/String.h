@@ -39,6 +39,8 @@ Int String_length__g(String self);
 Bool String__equal(String self, String string);
 String String_uppercase__g(String self);
 String String_lowercase__g(String self);
+Int String_int__g(String self);
+Float String_float_g(String self);
 extern void String__vtable();
 
 #endif

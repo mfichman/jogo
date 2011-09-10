@@ -109,9 +109,8 @@ xor\= return BIT_XOR_ASSIGN;
 	yylval->expression = new IntegerLiteral(*yylloc, value); 
 	return LITERAL;
 }
-\'.\'c {
-    assert("Fix escapes" && yytext[0] != '\\');
-    int code = yytext[1];
+\'(.|\\[0-9][0-9][0-9]|\\.|\\x[0-9a-fA-F][0-9a-fA-F])\'c {
+    int code = String::escape(yytext+1);
     String* value = yyextra->environment()->integer(stringify(code));
     Type* type = yyextra->environment()->char_type();
     yylval->expression = new IntegerLiteral(*yylloc, value);

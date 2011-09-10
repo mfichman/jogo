@@ -1,4 +1,5 @@
 
+
 import Array
 
 main() Int {
@@ -36,6 +37,25 @@ main() Int {
 #    stdin = Stream(0)
 #    msg = stdin.scan('\n')
 #    stdout.print(msg)
+    
+    stdout.put('\x48'c)
+    stdout.put('\x45'c)
+    stdout.put('\x4c'c)
+    stdout.put('\x4C'c)
+    stdout.put('\x4f'c)
+    stdout.put('\x0A'c)
+
+    stdout.put('\150'c)
+    stdout.put('\145'c)
+    stdout.put('\154'c)
+    stdout.put('\154'c)
+    stdout.put('\157'c)
+    stdout.put('\012'c)
+
+    stdout.put('\r'c)
+    stdout.put('\t'c)
+    stdout.put('\n'c)
+    stdout.put('\\'c)
     
     ret 0
 }
