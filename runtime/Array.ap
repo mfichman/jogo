@@ -174,7 +174,46 @@ Array[:a] < Object {
         count = last
     }
 
+    iter() ArrayIter[:a] {
+        # Returns an iterator over the elements in this array
+        ret ArrayIter[:a](self)
+    }
+
     #str?() native String {
         # Returns a string representation of this array.
     #}
+}
+
+ArrayIter[:a] < Object {
+    # This iterator returns each of the elements in the array it points to in
+    # sequence.  The iterator makes no guarantee on ordering if the array is
+    # modified during iteration, but the iteration is guaranteed to terminate 
+    # and will not result in a fault.
+
+    array private Array[:a]
+    index = 0
+
+    @init(coll Array[:a]) {
+        # Initializes the iterator.  The iterator will iterate over the items 
+        # in 'coll'.
+        array = coll
+    }
+
+    more?() Bool {
+        # Returns true if there are more elements in the array.
+        #ret index < array.count
+        if index < array.count {
+            ret true
+        } else {
+            ret false
+        }
+    } 
+    
+    next() :a {
+        # Returns the next element in the array, or nil if there are no more 
+        # elements.
+        val = array[index]
+        ++index
+        ret val
+    } 
 }

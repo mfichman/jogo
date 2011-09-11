@@ -155,6 +155,18 @@ test_compact() {
     
 }
 
+test_iter() {
+    arr = Array[String](10)
+    arr.push("one")
+    arr.push("two")
+    arr.push("three")
+
+    for word in arr {
+        println(word)
+    }
+
+}
+
 test_str?() {
 
 }
@@ -169,6 +181,7 @@ main() Int {
     test_prefix_suffix()
     test_slice()
     test_compact()
+    test_iter()
     test_str?()
     ret 0
 }

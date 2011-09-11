@@ -438,11 +438,14 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         if (ft->is_generic()) {
             ft = type->generic(ft->name());
         }
+        Type::Ptr at = arg->type();
+        if (arg->type() == env_->self_type()) {
+            at = class_->type();
+        }
 
-        if (!arg->type()->subtype(ft)) {
+        if (!at->subtype(ft)) {
             err_ << arg->location();
-            err_ << "Argument does not conform to type '";
-            err_ << formal->type() << "'\n";
+            err_ << "Argument does not conform to type '" << ft << "'\n";
             env_->error();
         }
         arg = arg->next();

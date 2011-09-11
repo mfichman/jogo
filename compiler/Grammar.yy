@@ -309,25 +309,20 @@ statement
     | FOR IDENTIFIER IN expression block { 
         //$$ = new For(@$, $2, $4, $5);
 
-        // _i = $4.iterator()
-        Dispatch* t1 = new Dispatch(@$, ID("iterator"), $4, 0);
+        // _i = $4.iter()
+        Dispatch* t1 = new Dispatch(@$, ID("iter"), $4, 0);
         Assignment* t2 = new Assignment(@$, ID("_i"), 0, t1);
         
-        // _i.more()
+        // while (_i.more())
         Identifier* t3 = new Identifier(@$, ID("_i"));
-        Dispatch* t4 = new Dispatch(@$, ID("more"), t3, 0); 
+        Dispatch* t4 = new Dispatch(@$, ID("more?"), t3, 0); 
 
-        // $2 = _i.value()
+        // $2 = _i.next()
         Identifier* t5 = new Identifier(@$, ID("_i"));
-        Dispatch* t6 = new Dispatch(@$, ID("value"), t5, 0); 
+        Dispatch* t6 = new Dispatch(@$, ID("next"), t5, 0); 
         Simple* t7 = new Simple(@$, new Assignment(@$, $2, 0, t6)); 
-
-        // i.next()
-        Identifier* t8 = new Identifier(@$, ID("_i"));
-        Simple* t9 = new Simple(@$, new Dispatch(@$, ID("next"), t8, 0)); 
         
-        t7->next(t9);
-        t9->next($5);
+        t7->next($5);
          
         // Whole loop body
         While* t10 = new While(@$, t4, new Block(@$, 0, t7));

@@ -2,20 +2,17 @@
 
 
 Iterator < Object {
-    value() String {
+    next() String {
         ret "Hello, world"
     }
-
-    next() {
-    }
     
-    more() Bool {
+    more?() Bool {
         ret true
     }    
 }
 
 Iterable < Object {
-    iterator() Iterator {
+    iter() Iterator {
         ret Iterator()
     }
 }

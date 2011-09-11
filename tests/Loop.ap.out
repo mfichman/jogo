@@ -15,7 +15,7 @@ Module
         type: Self
       block: Block
     feature2: Function
-      name: value
+      name: next
       type: String
       comment:
       formal0: Formal
@@ -26,15 +26,7 @@ Module
           expression: StringLiteral
             value: Hello, world
     feature3: Function
-      name: next
-      type: Void
-      comment:
-      formal0: Formal
-        name: self
-        type: Self
-      block: Block
-    feature4: Function
-      name: more
+      name: more?
       type: Bool
       comment:
       formal0: Formal
@@ -58,7 +50,7 @@ Module
         type: Self
       block: Block
     feature2: Function
-      name: iterator
+      name: iter
       type: Iterator
       comment:
       formal0: Formal
@@ -103,12 +95,12 @@ Module
             name: _i
             type: Iterator
             initializer: Dispatch
-              name: iterator
+              name: iter
               argument0: Construct
                 type: Iterable
           block: While
             guard: Dispatch
-              name: more
+              name: more?
               argument0: Identifier
                 name: _i
             block: Block
@@ -117,15 +109,10 @@ Module
                   name: i
                   type: String
                   initializer: Dispatch
-                    name: value
+                    name: next
                     argument0: Identifier
                       name: _i
-              child1: Statement
-                expression: Dispatch
-                  name: next
-                  argument0: Identifier
-                    name: _i
-              child2: Block
+              child1: Block
                 child0: Statement
                   expression: Call
                     name: test
