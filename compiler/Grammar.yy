@@ -464,6 +464,18 @@ expression
         /* Invokes the special @insert method, a la Lua and Python */
         $$ = new Dispatch(@$, ID("@insert"), $1, $3);
     }
+    | INCREMENT IDENTIFIER {
+        Expression* t1 = new IntegerLiteral(@$, ID("1"));
+        Expression* t2 = new Identifier(@$, $2);
+        Expression* t3 = new Dispatch(@$, ID("@add"), t2, t1);
+        $$ = new Assignment(@$, $2, 0, t3);  
+    }
+    | DECREMENT IDENTIFIER {
+        Expression* t1 = new IntegerLiteral(@$, ID("1"));
+        Expression* t2 = new Identifier(@$, $2);
+        Expression* t3 = new Dispatch(@$, ID("@sub"), t2, t1);
+        $$ = new Assignment(@$, $2, 0, t3);  
+    }
     | assignment { $$ = $1; }
     | call { $$ = $1; }
     | '(' expression ')' { $$ = $2; } 
