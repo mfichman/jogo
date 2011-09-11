@@ -310,8 +310,9 @@ void BasicBlockGenerator::operator()(Let* statement) {
     // Enter a new scope, then emit code for initializing all the let
     // variables, and initialize code for the body.
     enter_scope();
-    for (Statement::Ptr v = statement->variables(); v; v = v->next()) {
+    for (Expression::Ptr v = statement->variables(); v; v = v->next()) {
         emit(v);
+        emit_free_temps();
     } 
     emit(statement->block());
     exit_scope();
@@ -393,23 +394,22 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
     emit(done_block);
 }
 
-void BasicBlockGenerator::operator()(Assignment* statement) {
+void BasicBlockGenerator::operator()(Assignment* expr) {
     // FixMe: This breaks SSA form, because variables are not renamed.  With
     // this code the way it is, the generator only generates SSA for temporary
     // expressions.  This limitation is here as a punt on introducing
     // phi-functions until optimizations are needed, since without
     // optimizations, SSA is not needed anyway.
 
-    Expression::Ptr init = statement->initializer();
-    Operand value;
+    Expression::Ptr init = expr->initializer();
     if (dynamic_cast<Empty*>(init.pointer())) {
-        value = env_->integer("0");
+        return_ = env_->integer("0");
     } else {
-        value = emit(init);
+        return_ = emit(init);
     }
 
-    String::Ptr id = statement->identifier();
-    Type::Ptr type = statement->type(); 
+    String::Ptr id = expr->identifier();
+    Type::Ptr type = expr->type(); 
     Variable::Ptr var = variable(id);
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
 
@@ -419,7 +419,7 @@ void BasicBlockGenerator::operator()(Assignment* statement) {
         if (!type->is_value()) {
             emit_refcount_dec(var->operand());
         }
-        block_->instr(MOV, var->operand(), value, 0);
+        block_->instr(MOV, var->operand(), return_, 0);
         if (!type->is_value()) {
             emit_refcount_inc(var->operand());
         }
@@ -432,21 +432,19 @@ void BasicBlockGenerator::operator()(Assignment* statement) {
             emit_refcount_dec(old);
         } 
         // +2 is for vtable and refcount
-        store(addr, value);
+        store(addr, return_);
         if (!type->is_value() && !attr->is_weak()) {
-            emit_refcount_inc(value);
+            emit_refcount_inc(return_);
         }
     } else {
         // Assignment to a local var that has not yet been initialized in the
         // current scope.
-        Variable::Ptr var = new Variable(id, mov(value), init->type());
+        Variable::Ptr var = new Variable(id, mov(return_), init->type());
         variable(var);
         if (!type->is_value()) {
             emit_refcount_inc(var->operand());
         }
     }
-
-    emit_free_temps();
 }
 
 void BasicBlockGenerator::operator()(Return* statement) {

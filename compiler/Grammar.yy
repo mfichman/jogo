@@ -295,15 +295,17 @@ statement_list
     ;
 
 statement
-    : LET assignment_list block { $$ = new Let(@$, $2, $3); }
+    : LET assignment_list block { $$ = new Let(@$, $2, $3); } 
     | WHILE expression block { $$ = new While(@$, $2, $3); }
     | RETURN expression SEPARATOR { $$ = new Return(@$, $2); }
     | RETURN SEPARATOR { $$ = new Return(@$, new Empty(@$)); }
     | YIELD expression SEPARATOR { $$ = new Yield(@$, $2); }
     | FORK call SEPARATOR { $$ = new Fork(@$, $2); }
-    | assignment SEPARATOR { $$ = $1; }
     | expression SEPARATOR { $$ = new Simple(@$, $1); }
     | conditional { $$ = $1; }
+    | IDENTIFIER type SEPARATOR { 
+        $$ = new Simple(@$, new Assignment(@$, $1, $2, new Empty(@$)));
+    }
     | FOR IDENTIFIER IN expression block { 
         //$$ = new For(@$, $2, $4, $5);
 
@@ -318,7 +320,7 @@ statement
         // $2 = _i.value()
         Identifier* t5 = new Identifier(@$, ID("_i"));
         Dispatch* t6 = new Dispatch(@$, ID("value"), t5, 0); 
-        Assignment* t7 = new Assignment(@$, $2, 0, t6); 
+        Simple* t7 = new Simple(@$, new Assignment(@$, $2, 0, t6)); 
 
         // i.next()
         Identifier* t8 = new Identifier(@$, ID("_i"));
@@ -346,21 +348,6 @@ statement
     | error block {
         $$ = $2;
         yyerrok;
-    }
-    | expression '[' expression_list ']' '=' expression SEPARATOR {
-        /* Indexed assignment operator */
-        Expression* last = $3;
-        while (last->next()) {
-            last = last->next();
-        }
-        last->next($6);
-
-        /* Invokes the special @insert method, a la Lua and Python */
-        $$ = new Simple(@$, new Dispatch(@$, ID("@insert"), $1, $3));
-    }
-    | expression '.' IDENTIFIER '=' expression SEPARATOR {
-        /* Attribute assignment, calls the mutator function */
-        $$ = new Simple(@$, new Dispatch(@$, ID($3->string() + "="), $1, $5));
     }
     | error SEPARATOR {
         $$ = new Simple(@$, new Empty(@$));
@@ -396,11 +383,6 @@ expression
             $$ = new Dispatch(@$, ID("@neg"), $2, 0); 
         }
     }
-    | call { $$ = $1; }
-    | '(' expression ')' { $$ = $2; } 
-    | string { $$ = $1; }
-    | LITERAL { $$ = $1; }
-    | IDENTIFIER { $$ = new Identifier(@$, $1); }
     | expression OR expression { $$ = new Binary(@$, ID("or"), $1, $3); }
     | expression AND expression { $$ = new Binary(@$, ID("and"), $1, $3); }
     | expression XOR expression {
@@ -467,6 +449,27 @@ expression
         $3 = 0;
         parser->force_separator();
     }
+    | expression '.' IDENTIFIER '=' expression {
+        /* Attribute assignment, calls the mutator function */
+        $$ = new Dispatch(@$, ID($3->string() + "="), $1, $5);
+    }
+    | expression '[' expression_list ']' '=' expression {
+        /* Indexed assignment operator */
+        Expression* last = $3;
+        while (last->next()) {
+            last = last->next();
+        }
+        last->next($6);
+
+        /* Invokes the special @insert method, a la Lua and Python */
+        $$ = new Dispatch(@$, ID("@insert"), $1, $3);
+    }
+    | assignment { $$ = $1; }
+    | call { $$ = $1; }
+    | '(' expression ')' { $$ = $2; } 
+    | string { $$ = $1; }
+    | LITERAL { $$ = $1; }
+    | IDENTIFIER { $$ = new Identifier(@$, $1); }
     ;
 
 string
@@ -508,16 +511,11 @@ call
 assignment_list
     : assignment ',' assignment_list { $1->next($3); $$ = $1; }
     | assignment { $$ = $1; }
-    | expression { $$ = new Assignment(@$, ID(""), 0, $1); }
-    | expression ',' assignment_list {
-        $$ = new Assignment(@$, ID(""), 0, $1);
-        $$->next($3);
-    }
     ;
 
 assignment
-    : IDENTIFIER type { $$ = new Assignment(@$, $1, $2, new Empty(@$)); }
-    | IDENTIFIER type '=' expression { $$ = new Assignment(@$, $1, $2, $4); }
+    /*: IDENTIFIER type { $$ = new Assignment(@$, $1, $2, new Empty(@$)); } */
+    : IDENTIFIER type '=' expression { $$ = new Assignment(@$, $1, $2, $4); }
     | IDENTIFIER '=' expression { $$ = new Assignment(@$, $1, 0, $3); }
     ;
 

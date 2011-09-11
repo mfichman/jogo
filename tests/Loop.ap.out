@@ -112,13 +112,14 @@ Module
               argument0: Identifier
                 name: _i
             block: Block
-              child0: Assignment
-                name: i
-                type: String
-                initializer: Dispatch
-                  name: value
-                  argument0: Identifier
-                    name: _i
+              child0: Statement
+                expression: Assignment
+                  name: i
+                  type: String
+                  initializer: Dispatch
+                    name: value
+                    argument0: Identifier
+                      name: _i
               child1: Statement
                 expression: Dispatch
                   name: next

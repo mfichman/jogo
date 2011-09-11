@@ -154,10 +154,11 @@ Module
     block: Block
       child0: Return
         expression: IntegerLiteral(1)
-      child1: Assignment
-        name: a
-        type: Int
-        initializer: IntegerLiteral(10)
+      child1: Statement
+        expression: Assignment
+          name: a
+          type: Int
+          initializer: IntegerLiteral(10)
       child2: Return
         expression: Identifier
           name: a
@@ -169,10 +170,11 @@ Module
       name: a
       type: Int
     block: Block
-      child0: Assignment
-        name: a
-        type: <<notype>>
-        initializer: IntegerLiteral(10)
+      child0: Statement
+        expression: Assignment
+          name: a
+          type: Int
+          initializer: IntegerLiteral(10)
   feature6: Class
     name: Container
     comment:
@@ -196,11 +198,12 @@ Module
         name: _arg0
         type: :b
       block: Block
-        child0: Assignment
-          name: value
-          type: :b
-          initializer: Identifier
-            name: _arg0
+        child0: Statement
+          expression: Assignment
+            name: value
+            type: :b
+            initializer: Identifier
+              name: _arg0
     feature2: Function
       name: @init
       type: Void
@@ -252,11 +255,12 @@ Module
         name: _arg0
         type: One[String,String]
       block: Block
-        child0: Assignment
-          name: one
-          type: One[String,String]
-          initializer: Identifier
-            name: _arg0
+        child0: Statement
+          expression: Assignment
+            name: one
+            type: One[String,String]
+            initializer: Identifier
+              name: _arg0
     feature2: Function
       name: @init
       type: Void
@@ -295,11 +299,12 @@ Module
         name: _arg0
         type: Two
       block: Block
-        child0: Assignment
-          name: three
-          type: Two
-          initializer: Identifier
-            name: _arg0
+        child0: Statement
+          expression: Assignment
+            name: three
+            type: Two
+            initializer: Identifier
+              name: _arg0
     feature2: Function
       name: two?
       type: Two[String]
@@ -320,11 +325,12 @@ Module
         name: _arg0
         type: Two[String]
       block: Block
-        child0: Assignment
-          name: two
-          type: Two[String]
-          initializer: Identifier
-            name: _arg0
+        child0: Statement
+          expression: Assignment
+            name: two
+            type: Two[String]
+            initializer: Identifier
+              name: _arg0
     feature4: Function
       name: @init
       type: Void

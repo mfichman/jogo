@@ -22,11 +22,13 @@ Module
         name: self
         type: Self
       block: Block
-        child0: Assignment
-          name: one
-          type: Int
-          initializer: Empty
-        child1: Assignment
-          name: two
-          type: Int
-          initializer: IntegerLiteral(0)
+        child0: Statement
+          expression: Assignment
+            name: one
+            type: Int
+            initializer: Empty
+        child1: Statement
+          expression: Assignment
+            name: two
+            type: Int
+            initializer: IntegerLiteral(0)

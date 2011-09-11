@@ -26,11 +26,12 @@ Module
         name: _arg0
         type: String
       block: Block
-        child0: Assignment
-          name: x
-          type: String
-          initializer: Identifier
-            name: _arg0
+        child0: Statement
+          expression: Assignment
+            name: x
+            type: String
+            initializer: Identifier
+              name: _arg0
     feature2: Function
       name: @init
       type: Void
