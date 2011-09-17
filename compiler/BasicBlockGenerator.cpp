@@ -159,7 +159,11 @@ void BasicBlockGenerator::operator()(Call* expr) {
     // be pushed in reverse order.
     vector<Operand> args;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
-        args.push_back(emit(a));
+        if (a->type()->is_bool()) {
+            args.push_back(emit_bool_expr(a));
+        } else {
+            args.push_back(emit(a));
+        }
     }
     for (int i = args.size()-1; i >= 0; i--) {
         emit_push_arg(i, args[i]);
@@ -362,9 +366,9 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
         else_block = done_block;
     }
 
-    // Recursively emit the boolean guard expression.  We need to pass the
-    // true and the false block pointers so that the correct code is emitted
-    // on each branch.
+    // Recursively emit the boolean guard expression.  We need to pass the true
+    // and the false block pointers so that the correct code is emitted on each
+    // branch.
     invert_guard_ = false;
     Operand guard = emit(statement->guard(), then_block, else_block, false);
     emit_free_temps();
@@ -404,6 +408,8 @@ void BasicBlockGenerator::operator()(Assignment* statement) {
     Operand value;
     if (dynamic_cast<Empty*>(init.pointer())) {
         value = env_->integer("0");
+    } else if (init->type()->is_bool()) {
+        value = emit_bool_expr(init.pointer());
     } else {
         value = emit(init);
     }
@@ -454,7 +460,12 @@ void BasicBlockGenerator::operator()(Return* statement) {
     if (!dynamic_cast<Empty*>(expr.pointer())) {
         // Don't actually return right away; store the result in a pseudo-var
         // and return it after cleanup.
-        Operand ret = emit(expr);
+        Operand ret;
+        if (expr->type()->is_bool()) {
+            ret = emit_bool_expr(expr);
+        } else {
+            ret = emit(expr);
+        }
         scope_.back()->return_val(ret);
 
         // Increment the refcount of the returned value if it is an object.
@@ -555,7 +566,11 @@ void BasicBlockGenerator::emit_operator(Dispatch* expr) {
 
     vector<Operand> args;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
-        args.push_back(emit(a));
+        if (a->type()->is_bool()) {
+            args.push_back(emit_bool_expr(a));
+        } else {
+            args.push_back(emit(a));
+        }
     }
    
     if (id == "@add") {
@@ -639,7 +654,7 @@ void BasicBlockGenerator::exit_scope() {
 
     // Remove variables in reverse order!
     for (int i = scope->variables()-1; i >= 0; i--) { 
-        emit_var_cleanup(scope->variable(i));
+        emit_cleanup(scope->variable(i));
     }
 
     if (!scope->has_return()) {
@@ -652,7 +667,7 @@ void BasicBlockGenerator::exit_scope() {
     for (int j = scope_.size()-2; j > 1; j--) {
         Scope::Ptr s = scope_[j];
         for (int i = s->variables()-1; i >= 0; i--) {
-            emit_var_cleanup(scope->variable(i));
+            emit_cleanup(scope->variable(i));
         }
     }
 
@@ -660,7 +675,54 @@ void BasicBlockGenerator::exit_scope() {
     scope_.pop_back();
 }
 
-void BasicBlockGenerator::emit_var_cleanup(Variable* var) {
+Operand BasicBlockGenerator::emit_bool_expr(Expression* expression) {
+    // Emits a boolean expression with short-circuiting, and stores the result
+    // in a fixed operand.  Note:  This breaks SSA form, because a value gets
+    // assigned different values on different branches.
+    if (dynamic_cast<BooleanLiteral*>(expression)) {
+        return_ = emit(expression);
+        return return_;
+    }
+
+    BasicBlock::Ptr then_block = basic_block();
+    BasicBlock::Ptr else_block = basic_block();
+    BasicBlock::Ptr done_block = basic_block();
+    return_ = ++temp_;
+
+    // Recursively emit the boolean guard expression.
+    invert_guard_ = false;
+    Operand guard = emit(expression, then_block, else_block, false);
+    emit_free_temps();
+    if (!block_->is_terminated()) {
+        if (invert_guard_) {
+            bnz(guard, else_block, then_block);
+        } else {
+            bz(guard, else_block, then_block);
+        }
+    }
+
+    Location loc;
+
+    // Now emit the code for the 'true' branch, i.e., assign 'true' to the
+    // return value.
+    emit(then_block);
+    String::Ptr one = env_->integer("1");
+    block_->instr(MOV, return_, load(new IntegerLiteral(loc, one)), 0);
+    jump(done_block);
+    
+    // Now emit the code for the 'false' branch.
+    emit(else_block);
+    String::Ptr zero = env_->integer("0");
+    block_->instr(MOV, return_, load(new IntegerLiteral(loc, zero)), 0);
+    
+    emit(done_block);
+
+    return return_;
+}
+
+void BasicBlockGenerator::emit_cleanup(Variable* var) {
+    // Emits the code to clean up the stack when exiting block.  This includes 
+    // decrementing reference counts, and calling destructors for value types.
     Type::Ptr type = var->type();
     if (type && !type->is_primitive()) {
         if (type->is_value()) {

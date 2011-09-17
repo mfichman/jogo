@@ -1,0 +1,16 @@
+
+fib(n Int) Int {
+    if n == 0 { 
+        ret 0
+    }
+    if n == 1 {
+        ret 1
+    }
+    ret fib(n-1) + fib(n-2)
+}
+
+
+main() Int {
+    Stream(1).print(fib(Stream(0).scan('\n').int).str+'\n')
+    ret 0
+}

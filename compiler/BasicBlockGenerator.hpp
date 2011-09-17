@@ -225,7 +225,7 @@ private:
     void enter_scope();
     void exit_scope();
     void emit_operator(Dispatch* expression);
-    void emit_var_cleanup(Variable* var);
+    void emit_cleanup(Variable* var);
     void emit_refcount_inc(Operand var);
     void emit_refcount_dec(Operand var);
     void emit_vtable(Class* clazz);
@@ -235,6 +235,7 @@ private:
     void emit_dtor_epilog(Function* func);
     void emit_free_temps();
     void calculate_size(Class* clazz);
+    Operand emit_bool_expr(Expression* expr);
     Operand emit_pop_ret();
 
     Environment::Ptr env_;

@@ -289,6 +289,17 @@ void RegisterAllocator::spill_register(Function* func) {
     bool is_caller_reg = false;
 
     if (!spilled) {
+        for (int i = 1; i < graph_.size(); i++) {
+            const RegisterVertex& v = graph_[i];
+            set<int>::iterator m = spilled_.find(v.temp());
+            if (v.neighbors() > max_neighbors && m == spilled_.end()) {
+                max_neighbors = v.neighbors();
+                spilled = v.temp();
+            }
+        }
+    }
+
+    if (!spilled) {
        for (int i = 0; i < machine_->caller_regs(); i++) {
            int reg = -machine_->caller_reg(i)->id();
            set<int>::iterator m = spilled_.find(reg);
@@ -298,17 +309,6 @@ void RegisterAllocator::spill_register(Function* func) {
                break;
            } 
        }
-    }
-
-    if (!spilled) {
-        for (int i = 1; i < graph_.size(); i++) {
-            const RegisterVertex& v = graph_[i];
-            set<int>::iterator m = spilled_.find(v.temp());
-            if (v.neighbors() > max_neighbors && m == spilled_.end()) {
-                max_neighbors = v.neighbors();
-                spilled = v.temp();
-            }
-        }
     }
 
     spilled_.insert(spilled);
