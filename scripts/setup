@@ -48,9 +48,9 @@ def setup_deps()
 
     puts "Installing dependencies"
     if system 'which apt-get'
-        `sudo apt-get install bison flex scons ruby valgrind vim nasm` 
+        `sudo apt-get install bison flex scons valgrind vim nasm` 
     elsif system 'which yum'
-        `sudo yum install bison flex scons ruby valgrind vim nasm`
+        `sudo yum install bison flex scons valgrind vim nasm`
     elsif system 'which brew'
         `brew install bison`
         `brew install flex`
