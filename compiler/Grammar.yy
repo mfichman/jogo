@@ -296,37 +296,34 @@ statement_list
     ;
 
 statement
-    : LET assignment_list block { $$ = new Let(@$, $2, $3); }
+    : LET assignment_list block { $$ = new Let(@$, $2, $3); } 
     | WHILE expression block { $$ = new While(@$, $2, $3); }
     | RETURN expression SEPARATOR { $$ = new Return(@$, $2); }
     | RETURN SEPARATOR { $$ = new Return(@$, new Empty(@$)); }
     | YIELD expression SEPARATOR { $$ = new Yield(@$, $2); }
     | FORK call SEPARATOR { $$ = new Fork(@$, $2); }
-    | assignment SEPARATOR { $$ = $1; }
     | operation SEPARATOR { $$ = new Simple(@$, $1); }
     | conditional { $$ = $1; }
+    | IDENTIFIER type SEPARATOR { 
+        $$ = new Simple(@$, new Assignment(@$, $1, $2, new Empty(@$)));
+    }
     | FOR IDENTIFIER IN expression block { 
         //$$ = new For(@$, $2, $4, $5);
 
-        // _i = $4.iterator()
-        Dispatch* t1 = new Dispatch(@$, ID("iterator"), $4, 0);
+        // _i = $4.iter()
+        Dispatch* t1 = new Dispatch(@$, ID("iter"), $4, 0);
         Assignment* t2 = new Assignment(@$, ID("_i"), 0, t1);
         
-        // _i.more()
+        // while (_i.more())
         Identifier* t3 = new Identifier(@$, ID("_i"));
-        Dispatch* t4 = new Dispatch(@$, ID("more"), t3, 0); 
+        Dispatch* t4 = new Dispatch(@$, ID("more?"), t3, 0); 
 
-        // $2 = _i.value()
+        // $2 = _i.next()
         Identifier* t5 = new Identifier(@$, ID("_i"));
-        Dispatch* t6 = new Dispatch(@$, ID("value"), t5, 0); 
-        Assignment* t7 = new Assignment(@$, $2, 0, t6); 
-
-        // i.next()
-        Identifier* t8 = new Identifier(@$, ID("_i"));
-        Simple* t9 = new Simple(@$, new Dispatch(@$, ID("next"), t8, 0)); 
+        Dispatch* t6 = new Dispatch(@$, ID("next"), t5, 0); 
+        Simple* t7 = new Simple(@$, new Assignment(@$, $2, 0, t6)); 
         
-        t7->next(t9);
-        t9->next($5);
+        t7->next($5);
          
         // Whole loop body
         While* t10 = new While(@$, t4, new Block(@$, 0, t7));
@@ -347,21 +344,6 @@ statement
     | error block {
         $$ = $2;
         yyerrok;
-    }
-    | expression '[' expression_list ']' '=' expression SEPARATOR {
-        /* Indexed assignment operator */
-        Expression* last = $3;
-        while (last->next()) {
-            last = last->next();
-        }
-        last->next($6);
-
-        /* Invokes the special @insert method, a la Lua and Python */
-        $$ = new Simple(@$, new Dispatch(@$, ID("@insert"), $1, $3));
-    }
-    | expression '.' IDENTIFIER '=' expression SEPARATOR {
-        /* Attribute assignment, calls the mutator function */
-        $$ = new Simple(@$, new Dispatch(@$, ID($3->string() + "="), $1, $5));
     }
     | error SEPARATOR {
         $$ = new Simple(@$, new Empty(@$));
@@ -493,6 +475,34 @@ operation
             $$ = new Dispatch(@$, ID("@neg"), $2, 0); 
         }
     }
+    | expression '.' IDENTIFIER '=' expression {
+        /* Attribute assignment, calls the mutator function */
+        $$ = new Dispatch(@$, ID($3->string() + "="), $1, $5);
+    }
+    | expression '[' expression_list ']' '=' expression {
+        /* Indexed assignment operator */
+        Expression* last = $3;
+        while (last->next()) {
+            last = last->next();
+        }
+        last->next($6);
+
+        /* Invokes the special @insert method, a la Lua and Python */
+        $$ = new Dispatch(@$, ID("@insert"), $1, $3);
+    }
+    | INCREMENT IDENTIFIER {
+        Expression* t1 = new IntegerLiteral(@$, ID("1"));
+        Expression* t2 = new Identifier(@$, $2);
+        Expression* t3 = new Dispatch(@$, ID("@add"), t2, t1);
+        $$ = new Assignment(@$, $2, 0, t3);  
+    }
+    | DECREMENT IDENTIFIER {
+        Expression* t1 = new IntegerLiteral(@$, ID("1"));
+        Expression* t2 = new Identifier(@$, $2);
+        Expression* t3 = new Dispatch(@$, ID("@sub"), t2, t1);
+        $$ = new Assignment(@$, $2, 0, t3);  
+    }
+    | assignment { $$ = $1; }
     ;
 
 string
@@ -534,16 +544,11 @@ call
 assignment_list
     : assignment ',' assignment_list { $1->next($3); $$ = $1; }
     | assignment { $$ = $1; }
-    | expression { $$ = new Assignment(@$, ID(""), 0, $1); }
-    | expression ',' assignment_list {
-        $$ = new Assignment(@$, ID(""), 0, $1);
-        $$->next($3);
-    }
     ;
 
 assignment
-    : IDENTIFIER type { $$ = new Assignment(@$, $1, $2, new Empty(@$)); }
-    | IDENTIFIER type '=' expression { $$ = new Assignment(@$, $1, $2, $4); }
+    /*: IDENTIFIER type { $$ = new Assignment(@$, $1, $2, new Empty(@$)); } */
+    : IDENTIFIER type '=' expression { $$ = new Assignment(@$, $1, $2, $4); }
     | IDENTIFIER '=' expression { $$ = new Assignment(@$, $1, 0, $3); }
     ;
 

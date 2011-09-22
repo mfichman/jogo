@@ -27,8 +27,4 @@ Module
             name: a
             type: Int
             initializer: IntegerLiteral(0)
-          variable1: Assignment
-            name: b
-            type: Int
-            initializer: Empty
           block: Block

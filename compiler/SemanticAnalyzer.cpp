@@ -241,7 +241,7 @@ void SemanticAnalyzer::operator()(Let* expression) {
     // then check the block.
     enter_scope();
     Statement::Ptr block = expression->block();
-    for (Statement::Ptr v = expression->variables(); v; v = v->next()) {
+    for (Expression::Ptr v = expression->variables(); v; v = v->next()) {
         v(this);
     }
     block(this);
@@ -467,11 +467,14 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         if (ft->is_generic()) {
             ft = type->generic(ft->name());
         }
+        Type::Ptr at = arg->type();
+        if (arg->type() == env_->self_type()) {
+            at = class_->type();
+        }
 
-        if (!arg->type()->subtype(ft)) {
+        if (!at->subtype(ft)) {
             err_ << arg->location();
-            err_ << "Argument does not conform to type '";
-            err_ << formal->type() << "'\n";
+            err_ << "Argument does not conform to type '" << ft << "'\n";
             env_->error();
         }
         arg = arg->next();
@@ -513,15 +516,16 @@ void SemanticAnalyzer::operator()(Block* statement) {
     // always the last statement in the block.
     enter_scope();
     return_ = 0;
+
+    bool return_checked = false;
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
-        if (return_) {
+        if (return_ && ! return_checked) {
             err_ << s->location();
             err_ << "Statement is unreachable\n";
             env_->error();
-            break;
-        } else {
-            s(this);
+            return_checked = true;
         }
+        s(this);
     }
     exit_scope();
 }
@@ -570,21 +574,26 @@ void SemanticAnalyzer::operator()(Conditional* statement) {
     }
 }
 
-void SemanticAnalyzer::operator()(Assignment* statement) {
+void SemanticAnalyzer::operator()(Assignment* expr) {
     // Ensure that a variable is not duplicated, or re-initialized with a 
     // different type.  This function handles both assignment and variable
     // initialization.
 
-    String::Ptr id = statement->identifier();
+    String::Ptr id = expr->identifier();
     Variable::Ptr var = variable(id);
     Type::Ptr type = var ? var->type() : 0;
 
-    Expression::Ptr init = statement->initializer();
-    init->parent_type(type ? type.pointer() : statement->type());
+    Expression::Ptr init = expr->initializer();
+    init->parent_type(type ? type.pointer() : expr->type());
     init(this);
+    if (init->type()) {
+        expr->type(init->type());
+    } else {
+        expr->type(expr->declared_type());
+    }
 
-    if (statement->type()) {
-        Type::Ptr type = statement->type();
+    if (expr->declared_type()) {
+        Type::Ptr type = expr->declared_type();
         type(this);
         if (!type->clazz()) {
             variable(new Variable(id, 0, env_->no_type()));
@@ -594,7 +603,7 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
 
     // Attempt to assign to an immutable var, usually a param
     if (var && var->is_immutable()) {
-        err_ << statement->location();
+        err_ << expr->location();
         err_ << "Value assigned to formal parameter '" << id << "'\n"; 
         env_->error();
         return;
@@ -609,11 +618,11 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
         return;
     }
     
-    if (statement->type()) {
+    if (expr->declared_type()) {
         // The variable was declared with an explicit type, but the variable
         // already exists.
         if (type) {
-            err_ << statement->location();
+            err_ << expr->location();
             err_ << "Duplicate definition of variable '" << id << "'\n";
             env_->error();
             return;
@@ -621,15 +630,15 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
 
         // The variable was declared with an explicit type, and the init
         // does not conform to that type.
-        if (init->type() && !init->type()->subtype(statement->type())) {
+        if (init->type() && !init->type()->subtype(expr->declared_type())) {
             err_ << init->location();
             err_ << "Expression does not conform to type '";
-            err_ << statement->type() << "'\n";
+            err_ << expr->declared_type() << "'\n";
             env_->error();
             return;
         }
 
-        variable(new Variable(id, 0, statement->type()));
+        variable(new Variable(id, 0, expr->declared_type()));
     } else {
         // The variable was already declared, but the init type is not
         // compatible with the variable type.
@@ -641,7 +650,6 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
             return;
         }
         variable(new Variable(id, 0, init->type())); 
-        statement->type(init->type());
     }
 }
 
@@ -967,7 +975,7 @@ void SemanticAnalyzer::gen_mutator(Attribute* feature) {
         Location loc;
         Identifier::Ptr val(new Identifier(loc, env_->name("_arg0"))); 
         Assignment::Ptr assign(new Assignment(loc, feature->name(), 0, val)); 
-        Block::Ptr block(new Block(loc, 0, assign));
+        Block::Ptr block(new Block(loc, 0, new Simple(loc, assign)));
         Type::Ptr st = env_->self_type();
         Type::Ptr vt = env_->void_type();
         Type::Ptr ft = feature->type();

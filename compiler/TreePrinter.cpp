@@ -216,7 +216,7 @@ void TreePrinter::operator()(Let* expression) {
     out_ << "Let\n";
     
     int i = 0;
-    for (Statement::Ptr v = expression->variables(); v; v = v->next()) {
+    for (Expression::Ptr v = expression->variables(); v; v = v->next()) {
         print_tabs(); out_ << "variable" << i << ": ";
         v(this);
         i++;

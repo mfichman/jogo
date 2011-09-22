@@ -23,7 +23,7 @@
 #ifndef APOLLO_HASH_H
 #define APOLLO_HASH_H
 
-#include "Primitives.h";
+#include "Primitives.h"
 
 typedef struct Hash* Hash;
 struct Hash {

@@ -8,7 +8,7 @@ main() Int {
     stdout.print('hello world\n')
 
     # Read in a message from a file using scan()
-    let file = File::open('FileTest.txt', 'r') {
+    if file = File::open('FileTest.txt', 'r') {
         hello = file.scan('\n')
         stdout.print("#{hello}\n")    
         while eof != file.peek() {

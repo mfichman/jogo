@@ -116,29 +116,6 @@ private:
     Statement::Ptr children_;
 };
 
-/* Variable declaration */
-class Assignment : public Statement {
-public:
-    Assignment(Location loc, String* ident, Type* type, Expression* expr) :
-        Statement(loc),
-        identifier_(ident),
-		type_(type),
-        initializer_(expr) {
-    }
-
-    String* identifier() const { return identifier_; }
-    Type* type() const { return type_; }
-    Expression* initializer() const { return initializer_; }
-    void type(Type* type) { type_ = type; }
-    void operator()(Functor* functor) { functor->operator()(this); }
-    typedef Pointer<Assignment> Ptr;
-
-private:
-    String::Ptr identifier_;
-	Type::Ptr type_;
-    Expression::Ptr initializer_;
-};
-
 /* While loop */
 class While : public Statement {
 public:

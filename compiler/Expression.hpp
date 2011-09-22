@@ -260,6 +260,28 @@ private:
     String::Ptr identifier_;
 };
 
+/* Variable declaration */
+class Assignment : public Expression {
+public:
+    Assignment(Location loc, String* ident, Type* type, Expression* expr) :
+        Expression(loc),
+        identifier_(ident),
+		declared_type_(type),
+        initializer_(expr) {
+    }
+
+    String* identifier() const { return identifier_; }
+    Type* declared_type() { return declared_type_; }
+    Expression* initializer() const { return initializer_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Assignment> Ptr;
+
+private:
+    String::Ptr identifier_;
+	Type::Ptr declared_type_;
+    Expression::Ptr initializer_;
+};
+
 /* Empty expression */
 class Empty : public Expression {
 public:
