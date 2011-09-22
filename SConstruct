@@ -9,7 +9,7 @@ env.Append(ENV = os.environ)
 env.Append(YACCFLAGS = '--defines=build/compiler/Grammar.hpp')
 env.Append(YACCFLAGS = '--report=all')
 env['AS'] = 'nasm'
-env['RANLIB'] = 'echo'
+#env['RANLIB'] = 'echo'
 if env['PLATFORM'] == "darwin":
     env['AR'] = 'libtool'
     env['ARFLAGS'] = '-static -o'

@@ -4,28 +4,27 @@ require 'fileutils'
 require 'set'
 
 def setup_vim()
-    options = Set.new
-    FileUtils.touch("#{ENV['HOME']}/.vimrc")
-    File.open("#{ENV['HOME']}/.vimrc").each_line do |line|
-        options.add(line.strip)
-    end
-
-    options.add "au BufNew,BufRead *.ap setf apollo"
-    options.add "au BufNew,BufRead *.ll setf lex"
-    options.add "syntax on"
-    options.add "set tabstop=4"
-    options.add "set expandtab"
-    options.add "colors molokai"
-    options.add "set noerrorbells"
-    options.add "set number"
-    options.add "set nowrap"
-    options.add "set t_Co=256"
-
-    File.open("#{ENV['HOME']}/.vimrc", "w") do |file|
-        options.each do |option|
-            file.puts option
-        end
-    end
+#    options = Set.new
+#    FileUtils.touch("#{ENV['HOME']}/.vimrc")
+#    File.open("#{ENV['HOME']}/.vimrc").each_line do |line|
+#        options.add(line.strip)
+#    end
+#
+#    options.add "au BufNew,BufRead *.ll setf lex"
+#    options.add "syntax on"
+#    options.add "set tabstop=4"
+#    options.add "set expandtab"
+#    options.add "colors molokai"
+#    options.add "set noerrorbells"
+#    options.add "set number"
+#    options.add "set nowrap"
+#    options.add "set t_Co=256"
+#
+#    File.open("#{ENV['HOME']}/.vimrc", "w") do |file|
+#        options.each do |option|
+#            file.puts option
+#        end
+#    end
 
     begin
         FileUtils.rm "#{ENV['HOME']}/.vim/syntax/apollo.vim"
@@ -52,10 +51,16 @@ def setup_deps()
         `sudo apt-get install bison flex scons ruby valgrind vim nasm` 
     elsif system 'which yum'
         `sudo yum install bison flex scons ruby valgrind vim nasm`
+    elsif system 'which brew'
+        `brew install bison`
+        `brew install flex`
+        `brew install scons`
+        `brew install nasm`
+        #`brew install valgrind` # Not supported yet
     else
         puts "Package manager not supported." 
     end
 end
 
-setup_vim
-setup_deps()
+#setup_vim
+setup_deps
