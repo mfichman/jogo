@@ -35,15 +35,18 @@ public:
     }
 	
 	Expression* next() const { return next_; }
+    Type* parent_type() const { return parent_type_; }
     Type* type() const { return type_; }
     bool is_logic_op() const;
 	void next(Expression* next) { next_ = next; }
+    void parent_type(Type* type) { parent_type_ = type; }
     void type(Type* type) { type_ = type; }
     typedef Pointer<Expression> Ptr;
 
 private:
 	Expression::Ptr next_;
     Type::Ptr type_;
+    Type::Ptr parent_type_;
 };
 
 /* Literal expression (integers, strings, booleans, hashes, etc.) */
@@ -110,6 +113,36 @@ private:
     void operator()(Functor* functor) { functor->operator()(this); }
     String::Ptr value_;
 };    
+
+/* Hash literal */
+class HashLiteral : public Expression {
+public:
+    HashLiteral(Location loc, Expression* args) :
+        Expression(loc),
+        arguments_(args) {
+    }
+
+    Expression* arguments() const { return arguments_; }
+
+private:
+    void operator()(Functor* functor) { functor->operator()(this); }
+    Expression::Ptr arguments_;
+};
+
+/* Array literal */
+class ArrayLiteral : public Expression {
+public:
+    ArrayLiteral(Location loc, Expression* args) :
+        Expression(loc),
+        arguments_(args) {
+    }
+
+    Expression* arguments() const { return arguments_; }
+
+private:
+    void operator()(Functor* functor) { functor->operator()(this); }
+    Expression::Ptr arguments_;
+};
 
 /* Simple binary expression */
 class Binary : public Expression {

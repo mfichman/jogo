@@ -46,6 +46,7 @@ Environment::Environment() :
     float_type_ = new Type(Location(), name("Float"), 0, builtin_file_, this);
     char_type_ = new Type(Location(), name("Char"), 0, builtin_file_, this);
     byte_type_ = new Type(Location(), name("Byte"), 0, builtin_file_, this);
+    pair_type_ = new Type(Location(), name("Pair"), 0, builtin_file_, this);
     self_type_ = new Type(Location(), name("Self"), 0, builtin_file_, this);
 
     module(root_);

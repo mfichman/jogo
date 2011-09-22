@@ -75,6 +75,8 @@ public:
     virtual void operator()(Attribute* feature) {}
     virtual void operator()(Import* feature) {}
     virtual void operator()(Type* type) {}
+    virtual void operator()(ArrayLiteral* literal) {}
+    virtual void operator()(HashLiteral* literal) {}
 };
 
 

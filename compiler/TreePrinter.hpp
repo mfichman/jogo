@@ -63,6 +63,8 @@ private:
     void operator()(Attribute* feature);
     void operator()(Import* feature);
     void operator()(Type* type);
+    void operator()(HashLiteral* literal);
+    void operator()(ArrayLiteral* literal);
 
     void print_tabs();
     void print_comment(String* comment);

@@ -88,6 +88,7 @@ public:
     Type* float_type() const { return float_type_; }
     Type* char_type() const { return char_type_; }
     Type* byte_type() const { return byte_type_; }
+    Type* pair_type() const { return pair_type_; }
     Type* self_type() const { return self_type_; }
 
 private:
@@ -117,6 +118,7 @@ private:
     Type::Ptr float_type_;
     Type::Ptr char_type_;
     Type::Ptr byte_type_;
+    Type::Ptr pair_type_;
     Type::Ptr self_type_;
 
     std::string output_;

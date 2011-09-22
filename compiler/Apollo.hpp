@@ -38,6 +38,8 @@ class String;
 class Binary;
 class Unary;
 class Call;
+class HashLiteral;
+class ArrayLiteral;
 class Dispatch;
 class Construct;
 class Identifier;

@@ -103,6 +103,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %type <block> block function_body
 %type <assignment> assignment assignment_list
 %type <expression> call string expression expression_list
+%type <expression> operation pair pair_list 
 
 
 /* The Standard Apollo Grammar, version 2010 */
@@ -302,7 +303,7 @@ statement
     | YIELD expression SEPARATOR { $$ = new Yield(@$, $2); }
     | FORK call SEPARATOR { $$ = new Fork(@$, $2); }
     | assignment SEPARATOR { $$ = $1; }
-    | expression SEPARATOR { $$ = new Simple(@$, $1); }
+    | operation SEPARATOR { $$ = new Simple(@$, $1); }
     | conditional { $$ = $1; }
     | FOR IDENTIFIER IN expression block { 
         //$$ = new For(@$, $2, $4, $5);
@@ -374,6 +375,44 @@ expression_list
     ;
 
 expression
+    : IDENTIFIER { $$ = new Identifier(@$, $1); }
+    | LITERAL { $$ = $1; }
+    | '{' pair_list '}' { $$ = new HashLiteral(@$, $2); }
+    | '{' '}' { $$ = new HashLiteral(@$, 0); }
+    | '[' expression_list ']' { $$ = new ArrayLiteral(@$, $2); }
+    | '[' ']' { $$ = new ArrayLiteral(@$, 0); }
+    | operation { $$ = $1; } 
+    | string { $$ = $1; }
+    | FUNCTION formal_sig return_sig block {
+        // anonymous function!
+        //String* name = ID("@call");
+        //$$ = new Function(@$, name, $2, $3, $4);
+        $$ = new Empty(@$);
+        $2 = 0;
+        $4 = 0;
+        $3 = 0;
+        parser->force_separator();
+    }
+    ;
+
+pair_list
+    : pair ',' pair_list { $1->next($3); $$ = $1; }
+    | pair { $$ = $1; }
+    ;
+
+pair
+    : string ':' expression { 
+        $1->next($3);
+        $$ = new Construct(@$, ENV->pair_type(), $1);
+    }
+    | IDENTIFIER ':' expression {
+        StringLiteral* string = new StringLiteral(@$, $1); 
+        string->next($3);
+        $$ = new Construct(@$, ENV->pair_type(), string);
+    }
+    ;
+
+operation
     : expression '?' expression { $$ = new Binary(@$, ID("?"), $1, $3); }
     | expression '^' expression { $$ = new Dispatch(@$, ID("@pow"), $1, $3); } 
     | expression '+' expression { $$ = new Dispatch(@$, ID("@add"), $1, $3); } 
@@ -383,24 +422,8 @@ expression
     | expression '%' expression { $$ = new Dispatch(@$, ID("@mod"), $1, $3); } 
     | NOT expression { $$ = new Unary(@$, ID("not"), $2); }
     | '~' expression { $$ = new Dispatch(@$, ID("@compl"), $2, 0); } 
-    | '-' expression %prec '*' { 
-        if (IntegerLiteral* lit = dynamic_cast<IntegerLiteral*>($2)) {
-            String* val = ENV->integer("-" + lit->value()->string());
-            $$ = new IntegerLiteral(@$, val);
-            delete $2;
-        } else if (FloatLiteral* lit = dynamic_cast<FloatLiteral*>($2)) {
-            String* val = ENV->floating("-" + lit->value()->string());
-            $$ = new FloatLiteral(@$, val);
-            delete $2;
-        } else {
-            $$ = new Dispatch(@$, ID("@neg"), $2, 0); 
-        }
-    }
     | call { $$ = $1; }
     | '(' expression ')' { $$ = $2; } 
-    | string { $$ = $1; }
-    | LITERAL { $$ = $1; }
-    | IDENTIFIER { $$ = new Identifier(@$, $1); }
     | expression OR expression { $$ = new Binary(@$, ID("or"), $1, $3); }
     | expression AND expression { $$ = new Binary(@$, ID("and"), $1, $3); }
     | expression XOR expression {
@@ -457,15 +480,18 @@ expression
     | expression '.' IDENTIFIER '(' ')' {
         $$ = new Dispatch(@$, $3, $1, 0);
     }
-    | FUNCTION formal_sig return_sig block {
-        // anonymous function!
-        //String* name = ID("@call");
-        //$$ = new Function(@$, name, $2, $3, $4);
-        $$ = new Empty(@$);
-        $2 = 0;
-        $4 = 0;
-        $3 = 0;
-        parser->force_separator();
+    | '-' expression %prec '*' { 
+        if (IntegerLiteral* lit = dynamic_cast<IntegerLiteral*>($2)) {
+            String* val = ENV->integer("-" + lit->value()->string());
+            $$ = new IntegerLiteral(@$, val);
+            delete $2;
+        } else if (FloatLiteral* lit = dynamic_cast<FloatLiteral*>($2)) {
+            String* val = ENV->floating("-" + lit->value()->string());
+            $$ = new FloatLiteral(@$, val);
+            delete $2;
+        } else {
+            $$ = new Dispatch(@$, ID("@neg"), $2, 0); 
+        }
     }
     ;
 

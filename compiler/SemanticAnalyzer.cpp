@@ -208,8 +208,36 @@ void SemanticAnalyzer::operator()(BooleanLiteral* expression) {
     expression->type(env_->bool_type());
 }
 
+void SemanticAnalyzer::operator()(HashLiteral* literal) {
+}
+
+void SemanticAnalyzer::operator()(ArrayLiteral* literal) {
+    Type::Ptr parent_type = literal->parent_type();
+    Type::Ptr type;
+    for (Expression::Ptr a = literal->arguments(); a; a = a->next()) {
+        a(this);
+        if (parent_type) {
+            if (!a->type()->subtype(parent_type)) {
+                err_ << a->location();
+                err_ << "List element does not conform to type '";
+                err_ << parent_type << "'\n";
+                env_->error();
+            }
+        } else if (type) {
+            if (!a->type()->subtype(type)) {
+                err_ << a->location();
+                err_ << "List element does not conform to type '";
+                err_ << type << "'\n";
+                env_->error();
+            }
+        } else {
+            type = a->type();
+        }
+    }
+}
+
 void SemanticAnalyzer::operator()(Let* expression) {
-    // For a lot expression, introduce the new variables in a new scope, and 
+    // For a let expression, introduce the new variables in a new scope, and 
     // then check the block.
     enter_scope();
     Statement::Ptr block = expression->block();
@@ -223,6 +251,8 @@ void SemanticAnalyzer::operator()(Let* expression) {
 void SemanticAnalyzer::operator()(Binary* expression) {
     // Checks primitive binary expressions.  These include basic logic
     // operations, which cannot be overloaded as methods.
+    expression->type(env_->bool_type());
+
     Expression::Ptr left = expression->left();
     Expression::Ptr right = expression->right();
     left(this);
@@ -246,7 +276,6 @@ void SemanticAnalyzer::operator()(Binary* expression) {
     } else {
         assert(!"Operator not implemented");
     }
-    expression->type(env_->bool_type());
 }
 
 void SemanticAnalyzer::operator()(Unary* expression) {
@@ -545,8 +574,13 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
     // Ensure that a variable is not duplicated, or re-initialized with a 
     // different type.  This function handles both assignment and variable
     // initialization.
+
     String::Ptr id = statement->identifier();
+    Variable::Ptr var = variable(id);
+    Type::Ptr type = var ? var->type() : 0;
+
     Expression::Ptr init = statement->initializer();
+    init->parent_type(type ? type.pointer() : statement->type());
     init(this);
 
     if (statement->type()) {
@@ -557,9 +591,6 @@ void SemanticAnalyzer::operator()(Assignment* statement) {
             return;
         }
     }
-
-    Variable::Ptr var = variable(id);
-    Type::Ptr type = var ? var->type() : 0;
 
     // Attempt to assign to an immutable var, usually a param
     if (var && var->is_immutable()) {

@@ -170,6 +170,32 @@ void TreePrinter::operator()(BooleanLiteral* expression) {
     indent_level_--;
 }
 
+void TreePrinter::operator()(ArrayLiteral* expression) {
+    indent_level_++;
+    out_ << "ArrayLiteral\n";
+    
+    int i = 0;
+    for (Expression::Ptr e = expression->arguments(); e; e = e->next()) {
+        print_tabs(); out_ << "argument" << i << ": ";
+        e(this);
+        i++;
+    }
+    indent_level_--;
+}
+
+void TreePrinter::operator()(HashLiteral* expression) {
+    indent_level_++;
+    out_ << "HashLiteral\n";
+    
+    int i = 0;
+    for (Expression::Ptr e = expression->arguments(); e; e = e->next()) {
+        print_tabs(); out_ << "argument" << i << ": ";
+        e(this);
+        i++;
+    }
+    indent_level_--;
+}
+
 void TreePrinter::operator()(Binary* expression) {
     indent_level_++;
     Expression::Ptr left = expression->left();
