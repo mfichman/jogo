@@ -321,18 +321,39 @@ void SemanticAnalyzer::operator()(Call* expression) {
     // the current compilation unit.
     String::Ptr id = expression->identifier();
     String::Ptr scope = expression->scope();
+    Expression::Ptr args = expression->arguments();
+    Location loc = expression->location();
     Function::Ptr func;
-    if (class_) {
+    Type::Ptr receiver;
+
+    Variable::Ptr var = variable(id); 
+    if (var) {
+        receiver = var->type();
+        func = receiver->clazz()->function(env_->name("@call"));
+        if (!func) {
+            err_ << expression->location();
+            err_ << "Object '" << id << "' is not callable\n";
+            env_->error();
+            expression->type(env_->no_type());
+            return;
+        }
+        Expression::Ptr self = new Identifier(loc, id);
+        self->next(args);
+        expression->arguments(self);
+    }
+
+    if (!func && class_) {
+        receiver = class_->type();
         func = class_->function(id);
+        if (func) {
+            Expression::Ptr self = new Identifier(loc, env_->name("self"));
+            self->next(args);
+            expression->arguments(self);
+        }
     }
     if (!func) {
         func = expression->file()->function(scope, id);
     } else if (!expression->function()) {
-        Expression::Ptr args = expression->arguments();
-        String::Ptr name = env_->name("self");
-        Expression::Ptr self = new Identifier(expression->location(), name);
-        self->next(args);
-        expression->arguments(self);
     }
 
     // Evaluate types of argument expressions, then perform type checking
@@ -362,10 +383,10 @@ void SemanticAnalyzer::operator()(Call* expression) {
         // then look up the actual type from the class' definition.
         Type::Ptr ft = formal->type();
         if (ft == env_->self_type()) {
-            ft = class_->type();
+            ft = receiver;
         }
         if (ft->is_generic()) {
-            ft = class_->type()->generic(ft->name());
+            ft = receiver->generic(ft->name());
         }
 
         Type::Ptr at = arg->type();
