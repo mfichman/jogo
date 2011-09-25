@@ -39,6 +39,13 @@ public:
     Type* type() const { return type_; }
     bool is_logic_op() const;
 	void next(Expression* next) { next_ = next; }
+    void last(Expression* last) {
+        Expression* expr = this;
+        while (expr->next()) {
+            expr = expr->next();
+        }
+        expr->next(last);
+    }
     void parent_type(Type* type) { parent_type_ = type; }
     void type(Type* type) { type_ = type; }
     typedef Pointer<Expression> Ptr;

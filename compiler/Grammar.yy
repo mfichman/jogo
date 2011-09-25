@@ -82,7 +82,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %token <expression> STRING LITERAL SBEGIN 
 %token <flag> PUBLIC PRIVATE STATIC NATIVE WEAK IMMUTABLE
 %token IMPORT FUNCTION VOID
-%token SEPARATOR COLON SEMICOLON BACKTICK
+%token SEPARATOR SEMICOLON BACKTICK
 %token WHEN CASE WHILE ELSE UNTIL IF DO FOR RETURN
 %token RIGHT_ARROW LEFT_ARROW
 %token EQUAL NOT_EQUAL GREATER_OR_EQUAL LESS_OR_EQUAL
@@ -102,8 +102,8 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
 %type <statement> conditional when when_list statement statement_list
 %type <block> block function_body
 %type <assignment> assignment assignment_list
+%type <expression> closure_formal closure operation pair pair_list item_list 
 %type <expression> call string expression expression_list
-%type <expression> operation pair pair_list 
 
 
 /* The Standard Apollo Grammar, version 2010 */
@@ -125,7 +125,7 @@ class_name
     ;
 
 class
-    : class_name '<' type_list '{' comment member_list '}' {
+    : class_name '<' type_list '{' comment member_list '}' SEPARATOR {
         std::string qn = MODULE->name()->string();
         if (qn.empty()) {
             qn = $1->name()->string();
@@ -139,7 +139,7 @@ class
     ;
 
 function_body
-    : block { $$ = $1; }
+    : block SEPARATOR { $$ = $1; }
     | SEPARATOR { $$ = 0; }
     ;
 
@@ -217,7 +217,7 @@ method
             $$ = new Function(@$, $1, $2, $3, $4, $5);
         }
     }
-    | error block {
+    | error block SEPARATOR {
         Formal* self = new Formal(@$, ID("self"), ENV->self_type());
         $$ = new Function(@$, ID(""), self, 0, 0, $2);
         yyerrok;
@@ -296,8 +296,8 @@ statement_list
     ;
 
 statement
-    : LET assignment_list block { $$ = new Let(@$, $2, $3); } 
-    | WHILE expression block { $$ = new While(@$, $2, $3); }
+    : LET assignment_list block SEPARATOR { $$ = new Let(@$, $2, $3); } 
+    | WHILE expression block SEPARATOR { $$ = new While(@$, $2, $3); }
     | RETURN expression SEPARATOR { $$ = new Return(@$, $2); }
     | RETURN SEPARATOR { $$ = new Return(@$, new Empty(@$)); }
     | YIELD expression SEPARATOR { $$ = new Yield(@$, $2); }
@@ -307,7 +307,7 @@ statement
     | IDENTIFIER type SEPARATOR { 
         $$ = new Simple(@$, new Assignment(@$, $1, $2, new Empty(@$)));
     }
-    | FOR IDENTIFIER IN expression block { 
+    | FOR IDENTIFIER IN expression block SEPARATOR { 
         //$$ = new For(@$, $2, $4, $5);
 
         // _i = $4.iter()
@@ -330,18 +330,18 @@ statement
          
         $$ = new Let(@$, t2, t10);
     }
-    | IDENTIFIER formal_sig return_sig block {
+    | IDENTIFIER formal_sig return_sig block SEPARATOR {
         $$ = new Simple(@$, new Empty(@$));
         $1 = 0;
         $2 = 0;
         $3 = 0;
         $4 = 0;
     }
-    | CASE expression '{' comment when_list '}' {
+    | CASE expression '{' comment when_list '}' SEPARATOR {
         $$ = new Case(@$, $2, static_cast<When*>($5));
         delete $4; // '{' may introduce a comment, but we discard it
     }
-    | error block {
+    | error block SEPARATOR {
         $$ = $2;
         yyerrok;
     }
@@ -360,12 +360,19 @@ expression
     : IDENTIFIER { $$ = new Identifier(@$, $1); }
     | LITERAL { $$ = $1; }
     | '{' pair_list '}' { $$ = new HashLiteral(@$, $2); }
-    | '{' '}' { $$ = new HashLiteral(@$, 0); }
-    | '[' expression_list ']' { $$ = new ArrayLiteral(@$, $2); }
-    | '[' ']' { $$ = new ArrayLiteral(@$, 0); }
+    | '[' item_list ']' { $$ = new ArrayLiteral(@$, $2); }
     | operation { $$ = $1; } 
     | string { $$ = $1; }
-    | FUNCTION formal_sig return_sig block {
+    | closure { $$ = $1; }
+    ;
+
+closure_formal
+    : /* empty */ { $$ = 0; }
+    | closure { $$ = $1; }
+    ;
+
+closure
+    : FUNCTION formal_sig return_sig block {
         // anonymous function!
         //String* name = ID("@call");
         //$$ = new Function(@$, name, $2, $3, $4);
@@ -373,13 +380,21 @@ expression
         $2 = 0;
         $4 = 0;
         $3 = 0;
-        parser->force_separator();
     }
+    ;
+
+item_list
+    : expression ',' item_list { $1->next($3); $$ = $1; }
+    | expression SEPARATOR item_list { $1->next($3); $$ = $1; }
+    | expression { $$ = $1; }
+    | /* empty */ { $$ = 0; }
     ;
 
 pair_list
     : pair ',' pair_list { $1->next($3); $$ = $1; }
+    | pair SEPARATOR pair_list { $1->next($3); $$ = $1; }
     | pair { $$ = $1; }
+    | /* empty */ { $$ = 0; }
     ;
 
 pair
@@ -456,11 +471,12 @@ operation
     | expression '.' IDENTIFIER { 
         $$ = new Dispatch(@$, ID($3->string() + "?"), $1, 0);
     }
-    | expression '.' IDENTIFIER '(' expression_list ')' {
+    | expression '.' IDENTIFIER '(' expression_list ')' closure_formal {
+        $5->last($7);
         $$ = new Dispatch(@$, $3, $1, $5);
     }
-    | expression '.' IDENTIFIER '(' ')' {
-        $$ = new Dispatch(@$, $3, $1, 0);
+    | expression '.' IDENTIFIER '(' ')' closure_formal {
+        $$ = new Dispatch(@$, $3, $1, $6);
     }
     | '-' expression %prec '*' { 
         if (IntegerLiteral* lit = dynamic_cast<IntegerLiteral*>($2)) {
@@ -481,11 +497,7 @@ operation
     }
     | expression '[' expression_list ']' '=' expression {
         /* Indexed assignment operator */
-        Expression* last = $3;
-        while (last->next()) {
-            last = last->next();
-        }
-        last->next($6);
+        $3->last($6);
 
         /* Invokes the special @insert method, a la Lua and Python */
         $$ = new Dispatch(@$, ID("@insert"), $1, $3);
@@ -517,25 +529,44 @@ string
     ;
 
 conditional
-    : IF expression block ELSE block { $$ = new Conditional(@$, $2, $3, $5); }
-    | IF expression block {
+    : IF expression block ELSE block SEPARATOR { 
+        $$ = new Conditional(@$, $2, $3, $5); 
+    }
+    | IF expression block SEPARATOR ELSE block SEPARATOR { 
+        $$ = new Conditional(@$, $2, $3, $6); 
+    }
+    | IF expression block SEPARATOR {
         $$ = new Conditional(@$, $2, $3, 0);
     }
     | IF expression block ELSE conditional {
         $$ = new Conditional(@$, $2, $3, $5);
     }
+    | IF expression block SEPARATOR ELSE conditional {
+        $$ = new Conditional(@$, $2, $3, $6);
+    }
     ;
 
 call
-    : type '(' expression_list ')' { $$ = new Construct(@$, $1, $3); }
-    | type '(' ')' { $$ = new Construct(@$, $1, 0); }
-    | IDENTIFIER '(' expression_list ')' { $$ = new Call(@$, UNIT, 0, $1, $3); }
-    | IDENTIFIER '(' ')' { $$ = new Call(@$, UNIT, 0, $1, 0); }
-    | scope_prefix IDENTIFIER '(' ')' { 
-        UNIT->feature(new Import(@$, $1, true));
-        $$ = new Call(@$, UNIT, $1, $2, 0); 
+    : type '(' expression_list ')' closure_formal  { 
+        $3->last($5);
+        $$ = new Construct(@$, $1, $3);
     }
-    | scope_prefix IDENTIFIER '(' expression_list ')' {
+    | type '(' ')' closure_formal { 
+        $$ = new Construct(@$, $1, $4);
+    }
+    | IDENTIFIER '(' expression_list ')' closure_formal {
+        $3->last($5);
+        $$ = new Call(@$, UNIT, 0, $1, $3); 
+    }
+    | IDENTIFIER '(' ')' closure_formal {
+        $$ = new Call(@$, UNIT, 0, $1, $4); 
+    }
+    | scope_prefix IDENTIFIER '(' ')' closure_formal { 
+        UNIT->feature(new Import(@$, $1, true));
+        $$ = new Call(@$, UNIT, $1, $2, $5); 
+    }
+    | scope_prefix IDENTIFIER '(' expression_list ')' closure_formal {
+        $4->last($6);
         UNIT->feature(new Import(@$, $1, true));
         $$ = new Call(@$, UNIT, $1, $2, $4);
     } 

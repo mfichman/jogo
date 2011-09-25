@@ -39,12 +39,13 @@ Options::Options(Environment* env, int argc, char** argv) {
         // convert -p to --path)
         if (argv[i][0] == '-' && argv[i][1] != '-') {
             flag = argv[i] + 1;
-            if ("p" == flag) { flag = "path"; }
+            if ("i" == flag) { flag = "include"; }
             else if ("a" == flag) { flag = "assembly"; }
             else if ("c" == flag) { flag = "compile"; }
             else if ("l" == flag) { flag = "library"; }
             else if ("o" == flag) { flag = "output"; }
             else if ("e" == flag) { flag = "execute"; }
+            else if ("m" == flag) { flag = "make"; }
             else if ("h" == flag) { flag = "help"; }
             else {
                 err << "Unknown flag '" << argv[i] << "'\n";
@@ -72,6 +73,8 @@ Options::Options(Environment* env, int argc, char** argv) {
                 env->link(false);
             } else if ("compile" == flag) {
                 env->link(false);
+            } else if ("make" == flag) {
+                env->make(true);
             } else if ("dump-ir" == flag) {
                 env->dump_ir(true);
             } else if ("dump-ast" == flag) {
@@ -88,7 +91,7 @@ Options::Options(Environment* env, int argc, char** argv) {
             break;
         // Single-parameter arguments
         case 1:
-            if ("path" == flag) {
+            if ("include" == flag) {
                 env->include(argv[i]); 
             } else if ("output" == flag) {
                 env->output(argv[i]);
@@ -121,7 +124,8 @@ void Options::print_usage() {
     out << "   -e, --execute        Execute program as a script.\n";
     out << "   -l, --library LIB    Compile and link with library LIB.\n";
     out << "   -o, --output FILE    Write compiler output to FILE.\n";
-    out << "   -p, --path DIR       Add the directory DIR to the source search path.\n";
+    out << "   -i, --include DIR    Add the directory DIR to the source search path.\n";
+    out << "   -m, --make           Compile input files and out-of-date dependencies.\n";
     out << "   -h, --help           Print this help message.\n";
     out << "   --dump-ir            Output the intermediate representation.\n";
     out << "   --dump-ast           Output the abstract syntax tree.\n";

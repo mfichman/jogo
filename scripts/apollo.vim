@@ -24,6 +24,7 @@ syn region apInterpolation matchgroup=apStringDelim start="#{" end="}" contained
 
 
 syn keyword apConstant true false nil self eof
+syn match apSymbol "[A-Za-z][a-zA-Z0-9]*:"
 
 
 "syn keyword apFunction @init @destroy @add @subtract @divide @mulitply
@@ -53,6 +54,7 @@ hi def link apFunction Function
 hi def link apType Structure 
 hi def link apOperator Operator
 hi def link apStringDelim Delimiter
+hi def link apSymbol Constant
 
 let b:current_syntax = "apollo"
 

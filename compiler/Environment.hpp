@@ -49,6 +49,7 @@ public:
     const std::string& input(int index) { return input_[index]; }
     const std::string& lib(int index) { return lib_[index]; }
     const std::string& output() const { return output_; }
+    bool make() const { return make_; }
     bool optimize() const { return optimize_; }
     bool link() const { return link_; }
     bool assemble() const { return assemble_; }
@@ -68,6 +69,7 @@ public:
     void dump_ir(bool dump) { dump_ir_ = dump; }
     void dump_liveness(bool dump) { dump_liveness_ = dump; }
     void dump_ast(bool dump) { dump_ast_ = dump; }
+    void make(bool make) { make_ = make; }
     void optimize(bool optimize) { optimize_ = optimize; }
     void link(bool link) { link_ = link; }
     void assemble(bool assemble) { assemble_ = assemble; }
@@ -125,6 +127,7 @@ private:
     bool dump_ast_;
     bool dump_ir_;
     bool dump_liveness_;
+    bool make_;
     bool optimize_;
     bool link_;
     bool assemble_;

@@ -5,7 +5,8 @@ Usage: ../bin/apollo [OPTIONS] FILE...
    -e, --execute        Execute program as a script.
    -l, --library LIB    Compile and link with library LIB.
    -o, --output FILE    Write compiler output to FILE.
-   -p, --path DIR       Add the directory DIR to the source search path.
+   -i, --include DIR    Add the directory DIR to the source search path.
+   -m, --make           Compile input files and out-of-date dependencies.
    -h, --help           Print this help message.
    --dump-ir            Output the intermediate representation.
    --dump-ast           Output the abstract syntax tree.
@@ -18,7 +19,8 @@ Usage: ../bin/apollo [OPTIONS] FILE...
    -e, --execute        Execute program as a script.
    -l, --library LIB    Compile and link with library LIB.
    -o, --output FILE    Write compiler output to FILE.
-   -p, --path DIR       Add the directory DIR to the source search path.
+   -i, --include DIR    Add the directory DIR to the source search path.
+   -m, --make           Compile input files and out-of-date dependencies.
    -h, --help           Print this help message.
    --dump-ir            Output the intermediate representation.
    --dump-ast           Output the abstract syntax tree.

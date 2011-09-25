@@ -14,6 +14,7 @@ def check(test, result)
         (1..79).each { putc '-' }        
         puts
         puts result
+        puts $?
         @failed = true
     end
 end
@@ -64,7 +65,7 @@ tests.each do |test|
         run = true
     end
 
-    command = "../bin/apollo #{test} --optimize -p ../runtime -p ../lib "
+    command = "../bin/apollo #{test} --optimize -i ../runtime -i ../lib "
     command = command + "#{flags} > /tmp/diff 2>&1"
     if @options[:full]
         valgrind = "valgrind -q --leak-check=full"
