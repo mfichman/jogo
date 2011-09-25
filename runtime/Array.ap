@@ -133,14 +133,13 @@ Array[:a] < Object {
     prefix(end Int) Array[:a] {
         # Returns a new array containing all of the elements from the beginning
         # of the array to the element before 'end'
-        
-        ret self.slice(0, end)
+        ret slice(0, end)
     }
 
     suffix(begin Int) Array[:a] {
         # Returns a new array containing elements starting at 'begin' and
         # continuing to the end of this string.
-        ret self.slice(begin, count)
+        ret slice(begin, count)
     }
 
     slice(begin Int, end Int) Array[:a] {

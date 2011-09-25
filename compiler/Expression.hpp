@@ -191,13 +191,17 @@ public:
         file_(file),
         scope_(mod),
         identifier_(id),
-        arguments_(args) {
+        arguments_(args),
+        function_(0) {
     }
 
     String* scope() const { return scope_; }
     String* identifier() const { return identifier_; }
     File* file() const { return file_; } 
     Expression* arguments() const { return arguments_; }
+    Function* function() const { return function_; }
+    void arguments(Expression* args) { arguments_ = args; }
+    void function(Function* function) { function_ = function; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -205,6 +209,7 @@ private:
     String::Ptr scope_;
     String::Ptr identifier_;
     Expression::Ptr arguments_;
+    Function* function_;
 };
 
 /* Object-oriented function call dispatch */
@@ -212,7 +217,8 @@ class Dispatch : public Expression {
 public:
     Dispatch(Location loc, String* ident, Expression* self, Expression* args) :
         Expression(loc),
-        identifier_(ident) {
+        identifier_(ident),
+        function_(0) {
         
         self->next(args);
         arguments_ = self;
@@ -220,11 +226,14 @@ public:
 
     String* identifier() const { return identifier_; }
     Expression* arguments() const { return arguments_; }
+    Function* function() const { return function_; }
+    void function(Function* function) { function_ = function; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     String::Ptr identifier_;
     Expression::Ptr arguments_;
+    Function* function_;
 };
 
 /* Constructor call */

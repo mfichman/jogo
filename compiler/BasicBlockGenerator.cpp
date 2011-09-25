@@ -157,33 +157,7 @@ void BasicBlockGenerator::operator()(Unary* expr) {
 void BasicBlockGenerator::operator()(Call* expr) {
     // Push objects in anticipation of the call instruction.  Arguments must
     // be pushed in reverse order.
-    vector<Operand> args;
-    for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
-        if (a->type()->is_bool()) {
-            args.push_back(emit_bool_expr(a));
-        } else {
-            args.push_back(emit(a));
-        }
-    }
-    for (int i = args.size()-1; i >= 0; i--) {
-        emit_push_arg(i, args[i]);
-    }
-
-    // Look up the function by name in the current context.
-    String::Ptr id = expr->identifier();
-    String::Ptr scope = expr->scope();
-    Function::Ptr func = expr->file()->function(scope, id);
-
-    // Insert a call expression, then pop the return value off the stack.
-    call(func->label());
-    if (!func->type()->is_void()) {
-        return_ = emit_pop_ret();
-        if (!func->type()->is_value()) {
-            object_temp_.push_back(return_);
-        }
-    } else {
-        return_ = 0;
-    }
+    emit_call(expr->function(), expr->arguments());
 }
 
 void BasicBlockGenerator::operator()(Dispatch* expr) {
@@ -196,50 +170,7 @@ void BasicBlockGenerator::operator()(Dispatch* expr) {
         return; 
     }
 
-    // Push objects in anticipation of the call instruction.
-    vector<Operand> args;
-    for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
-        args.push_back(emit(a));
-    }
-
-    // Look up the function by name in the current context.
-    Expression::Ptr receiver = expr->arguments();
-    Class::Ptr clazz = receiver->type()->clazz();
-    Function::Ptr func = clazz->function(id);
-
-    Operand fnptr;
-    if (type->is_interface()) { 
-        // Dynamic dispatch: call the object dispatch function with the
-        // receiver and function name as arguments.
-        
-        String::Ptr name = env_->string(func->name()->string());
-        emit_push_arg(1, load(new StringLiteral(Location(), name)));
-        emit_push_arg(0, args[0]); // Receiver
-        call(env_->name("Object__dispatch"));
-        fnptr = emit_pop_ret();
-    }
-
-    for (int i = args.size()-1; i >= 0; i--) {
-        emit_push_arg(i, args[i]);
-    }
-
-    if (type->is_interface()) {
-        // Dynamic dispatch: call the function pointer.
-        call(fnptr);
-    } else {
-        // Static dispatch: insert a call expression, then pop the return value
-        // off the stack.
-        call(func->label());
-    }
-
-    if (!func->type()->is_void()) {
-        return_ = emit_pop_ret();
-        if (!func->type()->is_value()) {
-            object_temp_.push_back(return_);
-        }
-    } else {
-        return_ = 0;
-    }
+    emit_call(expr->function(), expr->arguments());
 }
 
 void BasicBlockGenerator::operator()(Construct* expr) {
@@ -555,6 +486,54 @@ void BasicBlockGenerator::operator()(Import* feature) {
 
 void BasicBlockGenerator::operator()(Type* feature) {
     // Pass
+}
+
+void BasicBlockGenerator::emit_call(Function* func, Expression* args) {
+    // Push objects in anticipation of the call instruction.  Arguments must be
+    // pushed in reverse order.
+
+    vector<Operand> val;
+    for (Expression::Ptr a = args; a; a = a->next()) {
+        if (a->type()->is_bool()) {
+            val.push_back(emit_bool_expr(a));
+        } else {
+            val.push_back(emit(a));
+        }
+    }
+
+    Operand fnptr;
+    if (func->is_virtual()) {
+        // Dynamic dispatch: call the object dispatch function with the
+        // receiver and function name as arguments.
+        
+        String::Ptr name = env_->string(func->name()->string());
+        emit_push_arg(1, load(new StringLiteral(Location(), name)));
+        emit_push_arg(0, val[0]); // Receiver
+        call(env_->name("Object__dispatch"));
+        fnptr = emit_pop_ret();
+    } 
+
+    for (int i = val.size()-1; i >= 0; i--) {
+        emit_push_arg(i, val[i]);
+    }
+
+    if (func->is_virtual()) {
+        // Dynamic dispatch: call the function pointer.
+        call(fnptr);
+    } else {
+        // Static dispatch: insert a call expression, then pop the return value
+        // off the stack.
+        call(func->label());
+    }
+
+    if (!func->type()->is_void()) {
+        return_ = emit_pop_ret();
+        if (!func->type()->is_value()) {
+            object_temp_.push_back(return_);
+        }
+    } else {
+        return_ = 0;
+    }
 }
 
 void BasicBlockGenerator::emit_operator(Dispatch* expr) {

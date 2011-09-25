@@ -224,6 +224,7 @@ private:
     void stack(String* name, int offset);
     void enter_scope();
     void exit_scope();
+    void emit_call(Function* func, Expression* args);
     void emit_operator(Dispatch* expression);
     void emit_cleanup(Variable* var);
     void emit_refcount_inc(Operand var);

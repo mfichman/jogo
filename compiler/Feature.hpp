@@ -58,6 +58,7 @@ public:
     static const int NATIVE = 0x2;
     static const int WEAK = 0x4;
     static const int IMMUTABLE = 0x8;
+    static const int VIRTUAL = 0x10;
 
 private:
     Feature::Ptr next_;
@@ -102,6 +103,10 @@ public:
 		type_(r),
         block_(b),
         stack_vars_(0) {
+
+        if (!block_ && !is_native()) {
+            flags(flags() | VIRTUAL);
+        }
     }
 
     String* name() const { return name_; }
@@ -114,6 +119,7 @@ public:
     bool covariant(Function* other) const;
     bool is_constructor() const { return name()->string() == "@init"; }
     bool is_destructor() const { return name()->string() == "@destroy"; }
+    bool is_virtual() const { return flags() & VIRTUAL; }
     void stack_vars_inc() { stack_vars_++; }
     void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
     void operator()(Functor* functor) { functor->operator()(this); }

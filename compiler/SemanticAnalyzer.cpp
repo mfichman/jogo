@@ -316,18 +316,31 @@ void SemanticAnalyzer::operator()(Unary* expression) {
 }
 
 void SemanticAnalyzer::operator()(Call* expression) {
+    // Look up the function by name in the current context.  The function may
+    // be a member of the current module, or of a module that was imported in
+    // the current compilation unit.
+    String::Ptr id = expression->identifier();
+    String::Ptr scope = expression->scope();
+    Function::Ptr func;
+    if (class_) {
+        func = class_->function(id);
+    }
+    if (!func) {
+        func = expression->file()->function(scope, id);
+    } else if (!expression->function()) {
+        Expression::Ptr args = expression->arguments();
+        String::Ptr name = env_->name("self");
+        Expression::Ptr self = new Identifier(expression->location(), name);
+        self->next(args);
+        expression->arguments(self);
+    }
+
     // Evaluate types of argument expressions, then perform type checking
     // on the body of the function.
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         a(this);
     }
 
-    // Look up the function by name in the current context.  The function may
-    // be a member of the current module, or of a module that was imported
-    // in the current compilation unit.
-    String::Ptr id = expression->identifier();
-    String::Ptr scope = expression->scope();
-    Function::Ptr func = expression->file()->function(scope, id);
     if (!func) {
         err_ << expression->location();
         err_ << "Undeclared function '" << id << "'\n";
@@ -336,21 +349,32 @@ void SemanticAnalyzer::operator()(Call* expression) {
         return;
     }
     expression->type(func->type());
+    expression->function(func);
     // FIXME: Look up generics for function
     
-    // Check argument types versus formal parameter types.  Check the arity
-    // of the function as well.
+    // Check argument types versus formal parameter types.  Check the arity of
+    // the function as well.
     Expression::Ptr arg = expression->arguments(); 
     Formal::Ptr formal = func->formals();
     while (arg && formal) {
+        // Get the formal type.  If the type is 'self', then the formal
+        // parameter is the type of the receiver.  If the type is a generic,
+        // then look up the actual type from the class' definition.
+        Type::Ptr ft = formal->type();
+        if (ft == env_->self_type()) {
+            ft = class_->type();
+        }
+        if (ft->is_generic()) {
+            ft = class_->type()->generic(ft->name());
+        }
+
         Type::Ptr at = arg->type();
         if (arg->type() == env_->self_type()) {
             at = class_->type(); 
         }
-        if (!at->subtype(formal->type())) {
+        if (!at->subtype(ft)) {
             err_ << arg->location();
-            err_ << "Argument does not conform to type '";
-            err_ << formal->type() << "'\n";
+            err_ << "Argument does not conform to type '" << ft << "'\n";
             env_->error();
         }
         arg = arg->next();
@@ -406,6 +430,7 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
 
     // Set the type of the expression to the return type of the function.
     // Look up the return type in the receiver if it is a generic.
+    expression->function(func);
     expression->type(fix_generics(receiver->type(), func->type()));
 
     // Check argument types versus formal parameter types
