@@ -20,7 +20,7 @@
  * IN THE SOFTWARE.
  */
 
-#include "Stream.h"
+#include "Io/Stream.h"
 #include "String.h"
 #ifndef WINDOWS
 #include <unistd.h>
@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void Stream_read(Stream self, Buffer buffer) {
+void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 #ifndef WINDOWS
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->capacity - buffer->end;
@@ -45,7 +45,7 @@ void Stream_read(Stream self, Buffer buffer) {
 #endif
 }
 
-void Stream_write(Stream self, Buffer buffer) {
+void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
 #ifndef WINDOWS
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->end - buffer->begin;
@@ -61,12 +61,12 @@ void Stream_write(Stream self, Buffer buffer) {
 #endif
 }
 
-Int Stream_get(Stream self) {
-    Buffer buf = self->read_buf;
+Int Io_Stream_get(Io_Stream self) {
+    Io_Buffer buf = self->read_buf;
     if (buf->begin == buf->end) {
         buf->begin = 0;
         buf->end = 0;
-        Stream_read(self, buf);
+        Io_Stream_read(self, buf);
     }
     if (buf->begin >= buf->end) {
    printf("end");
@@ -76,12 +76,12 @@ Int Stream_get(Stream self) {
     }
 }
 
-Int Stream_peek(Stream self) {
-    Buffer buf = self->read_buf;
+Int Io_Stream_peek(Io_Stream self) {
+    Io_Buffer buf = self->read_buf;
     if (buf->begin == buf->end) {
         buf->begin = 0;
         buf->end = 0;
-        Stream_read(self, buf);
+        Io_Stream_read(self, buf);
     }
     if (buf->begin >= buf->end) {
         return -1;
@@ -90,10 +90,10 @@ Int Stream_peek(Stream self) {
     }
 }
 
-void Stream_put(Stream self, Char ch) {
-    Buffer buf = self->write_buf;
+void Io_Stream_put(Io_Stream self, Char ch) {
+    Io_Buffer buf = self->write_buf;
     if (buf->end == buf->capacity) {
-        Stream_write(self, buf);
+        Io_Stream_write(self, buf);
     }
     if (buf->end >= buf->capacity) {
         return;
@@ -102,7 +102,7 @@ void Stream_put(Stream self, Char ch) {
     }
 }
 
-String Stream_scan(Stream self, String delim) {
+String Io_Stream_scan(Io_Stream self, String delim) {
     // Read in characters until one of the characters in 'delim' is found,
     // then return all the characters read so far.
     Int length = 16;
@@ -118,7 +118,7 @@ String Stream_scan(Stream self, String delim) {
 
     while (1) {
         // Loop until we find a delimiter somewhere in the input stream
-        Char next = Stream_get(self);
+        Char next = Io_Stream_get(self);
         for (Char* c = delim->data; *c; ++c) {
             if (*c == next) {
                 ret->data[ret->length] = '\0';
@@ -149,18 +149,18 @@ String Stream_scan(Stream self, String delim) {
     return 0;
 }
 
-void Stream_print(Stream self, String str) {
+void Io_Stream_print(Io_Stream self, String str) {
     for (Int i = 0; i < str->length; i++) {
-        Stream_put(self, str->data[i]);
+        Io_Stream_put(self, str->data[i]);
     }
 }
 
-void Stream_flush(Stream self) {
-    Stream_write(self, self->write_buf); 
+void Io_Stream_flush(Io_Stream self) {
+    Io_Stream_write(self, self->write_buf); 
 }
 
-void Stream_close(Stream self) {
-    Stream_flush(self);
+void Io_Stream_close(Io_Stream self) {
+    Io_Stream_flush(self);
     self->write_buf->begin = self->write_buf->end = 0;
     self->read_buf->begin = self->read_buf->end = 0;
 #ifndef WINDOWS
@@ -171,7 +171,7 @@ void Stream_close(Stream self) {
 #endif 
 }
 
-void println(String str) {
+void Io_println(String str) {
     // FIXME: Use Apollo streams
     if (str) {
         fwrite(str->data, str->length, 1, stdout);
@@ -182,7 +182,7 @@ void println(String str) {
     fflush(stdout);
 }
 
-void print(String str) {
+void Io_print(String str) {
     // FIXME: Use Apollo streams
     if (str) {
         fwrite(str->data, str->length, 1, stdout);

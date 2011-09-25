@@ -15,7 +15,7 @@ Stream < Object {
 }
 
 Listener < Object {
-    address Address();
+    address = Address;
 
     @init(address Address) native;
     accept() native Stream;

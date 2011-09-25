@@ -4,7 +4,7 @@ import Array
 
 main() Int {
     # Write a message to standard output
-    stdout = Stream(1)
+    stdout = Io::Stream(1)
     stdout.print('hello world\n')
 
     # Read in a message from a file using scan()
@@ -15,6 +15,8 @@ main() Int {
             stdout.put('*'c)
             stdout.put(file.get())
         }
+    } else {
+        stdout.print('Could not open file!\n')
     }
 
     array = Array[String](10)

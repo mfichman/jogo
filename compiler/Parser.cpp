@@ -39,7 +39,6 @@ Parser::Parser(Environment* env) :
 
     input("Primitives");
     input("String");
-    input("Stream");
 
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));
@@ -83,7 +82,6 @@ void Parser::input(const std::string& import) {
         tests.push_back(prefix + "/" + file);
     }
     env_->error("Could not find " + import);
-    //std::cerr << import->location();
     err_ << "Module '" << import << "' not found:\n";
     for (int i = 0; i < tests.size(); i++) {
         err_ << "    no file '" << tests[i] << "'\n";

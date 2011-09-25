@@ -955,7 +955,7 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
        
         // Initialize the vtable pointer
         Operand vtable = Operand::addr(self.temp(), 0);
-        Operand label = load(env_->name(class_->name()->string()+"__vtable"));
+        Operand label = load(env_->name(class_->label()->string()+"__vtable"));
         store(vtable, label);
         
         // Make sure that the refcount starts out at 1, otherwise the object may

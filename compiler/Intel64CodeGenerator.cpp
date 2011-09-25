@@ -71,7 +71,7 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     // The table is output in the .text section because it should be 
     // immutable.
     if (feature->is_object()) {
-        String::Ptr name = feature->name();
+        String::Ptr name = feature->label();
         Function::Ptr dtor = feature->function(env_->name("@destroy"));
         out_ << "section .data\n";
         out_ << "global "; emit_label(name->string()+"__vtable"); out_ << "\n";

@@ -163,6 +163,7 @@ public:
     Type* type() const { return type_; }
     Type* mixins() const { return mixins_; }
     String* name() const { return type_->name(); }
+    String* label() const { return label_; }
     bool is_object() const { return is_object_; }
     bool is_value() const { return is_value_; }
     bool is_interface() const { return is_interface_; }
@@ -176,6 +177,7 @@ public:
     void jump1(int index, int d);
     void jump2(int index, Function* func);
     void size(int size) { size_ = size; }
+    void label(String* label) { label_ = label; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Class> Ptr;
 
@@ -188,6 +190,7 @@ private:
     Type::Ptr type_;
     Type::Ptr mixins_;
     String::Ptr comment_;
+    String::Ptr label_;
     Feature::Ptr features_;
     bool is_object_;
     bool is_value_;

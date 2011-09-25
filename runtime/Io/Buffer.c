@@ -20,19 +20,19 @@
  * IN THE SOFTWARE.
  */
 
-#include "Buffer.h"
+#include "Io/Buffer.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 
-Buffer Buffer__init(Int capacity) {
-    Buffer ret = calloc(sizeof(struct Buffer) + capacity, 1);
+Io_Buffer Io_Buffer__init(Int capacity) {
+    Io_Buffer ret = calloc(sizeof(struct Io_Buffer) + capacity, 1);
     if (!ret) {
         fprintf(stderr, "Out of memory");
         fflush(stderr);
         abort();
     }
-    ret->_vtable = Buffer__vtable;
+    ret->_vtable = Io_Buffer__vtable;
     ret->_refcount = 1;
     ret->capacity = capacity;
     ret->begin = 0;
@@ -40,7 +40,7 @@ Buffer Buffer__init(Int capacity) {
     return ret; 
 }
 
-Byte Buffer__index(Buffer self, Int index) {
+Byte Io_Buffer__index(Io_Buffer self, Int index) {
     if (index < self->begin || index >= self->end) {
         return 0;
     } else {
@@ -48,7 +48,7 @@ Byte Buffer__index(Buffer self, Int index) {
     }
 }
 
-void Buffer__insert(Buffer self, Int index, Byte byte) {
+void Io_Buffer__insert(Io_Buffer self, Int index, Byte byte) {
     if (index < self->begin || index >= self->end) {
         return;
     } else {

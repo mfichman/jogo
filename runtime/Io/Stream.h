@@ -24,27 +24,27 @@
 #define APOLLO_STREAM_H
 
 #include "Primitives.h"
-#include "Buffer.h"
+#include "Io/Buffer.h"
 
-typedef struct Stream* Stream;
-struct Stream {
+typedef struct Io_Stream* Io_Stream;
+struct Io_Stream {
     Ptr _vtable;
     U64 _refcount;
     Int handle;
-    Buffer read_buf;
-    Buffer write_buf;
+    Io_Buffer read_buf;
+    Io_Buffer write_buf;
     Int flags;
 };
 
-Stream Stream__init(Int handle);
-void Stream_read(Stream self, Buffer buffer);
-void Stream_write(Stream self, Buffer buffer);
-Int Stream_get(Stream self);
-Int Stream_peek(Stream self);
-void Stream_put(Stream self, Char ch);
-String Stream_scan(Stream self, String delim);
-void Stream_print(Stream self, String str);
-void Stream_flush(Stream self);
-void Stream_close(Stream self);
+Io_Stream Io_Stream__init(Int handle);
+void Io_Stream_read(Io_Stream self, Io_Buffer buffer);
+void Io_Stream_write(Io_Stream self, Io_Buffer buffer);
+Int Io_Stream_get(Io_Stream self);
+Int Io_Stream_peek(Io_Stream self);
+void Io_Stream_put(Io_Stream self, Char ch);
+String Io_Stream_scan(Io_Stream self, String delim);
+void Io_Stream_print(Io_Stream self, String str);
+void Io_Stream_flush(Io_Stream self);
+void Io_Stream_close(Io_Stream self);
 
 #endif

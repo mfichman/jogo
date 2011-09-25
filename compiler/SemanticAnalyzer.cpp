@@ -90,6 +90,25 @@ void SemanticAnalyzer::operator()(Class* feature) {
     slot_ = 0;
     enter_scope();
 
+    // Calculate the label name for this function.
+    std::string name = module_->name()->string();
+    if (!name.empty()) {
+        name += "_";
+    }
+    name += class_->name()->string();
+    std::string label;
+    label.reserve(name.length());
+    for (int i = 0; i < name.length(); i++) {
+        if (name[i] == ':') {
+            label += '_';
+            i++;
+        } else {
+            label += name[i];
+        }
+    }
+
+    feature->label(env_->name(label));
+
     // Make sure that a module with this name doesn't already exist.
     if (env_->module(feature->type()->qualified_name())) {
         err_ << feature->location();

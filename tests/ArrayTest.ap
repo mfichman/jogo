@@ -1,13 +1,13 @@
 # This file tests the built-in Array type.
 
-import Array
+import Array, Io
 
 test_insert_index() {
     arr = Array[String](10)
     arr[0] = 'batman'
     arr[4] = 'joker'
 
-    println(arr[0])
+    Io::println(arr[0])
     println(arr[4])
 
     arr[50] = 'mr. freeze'

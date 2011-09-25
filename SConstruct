@@ -24,6 +24,7 @@ if env['PLATFORM'] == "posix":
 if env['PLATFORM'] == "win32":
     env.Append(CXXFLAGS = '/DWINDOWS')
     env.Append(CFLAGS = '/DWINDOWS')
+    env.Appned(CFLAGS = '/Iruntime')
     env.Append(CXXFLAGS ='/ID:\Tools\Flex\include')
     env.Append(CXXFLAGS = "/EHsc")
 
@@ -33,6 +34,7 @@ if env['PLATFORM'] != "win32":
     env.Append(CXXFLAGS = '-Wno-unused')
     env.Append(CXXFLAGS = '-Wno-sign-compare')
     env.Append(CFLAGS = '-g')
+    env.Append(CFLAGS = '-Iruntime')
     env.Append(CFLAGS = '-Wall -Werror -std=c99 -m64')
 
 

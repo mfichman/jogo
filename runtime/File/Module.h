@@ -24,9 +24,9 @@
 #define APOLLO_FILE_MODULE_H
 
 #include "../Primitives.h"
-#include "../Stream.h"
+#include "../Io/Stream.h"
 
-Stream File_open(String path, String mode);
+Io_Stream File_open(String path, String mode);
 
 
 #endif

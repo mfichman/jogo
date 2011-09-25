@@ -18,12 +18,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-open(path String, mode String) native Io::Stream {
-    # Opens a stream to the file specified by 'path'.  Returns 'nil' if the
-    # file cannot be found.  The 'mode' parameter specifies how the file 
-    # should be opened, and may be one of the following:
-    #    "r": Open for reading; file must exist
-    #    "w": Open for writing; creates a new file if 'path' doesn't exist
-    #    "a": Open for appending; creates a new file if 'path' doesn't exist
-    #    "rw": Open a file for reading and writing; file must exist
+Value = String | Int | Bool | Float | Array[Value] | Hash[String,Value]
+
+read(stream Io::Stream) Hash[String,Value] {
+    ret new Parser 
 }
+
+write(stream Io::Stream, hash Hash[String,Value]) {
+
+}
+
+
+

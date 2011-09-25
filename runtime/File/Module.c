@@ -20,38 +20,43 @@
  * IN THE SOFTWARE.
  */
 
-#include "Module.h"
-#include "../String.h"
-#include <string.h>
+#include "File/Module.h"
+#include "String.h"
 #ifndef WINDOWS
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #endif
 
-Stream File_open(String path, String mode) {
+Io_Stream File_open(String path, String mode) {
 
 #ifndef WINDOWS
     Int flags = 0;
-    if (!strncmp(mode->data, "r", 1)) {
+    if (mode->length < 1) {
+        return 0;
+    } else if (mode->data[0] == 'r') {
         flags = O_RDONLY;
-    } else if (!strncmp(mode->data, "w", 1)) {
+    } else if (mode->data[0] ==  'w') {
         flags = O_WRONLY|O_CREAT;
-    } else if (!strncmp(mode->data, "a", 1)) {
+    } else if (mode->data[0] == 'a') {
         flags = O_WRONLY|O_APPEND|O_CREAT; 
-    } else if (!strncmp(mode->data, "r+", 2)) {
+    } else if (mode->length < 2) {
+        return 0;
+    } else if (mode->data[0] == 'r' && mode->data[1] == '+') {
         flags = O_RDWR;
-    } else if (!strncmp(mode->data, "w+", 2)) {
+    } else if (mode->data[0] == 'w' && mode->data[1] == '+') {
         flags = O_RDWR|O_CREAT;
-    } else if (!strncmp(mode->data, "a+", 2)) {
+    } else if (mode->data[0] == 'a' && mode->data[1] == '+') {
         flags = O_RDWR|O_APPEND|O_CREAT;
+    } else {
+        return 0;
     }
 
     Int ret = open(path->data, flags, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
     if (ret == -1) {
         return 0;
     } else {
-        return Stream__init(ret);
+        return Io_Stream__init(ret);
     }
 #endif
 }
