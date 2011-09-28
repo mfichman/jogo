@@ -8,6 +8,7 @@ Usage: ../bin/apollo [OPTIONS] FILE...
    -i, --include DIR    Add the directory DIR to the source search path.
    -m, --make           Compile input files and out-of-date dependencies.
    -h, --help           Print this help message.
+   -v, --verbose        Print extra information during compilation.
    --dump-ir            Output the intermediate representation.
    --dump-ast           Output the abstract syntax tree.
    --dump-liveness      Display liveness info when outputing the IR.
@@ -22,6 +23,7 @@ Usage: ../bin/apollo [OPTIONS] FILE...
    -i, --include DIR    Add the directory DIR to the source search path.
    -m, --make           Compile input files and out-of-date dependencies.
    -h, --help           Print this help message.
+   -v, --verbose        Print extra information during compilation.
    --dump-ir            Output the intermediate representation.
    --dump-ast           Output the abstract syntax tree.
    --dump-liveness      Display liveness info when outputing the IR.

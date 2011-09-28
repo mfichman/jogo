@@ -38,6 +38,8 @@ public:
     BasicBlockGenerator(Environment* env, Machine* mach);
     typedef Pointer<BasicBlockGenerator> Ptr; 
 
+    void operator()(File* file);
+
 private:
     void operator()(Class* unit);
     void operator()(Module* unit);
@@ -240,6 +242,7 @@ private:
     Operand emit_pop_ret();
 
     Environment::Ptr env_;
+    File::Ptr file_;
     Machine::Ptr machine_;
     Class::Ptr class_;
     Module::Ptr module_;

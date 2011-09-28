@@ -35,8 +35,6 @@
 class Parser : public Object {
 public:
     Parser(Environment* env);
-    ~Parser();
-
     Environment* environment() const { return env_; }
     Module* module() const { return module_; }
 	File* file() const { return file_; }
@@ -62,6 +60,7 @@ private:
     void *scanner_;
     std::string string_;
     int string_start_;
+    bool is_input_file_;
 
     void file(const std::string& prefix, const std::string& file);
     void dir(const std::string& prefix, const std::string& dir);

@@ -61,9 +61,10 @@ tests.each do |test|
         end
     end
     if flags.empty?
-        flags += "-e" 
+        flags += " -e" 
         run = true
     end
+    flags += " -m"
 
     command = "../bin/apollo #{test} --optimize -i ../runtime -i ../lib "
     command = command + "#{flags} > /tmp/diff 2>&1"

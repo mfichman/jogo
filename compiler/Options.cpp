@@ -40,6 +40,7 @@ Options::Options(Environment* env, int argc, char** argv) {
         if (argv[i][0] == '-' && argv[i][1] != '-') {
             flag = argv[i] + 1;
             if ("i" == flag) { flag = "include"; }
+            else if ("v" == flag) { flag = "verbose"; }
             else if ("a" == flag) { flag = "assembly"; }
             else if ("c" == flag) { flag = "compile"; }
             else if ("l" == flag) { flag = "library"; }
@@ -47,8 +48,12 @@ Options::Options(Environment* env, int argc, char** argv) {
             else if ("e" == flag) { flag = "execute"; }
             else if ("m" == flag) { flag = "make"; }
             else if ("h" == flag) { flag = "help"; }
+            else if ("d" == flag) { flag = "output-dir"; }
             else {
-                err << "Unknown flag '" << argv[i] << "'\n";
+                print_usage();
+                err << "Unknown flag '" << argv[i] << "'\n\n";
+                err->flush();
+                exit(1);
             }
             args.clear();
         } else if (argv[i][0] == '-') {
@@ -66,6 +71,8 @@ Options::Options(Environment* env, int argc, char** argv) {
             if ("help" == flag) {
                 print_usage();
                 exit(0);
+            } else if ("verbose" == flag) {
+                env->verbose(true);
             } else if ("optimize" == flag) {
                 env->optimize(true);
             } else if ("assembly" == flag) {
@@ -95,6 +102,8 @@ Options::Options(Environment* env, int argc, char** argv) {
                 env->include(argv[i]); 
             } else if ("output" == flag) {
                 env->output(argv[i]);
+            } else if ("output-dir" == flag) {
+                env->output_dir(argv[i]);
             } else if ("library" == flag) {
                 env->lib(argv[i]);
             } else {
@@ -127,6 +136,7 @@ void Options::print_usage() {
     out << "   -i, --include DIR    Add the directory DIR to the source search path.\n";
     out << "   -m, --make           Compile input files and out-of-date dependencies.\n";
     out << "   -h, --help           Print this help message.\n";
+    out << "   -v, --verbose        Print extra information during compilation.\n";
     out << "   --dump-ir            Output the intermediate representation.\n";
     out << "   --dump-ast           Output the abstract syntax tree.\n";
     out << "   --dump-liveness      Display liveness info when outputing the IR.\n";

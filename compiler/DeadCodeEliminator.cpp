@@ -24,14 +24,20 @@
 
 
 DeadCodeEliminator::DeadCodeEliminator(Environment* env, Machine* mach) :
+    env_(env),
     liveness_(new LivenessAnalyzer(mach)) {
 
-    if (env->errors()) {
+}
+
+void DeadCodeEliminator::operator()(File* file) {
+    if (env_->errors()) {
         return;
     } 
-    for (Feature::Ptr m = env->modules(); m; m = m->next()) {
-        m(this);
+    file_ = file;
+    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
+        f(this);
     }
+    file_ = 0;
 }
 
 void DeadCodeEliminator::operator()(Module* feature) {
@@ -41,12 +47,18 @@ void DeadCodeEliminator::operator()(Module* feature) {
 }
 
 void DeadCodeEliminator::operator()(Class* feature) {
+    if (feature->location().file != file_) {
+        return;
+    }
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
 }
 
 void DeadCodeEliminator::operator()(Function* feature) {
+    if (feature->location().file != file_) {
+        return;
+    }
     liveness_->operator()(feature);
     for (int i = 0; i < feature->basic_blocks(); i++) {
         operator()(feature->basic_block(i));

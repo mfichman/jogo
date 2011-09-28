@@ -28,18 +28,27 @@ using namespace std;
 
 
 RegisterAllocator::RegisterAllocator(Environment* env, Machine* machine) :
+    env_(env),
     liveness_(new LivenessAnalyzer(machine)),
     machine_(machine) {
 
-    if (env->errors()) {
+}
+
+void RegisterAllocator::operator()(File* file) {
+    if (env_->errors()) {
         return;
     }
-    for (Feature::Ptr m = env->modules(); m; m = m->next()) {
-        m(this);
+    file_ = file;
+    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
+        f(this);
     }
+    file_ = 0;
 }
 
 void RegisterAllocator::operator()(Class* feature) {
+    if (feature->location().file != file_) {
+        return;
+    }
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
@@ -54,6 +63,9 @@ void RegisterAllocator::operator()(Module* feature) {
 void RegisterAllocator::operator()(Function* func) {
     // Allocate registers for temporaries in the function.  This allocator
     // uses an optimistic, greedy graph coloring algorithm.
+    if (func->location().file != file_) {
+        return;
+    }
 
     spilled_.clear();
 

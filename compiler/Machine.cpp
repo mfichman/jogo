@@ -32,7 +32,7 @@ Register* Machine::reg(const std::string& name, bool allocatable) {
     return reg_.back();
 }
 
-Machine::Ptr Machine::intel64() {
+Machine* Machine::intel64() {
     // Creates an Intel64 machine description (a.k.a. AMD64, x86-64, but my
     // dad worked at Intel for 18 years, so in this compiler, we're callin it
     // Intel64!).

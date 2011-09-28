@@ -22,13 +22,20 @@
 
 #include "CopyPropagator.hpp"
 
-CopyPropagator::CopyPropagator(Environment* env) {
-    if (env->errors()) {
+CopyPropagator::CopyPropagator(Environment* env) :
+    env_(env) {
+
+}
+
+void CopyPropagator::operator()(File* file) {
+    if (env_->errors()) {
         return;
     } 
-    for (Feature::Ptr m = env->modules(); m; m = m->next()) {
-        m(this);
+    file_ = file;
+    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
+        f(this);
     }
+    file_ = 0;
 }
 
 void CopyPropagator::operator()(Module* feature) {
@@ -38,12 +45,18 @@ void CopyPropagator::operator()(Module* feature) {
 }
 
 void CopyPropagator::operator()(Class* feature) {
+    if (feature->location().file != file_) {
+        return;
+    }
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
 }
 
 void CopyPropagator::operator()(Function* feature) {
+    if (feature->location().file != file_) {
+        return;
+    }
     for (int i = 0; i < feature->basic_blocks(); i++) {
         operator()(feature->basic_block(i));
     } 

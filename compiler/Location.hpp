@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <Apollo.hpp>
 #include <String.hpp>
 #include <Stream.hpp>
 #include <cassert>
@@ -29,6 +30,7 @@
 class Location {
 public:
     Location() :
+        file(0),
         first_line(0),
         first_column(0),
         last_line(0),
@@ -36,13 +38,13 @@ public:
     }
     Location(const Location& copy) {
 
-        file_name = copy.file_name;
+        file = copy.file; 
         first_line = copy.first_line;
         first_column = copy.first_column;
         last_line = copy.last_line;
         last_column = copy.last_column;
     }
-    String::Ptr file_name;
+    File* file;
     int first_line;
     int first_column;
     int last_line;

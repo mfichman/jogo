@@ -41,12 +41,9 @@ Parser::Parser(Environment* env) :
     input("String");
 
     for (int i = 0; i < env->inputs(); i++) {
+        is_input_file_ = true;
         input(env->input(i));
     }
-}
-
-Parser::~Parser() {
-
 }
 
 void Parser::input(const std::string& import) {
@@ -102,14 +99,16 @@ void Parser::file(const std::string& prefix, const std::string& file) {
 
     // Create a file object for this file if it hasn't been parsed yet.
     std::string actual_file = (prefix == ".") ? file : prefix + "/" + file;
-    String* fs = env_->name(actual_file);
+    String* fs = env_->name(file);
     file_ = env_->file(fs);
     if (file_) {
         return;
     } else {
-        file_ = new File(fs, module_, env_);
+        file_ = new File(fs, env_->name(actual_file), module_, env_);
+        file_->is_input_file(is_input_file_);
         env_->file(file_);
     }
+    is_input_file_ = false;
 
     this->column_ = 1;
     this->input_.close();

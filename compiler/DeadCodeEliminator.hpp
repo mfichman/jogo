@@ -32,11 +32,15 @@ public:
     DeadCodeEliminator(Environment* env, Machine* mach);
     
     typedef Pointer<DeadCodeEliminator> Ptr; 
+    void operator()(File* file);
+    
+private:
     void operator()(Module* feature);
     void operator()(Class* feature);
     void operator()(Function* feature);
-    
-private:
     void operator()(BasicBlock* block);
+
+    Environment::Ptr env_;
     LivenessAnalyzer::Ptr liveness_;
+    File::Ptr file_;
 };

@@ -29,6 +29,7 @@
 #include "File.hpp"
 #include <map>
 
+
 /* Compilation environment; contains symbol table and compilation units */
 class Environment : public Object {
 public:
@@ -40,6 +41,7 @@ public:
     String* integers() const { return integers_; }
     String* floats() const { return floats_; }
     String* strings() const { return strings_; }
+    File* files() const { return files_; }
     Module* root() const { return root_; }
     Module* builtins() const { return builtins_; }
     Module* module(String* scope);
@@ -49,6 +51,7 @@ public:
     const std::string& input(int index) { return input_[index]; }
     const std::string& lib(int index) { return lib_[index]; }
     const std::string& output() const { return output_; }
+    const std::string& output_dir() const { return output_dir_; }
     bool make() const { return make_; }
     bool optimize() const { return optimize_; }
     bool link() const { return link_; }
@@ -57,6 +60,7 @@ public:
     bool dump_ir() const { return dump_ir_; }
     bool dump_liveness() const { return dump_liveness_; }
     bool dump_ast() const { return dump_ast_; }
+    bool verbose() const { return verbose_; }
     
     int errors() { return errors_; }
     int includes() { return include_.size(); }
@@ -66,9 +70,11 @@ public:
     void input(const std::string& path) { input_.push_back(path); }
     void lib(const std::string& path) { lib_.push_back(path); }
     void output(const std::string& path) { output_ = path; }
+    void output_dir(const std::string& path) { output_dir_ = path; }
     void dump_ir(bool dump) { dump_ir_ = dump; }
     void dump_liveness(bool dump) { dump_liveness_ = dump; }
     void dump_ast(bool dump) { dump_ast_ = dump; }
+    void verbose(bool verbose) { verbose_ = verbose; }
     void make(bool make) { make_ = make; }
     void optimize(bool optimize) { optimize_ = optimize; }
     void link(bool link) { link_ = link; }
@@ -104,6 +110,7 @@ private:
     std::vector<std::string> input_;
     std::vector<std::string> lib_;
 
+    File::Ptr files_;
     String::Ptr strings_;
     String::Ptr integers_;
     String::Ptr floats_;
@@ -124,6 +131,7 @@ private:
     Type::Ptr self_type_;
 
     std::string output_;
+    std::string output_dir_;
     bool dump_ast_;
     bool dump_ir_;
     bool dump_liveness_;
@@ -132,6 +140,7 @@ private:
     bool link_;
     bool assemble_;
     bool execute_;
+    bool verbose_;
 
     int errors_;
 };

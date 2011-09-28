@@ -31,7 +31,11 @@
 #define S_ISDIR(x) ((x) & _S_IFDIR)
 #define S_ISREG(x) ((x) & _S_IFREG)
 #else
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <dirent.h>
+#include <errno.h>
 #endif
 
 Function* File::function(String* scope, String* name) {
@@ -138,6 +142,16 @@ void File::feature(Feature* feature) {
     }
 }
 
+time_t File::mtime(const std::string& name) {
+    struct stat info;
+    if (stat(name.c_str(), &info)) {
+        return 0;
+    } else {
+        return info.st_mtime;
+    }
+
+}
+
 bool File::is_dir(const std::string& name) {
     struct stat info;
     if (stat(name.c_str(), &info)) {
@@ -199,6 +213,15 @@ std::string File::base_name(const std::string& file) {
     return file.substr(slash, dot - slash); // slashdot!!
 }
 
+std::string File::no_ext_name(const std::string& file) {
+    size_t dot = file.find_last_of('.');
+    if (dot == std::string::npos) {
+        return file;
+    } else {
+        return file.substr(0, dot);
+    }
+}
+
 std::string File::ext(const std::string& file) {
     // Returns the component after the last '.'
 
@@ -208,6 +231,36 @@ std::string File::ext(const std::string& file) {
     } else {    
         return file.substr(dot);
     }
+}
+
+std::string File::dir_name(const std::string& file) {
+    size_t slash = file.find_last_of('/');
+    if (slash == std::string::npos) {
+        return ".";
+    } else {
+        return file.substr(0, slash);
+    }
+}
+
+bool File::mkdir(const std::string& file) {
+    // Recursively makes all directories in the path specified by 'file'.
+
+    size_t pos = file.find_last_of('/');
+    if (pos != std::string::npos) {
+        File::mkdir(file.substr(0, pos));
+    }
+
+#ifdef WINDOWS
+    if (CreateDirectory(path.c_str(), 0)) {
+        return GetLastError() == ERROR_ALREADY_EXISTS;
+    }
+#else
+    mode_t mode = S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH;
+    if (::mkdir(file.c_str(), mode)) {
+        return errno == EEXIST;
+    }
+#endif
+    return true;
 }
 
 File::Iterator::Iterator(const std::string& file) :

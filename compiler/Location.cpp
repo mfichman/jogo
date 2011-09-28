@@ -21,11 +21,11 @@
  */  
 
 #include "Location.hpp"
-#include <iostream>
+#include "File.hpp"
 
 Stream::Ptr operator<<(Stream::Ptr out, const Location& location) {
-    if (location.file_name) {
-        out << location.file_name << ":";
+    if (location.file) {
+        out << location.file->name() << ":";
     }
     out << location.first_line << ":";
     out << location.first_column << ": ";

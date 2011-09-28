@@ -53,13 +53,10 @@ private:
 /* Register allocator; reduces instructions to sequences */
 class RegisterAllocator : public TreeNode::Functor {
 public:
-    RegisterAllocator(Machine* machine) :
-        liveness_(new LivenessAnalyzer(machine)),
-        machine_(machine) {
-    }
     RegisterAllocator(Environment* env, Machine* machine);
 
     typedef Pointer<RegisterAllocator> Ptr;
+    void operator()(File* file);
     void operator()(Module* feature);
     void operator()(Class* feature);
     void operator()(Function* feature);
@@ -73,10 +70,12 @@ private:
 
     std::vector<RegisterVertex> graph_;
     std::vector<int> stack_;
+    Environment::Ptr env_;
     LivenessAnalyzer::Ptr liveness_;
     Machine::Ptr machine_;
     bool spill_;
     std::set<int> spilled_;
+    File::Ptr file_;
 };
 
 

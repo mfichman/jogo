@@ -33,8 +33,11 @@
 
 class BasicBlockPrinter : public TreeNode::Functor {
 public:
-    BasicBlockPrinter(Environment* e, Machine* m, Stream* o=Stream::stout());
+    BasicBlockPrinter(Environment* env, Machine* mach);
     typedef Pointer<BasicBlockPrinter> Ptr;
+
+    void out(Stream* out) { out_ = out; }
+    void operator()(File* file);
 
 private:
     void operator()(Module* feature);
@@ -47,4 +50,5 @@ private:
     LivenessAnalyzer::Ptr liveness_;
     Module::Ptr module_;
     Class::Ptr class_;
+    File::Ptr file_;
 };

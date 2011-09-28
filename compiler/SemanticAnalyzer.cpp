@@ -998,7 +998,7 @@ void SemanticAnalyzer::gen_constructor() {
     if (!class_->function(env_->name("@init"))) {
         String::Ptr nm = env_->name("@init");
         Type::Ptr vt = env_->void_type();
-        Location loc;
+        Location loc = class_->location();
         Block::Ptr block(new Block(loc, 0, 0));
         class_->feature(new Function(loc, nm, 0, 0, vt, block));
     }
@@ -1010,7 +1010,7 @@ void SemanticAnalyzer::gen_destructor() {
         String::Ptr nm = env_->name("@destroy");
         Type::Ptr st = env_->self_type();
         Type::Ptr vt = env_->void_type();
-        Location loc;
+        Location loc = class_->location();
         Block::Ptr block(new Block(loc, 0, 0));
         Formal::Ptr self(new Formal(loc, env_->name("self"), st));
         class_->feature(new Function(loc, nm, self, 0, vt, block));
@@ -1021,7 +1021,7 @@ void SemanticAnalyzer::gen_accessor(Attribute* feature) {
     // Insert a setter for the attribute if it doesn't already exist
     String::Ptr get = env_->name(feature->name()->string()+"?");
     if (!class_->function(get) && !feature->is_private()) {
-        Location loc;
+        Location loc = class_->location();
         Identifier::Ptr attr(new Identifier(loc, feature->name()));
         Return::Ptr ret(new Return(loc, attr)); 
         Block::Ptr block(new Block(loc, 0, ret));
@@ -1037,7 +1037,7 @@ void SemanticAnalyzer::gen_mutator(Attribute* feature) {
     String::Ptr set = env_->name(feature->name()->string()+"=");
     if (!class_->function(set) && !feature->is_immutable()
             && !feature->is_private()) {
-        Location loc;
+        Location loc = class_->location();
         Identifier::Ptr val(new Identifier(loc, env_->name("_arg0"))); 
         Assignment::Ptr assign(new Assignment(loc, feature->name(), 0, val)); 
         Block::Ptr block(new Block(loc, 0, new Simple(loc, assign)));

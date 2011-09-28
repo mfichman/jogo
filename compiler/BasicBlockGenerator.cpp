@@ -32,29 +32,35 @@ BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
     machine_(mach),
     label_(0) {
 
+}
+
+void BasicBlockGenerator::operator()(File* file) {
     if (env_->errors()) {
         return;
     }
-    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
-        m(this);
+    file_ = file;
+    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
+        f(this);
     }    
+    file_ = 0;
 }
 
 void BasicBlockGenerator::operator()(Class* feature) {
     // Output intermediate-level code for the class given by 'feature'.  
     // This function also sets up the vtable for the class.
+    if (feature->location().file != file_) {
+        return;
+    }
     class_ = feature;
     calculate_size(feature);
-
     enter_scope();
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
     exit_scope();
-
-    if (!feature->is_object()) { return; }
-
-    emit_vtable(feature);
+    if (feature->is_object()) {
+        emit_vtable(feature);
+    }
     class_ = 0;
 }
 
@@ -434,6 +440,9 @@ void BasicBlockGenerator::operator()(Yield* statament) {
 void BasicBlockGenerator::operator()(Function* feature) {
     // If the function is just a prototype, don't emit any code.
     if (!feature->block() || feature->is_native()) {
+        return;
+    }
+    if (feature->location().file != file_) {
         return;
     }
 

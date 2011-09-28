@@ -26,6 +26,7 @@
 
 Environment::Environment() :
     output_("-"),
+    output_dir_("build"),
     dump_ast_(false),
     dump_ir_(false),
     dump_liveness_(false),
@@ -37,7 +38,7 @@ Environment::Environment() :
 
     root_ = new Module(Location(), name(""), this);
     builtins_ = new Module(Location(), name(""), this);
-    builtin_file_ = new File(0, builtins_, this);
+    builtin_file_ = new File(0, 0, builtins_, this);
     void_type_ = new Type(Location(), name("Void"), 0, builtin_file_, this);
     bool_type_ = new Type(Location(), name("Bool"), 0, builtin_file_, this);
     int_type_ = new Type(Location(), name("Int"), 0, builtin_file_, this);
@@ -136,6 +137,8 @@ File* Environment::file(String* scope) {
 
 void Environment::file(File* file) {
     file_[file->name()] = file;
+    file->next(files_);
+    files_ = file;
 }
 
 void Environment::module(Module* module) {

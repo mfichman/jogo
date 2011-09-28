@@ -91,7 +91,7 @@ public:
     void word_size(int size) { word_size_ = size; }
     typedef Pointer<Machine> Ptr;
 
-    static Machine::Ptr intel64();
+    static Machine* intel64();
 
 private:
     std::vector<Register::Ptr> caller_reg_;

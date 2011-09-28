@@ -54,11 +54,13 @@ env.Program('bin/apdoc', compiler_sources + ['build/drivers/Doc.cpp'])
 
 library_sources = env.Glob('build/runtime/*/*.c') 
 library_sources += env.Glob('build/runtime/*.c')
-env.StaticLibrary('lib/apollo', library_sources)
+lib = env.StaticLibrary('lib/apollo', library_sources)
 #env.Program('bin/asmtest', 'samples/Test.linux.asm')
 
 if 'check' in COMMAND_LINE_TARGETS:
-    env.Command('check', 'bin/apollo', 'scripts/test --verbose')
+    check = env.Command('check', 'bin/apollo', 'scripts/test --verbose')
+    env.Depends(check, lib)
 
 if 'test' in COMMAND_LINE_TARGETS:
-    env.Command('test', 'bin/apollo', 'scripts/test --full --verbose')
+    test = env.Command('test', 'bin/apollo', 'scripts/test --full --verbose')
+    env.Depends(test, lib)

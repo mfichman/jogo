@@ -30,17 +30,26 @@
 /* Basic file operations and utilites */
 class File : public Object {
 public:
-    File(String* name, Module* module, Environment* env) :
+    File(String* name, String* path, Module* module, Environment* env) :
         name_(name),
+        path_(path),
         module_(module),
-        environment_(env) {  
+        environment_(env),
+        is_input_file_(false) {  
     }
 
     Feature* features() const { return features_; }
     Function* function(String* scope, String* name);
     Class* clazz(String* scope, String* name);
     String* name() const { return name_; }
+    String* path() const { return path_; }
+    File* next() const { return next_; }
+    String* output() const { return output_; }
+    bool is_input_file() const { return is_input_file_; }
     void feature(Feature* feature);
+    void next(File* next) { next_ = next; }
+    void output(String* path) { output_ = path; }
+    void is_input_file(bool input) { is_input_file_ = input; }
     typedef Pointer<File> Ptr;
 
     class Iterator;
@@ -49,13 +58,21 @@ public:
     static bool is_native_lib(const std::string& file);
     static std::string base_name(const std::string& file);
     static std::string ext(const std::string& file);
+    static std::string no_ext_name(const std::string& file);
+    static std::string dir_name(const std::string& file);
+    static bool mkdir(const std::string& file);
+    static time_t mtime(const std::string& file);
 
 private:
     Feature::Ptr features_;
     String::Ptr name_;
+    String::Ptr path_;
     Module::Ptr module_;
     Environment* environment_;
     std::vector<Import::Ptr> imports_; 
+    File::Ptr next_;
+    String::Ptr output_;
+    bool is_input_file_;
 };
 
 /* Directory iterator object */

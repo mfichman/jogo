@@ -22,8 +22,8 @@
 
 #pragma once
 #include "Apollo.hpp"
-#include <vector>
 #include <cstring>
+#include <vector>
 #ifdef WINDOWS
 #include <windows.h>
 #endif

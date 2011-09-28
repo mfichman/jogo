@@ -21,7 +21,7 @@ void yyerror(Location *loc, Parser *parser, void *scanner, const char *msg);
     current.first_column = rhs[1].first_column;\
     current.last_line = rhs[n].last_line;\
     current.last_column = rhs[n].last_column;\
-    current.file_name = parser->file()->name();\
+    current.file = parser->file();\
 }
 
 #define ID(X) parser->environment()->name((X))

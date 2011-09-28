@@ -36,10 +36,90 @@
 #include <iostream>
 #include <cstdlib>
 
+Machine::Ptr machine = Machine::intel64();
+Environment::Ptr env(new Environment());
+BasicBlockGenerator::Ptr bgen(new BasicBlockGenerator(env, machine));
+CopyPropagator::Ptr copy(new CopyPropagator(env));
+DeadCodeEliminator::Ptr elim(new DeadCodeEliminator(env, machine));
+BasicBlockPrinter::Ptr bprint(new BasicBlockPrinter(env, machine));
+RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
+Intel64CodeGenerator::Ptr cgen(new Intel64CodeGenerator(env));
+
+void output(File* file) {
+    // Process 'file' and output the requested output path.  Multiple files 
+    // may go through this function if the multi-compile option is enabled.
+    if (!env->make() && !env->link() && !file->is_input_file()) {
+        return;
+    }
+
+    std::string name = File::no_ext_name(file->name()->string());
+    std::string out_file = env->output_dir() + "/" + name;
+
+    if (env->make() && env->link()) {
+        time_t t1 = File::mtime(out_file + ".apo");
+        time_t t2 = File::mtime(file->path()->string());
+        file->output(env->name(out_file + ".apo"));
+        if (t1 >= t2) { return; }
+    }
+ 
+    if (env->verbose()) {
+        std::cout << "Compiling " << out_file << std::endl;
+    }
+    
+    if (!env->assemble() || !env->link() || env->make()) {
+        File::mkdir(File::dir_name(out_file));
+    }
+
+    bgen->operator()(file);
+    if (env->optimize()) {
+        copy->operator()(file);
+        elim->operator()(file); 
+    }
+    if (env->dump_ir()) {
+        bprint->out(new Stream(env->output()));
+        bprint->operator()(file);
+    } 
+    alloc->operator()(file);
+    if (env->dump_ir()) {
+        bprint->out(new Stream(env->output()));
+        bprint->operator()(file);
+        exit(0);
+    } 
+
+    std::string asm_file = env->assemble() ? tmpnam(0) : out_file + ".s";
+    file->output(env->name(asm_file));
+    cgen->out(new Stream(asm_file));
+    cgen->operator()(file);
+
+    if (!env->assemble()) { return; }
+
+    // Run the assembler.  Output to a non-temp file if the compiler will stop
+    // at the assembly stage
+    std::string obj_file;
+    if (env->link() && !env->make()) {
+        obj_file = tmpnam(0);
+    } else {
+
+        obj_file = out_file + ".apo";
+    }
+    file->output(env->name(obj_file));
+    std::stringstream ss;
+#if defined(WINDOWS)
+    ss << "nasm -fobj64 " << asm_file << " -o " << obj_file;
+#elif defined(LINUX)
+    ss << "nasm -felf64 " << asm_file << " -o " << obj_file;
+#elif defined(DARWIN)
+    ss << "nasm -fmacho64 " << asm_file << " -o " << obj_file;
+#endif 
+    if (system(ss.str().c_str())) {
+        exit(1);
+    }
+    remove(asm_file.c_str());
+}
+
 int main(int argc, char** argv) {
     // Create a new empty environment to store the AST and symbols tables, and
     // set the options for compilation.
-    Environment::Ptr env(new Environment());
     Options(env, argc, argv);
 
     // Run the compiler.  Output to a temporary file if the compiler will
@@ -53,55 +133,29 @@ int main(int argc, char** argv) {
     } 
     if (env->errors()) { return 1; }
 
-    Machine::Ptr machine = Machine::intel64();
-    BasicBlockGenerator::Ptr generator(new BasicBlockGenerator(env, machine));
-    if (env->optimize()) {
-        CopyPropagator::Ptr copy(new CopyPropagator(env));
-        DeadCodeEliminator::Ptr opt(new DeadCodeEliminator(env, machine));
-    }
-    if (env->dump_ir()) {
-        Stream::Ptr out(new Stream(env->output()));
-        BasicBlockPrinter::Ptr print(new BasicBlockPrinter(env, machine, out));
-    } 
-    RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
-    if (env->dump_ir()) {
-        Stream::Ptr out(new Stream(env->output()));
-        BasicBlockPrinter::Ptr print(new BasicBlockPrinter(env, machine, out));
-        return 0;
-    } 
-
-    std::string asm_file = env->assemble() ? tmpnam(0) : env->output();
-    Stream::Ptr out(new Stream(asm_file));
-    Intel64CodeGenerator::Ptr codegen(new Intel64CodeGenerator(env, out));
-    if (!env->assemble()) { return 0; }
-
-    // Run the assembler.  Output to a non-temp file if the compiler will stop
-    // at the assembly stage
-    std::string obj_file = env->link() ? tmpnam(0) : env->output();
-    std::stringstream ss;
-#if defined(WINDOWS)
-    ss << "nasm -fobj64 " << asm_file << " -o " << obj_file;
-#elif defined(LINUX)
-    ss << "nasm -felf64 " << asm_file << " -o " << obj_file;
-#elif defined(DARWIN)
-    ss << "nasm -fmacho64 " << asm_file << " -o " << obj_file;
-#endif 
-    if (system(ss.str().c_str())) { return 1; }
-    remove(asm_file.c_str());
+    for (File::Ptr file = env->files(); file; file = file->next()) {
+        output(file);
+    }     
+    if (env->errors()) { return 1; }
     if (!env->link()) { return 0; }
 
     // Run the linker.  Always output to the given output file name.
+    std::string obj_files;
+    for (File::Ptr file = env->files(); file; file = file->next()) {
+        obj_files += file->output()->string() + " ";
+    } 
     std::string exe_file = env->execute() ? tmpnam(0) : env->output();
     if (exe_file == "-") {
         exe_file = "out";
     }
-    ss.str("");
+
+    std::stringstream ss;
 #if defined(WINDOWS)    
-    ss << "link.exe " << obj_file << " /OUT:" << exe_file << ".exe";
+    ss << "link.exe " << obj_files << " /OUT:" << exe_file << ".exe";
 #elif defined(LINUX)
-    ss << "gcc -m64 " << obj_file << " -o " << exe_file;
+    ss << "gcc -m64 " << obj_files << " -o " << exe_file;
 #elif defined(DARWIN)
-    ss << "gcc -Wl,-no_pie " << obj_file << " -o " << exe_file;
+    ss << "gcc -Wl,-no_pie " << obj_files << " -o " << exe_file;
     // FIXME: Remove dynamic-no-pic once rel addressing is fixed
 #endif
     for (int i = 0; i < env->libs(); i++) {
@@ -120,8 +174,14 @@ int main(int argc, char** argv) {
 #endif
         }
     }
+
     if (system(ss.str().c_str())) { return 1; }
-    remove(obj_file.c_str());
+    if (!env->make()) {
+        for (File::Ptr file = env->files(); file; file = file->next()) {
+            remove(file->output()->string().c_str());   
+        }
+    }
+
     if (!env->execute()) { return 0; }
 
     // Run the program, if the -e flag was specified.

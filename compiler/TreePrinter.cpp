@@ -100,7 +100,7 @@ void TreePrinter::operator()(Module* feature) {
     int i = 0;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         const Location& loc = f->location();
-        if (loc.file_name->string().find("../runtime") != 0) {
+        if (loc.file->path()->string().find("../runtime") != 0) {
             print_tabs(); out_ << "feature" << i << ": ";
             f(this);
             i++;

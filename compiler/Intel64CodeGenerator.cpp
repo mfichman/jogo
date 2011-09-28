@@ -24,17 +24,19 @@
 #include <sstream>
 
 static const int MAXIMM = 4096;
-static const Register::Ptr ESP(new Register("rsp", 0, false));
-static const Register::Ptr EBP(new Register("rbp", 0, false));
 
-Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
+Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
     env_(env),
-    machine_(Machine::intel64()),
-    out_(out) {
+    machine_(Machine::intel64()) {
 
+}
+
+void Intel64CodeGenerator::operator()(File* file) {
     if (env_->errors()) {
         return;
     }
+
+    file_ = file;
     
     out_ << "default rel\n";
     out_ << "section .data\n";
@@ -51,13 +53,13 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env, Stream* out) :
     out_ << "extern "; emit_label("Object__dispatch"); out_ << "\n";
     out_ << "extern "; emit_label("Object__refcount_dec"); out_ << "\n";
     out_ << "extern "; emit_label("Object__refcount_inc"); out_ << "\n";
-    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
-        m(this);
+    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
+        f(this);
     }
 
     out_->flush();
+    file_ = 0;
 }
-
 
 void Intel64CodeGenerator::operator()(Class* feature) {
     // Output the class dispatch table for calling methods with dynamic
@@ -73,22 +75,31 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     if (feature->is_object()) {
         String::Ptr name = feature->label();
         Function::Ptr dtor = feature->function(env_->name("@destroy"));
-        out_ << "section .data\n";
-        out_ << "global "; emit_label(name->string()+"__vtable"); out_ << "\n";
-        emit_label(name->string()+"__vtable"); out_ << ":\n";
-        out_ << "    dq "; emit_label(dtor->label()); out_ << "\n"; 
-        out_ << "    dq " << feature->jump1s() << "\n";
-        for (int i = 0; i < feature->jump1s(); i++) {
-            out_ << "    dq " << feature->jump1(i) << "\n";
-        } 
-        for (int i = 0; i < feature->jump2s(); i++) {
-            if (feature->jump2(i)) {
-                out_ << "    dq ";
-                emit_label(feature->jump2(i)->label());
-                out_ << "\n";
-            } else {
-                out_ << "    dq 0\n";
+
+        if (feature->location().file == file_) {
+            out_ << "section .data\n";
+            out_ << "global "; 
+            emit_label(name->string()+"__vtable"); 
+            out_ << "\n";
+            emit_label(name->string()+"__vtable"); out_ << ":\n";
+            out_ << "    dq "; emit_label(dtor->label()); out_ << "\n"; 
+            out_ << "    dq " << feature->jump1s() << "\n";
+            for (int i = 0; i < feature->jump1s(); i++) {
+                out_ << "    dq " << feature->jump1(i) << "\n";
+            } 
+            for (int i = 0; i < feature->jump2s(); i++) {
+                if (feature->jump2(i)) {
+                    out_ << "    dq ";
+                    emit_label(feature->jump2(i)->label());
+                    out_ << "\n";
+                } else {
+                    out_ << "    dq 0\n";
+                }
             }
+        } else {
+            out_ << "extern ";
+            emit_label(name->string()+"__vtable");
+            out_ << "\n";
         }
     }
 
@@ -108,7 +119,7 @@ void Intel64CodeGenerator::operator()(Module* feature) {
 void Intel64CodeGenerator::operator()(Function* feature) {
     // Emit a function, or an extern declaration if the function is native or
     // belongs to a different output file.
-    if (feature->is_native()) {
+    if (feature->is_native() || feature->location().file != file_) {
         out_ << "extern "; emit_label(feature->label()); out_ << "\n";
     } else if (feature->basic_blocks()) {
         out_ << "global "; emit_label(feature->label()); out_ << "\n";

@@ -32,8 +32,13 @@ public:
     CopyPropagator(Environment* env);
 
     typedef Pointer<CopyPropagator> Ptr;
+    void operator()(File* file);
     void operator()(Module* feature);
     void operator()(Class* feature);
     void operator()(Function* feature);
     void operator()(BasicBlock* block);
+
+private:
+    Environment::Ptr env_;
+    File::Ptr file_;
 };

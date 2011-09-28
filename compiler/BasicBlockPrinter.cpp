@@ -25,18 +25,20 @@
 
 using namespace std;
 
-BasicBlockPrinter::BasicBlockPrinter(Environment* e, Machine* m, Stream* o) :
-    env_(e),
-    out_(o),
-    liveness_(new LivenessAnalyzer(m)) {
+BasicBlockPrinter::BasicBlockPrinter(Environment* env, Machine* mach) :
+    env_(env),
+    liveness_(new LivenessAnalyzer(mach)) {
+}
 
+void BasicBlockPrinter::operator()(File* file) {
     if (env_->errors()) {
         return;
     }
-    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
-        m(this);
+    file_ = file;
+    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
+        f(this);
     }
-
+    file_ = 0;
     out_->flush();
 }
 
@@ -44,20 +46,26 @@ void BasicBlockPrinter::operator()(Module* feature) {
     module_ = feature;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         const Location& loc = f->location();
-        if (loc.file_name->string().find("../runtime") != 0) {
-            f(this);
-        }
+        f(this);
     } 
+    module_ = 0;
 }
 
 void BasicBlockPrinter::operator()(Class* feature) {
+    if (feature->location().file != file_) {
+        return;
+    }
     class_ = feature;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
+    class_ = 0;
 }
 
 void BasicBlockPrinter::operator()(Function* feature) {
+    if (feature->location().file != file_) {
+        return;
+    } 
     liveness_->operator()(feature);
 
     if (feature->basic_blocks()) {
