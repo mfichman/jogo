@@ -1,4 +1,4 @@
-Usage: ../bin/apollo [OPTIONS] FILE...
+Usage: apollo [OPTIONS] FILE...
 
    -a, --assembly       Compile, but do not assemble or link.
    -c, --compile        Compile and assemble, but do not link.
@@ -11,9 +11,10 @@ Usage: ../bin/apollo [OPTIONS] FILE...
    -v, --verbose        Print extra information during compilation.
    --dump-ir            Output the intermediate representation.
    --dump-ast           Output the abstract syntax tree.
-   --dump-liveness      Display liveness info when outputing the IR.
+   --dump-liveness      Output liveness info when printing the IR.
+   --version            Print the compiler version number.
 
-Usage: ../bin/apollo [OPTIONS] FILE...
+Usage: apollo [OPTIONS] FILE...
 
    -a, --assembly       Compile, but do not assemble or link.
    -c, --compile        Compile and assemble, but do not link.
@@ -26,5 +27,6 @@ Usage: ../bin/apollo [OPTIONS] FILE...
    -v, --verbose        Print extra information during compilation.
    --dump-ir            Output the intermediate representation.
    --dump-ast           Output the abstract syntax tree.
-   --dump-liveness      Display liveness info when outputing the IR.
+   --dump-liveness      Output liveness info when printing the IR.
+   --version            Print the compiler version number.
 

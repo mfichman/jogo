@@ -90,6 +90,9 @@ Options::Options(Environment* env, int argc, char** argv) {
                 env->dump_liveness(true);
             } else if ("execute" == flag) {
                 env->execute(true);
+            } else if ("version" == flag) {
+                print_version();
+                exit(0); 
             } else {
                 break;
             }
@@ -125,9 +128,15 @@ Options::Options(Environment* env, int argc, char** argv) {
     err->flush();
 }
 
+void Options::print_version() {
+    Stream::Ptr out = Stream::stout();
+    out << "Apollo version 0.1.0, compiled on "__DATE__ << " " << __TIME__ << "\n";
+    out->flush();
+}
+
 void Options::print_usage() {
     Stream::Ptr out = Stream::stout();
-    out << "Usage: " << program_name_ << " [OPTIONS] FILE...\n\n";
+    out << "Usage: apollo [OPTIONS] FILE...\n\n";
     out << "   -a, --assembly       Compile, but do not assemble or link.\n";
     out << "   -c, --compile        Compile and assemble, but do not link.\n";
     out << "   -e, --execute        Execute program as a script.\n";
@@ -139,7 +148,8 @@ void Options::print_usage() {
     out << "   -v, --verbose        Print extra information during compilation.\n";
     out << "   --dump-ir            Output the intermediate representation.\n";
     out << "   --dump-ast           Output the abstract syntax tree.\n";
-    out << "   --dump-liveness      Display liveness info when outputing the IR.\n";
+    out << "   --dump-liveness      Output liveness info when printing the IR.\n";
+    out << "   --version            Print the compiler version number.\n";
     out << "\n";
     out->flush();
 }

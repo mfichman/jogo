@@ -44,6 +44,7 @@ DeadCodeEliminator::Ptr elim(new DeadCodeEliminator(env, machine));
 BasicBlockPrinter::Ptr bprint(new BasicBlockPrinter(env, machine));
 RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
 Intel64CodeGenerator::Ptr cgen(new Intel64CodeGenerator(env));
+std::string program_path;
 
 void output(File* file) {
     // Process 'file' and output the requested output path.  Multiple files 
@@ -58,8 +59,9 @@ void output(File* file) {
     if (env->make() && env->link()) {
         time_t t1 = File::mtime(out_file + ".apo");
         time_t t2 = File::mtime(file->path()->string());
+        time_t t3 = File::mtime(program_path);
         file->output(env->name(out_file + ".apo"));
-        if (t1 >= t2) { return; }
+        if (t1 >= t2 && t1 >=t3) { return; }
     }
  
     if (env->verbose()) {
@@ -120,6 +122,7 @@ void output(File* file) {
 int main(int argc, char** argv) {
     // Create a new empty environment to store the AST and symbols tables, and
     // set the options for compilation.
+    program_path = argv[0];
     Options(env, argc, argv);
 
     // Run the compiler.  Output to a temporary file if the compiler will

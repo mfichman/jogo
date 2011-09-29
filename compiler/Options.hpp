@@ -28,6 +28,7 @@ public:
 
 private:
     void print_usage();
+    void print_version();
     
     std::string program_name_;
 };
