@@ -190,7 +190,7 @@ ArrayIter[:a] < Object {
     # and will not result in a fault.
 
     array private Array[:a]
-    index = 0
+    index private = 0
 
     @init(coll Array[:a]) {
         # Initializes the iterator.  The iterator will iterate over the items 
@@ -200,12 +200,7 @@ ArrayIter[:a] < Object {
 
     more?() Bool {
         # Returns true if there are more elements in the array.
-        #ret index < array.count
-        if index < array.count {
-            ret true
-        } else {
-            ret false
-        }
+        ret index < array.count
     } 
     
     next() :a {
