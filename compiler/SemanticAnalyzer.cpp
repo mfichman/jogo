@@ -371,6 +371,13 @@ void SemanticAnalyzer::operator()(Call* expression) {
     }
     expression->type(func->type());
     expression->function(func);
+
+    if (func->is_private()) {
+        err_ << expression->location();
+        err_ << "Function '" << id << "' is private in class '";
+        err_ << receiver << "'\n";
+        env_->error();  
+    }
     
     // FIXME: Look up generics for function
     check_args(expression->arguments(), func, receiver);
@@ -416,6 +423,14 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
     // Look up the return type in the receiver if it is a generic.
     expression->function(func);
     expression->type(fix_generics(receiver->type(), func->type()));
+
+    if (func->is_private()) {
+        err_ << expression->location();
+        err_ << "Function '" << id << "' is private in class '";
+        err_ << receiver->type() << "'\n";
+        env_->error();  
+    }
+
     check_args(expression->arguments(), func, receiver->type());
 }
 
@@ -445,6 +460,11 @@ void SemanticAnalyzer::operator()(Construct* expression) {
 
     // Look up the constructor using the class object.
     Function::Ptr constr = clazz->function(env_->name("@init"));
+    if (constr && constr->is_private()) {
+        err_ << expression->location();
+        err_ << "Constructor is private in class '" << type << "'\n";
+        env_->error();  
+    }
 
     // Check arguments types versus formal parameter types
     Expression::Ptr arg = expression->arguments();

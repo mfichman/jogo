@@ -1,0 +1,21 @@
+
+
+Private < Object {
+
+    attr private = 0
+
+    @init() private {
+    }
+    test() private {
+    }
+}
+
+
+main() Int {
+
+
+    bob = Private()
+    bob.attr = 9
+    bob.test()
+    ret 0
+}
