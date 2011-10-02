@@ -331,6 +331,7 @@ statement
         $$ = new Let(@$, t2, t10);
     }
     | IDENTIFIER formal_sig return_sig block SEPARATOR {
+        // Need a maybe-assign type (e.g., Assignment, Declaration) 
         $$ = new Simple(@$, new Empty(@$));
         $1 = 0;
         $2 = 0;
@@ -373,13 +374,21 @@ closure_formal
 
 closure
     : FUNCTION formal_sig return_sig block {
-        // anonymous function!
-        //String* name = ID("@call");
-        //$$ = new Function(@$, name, $2, $3, $4);
-        $$ = new Empty(@$);
-        $2 = 0;
-        $4 = 0;
-        $3 = 0;
+        // Anonymous function!
+        std::string qn = MODULE->name()->string();
+        if (qn.empty()) {
+            qn = "_Closure" + stringify($4);
+        } else {
+            qn += "::_Closure" + stringify($4);
+        }
+        Formal* self = new Formal(@$, ID("self"), ENV->self_type());
+        self->next($2);
+        Function* func = new Function(@$, ID("@call"), self, 0, $3, $4);
+        Type* type = new Type(@$, ID(qn), 0, UNIT, ENV);
+        Type* obj = new Type(@$, ID("Object"), 0, UNIT, ENV);
+        Class* clazz = new Class(@$, type, obj, 0, func);
+        MODULE->feature(clazz); 
+        $$ = new Closure(@$, func, clazz);
     }
     ;
 

@@ -139,15 +139,15 @@ bool Type::is_primitive() const {
 }
 
 bool Type::is_interface() const {
-    return clazz()->is_interface();
+    return clazz() && clazz()->is_interface();
 }
 
 bool Type::is_object() const {
-    return clazz()->is_object();
+    return clazz() && clazz()->is_object();
 }
 
 bool Type::is_value() const {
-    return !is_generic() && clazz()->is_value();
+    return !is_generic() && clazz() && clazz()->is_value();
 }
 
 bool Type::is_byte() const {

@@ -64,6 +64,7 @@ class Generic;
 class Empty;
 class Let;
 class LivenessAnalyzer;
+class Closure;
 
 #include <Pointer.hpp>
 #include <map>

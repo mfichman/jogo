@@ -25,6 +25,7 @@
 #include "Statement.hpp"
 #include "Expression.hpp"
 #include "Location.hpp"
+#include "ClosureAnalyzer.hpp"
 #include <iostream>
 #include <cassert>
 #include <set>
@@ -353,7 +354,6 @@ void SemanticAnalyzer::operator()(Call* expression) {
     }
     if (!func) {
         func = expression->file()->function(scope, id);
-    } else if (!expression->function()) {
     }
 
     // Evaluate types of argument expressions, then perform type checking
@@ -371,46 +371,9 @@ void SemanticAnalyzer::operator()(Call* expression) {
     }
     expression->type(func->type());
     expression->function(func);
-    // FIXME: Look up generics for function
     
-    // Check argument types versus formal parameter types.  Check the arity of
-    // the function as well.
-    Expression::Ptr arg = expression->arguments(); 
-    Formal::Ptr formal = func->formals();
-    while (arg && formal) {
-        // Get the formal type.  If the type is 'self', then the formal
-        // parameter is the type of the receiver.  If the type is a generic,
-        // then look up the actual type from the class' definition.
-        Type::Ptr ft = formal->type();
-        if (ft == env_->self_type()) {
-            ft = receiver;
-        }
-        if (ft->is_generic()) {
-            ft = receiver->generic(ft->name());
-        }
-
-        Type::Ptr at = arg->type();
-        if (arg->type() == env_->self_type()) {
-            at = class_->type(); 
-        }
-        if (!at->subtype(ft)) {
-            err_ << arg->location();
-            err_ << "Argument does not conform to type '" << ft << "'\n";
-            env_->error();
-        }
-        arg = arg->next();
-        formal = formal->next();
-    }
-    if (arg) {
-        err_ << expression->location();
-        err_ << "Too many arguments to function '" << id << "'\n";
-        env_->error();
-    }
-    if (formal) {
-        err_ << expression->location();
-        err_ << "Not enough arguments to function '" << id << "'\n";
-        env_->error();
-    }
+    // FIXME: Look up generics for function
+    check_args(expression->arguments(), func, receiver);
 }
 
 void SemanticAnalyzer::operator()(Dispatch* expression) {
@@ -453,46 +416,7 @@ void SemanticAnalyzer::operator()(Dispatch* expression) {
     // Look up the return type in the receiver if it is a generic.
     expression->function(func);
     expression->type(fix_generics(receiver->type(), func->type()));
-
-    // Check argument types versus formal parameter types
-    Expression::Ptr arg = expression->arguments();
-    Formal::Ptr formal = func->formals();
-    while (arg && formal) {
-        // Get the formal type.  If the type is 'self', then the formal
-        // parameter is the type of the receiver.  If the type is a generic,
-        // then look up the actual type from the class' definition.
-        Type::Ptr ft = formal->type();
-        if (ft == env_->self_type()) {
-            ft = receiver->type();
-        }
-        if (ft->is_generic()) {
-            ft = receiver->type()->generic(ft->name());
-        }
-
-        // Get the actual type.  If the actual type is equal to 'self', then
-        // get the type from the current class context.
-        Type::Ptr at = arg->type();
-        if (arg->type() == env_->self_type()) {
-            at = class_->type(); 
-        }
-        if (!at->subtype(ft)) {
-            err_ << arg->location();
-            err_ << "Argument does not conform to type '" << ft << "'\n";
-            env_->error();
-        }
-        arg = arg->next();
-        formal = formal->next();
-    }
-    if (arg) {
-        err_ << expression->location();
-        err_ << "Too many arguments to function '" << id << "'\n";
-        env_->error();
-    }
-    if (formal) {
-        err_ << expression->location();
-        err_ << "Not enough arguments to function '" << id << "'\n";
-        env_->error();
-    }
+    check_args(expression->arguments(), func, receiver->type());
 }
 
 void SemanticAnalyzer::operator()(Construct* expression) {
@@ -748,11 +672,11 @@ void SemanticAnalyzer::operator()(When* statement) {
 }
 
 void SemanticAnalyzer::operator()(Fork* statement) {
-    assert("Not supported");
+    assert(!"Not supported");
 }
 
 void SemanticAnalyzer::operator()(Yield* statement) {
-    assert("Not supported");
+    assert(!"Not supported");
 }
 
 void SemanticAnalyzer::operator()(Case* statement) {
@@ -905,6 +829,62 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     gen_accessor(feature);
 }
 
+void SemanticAnalyzer::operator()(Closure* expression) {
+    Type::Ptr type = expression->clazz()->type();
+    expression->type(type);
+
+    // Analyze the closure to find unbound variables
+    ClosureAnalyzer::Ptr analyzer(new ClosureAnalyzer(env_)); 
+    Function::Ptr func = expression->function();
+    func(analyzer.pointer());
+
+    // Now build the arg/formal list for the call to the constructor for the
+    // closure.  Basically, this code is turns a closure into a call to a 
+    // closure object.
+    Location loc = expression->location();
+    Expression::Ptr args;
+    Formal::Ptr formals;
+    Statement::Ptr stmts;
+    Feature::Flags flags = Feature::PRIVATE; 
+    Expression::Ptr empty = new Empty(loc);
+
+    for (int i = 0; i < analyzer->unbound_vars(); i++) {
+        String::Ptr id = analyzer->unbound_var(i);
+        Variable::Ptr var = variable(id);
+        if (!var) { continue; }
+
+        // Add a new formal to the constructor; also add a statement to assign
+        // the formal to the attribute stored in the closure object.
+        Identifier::Ptr arg = new Identifier(loc, id); 
+        String::Ptr fid = env_->name("_"+id->string());
+        Formal::Ptr formal = new Formal(loc, fid, var->type()); 
+        Identifier::Ptr rhs = new Identifier(loc, fid);
+        Assignment::Ptr as = new Assignment(loc, id, 0, rhs); 
+        Statement::Ptr stmt = new Simple(loc, as);
+        if (args) {
+            formal->next(formals);
+            arg->next(args);
+            stmt->next(stmts);
+        }
+        formals = formal;
+        args = arg; 
+        stmts = stmt;
+        
+        // Create a new attribute inside the closure object to store the 
+        // variable.
+        Attribute::Ptr attr = new Attribute(loc, id, flags, var->type(), empty);
+        expression->clazz()->feature(attr); 
+    }
+
+    expression->construct(new Construct(loc, type, args)); 
+
+    Type::Ptr ret = env_->void_type();
+    Block::Ptr block = new Block(loc, 0, stmts);
+    String::Ptr name = env_->name("@init");
+    Function::Ptr ctor = new Function(loc, name, formals, 0, ret, block);
+    expression->clazz()->feature(ctor);
+}
+
 void SemanticAnalyzer::operator()(Import* feature) {
 }
 
@@ -964,6 +944,49 @@ void SemanticAnalyzer::operator()(Type* type) {
         err_ << "Not enough arguments for type '" << type->name() << "'\n";
         env_->error();
         type->is_no_type(true);
+    }
+}
+
+void SemanticAnalyzer::check_args(Expression* args, Function* fn, Type* rec) {
+    // Check argument types versus formal parameter types
+    String::Ptr id = fn->name();
+    Formal::Ptr formal = fn->formals();
+    Expression::Ptr arg = args;
+    while (arg && formal) {
+        // Get the formal type.  If the type is 'self', then the formal
+        // parameter is the type of the receiver.  If the type is a generic,
+        // then look up the actual type from the class' definition.
+        Type::Ptr ft = formal->type();
+        if (ft == env_->self_type()) {
+            ft = rec;
+        }
+        if (ft->is_generic()) {
+            ft = rec->generic(ft->name());
+        }
+
+        // Get the actual type.  If the actual type is equal to 'self', then
+        // get the type from the current class context.
+        Type::Ptr at = arg->type();
+        if (arg->type() == env_->self_type()) {
+            at = class_->type(); 
+        }
+        if (!at->subtype(ft)) {
+            err_ << arg->location();
+            err_ << "Argument does not conform to type '" << ft << "'\n";
+            env_->error();
+        }
+        arg = arg->next();
+        formal = formal->next();
+    }
+    if (arg) {
+        err_ << args->location();
+        err_ << "Too many arguments to function '" << id << "'\n";
+        env_->error();
+    }
+    if (formal) {
+        err_ << args->location();
+        err_ << "Not enough arguments to function '" << id << "'\n";
+        env_->error();
     }
 }
 

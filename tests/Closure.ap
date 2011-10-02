@@ -1,0 +1,49 @@
+import Boot
+
+Callable < Interface {
+    @call()
+}
+
+Test < Object {
+    test(f Callable) {
+        f()
+    }
+}
+
+test(f Callable) {
+    f()
+}
+
+main() Int {
+
+    hello = 'hello world\n'
+
+    sample = func(x Int) {
+        boot_print_int(x)
+        boot_print_str(hello)
+    }
+
+    sample(10)
+
+    test(func() {
+        boot_print_str("one")
+        boot_print_str(hello)
+    })
+    test() func() {
+        boot_print_str("two")
+        boot_print_str(hello)
+    }
+
+    obj = Test()
+    obj.test(func() {
+        boot_print_str("three")
+        boot_print_str(hello)
+    })
+
+    obj.test() func() {
+        boot_print_str("four")
+        boot_print_str(hello)
+    }
+
+    ret 0
+}

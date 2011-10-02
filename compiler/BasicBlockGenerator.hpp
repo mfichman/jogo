@@ -70,6 +70,7 @@ private:
     void operator()(Function* feature);
     void operator()(Attribute* feature);
     void operator()(Import* feature);
+    void operator()(Closure* expression);
     void operator()(Type* type);
 
     void emit(BasicBlock* block) {

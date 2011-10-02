@@ -254,6 +254,7 @@ public:
     }
 
     Expression* arguments() const { return arguments_; }
+    typedef Pointer<Construct> Ptr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -298,14 +299,35 @@ private:
     Expression::Ptr initializer_;
 };
 
+/* Closure */
+class Closure : public Expression {
+public:
+    Closure(Location loc, Function* function, Class* clazz) :
+        Expression(loc),
+        function_(function),
+        class_(clazz) {
+    }
+
+    Function* function() const { return function_; } 
+    Class* clazz() const { return class_; }
+    Construct* construct() const { return construct_; }
+    void construct(Construct* construct) { construct_ = construct; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Assignment> Ptr;
+
+private:
+    Function* function_;
+    Class* class_;
+    Construct::Ptr construct_;
+};
+
 /* Empty expression */
 class Empty : public Expression {
 public:
     Empty(Location loc) :
         Expression(loc) {
     }
-
-private:
     void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Empty> Ptr;
 };
 

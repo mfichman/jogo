@@ -77,6 +77,7 @@ public:
     virtual void operator()(Type* type) {}
     virtual void operator()(ArrayLiteral* literal) {}
     virtual void operator()(HashLiteral* literal) {}
+    virtual void operator()(Closure* expression) {}
 };
 
 

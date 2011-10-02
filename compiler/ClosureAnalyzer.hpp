@@ -26,24 +26,23 @@
 #include "TreeNode.hpp"
 #include "Environment.hpp"
 #include "Feature.hpp"
-#include "Scope.hpp"
-#include <vector>
-#include <map>
 
-class SemanticAnalyzer : public TreeNode::Functor {
+/* 
+ * This class recursively iterates through a closure to find unbound vars.
+ * Unbound vars are variables reference within the closure that are not bound
+ * to a variable in the scope when they are referenced.
+ */
+class ClosureAnalyzer : public TreeNode::Functor {
 public:
-	SemanticAnalyzer(Environment* environment);
-    typedef Pointer<SemanticAnalyzer> Ptr;
+    ClosureAnalyzer(Environment* env);
+    typedef Pointer<ClosureAnalyzer> Ptr;
+
+    int unbound_vars() const { return unbound_var_.size(); } 
+    String::Ptr unbound_var(int i) const { return unbound_var_[i]; }
+
+    void operator()(Function* func);
 
 private:
-    void operator()(Class* unit);
-    void operator()(Module* unit);
-    void operator()(Formal* formal);
-    void operator()(StringLiteral* expression);
-    void operator()(NilLiteral* expression);
-    void operator()(IntegerLiteral* expression);
-    void operator()(FloatLiteral* expression);
-    void operator()(BooleanLiteral* expression);
     void operator()(HashLiteral* expression);
     void operator()(ArrayLiteral* expression);
     void operator()(Binary* expression);
@@ -52,7 +51,6 @@ private:
     void operator()(Dispatch* expression);
     void operator()(Construct* expression);
     void operator()(Identifier* expression);
-    void operator()(Empty* expression);
     void operator()(Block* statement);
     void operator()(Simple* statement);
     void operator()(Let* let);
@@ -64,30 +62,14 @@ private:
     void operator()(Case* statement);
     void operator()(Fork* statement);
     void operator()(Yield* statement);
-    void operator()(Function* feature);
-    void operator()(Attribute* feature);
-    void operator()(Import* feature);
-    void operator()(Type* type);
-    void operator()(Closure* expression);
 
-    Variable* variable(String* name);
-    void variable(Variable* var);
+    void variable(String* var, bool set);
+    bool variable(String* var);
     void enter_scope();
     void exit_scope();
-    void check_args(Expression* expr, Function* func, Type* receiver);
-    void gen_mutator(Attribute* feature);
-    void gen_accessor(Attribute* feature);
-    void gen_constructor();
-    void gen_destructor();
-    Type* fix_generics(Type* parent, Type* type);
 
     Environment::Ptr env_;
-    Stream::Ptr err_;
-    Module::Ptr module_;
-    Class::Ptr class_;
-    Function::Ptr function_;
-    Type::Ptr return_; // Return value of the current block
-    std::vector<Scope::Ptr> scope_;
-    int slot_;
+    std::vector<String::Ptr> unbound_var_;
+    std::set<String::Ptr> unbound_var_set_;
+    std::vector<std::set<String::Ptr> > variable_;
 };
-

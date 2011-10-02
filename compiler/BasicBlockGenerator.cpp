@@ -179,6 +179,12 @@ void BasicBlockGenerator::operator()(Dispatch* expr) {
     emit_call(expr->function(), expr->arguments());
 }
 
+void BasicBlockGenerator::operator()(Closure* expr) {
+    // Just emit the construct expression for the closure.
+    Construct::Ptr construct = expr->construct();
+    emit(construct);
+}
+
 void BasicBlockGenerator::operator()(Construct* expr) {
     // Push objects in anticipation of the call instruction.  Arguments must
     // be pushed in reverse order.
