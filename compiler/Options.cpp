@@ -144,6 +144,7 @@ void Options::print_usage() {
     out << "   -o, --output FILE    Write compiler output to FILE.\n";
     out << "   -i, --include DIR    Add the directory DIR to the source search path.\n";
     out << "   -m, --make           Compile input files and out-of-date dependencies.\n";
+    out << "   -d, --output-dir DIR Output directory for object files.\n";
     out << "   -h, --help           Print this help message.\n";
     out << "   -v, --verbose        Print extra information during compilation.\n";
     out << "   --dump-ir            Output the intermediate representation.\n";

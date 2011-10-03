@@ -7,6 +7,7 @@ Usage: apollo [OPTIONS] FILE...
    -o, --output FILE    Write compiler output to FILE.
    -i, --include DIR    Add the directory DIR to the source search path.
    -m, --make           Compile input files and out-of-date dependencies.
+   -d, --output-dir DIR Output directory for object files.
    -h, --help           Print this help message.
    -v, --verbose        Print extra information during compilation.
    --dump-ir            Output the intermediate representation.
@@ -23,6 +24,7 @@ Usage: apollo [OPTIONS] FILE...
    -o, --output FILE    Write compiler output to FILE.
    -i, --include DIR    Add the directory DIR to the source search path.
    -m, --make           Compile input files and out-of-date dependencies.
+   -d, --output-dir DIR Output directory for object files.
    -h, --help           Print this help message.
    -v, --verbose        Print extra information during compilation.
    --dump-ir            Output the intermediate representation.
