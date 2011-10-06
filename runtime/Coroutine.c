@@ -41,10 +41,14 @@ Coroutine Coroutine__init(Object func) {
     ret->_refcount = 1; 
     ret->function = func;
     ret->status = 0; // New coroutine status code 
-    ret->context[1] = (Int)(ret->stack+COROUTINE_STACK_SIZE-2); // ESP = R6
-    ret->context[2] = (Int)func; // RDI = R3 (argument to coroutine func)
+
+    Int stack_index = COROUTINE_STACK_SIZE - 2 - 6; 
+    // -2 is for the two return addresses that are initially on the stack
+    // -6 is for the initial values of the saved registers
+
+    ret->sp = (Int)(ret->stack + stack_index); // ESP = R6
     
-    ret->stack[COROUTINE_STACK_SIZE-1] = (Int)Coroutine__yield;
+    ret->stack[COROUTINE_STACK_SIZE-1] = (Int)Coroutine__exit;
     ret->stack[COROUTINE_STACK_SIZE-2] = (Int)Object__dispatch2(func, "@call");
 
     return ret;
@@ -55,7 +59,11 @@ void Coroutine__call(Coroutine self) {
         // Coroutine is dead or already running
         return;
     } else {
+        self->status = 1;
         Coroutine__resume(self);
+        if (self->status != 3) {
+            self->status = 2;
+        }
     }
 }
 

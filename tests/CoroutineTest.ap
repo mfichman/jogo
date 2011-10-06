@@ -13,6 +13,8 @@ main() Int {
         }
         nested()
         nested()
+        nested()
+        nested()
 
         while true {
             i = i + 1

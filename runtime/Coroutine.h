@@ -33,7 +33,8 @@ struct Coroutine {
     U64 _refcount;
     Object function; 
     Int status;
-    Int context[COROUTINE_CONTEXT_SIZE];
+    Int sp;
+    Int padding; // Force stack to align 16
     Int stack[COROUTINE_STACK_SIZE];
 };
 
@@ -42,6 +43,7 @@ typedef struct Coroutine* Coroutine;
 Coroutine Coroutine__init(Object function);
 void Coroutine__resume(Coroutine self);
 void Coroutine__yield();
+void Coroutine__exit();
 extern void Coroutine__vtable();
 
 #endif
