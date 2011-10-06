@@ -417,8 +417,10 @@ void TreePrinter::operator()(Yield* statement) {
     indent_level_++;
     Expression::Ptr expression = statement->expression();
     out_ << "Yield\n";
-    print_tabs(); out_ << "expression: ";
-    expression(this);
+    if (expression) {
+        print_tabs(); out_ << "expression: ";
+        expression(this);
+    }
     indent_level_--;
 }
 

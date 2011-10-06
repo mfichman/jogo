@@ -184,7 +184,6 @@ void ClosureAnalyzer::operator()(Fork* statement) {
 }
 
 void ClosureAnalyzer::operator()(Yield* statement) {
-    assert(!"Not supported");
 }
 
 void ClosureAnalyzer::enter_scope() {

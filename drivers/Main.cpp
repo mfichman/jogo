@@ -85,7 +85,7 @@ void output(File* file) {
     if (env->dump_ir()) {
         bprint->out(new Stream(env->output()));
         bprint->operator()(file);
-        exit(0);
+        return;
     } 
 
     std::string asm_file = env->assemble() ? tmpnam(0) : out_file + ".s";
@@ -139,6 +139,7 @@ int main(int argc, char** argv) {
     for (File::Ptr file = env->files(); file; file = file->next()) {
         output(file);
     }     
+    if (env->dump_ir()) { return 0; }
     if (env->errors()) { return 1; }
     if (!env->link()) { return 0; }
 

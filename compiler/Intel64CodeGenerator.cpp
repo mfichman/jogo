@@ -55,6 +55,7 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "extern "; emit_label("Object__refcount_inc"); out_ << "\n";
     out_ << "extern "; emit_label("Object__hash__g"); out_ << "\n";
     out_ << "extern "; emit_label("Object___equal"); out_ << "\n";
+    out_ << "extern "; emit_label("Coroutine__yield"); out_ << "\n";
     for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
         f(this);
     }

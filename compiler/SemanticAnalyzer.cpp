@@ -701,7 +701,8 @@ void SemanticAnalyzer::operator()(Fork* statement) {
 }
 
 void SemanticAnalyzer::operator()(Yield* statement) {
-    assert(!"Not supported");
+    // Nothing to check
+    assert("Not supported" && !statement->expression());
 }
 
 void SemanticAnalyzer::operator()(Case* statement) {

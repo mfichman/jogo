@@ -54,6 +54,8 @@ env.Program('bin/apdoc', compiler_sources + ['build/drivers/Doc.cpp'])
 
 library_sources = env.Glob('build/runtime/*/*.c') 
 library_sources += env.Glob('build/runtime/*.c')
+library_sources += env.Glob('build/runtime/*/*.asm')
+library_sources += env.Glob('build/runtime/*.asm')
 lib = env.StaticLibrary('lib/apollo', library_sources)
 #env.Program('bin/asmtest', 'samples/Test.linux.asm')
 

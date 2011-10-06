@@ -437,8 +437,8 @@ void BasicBlockGenerator::operator()(Fork* statement) {
 }
 
 void BasicBlockGenerator::operator()(Yield* statament) {
-    assert(!"Not implemented");
-    emit_free_temps();
+//    emit_free_temps();
+    call(env_->name("Coroutine__yield")); 
 }
 
 void BasicBlockGenerator::operator()(Function* feature) {

@@ -67,7 +67,7 @@ or PUSH_SEPARATOR(); return OR;
 in PUSH_SEPARATOR(); return IN;
 not PUSH_SEPARATOR(); return NOT;
 fork PUSH_SEPARATOR(); return FORK;
-yield PUSH_SEPARATOR(); return YIELD;
+yield return YIELD;
 Void PUSH_SEPARATOR(); return VOID;
 -> PUSH_SEPARATOR(); return RIGHT_ARROW;
 \<\- PUSH_SEPARATOR(); return LEFT_ARROW;

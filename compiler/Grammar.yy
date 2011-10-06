@@ -300,7 +300,7 @@ statement
     | WHILE expression block SEPARATOR { $$ = new While(@$, $2, $3); }
     | RETURN expression SEPARATOR { $$ = new Return(@$, $2); }
     | RETURN SEPARATOR { $$ = new Return(@$, new Empty(@$)); }
-    | YIELD expression SEPARATOR { $$ = new Yield(@$, $2); }
+    | YIELD SEPARATOR { $$ = new Yield(@$, 0); }
     | FORK call SEPARATOR { $$ = new Fork(@$, $2); }
     | operation SEPARATOR { $$ = new Simple(@$, $1); }
     | conditional { $$ = $1; }
