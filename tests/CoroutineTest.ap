@@ -1,0 +1,35 @@
+
+import Boot, Coroutine
+
+main() Int {
+
+    coroutine = Coroutine() func() {
+        i = 0
+    
+        nested = Coroutine() func() {
+            boot_print_str('hello ')
+            yield
+            boot_print_str('world\n')
+        }
+        nested()
+        nested()
+
+        while true {
+            i = i + 1
+            boot_print_int(i)
+            boot_print_str('\n')
+            yield
+        }
+       
+    }
+    coroutine()
+    coroutine()
+    coroutine()
+    coroutine()
+    coroutine()
+    coroutine()
+    coroutine()
+    coroutine()
+    
+    ret 0
+}
