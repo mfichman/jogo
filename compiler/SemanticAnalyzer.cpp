@@ -88,7 +88,12 @@ void SemanticAnalyzer::operator()(Module* feature) {
 
 void SemanticAnalyzer::operator()(Class* feature) {
     class_ = feature;
-    slot_ = 0;
+    slot_ = 2;
+    // The initial 4 slots are for the following attributes, which every object
+    // has a pointer to:
+    // 1. refcount
+    // 2. vtable 
+
     enter_scope();
 
     // Calculate the label name for this function.
@@ -1099,7 +1104,7 @@ Type* SemanticAnalyzer::fix_generics(Type* parent, Type* type) {
     // container type 'parent'.  For example, if 'parent' is Array[String], and
     // :a is the first type parameter of array, this function would return
     // 'String'.  This function recursively substitutes generics, so List[:a]
-    // would return List[String] if the 'parent' type is Array.
+    // would return List[String] if the 'parent' type is List.
     if (type->is_generic()) {
         return parent->generic(type->name());
     }

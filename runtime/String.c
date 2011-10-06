@@ -54,10 +54,10 @@ String String__add(String self, String string) {
     // Copy the data from the two strings.  Do this manually to take control
     // of security bugs. 
     Char *c = ret->data;
-    for (Int i = 0; i < self->length; i++) {
+    for (Int i = 0; i < self->length; ++i) {
         *c++ = self->data[i];
     }    
-    for (Int i = 0; i < string->length; i++) {
+    for (Int i = 0; i < string->length; ++i) {
         *c++ = string->data[i];
     }
     ret->data[ret->length] = '\0'; // Add nul-terminator for C usage
@@ -85,7 +85,7 @@ String String_slice(String self, Int begin, Int end) {
     
     // Copy the data from this string's substring, using range checking.
     Char *c = ret->data;
-    for (Int i = begin; i < end; i++) {
+    for (Int i = begin; i < end; ++i) {
         *c++ = self->data[i];
     } 
     ret->data[ret->length] = '\0'; // Add nul-terminator for C usage
@@ -105,7 +105,7 @@ Bool String__equal(String self, String string) {
     if (self->length != string->length) {
         return 0;
     }
-    for (Int i = 0; i < self->length; i++) {
+    for (Int i = 0; i < self->length; ++i) {
         if (self->data[i] != string->data[i]) {
             return 0;
         }
@@ -119,7 +119,7 @@ String String_uppercase__g(String self) {
     ret->length = self->length;
 
     Char *c = ret->data;
-    for (Int i = 0; i < ret->length; i++) {
+    for (Int i = 0; i < ret->length; ++i) {
         *c++ = toupper(self->data[i]);
     }
 
@@ -133,7 +133,7 @@ String String_lowercase__g(String self) {
     ret->length = self->length;
 
     Char *c = ret->data;
-    for (Int i = 0; i < ret->length; i++) {
+    for (Int i = 0; i < ret->length; ++i) {
         *c++ = tolower(self->data[i]);
     }
     
@@ -148,7 +148,7 @@ Int String_int__g(String self) {
     }
     Int ret = 0;
     Int neg = 0;
-    for (Char* c = self->data; *c; c++) {
+    for (Char* c = self->data; *c; ++c) {
         if (*c == '-' && c == self->data) {
             neg = 1;
         } else if (isdigit(*c)) {
@@ -164,3 +164,12 @@ Int String_float__g(String self) {
     assert(!"Not supported");
 }
 
+Int String_hash__g(String self) {
+    // Returns the hash code of this string.  This function uses the Java hash
+    // code implementation, i.e., s[0]*31^(n-1) + s[1]*32^(n-2) ...
+    Int hash = 0;
+    for (Char* c = self->data; *c; ++c) {
+        hash = 31 * hash + (*c);
+    }
+    return hash;
+}

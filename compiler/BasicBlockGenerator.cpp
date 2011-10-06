@@ -218,8 +218,7 @@ void BasicBlockGenerator::operator()(Identifier* expr) {
         return_ = var->operand();
     } else if (attr) {
         Operand self = variable(env_->name("self"))->operand();
-        return_ = load(Operand::addr(self.temp(), attr->slot()+2));
-        // +2 is for refcount, vtable slots
+        return_ = load(Operand::addr(self.temp(), attr->slot()));
     } else {
         // Variable can't be found in a temporary; it must be an argument 
         // passed on the stack.
@@ -375,12 +374,11 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
     } else if (attr) {
         // Assignment to an attribute within a class
         Variable::Ptr self = variable(env_->name("self"));
-        Operand addr = Operand::addr(self->operand().temp(), attr->slot()+2);  
+        Operand addr = Operand::addr(self->operand().temp(), attr->slot());  
         Operand old = load(addr);
         if (!type->is_value() && !attr->is_weak()) {
             emit_refcount_dec(old);
         } 
-        // +2 is for vtable and refcount
         store(addr, return_);
         if (!type->is_value() && !attr->is_weak()) {
             emit_refcount_inc(return_);
@@ -974,8 +972,7 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
                 continue;
             }
             Operand value = emit(init);
-            Operand addr = Operand::addr(self.temp(), attr->slot()+2);
-            // +2 is for vtable and refcount slots
+            Operand addr = Operand::addr(self.temp(), attr->slot());
             store(addr, value);
             if (!init->type()->is_value()) {
                 emit_refcount_inc(value);
@@ -999,9 +996,8 @@ void BasicBlockGenerator::emit_dtor_epilog(Function* feature) {
     // The attributes need to be released in the reverse order
     for (int i = attrs.size()-1; i >= 0; i--) {
         Operand self = variable(env_->name("self"))->operand();
-        Operand val = load(Operand::addr(self.temp(), attrs[i]->slot()+2));
+        Operand val = load(Operand::addr(self.temp(), attrs[i]->slot()));
         emit_refcount_dec(val);
-        // +2 is for refcount, vtable slots
     }
 
     if (class_->is_object()) {

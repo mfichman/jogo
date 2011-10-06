@@ -32,36 +32,36 @@
 // _vtable[2..n+1] = Jump table 1 (hash mixing values) 
 // _vtable[n+2..2n+1] = Method pointers
 
-void Object__refcount_inc(Object obj) {
+void Object__refcount_inc(Object self) {
      // Increment the object's refcount;
-    if (obj) {
-        obj->_refcount++;
+    if (self) {
+        self->_refcount++;
     }
 }
 
-void Object__refcount_dec(Object obj) {
+void Object__refcount_dec(Object self) {
     // Decrement the object's refcount if the object is non-null.  Free the 
     // object if the refcount is below 0
-    if (obj) {
-        obj->_refcount--;
-        if (obj->_refcount <= 0) {
+    if (self) {
+        self->_refcount--;
+        if (self->_refcount <= 0) {
             // The second entry in the vtable is always the destructor. Call
             // the destructor and then release the memory.
-            typedef void (*Destructor)(Object obj);  
-            Destructor dtor = ((Ptr*)obj->_vtable)[0];
-            dtor(obj);
+            typedef void (*Destructor)(Object);  
+            Destructor dtor = ((Ptr*)self->_vtable)[0];
+            dtor(self);
         } 
     }
 }
 
-Ptr Object__dispatch(Object obj, String id) {
+Ptr Object__dispatch(Object self, String id) {
     // Dispatch using the vtable to the correct method implementation.
     // FixMe: Investigate a more efficient way to do this; possibly using some
     // form of caching.  The method dispatch performance penalty is only
     // invoked when calling through an interface.
-    U64 n = ((U64*)obj->_vtable)[1];
-    U64* jump1 = ((U64*)obj->_vtable) + 2;
-    Ptr* jump2 = ((Ptr*)obj->_vtable) + 2 + n;
+    U64 n = ((U64*)self->_vtable)[3];
+    U64* jump1 = ((U64*)self->_vtable) + 4;
+    Ptr* jump2 = ((Ptr*)self->_vtable) + 4 + n;
 
     U64 hash = 0;
     for (Int i = 0; i < id->length; ++i) {
@@ -73,4 +73,36 @@ Ptr Object__dispatch(Object obj, String id) {
         d = ((d * 0x01000193) ^ id->data[i]);
     }
     return jump2[d % n]; 
+}
+
+Int Object__hash__g(Object self) {
+    // This function hashes each byte of the pointer value using the Java
+    // String hash function.
+    Char* array = (Char*)self;
+    Int hash = 0;
+    for (Int i = 0; i < sizeof(Int); ++i) {
+        hash = 31 * hash + array[i]; 
+    }
+    return hash;
+}
+
+Int Object_hash__g(Object self) {
+    // Call the hash function method, which is always at offset 1 in the 
+    // vtable.
+    typedef Int (*HashFunc)(Object);
+    HashFunc func = ((Ptr*)self->_vtable)[1];
+    return func(self);
+}
+
+Bool Object__equal(Object self, Object other) {
+    // Call the hash function method, which is always at offset 2 in the 
+    // vtable.
+    typedef Bool (*EqualFunc)(Object, Object);
+    EqualFunc func = ((Ptr*)self->_vtable)[2];
+    return func(self, other);
+}
+
+Int Object___equal(Object self, Object other) {
+    // This function returns true if the two pointers are equivalent.
+    return self == other;
 }

@@ -32,5 +32,7 @@ struct Object {
 
 void Object__refcount_inc(Object obj);
 void Object__refcount_dec(Object obj);
+Ptr Object__dispatch(Object self, String id);
+Int Object__hash__g(Object self);
 
 #endif

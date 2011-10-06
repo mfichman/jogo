@@ -53,6 +53,8 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "extern "; emit_label("Object__dispatch"); out_ << "\n";
     out_ << "extern "; emit_label("Object__refcount_dec"); out_ << "\n";
     out_ << "extern "; emit_label("Object__refcount_inc"); out_ << "\n";
+    out_ << "extern "; emit_label("Object__hash__g"); out_ << "\n";
+    out_ << "extern "; emit_label("Object___equal"); out_ << "\n";
     for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
         f(this);
     }
@@ -62,44 +64,14 @@ void Intel64CodeGenerator::operator()(File* file) {
 }
 
 void Intel64CodeGenerator::operator()(Class* feature) {
-    // Output the class dispatch table for calling methods with dynamic
-    // dispatch.  The format is as follows: 
-    //
-    //     vtable[0] is the destructor
-    //     vtable[1] is the number of 'slots' in the vtable (n)
-    //     vtable[2..n+1] are the hash mixing values
-    //     vtable[2n+2..2n+1] are the actual method pointers
-    //
-    // The table is output in the .text section because it should be 
-    // immutable.
+    // Emit the functions and vtable for the class specified by 'feature'
     if (feature->is_object()) {
-        String::Ptr name = feature->label();
-        Function::Ptr dtor = feature->function(env_->name("@destroy"));
-
         if (feature->location().file == file_) {
-            out_ << "section .data\n";
-            out_ << "global "; 
-            emit_label(name->string()+"__vtable"); 
-            out_ << "\n";
-            emit_label(name->string()+"__vtable"); out_ << ":\n";
-            out_ << "    dq "; emit_label(dtor->label()); out_ << "\n"; 
-            out_ << "    dq " << feature->jump1s() << "\n";
-            for (int i = 0; i < feature->jump1s(); i++) {
-                out_ << "    dq " << feature->jump1(i) << "\n";
-            } 
-            for (int i = 0; i < feature->jump2s(); i++) {
-                if (feature->jump2(i)) {
-                    out_ << "    dq ";
-                    emit_label(feature->jump2(i)->label());
-                    out_ << "\n";
-                } else {
-                    out_ << "    dq 0\n";
-                }
-            }
+            emit_vtable(feature);
         } else {
-            out_ << "extern ";
-            emit_label(name->string()+"__vtable");
-            out_ << "\n";
+           out_ << "extern ";
+           emit_label(feature->label()->string()+"__vtable");
+           out_ << "\n";
         }
     }
 
@@ -195,6 +167,64 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case ORB: emit("mov", res, a1); emit("or", res, a2); break; 
         case NOP: emit("nop"); break;
         case RET: emit("leave"); emit("ret"); break;
+        }
+    }
+}
+
+void Intel64CodeGenerator::emit_vtable(Class* feature) {
+    // Output the class dispatch table for calling methods with dynamic
+    // dispatch.  The format is as follows: 
+    //
+    //     vtable[0] is the destructor
+    //     vtable[1] is the hash function
+    //     vtable[2] is the equals function
+    //     vtable[3] is the number of 'slots' in the vtable (n)
+    //     vtable[2..n+3] are the hash mixing values
+    //     vtable[2n+2..2n+3] are the actual method pointers
+
+    String* name = feature->label();
+    Function* dtor = feature->function(env_->name("@destroy"));
+    Function* hashfn = feature->function(env_->name("hash?"));
+    Function* equalfn = feature->function(env_->name("@equal"));
+    String* hash;
+    String* equal;
+    if (hashfn) {
+        hash = hashfn->label(); 
+    } else {
+        hash = env_->name("Object__hash__g"); 
+    }
+    if (equalfn) {
+        equal = hashfn->label();
+    } else {
+        equal = env_->name("Object___equal");
+    }
+
+    // Output the vtable label and global directive
+    out_ << "section .data\n";
+    out_ << "global "; 
+    emit_label(name->string()+"__vtable"); 
+    out_ << "\n";
+    emit_label(name->string()+"__vtable"); out_ << ":\n";
+
+    // Emit the destructor, hash func, equals func, and vtable length
+    out_ << "    dq "; emit_label(dtor->label()); out_ << "\n"; 
+    out_ << "    dq "; emit_label(hash); out_ << "\n";
+    out_ << "    dq "; emit_label(equal); out_ << "\n";
+    out_ << "    dq " << feature->jump1s() << "\n";
+
+    // Emit the first jump table
+    for (int i = 0; i < feature->jump1s(); i++) {
+        out_ << "    dq " << feature->jump1(i) << "\n";
+    } 
+    
+    // Emit the second jump table
+    for (int i = 0; i < feature->jump2s(); i++) {
+        if (feature->jump2(i)) {
+            out_ << "    dq ";
+            emit_label(feature->jump2(i)->label());
+            out_ << "\n";
+        } else {
+            out_ << "    dq 0\n";
         }
     }
 }

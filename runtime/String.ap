@@ -93,5 +93,9 @@ String < Object {
         # in the string.
         ret self[0]
     }
+    
+    hash?() native Int {
+        # Returns the hash code for this string.
+    }
 }
 
