@@ -30,25 +30,13 @@ _Coroutine__resume:
     ; Resume the coroutine passed in via rdi by saving the state of the current
     ; coroutine, and loading the other corountine's state.  Then, 'return' to
     ; the caller of the other coroutine's yield() invocation.
-    push rbx
     push rbp
-    push r12
-    push r13
-    push r14
-    push r15
-
     push qword [current_coroutine]
     push qword [save_rsp]
     mov [save_rsp], rsp
     mov rsp, [rdi+RSP_OFFSET]
     mov [current_coroutine], rdi
-
-    pop r15
-    pop r14
-    pop r13
-    pop r12
     pop rbp
-    pop rbx
     ret
     
 global _Coroutine__exit
@@ -64,25 +52,13 @@ _Coroutine__yield:
     ; Yield to the calling corountine by saving the state of the current
     ; coroutine, and loading the other coroutine's state.  Then, 'return' to
     ; the calling coroutine's resume() invocation.
-    push rbx
     push rbp
-    push r12
-    push r13
-    push r14
-    push r15
-
     mov rdi, [current_coroutine]
     mov [rdi+RSP_OFFSET], rsp
     mov rsp, [save_rsp]
     pop qword [save_rsp]
     pop qword [current_coroutine]
-
-    pop r15
-    pop r14
-    pop r13
-    pop r12
     pop rbp
-    pop rbx
     ret
     
 section .bss

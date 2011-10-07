@@ -243,7 +243,6 @@ formal
     : IDENTIFIER type { $$ = new Formal(@$, $1, $2); }
     ;
 
-
 scope_prefix
     : TYPE SCOPE scope_prefix { $$ = ID($1->string() + "::" + $3->string()); }
     | TYPE SCOPE { $$ = $1; }
@@ -487,6 +486,9 @@ operation
     | expression '.' IDENTIFIER '(' ')' closure_formal {
         $$ = new Dispatch(@$, $3, $1, $6);
     }
+    | expression '.' IDENTIFIER closure {
+        $$ = new Dispatch(@$, $3, $1, $4);
+    }
     | '-' expression %prec '*' { 
         if (IntegerLiteral* lit = dynamic_cast<IntegerLiteral*>($2)) {
             String* val = ENV->integer("-" + lit->value()->string());
@@ -563,6 +565,9 @@ call
     | type '(' ')' closure_formal { 
         $$ = new Construct(@$, $1, $4);
     }
+    | type closure { 
+        $$ = new Construct(@$, $1, $2);
+    }
     | IDENTIFIER '(' expression_list ')' closure_formal {
         $3->last($5);
         $$ = new Call(@$, UNIT, 0, $1, $3); 
@@ -570,15 +575,22 @@ call
     | IDENTIFIER '(' ')' closure_formal {
         $$ = new Call(@$, UNIT, 0, $1, $4); 
     }
-    | scope_prefix IDENTIFIER '(' ')' closure_formal { 
-        UNIT->feature(new Import(@$, $1, true));
-        $$ = new Call(@$, UNIT, $1, $2, $5); 
+    | IDENTIFIER closure {
+        $$ = new Call(@$, UNIT, 0, $1, $2); 
     }
     | scope_prefix IDENTIFIER '(' expression_list ')' closure_formal {
         $4->last($6);
         UNIT->feature(new Import(@$, $1, true));
         $$ = new Call(@$, UNIT, $1, $2, $4);
     } 
+    | scope_prefix IDENTIFIER '(' ')' closure_formal { 
+        UNIT->feature(new Import(@$, $1, true));
+        $$ = new Call(@$, UNIT, $1, $2, $5); 
+    }
+    | scope_prefix IDENTIFIER closure { 
+        UNIT->feature(new Import(@$, $1, true));
+        $$ = new Call(@$, UNIT, $1, $2, $3); 
+    }
     ; 
 
 assignment_list
@@ -587,7 +599,6 @@ assignment_list
     ;
 
 assignment
-    /*: IDENTIFIER type { $$ = new Assignment(@$, $1, $2, new Empty(@$)); } */
     : IDENTIFIER type '=' expression { $$ = new Assignment(@$, $1, $2, $4); }
     | IDENTIFIER '=' expression { $$ = new Assignment(@$, $1, 0, $3); }
     ;

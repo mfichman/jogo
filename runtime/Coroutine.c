@@ -42,9 +42,9 @@ Coroutine Coroutine__init(Object func) {
     ret->function = func;
     ret->status = 0; // New coroutine status code 
 
-    Int stack_index = COROUTINE_STACK_SIZE - 2 - 6; 
+    Int stack_index = COROUTINE_STACK_SIZE - 2 - 1; 
     // -2 is for the two return addresses that are initially on the stack
-    // -6 is for the initial values of the saved registers
+    // -1 is for the initial values of RBP
 
     ret->sp = (Int)(ret->stack + stack_index); // ESP = R6
     
@@ -55,6 +55,8 @@ Coroutine Coroutine__init(Object func) {
 }
 
 void Coroutine__call(Coroutine self) {
+    // Resumes a coroutine if it is still running.  Otherwise, returns
+    // immediately.
     if (self->status == 3 || self->status == 1) {
         // Coroutine is dead or already running
         return;
