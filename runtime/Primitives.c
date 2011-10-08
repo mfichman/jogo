@@ -74,6 +74,8 @@ String Float_str__g(Float self) {
 }
 
 String Bool_str__g(Bool self) {
+    // Returns the string representation of a Bool value, namely "true" or
+    // "false".
     static struct String true_str = { String__vtable, 1, 4, "true" };
     static struct String false_str = { String__vtable, 1, 5, "false" };
     if (self) {

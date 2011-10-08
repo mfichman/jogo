@@ -62,7 +62,6 @@ String < Object {
         if string.length > self.length {
             ret false
         }
-
         i = 0
         while i < string.length {
             if string[i] != self[i] {
@@ -79,7 +78,6 @@ String < Object {
         if string.length > self.length {
             ret false
         }
-
         i = 1
         while i <= string.length {
             if string[-i] != self[-i] {

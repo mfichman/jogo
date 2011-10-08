@@ -64,6 +64,7 @@ private:
     void emit_literal(Operand lit);
     void emit_label(Operand string);
     void emit_label(const std::string& string);
+    void emit_stack_check(Function* feature);
 
     Environment::Ptr env_;
     Machine::Ptr machine_;

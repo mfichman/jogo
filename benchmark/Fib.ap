@@ -11,6 +11,6 @@ fib(n Int) Int {
 
 
 main() Int {
-    Stream(1).print(fib(Stream(0).scan('\n').int).str+'\n')
+    Io::Stream(1).print(fib(Io::Stream(0).scan('\n').int).str+'\n')
     ret 0
 }

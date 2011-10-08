@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <assert.h>
 
+Coroutine Coroutine__current = 0;
+Coroutine_Stack* Coroutine__stack = 0;
 
 Coroutine Coroutine__init(Object func) {
     // Initializes a function with a new stack and instruction pointer. When
@@ -37,21 +39,44 @@ Coroutine Coroutine__init(Object func) {
         fflush(stderr);
         abort();
     }
+
     ret->_vtable = Coroutine__vtable;
     ret->_refcount = 1; 
     ret->function = func;
-    ret->status = 0; // New coroutine status code 
+    ret->current = &ret->stack;
 
     Int stack_index = COROUTINE_STACK_SIZE - 2 - 1; 
     // -2 is for the two return addresses that are initially on the stack
     // -1 is for the initial values of RBP
 
-    ret->sp = (Int)(ret->stack + stack_index); // ESP = R6
-    
-    ret->stack[COROUTINE_STACK_SIZE-1] = (Int)Coroutine__exit;
-    ret->stack[COROUTINE_STACK_SIZE-2] = (Int)Object__dispatch2(func, "@call");
+    ret->sp = (Int)(ret->stack.stack + stack_index); // ESP = R6
+    ret->stack.next = 0;
+
+    Object__refcount_inc(func);
+    if (func) {
+        Int exit = (Int)Coroutine__exit;
+        Int call = (Int)Object__dispatch2(func, "@call");
+        ret->stack.stack[COROUTINE_STACK_SIZE-1] = exit;
+        ret->stack.stack[COROUTINE_STACK_SIZE-2] = call;
+        ret->status = 0; // New coroutine status code 
+    } else {
+        ret->status = 3; 
+    }
 
     return ret;
+}
+
+void Coroutine__destroy(Coroutine self) {
+    // Free the stack, and the pointer to the closure object so that no memory
+    // is leaked.
+    for (Coroutine_Stack* stack = self->stack.next; stack;) {
+        Coroutine_Stack* temp = stack;
+        stack = stack->next;
+        free(temp);
+    }
+
+    Object__refcount_dec(self->function);
+    free(self);
 }
 
 void Coroutine__call(Coroutine self) {
@@ -68,4 +93,34 @@ void Coroutine__call(Coroutine self) {
         }
     }
 }
+
+Ptr Coroutine__grow_stack() {
+    // Grows the coroutine stack, and keeps track of the next stack pointer.
+    // Returns the pointer to the next stack.  Each function call has a section
+    // that checks the stack to make sure it has enough remaining space.
+    // Basically, if the stack doesn't have at least 512 bytes left, then a new
+    // stack pointer will be allocated.  Note that this doesn't protect against
+    // calls to native functions using more stack then they should. 
+    if (!Coroutine__stack->next) {
+        Coroutine__stack->next = calloc(sizeof(Coroutine_Stack), 1); 
+        Coroutine__stack->next->next = 0;
+    }
+    Coroutine__stack = Coroutine__stack->next;
+    return Coroutine__stack->stack+COROUTINE_STACK_SIZE-2;
+}
+
+    // function:
+    //   push rbp
+    //   mov rbp, rsp
+    //   cmp rsp, [Coroutine_stack+512] 
+    //   blt function.enter
+    //   call Coroutine__grow_stack
+    //   mov rsp, rax
+    // function.enter:
+    //   ... continue
+    //   ...
+    //   ...
+    //   mov rsp, rbp
+    //   pop rbp
+
 

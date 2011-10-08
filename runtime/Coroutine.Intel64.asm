@@ -22,6 +22,7 @@ default rel
 
 %define RSP_OFFSET 32; Stack pointer
 %define STATUS_OFFSET 24
+%define CURRENT_OFFSET 40 
 
 section .text
 
@@ -31,11 +32,14 @@ _Coroutine__resume:
     ; coroutine, and loading the other corountine's state.  Then, 'return' to
     ; the caller of the other coroutine's yield() invocation.
     push rbp
-    push qword [current_coroutine]
+    push qword [_Coroutine__current]
+    push qword [_Coroutine__stack]
     push qword [save_rsp]
     mov [save_rsp], rsp
     mov rsp, [rdi+RSP_OFFSET]
-    mov [current_coroutine], rdi
+    mov [_Coroutine__current], rdi
+    mov rax, [rdi+CURRENT_OFFSET]
+    mov [_Coroutine__stack], rax;
     pop rbp
     ret
     
@@ -43,26 +47,30 @@ global _Coroutine__exit
 _Coroutine__exit:
     ; This is the same as yield, except it sets the status code to '3' because
     ; the coroutine is finished.
-    mov rdi, [current_coroutine]
+    mov rdi, [_Coroutine__current]
     mov qword [rdi+STATUS_OFFSET], 3
     jmp _Coroutine__yield
 
 global _Coroutine__yield
 _Coroutine__yield:
-    ; Yield to the calling corountine by saving the state of the current
+    ; Yield to the calling coroutine by saving the state of the current
     ; coroutine, and loading the other coroutine's state.  Then, 'return' to
     ; the calling coroutine's resume() invocation.
     push rbp
-    mov rdi, [current_coroutine]
+    mov rdi, [_Coroutine__current]
+    mov rax, [_Coroutine__stack]
+    mov [rdi+CURRENT_OFFSET], rax
     mov [rdi+RSP_OFFSET], rsp
     mov rsp, [save_rsp]
     pop qword [save_rsp]
-    pop qword [current_coroutine]
+    pop qword [_Coroutine__stack]
+    pop qword [_Coroutine__current]
     pop rbp
     ret
     
 section .bss
 
-current_coroutine resq 1
+extern _Coroutine__stack;
+extern _Coroutine__current;
 save_rsp resq 1
 

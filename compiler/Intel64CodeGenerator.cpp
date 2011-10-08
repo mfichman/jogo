@@ -23,7 +23,8 @@
 #include "Intel64CodeGenerator.hpp"
 #include <sstream>
 
-static const int MAXIMM = 4096;
+static const int INTEL64_MAX_IMM = 4096;
+static const int INTEL64_MIN_STACK = 4096;
 
 Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
     env_(env),
@@ -56,6 +57,8 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "extern "; emit_label("Object__hash__g"); out_ << "\n";
     out_ << "extern "; emit_label("Object___equal"); out_ << "\n";
     out_ << "extern "; emit_label("Coroutine__yield"); out_ << "\n";
+    out_ << "extern "; emit_label("Coroutine__grow_stack"); out_ << "\n";
+    out_ << "extern "; emit_label("Coroutine__stack"); out_ << "\n";
     for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
         f(this);
     }
@@ -99,6 +102,9 @@ void Intel64CodeGenerator::operator()(Function* feature) {
         emit_label(feature->label()); out_ << ":\n";
         out_ << "    push rbp\n"; 
         out_ << "    mov rbp, rsp\n";
+
+        emit_stack_check(feature);
+
         if (feature->stack_vars()) {
             // Allocate space on the stack; ensure that the stack is aligned to
             // a 16-byte boundary.
@@ -379,7 +385,7 @@ void Intel64CodeGenerator::emit_literal(Operand literal) {
         std::stringstream ss(le->value()->string());
         int number;
         ss >> number;
-        if(number < MAXIMM) {
+        if(number < INTEL64_MAX_IMM) {
             out_ << le->value();
         } else {
             out_ << "[lit" << (void*)le->value() << "]";
@@ -415,6 +421,38 @@ void Intel64CodeGenerator::emit_label(const std::string& label) {
         out_ << label;
 #endif   
     }
+}
+
+void Intel64CodeGenerator::emit_stack_check(Function* feature) {
+    // Emits a stack check, and code to dynamically grow the stack if it is
+    // too small.
+    out_ << "    mov rax, ["; emit_label("Coroutine__stack"); out_ << "]\n";
+    out_ << "    add rax, " << INTEL64_MIN_STACK << "\n"; 
+    out_ << "    cmp rsp, rax\n"; 
+    out_ << "    jge .l0\n";
+    
+    // Push any argument register before we clal the routine to grow the stack.
+    // It would be nice to have the register allocator handle this, but the
+    // stack pointer register is hidden to the register allocator.
+    int index = 0;
+    for (Formal* f = feature->formals(); f; f = f->next()) {
+        if (index < machine_->arg_regs()) {
+            emit("push", -machine_->arg_reg(index)->id()); 
+            index++;
+        } else {
+            break;
+        }
+    }
+
+    out_ << "    call "; emit_label("Coroutine__grow_stack"); out_ << "\n";
+    out_ << "    mov rsp, rax\n";
+    
+    // Pop any argument registers that are used in the function.
+    for (int i = index-1; i >= 0; i--) {
+        emit("pop", -machine_->arg_reg(i)->id());
+    }
+
+    emit_label(".l0:"); out_ << "\n";
 }
 
 void Intel64CodeGenerator::emit_string(String* string) {

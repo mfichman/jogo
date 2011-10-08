@@ -39,6 +39,7 @@ Parser::Parser(Environment* env) :
 
     input("Primitives");
     input("String");
+    input("Coroutine");
 
     for (int i = 0; i < env->inputs(); i++) {
         is_input_file_ = true;

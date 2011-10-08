@@ -42,6 +42,10 @@ Coroutine < Object {
         # coroutine will execute 'start' the first time it is run.
     }
 
+    @destroy() native {
+        # Deallocates the coroutine, and releases the closure.
+    }
+
     @call() native {
         # This function starts or resumes a coroutine.  If the coroutine is
         # new, then the execution begins starting at 'function'.  If the

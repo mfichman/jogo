@@ -1,12 +1,19 @@
 
 import Boot, Coroutine
 
+countdown(num Int) {
+    if num != 0 {
+        countdown(num-1)
+    }
+}
+
 main() Int {
 
     coroutine = Coroutine() func() {
         i = 0
     
         nested = Coroutine() func() {
+            countdown(40960) # Check to make sure the stack grows
             boot_print_str('hello ')
             yield
             boot_print_str('world\n')

@@ -20,38 +20,27 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_COROUTINE_H
-#define APOLLO_COROUTINE_H
+#include "Io/Stream.h"
+#include "String.h"
+#include <stdio.h>
 
-#include "Primitives.h"
+void Io_println(String str) {
+    // FIXME: Use Apollo streams
+    if (str) {
+        fwrite(str->data, str->length, 1, stdout);
+    } else {
+        fwrite("nil", 3, 1, stdout);
+    }
+    fwrite("\n", 1, 1, stdout);
+    fflush(stdout);
+}
 
-struct Coroutine_Stack {
-    Int stack[COROUTINE_STACK_SIZE];
-    struct Coroutine_Stack* next; // Pointer to the next stack
-};
-
-typedef struct Coroutine_Stack Coroutine_Stack;
-
-struct Coroutine {
-    Ptr _vtable; // 0
-    U64 _refcount; // 8
-    Object function;  //16
-    Int status; // 24
-    Int sp; // 32
-    Coroutine_Stack* current; // 40
-    Coroutine_Stack stack;
-};
-
-typedef struct Coroutine* Coroutine;
-
-Coroutine Coroutine__init(Object function);
-void Coroutine__resume(Coroutine self);
-void Coroutine__yield();
-void Coroutine__exit();
-Ptr Coroutine__grow_stack();
-
-extern Coroutine_Stack* Coroutine__stack;
-extern Coroutine Coroutine__current;
-extern void Coroutine__vtable();
-
-#endif
+void Io_print(String str) {
+    // FIXME: Use Apollo streams
+    if (str) {
+        fwrite(str->data, str->length, 1, stdout);
+    } else {
+        fwrite("nil", 3, 1, stdout);
+    }
+    fflush(stdout);
+}
