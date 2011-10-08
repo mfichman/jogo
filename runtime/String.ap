@@ -56,15 +56,39 @@ String < Object {
         ret self.slice(begin, self.length)
     }
 
-    #starts_with(string String) native Bool {
+    starts_with(string String) Bool {
         # Returns true if this string starts with the exact string specified
         # by 'string'
-    #}
+        if string.length > self.length {
+            ret false
+        }
 
-    #ends_with(string String) native Bool {
+        i = 0
+        while i < string.length {
+            if string[i] != self[i] {
+                ret false
+            }    
+            ++i
+        }
+        ret true
+    }
+
+    ends_with(string String) Bool {
         # Returns true if this string ends with the exact string specified by
         # 'string'
-    #}
+        if string.length > self.length {
+            ret false
+        }
+
+        i = 1
+        while i <= string.length {
+            if string[-i] != self[-i] {
+                ret false
+            } 
+            ++i
+        }
+        ret true
+    }
     
     uppercase?() native String {
         # Returns an uppercase version of this string.
@@ -97,5 +121,39 @@ String < Object {
     hash?() native Int {
         # Returns the hash code for this string.
     }
+
+    iter() StringIter {
+        # Returns an iterator over the characters in this string
+        ret StringIter(self)
+    }
 }
 
+StringIter < Object {
+    # This iterator returns each of the characters in the string it points to
+    # in sequence.
+
+    string private String
+    index private = 0
+
+    @init(str String) {
+        # Initializes the iterator; the iterator will iterate over the
+        # characters in 'str'.
+        string = str
+    }
+    
+    more?() Bool {
+        # Returns true if there are more elements in the array.
+        ret index < string.length
+    }
+
+    next() Char {
+        # Returns the next character in the string.
+        val = string[index]
+        ++index
+        ret val
+    }
+
+    iter() StringIter {
+        ret self
+    }
+}

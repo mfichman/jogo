@@ -105,6 +105,11 @@ private:
         return temp_;
     }
 
+    Operand neg(Operand t2) {
+        block_->instr(NEG, ++temp_, t2, 0);
+        return temp_;
+    }
+
     Operand add(Operand t2, Operand t3) {
         block_->instr(ADD, ++temp_, t2, t3);
         return temp_;

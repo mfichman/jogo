@@ -29,7 +29,12 @@
 Char String__index(String self, Int index) {
     // All index operations are checked.  If the index is off the end of the
     // string, then return the NUL character.
-    return index < self->length ? self->data[index] : '\0';
+    if (index < 0) {
+        return -index <= self->length ? self->data[self->length+index] : '\0'; 
+    } else {
+        return index < self->length ? self->data[index] : '\0';
+    }
+
 }
 
 String String__add(String self, String string) {

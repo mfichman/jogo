@@ -28,6 +28,7 @@ Int < Value {
     @mod(other Int) native Int
     @equal(other Int) native Bool
     @less(other Int) native Bool
+    @neg() native Int
     @compl() native Int
     str?() native String
 
@@ -92,6 +93,7 @@ Char < Value {
 }
 
 Bool < Value {
+    str?() native String
 }
 
 Byte < Value {

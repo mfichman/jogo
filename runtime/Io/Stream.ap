@@ -105,10 +105,3 @@ Stream < Object {
     }
 }
 
-println(str String) native {
-    # Prints 'str' to standard output, and flushes the output.
-}
-
-print(str String) native {
-    # Prints 'str' to standard output.  Does not flush the output.
-}

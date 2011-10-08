@@ -73,3 +73,15 @@ String Float_str__g(Float self) {
     abort();
 }
 
+String Bool_str__g(Bool self) {
+    static struct String true_str = { String__vtable, 1, 4, "true" };
+    static struct String false_str = { String__vtable, 1, 5, "false" };
+    if (self) {
+        true_str._refcount++;
+        return &true_str;
+    } else {
+        false_str._refcount++;
+        return &false_str;
+    }
+}
+

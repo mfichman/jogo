@@ -159,6 +159,7 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case SUB: emit_arith(instr); break;
         case MUL: emit_arith(instr); break;
         case DIV: emit_arith(instr); break;
+        case NEG: emit("mov", res, a1); emit("neg", res); break;
         case PUSH: emit("push", a1); break;
         case POP: emit("pop", res); break;
         case STORE: emit("mov qword", a1, a2); break;

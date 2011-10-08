@@ -575,6 +575,9 @@ void BasicBlockGenerator::emit_operator(Dispatch* expr) {
     } else if (id == "@div") {
         assert(args.size() == 2);
         return_ = div(args[0], args[1]);
+    } else if (id == "@neg") {
+        assert(args.size() == 1);
+        return_ = neg(args[0]);
     } else if (id == "@mod") {
         assert(!"Not implemented");
     } else if (id == "@compl") {
@@ -657,7 +660,7 @@ void BasicBlockGenerator::exit_scope() {
     for (int j = scope_.size()-2; j > 1; j--) {
         Scope::Ptr s = scope_[j];
         for (int i = s->variables()-1; i >= 0; i--) {
-            emit_cleanup(scope->variable(i));
+            emit_cleanup(s->variable(i));
         }
     }
 

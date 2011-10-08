@@ -44,7 +44,8 @@ int main() {
     assert(strncmp(str8->data, "llo ", 4) == 0);
 
     // Index
-    assert('\0' == String__index(str3, -1));
+    assert('!' == String__index(str3, -1));
+    assert('o' == String__index(str3, -5));
     assert('h' == String__index(str3, 0));
     assert('!' == String__index(str3, 11));
     assert('\0' == String__index(str3, 12));

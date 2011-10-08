@@ -47,6 +47,7 @@ typedef struct String* String;
 typedef struct Object* Object;
 
 String Int_str__g(Int self);
-String Foat_str__g(Float self);
+String Float_str__g(Float self);
+String Bool_str__g(Bool self); 
 
 #endif

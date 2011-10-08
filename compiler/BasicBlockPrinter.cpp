@@ -93,6 +93,7 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         case SUB: out_ << res << " <- " << first << " - " << second; break;
         case MUL: out_ << res << " <- " << first << " * " << second; break; 
         case DIV: out_ << res << " <- " << first << " / " << second; break; 
+        case NEG: out_ << res << " <- -" << first; break;
         case ANDB: out_ << res << " <- " << first << " & " << second; break;
         case ORB: out_ << res << " <- " << first << " | " << second; break; 
         case NOTB: out_ << res << " <- not " << first; break;
