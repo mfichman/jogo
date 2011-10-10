@@ -40,16 +40,7 @@ else:
     env.Append(CFLAGS = '-DCOROUTINE_STACK_SIZE=8192')
 
 
-#bison = Builder(action='bison --defines $SOURCE -o $TARGET')
-#flex = Builder(action='flex -t $SOURCE > $TARGET')
-#env.Append(BUILDERS={'Bison':bison, 'Flex':flex})
-#parser = env.Bison('build/compiler/Grammar.cpp', 'build/compiler/Grammar.yy')
-#lexer = env.Flex('build/compiler/Lexer.cpp', 'build/compiler/Lexer.ll')
-
-parser = 'build/compiler/Grammar.yy'
-lexer = 'build/compiler/Lexer.ll'
-
-compiler_sources = env.Glob('build/compiler/*.cpp') + [parser, lexer]
+compiler_sources = env.Glob('build/compiler/*.cpp')
 env.Program('bin/apollo', compiler_sources +  ['build/drivers/Main.cpp'])
 env.Program('bin/apdoc', compiler_sources + ['build/drivers/Doc.cpp'])
 

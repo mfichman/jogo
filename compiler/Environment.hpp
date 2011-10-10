@@ -98,6 +98,7 @@ public:
     Type* byte_type() const { return byte_type_; }
     Type* pair_type() const { return pair_type_; }
     Type* self_type() const { return self_type_; }
+    Type* any_type() const { return any_type_; }
 
 private:
     std::map<std::string, String::Ptr> name_;
@@ -129,6 +130,7 @@ private:
     Type::Ptr byte_type_;
     Type::Ptr pair_type_;
     Type::Ptr self_type_;
+    Type::Ptr any_type_;
 
     std::string output_;
     std::string output_dir_;

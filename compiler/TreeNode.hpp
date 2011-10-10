@@ -56,7 +56,6 @@ public:
     virtual void operator()(Binary* expression) {}
     virtual void operator()(Unary* expression) {}
     virtual void operator()(Call* expression) {}
-    virtual void operator()(Dispatch* expression) {}
     virtual void operator()(Construct* expression) {}
     virtual void operator()(Identifier* expression) {}
     virtual void operator()(Empty* empty) {}
@@ -78,6 +77,21 @@ public:
     virtual void operator()(ArrayLiteral* literal) {}
     virtual void operator()(HashLiteral* literal) {}
     virtual void operator()(Closure* expression) {}
+    virtual void operator()(Member* expression) {}
 };
 
+template <typename T>
+T* append(typename T::Ptr list, T* last) {
+    if (list) {
+        if (list->last()) {
+            list->last()->next(last);
+        } else {
+            list->next(last);
+        }
+        list->last(last);
+        return list;
+    } else {
+        return last;
+    }
+}
 

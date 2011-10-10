@@ -51,6 +51,7 @@ Environment::Environment() :
     byte_type_ = new Type(loc, name("Byte"), 0, builtin_file_, this);
     pair_type_ = new Type(loc, name("Pair"), 0, builtin_file_, this);
     self_type_ = new Type(loc, name("Self"), 0, builtin_file_, this);
+    any_type_ = new Type(loc, name("Any"), 0, builtin_file_, this);
 
     module(root_);
 

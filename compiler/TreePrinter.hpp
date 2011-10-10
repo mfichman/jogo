@@ -44,7 +44,6 @@ private:
     void operator()(Binary* expression);
     void operator()(Unary* expression);
     void operator()(Call* expression);
-    void operator()(Dispatch* expression);
     void operator()(Construct* expression);
     void operator()(Identifier* expression);
     void operator()(Empty* empty);
@@ -65,6 +64,7 @@ private:
     void operator()(Type* type);
     void operator()(HashLiteral* literal);
     void operator()(ArrayLiteral* literal);
+    void operator()(Member* expression);
 
     void print_tabs();
     void print_comment(String* comment);

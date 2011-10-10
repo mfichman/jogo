@@ -35,23 +35,19 @@ public:
     }
 	
 	Expression* next() const { return next_; }
+    Expression* last() const { return last_; }
     Type* parent_type() const { return parent_type_; }
     Type* type() const { return type_; }
     bool is_logic_op() const;
 	void next(Expression* next) { next_ = next; }
-    void last(Expression* last) {
-        Expression* expr = this;
-        while (expr->next()) {
-            expr = expr->next();
-        }
-        expr->next(last);
-    }
+    void last(Expression* last) { last_ = last; }
     void parent_type(Type* type) { parent_type_ = type; }
     void type(Type* type) { type_ = type; }
     typedef Pointer<Expression> Ptr;
 
 private:
 	Expression::Ptr next_;
+    Expression::Ptr last_;
     Type::Ptr type_;
     Type::Ptr parent_type_;
 };
@@ -193,18 +189,16 @@ private:
 /* Normal function all */
 class Call : public Expression {
 public:
-    Call(Location loc, File* file, String* mod, String* id, Expression* args) :
+    Call(Location loc, File* file, Expression* expr, Expression* args) :
         Expression(loc),
         file_(file),
-        scope_(mod),
-        identifier_(id),
+        expression_(expr),
         arguments_(args),
         function_(0) {
     }
 
-    String* scope() const { return scope_; }
-    String* identifier() const { return identifier_; }
     File* file() const { return file_; } 
+    Expression* expression() const { return expression_; }
     Expression* arguments() const { return arguments_; }
     Function* function() const { return function_; }
     void arguments(Expression* args) { arguments_ = args; }
@@ -213,34 +207,27 @@ public:
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     File* file_;
-    String::Ptr scope_;
-    String::Ptr identifier_;
+    Expression::Ptr expression_;
     Expression::Ptr arguments_;
     Function* function_;
 };
 
-/* Object-oriented function call dispatch */
-class Dispatch : public Expression {
+/* Member access (e.g., object.attribute) */
+class Member : public Expression {
 public:
-    Dispatch(Location loc, String* ident, Expression* self, Expression* args) :
-        Expression(loc),
+    Member(Location loc, Expression* expr, String* ident) :
+        Expression(loc), 
         identifier_(ident),
-        function_(0) {
-        
-        self->next(args);
-        arguments_ = self;
+        expression_(expr) {
     }
 
     String* identifier() const { return identifier_; }
-    Expression* arguments() const { return arguments_; }
-    Function* function() const { return function_; }
-    void function(Function* function) { function_ = function; }
+    Expression* expression() const { return expression_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     String::Ptr identifier_;
-    Expression::Ptr arguments_;
-    Function* function_;
+    Expression::Ptr expression_;
 };
 
 /* Constructor call */

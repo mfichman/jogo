@@ -321,122 +321,112 @@ void SemanticAnalyzer::operator()(Unary* expression) {
     expression->type(env_->bool_type());
 }
 
-void SemanticAnalyzer::operator()(Call* expression) {
+void SemanticAnalyzer::operator()(Call* call) {
     // Look up the function by name in the current context.  The function may
     // be a member of the current module, or of a module that was imported in
     // the current compilation unit.
-    String::Ptr id = expression->identifier();
-    String::Ptr scope = expression->scope();
-    Expression::Ptr args = expression->arguments();
-    Location loc = expression->location();
-    Function::Ptr func;
-    Type::Ptr receiver;
+    call->type(env_->no_type());
 
-    Variable::Ptr var = variable(id); 
-    if (var) {
-        receiver = var->type();
-        func = receiver->clazz()->function(env_->name("@call"));
-        if (!func) {
-            err_ << expression->location();
-            err_ << "Object '" << id << "' is not callable\n";
-            env_->error();
-            expression->type(env_->no_type());
-            return;
-        }
-        Expression::Ptr self = new Identifier(loc, id);
-        self->next(args);
-        expression->arguments(self);
-    }
-
-    if (!func && class_) {
-        receiver = class_->type();
-        func = class_->function(id);
-        if (func) {
-            Expression::Ptr self = new Identifier(loc, env_->name("self"));
-            self->next(args);
-            expression->arguments(self);
-        }
-    }
-    if (!func) {
-        func = expression->file()->function(scope, id);
-    }
+    // Check the expression that is being called
+    Expression::Ptr expr = call->expression();
+    expr(this);
 
     // Evaluate types of argument expressions, then perform type checking
     // on the body of the function.
-    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
+    for (Expression::Ptr a = call->arguments(); a; a = a->next()) {
         a(this);
     }
 
-    if (!func) {
-        err_ << expression->location();
-        err_ << "Undeclared function '" << id << "'\n";
-        env_->error();
-        expression->type(env_->no_type());
-        return;
-    }
-    expression->type(func->type());
-    expression->function(func);
+    Location loc = call->location();
+    String::Ptr id;
+    Type::Ptr receiver;
+    Expression::Ptr self;
 
+    // There are several cases that need to be handled here in the following
+    // few conditionals:
+    // 1. Call to a function with an identifier (e.g., min(1, 2))
+    // 2. Call to a function through @call to local var 
+    // 3. Call to a function with a dispatch, e.g. x.calculate()
+    // 4. Call to a function within the current class, (e.g., calculate()) 
+    // 5. Call to a function through @call to arb. expr (e.g., 1())
+    if (Identifier* ident = dynamic_cast<Identifier*>(expr.pointer())) {
+        // Call directly on an identifier, i.e., x() 
+        Variable::Ptr var = variable(ident->identifier());
+        if (var) {
+            // Attempt to use the local var's @call method
+            receiver = var->type();
+            id = env_->name("@call");
+            self = new Identifier(loc, id);
+        } else if (class_) {
+            // Attempt to look up the function in the enclosing class
+            id = ident->identifier();
+            if (class_->function(id)) {
+                receiver = class_->type();
+                self = new Identifier(loc, env_->name("self"));
+            }
+        } else {
+            id = ident->identifier();
+        }
+    } else if (Member* member = dynamic_cast<Member*>(expr.pointer())) {
+        // Use the left of the '.' operator as the receiver
+        id = member->identifier();
+        receiver = member->expression()->type();
+        self = member->expression();
+    } else {
+        // Call directly on expression
+        receiver = expr->type();
+        id = env_->name("@call");
+        self = expr;
+    }
+
+    // Look up the function using the id and/or receiver type
+    Function::Ptr func;
+    if (self && receiver) {
+        Class::Ptr clazz = receiver->clazz();
+        if (!clazz) {
+            err_ << call->location();
+            err_ << "Unknown class '" << receiver->name() << "'\n";
+            env_->error();
+            return;
+        }
+        func = clazz->function(id);
+        if (!func && id->string() == "@call") {
+            err_ << call->location();
+            err_ << "Object is not callable\n";
+            env_->error();
+            return;
+        } else if (!func) {
+            err_ << call->location();
+            err_ << "Undeclared function '" << id << "' in class '";
+            err_ << clazz->name() << "'\n";
+            env_->error();
+            return;
+        }
+        self->next(call->arguments());
+        call->arguments(self);
+    } else {
+        func = call->file()->function(env_->name(""), id);
+        if (!func) {
+            err_ << call->location();
+            err_ << "Undeclared function'" << id << "'\n";
+            env_->error();
+            return;
+        }
+    }     
+
+    // Check to make sure the function is not private
     if (func->is_private()) {
-        err_ << expression->location();
+        err_ << call->location();
         err_ << "Function '" << id << "' is private in class '";
         err_ << receiver << "'\n";
         env_->error();  
     }
-    
+
+    call->type(func->type());
+    call->function(func);
+
     // FIXME: Look up generics for function
-    check_args(expression->arguments(), func, receiver);
-}
-
-void SemanticAnalyzer::operator()(Dispatch* expression) {
-    // Evaluate types of argument expressions and the receiver
-    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
-        a(this);
-    }
-
-    // Get the class associated with the receiver (always the first argument)
-    Expression::Ptr receiver = expression->arguments();
-    if (receiver->type()->is_no_type()) {
-        expression->type(env_->no_type());
-        return;
-    }
-    if (receiver->type()->is_self()) {
-        receiver->type(class_->type());
-    }
-    Class::Ptr clazz = receiver->type()->clazz();
-    if (!clazz) {
-        err_ << expression->location();
-        err_ << "Undefined class '" << receiver->type() << "'\n";
-        env_->error();
-        expression->type(env_->no_type());
-        return;
-    }
-    
-    // Look up the function using the class object.
-    String::Ptr id = expression->identifier();
-    Function::Ptr func = clazz->function(id); 
-    if (!func) {
-        err_ << expression->location();
-        err_ << "Undeclared function '" << id << "' in class '";
-        err_ << clazz->type() << "'\n";
-        env_->error();
-        expression->type(env_->no_type());
-        return;
-    } 
-
-    // Set the type of the expression to the return type of the function.
-    // Look up the return type in the receiver if it is a generic.
-    expression->function(func);
-    expression->type(fix_generics(receiver->type(), func->type()));
-
-    if (func->is_private()) {
-        err_ << expression->location();
-        err_ << "Function '" << id << "' is private in class '";
-        err_ << receiver->type() << "'\n";
-        env_->error();  
-    }
-
-    check_args(expression->arguments(), func, receiver->type());
+    check_args(call->arguments(), func, receiver);
 }
 
 void SemanticAnalyzer::operator()(Construct* expression) {

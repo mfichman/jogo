@@ -48,7 +48,6 @@ private:
     void operator()(Binary* expression);
     void operator()(Unary* expression);
     void operator()(Call* expression);
-    void operator()(Dispatch* expression);
     void operator()(Construct* expression);
     void operator()(Identifier* expression);
     void operator()(Block* statement);

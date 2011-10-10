@@ -161,16 +161,10 @@ void BasicBlockGenerator::operator()(Unary* expr) {
 }
 
 void BasicBlockGenerator::operator()(Call* expr) {
-    // Push objects in anticipation of the call instruction.  Arguments must
-    // be pushed in reverse order.
-    emit_call(expr->function(), expr->arguments());
-}
-
-void BasicBlockGenerator::operator()(Dispatch* expr) {
     // The call expression may actually be an operator, if the type of the
     // expression is primitive.
     Type::Ptr type = expr->arguments()->type();
-    String::Ptr id = expr->identifier();
+    String::Ptr id = expr->function()->name();
     if (id->string()[0] == '@' && type->is_primitive()) {
         emit_operator(expr);
         return; 
@@ -549,10 +543,10 @@ void BasicBlockGenerator::emit_call(Function* func, Expression* args) {
     }
 }
 
-void BasicBlockGenerator::emit_operator(Dispatch* expr) {
+void BasicBlockGenerator::emit_operator(Call* expr) {
     // FixMe: Replace this with a mini-parser that can read three-address-code
     // and output it as an inline function.
-    string id = expr->identifier()->string();
+    string id = expr->function()->name()->string();
 
     vector<Operand> args;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {

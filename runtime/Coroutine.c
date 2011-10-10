@@ -109,18 +109,3 @@ Ptr Coroutine__grow_stack() {
     return Coroutine__stack->stack+COROUTINE_STACK_SIZE-2;
 }
 
-    // function:
-    //   push rbp
-    //   mov rbp, rsp
-    //   cmp rsp, [Coroutine_stack+512] 
-    //   blt function.enter
-    //   call Coroutine__grow_stack
-    //   mov rsp, rax
-    // function.enter:
-    //   ... continue
-    //   ...
-    //   ...
-    //   mov rsp, rbp
-    //   pop rbp
-
-

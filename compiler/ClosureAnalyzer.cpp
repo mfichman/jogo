@@ -67,19 +67,6 @@ void ClosureAnalyzer::operator()(Unary* expression) {
 }
 
 void ClosureAnalyzer::operator()(Call* expression) {
-    // The call expression could be calling the @call operator of a local var,
-    // so we have to add it here.
-    String::Ptr id = expression->identifier();
-    if (!variable(id)) {
-        unbound_var_set_.insert(id);
-    }
-
-    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
-        a(this);
-    }
-}
-
-void ClosureAnalyzer::operator()(Dispatch* expression) {
     // Simply check the arguments recursively.
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         a(this);

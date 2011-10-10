@@ -49,7 +49,6 @@ private:
     void operator()(Binary* expression);
     void operator()(Unary* expression);
     void operator()(Call* expression);
-    void operator()(Dispatch* expression);
     void operator()(Construct* expression);
     void operator()(Identifier* expression);
     void operator()(Empty* expression);
@@ -75,6 +74,9 @@ private:
     void enter_scope();
     void exit_scope();
     void check_args(Expression* expr, Function* func, Type* receiver);
+    Function* check_call(Identifier* ident);
+    Function* check_call(Member* member);
+    Function* check_call(Expression* expr);
     void gen_mutator(Attribute* feature);
     void gen_accessor(Attribute* feature);
     void gen_constructor();

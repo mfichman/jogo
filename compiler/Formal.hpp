@@ -37,7 +37,9 @@ public:
 	String* name() const { return name_; }
 	Type* type() const { return type_; }
     Formal* next() const { return next_; }
+    Formal* last() const { return last_; }
 	void next(Formal* next) { next_ = next; }
+    void last(Formal* last) { last_ = last; }
     virtual void operator()(Functor* functor) { functor->operator()(this); }
 	typedef Pointer<Formal> Ptr;
 
@@ -45,5 +47,5 @@ private:
 	String::Ptr name_;
 	Type::Ptr type_;
 	Formal::Ptr next_;
+    Formal::Ptr last_;
 };
-

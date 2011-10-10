@@ -238,32 +238,24 @@ void TreePrinter::operator()(Unary* expression) {
     indent_level_--;
 }
 
-void TreePrinter::operator()(Call* expression) {
+void TreePrinter::operator()(Member* expression) {
     indent_level_++;
-    Expression::Ptr arguments = expression->arguments();
-    out_ << "Call\n";
-    print_tabs(); out_ << "name: ";
+    Expression::Ptr expr = expression->expression();
+    out_ << "Member\n";
+    print_tabs(); out_ << "identifier: ";
     out_ << expression->identifier() << "\n";
-    if (expression->scope()) {
-        print_tabs(); out_ << "module: ";
-        out_ << expression->scope() << "\n";
-    }
-
-    int i = 0;
-    for (Expression::Ptr a = arguments; a; a = a->next()) {
-        print_tabs(); out_ << "argument" << i << ": ";
-        a(this);
-        i++;
-    }
+    print_tabs(); out_ << "expression: ";
+    expr(this);
     indent_level_--;
 }
 
-void TreePrinter::operator()(Dispatch* expression) {
+void TreePrinter::operator()(Call* expression) {
     indent_level_++;
     Expression::Ptr arguments = expression->arguments();
-    out_ << "Dispatch\n";
-    print_tabs(); out_ << "name: ";
-    out_ << expression->identifier() << "\n";
+    Expression::Ptr expr = expression->expression();
+    out_ << "Call\n";
+    print_tabs(); out_ << "expression: ";
+    expr(this);
 
     int i = 0;
     for (Expression::Ptr a = arguments; a; a = a->next()) {

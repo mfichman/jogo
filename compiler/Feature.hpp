@@ -43,6 +43,7 @@ public:
     }
 
     Feature* next() const { return next_; }
+    Feature* last() const { return last_; }
     Flags flags() const { return flags_; }
     String* label() const { return label_; }
     bool is_private() const { return flags_ & PRIVATE; }
@@ -50,6 +51,7 @@ public:
     bool is_weak() const { return flags_ & WEAK; }
     bool is_immutable() const { return flags_ & IMMUTABLE; }
     void next(Feature* next) { next_ = next; }
+    void last(Feature* last) { last_ = last; }
     void flags(Flags flags) { flags_ = flags; }
     void label(String* label) { label_ = label; }
     typedef Pointer<Feature> Ptr;
@@ -62,6 +64,7 @@ public:
 
 private:
     Feature::Ptr next_;
+    Feature::Ptr last_;
     Flags flags_;
     String::Ptr label_;
 };

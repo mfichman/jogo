@@ -52,7 +52,6 @@ private:
     void operator()(Binary* expression);
     void operator()(Unary* expression);
     void operator()(Call* expression);
-    void operator()(Dispatch* expression);
     void operator()(Construct* expression);
     void operator()(Identifier* expression);
     void operator()(Empty* expression);
@@ -233,7 +232,7 @@ private:
     void enter_scope();
     void exit_scope();
     void emit_call(Function* func, Expression* args);
-    void emit_operator(Dispatch* expression);
+    void emit_operator(Call* expression);
     void emit_cleanup(Variable* var);
     void emit_refcount_inc(Operand var);
     void emit_refcount_dec(Operand var);

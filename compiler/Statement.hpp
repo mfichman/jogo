@@ -37,11 +37,14 @@ public:
     }
     
     Statement* next() const { return next_; }
+    Statement* last() const { return last_; }
     void next(Statement* next) { next_ = next; }
+    void last(Statement* last) { last_ = last; }
     typedef Pointer<Statement> Ptr;
 
 private:
     Statement::Ptr next_;
+    Statement::Ptr last_;
 };
 
 /* Simple statement with only one expression */

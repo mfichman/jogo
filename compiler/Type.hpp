@@ -38,6 +38,7 @@ public:
     String* name() const { return name_; }
     String* scope() const { return scope_; }
     Type* next() const { return next_; }
+    Type* last() const { return last_; }
     Type* generic(String* name) const;
     Class* clazz() const;
     File* file() const { return file_; }
@@ -60,6 +61,7 @@ public:
     bool is_nil_type() const;
     void is_no_type(bool flag) { is_no_type_ = flag; }
     void next(Type* next) { next_ = next; }
+    void last(Type* last) { last_ = last; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Type> Ptr;
 
@@ -70,6 +72,7 @@ private:
     String::Ptr scope_;
     String::Ptr name_;
     Type::Ptr next_;
+    Type::Ptr last_;
     Class* class_;
     String::Ptr qualified_name_;
     bool is_no_type_;
@@ -84,12 +87,15 @@ public:
 
     Type* type() const { return type_; }
     Generic* next() const { return next_; }
+    Generic* last() const { return last_; }
     void next(Generic* next) { next_ = next; }
+    void last(Generic* last) { last_ = last; }
     typedef Pointer<Generic> Ptr;
 
 private:
     Type::Ptr type_;
     Generic::Ptr next_;
+    Generic::Ptr last_;
 };
 
 Stream::Ptr operator<<(Stream::Ptr out, const Type* type);
