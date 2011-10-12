@@ -46,7 +46,8 @@ Hash Hash__init(Int capacity) {
 }
 
 void Hash__destroy(Hash self) {
-    for (Int i = 0; i < self->count; ++i) {
+    Int i = 0;
+    for (; i < self->count; ++i) {
         Object__refcount_dec(self->data[i]);
     }
     free(self->data);

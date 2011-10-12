@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#undef Int
 
 Array Array__init(Int capacity) {
     Array ret = calloc(sizeof(struct Array), 1);
@@ -47,7 +48,8 @@ Array Array__init(Int capacity) {
 }
 
 void Array__destroy(Array self) {
-    for (Int i = 0; i < self->count; ++i) {
+    Int i = 0; // gdmf windows!! C99 is 12 years old
+    for (; i < self->count; ++i) {
         Object__refcount_dec(self->data[i]);
     }
     free(self->data);
@@ -72,24 +74,33 @@ void Array__insert(Array self, Int index, Object obj) {
     }
 
     if (index >= self->capacity) {
+        // Array needs to be resized, so double the size of the array, and 
+        // then copy the array elements over.
+        Int i = 0;
+        Object* temp = 0;
+
         if (self->capacity*2 > index+1) {
             self->capacity *= 2;
         } else {
             self->capacity = index+1;
         }
-        Object* temp = calloc(sizeof(Object), self->capacity);
+        temp = calloc(sizeof(Object), self->capacity);
         if (!temp) {
             fprintf(stderr, "Out of memory");
             fflush(stderr);
             abort();
         }
-        for (Int i = 0; i < self->count; ++i) {
+
+        // Copy data from the old array into the new array
+        for (i = 0; i < self->count; ++i) {
             temp[i] = self->data[i];
         } 
         free(self->data);   
         self->data = temp;
     }
     if (index >= self->count) {
+        // Array doesn't need to be resized; just increment the count and 
+        // insert the element
         self->count = index+1;
     }
 

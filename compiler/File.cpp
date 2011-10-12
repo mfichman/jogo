@@ -250,7 +250,7 @@ bool File::mkdir(const std::string& file) {
     }
 
 #ifdef WINDOWS
-    if (CreateDirectory(path.c_str(), 0)) {
+    if (CreateDirectory(file.c_str(), 0)) {
         return GetLastError() == ERROR_ALREADY_EXISTS;
     }
 #else

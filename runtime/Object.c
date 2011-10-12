@@ -67,14 +67,15 @@ Ptr Object__dispatch2(Object self, Char* id) {
     U64 n = ((U64*)self->_vtable)[3];
     U64* jump1 = ((U64*)self->_vtable) + 4;
     Ptr* jump2 = ((Ptr*)self->_vtable) + 4 + n;
-
+    U64 d = 0;
     U64 hash = 0;
-    for (Char* c = id; *c; ++c) {
+    Char* c = 0;
+    for (c = id; *c; ++c) {
         hash = ((hash * 0x01000193) ^ (*c)); 
     }
 
-    U64 d = jump1[hash % n];        
-    for (Char* c = id; *c; ++c) {
+    d = jump1[hash % n];        
+    for (c = id; *c; ++c) {
         d = ((d * 0x01000193) ^ (*c));
     }
     return jump2[d % n]; 
@@ -85,7 +86,8 @@ Int Object__hash__g(Object self) {
     // String hash function.
     Char* array = (Char*)self;
     Int hash = 0;
-    for (Int i = 0; i < sizeof(Int); ++i) {
+    Int i = 0;
+    for (; i < sizeof(Int); ++i) {
         hash = 31 * hash + array[i]; 
     }
     return hash;

@@ -63,12 +63,19 @@ Stream::Stream(const std::string& file) : error_(false) {
     }
 }
 
-Stream::Stream(int fd) : error_(false) {
+#ifdef WINDOWS
+Stream::Stream(HANDLE fd) : error_(false) {
     // Creates an output stream that writes to a fixed file descriptor.
     buffer_.reserve(1024);
     fd_ = fd;
-	 	
 }
+#else
+Stream::Stream(int fd) : error_(false) {
+    // Creates an output stream that writes to a fixed file descriptor.
+    buffer_.reserve(1024);
+    fd_ = fd	
+}
+#endif
 
 Stream::~Stream() {
     // Flush the remaining buffer, and then close the stream if it isn't a
@@ -139,6 +146,8 @@ void Stream::write_direct(const char* data, int len) {
 
 void Stream::flush() {
     // Write all bytes in the buffer immediately.
-    write_direct(&buffer_.front(), buffer_.size());
-    buffer_.resize(0);
+    if (!buffer_.empty()) {
+        write_direct(&buffer_.front(), buffer_.size());
+        buffer_.resize(0);
+    }
 }

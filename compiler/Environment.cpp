@@ -34,6 +34,8 @@ Environment::Environment() :
     optimize_(false),
     link_(true),
     assemble_(true),
+    execute_(false),
+    verbose_(false),
     errors_(0) {
 
     Location loc;

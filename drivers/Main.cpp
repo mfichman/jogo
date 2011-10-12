@@ -46,6 +46,19 @@ RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
 Intel64CodeGenerator::Ptr cgen(new Intel64CodeGenerator(env));
 std::string program_path;
 
+std::string tempnam() {
+#ifdef WINDOWS
+    static const char* prefix = "tmp";
+    char path[MAX_PATH];
+    char file[MAX_PATH];
+    GetTempPath(sizeof(path), path);
+    GetTempFileName(path, prefix, 0, file);
+    return std::string(file);
+#else
+    return std::string(tempnam());
+#endif
+}
+
 void output(File* file) {
     // Process 'file' and output the requested output path.  Multiple files 
     // may go through this function if the multi-compile option is enabled.
@@ -88,7 +101,7 @@ void output(File* file) {
         return;
     } 
 
-    std::string asm_file = env->assemble() ? tmpnam(0) : out_file + ".s";
+    std::string asm_file = env->assemble() ? tempnam() : out_file + ".s";
     file->output(env->name(asm_file));
     cgen->out(new Stream(asm_file));
     cgen->operator()(file);
@@ -99,7 +112,7 @@ void output(File* file) {
     // at the assembly stage
     std::string obj_file;
     if (env->link() && !env->make()) {
-        obj_file = tmpnam(0);
+        obj_file = tempnam();
     } else {
 
         obj_file = out_file + ".apo";
@@ -107,7 +120,7 @@ void output(File* file) {
     file->output(env->name(obj_file));
     std::stringstream ss;
 #if defined(WINDOWS)
-    ss << "nasm -fobj64 " << asm_file << " -o " << obj_file;
+    ss << "nasm -fwin64 " << asm_file << " -o " << obj_file;
 #elif defined(LINUX)
     ss << "nasm -felf64 " << asm_file << " -o " << obj_file;
 #elif defined(DARWIN)
@@ -148,14 +161,16 @@ int main(int argc, char** argv) {
     for (File::Ptr file = env->files(); file; file = file->next()) {
         obj_files += file->output()->string() + " ";
     } 
-    std::string exe_file = env->execute() ? tmpnam(0) : env->output();
+    std::string exe_file = env->execute() ? tempnam() : env->output();
     if (exe_file == "-") {
         exe_file = "out";
     }
 
     std::stringstream ss;
 #if defined(WINDOWS)    
-    ss << "link.exe " << obj_files << " /OUT:" << exe_file << ".exe";
+    ss << "link.exe /DEBUG /ENTRY:main" << " /SUBSYSTEM:console ";
+    ss << "/MACHINE:amd64 ";
+    ss << obj_files << " /OUT:" << exe_file << ".exe ";
 #elif defined(LINUX)
     ss << "gcc -m64 " << obj_files << " -o " << exe_file;
 #elif defined(DARWIN)
@@ -164,7 +179,7 @@ int main(int argc, char** argv) {
 #endif
     for (int i = 0; i < env->libs(); i++) {
 #ifdef WINDOWS
-        ss << env->lib(i) << ".lib";
+        ss << " " << env->lib(i) << ".lib";
 #else
         ss << " -l" << env->lib(i);
 #endif
@@ -172,12 +187,14 @@ int main(int argc, char** argv) {
     for (int i = 0; i < env->includes(); i++) {
         if (File::is_dir(env->include(i))) {
 #ifdef WINDOWS
-            ss << "/L:" << env->include(i);
+            ss << " /LIBPATH:" << env->include(i);
 #else
             ss << " -L" << env->include(i);  
 #endif
         }
     }
+
+    std::cout << ss.str() << std::endl;
 
     if (system(ss.str().c_str())) { return 1; }
     if (!env->make()) {

@@ -69,6 +69,8 @@ void Intel64CodeGenerator::operator()(File* file) {
 
 void Intel64CodeGenerator::operator()(Class* feature) {
     // Emit the functions and vtable for the class specified by 'feature'
+    class_ = feature;
+
     if (feature->is_object()) {
         if (feature->location().file == file_) {
             emit_vtable(feature);
@@ -84,6 +86,8 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
+
+    class_ = 0;
 }
 
 void Intel64CodeGenerator::operator()(Module* feature) {
@@ -95,6 +99,13 @@ void Intel64CodeGenerator::operator()(Module* feature) {
 void Intel64CodeGenerator::operator()(Function* feature) {
     // Emit a function, or an extern declaration if the function is native or
     // belongs to a different output file.
+    String::Ptr id = feature->name();
+    if (id->string()[0] == '@' && class_ && class_->type()->is_primitive()) {
+        return;
+    }
+    if (feature->is_virtual()) {
+        return;
+    }
     if (feature->is_native() || feature->location().file != file_) {
         out_ << "extern "; emit_label(feature->label()); out_ << "\n";
     } else if (feature->basic_blocks()) {
@@ -415,7 +426,7 @@ void Intel64CodeGenerator::emit_label(const std::string& label) {
     if (label[0] == '.') {
         out_ << label;
     } else {
-#ifdef DARWIN
+#if defined(DARWIN)
         out_ << "_" << label;
 #else
         out_ << label;

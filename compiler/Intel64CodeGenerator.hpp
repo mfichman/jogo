@@ -68,6 +68,7 @@ private:
 
     Environment::Ptr env_;
     Machine::Ptr machine_;
+    Class::Ptr class_;
     Stream::Ptr out_;
     Opcode opcode_;
     File::Ptr file_;

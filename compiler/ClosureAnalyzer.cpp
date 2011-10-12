@@ -22,6 +22,7 @@
 
 #include "ClosureAnalyzer.hpp"
 #include <algorithm>
+#include <iterator>
 
 using namespace std;
 
@@ -43,7 +44,7 @@ void ClosureAnalyzer::operator()(Function* feature) {
 
     std::set<String::Ptr>::iterator begin = unbound_var_set_.begin();
     std::set<String::Ptr>::iterator end = unbound_var_set_.end();
-    copy(begin, end, back_inserter(unbound_var_));
+    copy(begin, end, std::back_inserter(unbound_var_));
 }
 
 void ClosureAnalyzer::operator()(HashLiteral* expression) {
@@ -139,7 +140,7 @@ void ClosureAnalyzer::operator()(Assignment* statement) {
     if (init) {
         init(this);
     }
-    if (variable(id) && !id->string()[0] == '_') {
+    if (variable(id) && id->string()[0] != '_') {
         unbound_var_set_.insert(id); 
     }
 }

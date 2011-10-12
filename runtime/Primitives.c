@@ -31,6 +31,8 @@ String Int_str__g(Int self) {
     // string.
     Int length = 0;
     Int val = self;
+    String ret = 0;
+    Char *c = 0;
 
     if (self < 0) { length++; }
     while (val) { 
@@ -41,7 +43,7 @@ String Int_str__g(Int self) {
         length++;
     }
 
-    String ret = malloc(sizeof(struct String) + length + 1); 
+    ret = malloc(sizeof(struct String) + length + 1); 
     if (!ret) {
         fprintf(stderr, "Out of memory");
         fflush(stderr);
@@ -52,7 +54,7 @@ String Int_str__g(Int self) {
     ret->length = length;
     
     // Now copy over the characters for each decimal place
-    Char *c = ret->data + ret->length - 1;
+    c = ret->data + ret->length - 1;
     val = self < 0 ? -self : self;
     if (!val) {
         *c-- = '0';
@@ -71,6 +73,7 @@ String Int_str__g(Int self) {
 
 String Float_str__g(Float self) {
     abort();
+    return 0;
 }
 
 String Bool_str__g(Bool self) {
@@ -87,3 +90,18 @@ String Bool_str__g(Bool self) {
     }
 }
 
+String Char_str__g(Char self) {
+    // Returns the string representation of the character.
+    
+    String ret = malloc(sizeof(struct String) + 1 + 1); 
+    if (!ret) {
+        fprintf(stderr, "Out of memory");
+        fflush(stderr);
+        abort();
+    }
+    ret->_vtable = String__vtable;
+    ret->_refcount = 1;
+    ret->length = 1;
+    ret->data[0] = self;
+    return ret;
+}

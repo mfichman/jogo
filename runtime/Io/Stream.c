@@ -119,7 +119,8 @@ String Io_Stream_scan(Io_Stream self, String delim) {
     while (1) {
         // Loop until we find a delimiter somewhere in the input stream
         Char next = Io_Stream_get(self);
-        for (Char* c = delim->data; *c; ++c) {
+        Char* c = 0;
+        for (c = delim->data; *c; ++c) {
             if (*c == next) {
                 ret->data[ret->length] = '\0';
                 return ret;
@@ -127,9 +128,12 @@ String Io_Stream_scan(Io_Stream self, String delim) {
         }
         // Resize the string if necessary
         if (ret->length >= length) {
+            String exp = 0;
+            Char* c = 0;
+            Int i = 0;
             length *= 2;
-            String exp = malloc(sizeof(struct String) + length + 1);
-            if (!ret) {
+            exp = malloc(sizeof(struct String) + length + 1);
+            if (!exp) {
                 fprintf(stderr, "Out of memory");
                 fflush(stderr);
                 abort();
@@ -137,8 +141,8 @@ String Io_Stream_scan(Io_Stream self, String delim) {
             exp->_vtable = String__vtable;
             exp->_refcount = 1;
             exp->length = ret->length;
-            Char* c = exp->data;
-            for (Int i = 0; i < ret->length; i++) {
+            c = exp->data;
+            for (i = 0; i < ret->length; i++) {
                 *c++ = ret->data[i];
             } 
         }
@@ -150,7 +154,8 @@ String Io_Stream_scan(Io_Stream self, String delim) {
 }
 
 void Io_Stream_print(Io_Stream self, String str) {
-    for (Int i = 0; i < str->length; i++) {
+    Int i = 0;
+    for (; i < str->length; i++) {
         Io_Stream_put(self, str->data[i]);
     }
 }

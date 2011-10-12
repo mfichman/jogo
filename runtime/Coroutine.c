@@ -33,6 +33,10 @@ Coroutine Coroutine__init(Object func) {
     // Initializes a function with a new stack and instruction pointer. When
     // the coroutine is resumed, it will begin executing at 'function' with its
     // own stack.
+    Int stack_index = COROUTINE_STACK_SIZE - 2 - 1; 
+    // -2 is for the two return addresses that are initially on the stack
+    // -1 is for the initial values of RBP
+    
     Coroutine ret = calloc(sizeof(struct Coroutine), 1); 
     if (!ret) {
         fprintf(stderr, "Out of memory");
@@ -45,9 +49,7 @@ Coroutine Coroutine__init(Object func) {
     ret->function = func;
     ret->current = &ret->stack;
 
-    Int stack_index = COROUTINE_STACK_SIZE - 2 - 1; 
-    // -2 is for the two return addresses that are initially on the stack
-    // -1 is for the initial values of RBP
+
 
     ret->sp = (Int)(ret->stack.stack + stack_index); // ESP = R6
     ret->stack.next = 0;
@@ -69,7 +71,8 @@ Coroutine Coroutine__init(Object func) {
 void Coroutine__destroy(Coroutine self) {
     // Free the stack, and the pointer to the closure object so that no memory
     // is leaked.
-    for (Coroutine_Stack* stack = self->stack.next; stack;) {
+    Coroutine_Stack* stack = 0;
+    for (stack = self->stack.next; stack;) {
         Coroutine_Stack* temp = stack;
         stack = stack->next;
         free(temp);

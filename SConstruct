@@ -21,11 +21,18 @@ if env['PLATFORM'] == 'posix':
     env.Append(ASFLAGS = '-felf64')
 
 if env['PLATFORM'] == 'win32':
+    bld = Builder(action = 'nasm -fwin64 -o $TARGET $SOURCE', 
+                  src_suffix = '.nasm',
+                  suffix = '.obj')
+    env.Append(BUILDERS = { 'NASM': bld })
     env.Append(CXXFLAGS = '/DWINDOWS')
+    env.Append(CXXFLAGS = '/MDd')
+    env.Append(CXXFLAGS = '/Zi')
+    env.Append(LINKFLAGS = '/DEBUG')
     env.Append(CFLAGS = '/DWINDOWS')
-    env.Appned(CFLAGS = '/Iruntime')
+    env.Append(CFLAGS = '/Iruntime')
+    env.Append(CFLAGS = '/MDd')
     env.Append(CFLAGS = '/DCOROUTINE_STACK_SIZE=8192')
-    env.Append(CXXFLAGS ='/ID:\Tools\Flex\include')
     env.Append(CXXFLAGS = '/EHsc')
     env.Append(CXXFLAGS = '/DCOROUTINE_STACK_SIZE=8192')
 else:
@@ -50,7 +57,6 @@ library_sources += env.Glob('build/runtime/*.c')
 library_sources += env.Glob('build/runtime/*/*.asm')
 library_sources += env.Glob('build/runtime/*.asm')
 lib = env.StaticLibrary('lib/apollo', library_sources)
-#env.Program('bin/asmtest', 'samples/Test.linux.asm')
 
 if 'check' in COMMAND_LINE_TARGETS:
     check = env.Command('check', 'bin/apollo', 'scripts/test --verbose')
