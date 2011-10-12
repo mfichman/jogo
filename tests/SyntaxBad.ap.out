@@ -6,8 +6,7 @@ SyntaxBad.ap:9:9: Unexpected '@init'
 SyntaxBad.ap:11:0: Unexpected end of line
 SyntaxBad.ap:11:15: Unexpected identifier
 SyntaxBad.ap:13:13: Unexpected '@'
-SyntaxBad.ap:15:9: Unexpected identifier
-SyntaxBad.ap:19:9: Unexpected identifier
+SyntaxBad.ap:19:5: Unexpected type name
 SyntaxBad.ap:23:9: Invalid character: '`'
 SyntaxBad.ap:28:5: Unexpected type name
 SyntaxBad.ap:30:7: Unexpected ':'

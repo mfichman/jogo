@@ -1,0 +1,128 @@
+import Boot
+
+Addr < Object {
+
+    port Int
+    ip Int
+}
+
+Uri < Object {
+    scheme String
+    host String
+    port Int
+    path Path
+    query String
+    frag String
+}
+
+Reader < Object {
+    handle Int
+    err immutable Bool
+    eof immutable Bool
+
+    read(buffer Buffer)
+    get() Char
+
+#    string?() String
+#    line?() String
+#    int?() Int
+#    char?() Char
+#    float?() Float
+    close()
+}
+
+Writer < Object {
+    handle Int
+    err immutable Bool
+
+    write(buffer Buffer)
+    put(char Char)
+    print(string String)
+
+#    string!(string String)
+#    line!(line String)
+#    int!(int Int)
+#    char!(char Char)
+#    float!(float Float)
+#    print(string String)
+    flush()
+    close()
+}
+
+Stream < Object {
+    handle Int
+    err immutable Bool
+    eof immutable Bool
+
+    read(buffer Buffer)
+    get() Char
+    scan(char Char) String
+    write(buffer Buffer`)
+    put(char Char)
+    print(string String)
+    close()
+}
+
+File::Stream < Stream {
+
+}
+
+File::Stat < Stream {
+    # Must put FQN, otherwise private
+}
+
+Listener < Object {
+    handle Int
+    err immutable Bool
+    
+    accept() Socket
+    close()
+}
+
+Datagram < Object, Stream {
+    source Address
+    dest Address
+}
+
+Stream < Object, Stream {
+    source immutable Address
+    dest immutable Address
+}
+
+main() Int {
+
+    stat = File::stat('Hello, world\n')
+    file = File::open('Hello, world\n')
+  
+
+    sd = Socket::stream('192.168.1.2')
+    sd.input
+    sd.output
+
+    sd = Socket::server('192.168.1.2')
+    sd.accept()
+
+    sd = Socket::datagram('hello')
+    sd.addr?()
+
+
+    }
+    let sd = Socket::datagram() {
+
+        
+    }
+
+    let file = File::read('hello, world!\n') {
+        for line in file.lines {
+
+        }
+        file.close()
+        file.string!('hello')
+        file.string?()
+    }
+
+    file.method 
+
+    boot_print_str('hello, world')
+    return 0
+}

@@ -31,17 +31,17 @@
 class Expression : public TreeNode {
 public:
     Expression(Location loc) :
-        TreeNode(loc) {
+        TreeNode(loc),
+        parent_(0) {
     }
 	
 	Expression* next() const { return next_; }
     Expression* last() const { return last_; }
-    Type* parent_type() const { return parent_type_; }
+    Expression* parent() const { return parent_; }
     Type* type() const { return type_; }
-    bool is_logic_op() const;
 	void next(Expression* next) { assert(next != this); next_ = next; }
     void last(Expression* last) { last_ = last; }
-    void parent_type(Type* type) { parent_type_ = type; }
+    void parent(Expression* parent) { parent_ = parent; }
     void type(Type* type) { type_ = type; }
     typedef Pointer<Expression> Ptr;
 
@@ -49,7 +49,7 @@ private:
 	Expression::Ptr next_;
     Expression::Ptr last_;
     Type::Ptr type_;
-    Type::Ptr parent_type_;
+    Expression* parent_;
 };
 
 /* Literal expression (integers, strings, booleans, hashes, etc.) */
@@ -155,6 +155,9 @@ public:
         operation_(op),
         left_(left),
         right_(right) {
+
+        left->parent(this);
+        right->parent(this);
     }
 
     String* operation() const { return operation_; }
@@ -175,6 +178,8 @@ public:
         Expression(loc),
         operation_(op),
         child_(child) {
+
+        child->parent(this);
     }
 
     String* operation() const { return operation_; }
@@ -194,18 +199,24 @@ public:
         expression_(expr),
         arguments_(args),
         function_(0) {
+
+        expr->parent(this);
     }
 
     Expression* expression() const { return expression_; }
     Expression* arguments() const { return arguments_; }
+    Expression* receiver() const { return receiver_; }
     Function* function() const { return function_; }
     void arguments(Expression* args) { arguments_ = args; }
     void function(Function* function) { function_ = function; }
+    void receiver(Expression* receiver) { receiver_ = receiver; }
+    typedef Pointer<Call> Ptr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     Expression::Ptr expression_;
     Expression::Ptr arguments_;
+    Expression::Ptr receiver_;
     Function* function_;
 };
 
@@ -217,6 +228,8 @@ public:
         identifier_(ident),
         expression_(expr),
         function_(0) {
+
+        expr->parent(this);
     }
 
     String* identifier() const { return identifier_; }
@@ -239,6 +252,9 @@ public:
         arguments_(args) {
         
         Expression::type(type);
+        for (Expression* arg = args; arg; arg = arg->next()) {
+            arg->parent(this);
+        }
     }
 
     Expression* arguments() const { return arguments_; }
@@ -277,6 +293,8 @@ public:
         identifier_(ident),
 		declared_type_(type),
         initializer_(expr) {
+
+        expr->parent(this);
     }
 
     String* identifier() const { return identifier_; }

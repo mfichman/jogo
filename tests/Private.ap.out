@@ -1,3 +1,3 @@
 Private.ap:17:11: Constructor is private in class 'Private'
-Private.ap:18:5: Undeclared function 'attr=' in class 'Private'
+Private.ap:18:5: Function 'attr=' not found in class 'Private'
 Private.ap:19:5: Function 'test' is private in class 'Private'

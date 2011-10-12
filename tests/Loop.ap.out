@@ -4,17 +4,6 @@ Module
     name: Iterator
     comment:
     feature0: Function
-      name: @init
-      type: Void
-      block: Block
-    feature1: Function
-      name: @destroy
-      type: Void
-      formal0: Formal
-        name: self
-        type: Self
-      block: Block
-    feature2: Function
       name: next
       type: String
       comment:
@@ -25,7 +14,7 @@ Module
         child0: Return
           expression: StringLiteral
             value: Hello, world
-    feature3: Function
+    feature1: Function
       name: more?
       type: Bool
       comment:
@@ -35,21 +24,21 @@ Module
       block: Block
         child0: Return
           expression: BooleanLiteral(1)
-  feature1: Class
-    name: Iterable
-    comment:
-    feature0: Function
-      name: @init
-      type: Void
-      block: Block
-    feature1: Function
+    feature2: Function
       name: @destroy
       type: Void
       formal0: Formal
         name: self
         type: Self
       block: Block
-    feature2: Function
+    feature3: Function
+      name: @init
+      type: Void
+      block: Block
+  feature1: Class
+    name: Iterable
+    comment:
+    feature0: Function
       name: iter
       type: Iterator
       comment:
@@ -60,6 +49,17 @@ Module
         child0: Return
           expression: Construct
             type: Iterator
+    feature1: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature2: Function
+      name: @init
+      type: Void
+      block: Block
   feature2: Function
     name: test
     type: Void
@@ -72,17 +72,6 @@ Module
     name: Loop
     comment:
     feature0: Function
-      name: @init
-      type: Void
-      block: Block
-    feature1: Function
-      name: @destroy
-      type: Void
-      formal0: Formal
-        name: self
-        type: Self
-      block: Block
-    feature2: Function
       name: loop1
       type: Void
       comment:
@@ -94,13 +83,19 @@ Module
           variable0: Assignment
             name: _i
             type: Iterator
-            initializer: Dispatch
-              name: iter
+            initializer: Call
+              expression: Member
+                identifier: iter
+                expression: Construct
+                  type: Iterable
               argument0: Construct
                 type: Iterable
           block: While
-            guard: Dispatch
-              name: more?
+            guard: Call
+              expression: Member
+                identifier: more?
+                expression: Identifier
+                  name: _i
               argument0: Identifier
                 name: _i
             block: Block
@@ -108,17 +103,21 @@ Module
                 expression: Assignment
                   name: i
                   type: String
-                  initializer: Dispatch
-                    name: next
+                  initializer: Call
+                    expression: Member
+                      identifier: next
+                      expression: Identifier
+                        name: _i
                     argument0: Identifier
                       name: _i
               child1: Block
                 child0: Statement
                   expression: Call
-                    name: test
+                    expression: Identifier
+                      name: test
                     argument0: Identifier
                       name: i
-    feature3: Function
+    feature1: Function
       name: loop2
       type: Void
       comment:
@@ -129,3 +128,14 @@ Module
         child0: While
           guard: BooleanLiteral(1)
           block: Block
+    feature2: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature3: Function
+      name: @init
+      type: Void
+      block: Block
