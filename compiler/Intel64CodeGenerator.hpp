@@ -52,7 +52,6 @@ private:
     void emit(const char* instr);
     void emit(const char* instr, Operand r1, const char* label);
 
-
     void emit_vtable(Class* feature);
     void emit_arith(const Instruction& instr);
     void emit_load(Operand r1, Operand r2);

@@ -10,6 +10,7 @@ env.Append(YACCFLAGS = '--defines=build/compiler/Grammar.hpp')
 env.Append(YACCFLAGS = '--report=all')
 env['AS'] = 'nasm'
 
+
 if env['PLATFORM'] == 'darwin':
     env.Append(CXXFLAGS = '-DDARWIN')
     env.Append(CFLAGS = '-DDARWIN')
@@ -51,11 +52,12 @@ compiler_sources = env.Glob('build/compiler/*.cpp')
 env.Program('bin/apollo', compiler_sources +  ['build/drivers/Main.cpp'])
 env.Program('bin/apdoc', compiler_sources + ['build/drivers/Doc.cpp'])
 
-
 library_sources = env.Glob('build/runtime/*/*.c') 
 library_sources += env.Glob('build/runtime/*.c')
-library_sources += env.Glob('build/runtime/*/*.asm')
-library_sources += env.Glob('build/runtime/*.asm')
+library_sources += env.NASM(
+    'build/runtime/Coroutine.Intel64.o',
+    'build/runtime/Coroutine.Intel64.asm')
+
 lib = env.StaticLibrary('lib/apollo', library_sources)
 
 if 'check' in COMMAND_LINE_TARGETS:

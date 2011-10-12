@@ -26,14 +26,16 @@ default rel
 
 %ifidn __OUTPUT_FORMAT__,macho64
 %macro  cglobal 1 
-  global  _%1 
-  %define %1 _%1 
-
+global  _%1 
+%define %1 _%1 
 %endmacro 
 %macro  cextern 1 
-  extern  _%1 
-  %define %1 _%1 
+extern  _%1 
+%define %1 _%1 
 %endmacro
+%else
+%define cglobal global
+%define cextern extern
 %endif
 
 cglobal Coroutine__resume

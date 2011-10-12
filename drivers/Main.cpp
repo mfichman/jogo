@@ -67,7 +67,11 @@ void output(File* file) {
     }
 
     std::string name = File::no_ext_name(file->name()->string());
+#ifdef WINDOWS
+    std::string out_file = env->output_dir() + "\\" + name;
+#else
     std::string out_file = env->output_dir() + "/" + name;
+#endif
 
     if (env->make() && env->link()) {
         time_t t1 = File::mtime(out_file + ".apo");
@@ -101,7 +105,7 @@ void output(File* file) {
         return;
     } 
 
-    std::string asm_file = env->assemble() ? tempnam() : out_file + ".s";
+    std::string asm_file = env->assemble() ? tempnam() : out_file + ".asm";
     file->output(env->name(asm_file));
     cgen->out(new Stream(asm_file));
     cgen->operator()(file);
@@ -114,7 +118,6 @@ void output(File* file) {
     if (env->link() && !env->make()) {
         obj_file = tempnam();
     } else {
-
         obj_file = out_file + ".apo";
     }
     file->output(env->name(obj_file));

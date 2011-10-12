@@ -42,28 +42,41 @@ Machine* Machine::intel64() {
 
     machine = new Machine;
 
-    Register::Ptr rax = machine->reg("rax"); machine->callee_reg(rax); //1
+    Register::Ptr rax = machine->reg("rax"); machine->callee_reg(rax); //1 VOL
     Register::Ptr rbx = machine->reg("rbx"); machine->caller_reg(rbx); //2
-    Register::Ptr rcx = machine->reg("rcx"); machine->callee_reg(rcx); //3
-    Register::Ptr rdx = machine->reg("rdx"); machine->callee_reg(rdx); //4 
+    Register::Ptr rcx = machine->reg("rcx"); machine->callee_reg(rcx); //3 VOL
+    Register::Ptr rdx = machine->reg("rdx"); machine->callee_reg(rdx); //4 VOL
+
+#ifdef WINDOWS
+    Register::Ptr rdi = machine->reg("rdi"); machine->caller_reg(rdi); //5
+#else
     Register::Ptr rdi = machine->reg("rdi"); machine->callee_reg(rdi); //5
+#endif
     Register::Ptr rsi = machine->reg("rsi"); machine->callee_reg(rsi); //6
-    Register::Ptr r8 = machine->reg("r8"); machine->callee_reg(r8); //7
-    Register::Ptr r9 = machine->reg("r9"); machine->callee_reg(r9); //8
-    Register::Ptr r10 = machine->reg("r10"); machine->callee_reg(r10);//9
-    Register::Ptr r11 = machine->reg("r11"); machine->callee_reg(r11); //10
+    Register::Ptr r8 = machine->reg("r8"); machine->callee_reg(r8); //7 VOL
+    Register::Ptr r9 = machine->reg("r9"); machine->callee_reg(r9); //8 VOL
+    Register::Ptr r10 = machine->reg("r10"); machine->callee_reg(r10);//9 VOL
+    Register::Ptr r11 = machine->reg("r11"); machine->callee_reg(r11); //10 VOL
     Register::Ptr r12 = machine->reg("r12"); machine->caller_reg(r12); //11
     Register::Ptr r13 = machine->reg("r13"); machine->caller_reg(r13); //12
     Register::Ptr r14 = machine->reg("r14"); machine->caller_reg(r14); //13
     Register::Ptr r15 = machine->reg("r15"); machine->caller_reg(r15); //14
         
     machine->return_reg(rax);
+
+#ifdef WINDOWS
+    machine->arg_reg(rcx);
+    machine->arg_reg(rdx);
+    machine->arg_reg(r8);
+    machine->arg_reg(r9);
+#else
     machine->arg_reg(rdi);
     machine->arg_reg(rsi);
     machine->arg_reg(rdx);
     machine->arg_reg(rcx);
     machine->arg_reg(r8);
     machine->arg_reg(r9);
+#endif
 
     machine->word_size(8); // 64 bits = 8 bytes
 
