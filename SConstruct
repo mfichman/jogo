@@ -8,23 +8,19 @@ env = Environment(CPPPATH = ['build/compiler'])
 env.Append(ENV = os.environ)
 env.Append(YACCFLAGS = '--defines=build/compiler/Grammar.hpp')
 env.Append(YACCFLAGS = '--report=all')
-env['AS'] = 'nasm'
-
 
 if env['PLATFORM'] == 'darwin':
     env.Append(CXXFLAGS = '-DDARWIN')
     env.Append(CFLAGS = '-DDARWIN')
-    env.Append(ASFLAGS = '-fmacho64')
+    nasm = 'nasm -fmacho64 -o $TARGET $SOURCE'
 
 if env['PLATFORM'] == 'posix':
     env.Append(CXXFLAGS = '-DLINUX')
     env.Append(CFLAGS = '-DLINUX')
-    env.Append(ASFLAGS = '-felf64')
+    nasm = 'nasm -felf64 -o $TARGET $SOURCE'
 
 if env['PLATFORM'] == 'win32':
-    bld = Builder(action = 'nasm -fwin64 -o $TARGET $SOURCE', 
-                  src_suffix = '.nasm',
-                  suffix = '.obj')
+    nasm = 'nasm -fwin64 -o $TARGET $SOURCE'
     env.Append(BUILDERS = { 'NASM': bld })
     env.Append(CXXFLAGS = '/DWINDOWS')
     env.Append(CXXFLAGS = '/MDd')
@@ -47,6 +43,8 @@ else:
     env.Append(CFLAGS = '-Wall -Werror -std=c99 -m64')
     env.Append(CFLAGS = '-DCOROUTINE_STACK_SIZE=8192')
 
+bld = Builder(action = nasm, src_suffix = '.nasm', suffix = '.obj')
+env.Append(BUILDERS = { 'NASM': bld })
 
 compiler_sources = env.Glob('build/compiler/*.cpp')
 env.Program('bin/apollo', compiler_sources +  ['build/drivers/Main.cpp'])
@@ -56,7 +54,7 @@ library_sources = env.Glob('build/runtime/*/*.c')
 library_sources += env.Glob('build/runtime/*.c')
 library_sources += env.NASM(
     'build/runtime/Coroutine.Intel64.o',
-    'build/runtime/Coroutine.Intel64.asm')
+    'runtime/Coroutine.Intel64.asm')
 
 lib = env.StaticLibrary('lib/apollo', library_sources)
 
