@@ -55,7 +55,7 @@ std::string tempnam() {
     GetTempFileName(path, prefix, 0, file);
     return std::string(file);
 #else
-    return std::string(tempnam());
+    return std::string(tmpnam(0));
 #endif
 }
 
@@ -194,7 +194,9 @@ int main(int argc, char** argv) {
         }
     }
 
-    std::cout << ss.str() << std::endl;
+    if (env->verbose()) {
+        std::cout << ss.str() << std::endl;
+    }
 
     if (system(ss.str().c_str())) { return 1; }
     if (!env->make()) {

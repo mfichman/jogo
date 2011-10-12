@@ -73,7 +73,7 @@ Stream::Stream(HANDLE fd) : error_(false) {
 Stream::Stream(int fd) : error_(false) {
     // Creates an output stream that writes to a fixed file descriptor.
     buffer_.reserve(1024);
-    fd_ = fd	
+    fd_ = fd;	
 }
 #endif
 

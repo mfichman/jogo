@@ -23,13 +23,27 @@ default rel
 %define RSP_OFFSET 32; Stack pointer
 %define STATUS_OFFSET 24
 %define CURRENT_OFFSET 40 
-%ifdef DARWIN
-%define Coroutine _Coroutine
-%end
+
+%ifidn __OUTPUT_FORMAT__,macho64
+%macro  cglobal 1 
+  global  _%1 
+  %define %1 _%1 
+
+%endmacro 
+%macro  cextern 1 
+  extern  _%1 
+  %define %1 _%1 
+%endmacro
+%endif
+
+cglobal Coroutine__resume
+cglobal Coroutine__exit
+cglobal Coroutine__yield
+cextern Coroutine__stack;
+cextern Coroutine__current;
 
 section .text
 
-global Coroutine__resume
 Coroutine__resume:
     ; Resume the coroutine passed in via rdi by saving the state of the current
     ; coroutine, and loading the other corountine's state.  Then, 'return' to
@@ -46,15 +60,13 @@ Coroutine__resume:
     pop rbp
     ret
     
-global Coroutine__exit
 Coroutine__exit:
     ; This is the same as yield, except it sets the status code to '3' because
     ; the coroutine is finished.
-    mov rdi, [_Coroutine__current]
+    mov rdi, [Coroutine__current]
     mov qword [rdi+STATUS_OFFSET], 3
-    jmp _Coroutine__yield
+    jmp Coroutine__yield
 
-global Coroutine__yield
 Coroutine__yield:
     ; Yield to the calling coroutine by saving the state of the current
     ; coroutine, and loading the other coroutine's state.  Then, 'return' to
@@ -73,7 +85,5 @@ Coroutine__yield:
     
 section .bss
 
-extern Coroutine__stack;
-extern Coroutine__current;
 save_rsp resq 1
 
