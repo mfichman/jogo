@@ -39,6 +39,8 @@ public:
     Environment* environment() const { return env_; }
     Module* module() const { return module_; }
 	File* file() const { return file_; }
+    Location location() const { return lexer_->loc(); }
+    Location last_location() const { return last_location_; } 
     void input(const std::string& file);
     typedef Pointer<Parser> Ptr;
 
@@ -46,21 +48,17 @@ private:
     void file(const std::string& prefix, const std::string& file);
     void dir(const std::string& prefix, const std::string& dir);
 
-    Location loc() const { return lexer_->loc(); }
-    Token token() const { return lexer_->token(); }
-    void next() { lexer_->next(); }
+    String* name(const std::string& name) { return env_->name(name); }
+    void next();
     void error() { error_++; env_->error(); }
     bool expect(Token token);
-    Expression* op(Expression* left, const std::string& op, Expression* right);
-    Expression* op(const std::string& op, Expression* expr);
 
     Module* module();
     Class* clazz();
-    Feature* features();
+    Feature* feature_list();
     Feature* feature();
     Function* function();
     Attribute* attribute();
-    Import* import();
     Function* method();
     String* identifier();
     Type* type();
@@ -68,12 +66,20 @@ private:
     String* scope();
     String* comment();
     Feature::Flags flags();
+    void import();
 
     Statement* statement();
+    Statement* conditional();
+    Statement* while_loop();
+    Statement* for_loop();
+    Statement* let();
 
+    Expression* string();
     Expression* expression();
+    Expression* expression_list();
     Expression* member();
     Expression* call();
+    Expression* construct();
     Expression* increment();
     Expression* unary();
     Expression* pow();
@@ -87,8 +93,21 @@ private:
     Expression* bitwise_and();
     Expression* bitwise_or();
     Expression* bitwise_xor();
-    Expression* assignment();
     Expression* literal();
+    Expression* closure();
+    Assignment* assignment();
+
+    Token token(int index=0) const { 
+        return lexer_->token(index); 
+    }
+    const std::string& value(int index=0) const { 
+        return lexer_->value(index); 
+    }
+
+    Expression* op(const LocationAnchor& loc, const std::string& op, 
+                   Expression* left, Expression* right);
+    Expression* op(const LocationAnchor& loc, const std::string& op, 
+                   Expression* expr);
 
 
     Environment::Ptr env_;
@@ -96,23 +115,30 @@ private:
     File::Ptr file_;
     Stream::Ptr err_;
     Lexer::Ptr lexer_;
+    Location last_location_;
     bool is_input_file_;
     int error_;
 
 };
 
-/* Union used to return parser values */
-union ParseNode {
-	Expression* expression;
-	Statement* statement;
-	Formal* formal;
-	When* when;
-	Feature* feature;
-	String* string;
-    Type* type;
-    Generic* generic;
-    Assignment* assignment;
-    Block* block;
-	Feature::Flags flag;
+class LocationAnchor {
+public:
+    LocationAnchor(Parser* parser) : 
+        parser_(parser),
+        location_(parser->location()) {
+    }
+    operator Location() const { 
+        Location loc;
+        loc.file = location_.file;
+        loc.first_line = location_.first_line;
+        loc.first_column = location_.first_column;
+        loc.last_line = parser_->last_location().last_line;
+        loc.last_column = parser_->last_location().last_column;
+        return loc;
+    }
+
+private:
+    Parser* parser_;
+    Location location_; 
 };
 

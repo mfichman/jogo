@@ -32,7 +32,7 @@
 /* Type object */
 class Type : public TreeNode {
 public:
-    Type(Location loc, String* qn, Generic* gen, File* file, Environment* env);
+    Type(Location loc, String* qn, Generic* gen, Environment* env);
     Generic* generics() const { return generics_; }
     String* qualified_name() const { return qualified_name_; }
     String* name() const { return name_; }
@@ -41,7 +41,6 @@ public:
     Type* last() const { return last_; }
     Type* generic(String* name) const;
     Class* clazz() const;
-    File* file() const { return file_; }
     bool equals(Type* other) const;
     bool subtype(Type* other) const;
     bool is_primitive() const;

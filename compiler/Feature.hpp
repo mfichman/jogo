@@ -50,6 +50,7 @@ public:
     bool is_native() const { return flags_ & NATIVE; }
     bool is_weak() const { return flags_ & WEAK; }
     bool is_immutable() const { return flags_ & IMMUTABLE; }
+    bool is_closure() const { return flags_ & CLOSURE; }
     void next(Feature* next) { next_ = next; }
     void last(Feature* last) { last_ = last; }
     void flags(Flags flags) { flags_ = flags; }
@@ -61,6 +62,7 @@ public:
     static const int WEAK = 0x4;
     static const int IMMUTABLE = 0x8;
     static const int VIRTUAL = 0x10;
+    static const int CLOSURE = 0x20;
 
 private:
     Feature::Ptr next_;
@@ -125,6 +127,7 @@ public:
     bool is_virtual() const { return flags() & VIRTUAL; }
     void stack_vars_inc() { stack_vars_++; }
     void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
+    void formals(Formal* formals) { formals_ = formals; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
 

@@ -28,11 +28,6 @@
 #include <iostream>
 #include <cassert>
 
-int yyparse(Parser* parser, void* scanner);
-int yylex_init(void**);
-int yylex_destroy(void*);
-void yyset_extra(Parser*, void*);
-
 Parser::Parser(Environment* env) :
 	env_(env),
     err_(Stream::sterr()),
@@ -95,7 +90,7 @@ void Parser::file(const std::string& prefix, const std::string& file) {
 
 
     // The module can be loaded from the dir components of the file name
-    String* scope = env_->name(Import::scope_name(file));
+    String::Ptr scope = name(Import::scope_name(file));
     module_ = env_->module(scope);
     if (!module_) {
         module_ = new Module(Location(), scope, env_);
@@ -104,12 +99,12 @@ void Parser::file(const std::string& prefix, const std::string& file) {
 
     // Create a file object for this file if it hasn't been parsed yet.
     std::string actual_file = (prefix == ".") ? file : prefix + "/" + file;
-    String* fs = env_->name(file);
+    String::Ptr fs = name(file);
     file_ = env_->file(fs);
     if (file_) {
         return;
     } else {
-        file_ = new File(fs, env_->name(actual_file), module_, env_);
+        file_ = new File(fs, name(actual_file), module_, env_);
         file_->is_input_file(is_input_file_);
         env_->file(file_);
     }
@@ -144,24 +139,42 @@ void Parser::dir(const std::string& prefix, const std::string& dir) {
     }
 }
 
+void Parser::next() { 
+    // Read the next token, update the position, and record any bad tokens
+    last_location_ = lexer_->loc(); 
+    lexer_->next();
+    if (token() == Token::ERROR) {
+        err_ << location() << "Invalid character: " << token() << "\n";
+        error();
+    } 
+}
+
 Module* Parser::module() {
     // Parses a module, which can consist of classes, functions, and import
     // statements.
-    switch (token()) {
-    case Token::IDENTIFIER:
-        module_->feature(function());
-        break;
-    case Token::TYPE:
-        module_->feature(clazz()); 
-        break;
-    case Token::IMPORT:
-        module_->feature(import());
-        break;
-    default:
-        err_ << loc() << "Unexpected '" << token() << "'\n";
-        error();
-        next();
-        break;
+    while (token() != Token::END) {
+        switch (token()) {
+        case Token::IDENTIFIER:
+        case Token::OPERATOR:
+            module_->feature(function());
+            break;
+        case Token::TYPE:
+            module_->feature(clazz()); 
+            break;
+        case Token::IMPORT:
+            import();
+            break;
+        default:
+            if (!error_) {
+                err_ << location() << "Unexpected " << token() << "\n";
+                error();
+            }
+            next();
+            break;
+        }
+        if (token() == Token::SEPARATOR) {
+            next();
+        }
     }
 
     return module_;
@@ -175,9 +188,10 @@ bool Parser::expect(Token token) {
         next();
         return true;
     } else {
-        err_ << loc() << "Expected '" << token << "', got '";
-        err_ << lexer_->value() << "'\n";
-        error();
+        if (!error_) {
+            err_ << location() << "Unexpected " << Parser::token() << "\n";
+            error();
+        }
         return false;
     }
 }
@@ -185,15 +199,16 @@ bool Parser::expect(Token token) {
 Class* Parser::clazz() {
     // This function parses a class or interface definition, containing methods
     // and attributes.
+    LocationAnchor loc(this);
 
     // Read in the name of the class, and any generic parameters
-    String::Ptr name = scope(); 
+    String::Ptr id = scope(); 
     Generic::Ptr generics;
     if (token() == Token::LEFT_BRACKET) {
         next();
         while (token() == Token::TYPEVAR) {
-            String::Ptr name = env_->name(lexer_->value());
-            Type::Ptr type = new Type(loc(), name, 0, file_, env_);
+            LocationAnchor loc(this);
+            Type::Ptr type = new Type(loc, name(value()), 0, env_);
             generics = append(generics, new Generic(type));
             next();
             if (token() == Token::COMMA) {
@@ -206,15 +221,17 @@ Class* Parser::clazz() {
     }
     std::string qn = module_->name()->string();
     if (qn.empty()) {
-        qn = name->string();
+        qn = id->string();
     } else {
-        qn += "::" + name->string();
+        qn += "::" + id->string();
     }
+    Type::Ptr type = new Type(loc, name(qn), generics, env_);
     
     // Parse the type list
+    expect(Token::LESS);
     Type::Ptr mixins;
     while (token() == Token::TYPE) {
-        mixins = append(mixins, type());
+        mixins = append(mixins, Parser::type());
         if (token() == Token::COMMA) {
             next();
         } else {
@@ -225,19 +242,25 @@ Class* Parser::clazz() {
 
     // Parse the comment, if present
     String::Ptr comment = Parser::comment(); 
-    Feature::Ptr members = Parser::features(); 
-    Type::Ptr type = new Type(loc(), env_->name(qn), generics, file_, env_);
-    return new Class(loc(), type, mixins, comment, members);
+    Feature::Ptr members = feature_list();
+    expect(Token::RIGHT_BRACE);
+    return new Class(loc, type, mixins, comment, members);
 }
 
-Feature* Parser::features() {
+Feature* Parser::feature_list() {
     // Parses the list of class members, functions, and attributes
-    Feature::Ptr members;
-    while (token() != Token::RIGHT_BRACE) {
+    Feature* members = 0;
+    while (token() == Token::IDENTIFIER || token() == Token::OPERATOR) {
         members = append(members, feature());
         if (error_) {
-            while (token() != Token::SEPARATOR) {
+            while (true) {
+                if (token() == Token::SEPARATOR) {
+                    break;
+                }
                 if (token() == Token::RIGHT_BRACE) {
+                    break;
+                }
+                if (token() == Token::END) {
                     break;
                 }
                 next();
@@ -246,40 +269,79 @@ Feature* Parser::features() {
             error_ = 0;
         } else if (token() == Token::SEPARATOR) {
             next();
-        } else {
-            break;
         }
     }
-    expect(Token::RIGHT_BRACE);
     return members; 
 }
 
 Feature* Parser::feature() {
-    // Parses an attribute or function.
-    
-    return 0;
+    // Parses an attribute or function that is a member of a class.
+    if (token(1) == Token::LEFT_PARENS) {
+        Function* func = function();
+        if (func->name()->string() != "@init") {
+            String* id = name("self");
+            Formal* self = new Formal(location(), id, env_->self_type());
+            self->next(func->formals());
+            func->formals(self);
+        }
+        return func;
+    } else {
+        return attribute(); 
+    }
+}
+
+Attribute* Parser::attribute() {
+    // Parses an attribute of a class.  The signature of an attribute is:
+    // id flag* type? ('=' expression)?
+    LocationAnchor loc(this);
+    String::Ptr id = identifier();
+    Feature::Flags flags = Parser::flags();
+
+    // Read the explicit type, if present
+    Type::Ptr type = 0;
+    if (token() == Token::TYPE || token() == Token::TYPEVAR) {
+        type = Parser::type(); 
+    }
+
+    // Read the initializer, if present
+    Expression::Ptr init = 0;
+    if (token() == Token::ASSIGN) {
+        next();
+        init = expression();
+    }  else {
+        init = new Empty(location());
+    }
+    expect(Token::SEPARATOR);
+
+    return new Attribute(loc, id, flags, type, init);
 }
 
 Function* Parser::function() {
     // Parses a free function, which does not belong to any class.  A function
     // has the following syntax: name([id type]*) flags? type? block?
-    String* id = env_->name("");
+    LocationAnchor loc(this);
+    String::Ptr id = name("");
     if (token() == Token::IDENTIFIER) {
         id = identifier();
+    } else if (token() == Token::OPERATOR) {
+        id = name(value());
+        next();
     } else if (token() == Token::FUNC) {
-        id = env_->name("@call"); // Closure
+        id = name("@call"); // Closure
+        next();
     }
     expect(Token::LEFT_PARENS);
 
     // Now parse the formal list of arguments, e.g., "a Int, b String"
     Formal::Ptr formals;
     while (token() == Token::IDENTIFIER) {
-        String* id = identifier();
-        Type* type = env_->any_type();
+        LocationAnchor loc(this);
+        String::Ptr nm = identifier();
+        Type::Ptr type = env_->any_type();
         if (token() == Token::TYPE || token() == Token::TYPEVAR) { 
             type = Parser::type();
         }
-        formals = append(formals, new Formal(loc(), id, type));
+        formals = append(formals, new Formal(loc, nm, type));
         if (token() == Token::COMMA) {
             next(); 
         } else {
@@ -302,16 +364,20 @@ Function* Parser::function() {
     Block::Ptr block;
     if (token() == Token::LEFT_BRACE) {
         block = Parser::block();
-    } else if (token() != Token::SEPARATOR) {
-        err_ << loc() << "Parse error\n";
-        error();
     }
-    return new Function(loc(), id, formals, flags, ret, block);
+    return new Function(loc, id, formals, flags, ret, block);
 }
 
 Type* Parser::type() {
     // Parses a type name, including generics.  A type has the following 
     // syntax: id [type (, type)+]?
+    LocationAnchor loc(this);
+    if (token() == Token::TYPEVAR) {
+        String* id = name(value());
+        Type* type = new Type(location(), id, 0, env_);
+        next();
+        return type;
+    }
     String* qn = scope();
 
     // Now read in any generic type parameters for this type.
@@ -322,8 +388,7 @@ Type* Parser::type() {
             if (token() == Token::TYPE) {
                 generics = append(generics, new Generic(type()));
             } else if (token() == Token::TYPEVAR) {
-                String::Ptr name = env_->name(lexer_->value());
-                Type::Ptr type = new Type(loc(), name, 0, file_, env_);
+                Type::Ptr type = new Type(location(), name(value()), 0, env_);
                 generics = append(generics, new Generic(type));
                 next();
             } else {
@@ -340,7 +405,7 @@ Type* Parser::type() {
     if (qn->string().empty()) {
         return env_->no_type();
     } else {
-        return new Type(loc(), qn, generics, file_, env_); 
+        return new Type(loc, qn, generics, env_); 
     }
 }
 
@@ -349,9 +414,9 @@ String* Parser::scope() {
     // then the name returned is the empty string.
     std::string scope;
     while (token() == Token::TYPE) {
-        scope += lexer_->value();
+        scope += value();
         next();
-        if (token() == Token::SCOPE) {
+        if (token() == Token::SCOPE && token(1) == Token::TYPE) {
             scope += "::";
             next();
         } else {
@@ -359,24 +424,26 @@ String* Parser::scope() {
         }
     }
 
-    if (scope.empty()) {
-        err_ << loc() << "Expected a type name, not '" << token() << "'\n";
+    if (scope.empty() && !error_) {
+        err_ << location() << "Expected a type name, not '";
+        err_ << token() << "'\n";
         error();
     }
-    return env_->name(scope);
+    return name(scope);
 }
 
 Block* Parser::block() {
     // Parses a block, e.g. { stmt* }.  If a parse error occurs, the routine
     // will attempt to find the next '}' and bail out, returning as much code
     // as it can.
+    LocationAnchor loc(this);
     expect(Token::LEFT_BRACE);
     String::Ptr comment = Parser::comment();
     Statement::Ptr statements;
-    while (token() != Token::RIGHT_BRACE) {
+    while (token() != Token::RIGHT_BRACE && token() != Token::END) {
         statements = append(statements, statement());
         if (error_) {
-            while (token() != Token::SEPARATOR) {
+            while (token() != Token::SEPARATOR && token() != Token::END) {
                 if (token() == Token::RIGHT_BRACE) {
                     break;
                 }
@@ -391,163 +458,293 @@ Block* Parser::block() {
         }
     }
     expect(Token::RIGHT_BRACE);
-    return new Block(loc(), comment, statements);
+    return new Block(loc, comment, statements);
 }
 
 String* Parser::comment() {
     // Parses a block comment, which can be attached to functions/classes
     std::string text;
     while (token() == Token::COMMENT) {
-        std::string line = lexer_->value();
+        std::string line = value();
         if (line.empty()) {
             text += "\n\n" + line;
+        } else if (text.empty()) {
+            text = line;
         } else {
             text += " " + line;
         }
+        next();
     }
     return new String(text);
 }
 
 Statement* Parser::statement() {
+    LocationAnchor loc(this);
     switch(token().type()) {
-    case Token::RETURN:
+    case Token::IF: return conditional();
+    case Token::WHILE: return while_loop();
+    case Token::FOR: return for_loop();
+    case Token::LET: return let();
+    case Token::RETURN: {
         next();
         if (token() == Token::SEPARATOR) {
-            return new Return(loc(), new Empty(loc()));
+            return new Return(loc, new Empty(location()));
         } else {
-            return new Return(loc(), expression());
+            Expression::Ptr expr = expression();
+            return new Return(loc, expr);
         }
         break;
-    default:
-        return new Simple(loc(), expression());
+    }
+    case Token::YIELD: {
+        next();
+        return new Yield(loc, 0);
+    }
+    default: {
+        Expression::Ptr expr = expression();
+        return new Simple(loc, expr);
+    }
     }
 }
 
-Import* Parser::import() {
+void Parser::import() {
+    // Parses an import declaration, i.e., import type (, type)*
+    LocationAnchor loc(this);
+    expect(Token::IMPORT);
+    if (token() != Token::TYPE) {
+        err_ << location() << "Expected a type name in import statement\n";
+        error();
+    }
 
-    return 0;
+    while (token() == Token::TYPE) {
+        String::Ptr scope = Parser::scope();
+        file_->feature(new Import(loc, scope, false));
+        if (token() == Token::COMMA) {
+            next();
+        } else {
+            break;
+        }
+    }
 }
 
 String* Parser::identifier() {
     // Parses an identifier, i.e., [a-z][A-Z_0-9]* (leading lowercase letter)
     if (token() == Token::IDENTIFIER) {
-        String* id = env_->name(lexer_->value());
+        String* id = name(value());
         next();
         return id;
     } else {
-        err_ << loc() << "Expected an identifier";
+        err_ << location() << "Expected an identifier\n";
         error();
-        String* id = env_->name("");
+        String* id = name("");
         return id;
     }
 }
 
 Feature::Flags Parser::flags() {
+    // Parses keyword flags, e.g., native, immutable, private, weak
+    Feature::Flags flags = 0;
+    while (true) {
+        switch (token().type()) {
+        case Token::NATIVE: next(); flags |= Feature::NATIVE; break;
+        case Token::IMMUTABLE: next(); flags |= Feature::IMMUTABLE; break;
+        case Token::PRIVATE: next(); flags |= Feature::PRIVATE; break;
+        case Token::WEAK: next(); flags |= Feature::WEAK; break;
+        default: return flags;
+        }
 
-    return 0;
+    }
+    return flags;
 }
 
+Expression* Parser::expression_list() {
+    // Parses an argument list of expressions: expr? (, expr)?
+    if (token() == Token::RIGHT_PARENS || token() == Token::RIGHT_BRACKET) {
+        return 0;
+    }
 
+    Expression* args = 0;
+    while (true) {
+        args = append(args, expression());
+        if (token() == Token::COMMA) {
+            next();
+        } else {
+            break;
+        }
+    }
+    return args;
+}
 
 Expression* Parser::expression() {
+    if (token() == Token::IDENTIFIER) {
+        if (token(1) == Token::ASSIGN || token(1) == Token::TYPE) {
+            return assignment();
+        }
+    } else if (token() == Token::FUNC) {
+        return closure();
+    }
     return logical_or();
 }
 
-Expression* Parser::assignment() {
-    // Parses an assignment, either a = expr or a type = expr
-    return 0;
+Expression* Parser::closure() {
+    // Parses a closure expression: func(arg? (, arg)?) { ... }
+    LocationAnchor loc(this);
+    Function::Ptr func = function(); 
+    std::string qn = module_->name()->string();
+    if (qn.empty()) {
+        qn = "_Closure" + stringify(func);
+    } else {
+        qn += "::_Closure" + stringify(func);
+    }
+    Formal::Ptr self = new Formal(loc, name("self"), env_->self_type());
+    self->next(func->formals());
+    func->formals(self);
+
+    Type::Ptr type = new Type(loc, name(qn), 0, env_);
+    Type::Ptr object = new Type(loc, name("Object"), 0, env_);
+    Class::Ptr clazz = new Class(loc, type, object, 0, func);
+    clazz->flags(Feature::CLOSURE);
+    module_->feature(clazz);
+    return new Closure(loc, func, clazz);
+}
+
+Assignment* Parser::assignment() {
+    // Parses an assignment, either a = expr, or a type = expr
+    LocationAnchor loc(this);
+    String::Ptr id = identifier();
+    Type::Ptr type;
+    Expression::Ptr init;
+    if (token() == Token::TYPE) {
+        type = Parser::type(); 
+    }
+    if (token() == Token::ASSIGN) {
+        next();
+        init = expression();
+    } else {
+        init = new Empty(location());
+    }
+    return new Assignment(loc, id, type, init);
 }
 
 Expression* Parser::logical_or() {
     // Parse a logical or, i.e., an expression of the form: expr (or expr)+
+    LocationAnchor loc(this);
     Expression* expr = logical_and();    
     while (token() == Token::OR) {
         next();
-        expr = op(expr, "or", logical_and());
+        Expression* right = logical_and();
+        expr = new Binary(loc, name("or"), expr, right);
     }
     return expr;
 }
 
 Expression* Parser::logical_and() {
     // Parse a logical and, i.e., an expression of the form: expr (and expr)+
+    LocationAnchor loc(this);
     Expression* expr = bitwise_or();
     while (token() == Token::AND) {
         next();
-        expr = op(expr, "and", bitwise_or());
+        Expression* right = bitwise_or();
+        expr = new Binary(loc, name("and"), expr, right);
     }
     return expr;
 }
 
 Expression* Parser::bitwise_or() {
     // Parse a bitwise or, i.e., an expression of the form: expr (| expr)+
+    LocationAnchor loc(this);
     Expression* expr = bitwise_xor();
     while (token() == Token::ORB) {
         next();
-        expr = op(expr, "@bitor", bitwise_xor());
+        Expression* right = bitwise_xor();
+        expr = op(loc, "@bitor", expr, right);
     }
     return expr;
 }
 
 Expression* Parser::bitwise_xor() {
     // Parse a bitwise xor, i.e., an expression of the form: expr (xor expr)+
+    LocationAnchor loc(this);
     Expression* expr = bitwise_and();
     while (token() == Token::XORB) {
         next();
-        expr = op(expr, "@bitxor", bitwise_and());
+        Expression* right = bitwise_and();
+        expr = op(loc, "@bitxor", expr, right);
     }
     return expr;
 }
 
 Expression* Parser::bitwise_and() {
     // Parse a bitwise and, i.e., an expression of the form: expr (& expr)+
+    LocationAnchor loc(this);
     Expression* expr = equality();
     while (token() == Token::ANDB) {
         next();
-        expr = op(expr, "@bitand", equality());
+        Expression* right = equality();
+        expr = op(loc, "@bitand", expr, right);
     }
     return expr;
 }
 
 Expression* Parser::equality() {
     // Parse an equality, i.e., an expression of the form: expr (== expr)+
+    LocationAnchor loc(this);
     Expression* expr = relational();
-    while (token() == Token::EQUAL) {
-        next();
-        expr = op(expr, "@equal", relational());
+    while (true) {
+        switch (token().type()) {
+        case Token::EQUAL: {
+            next();
+            Expression* right = relational();
+            expr = op(loc, "@equal", expr, right);
+            break;
+        }
+        case Token::NOT_EQUAL: {
+            next(); 
+            Expression* right = relational();
+            expr = op(loc, "not", op(loc, "@equal", expr, right));
+            break;
+        }
+        default: 
+            return expr;
+        }
     }
     return expr;
 }
 
 Expression* Parser::relational() {
     // Parse a relational expr, i.e., an expression of the form: expr (& expr)+
+    LocationAnchor loc(this);
     Expression* expr = shift();
     while (true) {
         switch (token().type()) {
         case Token::GREATER_OR_EQ: {
             next();
-            expr = op("not", op(expr, "@less", shift()));
+            Expression::Ptr right = shift();
+            expr = op(loc, "not", op(loc, "@less", expr, right));
             break;
         } 
         case Token::GREATER: {
             next();
             Expression::Ptr right = shift();
-            Expression::Ptr less = op(expr, "@less", right);
-            Expression::Ptr equal = op(expr, "@equal", right);
-            Expression::Ptr child = op(less, "or", equal);
-            expr = op("not", child); 
+            Expression::Ptr less = op(loc, "@less", expr, right);
+            Expression::Ptr equal = op(loc, "@equal", expr, right);
+            String::Ptr id = name("or");
+            Expression::Ptr child = new Binary(loc, id, less, equal);
+            expr = op(loc, "not", child); 
             break;
         }
         case Token::LESS: {
             next();
-            expr = op(expr, "@less", shift()); 
+            Expression::Ptr right = shift();
+            expr = op(loc, "@less", expr, right);
             break;
         }
         case Token::LESS_OR_EQ: {
             next();
             Expression::Ptr right = shift();
-            Expression::Ptr less = op(expr, "@less", right);
-            Expression::Ptr equal = op(expr, "@equal", right);
-            expr = op(less, "or", equal);
+            Expression::Ptr less = op(loc, "@less", expr, right);
+            Expression::Ptr equal = op(loc, "@equal", expr, right);
+            String::Ptr id = name("or");
+            expr = new Binary(loc, id, less, equal);
         }
         default: return expr;
         }
@@ -557,19 +754,23 @@ Expression* Parser::relational() {
 
 Expression* Parser::shift() {
     // Parse a shift, i.e., an expression of the form: expr ( << expr)+
+    LocationAnchor loc(this);
     Expression* expr = addition();
     while (true) {
         switch(token().type()) {
-        case Token::LEFT_SHIFT: 
+        case Token::LEFT_SHIFT: { 
             next();
-            expr = op(expr, "@shift", addition()); 
+            Expression* right = addition();
+            expr = op(loc, "@shift", expr, right); 
             break;
-        case Token::RIGHT_SHIFT: 
+        }
+        case Token::RIGHT_SHIFT: {
             next(); 
-            expr = op(expr, "@unshift", addition()); 
+            Expression* right = addition();
+            expr = op(loc, "@unshift", expr, right); 
             break;
-        default: 
-            return expr;
+        }
+        default: return expr;
         }
     }    
     return expr;
@@ -577,11 +778,22 @@ Expression* Parser::shift() {
 
 Expression* Parser::addition() {
     // Parse an add/sub, i.e., an expression of the form: expr (+ expr)+
+    LocationAnchor loc(this);
     Expression* expr = mult();
     while (true) {
         switch(token().type()) {
-        case Token::ADD: next(); expr = op(expr, "@add", mult()); break;
-        case Token::SUB: next(); expr = op(expr, "@sub", mult()); break;
+        case Token::ADD: {
+            next(); 
+            Expression* right = mult();
+            expr = op(loc, "@add", expr, right);
+            break;
+        }
+        case Token::SUB: {
+            next();
+            Expression* right = mult();
+            expr = op(loc, "@sub", expr, right);
+            break;
+        }
         default: return expr;
         }
     }    
@@ -590,12 +802,28 @@ Expression* Parser::addition() {
 
 Expression* Parser::mult() {
     // Parse an add/sub, i.e., an expression of the form: expr (+ expr)+
+    LocationAnchor loc(this);
     Expression* expr = unary();
     while (true) {
         switch(token().type()) {
-        case Token::MUL: next(); expr = op(expr, "@mul", unary()); break;
-        case Token::DIV: next(); expr = op(expr, "@div", unary()); break;
-        case Token::MOD: next(); expr = op(expr, "@mod", unary()); break;
+        case Token::MUL: {
+            next(); 
+            Expression* right = unary();
+            expr = op(loc, "@mul", expr, right);
+            break;
+        }
+        case Token::DIV: {
+            next();
+            Expression* right = unary();
+            expr = op(loc, "@div", expr, right);
+            break;
+        }
+        case Token::MOD: {
+            next();
+            Expression* right = unary();
+            expr = op(loc, "@mod", expr, right);
+            break;
+        }
         default: return expr;
         }
     }    
@@ -604,106 +832,307 @@ Expression* Parser::mult() {
 
 Expression* Parser::unary() {
     // Unary boolean not and logical complement
+    LocationAnchor loc(this);
     switch (token().type()) {
-    case Token::NOT: next(); return op("not", unary());
-    case Token::COMPL: next(); return op("@compl", unary());
-    case Token::SUB: next(); return op("@neg", unary());
-    default: return call();
+    case Token::NOT: {
+        next(); 
+        Expression* right = unary(); 
+        return op(loc, "not", right);
     }
-    return call();
+    case Token::COMPL: {
+        next();
+        Expression* right = unary();
+        return op(loc, "@compl", right, 0);
+    }
+    case Token::SUB: {
+        next();
+        Expression* right = unary();
+        return op(loc, "@neg", right, 0);
+    }
+    default: return increment();
+    }
+    return increment();
+}
+
+Expression* Parser::increment() {
+    // Increment or decrement expression, i.e., (++|--)? expr.  This can only
+    // be called on an identifier.
+    LocationAnchor loc(this);
+    if (token() == Token::INCREMENT) {
+        next();
+        String::Ptr id = identifier();
+        Expression::Ptr t1 = new IntegerLiteral(loc, env_->integer("1"));    
+        Expression::Ptr t2 = new Identifier(loc, name(""), id);
+        Expression::Ptr t3 = op(loc, "@add", t2, t1);
+        return new Assignment(loc, id, 0, t3);
+    } else if (token() == Token::DECREMENT) {
+        next();
+        String::Ptr id = identifier();
+        Expression::Ptr t1 = new IntegerLiteral(loc, env_->integer("1"));    
+        Expression::Ptr t2 = new Identifier(loc, name(""), id);
+        Expression::Ptr t3 = op(loc, "@sub", t2, t1);
+        return new Assignment(loc, id, 0, t3);
+    } else {
+        return call();
+    }
 }
 
 Expression* Parser::call() {
     // Parses a call expression, i.e.: expr ( arg? (, arg)* ) +
+    LocationAnchor loc(this);
     Expression* expr = member();
     while (token() == Token::LEFT_PARENS) {
         next();
     
         // Read in the arguments to the function.
-        Expression::Ptr args;
-        while (token() != Token::RIGHT_PARENS) {
-            args = append(args, expression());
-            if (token() == Token::COMMA) {
-                next();
-            } else {
-                break;
-            }
-        }
+        Expression::Ptr args = expression_list();
         expect(Token::RIGHT_PARENS);
-        expr = new Call(loc(), file_, expr, args);  
+        if (token() == Token::FUNC) {
+            args = append(args, closure());
+        }
+        expr = new Call(loc, expr, args);  
     }
     return expr;
 }
 
 Expression* Parser::member() {
     // Parses the member operator, i.e., '.', such as: expr [. ident]?
-    Expression* expr = literal();
-    while (token() == Token::DOT) {
-        next();
-        expr = new Member(loc(), expr, identifier());
+    LocationAnchor loc(this);
+    Expression* expr = construct();
+    while (true) {
+        if (token() == Token::LEFT_PARENS) {
+            next();
+            // Read in the arguments to the function.
+            Expression::Ptr args = expression_list();
+            expect(Token::RIGHT_PARENS);
+            if (token() == Token::FUNC) {
+                args = append(args, closure());
+            }
+            expr = new Call(loc, expr, args);  
+        }
+        else if (token() == Token::LEFT_BRACKET) {
+            next();
+            Expression* args = expression_list();
+            Member* mem = 0;
+            expect(Token::RIGHT_BRACKET);
+            if (token() == Token::ASSIGN) {
+                next();
+                args = append(args, expression());
+                mem = new Member(loc, expr, name("@insert")); 
+            } else {
+                mem = new Member(loc, expr, name("@index"));    
+            }
+            expr = new Call(loc, mem, args); 
+        } else if (token() == Token::DOT) {
+            next(); 
+            String* id = identifier();
+            if (token() == Token::ASSIGN) {
+                next();
+                String* set = name(id->string()+"=");
+                Member* mem = new Member(loc, expr, set);
+                Expression* args = expression();
+                return new Call(loc, mem, args);
+            } else {
+                expr = new Member(loc, expr, id);
+            }
+        } else {
+            break;
+        }
     }
     return expr;
 }
+
+Expression* Parser::construct() {
+    // Constructor expression, i.e., type ( arg? (, arg)*)
+    LocationAnchor loc(this);
+    if (token() == Token::TYPE) {
+        Type::Ptr type = Parser::type();
+        if (token() == Token::SCOPE) {
+            next();
+            String::Ptr scope = type->qualified_name();
+            String::Ptr id = identifier();
+            file_->feature(new Import(loc, scope, true));
+            return new Identifier(loc, scope, id); 
+        }
+        
+        // Read in the ctor arguments
+        expect(Token::LEFT_PARENS); 
+        Expression::Ptr args = expression_list();
+        expect(Token::RIGHT_PARENS);
+        if (token() == Token::FUNC) {
+            args = append(args, closure());
+        }
+        return new Construct(loc, type, args);
+    } else {
+        return literal();
+    }
+}
+
 
 Expression* Parser::literal() {
     // Parses a literal expression, variable, or parenthesized expression
     Expression* expr;
-    if (token() == Token::FLOAT) {
-        expr = new FloatLiteral(loc(), env_->integer(lexer_->value()));
-    } else if (token() == Token::INTEGER) {
-        expr = new IntegerLiteral(loc(), env_->integer(lexer_->value()));
-    } else if (token() == Token::STRING) {
-        expr = new StringLiteral(loc(), env_->string(lexer_->value()));
-    } else if (token() == Token::IDENTIFIER) {
-        expr = new Identifier(loc(), env_->name(lexer_->value()));
-    } else if (token() == Token::LEFT_PARENS) {
+    switch(token().type()) {
+    case Token::FLOAT:
+        expr = new FloatLiteral(location(), env_->integer(value()));
+        break;
+    case Token::INTEGER:
+        expr = new IntegerLiteral(location(), env_->integer(value()));
+        break;
+    case Token::STRING:
+        expr = new StringLiteral(location(), env_->string(value()));
+        break;
+    case Token::NIL:
+        expr = new NilLiteral(location());
+        break;
+    case Token::EOFLITERAL:
+        expr = new IntegerLiteral(location(), env_->integer("-1"));
+        expr->type(env_->char_type());
+        break;
+    case Token::CHAR: {
+        int code = String::escape(value());
+        expr = new IntegerLiteral(location(), env_->integer(stringify(code)));
+        expr->type(env_->char_type());
+        break;
+    }
+    case Token::BOOL:
+        if (value() == "true") {
+            expr = new BooleanLiteral(location(), env_->integer("1"));
+        } else if (value() == "false") {
+            expr = new BooleanLiteral(location(), env_->integer("0"));
+        }
+        break;
+    case Token::IDENTIFIER:
+        expr = new Identifier(location(), name(""), name(value()));
+        break;
+    case Token::LEFT_PARENS:
+        next();
         expr = expression();
         expect(Token::RIGHT_PARENS);
         return expr;  
-    } else {
-        err_ << loc() << "Expected a literal value or identifier";
-        error();
-        return new Empty(loc());
+    case Token::STRING_BEGIN:
+        return string();
+    default:
+        if (!error_) {
+            err_ << location() << "Unexpected " << token() << "\n";
+            error();
+        }
+        return new Empty(location());
     }
     next();
     return expr;
 }
 
-/*
-Expression* Parser::increment() {
-    // Increment or decrement expression, i.e., (++|--)? expr.  This can only
-    // be called on an identifier.
-    String::Ptr op;
-    if (token() == Token::INCREMENT) {
-        op = env_->name("@add");
-    } else if (token() == Token::DECREMENT) {
-        op = env_->name("@sub");
-    } else {
-        return unary();
+Expression* Parser::string() {
+    // String interpolation: ".*#{ expr } sdlkfjldkf #{
+    LocationAnchor loc(this);
+    Expression* expr = new StringLiteral(location(), env_->string(value()));
+    expect(Token::STRING_BEGIN);
+    
+    while (true) {
+        Expression* sub = expression();
+        Expression* tmp = op(loc, "str?", sub, 0); 
+        expr = op(loc, "@add", expr, tmp);
+        if (token() == Token::STRING_BEGIN) { 
+            tmp = new StringLiteral(location(), env_->string(value()));
+            next();
+            expr = op(loc, "@add", expr, tmp);
+        } else {
+            break;
+        }
+        
     }
-    next();
-
-    if (token() != Token::IDENTIFIER) {
-        err_ << loc() << "Invalid expression\n";
-        return new Empty(loc());
-    }
-    String::Ptr id = identifier();
-    Expression::Ptr t1 = new IntegerLiteral(loc(), env_->integer("1"));    
-    Expression::Ptr t2 = new Identifier(loc(), id);
-    Expression::Ptr t3 = new Member(loc(), t2, env_->name("@sub"));
-    Expression::Ptr t4 = new Call(loc(), file_, t3, t1);
-    return new Assignment(loc(), id, 0, t4);
+    Expression* tmp = new StringLiteral(location(), env_->string(value()));
+    expect(Token::STRING_END);
+    expr = op(loc, "@add", expr, tmp);
+    return expr;
 }
-*/
 
-Expression* Parser::op(Expression* a, const std::string& op, Expression* b) {
+Statement* Parser::conditional() {
+    // Conditional statement: if expr block (else if expr block)? (else block)?
+    Location loc;
+    expect(Token::IF); 
+    Expression::Ptr guard = expression();
+    Statement::Ptr true_branch = block();
+    Statement::Ptr false_branch;
+    if (token() == Token::SEPARATOR && token(1) == Token::ELSE) {
+        next(); 
+    }
+    if (token() == Token::ELSE) {
+        next();
+        if (token() == Token::IF) {
+            false_branch = conditional();
+        } else {
+            false_branch = block();
+        }
+    }
+    return new Conditional(loc, guard, true_branch, false_branch);
+}
+
+Statement* Parser::let() {
+    // Parses a let expression: let (guard)+ { block }
+    LocationAnchor loc(this);
+    expect(Token::LET);
+    Assignment::Ptr assign = assignment(); 
+    while (token() == Token::COMMA) {
+        assign = append(assign, assignment());
+    } 
+    Block::Ptr block = Parser::block();
+    return new Let(loc, assign, block); 
+}
+
+Statement* Parser::while_loop() {
+    // While loop: while expr block
+    LocationAnchor loc(this);
+    expect(Token::WHILE);
+    Expression::Ptr guard = expression();
+    Statement::Ptr block = Parser::block();
+    return new While(loc, guard, block); 
+}
+
+Statement* Parser::for_loop() {
+    // For loop: for x in expr block.  We have to build up the syntactic sugar
+    // for the loop by using an iterator and a while loop.
+    LocationAnchor loc(this);
+    expect(Token::FOR);
+    String* id = identifier();
+    expect(Token::IN);
+    Expression* guard = expression();
+    Statement* block = Parser::block();
+
+    String* i = name("_i");
+
+    // _i = guard.iter()
+    Expression* t1 = op(loc, "iter", guard, 0);
+    Assignment* t2 = new Assignment(loc, i, 0, t1);
+
+    // while (_i.more()) 
+    Expression* t3 = new Identifier(loc, name(""), i);
+    Expression* t4 = op(loc, "more?", t3, 0); 
+
+    // id = _i.next()    
+    Expression* t5 = new Identifier(loc, name(""), i);
+    Expression* t6 = op(loc, "next", t5, 0);
+    Simple* t7 = new Simple(loc, new Assignment(loc, id, 0, t6));
+
+    t7->next(block);
+    
+    // Loop body
+    While* t10 = new While(loc, t4, new Block(loc, 0, t7)); 
+    return new Let(loc, t2, t10);
+}
+
+Expression* Parser::op(const LocationAnchor& loc, const std::string& op, 
+                       Expression* a, Expression* b) {
     // Binary expression: Note that eventually this may be replaced by an 
     // actual Operator node
-    Member::Ptr mem = new Member(loc(), a, env_->name(op));
-    return new Call(loc(), file_, mem, b);     
+    Member::Ptr mem = new Member(loc, a, name(op));
+    return new Call(loc, mem, b);     
 }
 
-Expression* Parser::op(const std::string& op, Expression* expr) {
+Expression* Parser::op(const LocationAnchor& loc, const std::string& op,
+                       Expression* expr) {
     // Unary expression
-    return new Unary(loc(), env_->name(op), expr);
+    return new Unary(loc, name(op), expr);
 }
+

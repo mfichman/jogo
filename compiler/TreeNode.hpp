@@ -33,6 +33,7 @@ public:
         location_(loc) {
     }
 
+    File* file() const { return location_.file; } 
     const Location& location() const { return location_; }
 
     class Functor;
@@ -82,6 +83,11 @@ public:
 
 template <typename T>
 T* append(typename T::Ptr list, T* last) {
+    return append(list.pointer(), last);
+}
+
+template <typename T>
+T* append(T* list, T* last) {
     if (list) {
         if (list->last()) {
             list->last()->next(last);

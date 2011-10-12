@@ -1,4 +1,4 @@
-# aptest print_ast on
+import Io
 
 Stringable < Object {
     str?() String {
@@ -8,7 +8,10 @@ Stringable < Object {
 
 main() Int {
     bob = "what #{Stringable()} up"
+    println(bob)
     bob = "what #{ "what #{Stringable()} up"} up"
+    println(bob)
     bob = "what #{Stringable()} up what #{Stringable()} up"
+    println(bob)
     ret 0
 }

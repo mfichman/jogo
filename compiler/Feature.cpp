@@ -83,8 +83,7 @@ void Class::feature(Feature* feature) {
         return;
     }
 
-    feature->next(features_);
-    features_ = feature;
+    features_ = append(features_, feature);
 
     if (Attribute* attr = dynamic_cast<Attribute*>(feature)) {
         attributes_[attr->name()] = attr;
@@ -169,8 +168,7 @@ void Module::feature(Feature* feature) {
         return;
     }
 
-    feature->next(features_);
-    features_ = feature;
+    features_ = append(features_, feature);
 
     if (Class* clazz = dynamic_cast<Class*>(feature)) {
         classes_[clazz->name()] = clazz;

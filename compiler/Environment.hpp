@@ -111,13 +111,13 @@ private:
     std::vector<std::string> input_;
     std::vector<std::string> lib_;
 
+    File::Ptr builtin_file_;
     File::Ptr files_;
     String::Ptr strings_;
     String::Ptr integers_;
     String::Ptr floats_;
     Module::Ptr root_;
     Module::Ptr builtins_;
-    File::Ptr builtin_file_; 
     Module::Ptr modules_;
     Type::Ptr void_type_;
     Type::Ptr bool_type_;

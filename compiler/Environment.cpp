@@ -38,20 +38,21 @@ Environment::Environment() :
 
     Location loc;
     root_ = new Module(loc, name(""), this);
+    builtin_file_ = new File(name(""), name(""), root_, this);
+    loc.file = builtin_file_;
     builtins_ = new Module(loc, name(""), this);
-    builtin_file_ = new File(0, 0, builtins_, this);
-    void_type_ = new Type(loc, name("Void"), 0, builtin_file_, this);
-    bool_type_ = new Type(loc, name("Bool"), 0, builtin_file_, this);
-    int_type_ = new Type(loc, name("Int"), 0, builtin_file_, this);
-    string_type_ = new Type(loc, name("String"), 0, builtin_file_, this);
-    nil_type_ = new Type(loc, name("Nil"), 0, builtin_file_, this);
-    no_type_ = new Type(loc, name("<<notype>>"), 0, builtin_file_, this);
-    float_type_ = new Type(loc, name("Float"), 0, builtin_file_, this);
-    char_type_ = new Type(loc, name("Char"), 0, builtin_file_, this);
-    byte_type_ = new Type(loc, name("Byte"), 0, builtin_file_, this);
-    pair_type_ = new Type(loc, name("Pair"), 0, builtin_file_, this);
-    self_type_ = new Type(loc, name("Self"), 0, builtin_file_, this);
-    any_type_ = new Type(loc, name("Any"), 0, builtin_file_, this);
+    void_type_ = new Type(loc, name("Void"), 0, this);
+    bool_type_ = new Type(loc, name("Bool"), 0, this);
+    int_type_ = new Type(loc, name("Int"), 0, this);
+    string_type_ = new Type(loc, name("String"), 0, this);
+    nil_type_ = new Type(loc, name("Nil"), 0, this);
+    no_type_ = new Type(loc, name("<<notype>>"), 0, this);
+    float_type_ = new Type(loc, name("Float"), 0, this);
+    char_type_ = new Type(loc, name("Char"), 0, this);
+    byte_type_ = new Type(loc, name("Byte"), 0, this);
+    pair_type_ = new Type(loc, name("Pair"), 0, this);
+    self_type_ = new Type(loc, name("Self"), 0, this);
+    any_type_ = new Type(loc, name("Any"), 0, this);
 
     module(root_);
 

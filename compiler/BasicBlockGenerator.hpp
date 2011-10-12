@@ -52,6 +52,7 @@ private:
     void operator()(Binary* expression);
     void operator()(Unary* expression);
     void operator()(Call* expression);
+    void operator()(Member* expression);
     void operator()(Construct* expression);
     void operator()(Identifier* expression);
     void operator()(Empty* expression);

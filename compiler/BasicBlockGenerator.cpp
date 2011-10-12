@@ -160,14 +160,22 @@ void BasicBlockGenerator::operator()(Unary* expr) {
     }
 }
 
+void BasicBlockGenerator::operator()(Member* expr) {
+    // A stand-alone member operator, which means that we indirectly call the
+    // getter.
+    emit_call(expr->function(), expr->expression());
+}
+
 void BasicBlockGenerator::operator()(Call* expr) {
     // The call expression may actually be an operator, if the type of the
     // expression is primitive.
-    Type::Ptr type = expr->arguments()->type();
-    String::Ptr id = expr->function()->name();
-    if (id->string()[0] == '@' && type->is_primitive()) {
-        emit_operator(expr);
-        return; 
+    if (expr->arguments()) {
+        Type::Ptr type = expr->arguments()->type();
+        String::Ptr id = expr->function()->name();
+        if (id->string()[0] == '@' && type->is_primitive()) {
+            emit_operator(expr);
+            return; 
+        }
     }
 
     emit_call(expr->function(), expr->arguments());

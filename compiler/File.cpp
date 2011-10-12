@@ -129,8 +129,7 @@ void File::feature(Feature* feature) {
         return;
     }
 
-    feature->next(features_);
-    features_ = feature;
+    features_ = append(features_, feature);
 
     if (Import* import = dynamic_cast<Import*>(feature)) {
         if (import->scope()->string().empty()) {

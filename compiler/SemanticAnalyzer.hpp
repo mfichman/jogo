@@ -50,6 +50,7 @@ private:
     void operator()(Unary* expression);
     void operator()(Call* expression);
     void operator()(Construct* expression);
+    void operator()(Member* expression);
     void operator()(Identifier* expression);
     void operator()(Empty* expression);
     void operator()(Block* statement);

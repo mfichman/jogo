@@ -24,17 +24,6 @@ Module
     name: TypeChecker
     comment:
     feature0: Function
-      name: @init
-      type: Void
-      block: Block
-    feature1: Function
-      name: @destroy
-      type: Void
-      formal0: Formal
-        name: self
-        type: Self
-      block: Block
-    feature2: Function
       name: @index
       type: Void
       comment:
@@ -48,7 +37,7 @@ Module
         name: y
         type: CycleType2
       block: Block
-    feature3: Function
+    feature1: Function
       name: check1
       type: Int
       comment:
@@ -58,7 +47,7 @@ Module
       block: Block
         child0: Return
           expression: IntegerLiteral(2)
-    feature4: Function
+    feature2: Function
       name: check2
       type: Void
       comment:
@@ -69,7 +58,7 @@ Module
         name: bob
         type: Int
       block: Block
-    feature5: Function
+    feature3: Function
       name: main
       type: Void
       comment:
@@ -84,28 +73,40 @@ Module
             initializer: Construct
               type: TypeChecker
         child1: Statement
-          expression: Dispatch
-            name: check2
+          expression: Call
+            expression: Member
+              identifier: check2
+              expression: Identifier
+                name: t
             argument0: Identifier
               name: t
-            argument1: Dispatch
-              name: check1
+            argument1: Call
+              expression: Member
+                identifier: check1
+                expression: Identifier
+                  name: t
               argument0: Identifier
                 name: t
         child2: Statement
           expression: Assignment
             name: a
             type: Int
-            initializer: Dispatch
-              name: check1
+            initializer: Call
+              expression: Member
+                identifier: check1
+                expression: Identifier
+                  name: t
               argument0: Identifier
                 name: t
         child3: Statement
           expression: Assignment
             name: b
             type: Int
-            initializer: Dispatch
-              name: @add
+            initializer: Call
+              expression: Member
+                identifier: @add
+                expression: Identifier
+                  name: a
               argument0: Identifier
                 name: a
               argument1: IntegerLiteral(10)
@@ -132,8 +133,11 @@ Module
             initializer: Identifier
               name: c
         child8: Statement
-          expression: Dispatch
-            name: @index
+          expression: Call
+            expression: Member
+              identifier: @index
+              expression: Identifier
+                name: t
             argument0: Identifier
               name: t
             argument1: Identifier
@@ -172,3 +176,14 @@ Module
             right: Identifier
               name: b
           block: Block
+    feature4: Function
+      name: @destroy
+      type: Void
+      formal0: Formal
+        name: self
+        type: Self
+      block: Block
+    feature5: Function
+      name: @init
+      type: Void
+      block: Block

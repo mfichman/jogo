@@ -39,7 +39,7 @@ public:
     Type* parent_type() const { return parent_type_; }
     Type* type() const { return type_; }
     bool is_logic_op() const;
-	void next(Expression* next) { next_ = next; }
+	void next(Expression* next) { assert(next != this); next_ = next; }
     void last(Expression* last) { last_ = last; }
     void parent_type(Type* type) { parent_type_ = type; }
     void type(Type* type) { type_ = type; }
@@ -189,15 +189,13 @@ private:
 /* Normal function all */
 class Call : public Expression {
 public:
-    Call(Location loc, File* file, Expression* expr, Expression* args) :
+    Call(Location loc, Expression* expr, Expression* args) :
         Expression(loc),
-        file_(file),
         expression_(expr),
         arguments_(args),
         function_(0) {
     }
 
-    File* file() const { return file_; } 
     Expression* expression() const { return expression_; }
     Expression* arguments() const { return arguments_; }
     Function* function() const { return function_; }
@@ -206,7 +204,6 @@ public:
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
-    File* file_;
     Expression::Ptr expression_;
     Expression::Ptr arguments_;
     Function* function_;
@@ -218,16 +215,20 @@ public:
     Member(Location loc, Expression* expr, String* ident) :
         Expression(loc), 
         identifier_(ident),
-        expression_(expr) {
+        expression_(expr),
+        function_(0) {
     }
 
     String* identifier() const { return identifier_; }
     Expression* expression() const { return expression_; }
+    Function* function() const { return function_; }
+    void function(Function* function) { function_ = function; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
     String::Ptr identifier_;
     Expression::Ptr expression_;
+    Function* function_;
 };
 
 /* Constructor call */
@@ -252,15 +253,19 @@ private:
 /* Identifier expression (variable access) */
 class Identifier : public Expression {
 public:
-    Identifier(Location loc, String* ident) :
+    Identifier(Location loc, String* scope, String* ident) :
         Expression(loc),
+        scope_(scope),
         identifier_(ident) {
+
     }
 
+    String* scope() const { return scope_; }
     String* identifier() const { return identifier_; }
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
+    String::Ptr scope_;
     String::Ptr identifier_;
 };
 

@@ -32,6 +32,8 @@ class FloatLiteral;
 class BooleanLiteral;
 class Member;
 class File;
+class Location;
+class LocationAnchor;
 class Fork;
 class Yield;
 class Formal;
