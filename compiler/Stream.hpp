@@ -40,19 +40,21 @@ public:
 #endif
     ~Stream();
 
-    static Stream* stout();
-    static Stream* sterr();
+    typedef Pointer<Stream> Ptr;    
 
-    operator bool() { return error_; }
+    static Stream::Ptr stout();
+    static Stream::Ptr sterr();
+
+    const std::string& message() const { return message_; }
+    bool error() const { return error_; }
     void write(const char* data, int len);
     void flush();
-
-    typedef Pointer<Stream> Ptr;    
 
 private:
     void write_direct(const char* data, int len);
 
     std::vector<char> buffer_;
+    std::string message_;
 #ifdef WINDOWS
     HANDLE fd_;
 #else

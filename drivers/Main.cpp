@@ -82,7 +82,7 @@ void output(File* file) {
     }
  
     if (env->verbose()) {
-        std::cout << "Compiling " << out_file << std::endl;
+        Stream::stout() << "Compiling " << out_file << "\n";
     }
     
     if (!env->assemble() || !env->link() || env->make()) {
@@ -108,6 +108,13 @@ void output(File* file) {
     std::string asm_file = env->assemble() ? tempnam() : out_file + ".asm";
     file->output(env->name(asm_file));
     cgen->out(new Stream(asm_file));
+    if (cgen->out()->error()) {
+        Stream::sterr() << asm_file << ": " << cgen->out()->message() << "\n";  
+        Stream::sterr()->flush();
+        Stream::stout()->flush();
+        exit(1);
+    }
+
     cgen->operator()(file);
 
     if (!env->assemble()) { return; }
@@ -198,7 +205,7 @@ int main(int argc, char** argv) {
     }
 
     if (env->verbose()) {
-        std::cout << ss.str() << std::endl;
+        Stream::stout() << ss.str() << "\n";
     }
 
     if (system(ss.str().c_str())) { return 1; }

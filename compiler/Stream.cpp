@@ -47,10 +47,14 @@ Stream::Stream(const std::string& file) : error_(false) {
             GENERIC_WRITE, // desired access 
             FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
             0, // security attributes
-            OPEN_EXISTING, // creation disposition
+            CREATE_ALWAYS, // creation disposition
             0, // attributes and flags
             0); // template file
-        if (!fd_) {
+        if (fd_ == INVALID_HANDLE_VALUE) {
+            char message[1024];
+            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, GetLastError(), 0, 
+                message, 1024, 0);
+            message_ = message;
             error_ = true;
         }
 #else
@@ -90,7 +94,7 @@ Stream::~Stream() {
 #endif
 }
 
-Stream* Stream::sterr() {
+Stream::Ptr Stream::sterr() {
 #ifdef WINDOWS
     static Stream::Ptr sterr = new Stream(GetStdHandle(STD_ERROR_HANDLE));
 #else
@@ -99,7 +103,7 @@ Stream* Stream::sterr() {
     return sterr;
 }
 
-Stream* Stream::stout() {
+Stream::Ptr Stream::stout() {
 #ifdef WINDOWS
     static Stream::Ptr stout = new Stream(GetStdHandle(STD_OUTPUT_HANDLE));
 #else

@@ -59,4 +59,5 @@ Io_Stream File_open(String path, String mode) {
         return Io_Stream__init(ret);
     }
 #endif
+    return 0;
 }

@@ -38,6 +38,7 @@ public:
     Intel64CodeGenerator(Environment* env);
     typedef Pointer<Intel64CodeGenerator> Ptr;
 
+    Stream* out() const { return out_; }
     void out(Stream* out) { out_ = out; }
     void operator()(File* file);
     

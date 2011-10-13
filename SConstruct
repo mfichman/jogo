@@ -21,7 +21,6 @@ if env['PLATFORM'] == 'posix':
 
 if env['PLATFORM'] == 'win32':
     nasm = 'nasm -fwin64 -o $TARGET $SOURCE'
-    env.Append(BUILDERS = { 'NASM': bld })
     env.Append(CXXFLAGS = '/DWINDOWS')
     env.Append(CXXFLAGS = '/MDd')
     env.Append(CXXFLAGS = '/Zi')
@@ -42,6 +41,7 @@ else:
     env.Append(CFLAGS = '-Iruntime')
     env.Append(CFLAGS = '-Wall -Werror -std=c99 -m64')
     env.Append(CFLAGS = '-DCOROUTINE_STACK_SIZE=8192')
+
 
 bld = Builder(action = nasm, src_suffix = '.nasm', suffix = '.obj')
 env.Append(BUILDERS = { 'NASM': bld })
