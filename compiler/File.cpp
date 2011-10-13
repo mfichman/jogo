@@ -265,7 +265,7 @@ bool File::mkdir(const std::string& file) {
 
 File::Iterator::Iterator(const std::string& file) :
 #ifdef WINDOWS
-    handle_(FindFirstFile(file.c_str(), &data_)) {
+    handle_(FindFirstFile((file+"\\*").c_str(), &data_)) {
 #else
     handle_(opendir(file.c_str())),
     entry_(handle_ ? readdir((DIR*)handle_) : 0) {

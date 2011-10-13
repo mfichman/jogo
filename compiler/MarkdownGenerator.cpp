@@ -43,7 +43,7 @@ void MarkdownGenerator::operator()(Class* feature) {
         return;
     }
 
-    out_ = new Stream(env_->output()+"/"+qn->string()+".md"); 
+    out_ = new Stream(env_->output()+FILE_SEPARATOR+qn->string()+".md"); 
 
     if (feature->comment()) {
         out_ << feature->comment() << '\n';

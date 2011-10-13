@@ -28,6 +28,7 @@
 #include "Intel64CodeGenerator.hpp"
 #include "BasicBlockPrinter.hpp"
 #include "DeadCodeEliminator.hpp"
+#include "File.hpp"
 #include "CopyPropagator.hpp"
 #include "TreePrinter.hpp"
 #include "Machine.hpp"
@@ -67,11 +68,7 @@ void output(File* file) {
     }
 
     std::string name = File::no_ext_name(file->name()->string());
-#ifdef WINDOWS
-    std::string out_file = env->output_dir() + "\\" + name;
-#else
-    std::string out_file = env->output_dir() + "/" + name;
-#endif
+    std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
 
     if (env->make() && env->link()) {
         time_t t1 = File::mtime(out_file + ".apo");
@@ -152,6 +149,7 @@ int main(int argc, char** argv) {
     // continue on to another stage; otherwise, output the file directly.
     Parser::Ptr parser(new Parser(env));
     SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
+    Stream::sterr()->flush();
     if (env->dump_ast()) {
         Stream::Ptr out(new Stream(env->output()));
         TreePrinter::Ptr print(new TreePrinter(env, out));

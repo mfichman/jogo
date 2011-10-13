@@ -56,25 +56,25 @@ void Parser::input(const std::string& import) {
     for (int i = 0; i < env_->includes(); i++) {
         const std::string& prefix = env_->include(i);
         if (File::ext(file) != ".ap") {
-            if (File::is_reg(prefix + "/" + file + ".ap")) {
+            if (File::is_reg(prefix + FILE_SEPARATOR + file + ".ap")) {
                 std::vector<std::string>().swap(tests);
                 Parser::file(prefix, file + ".ap");
                 return;
             }
         } else {
-            if (File::is_reg(prefix + "/" + file)) {
+            if (File::is_reg(prefix + FILE_SEPARATOR + file)) {
                 std::vector<std::string>().swap(tests);
                 Parser::file(prefix, file);
                 return; 
             } 
         }
-        if (File::is_dir(prefix + "/" + file)) {
+        if (File::is_dir(prefix + FILE_SEPARATOR + file)) {
             std::vector<std::string>().swap(tests);
             Parser::dir(prefix, file);
             return;
         }   
-        tests.push_back(prefix + "/" + file + ".ap");
-        tests.push_back(prefix + "/" + file);
+        tests.push_back(prefix + FILE_SEPARATOR + file + ".ap");
+        tests.push_back(prefix + FILE_SEPARATOR + file);
     }
     env_->error("Could not find " + import);
     err_ << "Module '" << import << "' not found:\n";
@@ -98,7 +98,12 @@ void Parser::file(const std::string& prefix, const std::string& file) {
     }
 
     // Create a file object for this file if it hasn't been parsed yet.
-    std::string actual_file = (prefix == ".") ? file : prefix + "/" + file;
+    std::string actual_file;
+    if (prefix == ".") {
+        actual_file = file;
+    } else {
+        actual_file = prefix + FILE_SEPARATOR + file;
+    }
     String::Ptr fs = name(file);
     file_ = env_->file(fs);
     if (file_) {
@@ -127,14 +132,14 @@ void Parser::dir(const std::string& prefix, const std::string& dir) {
     // Parses all files in the directory specified by 'dir'.  If 'dir' is not
     // a directory, then no files are parsed.
 
-    for (File::Iterator i(prefix + "/" + dir); i; ++i) {
+    for (File::Iterator i(prefix + FILE_SEPARATOR + dir); i; ++i) {
         std::string name = *i;
         const std::string ext = ".ap";
         if (name.length() <= ext.length()) {
             continue;
         }
         if (!name.compare(name.length() - ext.length(), ext.length(), ext)) {
-            file(prefix, dir + "/" + name);
+            file(prefix, dir + FILE_SEPARATOR + name);
         } 
     }
 }
