@@ -3,7 +3,7 @@ SyntaxBad.ap:7:10: Invalid character: '`'
 SyntaxBad.ap:8:13: Unexpected '='
 SyntaxBad.ap:8:16: Invalid character: ';'
 SyntaxBad.ap:9:9: Unexpected '@init'
-SyntaxBad.ap:11:0: Unexpected end of line
+SyntaxBad.ap:11:1: Unexpected end of line
 SyntaxBad.ap:11:15: Unexpected identifier
 SyntaxBad.ap:13:13: Unexpected '@'
 SyntaxBad.ap:19:5: Unexpected type name
