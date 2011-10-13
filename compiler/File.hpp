@@ -27,6 +27,12 @@
 #include <string>
 #include <vector>
 
+#ifdef WINDOWS
+#define FILE_SEPARATOR '\\'
+#else
+#define FILE_SEPARATOR '/'
+#endif
+
 /* Basic file operations and utilites */
 class File : public Object {
 public:

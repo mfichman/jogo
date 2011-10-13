@@ -38,6 +38,7 @@
 #include <errno.h>
 #endif
 
+
 Function* File::function(String* scope, String* name) {
     // Returns the function with the scope "scope" and name "name."  Searches
     // through imports included in this file to attempt to find the function.
@@ -192,7 +193,7 @@ bool File::is_native_lib(const std::string& name) {
 std::string File::base_name(const std::string& file) {
     // Returns the last component of a file path, without the .ap extension.
 
-    size_t slash = file.find_last_of('/');
+    size_t slash = file.find_last_of(FILE_SEPARATOR);
     size_t dot = file.find_last_of('.');
 
     if (dot == std::string::npos) {
@@ -233,7 +234,7 @@ std::string File::ext(const std::string& file) {
 }
 
 std::string File::dir_name(const std::string& file) {
-    size_t slash = file.find_last_of('/');
+    size_t slash = file.find_last_of(FILE_SEPARATOR);
     if (slash == std::string::npos) {
         return ".";
     } else {
@@ -244,7 +245,7 @@ std::string File::dir_name(const std::string& file) {
 bool File::mkdir(const std::string& file) {
     // Recursively makes all directories in the path specified by 'file'.
 
-    size_t pos = file.find_last_of('/');
+    size_t pos = file.find_last_of(FILE_SEPARATOR);
     if (pos != std::string::npos) {
         File::mkdir(file.substr(0, pos));
     }

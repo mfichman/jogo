@@ -186,7 +186,7 @@ std::string Import::file_name(const std::string& scope) {
     std::string out;
     for (size_t i = 1; i <= scope.length(); i++) {    
         if (scope[i-1] == ':' && scope[i] == ':') {
-            out += '/';
+            out += FILE_SEPARATOR;
             i++;
         } else {
             out += scope[i-1];
@@ -201,7 +201,7 @@ std::string Import::scope_name(const std::string& file) {
     // to the directory name with the '/' replaced by '::'.  For example,
     // 'Foo/Bar.ap' would have scope name 'Foo'.
 
-    size_t pos = file.find_last_of('/');
+    size_t pos = file.find_last_of(FILE_SEPARATOR);
     if (pos == string::npos) {
         return "";
     }
@@ -209,7 +209,7 @@ std::string Import::scope_name(const std::string& file) {
     std::string name;
     for (size_t i = 0; i < dir.size(); i++) {
         if (!isalnum(dir[i])) {
-            if (dir[i] == '/') {
+            if (dir[i] == FILE_SEPARATOR) {
                 name += "::";
             } else {
                 return name;

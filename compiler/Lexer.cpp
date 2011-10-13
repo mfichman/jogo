@@ -63,7 +63,7 @@ void Lexer::input(File* file) {
     input_.close();
     input_.open(file->path()->string().c_str());
     line_ = 1;
-    column_ = 1;
+    column_ = -1;
     char_ = 0;
     front_ = 0;
     string_level_ = 0;
@@ -102,8 +102,13 @@ void Lexer::next() {
     token(Token::NONE);
 
     while (token() == Token::NONE) {
-        location_.first_column = column_;   
-        location_.first_line = line_;
+        if (char_ == '\n') {
+            location_.first_column = 1;
+            location_.first_line = line_+1;
+        } else {
+            location_.first_column = column_+1;   
+            location_.first_line = line_;
+        }
         token_[front_].location(location_);
         value("");
 
@@ -142,7 +147,7 @@ void Lexer::next() {
         } else {
             token(Token::ERROR);
         }
-        location_.last_column = column_-1;
+        location_.last_column = column_;
         location_.last_line = line_;
         token_[front_].location(location_);
     }
@@ -435,16 +440,16 @@ void Lexer::string() {
 void Lexer::read() {
     // Reads one character of input from the stream.  Updates the line number
     // and column number.
-    if (char_) {
-        token_[front_].value() += char_;
-    }
-    char_ = input_.get();
     if (char_ == '\n') {
         line_++;
         column_ = 0;
     } else {
         column_++;
-    }    
+    }   
+    if (char_) {
+        token_[front_].value() += char_;
+    }
+    char_ = input_.get(); 
 }
 
 Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {
