@@ -160,6 +160,8 @@ Module* Parser::module() {
     while (token() != Token::END) {
         switch (token()) {
         case Token::IDENTIFIER:
+            module_->feature(function());
+            break;
         case Token::OPERATOR:
             module_->feature(function());
             break;
@@ -863,23 +865,26 @@ Expression* Parser::increment() {
     // Increment or decrement expression, i.e., (++|--)? expr.  This can only
     // be called on an identifier.
     LocationAnchor loc(this);
-    if (token() == Token::INCREMENT) {
+    switch (token().type()) {
+    case Token::INCREMENT: {
         next();
         String::Ptr id = identifier();
         Expression::Ptr t1 = new IntegerLiteral(loc, env_->integer("1"));    
         Expression::Ptr t2 = new Identifier(loc, name(""), id);
         Expression::Ptr t3 = op(loc, "@add", t2, t1);
         return new Assignment(loc, id, 0, t3);
-    } else if (token() == Token::DECREMENT) {
+    }
+    case Token::DECREMENT: {
         next();
         String::Ptr id = identifier();
         Expression::Ptr t1 = new IntegerLiteral(loc, env_->integer("1"));    
         Expression::Ptr t2 = new Identifier(loc, name(""), id);
         Expression::Ptr t3 = op(loc, "@sub", t2, t1);
         return new Assignment(loc, id, 0, t3);
-    } else {
-        return call();
     }
+    default: return call();
+    }
+    return call();
 }
 
 Expression* Parser::call() {
@@ -901,21 +906,26 @@ Expression* Parser::call() {
 }
 
 Expression* Parser::member() {
-    // Parses the member operator, i.e., '.', such as: expr [. ident]?
+    // Parses the member operator, i.e., '.', such as: expr [. ident]?  Also
+    // parses the [] operator, and () operator
     LocationAnchor loc(this);
     Expression* expr = construct();
     while (true) {
-        if (token() == Token::LEFT_PARENS) {
+        switch (token().type()) {
+        case Token::LEFT_PARENS: {
+            // Parse the () operator; read in the arguments to the function.
             next();
-            // Read in the arguments to the function.
             Expression::Ptr args = expression_list();
             expect(Token::RIGHT_PARENS);
             if (token() == Token::FUNC) {
                 args = append(args, closure());
             }
             expr = new Call(loc, expr, args);  
+            break;
         }
-        else if (token() == Token::LEFT_BRACKET) {
+        case Token::LEFT_BRACKET: {
+            // Parse the [] array access operator, both for assignments and
+            // for reads.
             next();
             Expression* args = expression_list();
             Member* mem = 0;
@@ -928,7 +938,10 @@ Expression* Parser::member() {
                 mem = new Member(loc, expr, name("@index"));    
             }
             expr = new Call(loc, mem, args); 
-        } else if (token() == Token::DOT) {
+            break;
+        }
+        case Token::DOT: {
+            // Parse the '.' member access operator
             next(); 
             String* id = identifier();
             if (token() == Token::ASSIGN) {
@@ -940,8 +953,9 @@ Expression* Parser::member() {
             } else {
                 expr = new Member(loc, expr, id);
             }
-        } else {
             break;
+        }
+        default: return expr;
         }
     }
     return expr;
