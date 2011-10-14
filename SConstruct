@@ -9,6 +9,8 @@ env.Append(ENV = os.environ)
 env.Append(YACCFLAGS = '--defines=build/compiler/Grammar.hpp')
 env.Append(YACCFLAGS = '--report=all')
 
+mode = ARGUMENTS.get('mode', 'debug')
+
 if env['PLATFORM'] == 'darwin':
     env.Append(CXXFLAGS = '-DDARWIN')
     env.Append(CFLAGS = '-DDARWIN')
@@ -21,23 +23,30 @@ if env['PLATFORM'] == 'posix':
 
 if env['PLATFORM'] == 'win32':
     nasm = 'nasm -fwin64 -o $TARGET $SOURCE'
+    if 'release' == mode:
+        env.Append(CXXFLAGS = '/O2')
+        env.Append(CFLAGS = '/O2')
+    else:
+        env.Append(CXXFLAGS = '/MDd /Zi')
+        env.Append(CFLAGS = '/MDd /Zi') 
+        env.Append(LINKFLAGS = '/DEBUG')
     env.Append(CXXFLAGS = '/DWINDOWS')
-    env.Append(CXXFLAGS = '/MDd')
-    env.Append(CXXFLAGS = '/Zi')
-    env.Append(LINKFLAGS = '/DEBUG')
-    env.Append(CFLAGS = '/DWINDOWS')
-    env.Append(CFLAGS = '/Iruntime')
-    env.Append(CFLAGS = '/MDd')
-    env.Append(CFLAGS = '/DCOROUTINE_STACK_SIZE=8192')
     env.Append(CXXFLAGS = '/EHsc')
     env.Append(CXXFLAGS = '/DCOROUTINE_STACK_SIZE=8192')
+    env.Append(CFLAGS = '/DWINDOWS')
+    env.Append(CFLAGS = '/Iruntime')
+    env.Append(CFLAGS = '/DCOROUTINE_STACK_SIZE=8192')
 else:
-    env.Append(CXXFLAGS = '-g')
+    if 'release' == mode:
+        env.Append(CXXFLAGS = '-O3')
+        env.Append(CFLAGS = '-O3')
+    else:
+        env.Append(CXXFLAGS = '-g')
+        env.Append(CFLAGS = '-g')
     env.Append(CXXFLAGS = '-Wall -Werror -pedantic -ansi')
     env.Append(CXXFLAGS = '-Wno-unused')
     env.Append(CXXFLAGS = '-Wno-sign-compare')
     env.Append(CXXFLAGS = '-DCOROUTINE_STACK_SIZE=8192')
-    env.Append(CFLAGS = '-g')
     env.Append(CFLAGS = '-Iruntime')
     env.Append(CFLAGS = '-Wall -Werror -std=c99 -m64')
     env.Append(CFLAGS = '-DCOROUTINE_STACK_SIZE=8192')
