@@ -6,10 +6,9 @@ VariantDir('build/runtime', 'runtime', duplicate=0)
 
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(ENV = os.environ)
-env.Append(YACCFLAGS = '--defines=build/compiler/Grammar.hpp')
-env.Append(YACCFLAGS = '--report=all')
 
-mode = ARGUMENTS.get('mode', 'debug')
+build_mode = ARGUMENTS.get('mode', 'debug')
+stack_size = '8192'
 
 if env['PLATFORM'] == 'darwin':
     env.Append(CXXFLAGS = '-DDARWIN')
@@ -23,36 +22,35 @@ if env['PLATFORM'] == 'posix':
 
 if env['PLATFORM'] == 'win32':
     nasm = 'nasm -fwin64 -o $TARGET $SOURCE'
-    if 'release' == mode:
+    bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
+    if 'release' == build_mode:
         env.Append(CXXFLAGS = '/O2')
         env.Append(CFLAGS = '/O2')
     else:
         env.Append(CXXFLAGS = '/MDd /Zi')
         env.Append(CFLAGS = '/MDd /Zi') 
         env.Append(LINKFLAGS = '/DEBUG')
+    env.Append(CXXFLAGS = '/DCOROUTINE_STACK_SIZE='+stack_size)
     env.Append(CXXFLAGS = '/DWINDOWS')
     env.Append(CXXFLAGS = '/EHsc')
-    env.Append(CXXFLAGS = '/DCOROUTINE_STACK_SIZE=8192')
+    env.Append(CFLAGS = '/DCOROUTINE_STACK_SIZE='+stack_size)
     env.Append(CFLAGS = '/DWINDOWS')
     env.Append(CFLAGS = '/Iruntime')
-    env.Append(CFLAGS = '/DCOROUTINE_STACK_SIZE=8192')
 else:
-    if 'release' == mode:
+    bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.o')
+    if 'release' == build_mode:
         env.Append(CXXFLAGS = '-O3')
         env.Append(CFLAGS = '-O3')
     else:
         env.Append(CXXFLAGS = '-g')
         env.Append(CFLAGS = '-g')
+    env.Append(CXXFLAGS = '-DCOROUTINE_STACK_SIZE='+stack_size)
     env.Append(CXXFLAGS = '-Wall -Werror -pedantic -ansi')
     env.Append(CXXFLAGS = '-Wno-unused')
     env.Append(CXXFLAGS = '-Wno-sign-compare')
-    env.Append(CXXFLAGS = '-DCOROUTINE_STACK_SIZE=8192')
-    env.Append(CFLAGS = '-Iruntime')
-    env.Append(CFLAGS = '-Wall -Werror -std=c99 -m64')
-    env.Append(CFLAGS = '-DCOROUTINE_STACK_SIZE=8192')
+    env.Append(CFLAGS = '-DCOROUTINE_STACK_SIZE='+stack_size)
+    env.Append(CFLAGS = '-Wall -Werror -std=c99 -Iruntime')
 
-
-bld = Builder(action = nasm, src_suffix = '.nasm', suffix = '.obj')
 env.Append(BUILDERS = { 'NASM': bld })
 
 compiler_sources = env.Glob('build/compiler/*.cpp')
@@ -61,10 +59,8 @@ env.Program('bin/apdoc', compiler_sources + ['build/drivers/Doc.cpp'])
 
 library_sources = env.Glob('build/runtime/*/*.c') 
 library_sources += env.Glob('build/runtime/*.c')
-library_sources += env.NASM(
-    'build/runtime/Coroutine.Intel64.o',
-    'runtime/Coroutine.Intel64.asm')
-
+library_sources += env.NASM(env.Glob('build/runtime/*/*.asm'))
+library_sources += env.NASM(env.Glob('build/runtime/*.asm'))
 lib = env.StaticLibrary('lib/apollo', library_sources)
 
 if 'check' in COMMAND_LINE_TARGETS:
