@@ -33,9 +33,9 @@ Coroutine Coroutine__init(Object func) {
     // Initializes a function with a new stack and instruction pointer. When
     // the coroutine is resumed, it will begin executing at 'function' with its
     // own stack.
-    Int stack_index = COROUTINE_STACK_SIZE - 2 - 1; 
+    Int stack_index = COROUTINE_STACK_SIZE - 2 - 7; 
     // -2 is for the two return addresses that are initially on the stack
-    // -1 is for the initial values of RBP
+    // -7 is for the initial values of RBP + caller regs
     
     Coroutine ret = calloc(sizeof(struct Coroutine), 1); 
     if (!ret) {

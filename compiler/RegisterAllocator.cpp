@@ -38,11 +38,13 @@ void RegisterAllocator::operator()(File* file) {
     if (env_->errors()) {
         return;
     }
+    //std::cout << "begin" << file->path()->string() << std::endl;
     file_ = file;
     for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
         f(this);
     }
     file_ = 0;
+    //std::cout << "end" << std::endl;
 }
 
 void RegisterAllocator::operator()(Class* feature) {
@@ -67,6 +69,7 @@ void RegisterAllocator::operator()(Function* func) {
         return;
     }
 
+    int spills = 0;
     spilled_.clear();
 
     while (true) {
@@ -84,7 +87,10 @@ void RegisterAllocator::operator()(Function* func) {
         } else {
             break;
         }
+        spills++;
     }
+
+    //std::cout << func->name()->string() <<" spills: " << spills << std::endl;
 
     for (int i = 0; i < func->basic_blocks(); i++) {
         rewrite_temporaries(func->basic_block(i)); 
@@ -300,6 +306,18 @@ void RegisterAllocator::spill_register(Function* func) {
     int max_neighbors = 0;
     bool is_caller_reg = false;
 
+    // First attempt to spill caller-registers, because those registers have
+    // the most conflicts, usually.
+    for (int i = 0; i < machine_->caller_regs(); i++) {
+        int reg = -machine_->caller_reg(i)->id();
+        set<int>::iterator m = spilled_.find(reg);
+        if (m == spilled_.end()) {
+            spilled = reg;
+            is_caller_reg = true;
+            break;
+        } 
+    }
+
     if (!spilled) {
         for (int i = 1; i < graph_.size(); i++) {
             const RegisterVertex& v = graph_[i];
@@ -309,18 +327,6 @@ void RegisterAllocator::spill_register(Function* func) {
                 spilled = v.temp();
             }
         }
-    }
-
-    if (!spilled) {
-       for (int i = 0; i < machine_->caller_regs(); i++) {
-           int reg = -machine_->caller_reg(i)->id();
-           set<int>::iterator m = spilled_.find(reg);
-           if (m == spilled_.end()) {
-               spilled = reg;
-               is_caller_reg = true;
-               break;
-           } 
-       }
     }
 
     spilled_.insert(spilled);

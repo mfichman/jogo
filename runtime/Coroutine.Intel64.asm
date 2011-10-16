@@ -51,6 +51,12 @@ Coroutine__resume:
     ; coroutine, and loading the other corountine's state.  Then, 'return' to
     ; the caller of the other coroutine's yield() invocation.
     push rbp
+    push rbx
+    push rdi
+    push r12
+    push r13
+    push r14
+    push r15
     push qword [Coroutine__current]
     push qword [Coroutine__stack]
     push qword [save_rsp]
@@ -59,6 +65,12 @@ Coroutine__resume:
     mov [Coroutine__current], rdi
     mov rax, [rdi+CURRENT_OFFSET]
     mov [Coroutine__stack], rax;
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rdi
+    pop rbx
     pop rbp
     ret
     
@@ -74,6 +86,12 @@ Coroutine__yield:
     ; coroutine, and loading the other coroutine's state.  Then, 'return' to
     ; the calling coroutine's resume() invocation.
     push rbp
+    push rbx
+    push rdi
+    push r12
+    push r13
+    push r14
+    push r15
     mov rdi, [Coroutine__current]
     mov rax, [Coroutine__stack]
     mov [rdi+CURRENT_OFFSET], rax
@@ -82,6 +100,12 @@ Coroutine__yield:
     pop qword [save_rsp]
     pop qword [Coroutine__stack]
     pop qword [Coroutine__current]
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rdi
+    pop rbx
     pop rbp
     ret
     

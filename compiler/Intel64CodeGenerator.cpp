@@ -161,9 +161,6 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         opcode_ = instr.opcode();
 
         switch (instr.opcode()) {
-        case CALL: emit("call", a1); break;
-        case JUMP: emit("jmp", branch->label()); break;
-        case MOV: emit("mov", res, a1); break;
         case BNE: emit("cmp", a1, a2); emit("jne", branch->label()); break;
         case BE: emit("cmp", a1, a2); emit("je", branch->label()); break;
         case BZ: emit("cmp", a1, "0"); emit("je", branch->label()); break;
@@ -172,6 +169,13 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case BGE: emit("cmp", a1, a2); emit("jge", branch->label()); break;
         case BL: emit("cmp", a1, a2); emit("jl", branch->label()); break;
         case BLE: emit("cmp", a1, a2); emit("jle", branch->label()); break;
+        case CALL: emit("call", a1); break;
+        case JUMP: emit("jmp", branch->label()); break;
+        case MOV: 
+            if (res.temp() != a1.temp()) {
+                emit("mov", res, a1);
+            }
+            break;
         case ADD: emit_arith(instr); break;
         case SUB: emit_arith(instr); break;
         case MUL: emit_arith(instr); break;
