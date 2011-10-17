@@ -24,14 +24,28 @@
 #include "String.h"
 #ifndef WINDOWS
 #include <unistd.h>
+#else
+#include <windows.h>
 #endif
 #include <stdlib.h>
 #include <stdio.h>
 
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
-#ifndef WINDOWS
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->capacity - buffer->end;
+#ifdef WINDOWS
+    DWORD read = 0;
+    if (!ReadFile((HANDLE)self->handle, buf, len, &read, 0)) {
+        if (GetLastError() == ERROR_HANDLE_EOF) {
+            // EOF
+        } else {
+            // ERROR
+            return;
+        }
+    } else {
+        buffer->end += read;
+    }
+#else
     Int ret = read(self->handle, buf, len);
     if (ret == 0) {
         // EOF
@@ -46,9 +60,17 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 }
 
 void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
-#ifndef WINDOWS
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->end - buffer->begin;
+#ifdef WINDOWS
+    DWORD written = 0;
+    if (!WriteFile((HANDLE)self->handle, buf, len, &written, 0)) {
+        // ERROR
+        return;
+    } else {
+        buffer->begin += written;
+    }
+#else
     Int ret = write(self->handle, buf, len);
     if (ret == 0) {
         return;
@@ -69,7 +91,6 @@ Int Io_Stream_get(Io_Stream self) {
         Io_Stream_read(self, buf);
     }
     if (buf->begin >= buf->end) {
-   printf("end");
         return -1;
     } else {
         return buf->data[buf->begin++];
@@ -168,11 +189,10 @@ void Io_Stream_close(Io_Stream self) {
     Io_Stream_flush(self);
     self->write_buf->begin = self->write_buf->end = 0;
     self->read_buf->begin = self->read_buf->end = 0;
-#ifndef WINDOWS
-    Int ret = close(self->handle);
-    if (ret == -1) {
-        // Error
-    }
-#endif 
+#ifdef WINDOWS
+    CloseHandle(self->handle);
+#else
+    close(self->handle);
+#endif
 }
 

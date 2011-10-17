@@ -87,6 +87,7 @@ void SemanticAnalyzer::operator()(Module* feature) {
         }
         f(this);
     }
+    module_ = 0;
 }
 
 void SemanticAnalyzer::operator()(Class* feature) {
@@ -398,7 +399,11 @@ void SemanticAnalyzer::operator()(Member* expression) {
     
     assert(func->type() && "Attribute has no type");
     expression->type(fix_generics(expr->type(), func->type()));
-    expression->function(func);
+    expression->function(func);   
+    
+    if (func->file() != expression->file()) {
+        expression->file()->dependency(func);
+    }
 
     if (func->is_private()) {
         err_ << expression->location();
@@ -459,6 +464,10 @@ void SemanticAnalyzer::operator()(Call* expression) {
         expression->type(func->type());
     }
 
+    if (func->file() != expression->file()) {
+        expression->file()->dependency(func);
+    }
+
     // FIXME: Look up generics for function
     check_args(expression->arguments(), func, receiver);
 }
@@ -493,6 +502,9 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         err_ << expression->location();
         err_ << "Constructor is private in class '" << type << "'\n";
         env_->error();  
+    }
+    if (constr->file() != expression->file()) {
+        expression->file()->dependency(constr);
     }
 
     // Check arguments types versus formal parameter types
@@ -886,11 +898,16 @@ void SemanticAnalyzer::operator()(Function* feature) {
     }
         
     exit_scope();
+    function_ = 0;
 }
 
 void SemanticAnalyzer::operator()(Attribute* feature) {
     // Select a slot for this attribute.
     feature->slot(slot_++);
+
+    if (feature->name()->string() == "read_buf") {
+            std::cout << std::endl;
+    }
 
     if (variable(feature->name())) {
         err_ << feature->location();

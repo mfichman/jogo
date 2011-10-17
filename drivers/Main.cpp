@@ -177,7 +177,7 @@ int main(int argc, char** argv) {
     std::stringstream ss;
 #if defined(WINDOWS)    
     ss << "link.exe /DEBUG /ENTRY:main" << " /SUBSYSTEM:console ";
-    ss << "/MACHINE:amd64 ";
+    ss << "/NOLOGO /MACHINE:amd64 ";
     ss << obj_files << " /OUT:" << exe_file << ".exe ";
 #elif defined(LINUX)
     ss << "gcc -m64 " << obj_files << " -o " << exe_file;
@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
     // Run the program, if the -e flag was specified.
     ss.str("");
 #ifdef WINDOWS
-    ss << exe_file;
+    ss << exe_file << ".exe";
 #else
     ss << exe_file;
 #endif

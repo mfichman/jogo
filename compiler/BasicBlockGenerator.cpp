@@ -472,6 +472,12 @@ void BasicBlockGenerator::operator()(Function* feature) {
             // formal parameter by using a negative number.
             int reg = -machine_->arg_reg(index)->id();
             variable(new Variable(f->name(), mov(reg), 0));
+
+            // On Windows, the value is also passed with a backing location on
+            // the stack.
+#ifdef WINDOWS
+            stack(f->name(), stack_.size()+1);
+#endif
         }
         index++;
     } 
@@ -794,9 +800,17 @@ void BasicBlockGenerator::emit_refcount_dec(Operand var) {
 
 void BasicBlockGenerator::emit_push_arg(int i, Operand op) {
     if (i >= machine_->arg_regs()) {
+        // Argument is pushed on the stack
         push(op);
     } else {
+        // Argument is passed by register
         block_->instr(MOV, -machine_->arg_reg(i)->id(), op, 0);
+
+        // On Windows, the argument is also passed by the stack as a backing
+        // store
+#ifdef WINDOWS
+        push(op);
+#endif
     }        
 }
 

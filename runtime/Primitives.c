@@ -71,6 +71,74 @@ String Int_str__g(Int self) {
     return ret;
 }
 
+Int Int__init() {
+    return 0;
+}
+
+Int Int__add(Int self, Int other) {
+    return self + other;
+}
+
+Int Int__sub(Int self, Int other) {
+    return self - other;
+}
+
+Int Int__mul(Int self, Int other) {
+    return self * other;
+}
+
+Int Int__div(Int self, Int other) {
+    return self / other;
+}
+
+Int Int__neg(Int self) {
+    return -self;
+}
+
+Int Int__less(Int self, Int other) {
+    return self < other;
+}
+
+Int Int__mod(Int self, Int other) {
+    return self % other;
+}
+
+Int Int__compl(Int self) {
+    return ~self;
+}
+
+Bool Int__equal(Int self, Int other) {
+    return self == other;
+}
+
+Float Float__init() {
+    return 0;
+}
+
+Float Float__add(Float self, Float other) {
+    return self + other;
+}
+
+Float Float__sub(Float self, Float other) {
+    return self - other;
+}
+
+Float Float__mul(Float self, Float other) {
+    return self * other;
+}
+
+Float Float__div(Float self, Float other) {
+    return self / other;
+}
+
+Bool Float__equal(Float self, Float other) {
+    return self == other;
+}
+
+Bool Float__less(Float self, Float other) {
+    return self < other;
+}
+
 String Float_str__g(Float self) {
     abort();
     return 0;
@@ -104,4 +172,16 @@ String Char_str__g(Char self) {
     ret->length = 1;
     ret->data[0] = self;
     return ret;
+}
+
+Bool Char__equal(Char self, Char other) {
+    return self == other;
+}
+
+Char Char__init() {
+    return '\0';
+}
+
+Bool Char__less(Char self, Char other) {
+    return self < other;
 }

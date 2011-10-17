@@ -1,6 +1,6 @@
 
 
-import Array
+import Array, Boot
 
 main() Int {
     # Write a message to standard output

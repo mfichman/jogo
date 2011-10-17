@@ -59,8 +59,16 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "extern "; emit_label("Coroutine__yield"); out_ << "\n";
     out_ << "extern "; emit_label("Coroutine__grow_stack"); out_ << "\n";
     out_ << "extern "; emit_label("Coroutine__stack"); out_ << "\n";
+    if (file->name()->string() != "String.ap") {
+        out_ << "extern "; emit_label("String__vtable"); out_ << "\n";
+    }
     for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
         f(this);
+    }
+
+    for (int i = 0; i < file->dependencies(); i++) {
+        Function::Ptr func = file->dependency(i);
+        out_ << "extern "; emit_label(func->label()); out_ << "\n";
     }
 
     out_->flush();
@@ -74,10 +82,6 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     if (feature->is_object()) {
         if (feature->location().file == file_) {
             emit_vtable(feature);
-        } else {
-           out_ << "extern ";
-           emit_label(feature->label()->string()+"__vtable");
-           out_ << "\n";
         }
     }
 
@@ -100,13 +104,10 @@ void Intel64CodeGenerator::operator()(Function* feature) {
     // Emit a function, or an extern declaration if the function is native or
     // belongs to a different output file.
     String::Ptr id = feature->name();
-    if (id->string()[0] == '@' && class_ && class_->type()->is_primitive()) {
+    if (feature->is_virtual() || feature->location().file != file_) {
         return;
     }
-    if (feature->is_virtual()) {
-        return;
-    }
-    if (feature->is_native() || feature->location().file != file_) {
+    if (feature->is_native()) {
         out_ << "extern "; emit_label(feature->label()); out_ << "\n";
     } else if (feature->basic_blocks()) {
         out_ << "global "; emit_label(feature->label()); out_ << "\n";

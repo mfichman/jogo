@@ -58,10 +58,8 @@ Float < Value {
     @sub(other Float) native Float
     @mul(other Float) native Float
     @div(other Float) native Float
-    @mod(other Float) native Float
     @equal(other Float) native Bool
     @less(other Float) native Bool
-    @compl() native Float
     str?() native String
 
     max(other Float) Float {
@@ -83,14 +81,8 @@ Float < Value {
 
 Char < Value {
     @init(str String) native
-    @add(other Char) native Char
-    @sub(other Char) native Char
-    @mul(other Char) native Char
-    @div(other Char) native Char
-    @mod(other Char) native Char
     @equal(other Char) native Bool
     @less(other Char) native Bool
-    @compl() native Char
     str?() native String
 }
 

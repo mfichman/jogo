@@ -6,14 +6,20 @@ require 'optparse'
 @options = {}
 @total = 0
 
-def check(test, result)
-    if !result.empty? || $? != 0
+def check(test, expected, output)    
+    expected.gsub!(/\r/, '')
+    output.gsub!(/\r/, '')
+
+    if output != expected # || $? != 0
         (1..79).each { putc '-' }        
         puts
         puts "FAILED TEST: #{test}"
         (1..79).each { putc '-' }        
         puts
-        puts result
+        puts "#{expected}"
+        (1..79).each { putc '-' }   
+        puts 
+        puts "#{output}"
         puts $?
         @failed = true
     end
@@ -38,7 +44,7 @@ else
 end
 
 # Compilation tests.  Compile an Apollo source file, and potentially run the
-# resulting program
+# resulting program.
 tests.each do |test|
     next if /.ap$/ !~ test
 
@@ -64,19 +70,17 @@ tests.each do |test|
         flags += " -e" 
         run = true
     end
-    flags += " -m -d ../build"
-
-    command = "../bin/apollo #{test} --optimize -i ../runtime -i ../lib "
-    command = command + "#{flags} > /tmp/diff 2>&1"
+    flags += " -m -d ../build  --optimize"
+    command = "../bin/apollo #{test} -i ../runtime -i ../lib #{flags}"
     if @options[:full]
         valgrind = "valgrind -q --leak-check=full"
         valgrind = valgrind + " --suppressions=../scripts/valgrind.supp" 
         #valgrind = valgrind + " --gen-suppressions=all"
         command = valgrind + " " + command;    
     end
-    `#{command}`
-    result = `diff /tmp/diff #{test}.ap.out` 
-    check(test, result)
+    expected = File.open("#{test}.ap.out", "rb").read
+    output = `#{command}`
+    check(test, expected, output)
     @total += 1
 end
 
@@ -88,8 +92,9 @@ tests.each do |test|
         puts test
     end
     
-    result = `ruby #{test} 2>&1 | diff - #{test}.out`
-    check(test, result)
+    expected = File.open("#{test}.out", "rb").read
+    output = `ruby #{test}`
+    check(test, expected, output)
     @total += 1
 end
 
@@ -99,10 +104,11 @@ tests.each do |test|
     if @options[:verbose]
         puts test
     end
+    expected = File.open("#{test}.out", "rb").read
     exe = test.sub(/.c$/, "");
-    result = `gcc -g #{test} -o ../build/#{exe} -L../lib -lapollo -I..`
-    result += `../build/#{exe} | diff - #{test}.out`
-    check(test, result)
+    output = `gcc -g #{test} -o ../build/#{exe} -L../lib -lapollo -I..`
+    output += `../build/#{exe}`
+    check(test, expected, output)
     @total += 1
 end
 

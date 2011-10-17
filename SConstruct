@@ -22,6 +22,7 @@ if env['PLATFORM'] == 'posix':
 
 if env['PLATFORM'] == 'win32':
     nasm = 'nasm -fwin64 -o $TARGET $SOURCE'
+    apollo = 'bin\\apollo.exe'
     bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
     if 'release' == build_mode:
         env.Append(CXXFLAGS = '/O2')
@@ -37,6 +38,7 @@ if env['PLATFORM'] == 'win32':
     env.Append(CFLAGS = '/DWINDOWS')
     env.Append(CFLAGS = '/Iruntime')
 else:
+    apollo = 'bin\apollo'
     bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.o')
     if 'release' == build_mode:
         env.Append(CXXFLAGS = '-O3')
@@ -64,9 +66,9 @@ library_sources += env.NASM(env.Glob('build/runtime/*.asm'))
 lib = env.StaticLibrary('lib/apollo', library_sources)
 
 if 'check' in COMMAND_LINE_TARGETS:
-    check = env.Command('check', 'bin/apollo', 'scripts/test --verbose')
+    check = env.Command('check', apollo, 'ruby scripts/test --verbose')
     env.Depends(check, lib)
 
 if 'test' in COMMAND_LINE_TARGETS:
-    test = env.Command('test', 'bin/apollo', 'scripts/test --full --verbose')
+    test = env.Command('test', apollo, 'ruby scripts/test --full --verbose')
     env.Depends(test, lib)

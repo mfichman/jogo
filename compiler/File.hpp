@@ -43,7 +43,8 @@ public:
         environment_(env),
         is_input_file_(false) {  
     }
-
+    
+    Function* dependency(int id) { return dependency_[id]; }
     Feature* features() const { return features_; }
     Function* function(String* scope, String* name);
     Class* clazz(String* scope, String* name);
@@ -51,7 +52,9 @@ public:
     String* path() const { return path_; }
     File* next() const { return next_; }
     String* output() const { return output_; }
+    int dependencies() { return dependency_.size(); }
     bool is_input_file() const { return is_input_file_; }
+    void dependency(Function* func) { dependency_.push_back(func); }
     void feature(Feature* feature);
     void next(File* next) { next_ = next; }
     void output(String* path) { output_ = path; }
@@ -79,6 +82,7 @@ private:
     File::Ptr next_;
     String::Ptr output_;
     bool is_input_file_;
+    std::vector<Function*> dependency_;
 };
 
 /* Directory iterator object */

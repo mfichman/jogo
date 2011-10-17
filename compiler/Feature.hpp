@@ -222,7 +222,7 @@ public:
     Feature* features() const { return features_; }
     Function* function(String* name) { return query(functions_, name); }
     Class* clazz(String* name) { return query(classes_, name); }
-    String* name() const { return name_; }
+    String* name() const { return name_; }    
     void feature(Feature* feature);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Module> Ptr; 

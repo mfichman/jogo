@@ -283,11 +283,12 @@ Feature* Parser::feature_list() {
 
 Feature* Parser::feature() {
     // Parses an attribute or function that is a member of a class.
+    LocationAnchor loc(this);
     if (token(1) == Token::LEFT_PARENS) {
         Function* func = function();
         if (func->name()->string() != "@init") {
             String* id = name("self");
-            Formal* self = new Formal(location(), id, env_->self_type());
+            Formal* self = new Formal(loc, id, env_->self_type());
             self->next(func->formals());
             func->formals(self);
         }
@@ -316,7 +317,7 @@ Attribute* Parser::attribute() {
         next();
         init = expression();
     }  else {
-        init = new Empty(location());
+        init = new Empty(loc);
     }
     expect(Token::SEPARATOR);
 
@@ -381,7 +382,7 @@ Type* Parser::type() {
     LocationAnchor loc(this);
     if (token() == Token::TYPEVAR) {
         String* id = name(value());
-        Type* type = new Type(location(), id, 0, env_);
+        Type* type = new Type(loc, id, 0, env_);
         next();
         return type;
     }
@@ -495,7 +496,7 @@ Statement* Parser::statement() {
     case Token::RETURN: {
         next();
         if (token() == Token::SEPARATOR) {
-            return new Return(loc, new Empty(location()));
+            return new Return(loc, new Empty(loc));
         } else {
             Expression::Ptr expr = expression();
             return new Return(loc, expr);
@@ -627,7 +628,7 @@ Assignment* Parser::assignment() {
         next();
         init = expression();
     } else {
-        init = new Empty(location());
+        init = new Empty(loc);
     }
     return new Assignment(loc, id, type, init);
 }
@@ -1069,7 +1070,7 @@ Expression* Parser::string() {
 
 Statement* Parser::conditional() {
     // Conditional statement: if expr block (else if expr block)? (else block)?
-    Location loc;
+    LocationAnchor loc(this);
     expect(Token::IF); 
     Expression::Ptr guard = expression();
     Statement::Ptr true_branch = block();
