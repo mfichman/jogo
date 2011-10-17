@@ -905,10 +905,6 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     // Select a slot for this attribute.
     feature->slot(slot_++);
 
-    if (feature->name()->string() == "read_buf") {
-            std::cout << std::endl;
-    }
-
     if (variable(feature->name())) {
         err_ << feature->location();
         err_ << "Duplicate definition of attribute '";

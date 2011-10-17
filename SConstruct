@@ -38,7 +38,7 @@ if env['PLATFORM'] == 'win32':
     env.Append(CFLAGS = '/DWINDOWS')
     env.Append(CFLAGS = '/Iruntime')
 else:
-    apollo = 'bin\apollo'
+    apollo = 'bin/apollo'
     bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.o')
     if 'release' == build_mode:
         env.Append(CXXFLAGS = '-O3')

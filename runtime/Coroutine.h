@@ -37,8 +37,10 @@ struct Coroutine {
     U64 _refcount; // 8
     Object function;  //16
     Int status; // 24
-    Int sp; // 32
-    Coroutine_Stack* current; // 40
+    Int stack_size; // 32
+    Int sp; // 40
+    Coroutine_Stack* current; // 48
+    Int padding;
     Coroutine_Stack stack;
 };
 

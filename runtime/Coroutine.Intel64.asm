@@ -20,9 +20,9 @@
 
 default rel
 
-%define RSP_OFFSET 32; Stack pointer
+%define RSP_OFFSET 40; Stack pointer
 %define STATUS_OFFSET 24
-%define CURRENT_OFFSET 40 
+%define CURRENT_OFFSET 48 
 
 %ifidn __OUTPUT_FORMAT__,macho64
 %macro  cglobal 1 

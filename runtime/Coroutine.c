@@ -35,7 +35,7 @@ Coroutine Coroutine__init(Object func) {
     // own stack.
     Int stack_index = COROUTINE_STACK_SIZE - 2 - 7; 
     // -2 is for the two return addresses that are initially on the stack
-    // -7 is for the initial values of RBP + caller regs
+    // -16 is for the initial values of RBP + caller regs
     
     Coroutine ret = calloc(sizeof(struct Coroutine), 1); 
     if (!ret) {
@@ -48,8 +48,7 @@ Coroutine Coroutine__init(Object func) {
     ret->_refcount = 1; 
     ret->function = func;
     ret->current = &ret->stack;
-
-
+    ret->stack_size = COROUTINE_STACK_SIZE;
 
     ret->sp = (Int)(ret->stack.stack + stack_index); // ESP = R6
     ret->stack.next = 0;
@@ -107,6 +106,9 @@ Ptr Coroutine__grow_stack() {
     if (!Coroutine__stack->next) {
         Coroutine__stack->next = calloc(sizeof(Coroutine_Stack), 1); 
         Coroutine__stack->next->next = 0;
+    }
+    if (Coroutine__current) {
+        Coroutine__current->stack_size += COROUTINE_STACK_SIZE;
     }
     Coroutine__stack = Coroutine__stack->next;
     return Coroutine__stack->stack+COROUTINE_STACK_SIZE-2;

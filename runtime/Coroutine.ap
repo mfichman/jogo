@@ -37,6 +37,10 @@ Coroutine < Object {
     # the running coroutine, and RUNNING if the coroutine is the active
     # coroutine.
 
+    stack_size immutable Int
+    # Returns the current stack size of the coroutine.  This value can grow
+    # over time.
+
     @init(start CoroutineFunc) native {
         # Initializes a new coroutine, but does not begin executing it.  The
         # coroutine will execute 'start' the first time it is run.

@@ -14,10 +14,11 @@ def check(test, expected, output)
         (1..79).each { putc '-' }        
         puts
         puts "FAILED TEST: #{test}"
-        (1..79).each { putc '-' }        
-        puts
+        (1..70).each { putc '-' }        
+        puts " Expected"
         puts "#{expected}"
-        (1..79).each { putc '-' }   
+        (1..72).each { putc '-' }   
+        print " Output";
         puts 
         puts "#{output}"
         puts $?
@@ -79,7 +80,7 @@ tests.each do |test|
         command = valgrind + " " + command;    
     end
     expected = File.open("#{test}.ap.out", "rb").read
-    output = `#{command}`
+    output = `#{command} 2>&1`
     check(test, expected, output)
     @total += 1
 end
@@ -93,7 +94,7 @@ tests.each do |test|
     end
     
     expected = File.open("#{test}.out", "rb").read
-    output = `ruby #{test}`
+    output = `ruby #{test} 2>&1`
     check(test, expected, output)
     @total += 1
 end
@@ -106,8 +107,8 @@ tests.each do |test|
     end
     expected = File.open("#{test}.out", "rb").read
     exe = test.sub(/.c$/, "");
-    output = `gcc -g #{test} -o ../build/#{exe} -L../lib -lapollo -I..`
-    output += `../build/#{exe}`
+    output = `gcc -g #{test} -o ../build/#{exe} -L../lib -lapollo -I.. 2>&1`
+    output += `../build/#{exe} 2>&1`
     check(test, expected, output)
     @total += 1
 end
