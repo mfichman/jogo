@@ -56,11 +56,6 @@ void Object__refcount_dec(Object self) {
 
 Ptr Object__dispatch(Object self, String id) {
     // Dispatch using the vtable to the correct method implementation.
-    return Object__dispatch2(self, id->data);
-}
-
-Ptr Object__dispatch2(Object self, Char* id) {
-    // Dispatch using the vtable to the correct method implementation.
     // FixMe: Investigate a more efficient way to do this; possibly using some
     // form of caching.  The method dispatch performance penalty is only
     // invoked when calling through an interface.
@@ -70,12 +65,12 @@ Ptr Object__dispatch2(Object self, Char* id) {
     U64 d = 0;
     U64 hash = 0;
     Char* c = 0;
-    for (c = id; *c; ++c) {
+    for (c = id->data; *c; ++c) {
         hash = ((hash * 0x01000193) ^ (*c)); 
     }
 
     d = jump1[hash % n];        
-    for (c = id; *c; ++c) {
+    for (c = id->data; *c; ++c) {
         d = ((d * 0x01000193) ^ (*c));
     }
     return jump2[d % n]; 

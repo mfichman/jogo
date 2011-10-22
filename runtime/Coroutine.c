@@ -22,6 +22,7 @@
 
 #include "Coroutine.h"
 #include "Object.h"
+#include "String.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -55,8 +56,9 @@ Coroutine Coroutine__init(Object func) {
 
     Object__refcount_inc(func);
     if (func) {
+        static struct String call_str = { String__vtable, 1, 5, "@call" };
         Int exit = (Int)Coroutine__exit;
-        Int call = (Int)Object__dispatch2(func, "@call");
+        Int call = (Int)Object__dispatch(func, &call_str);
         ret->stack.stack[COROUTINE_STACK_SIZE-1] = exit;
         ret->stack.stack[COROUTINE_STACK_SIZE-2] = call;
         ret->status = 0; // New coroutine status code 

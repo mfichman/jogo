@@ -278,6 +278,25 @@ void SemanticAnalyzer::operator()(Let* expression) {
     exit_scope();
 }
 
+void SemanticAnalyzer::operator()(Cast* expression) {
+    // Cast expression.  Converts an item of the type specified by 'expr to
+    // an item of the type specified by the cast type.
+    Expression::Ptr child = expression->child();
+    child(this);
+
+    Type::Ptr type = expression->type();
+    type(this);
+    
+    if (type->is_value()) {
+        err_ << type->location();
+        err_ << "Illegal cast to value type\n";
+        env_->error();
+    } else if (type->is_interface()) {
+        err_ << type->location();
+        err_ << "Illegal cast interface type\n";
+    }
+}
+
 void SemanticAnalyzer::operator()(Binary* expression) {
     // Checks primitive binary expressions.  These include basic logic
     // operations, which cannot be overloaded as methods.
@@ -293,14 +312,12 @@ void SemanticAnalyzer::operator()(Binary* expression) {
 
         if (!left->type()->is_boolifiable()) {
             err_ << left->location();
-            err_ << "Value types cannot be converted to 'Bool'";
-            err_ << "\n";
+            err_ << "Value types cannot be converted to 'Bool'\n";
             env_->error();
         }
         if (!right->type()->is_boolifiable()) {
             err_ << right->location();
-            err_ << "Value types cannot be converted to 'Bool'";
-            err_ << "\n";
+            err_ << "Value types cannot be converted to 'Bool'\n";
             env_->error();
         }
     } else {
@@ -469,7 +486,7 @@ void SemanticAnalyzer::operator()(Call* expression) {
     }
 
     // FIXME: Look up generics for function
-    check_args(expression->arguments(), func, receiver);
+    expression->arguments(args(expression->arguments(), func, receiver));
 }
 
 void SemanticAnalyzer::operator()(Construct* expression) {
@@ -507,39 +524,7 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         expression->file()->dependency(constr);
     }
 
-    // Check arguments types versus formal parameter types
-    Expression::Ptr arg = expression->arguments();
-    Formal::Ptr formal = constr ? constr->formals() : 0;
-    while (arg && formal) {
-        // Get the formal type.  If the type is a generic, then look up the
-        // actual type from the class' definition.
-        Type::Ptr ft = formal->type();
-        if (ft->is_generic()) {
-            ft = type->generic(ft->name());
-        }
-        Type::Ptr at = arg->type();
-        if (arg->type() == env_->self_type()) {
-            at = class_->type();
-        }
-
-        if (!at->subtype(ft)) {
-            err_ << arg->location();
-            err_ << "Argument does not conform to type '" << ft << "'\n";
-            env_->error();
-        }
-        arg = arg->next();
-        formal = formal->next();
-    } 
-    if (arg) {
-        err_ << expression->location();
-        err_ << "Too many arguments to constructor '" << type << "'\n";
-        env_->error();
-    }
-    if (formal) {
-        err_ << expression->location();
-        err_ << "Not enough arguments to constructor '" << type << "'\n";
-        env_->error();
-    }
+    expression->arguments(args(expression->arguments(), constr, type));  
 }
 
 void SemanticAnalyzer::operator()(Identifier* expression) {
@@ -722,7 +707,10 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         return;
     }
     
-    if (expr->declared_type()) {
+    Type::Ptr declared = expr->declared_type();
+    if (declared) {
+        variable(new Variable(id, 0, declared));
+
         // The variable was declared with an explicit type, but the variable
         // already exists.
         if (type) {
@@ -732,18 +720,32 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
             return;
         }
 
-        // The variable was declared with an explicit type, and the init
-        // does not conform to that type.
-        if (init->type() && !init->type()->subtype(expr->declared_type())) {
-            err_ << init->location();
-            err_ << "Expression does not conform to type '";
-            err_ << expr->declared_type() << "'\n";
-            env_->error();
+        // Initializer is of the 'Any' type, but the declared type is not.
+        // Insert a cast expression.
+        if (init->type()->is_any_type() && !declared->is_any_type()) {
+            expr->initializer(new Cast(init->location(), declared, init));
             return;
         }
 
-        variable(new Variable(id, 0, expr->declared_type()));
+        // The variable was declared with an explicit type, and the init
+        // does not conform to that type.
+        if (init->type() && !init->type()->subtype(declared)) {
+            err_ << init->location();
+            err_ << "Expression does not conform to type '";
+            err_ << declared << "'\n";
+            env_->error();
+            return;
+        }
     } else {
+        variable(new Variable(id, 0, init->type())); 
+
+        // Initializer is of the 'Any' type, but the variable type is not.
+        // Insert a cast expression.
+        if (init->type()->is_any_type() && !type->is_any_type()) {
+            expr->initializer(new Cast(init->location(), type, init));
+            return;
+        }
+
         // The variable was already declared, but the init type is not
         // compatible with the variable type.
         if (type && !init->type()->subtype(type)) {
@@ -753,7 +755,6 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
             env_->error();
             return;
         }
-        variable(new Variable(id, 0, init->type())); 
     }
 }
 
@@ -993,7 +994,9 @@ void SemanticAnalyzer::operator()(Closure* expression) {
         expression->clazz()->feature(attr); 
     }
 
-    expression->construct(new Construct(loc, type, args)); 
+    Construct::Ptr constr = new Construct(loc, type, args);
+    expression->construct(constr);
+    
 
     Type::Ptr ret = env_->void_type();
     Block::Ptr block = new Block(loc, 0, stmts);
@@ -1012,6 +1015,8 @@ void SemanticAnalyzer::operator()(Closure* expression) {
     class_ = save_class_;
     function_ = save_function_;
     save_scope_.swap(scope_);
+
+    constr(this);
 }
 
 void SemanticAnalyzer::operator()(Import* feature) {
@@ -1076,11 +1081,12 @@ void SemanticAnalyzer::operator()(Type* type) {
     }
 }
 
-void SemanticAnalyzer::check_args(Expression* args, Function* fn, Type* rec) {
+Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec) {
     // Check argument types versus formal parameter types
     String::Ptr id = fn->name();
-    Formal::Ptr formal = fn->formals();
+    Formal::Ptr formal = fn ? fn->formals() : 0;
     Expression::Ptr arg = args;
+    Expression::Ptr out;
 
     while (arg && formal) {
         // Get the formal type.  If the type is 'self', then the formal
@@ -1100,12 +1106,32 @@ void SemanticAnalyzer::check_args(Expression* args, Function* fn, Type* rec) {
         if (at->is_self()) {
             at = class_->type(); 
         }
-        if (!at->subtype(ft)) {
-            err_ << arg->location();
-            err_ << "Argument does not conform to type '" << ft << "'\n";
-            env_->error();
-        }
+    
+        // If the formal type is not 'Any' but the argument is of type 'Any',
+        // the automatically insert a cast.
+        if (at->is_any_type() && !ft->is_any_type()) {
+            if (out) {
+                out->next(new Cast(arg->location(), ft, arg));
+            } else {
+                out = new Cast(arg->location(), ft, arg); 
+            }
+        } else {
+            // Build the modified argument list (which may include cast 
+            // expressions that were auto-inserted by the compiler).
+            if (out) {
+                out->next(arg);
+            } else {
+                out = arg;
+            }
+            if (!at->subtype(ft)) {
+                err_ << arg->location();
+                err_ << "Argument does not conform to type '" << ft << "'\n";
+                env_->error();
+            }
+        } 
+        Expression::Ptr prev = arg;
         arg = arg->next();
+        prev->next(0);
         formal = formal->next();
     }
     if (arg) {
@@ -1118,6 +1144,8 @@ void SemanticAnalyzer::check_args(Expression* args, Function* fn, Type* rec) {
         err_ << "Not enough arguments to function '" << id << "'\n";
         env_->error();
     }
+
+    return out;    
 }
 
 Variable* SemanticAnalyzer::variable(String* name) {

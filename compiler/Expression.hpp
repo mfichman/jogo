@@ -184,9 +184,9 @@ public:
 
     String* operation() const { return operation_; }
     Expression* child() { return child_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     String::Ptr operation_;
     Expression::Ptr child_;
 };
@@ -258,10 +258,11 @@ public:
     }
 
     Expression* arguments() const { return arguments_; }
+    void arguments(Expression* args) { arguments_ = args; }
+    void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Construct> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Type::Ptr clazz_;
     Expression::Ptr arguments_;
 };
@@ -300,6 +301,7 @@ public:
     String* identifier() const { return identifier_; }
     Type* declared_type() { return declared_type_; }
     Expression* initializer() const { return initializer_; }
+    void initializer(Expression* expr) { initializer_ = expr; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Assignment> Ptr;
 
@@ -341,3 +343,21 @@ public:
     typedef Pointer<Empty> Ptr;
 };
 
+/* Cast expression */
+class Cast : public Expression {
+public:
+    Cast(Location loc, Type* type, Expression* expr) :
+        Expression(loc),
+        child_(expr) {
+        
+        Expression::type(type);
+    }
+
+    Expression* child() const { return child_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Cast> Ptr;
+
+private:
+    Expression::Ptr child_;
+};
+ 

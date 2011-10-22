@@ -93,3 +93,9 @@ Bool < Value {
 Byte < Value {
 }
 
+Any < Object {
+    # The 'Any' type is a container for any value or reference type.  For
+    # reference types, storing an object as an 'Any' just does type erasure.
+    # For value types, it also boxes the value type inside a reference type,
+    # so that it can be passed around by pointer.
+}

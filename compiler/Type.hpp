@@ -44,6 +44,7 @@ public:
     bool equals(Type* other) const;
     bool subtype(Type* other) const;
     bool is_primitive() const;
+    bool is_any_type() const;
     bool is_bool() const;
     bool is_int() const;
     bool is_float() const;

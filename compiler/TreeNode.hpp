@@ -54,6 +54,7 @@ public:
     virtual void operator()(FloatLiteral* expression) {}
     virtual void operator()(NilLiteral* expression) {}
     virtual void operator()(BooleanLiteral* expression) {}
+    virtual void operator()(Cast* expression) {}
     virtual void operator()(Binary* expression) {}
     virtual void operator()(Unary* expression) {}
     virtual void operator()(Call* expression) {}

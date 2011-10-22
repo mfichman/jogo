@@ -59,7 +59,7 @@ void BasicBlockGenerator::operator()(Class* feature) {
     }
     exit_scope();
     if (feature->is_object()) {
-        emit_vtable(feature);
+        dispatch_table(feature);
     }
     class_ = 0;
 }
@@ -79,7 +79,7 @@ void BasicBlockGenerator::operator()(StringLiteral* expr) {
     // Load a pointer to the string from the string table.  Strings must
     // always be loaded first, since they are specified by address.
     return_ = load(expr);
-    emit_refcount_inc(return_);
+    refcount_inc(return_);
 }
 
 void BasicBlockGenerator::operator()(NilLiteral* expr) {
@@ -100,6 +100,39 @@ void BasicBlockGenerator::operator()(BooleanLiteral* expr) {
     // Load the literal value with load-immediate
     return_ = load(expr);
 }
+
+void BasicBlockGenerator::operator()(Cast* expr) {
+    // Check to make sure that the vtable of 'arg' and 'type' match.  If they
+    // don't then return the nil pointer.
+    Operand arg = emit(expr->child());
+    Class::Ptr clazz = expr->type()->clazz();
+
+    Operand vtable1 = Operand::addr(arg.temp(), 0);
+    Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
+    return_ = temp_++;
+
+    BasicBlock::Ptr mismatch_block = basic_block();
+    BasicBlock::Ptr ok_block = basic_block();
+    BasicBlock::Ptr done_block = basic_block();
+
+    // Emit vtable pointer comparison
+    be(vtable1, vtable2, ok_block, mismatch_block);
+
+    // If the vtable pointers are not equal, set the register to zero
+    emit(mismatch_block);
+    String::Ptr zero = env_->integer("0");
+    Location loc;
+    block_->instr(MOV, return_, load(new IntegerLiteral(loc, zero)), 0);
+    jump(done_block);
+
+    // Otherwise, keep the same value in the result.
+    emit(ok_block);
+    block_->instr(MOV, return_, arg, 0);
+
+    emit(done_block);
+}
+
+
 
 void BasicBlockGenerator::operator()(Binary* expr) {
     // Emit the left and right exprs, then perform the operation on
@@ -163,7 +196,7 @@ void BasicBlockGenerator::operator()(Unary* expr) {
 void BasicBlockGenerator::operator()(Member* expr) {
     // A stand-alone member operator, which means that we indirectly call the
     // getter.
-    emit_call(expr->function(), expr->expression());
+    call(expr->function(), expr->expression());
 }
 
 void BasicBlockGenerator::operator()(Call* expr) {
@@ -173,12 +206,12 @@ void BasicBlockGenerator::operator()(Call* expr) {
         Type::Ptr type = expr->arguments()->type();
         String::Ptr id = expr->function()->name();
         if (id->string()[0] == '@' && type->is_primitive()) {
-            emit_operator(expr);
+            native_operator(expr);
             return; 
         }
     }
 
-    emit_call(expr->function(), expr->arguments());
+    call(expr->function(), expr->arguments());
 }
 
 void BasicBlockGenerator::operator()(Closure* expr) {
@@ -188,24 +221,31 @@ void BasicBlockGenerator::operator()(Closure* expr) {
 }
 
 void BasicBlockGenerator::operator()(Construct* expr) {
-    // Push objects in anticipation of the call instruction.  Arguments must
-    // be pushed in reverse order.
-    vector<Operand> args;
-    for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
-        args.push_back(emit(a));
-    }
-    for (int i = args.size()-1; i >= 0; i--) {
-        emit_push_arg(i, args[i]);
-    }
-
     // Look up the function by name in the current context.
     String::Ptr id = env_->name("@init");
     Class::Ptr clazz = expr->type()->clazz();
     Function::Ptr func = clazz->function(id);
 
+    // Push objects in anticipation of the call instruction.  Arguments must
+    // be pushed in reverse order.
+    vector<Operand> args;
+    Formal::Ptr formal = func->formals();
+    for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
+        Type::Ptr ft = formal->type();
+        if (a->type()->is_bool()) {
+            args.push_back(bool_expr(a));
+        } else {
+            args.push_back(emit(a));
+        }
+        formal = formal->next();
+    }
+    for (int i = args.size()-1; i >= 0; i--) {
+        push_arg(i, args[i]);
+    }
+
     // Insert a call expression, then pop the return value off the stack.
     call(func->label());
-    return_ = emit_pop_ret();
+    return_ = pop_ret();
     if (!expr->type()->is_value()) {
         object_temp_.push_back(return_);
     }
@@ -251,7 +291,7 @@ void BasicBlockGenerator::operator()(Block* statement) {
 void BasicBlockGenerator::operator()(Simple* statement) {
     Expression::Ptr expr = statement->expression();
     expr(this);
-    emit_free_temps();
+    free_temps();
 }
 
 void BasicBlockGenerator::operator()(Let* statement) {
@@ -260,7 +300,7 @@ void BasicBlockGenerator::operator()(Let* statement) {
     enter_scope();
     for (Expression::Ptr v = statement->variables(); v; v = v->next()) {
         emit(v);
-        emit_free_temps();
+        free_temps();
     } 
     emit(statement->block());
     exit_scope();
@@ -282,7 +322,7 @@ void BasicBlockGenerator::operator()(While* statement) {
     // Recursively emit the boolean guard expression.  
     invert_guard_ = false;
     Operand guard = emit(statement->guard(), body_block, done_block, false);
-    emit_free_temps();
+    free_temps();
     if (!block_->is_terminated()) {
         if (invert_guard_) {
             bnz(guard, done_block, body_block);
@@ -316,7 +356,7 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
     // branch.
     invert_guard_ = false;
     Operand guard = emit(statement->guard(), then_block, else_block, false);
-    emit_free_temps();
+    free_temps();
     if (!block_->is_terminated()) {
         if (invert_guard_) {
             bnz(guard, else_block, then_block);
@@ -353,7 +393,7 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
     if (dynamic_cast<Empty*>(init.pointer())) {
         return_ = env_->integer("0");
     } else if (init->type()->is_bool()) {
-        return_ = emit_bool_expr(init.pointer());
+        return_ = bool_expr(init.pointer());
     } else {
         return_ = emit(init);
     }
@@ -367,11 +407,11 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         // Assignment to a local var that has already been initialized once in
         // the current scope.
         if (!type->is_value()) {
-            emit_refcount_dec(var->operand());
+            refcount_dec(var->operand());
         }
         block_->instr(MOV, var->operand(), return_, 0);
         if (!type->is_value()) {
-            emit_refcount_inc(var->operand());
+            refcount_inc(var->operand());
         }
     } else if (attr) {
         // Assignment to an attribute within a class
@@ -379,19 +419,23 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         Operand addr = Operand::addr(self->operand().temp(), attr->slot());  
         Operand old = load(addr);
         if (!type->is_value() && !attr->is_weak()) {
-            emit_refcount_dec(old);
+            refcount_dec(old);
         } 
         store(addr, return_);
         if (!type->is_value() && !attr->is_weak()) {
-            emit_refcount_inc(return_);
+            refcount_inc(return_);
         }
     } else {
         // Assignment to a local var that has not yet been initialized in the
         // current scope.
-        Variable::Ptr var = new Variable(id, mov(return_), init->type());
+        Type::Ptr declared = expr->declared_type();
+        if (!declared) {
+            declared = init->type();
+        }
+        Variable::Ptr var = new Variable(id, mov(return_), declared);
         variable(var);
         if (!type->is_value()) {
-            emit_refcount_inc(var->operand());
+            refcount_inc(var->operand());
         }
     }
 }
@@ -403,7 +447,7 @@ void BasicBlockGenerator::operator()(Return* statement) {
         // and return it after cleanup.
         Operand ret;
         if (expr->type()->is_bool()) {
-            ret = emit_bool_expr(expr);
+            ret = bool_expr(expr);
         } else {
             ret = emit(expr);
         }
@@ -416,30 +460,30 @@ void BasicBlockGenerator::operator()(Return* statement) {
         // refcount is simply already initialized to 1.  This code isn't called
         // because a constructor doesn't actually have a 'return' for 'self'.
         if (!expr->type()->is_value()) {
-            emit_refcount_inc(ret);
+            refcount_inc(ret);
         }
     }
     scope_.back()->has_return(true);
-    emit_free_temps();
+    free_temps();
 }
 
 void BasicBlockGenerator::operator()(When* statement) {
     assert(!"Not implemented");
-    emit_free_temps();
+    free_temps();
 }
 
 void BasicBlockGenerator::operator()(Case* statement) {
     assert(!"Not implemented");
-    emit_free_temps();
+    free_temps();
 }
 
 void BasicBlockGenerator::operator()(Fork* statement) {
     assert(!"Not implemented");
-    emit_free_temps();
+    free_temps();
 }
 
 void BasicBlockGenerator::operator()(Yield* statament) {
-//    emit_free_temps();
+//    free_temps();
     call(env_->name("Coroutine__yield")); 
 }
 
@@ -486,13 +530,13 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // allocates the memory for the object using calloc so that all of the
     // fields are initialized to zero.
     if (feature->is_constructor()) {
-        emit_ctor_preamble(feature);
+        ctor_preamble(feature);
     }
 
     // Generate code for the body of the function.
     emit(feature->block());
     if (feature->type()->is_void() || function_->is_constructor()) {
-        emit_return();
+        func_return();
     }
     exit_scope();
 }
@@ -509,17 +553,19 @@ void BasicBlockGenerator::operator()(Type* feature) {
     // Pass
 }
 
-void BasicBlockGenerator::emit_call(Function* func, Expression* args) {
+void BasicBlockGenerator::call(Function* func, Expression* args) {
     // Push objects in anticipation of the call instruction.  Arguments must be
     // pushed in reverse order.
-
     vector<Operand> val;
+    Formal::Ptr formal = func->formals();
     for (Expression::Ptr a = args; a; a = a->next()) {
+        Type::Ptr ft = formal->type();
         if (a->type()->is_bool()) {
-            val.push_back(emit_bool_expr(a));
+            val.push_back(bool_expr(a));
         } else {
             val.push_back(emit(a));
         }
+        formal = formal->next();
     }
 
     Operand fnptr;
@@ -528,14 +574,14 @@ void BasicBlockGenerator::emit_call(Function* func, Expression* args) {
         // receiver and function name as arguments.
         
         String::Ptr name = env_->string(func->name()->string());
-        emit_push_arg(1, load(new StringLiteral(Location(), name)));
-        emit_push_arg(0, val[0]); // Receiver
+        push_arg(1, load(new StringLiteral(Location(), name)));
+        push_arg(0, val[0]); // Receiver
         call(env_->name("Object__dispatch"));
-        fnptr = emit_pop_ret();
+        fnptr = pop_ret();
     } 
 
     for (int i = val.size()-1; i >= 0; i--) {
-        emit_push_arg(i, val[i]);
+        push_arg(i, val[i]);
     }
 
     if (func->is_virtual()) {
@@ -548,7 +594,7 @@ void BasicBlockGenerator::emit_call(Function* func, Expression* args) {
     }
 
     if (!func->type()->is_void()) {
-        return_ = emit_pop_ret();
+        return_ = pop_ret();
         if (!func->type()->is_value()) {
             object_temp_.push_back(return_);
         }
@@ -557,7 +603,7 @@ void BasicBlockGenerator::emit_call(Function* func, Expression* args) {
     }
 }
 
-void BasicBlockGenerator::emit_operator(Call* expr) {
+void BasicBlockGenerator::native_operator(Call* expr) {
     // FixMe: Replace this with a mini-parser that can read three-address-code
     // and output it as an inline function.
     string id = expr->function()->name()->string();
@@ -565,7 +611,7 @@ void BasicBlockGenerator::emit_operator(Call* expr) {
     vector<Operand> args;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         if (a->type()->is_bool()) {
-            args.push_back(emit_bool_expr(a));
+            args.push_back(bool_expr(a));
         } else {
             args.push_back(emit(a));
         }
@@ -655,7 +701,7 @@ void BasicBlockGenerator::exit_scope() {
 
     // Remove variables in reverse order!
     for (int i = scope->variables()-1; i >= 0; i--) { 
-        emit_cleanup(scope->variable(i));
+        scope_cleanup(scope->variable(i));
     }
 
     if (!scope->has_return()) {
@@ -668,15 +714,15 @@ void BasicBlockGenerator::exit_scope() {
     for (int j = scope_.size()-2; j > 1; j--) {
         Scope::Ptr s = scope_[j];
         for (int i = s->variables()-1; i >= 0; i--) {
-            emit_cleanup(s->variable(i));
+            scope_cleanup(s->variable(i));
         }
     }
 
-    emit_return();
+    func_return();
     scope_.pop_back();
 }
 
-Operand BasicBlockGenerator::emit_bool_expr(Expression* expression) {
+Operand BasicBlockGenerator::bool_expr(Expression* expression) {
     // Emits a boolean expression with short-circuiting, and stores the result
     // in a fixed operand.  Note:  This breaks SSA form, because a value gets
     // assigned different values on different branches.
@@ -693,7 +739,7 @@ Operand BasicBlockGenerator::emit_bool_expr(Expression* expression) {
     // Recursively emit the boolean guard expression.
     invert_guard_ = false;
     Operand guard = emit(expression, then_block, else_block, false);
-    emit_free_temps();
+    free_temps();
     if (!block_->is_terminated()) {
         if (invert_guard_) {
             bnz(guard, else_block, then_block);
@@ -721,7 +767,7 @@ Operand BasicBlockGenerator::emit_bool_expr(Expression* expression) {
     return return_;
 }
 
-void BasicBlockGenerator::emit_cleanup(Variable* var) {
+void BasicBlockGenerator::scope_cleanup(Variable* var) {
     // Emits the code to clean up the stack when exiting block.  This includes 
     // decrementing reference counts, and calling destructors for value types.
     Type::Ptr type = var->type();
@@ -733,12 +779,12 @@ void BasicBlockGenerator::emit_cleanup(Variable* var) {
         } else {
             // Emit a branch to check the variable's reference count and
             // free it if necessary.
-            emit_refcount_dec(var->operand());               
+            refcount_dec(var->operand());               
         }
     }
 }
 
-void BasicBlockGenerator::emit_return() {
+void BasicBlockGenerator::func_return() {
     // Emit an actual return.  Emit code to return the value saved in the var
     // '_ret' if the variable has been set.
     Operand retval = scope_.back()->return_val();
@@ -762,13 +808,13 @@ void BasicBlockGenerator::emit_return() {
     // object, and then call free() to release memory if the object was
     // dynamically allocated.
     if (function_->is_destructor()) {
-        emit_dtor_epilog(function_);
+        dtor_epilog(function_);
     }
     
     ret();
 }
 
-void BasicBlockGenerator::emit_refcount_inc(Operand var) {
+void BasicBlockGenerator::refcount_inc(Operand var) {
     // Emit code to increment the reference count for the object specified
     // by 'temp'
     int temp = var.temp();
@@ -783,7 +829,7 @@ void BasicBlockGenerator::emit_refcount_inc(Operand var) {
     call(env_->name("Object__refcount_inc"));
 }
 
-void BasicBlockGenerator::emit_refcount_dec(Operand var) {
+void BasicBlockGenerator::refcount_dec(Operand var) {
     // Emit code to decrement the reference count for the object specified
     // by 'temp'
     int temp = var.temp();
@@ -798,7 +844,7 @@ void BasicBlockGenerator::emit_refcount_dec(Operand var) {
     call(env_->name("Object__refcount_dec"));
 }
 
-void BasicBlockGenerator::emit_push_arg(int i, Operand op) {
+void BasicBlockGenerator::push_arg(int i, Operand op) {
     if (i >= machine_->arg_regs()) {
         // Argument is pushed on the stack
         push(op);
@@ -814,7 +860,7 @@ void BasicBlockGenerator::emit_push_arg(int i, Operand op) {
     }        
 }
 
-Operand BasicBlockGenerator::emit_pop_ret() {
+Operand BasicBlockGenerator::pop_ret() {
     if (0 >= machine_->return_regs()) {
         return pop();
     } else {
@@ -838,7 +884,7 @@ struct SortJumpBuckets {
     }
 };
 
-void BasicBlockGenerator::emit_vtable(Class* feature) {
+void BasicBlockGenerator::dispatch_table(Class* feature) {
     // Generate the Pearson perfect hash that will be used for vtable lookups.
     // FixMe: This is extremely haggard, because I couldn't find an algorithm
     // for generating the Pearson hash permutation algorithm.  Supposedly,
@@ -944,7 +990,7 @@ void BasicBlockGenerator::calculate_size(Class* feature) {
     feature->size(size);
 }
 
-void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
+void BasicBlockGenerator::ctor_preamble(Function* feature) {
     // Emits the memory alloc/vtable setup for the class.  FIXME: Eventually,
     // move to a prototype & copy type approach for initializing variables
     // FIXME: Run variable initializers here
@@ -955,13 +1001,13 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
     if (class_->is_object()) {
         String::Ptr one = env_->integer("1");
         String::Ptr size = env_->integer(stringify(class_->size()));
-        emit_push_arg(1, load(new IntegerLiteral(Location(), one)));
-        emit_push_arg(0, load(new IntegerLiteral(Location(), size)));
+        push_arg(1, load(new IntegerLiteral(Location(), one)));
+        push_arg(0, load(new IntegerLiteral(Location(), size)));
         call(env_->name("calloc"));        
  
         // Obtain a pointer to the 'self' object, and store it in the 'self'
         // variable.
-        self = emit_pop_ret(); 
+        self = pop_ret(); 
         variable(new Variable(env_->name("self"), self, 0)); 
        
         // Initialize the vtable pointer
@@ -994,14 +1040,14 @@ void BasicBlockGenerator::emit_ctor_preamble(Function* feature) {
             Operand addr = Operand::addr(self.temp(), attr->slot());
             store(addr, value);
             if (!init->type()->is_value()) {
-                emit_refcount_inc(value);
+                refcount_inc(value);
             }
-            emit_free_temps();
+            free_temps();
         }
     }
 }
 
-void BasicBlockGenerator::emit_dtor_epilog(Function* feature) {
+void BasicBlockGenerator::dtor_epilog(Function* feature) {
     // Free all of the attributes, and call destructors.
     std::vector<Attribute::Ptr> attrs;
     for (Feature::Ptr f = class_->features(); f; f = f->next()) {
@@ -1016,20 +1062,20 @@ void BasicBlockGenerator::emit_dtor_epilog(Function* feature) {
     for (int i = attrs.size()-1; i >= 0; i--) {
         Operand self = variable(env_->name("self"))->operand();
         Operand val = load(Operand::addr(self.temp(), attrs[i]->slot()));
-        emit_refcount_dec(val);
+        refcount_dec(val);
     }
 
     if (class_->is_object()) {
-        emit_push_arg(0, variable(env_->name("self"))->operand());
+        push_arg(0, variable(env_->name("self"))->operand());
         call(env_->name("free"));
     }
 }
 
-void BasicBlockGenerator::emit_free_temps() {
+void BasicBlockGenerator::free_temps() {
     // Free all object temporaries that were used to evaluate the expression by
     // decrementing their refcount.
     for (int i = 0; i < object_temp_.size(); i++) {
-        emit_refcount_dec(object_temp_[i]);
+        refcount_dec(object_temp_[i]);
     }
     object_temp_.clear();
 }

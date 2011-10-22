@@ -28,6 +28,7 @@ class Expression;
 class StringLiteral;
 class NilLiteral;
 class IntegerLiteral;
+class Cast;
 class FloatLiteral;
 class BooleanLiteral;
 class Member;

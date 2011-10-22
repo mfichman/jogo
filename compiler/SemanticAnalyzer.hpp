@@ -53,6 +53,7 @@ private:
     void operator()(Member* expression);
     void operator()(Identifier* expression);
     void operator()(Empty* expression);
+    void operator()(Cast* expression);
     void operator()(Block* statement);
     void operator()(Simple* statement);
     void operator()(Let* let);
@@ -74,10 +75,7 @@ private:
     void variable(Variable* var);
     void enter_scope();
     void exit_scope();
-    void check_args(Expression* expr, Function* func, Type* receiver);
-    Function* check_call(Identifier* ident);
-    Function* check_call(Member* member);
-    Function* check_call(Expression* expr);
+    Expression::Ptr args(Expression* expr, Function* func, Type* receiver);
     void gen_mutator(Attribute* feature);
     void gen_accessor(Attribute* feature);
     void gen_constructor();
