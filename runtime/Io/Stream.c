@@ -141,12 +141,6 @@ String Io_Stream_scan(Io_Stream self, String delim) {
         // Loop until we find a delimiter somewhere in the input stream
         Char next = Io_Stream_get(self);
         Char* c = 0;
-        for (c = delim->data; *c; ++c) {
-            if (*c == next) {
-                ret->data[ret->length] = '\0';
-                return ret;
-            }
-        }
         // Resize the string if necessary
         if (ret->length >= length) {
             String exp = 0;
@@ -166,6 +160,12 @@ String Io_Stream_scan(Io_Stream self, String delim) {
             for (i = 0; i < ret->length; i++) {
                 *c++ = ret->data[i];
             } 
+        }
+        for (c = delim->data; *c; ++c) {
+            if (*c == next) {
+                ret->data[ret->length] = '\0';
+                return ret;
+            }
         }
         // Append a new character
         ret->data[ret->length++] = next;

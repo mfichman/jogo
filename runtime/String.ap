@@ -31,7 +31,7 @@ String < Object {
         # Concatenates this string with 'string'.
     }
 
-    @equal(string String) native String {
+    @equal(string String) native Bool {
         # Returns true if this string is equal to 'string'.
     }
 
