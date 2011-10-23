@@ -719,6 +719,9 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
             env_->error();
             return;
         }
+        if (!init->type()) {
+            return; 
+        }
 
         // Initializer is of the 'Any' type, but the declared type is not.
         // Insert a cast expression.
@@ -729,7 +732,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
 
         // The variable was declared with an explicit type, and the init
         // does not conform to that type.
-        if (init->type() && !init->type()->subtype(declared)) {
+        if (!init->type()->subtype(declared)) {
             err_ << init->location();
             err_ << "Expression does not conform to type '";
             err_ << declared << "'\n";
@@ -1087,6 +1090,9 @@ Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec
     Formal::Ptr formal = fn ? fn->formals() : 0;
     Expression::Ptr arg = args;
     Expression::Ptr out;
+    if (arg) {
+        arg->last(0);
+    }
 
     while (arg && formal) {
         // Get the formal type.  If the type is 'self', then the formal
@@ -1111,7 +1117,8 @@ Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec
         // the automatically insert a cast.
         if (at->is_any_type() && !ft->is_any_type()) {
             if (out) {
-                out->next(new Cast(arg->location(), ft, arg));
+                Expression* expr = new Cast(arg->location(), ft, arg);
+                out = append(out, expr);
             } else {
                 out = new Cast(arg->location(), ft, arg); 
             }
@@ -1119,7 +1126,7 @@ Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec
             // Build the modified argument list (which may include cast 
             // expressions that were auto-inserted by the compiler).
             if (out) {
-                out->next(arg);
+                out = append(out, arg.pointer());
             } else {
                 out = arg;
             }
