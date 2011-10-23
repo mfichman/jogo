@@ -641,6 +641,7 @@ void SemanticAnalyzer::operator()(While* statement) {
         env_->error();
     }
     block(this);
+    return_ = 0;
 }
 
 void SemanticAnalyzer::operator()(Conditional* statement) {
