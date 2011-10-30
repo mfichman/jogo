@@ -1,0 +1,26 @@
+
+
+TestInterface < Interface {
+}
+
+TestUnion = String | Int
+TestUnion2 = String | TestInterface
+
+
+function(bool Bool) {
+
+}
+
+main() Int {
+
+    int1 TestInterface
+    test1 TestUnion = true
+    test2 TestUnion = int1
+    
+    bool Bool = test1
+    int2 TestInterface = test1
+
+    function(test1)
+
+    ret 0
+}

@@ -227,6 +227,28 @@ void TreePrinter::operator()(Let* expression) {
     indent_level_--;
 }
 
+void TreePrinter::operator()(Cast* expression) {
+    indent_level_++;
+    Expression::Ptr child = expression->child();
+    out_ << "Cast\n";
+    print_tabs(); out_ << "child: ";
+    child(this);
+    print_tabs(); out_ << "type: ";
+    out_ << expression->type() << "\n";
+    indent_level_--;
+}
+
+void TreePrinter::operator()(Box* expression) {
+    indent_level_++;
+    Expression::Ptr child = expression->child();
+    out_ << "Box\n";
+    print_tabs(); out_ << "child: ";
+    child(this);
+    print_tabs(); out_ << "type: ";
+    out_ << expression->type() << "\n";
+    indent_level_--;
+}
+
 void TreePrinter::operator()(Unary* expression) {
     indent_level_++;
     Expression::Ptr child = expression->child();

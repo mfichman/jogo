@@ -263,10 +263,20 @@ void Lexer::operator_or_typevar() {
     switch (char_) {
     case ',': read(); token(Token::COMMA); break;
     case '.': read(); token(Token::DOT); break;
-    case '*': read(); token(Token::MUL); break;
     case '/': read(); token(Token::DIV); break;
     case '%': read(); token(Token::MOD); break;
-    case '^': read(); token(Token::POW); break;
+    case '^': read(); token(Token::XORB); break;
+    case '|': read(); token(Token::ORB); break;
+    case '&': read(); token(Token::ANDB); break;
+    case '*': 
+        read(); 
+        if (char_ == '*') {
+            read();
+            token(Token::POW);
+        } else {
+            token(Token::MUL);
+        } 
+        break;
     case '[': read(); token(Token::LEFT_BRACKET); break;
     case ']': 
         ignore_newline_ = false;

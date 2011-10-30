@@ -57,6 +57,7 @@ private:
     void operator()(Identifier* expression);
     void operator()(Empty* expression);
     void operator()(Cast* expression);
+    void operator()(Box* expression);
     void operator()(Block* statement);
     void operator()(Simple* statement);
     void operator()(Let* let);
@@ -241,7 +242,7 @@ private:
     void dispatch_table(Class* clazz);
     void func_return();
     void push_arg(int i, Operand arg);
-    void ctor_preamble(Function* func);
+    void ctor_preamble(Class* clazz);
     void dtor_epilog(Function* func);
     void free_temps();
     void calculate_size(Class* clazz);

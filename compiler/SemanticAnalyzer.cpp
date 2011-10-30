@@ -132,6 +132,15 @@ void SemanticAnalyzer::operator()(Class* feature) {
         gen_constructor(); 
     }
 
+    // Check alternatives to make sure there are no interface types.
+    for (Type::Ptr alt = feature->alternates(); alt; alt = alt->next()) {
+        if (alt->clazz() && alt->is_interface()) {
+            err_ << alt->location();
+            err_ << "Interface cannot be used as an alternate\n";
+            env_->error(); 
+        }
+    }
+
     // Check interface/struct/object baseclass and make sure that 
     // disallowed things aren't included.
     for (Type::Ptr m = feature->mixins(); m; m = m->next()) {
@@ -276,6 +285,18 @@ void SemanticAnalyzer::operator()(Let* expression) {
     }
     block(this);
     exit_scope();
+}
+
+void SemanticAnalyzer::operator()(Box* expression) {
+    // Box expression
+    Expression::Ptr child = expression->child();
+    child(this);
+
+    if (child->type() != expression->type()) {
+        err_ << expression->location();
+        err_ << "Box type does not match expression type\n";
+        env_->error();
+    }
 }
 
 void SemanticAnalyzer::operator()(Cast* expression) {
@@ -724,13 +745,6 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
             return; 
         }
 
-        // Initializer is of the 'Any' type, but the declared type is not.
-        // Insert a cast expression.
-        if (init->type()->is_any_type() && !declared->is_any_type()) {
-            expr->initializer(new Cast(init->location(), declared, init));
-            return;
-        }
-
         // The variable was declared with an explicit type, and the init
         // does not conform to that type.
         if (!init->type()->subtype(declared)) {
@@ -740,16 +754,16 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
             env_->error();
             return;
         }
-    } else {
-        variable(new Variable(id, 0, init->type())); 
 
-        // Initializer is of the 'Any' type, but the variable type is not.
-        // Insert a cast expression.
-        if (init->type()->is_any_type() && !type->is_any_type()) {
-            expr->initializer(new Cast(init->location(), type, init));
-            return;
+        // Initializer is of the 'Any' type or an alternate type, but the
+        // declared type is not equal.  Insert a cast expression.
+        if (init->type()->is_alt_type() && !declared->equals(init->type())) {
+            expr->initializer(new Cast(init->location(), declared, init));
+        } else if (init->type()->is_value() && declared->is_alt_type()) {
+            expr->initializer(new Box(init->location(), init->type(), init));
         }
 
+    } else {
         // The variable was already declared, but the init type is not
         // compatible with the variable type.
         if (type && !init->type()->subtype(type)) {
@@ -758,6 +772,19 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
             err_ << type << "' in assignment of '" << id << "'\n";
             env_->error();
             return;
+        }
+
+        // Initializer is of the 'Any' type, but the variable type is not.
+        // Insert a cast expression.
+        if (type) {
+            Type::Ptr it = init->type();
+            if (it->is_alt_type() && !type->equals(init->type())) {
+                expr->initializer(new Cast(init->location(), type, init));
+            } else if (it->is_value() && type->is_alt_type()) {
+                expr->initializer(new Box(init->location(), it, init));
+            }
+        } else {
+            variable(new Variable(id, 0, init->type())); 
         }
     }
 }
@@ -1114,29 +1141,26 @@ Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec
             at = class_->type(); 
         }
     
+        // Build the modified argument list (which may include cast 
+        // expressions that were auto-inserted by the compiler).
+        if (!at->subtype(ft)) {
+            err_ << arg->location();
+            err_ << "Argument does not conform to type '" << ft << "'\n";
+            env_->error();
+        }
+
         // If the formal type is not 'Any' but the argument is of type 'Any',
-        // the automatically insert a cast.
-        if (at->is_any_type() && !ft->is_any_type()) {
-            if (out) {
-                Expression* expr = new Cast(arg->location(), ft, arg);
-                out = append(out, expr);
-            } else {
-                out = new Cast(arg->location(), ft, arg); 
-            }
+        // the automatically insert a cast.  Cast also unboxes primitives and
+        // value types if necessary.
+        Expression::Ptr actual;
+        if (at->is_alt_type() && !ft->equals(at)) {
+            actual = new Cast(arg->location(), ft, arg);
+        } else if (at->is_value() && ft->is_alt_type()) {
+            actual = new Box(arg->location(), at, arg); 
         } else {
-            // Build the modified argument list (which may include cast 
-            // expressions that were auto-inserted by the compiler).
-            if (out) {
-                out = append(out, arg.pointer());
-            } else {
-                out = arg;
-            }
-            if (!at->subtype(ft)) {
-                err_ << arg->location();
-                err_ << "Argument does not conform to type '" << ft << "'\n";
-                env_->error();
-            }
-        } 
+            actual = arg;
+        }
+        out = append(out, actual.pointer());
         Expression::Ptr prev = arg;
         arg = arg->next();
         prev->next(0);

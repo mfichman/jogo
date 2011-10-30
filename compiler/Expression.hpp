@@ -360,4 +360,21 @@ public:
 private:
     Expression::Ptr child_;
 };
+
+/* Boxes a primitive */
+class Box : public Expression {
+public:
+    Box(Location loc, Type* type, Expression* expr) :
+        Expression(loc),
+        child_(expr) {
+        
+        Expression::type(type);
+    }
+
+    Expression* child() const { return child_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    
+private:
+    Expression::Ptr child_;
+};
  

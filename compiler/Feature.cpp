@@ -64,6 +64,16 @@ Class::Class(Location loc, Type* t, Type* mixins, String* cmt, Feature* f) :
     }
 }
 
+Class::Class(Location loc, Type* type, Type* alt) :
+    Feature(loc),
+    type_(type),
+    alternates_(alt),
+    is_object_(true),
+    is_value_(false),
+    is_interface_(false),
+    size_(0) {
+}
+
 void Class::jump1(int index, int d) {
     if (index >= jump1_.size()) {
         jump1_.resize(index+1);
@@ -115,7 +125,26 @@ bool Class::subtype(Class* other) const {
     if (i != subtype_.end()) {
         return i->second;
     }
-    if (!other->is_interface()) {
+
+    // If 'this' is a union type, then it will be a subtype of 'other' if
+    // 'other' is listed as an alternate.  Likewise, 'this' will be a subtype
+    // of 'other' if 'other' is an alternate and 'this' is listed as an
+    // alternate of 'other'.
+    if (alternates()) {
+        for (Type::Ptr alt = alternates(); alt; alt = alt->next()) {
+            if (alt->clazz() == other) {
+                return true;
+            }  
+        }
+        return false;
+    } else if (other->alternates()) {
+        for (Type::Ptr alt = other->alternates(); alt; alt = alt->next()) {
+            if (alt->clazz() == this) {
+                return true;
+            }
+        }
+        return false;
+    } else if (!other->is_interface()) {
         return this == other; 
     }
 

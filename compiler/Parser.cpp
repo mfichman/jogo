@@ -211,7 +211,34 @@ Class* Parser::clazz() {
     // Read in the name of the class, and any generic parameters
     String::Ptr id = scope(); 
     Generic::Ptr generics;
-    if (token() == Token::LEFT_BRACKET) {
+
+    std::string qn = module_->name()->string();
+    if (qn.empty()) {
+        qn = id->string();
+    } else {
+        qn += "::" + id->string();
+    }
+
+    if (token() == Token::ASSIGN) {
+        // Parse a union declaration, e.g. type = type | type | type
+        next();
+        Type::Ptr alt;
+        while (token() == Token::TYPE) {
+            alt = append(alt, Parser::type()); 
+            if (token() == Token::ORB) {
+                next(); 
+            } else {
+                break;
+            }
+        } 
+        if (!alt) {
+            err_ << location() << "Expected a type name, not '";
+            err_ << token() << "'\n";
+            error();
+        }
+        return new Class(loc, new Type(loc, name(qn), 0, env_), alt);
+    } else if (token() == Token::LEFT_BRACKET) {
+        // Parse generic type parameters
         next();
         while (token() == Token::TYPEVAR) {
             LocationAnchor loc(this);
@@ -224,13 +251,12 @@ Class* Parser::clazz() {
                 break;
             }
         }
+        if (!generics) {
+            err_ << location() << "Expected a generic type, not '";
+            err_ << token() << "'\n";
+            error();
+        }
         expect(Token::RIGHT_BRACKET);
-    }
-    std::string qn = module_->name()->string();
-    if (qn.empty()) {
-        qn = id->string();
-    } else {
-        qn += "::" + id->string();
     }
     Type::Ptr type = new Type(loc, name(qn), generics, env_);
     

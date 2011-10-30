@@ -19,8 +19,7 @@
 # SOFTWARE.
 
 Int < Value {
-#    @init(float Float) native
-    @init(str String) native
+    @init() native
     @add(other Int) native Int
     @sub(other Int) native Int
     @mul(other Int) native Int
@@ -52,8 +51,7 @@ Int < Value {
 }
 
 Float < Value {
-#    @init(int Int) native
-    @init(str String) native
+    @init() native
     @add(other Float) native Float
     @sub(other Float) native Float
     @mul(other Float) native Float
@@ -80,7 +78,7 @@ Float < Value {
 }
 
 Char < Value {
-    @init(str String) native
+    @init() native
     @equal(other Char) native Bool
     @less(other Char) native Bool
     str?() native String

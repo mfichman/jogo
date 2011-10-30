@@ -29,6 +29,7 @@ class StringLiteral;
 class NilLiteral;
 class IntegerLiteral;
 class Cast;
+class Box;
 class FloatLiteral;
 class BooleanLiteral;
 class Member;

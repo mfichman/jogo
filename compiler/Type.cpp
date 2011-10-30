@@ -97,7 +97,7 @@ bool Type::equals(Type* other) const {
 }
 
 bool Type::subtype(Type* other) const {
-    if (other->is_any_type()) {
+    if (other->is_any_type() || is_any_type()) {
         return true;
     }
     if (is_no_type()) {
@@ -135,6 +135,10 @@ bool Type::is_nil_type() const {
 
 bool Type::is_any_type() const {
     return this->equals(environment_->any_type());
+}
+
+bool Type::is_alt_type() const {
+    return is_any_type() || (clazz() && clazz()->alternates());
 }
 
 bool Type::is_generic() const {

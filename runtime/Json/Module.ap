@@ -21,7 +21,7 @@
 Value = String | Int | Bool | Float | Array[Value] | Hash[String,Value]
 
 read(stream Io::Stream) Hash[String,Value] {
-    ret new Parser 
+    ret nil
 }
 
 write(stream Io::Stream, hash Hash[String,Value]) {

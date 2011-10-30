@@ -101,10 +101,42 @@ void BasicBlockGenerator::operator()(BooleanLiteral* expr) {
     return_ = load(expr);
 }
 
+void BasicBlockGenerator::operator()(Box* expr) {
+    // Boxes a value type into an object.
+    Operand arg = emit(expr->child()); 
+    assert(expr->type()->is_primitive() && "Not implemented for values");
+
+    Class::Ptr clazz = expr->type()->clazz();
+    String::Ptr one = env_->integer("1");
+    String::Ptr size = env_->integer(stringify(clazz->size()));
+    push_arg(1, load(new IntegerLiteral(Location(), one)));
+    push_arg(0, load(new IntegerLiteral(Location(), size)));
+    call(env_->name("calloc"));        
+
+    return_ = pop_ret();
+    object_temp_.push_back(return_);
+
+    // Initialize the vtable pointer
+    Operand vtable = Operand::addr(return_.temp(), 0);
+    Operand label = load(env_->name(clazz->label()->string()+"__vtable"));
+    store(vtable, label);
+    
+    // Make sure that the refcount starts out at 1, otherwise the object may
+    // be freed before the end of the constructor.
+    Operand refcount = Operand::addr(return_.temp(), 1);
+    store(refcount, new IntegerLiteral(Location(), one));
+
+    assert(!"not implemented");
+}
+
 void BasicBlockGenerator::operator()(Cast* expr) {
     // Check to make sure that the vtable of 'arg' and 'type' match.  If they
     // don't then return the nil pointer.
     Operand arg = emit(expr->child());
+    if (expr->type()->is_any_type()) {
+        return_ = arg;
+        return;
+    }
     Class::Ptr clazz = expr->type()->clazz();
 
     Operand vtable1 = Operand::addr(arg.temp(), 0);
@@ -530,7 +562,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // allocates the memory for the object using calloc so that all of the
     // fields are initialized to zero.
     if (feature->is_constructor()) {
-        ctor_preamble(feature);
+        ctor_preamble(class_);
     }
 
     // Generate code for the body of the function.
@@ -990,17 +1022,15 @@ void BasicBlockGenerator::calculate_size(Class* feature) {
     feature->size(size);
 }
 
-void BasicBlockGenerator::ctor_preamble(Function* feature) {
-    // Emits the memory alloc/vtable setup for the class.  FIXME: Eventually,
-    // move to a prototype & copy type approach for initializing variables
-    // FIXME: Run variable initializers here
+void BasicBlockGenerator::ctor_preamble(Class* clazz) {
+    // Emits the memory alloc/vtable setup for the class.
 
     // Allocate the memory for the new object by calling calloc with the size
     // of the object.
     Operand self;
-    if (class_->is_object()) {
+    if (clazz->is_object()) {
         String::Ptr one = env_->integer("1");
-        String::Ptr size = env_->integer(stringify(class_->size()));
+        String::Ptr size = env_->integer(stringify(clazz->size()));
         push_arg(1, load(new IntegerLiteral(Location(), one)));
         push_arg(0, load(new IntegerLiteral(Location(), size)));
         call(env_->name("calloc"));        
@@ -1012,7 +1042,7 @@ void BasicBlockGenerator::ctor_preamble(Function* feature) {
        
         // Initialize the vtable pointer
         Operand vtable = Operand::addr(self.temp(), 0);
-        Operand label = load(env_->name(class_->label()->string()+"__vtable"));
+        Operand label = load(env_->name(clazz->label()->string()+"__vtable"));
         store(vtable, label);
         
         // Make sure that the refcount starts out at 1, otherwise the object may
@@ -1027,7 +1057,7 @@ void BasicBlockGenerator::ctor_preamble(Function* feature) {
     }
 
     // Emit initializer code for initialized attributes
-    for (Feature::Ptr f = class_->features(); f; f = f->next()) {
+    for (Feature::Ptr f = clazz->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             Expression::Ptr init = attr->initializer();
             if (!init) {
@@ -1041,6 +1071,8 @@ void BasicBlockGenerator::ctor_preamble(Function* feature) {
             store(addr, value);
             if (!init->type()->is_value()) {
                 refcount_inc(value);
+            } else if (!init->type()->is_primitive()) {
+                assert("Not implemented");
             }
             free_temps();
         }

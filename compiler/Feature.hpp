@@ -168,11 +168,13 @@ private:
 class Class : public Feature {
 public:
     Class(Location loc, Type* type, Type* mixins, String* cmt, Feature* feat);
+    Class(Location loc, Type* type, Type* alt);
     Feature* features() const { return features_; }    
     Attribute* attribute(String* name) const;
     Function* function(String* name) const;
     String* comment() const { return comment_; }
     Type* type() const { return type_; }
+    Type* alternates() const { return alternates_; }
     Type* mixins() const { return mixins_; }
     String* name() const { return type_->name(); }
     String* label() const { return label_; }
@@ -200,6 +202,7 @@ private:
     std::vector<Function::Ptr> jump2_;
     mutable std::map<Class*, bool> subtype_;
     Type::Ptr type_;
+    Type::Ptr alternates_;
     Type::Ptr mixins_;
     String::Ptr comment_;
     String::Ptr label_;

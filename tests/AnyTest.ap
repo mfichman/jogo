@@ -1,0 +1,74 @@
+
+Test < Object {
+}
+
+Constructor < Object {
+    
+    @init(string String) {
+        if string {
+            Io::print(string)
+        } else {
+            Io::print("any\n")
+        }
+    }
+}
+
+Generic[:a] < Object {
+
+    test(obj :a) {
+        if obj {
+            Io::print("true\n")
+        } else {
+            Io::print("false\n")
+        } 
+    }
+}
+
+test(string String) {
+
+    if string {
+        Io::print(string)
+    } else {
+        Io::print("any\n")
+    }
+}
+
+main() Int {
+    
+    any Any = "hello world\n"
+    string String = any
+
+    Io::print(string)
+
+    any = Test()
+    string = any
+
+    if string {
+        Io::print("fail\n")
+    } else {
+        Io::print("pass\n")
+    }
+    
+
+    any2 Any = "hello\n"
+
+    test(any2)
+    test(any)
+
+    Constructor(any2)
+    Constructor(any)
+
+    g1 = Generic[String]()
+    g2 = Generic[Any]()
+
+    g1.test(any2)
+    g1.test(any)
+
+
+    g2.test(any2)
+    g2.test(any)
+
+    ret 0
+}
+
+
