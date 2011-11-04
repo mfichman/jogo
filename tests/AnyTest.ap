@@ -68,6 +68,11 @@ main() Int {
     g2.test(any2)
     g2.test(any)
 
+    any = 9
+    int Int = any
+
+    Io::print("#{int}\n")
+
     ret 0
 }
 
