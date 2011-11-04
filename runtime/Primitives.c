@@ -144,18 +144,8 @@ String Float_str__g(Float self) {
     return 0;
 }
 
-String Bool_str__g(Bool self) {
-    // Returns the string representation of a Bool value, namely "true" or
-    // "false".
-    static struct String true_str = { String__vtable, 1, 4, "true" };
-    static struct String false_str = { String__vtable, 1, 5, "false" };
-    if (self) {
-        true_str._refcount++;
-        return &true_str;
-    } else {
-        false_str._refcount++;
-        return &false_str;
-    }
+Char Char__init() {
+    return '\0';
 }
 
 String Char_str__g(Char self) {
@@ -178,10 +168,26 @@ Bool Char__equal(Char self, Char other) {
     return self == other;
 }
 
-Char Char__init() {
-    return '\0';
-}
 
 Bool Char__less(Char self, Char other) {
     return self < other;
 }
+
+Bool Bool__init() {
+    return 0;
+}
+
+String Bool_str__g(Bool self) {
+    // Returns the string representation of a Bool value, namely "true" or
+    // "false".
+    static struct String true_str = { String__vtable, 1, 4, "true" };
+    static struct String false_str = { String__vtable, 1, 5, "false" };
+    if (self) {
+        true_str._refcount++;
+        return &true_str;
+    } else {
+        false_str._refcount++;
+        return &false_str;
+    }
+}
+

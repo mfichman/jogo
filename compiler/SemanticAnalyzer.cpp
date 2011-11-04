@@ -127,9 +127,11 @@ void SemanticAnalyzer::operator()(Class* feature) {
         env_->error();
     }
 
-    if (!feature->is_interface() && !feature->type()->is_primitive()) {
+    if (!feature->is_interface()) {
         gen_destructor();
-        gen_constructor(); 
+        if (!feature->is_primitive()) {
+            gen_constructor(); 
+        }
     }
 
     // Check alternatives to make sure there are no interface types.

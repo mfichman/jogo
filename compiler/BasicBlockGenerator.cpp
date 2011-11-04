@@ -58,9 +58,7 @@ void BasicBlockGenerator::operator()(Class* feature) {
         f(this);
     }
     exit_scope();
-    if (feature->is_object()) {
-        dispatch_table(feature);
-    }
+    dispatch_table(feature);
     class_ = 0;
 }
 
@@ -102,11 +100,14 @@ void BasicBlockGenerator::operator()(BooleanLiteral* expr) {
 }
 
 void BasicBlockGenerator::operator()(Box* expr) {
-    // Boxes a value type into an object.
+    // Boxes a value type into an object, by allocating memory on the stack
+    // for the value type.  This function allocates and initializes a refcount
+    // and vtable pointer for the value type.
     Operand arg = emit(expr->child()); 
     assert(expr->type()->is_primitive() && "Not implemented for values");
 
     Class::Ptr clazz = expr->type()->clazz();
+    calculate_size(clazz);
     String::Ptr one = env_->integer("1");
     String::Ptr size = env_->integer(stringify(clazz->size()));
     push_arg(1, load(new IntegerLiteral(Location(), one)));
@@ -120,13 +121,22 @@ void BasicBlockGenerator::operator()(Box* expr) {
     Operand vtable = Operand::addr(return_.temp(), 0);
     Operand label = load(env_->name(clazz->label()->string()+"__vtable"));
     store(vtable, label);
+    // FixMe: Eventually, it should be possible to call virtual functions
+    // on boxed primitives.  That, however, would require generating special
+    // versions of all the basic operators, or adding thunks.  For now,
+    // disallow this.
+    //String::Ptr zero = env_->integer("0");
+    //store(vtable, load(new IntegerLiteral(Location(), zero)));
     
     // Make sure that the refcount starts out at 1, otherwise the object may
     // be freed before the end of the constructor.
     Operand refcount = Operand::addr(return_.temp(), 1);
     store(refcount, new IntegerLiteral(Location(), one));
 
-    assert(!"not implemented");
+    // Slot 2 is the value slot for primitive types
+    Operand addr = Operand::addr(return_.temp(), 2);
+    store(addr, arg); 
+    // FixMe: For value types, can't do a simple move
 }
 
 void BasicBlockGenerator::operator()(Cast* expr) {
@@ -159,8 +169,15 @@ void BasicBlockGenerator::operator()(Cast* expr) {
 
     // Otherwise, keep the same value in the result.
     emit(ok_block);
-    block_->instr(MOV, return_, arg, 0);
-
+    if (clazz->is_object()) {
+        block_->instr(MOV, return_, arg, 0);
+    } else if (clazz->is_primitive()) {
+        // Slot 2 is the value slot for primitive types
+        Operand addr = Operand::addr(arg.temp(), 2);
+        block_->instr(MOV, return_, addr, 0);
+    } else if (clazz->is_value()) {
+        assert(!"Not implemented");
+    }
     emit(done_block);
 }
 
@@ -431,13 +448,13 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
     }
 
     String::Ptr id = expr->identifier();
-    Type::Ptr type = expr->type(); 
     Variable::Ptr var = variable(id);
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
 
     if (var) {
         // Assignment to a local var that has already been initialized once in
         // the current scope.
+        Type::Ptr type = var->type();
         if (!type->is_value()) {
             refcount_dec(var->operand());
         }
@@ -447,6 +464,7 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         }
     } else if (attr) {
         // Assignment to an attribute within a class
+        Type::Ptr type = expr->type(); 
         Variable::Ptr self = variable(env_->name("self"));
         Operand addr = Operand::addr(self->operand().temp(), attr->slot());  
         Operand old = load(addr);
@@ -462,11 +480,11 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         // current scope.
         Type::Ptr declared = expr->declared_type();
         if (!declared) {
-            declared = init->type();
+            declared = expr->type();
         }
         Variable::Ptr var = new Variable(id, mov(return_), declared);
         variable(var);
-        if (!type->is_value()) {
+        if (!declared->is_value()) {
             refcount_inc(var->operand());
         }
     }
@@ -1008,6 +1026,8 @@ void BasicBlockGenerator::dispatch_table(Class* feature) {
 
 void BasicBlockGenerator::calculate_size(Class* feature) {
     // Calculate the memory footprint of the given class.
+    if (feature->size()) { return; }
+
     int size = 2 * machine_->word_size(); // Size of refcount + vtable pointer
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
@@ -1019,6 +1039,10 @@ void BasicBlockGenerator::calculate_size(Class* feature) {
             size += machine_->word_size();
         }
     }
+    if (feature->is_primitive()) {
+        size += machine_->word_size();
+    }
+
     feature->size(size);
 }
 
@@ -1072,6 +1096,7 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
             if (!init->type()->is_value()) {
                 refcount_inc(value);
             } else if (!init->type()->is_primitive()) {
+                // FixMe: for value types, can't do a simple move
                 assert("Not implemented");
             }
             free_temps();

@@ -1,0 +1,6 @@
+UnionTestBad.ap:7:23: Interface cannot be used as an alternate
+UnionTestBad.ap:17:23: Expression does not conform to type 'TestUnion'
+UnionTestBad.ap:18:23: Expression does not conform to type 'TestUnion'
+UnionTestBad.ap:20:17: Expression does not conform to type 'Bool'
+UnionTestBad.ap:21:26: Expression does not conform to type 'TestInterface'
+UnionTestBad.ap:23:14: Argument does not conform to type 'Bool'

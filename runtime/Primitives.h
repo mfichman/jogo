@@ -25,29 +25,46 @@
 
 #include <stdint.h>
 
+typedef void* Ptr;
+
 typedef int64_t Int;
 typedef int64_t Bool;
-
-typedef uint64_t U64;
-typedef uint32_t U32;
-typedef uint16_t U16;
-typedef uint8_t U8;
-
-typedef int64_t S64;
-typedef int32_t S32;
-typedef int16_t S16;
-typedef int8_t S8;
-
 typedef char Char;
 typedef uint8_t Byte;
-typedef void* Ptr;
 typedef double Float;
+
+typedef uint64_t U64;
 
 typedef struct String* String;
 typedef struct Object* Object;
 
+Int Int__init();
 String Int_str__g(Int self);
+Int Int__add(Int self, Int other);
+Int Int__sub(Int self, Int other);
+Int Int__mul(Int self, Int other);
+Int Int__div(Int self, Int other);
+Int Int__neg(Int self);
+Int Int__mod(Int self, Int other);
+Int Int_compl(Int self);
+Bool Int__less(Int self, Int other);
+Bool Int__equal(Int self, Int other);
+
+Float Float__init();
 String Float_str__g(Float self);
-String Bool_str__g(Bool self); 
+Float Float__add(Float self, Float other);
+Float Float__sub(Float self, Float other);
+Float Float__mul(Float self, Float other);
+Float Float__div(Float self, Float other);
+Bool Float__less(Float self, Float other);
+Bool Float__equal(Float self, Float other);
+
+Bool Bool__init();
+String Bool_str__g(Bool self);
+
+Char Char__init();
+String Char_str__g(Char self);
+Bool Char__less(Char self, Char other);
+Bool Char__equal(Char self, Char other);
 
 #endif

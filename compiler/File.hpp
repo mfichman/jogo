@@ -54,7 +54,7 @@ public:
     String* output() const { return output_; }
     int dependencies() { return dependency_.size(); }
     bool is_input_file() const { return is_input_file_; }
-    void dependency(Function* func) { dependency_.push_back(func); }
+    void dependency(Function* name) { dependency_.push_back(name); }
     void feature(Feature* feature);
     void next(File* next) { next_ = next; }
     void output(String* path) { output_ = path; }

@@ -181,6 +181,7 @@ public:
     bool is_object() const { return is_object_; }
     bool is_value() const { return is_value_; }
     bool is_interface() const { return is_interface_; }
+    bool is_primitive() const { return type_->is_primitive(); }
     bool subtype(Class* other) const;
     int jump1(int index) const { return jump1_[index]; }
     Function* jump2(int index) const { return jump2_[index]; } 

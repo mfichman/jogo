@@ -62,6 +62,12 @@ void Intel64CodeGenerator::operator()(File* file) {
     if (file->name()->string() != "String.ap") {
         out_ << "extern "; emit_label("String__vtable"); out_ << "\n";
     }
+    if (file->name()->string() != "Primitives.ap") {
+        out_ << "extern "; emit_label("Int__vtable"); out_ << "\n";
+        out_ << "extern "; emit_label("Float__vtable"); out_ << "\n";
+        out_ << "extern "; emit_label("Bool__vtable"); out_ << "\n";
+        out_ << "extern "; emit_label("Char__vtable"); out_ << "\n";
+    }
     for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
         f(this);
     }
@@ -79,7 +85,7 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     // Emit the functions and vtable for the class specified by 'feature'
     class_ = feature;
 
-    if (feature->is_object()) {
+    if (!feature->is_interface()) {
         if (feature->location().file == file_) {
             emit_vtable(feature);
         }
@@ -218,7 +224,7 @@ void Intel64CodeGenerator::emit_vtable(Class* feature) {
         hash = env_->name("Object__hash__g"); 
     }
     if (equalfn) {
-        equal = hashfn->label();
+        equal = equalfn->label();
     } else {
         equal = env_->name("Object___equal");
     }

@@ -86,15 +86,21 @@ void CopyPropagator::operator()(BasicBlock* block) {
             }
             if ((j = eq.find(first)) != eq.end()) {
                 // If the RHS has an alias to a non-precolored register, then
-                // substitute that alias.
-                instr.first(j->second);
+                // substitute that alias.  Make sure only to replace the
+                // register name, NOT the whole operand!
+                Operand repl = instr.first();
+                repl.temp(j->second.temp());
+                instr.first(repl);
             }
         }
         if (second) {
             if ((j = eq.find(second)) != eq.end()) {
-                // If the RHS (second arg) has an alias to a non-precolored 
-                // register, then substitute that alias.
-                instr.second(j->second);
+                // If the RHS (second arg) has an alias to a non-precolored
+                // register, then substitute that alias.  Make sure to only
+                // replace the register name, NOT the whole operand!
+                Operand repl = instr.second();
+                repl.temp(j->second.temp());
+                instr.second(repl);
             }
         }
 

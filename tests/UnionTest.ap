@@ -79,7 +79,11 @@ main() Int {
     any = union2
     Io::print(any)
 
-    #union2 = 9
+    # Boxing/unboxing
+    union2 = 9
+
+    int Int = union2
+    Io::print("#{int}\n")
 
     ret 0
 }
