@@ -33,6 +33,10 @@ test(string String) {
     }
 }
 
+call_any(any, arg Int) {
+    Io::print(any)
+}
+
 main() Int {
     
     any Any = "hello world\n"
@@ -72,6 +76,8 @@ main() Int {
     int Int = any
 
     Io::print("#{int}\n")
+
+    call_any("test\n", 0)
 
     ret 0
 }
