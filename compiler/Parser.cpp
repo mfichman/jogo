@@ -737,6 +737,11 @@ Expression* Parser::equality() {
             expr = op(loc, "not", op(loc, "@equal", expr, right));
             break;
         }
+        case Token::IS: {
+            next();
+            expr = new Is(loc, expr, type());
+            break;
+        }
         default: 
             return expr;
         }
@@ -1031,7 +1036,7 @@ Expression* Parser::literal() {
     case Token::NIL:
         expr = new NilLiteral(location());
         break;
-    case Token::EOFLITERAL:
+    case Token::EOF_LITERAL:
         expr = new IntegerLiteral(location(), env_->integer("-1"));
         expr->type(env_->char_type());
         break;

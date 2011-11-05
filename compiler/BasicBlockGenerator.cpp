@@ -148,7 +148,6 @@ void BasicBlockGenerator::operator()(Cast* expr) {
         return;
     }
     Class::Ptr clazz = expr->type()->clazz();
-
     Operand vtable1 = Operand::addr(arg.temp(), 0);
     Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
     return_ = temp_++;
@@ -181,7 +180,37 @@ void BasicBlockGenerator::operator()(Cast* expr) {
     emit(done_block);
 }
 
+void BasicBlockGenerator::operator()(Is* expr) {
+    // Emit code to check whether the expression type is equal to the cast
+    // type, and then return true/false depending
+    Operand arg = emit(expr->child());
 
+    Class::Ptr clazz = expr->check_type()->clazz();
+    Operand vtable1 = Operand::addr(arg.temp(), 0);
+    Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
+    return_ = temp_++;
+
+    BasicBlock::Ptr mismatch_block = basic_block();
+    BasicBlock::Ptr ok_block = basic_block();
+    BasicBlock::Ptr done_block = basic_block();
+
+    // Emit vtable pointer comparison
+    be(vtable1, vtable2, ok_block, mismatch_block);
+
+    Location loc;
+
+    // If the vtable pointers are not equal, set the register to zero
+    emit(mismatch_block);
+    String::Ptr zero = env_->integer("0");
+    block_->instr(MOV, return_, load(new BooleanLiteral(loc, zero)), 0);
+    jump(done_block);
+
+    // Otherwise, set the register to 1.
+    emit(ok_block);
+    String::Ptr one = env_->integer("1");
+    block_->instr(MOV, return_, load(new BooleanLiteral(loc, one)), 0);
+    emit(done_block);
+}
 
 void BasicBlockGenerator::operator()(Binary* expr) {
     // Emit the left and right exprs, then perform the operation on

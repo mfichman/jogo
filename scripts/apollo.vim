@@ -7,7 +7,7 @@
 
 syn keyword apKeyword import case when public private static native while
 syn keyword apKeyword if for let ret return xor and or in else until pass not
-syn keyword apKeyword func break def fork immutable weak
+syn keyword apKeyword func break def fork immutable weak is
 
 syn keyword apKeyword class struct interface yield 
 

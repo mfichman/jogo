@@ -361,6 +361,26 @@ private:
     Expression::Ptr child_;
 };
 
+/* An 'is' type check expression */
+class Is : public Expression {
+public:
+    Is(Location loc, Expression* expr, Type* type) :
+        Expression(loc),
+        child_(expr),
+        check_type_(type) {
+    
+    }
+
+    Expression* child() const { return child_; }
+    Type* check_type() const { return check_type_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Cast> Ptr;
+
+private:
+    Expression::Ptr child_;
+    Type::Ptr check_type_;
+};
+
 /* Boxes a primitive */
 class Box : public Expression {
 public:

@@ -4,3 +4,6 @@ UnionTestBad.ap:18:23: Expression does not conform to type 'TestUnion'
 UnionTestBad.ap:20:17: Expression does not conform to type 'Bool'
 UnionTestBad.ap:21:26: Expression does not conform to type 'TestInterface'
 UnionTestBad.ap:23:14: Argument does not conform to type 'Bool'
+UnionTestBad.ap:25:14: Type in 'is' expression cannot be an interface
+UnionTestBad.ap:26:14: Type in 'is' expression cannot be a union
+UnionTestBad.ap:27:14: Type in 'is' expression cannot be a union

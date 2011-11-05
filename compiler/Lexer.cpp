@@ -52,6 +52,7 @@ Lexer::Lexer(Environment* env) :
     keyword_["when"] = Token::WHEN;
     keyword_["xor"] = Token::XORB;
     keyword_["yield"] = Token::YIELD;
+    keyword_["is"] = Token::IS;
 }
 
 void Lexer::input(File* file) {
@@ -239,7 +240,7 @@ void Lexer::ident_or_keyword() {
     } else if (value() == "nil") {
         token(Token::NIL);
     } else if (value() == "eof") {
-        token(Token::EOFLITERAL);
+        token(Token::EOF_LITERAL);
     } else {
         token(Token::IDENTIFIER); 
     }
@@ -481,7 +482,8 @@ Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {
     case Token::LEFT_SHIFT: return out << "'<<'";
     case Token::RIGHT_SHIFT: return out << "'>>'";
     case Token::BOOL: return out << "'" << token.value() << "'"; 
-    case Token::EOFLITERAL: return out << "'eof'";
+    case Token::IS: return out << "'is'";
+    case Token::EOF_LITERAL: return out << "'eof'";
     case Token::ADD: return out << "'+'";
     case Token::SUB: return out << "'-'";
     case Token::MUL: return out << "'*'";

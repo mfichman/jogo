@@ -58,6 +58,7 @@ public:
     virtual void operator()(Box* expression) {}
     virtual void operator()(Binary* expression) {}
     virtual void operator()(Unary* expression) {}
+    virtual void operator()(Is* expression) {}
     virtual void operator()(Call* expression) {}
     virtual void operator()(Construct* expression) {}
     virtual void operator()(Identifier* expression) {}

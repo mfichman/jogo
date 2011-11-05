@@ -22,5 +22,9 @@ main() Int {
 
     function(test1)
 
+    test1 is TestInterface
+    test1 is TestUnion
+    test1 is Any 
+
     ret 0
 }

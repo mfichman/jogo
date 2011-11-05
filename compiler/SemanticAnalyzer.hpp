@@ -55,6 +55,7 @@ private:
     void operator()(Empty* expression);
     void operator()(Cast* expression);
     void operator()(Box* expression);
+    void operator()(Is* expression);
     void operator()(Block* statement);
     void operator()(Simple* statement);
     void operator()(Let* let);

@@ -289,6 +289,25 @@ void SemanticAnalyzer::operator()(Let* expression) {
     exit_scope();
 }
 
+void SemanticAnalyzer::operator()(Is* expr) {
+    // Check that the 'is' type is always a value or object type without type
+    // parameters.
+    Expression::Ptr child = expr->child();
+    child(this);
+    expr->type(env_->bool_type());
+
+    if (expr->check_type()->is_interface()) {
+        err_ << expr->check_type()->location();
+        err_ << "Type in 'is' expression cannot be an interface\n";
+        env_->error();
+    }
+    if (expr->check_type()->is_alt_type()) {
+        err_ << expr->check_type()->location();
+        err_ << "Type in 'is' expression cannot be a union\n";
+        env_->error();
+    }
+}
+
 void SemanticAnalyzer::operator()(Box* expression) {
     // Box expression
     Expression::Ptr child = expression->child();
@@ -676,8 +695,7 @@ void SemanticAnalyzer::operator()(Conditional* statement) {
     guard(this);
     if (!guard->type()->is_boolifiable()) {
         err_ << guard->location();
-        err_ << "Value types cannot be converted to 'Bool'";
-        err_ << "\n";
+        err_ << "Value types cannot be converted to 'Bool'\n";
         env_->error();
     }
     true_branch(this);
