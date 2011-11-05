@@ -169,6 +169,7 @@ public:
     }
 
     Expression* expression() const { return expression_; }
+    void expression(Expression* expr) { expression_ = expr; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Return> Ptr;
 

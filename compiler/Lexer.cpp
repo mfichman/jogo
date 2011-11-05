@@ -92,7 +92,7 @@ const Location& Lexer::loc(int index) const {
 }
 
 void Lexer::next() {
-    // Top-level lexer routine.  This function reads in characters one at a 
+    // Top-level lexer routine.  This function reads in characters one at a
     // time and attempts to match them to tokens. 
     if (token(-1) == Token::END) {
         token(Token::END);
@@ -158,8 +158,8 @@ void Lexer::next() {
 
 void Lexer::comment() {
     // Reads a comment.  If the comment is expected, then the comment will
-    // generate a Token::COMMENT token; otherwise, it will generate a Token::NONE token,
-    // causing the next real token to be read.
+    // generate a Token::COMMENT token; otherwise, it will generate a
+    // Token::NONE token, causing the next real token to be read.
     while (char_ != '\n' && char_ != EOF) {
         read();
     }

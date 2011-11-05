@@ -368,6 +368,7 @@ public:
         Expression(loc),
         child_(expr) {
         
+        // The 'type' parameter is the type to convert expr into.
         Expression::type(type);
     }
 

@@ -792,24 +792,30 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
 }
 
 void SemanticAnalyzer::operator()(Return* statement) {
-    Expression::Ptr expression = statement->expression();
-    if (expression) {
-        expression(this);
-        return_ = expression->type();
+    Expression::Ptr expr = statement->expression();
+    if (expr) {
+        expr(this);
+        return_ = expr->type();
     }
-    if (!expression->type()) {
-        expression->type(env_->void_type());
+    if (!expr->type()) {
+        expr->type(env_->void_type());
         return;
     }
-    if (expression->type()->is_self()) {
-        expression->type(class_->type());
+    if (expr->type()->is_self()) {
+        expr->type(class_->type());
     }
-    if (!expression->type()->subtype(function_->type())) {
+    if (!expr->type()->subtype(function_->type())) {
         err_ << statement->location();
         err_ << "Return must conform to type '";
         err_ << function_->type() << "'";
         err_ << "\n";
         env_->error();
+    }
+
+    Type::Ptr ft = function_->type();
+    Type::Ptr type = expr->type();
+    if (type->is_value() && ft->is_alt_type()) {
+        statement->expression(new Box(expr->location(), type, expr)); 
     }
 }
 
