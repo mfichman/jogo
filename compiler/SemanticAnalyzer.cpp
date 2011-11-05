@@ -306,6 +306,11 @@ void SemanticAnalyzer::operator()(Is* expr) {
         err_ << "Type in 'is' expression cannot be a union\n";
         env_->error();
     }
+    if (expr->check_type()->generics()) {
+        err_ << expr->check_type()->location();
+        err_ << "Type in 'is' expression cannot be parameterized\n";
+        env_->error();
+    }
 }
 
 void SemanticAnalyzer::operator()(Box* expression) {

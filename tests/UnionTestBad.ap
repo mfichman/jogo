@@ -25,6 +25,7 @@ main() Int {
     test1 is TestInterface
     test1 is TestUnion
     test1 is Any 
+    test1 is Array[String]
 
     ret 0
 }

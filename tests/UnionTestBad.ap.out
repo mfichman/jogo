@@ -7,3 +7,4 @@ UnionTestBad.ap:23:14: Argument does not conform to type 'Bool'
 UnionTestBad.ap:25:14: Type in 'is' expression cannot be an interface
 UnionTestBad.ap:26:14: Type in 'is' expression cannot be a union
 UnionTestBad.ap:27:14: Type in 'is' expression cannot be a union
+UnionTestBad.ap:28:14: Type in 'is' expression cannot be parameterized
