@@ -25,3 +25,15 @@ println(str String) native {
 print(str String) native {
     # Prints 'str' to standard output.  Does not flush the output.
 }
+
+#stdout() native Stream {
+#    # Returns the standard output stream.
+#}
+#
+#stdin() native Stream {
+#    # Returns the standard input stream.
+#}
+#
+#stderr() native Stream {
+#    # Returns the standard error stream.
+#}
