@@ -76,7 +76,7 @@ Ptr Object__dispatch(Object self, String id) {
     return jump2[d % n]; 
 }
 
-Int Object__hash__g(Object self) {
+Int Object_hash__g(Object self) {
     // This function hashes each byte of the pointer value using the Java
     // String hash function.
     Char* array = (Char*)self;
@@ -86,14 +86,6 @@ Int Object__hash__g(Object self) {
         hash = 31 * hash + array[i]; 
     }
     return hash;
-}
-
-Int Object_hash__g(Object self) {
-    // Call the hash function method, which is always at offset 1 in the 
-    // vtable.
-    typedef Int (*HashFunc)(Object);
-    HashFunc func = ((Ptr*)self->_vtable)[1];
-    return func(self);
 }
 
 Bool Object_same(Object self, Object other) {

@@ -24,6 +24,8 @@
 #include "String.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
+#include <ctype.h>
 
 String Int_str__g(Int self) {
     // Converts an integer into a string, by first calculating the amount of
@@ -111,6 +113,10 @@ Bool Int__equal(Int self, Int other) {
     return self == other;
 }
 
+Int Int__abs__g(Int self) {
+    return self >= 0 ? self : -self;
+}
+
 Float Float__init() {
     return 0;
 }
@@ -129,6 +135,70 @@ Float Float__mul(Float self, Float other) {
 
 Float Float__div(Float self, Float other) {
     return self / other;
+}
+
+Float Float__exp__g(Float self) {
+    return exp(self);
+}
+
+Float Float__ln__g(Float self) {
+    return log(self);
+}
+
+Float Float__log__g(Float self) {
+    return log10(self);
+}
+
+Float Float__sqrt__g(Float self) {
+    return sqrt(self);
+}
+
+Float Float__ceil__g(Float self) {
+    return ceil(self);
+}
+
+Float Float__floor__g(Float self) {
+    return floor(self);
+}
+
+Float Float__abs__g(Float self) {
+    return abs(self);
+}
+
+Float Float__sin__g(Float self) {
+    return sin(self);
+}
+
+Float Float__cos(Float self) {
+    return cos(self);
+}
+
+Float Float__tan(Float self) {
+    return tan(self);
+}
+
+Float Float__arcsin(Float self) {
+    return asin(self);
+}
+
+Float Float__arccos(Float self) {
+    return acos(self);
+}
+
+Float Float__arctan(Float self) {
+    return atan(self);
+}
+
+Float Float__sinh(Float self) {
+    return sinh(self);
+}
+
+Float Float__cosh(Float self) {
+    return cosh(self);
+}
+
+Float Float__tanh(Float self) {
+    return tanh(self);
 }
 
 Bool Float__equal(Float self, Float other) {
@@ -171,6 +241,50 @@ Bool Char__equal(Char self, Char other) {
 
 Bool Char__less(Char self, Char other) {
     return self < other;
+}
+
+Bool Char__is_alnum__g(Char self) {
+    return isalnum(self);
+}
+
+Bool Char__is_alpha__g(Char self) {
+    return isalpha(self);
+}
+
+Bool Char__is_ctrl__g(Char self) {
+    return iscntrl(self);
+}
+
+Bool Char__is_digit__g(Char self) {
+    return isdigit(self);
+}
+
+Bool Char__is_lower__g(Char self) {
+    return islower(self);
+}
+
+Bool Char__is_upper__g(Char self) {
+    return isupper(self);
+}
+
+Bool Char__is_print__g(Char self) {
+    return isprint(self);
+}
+
+Bool Char__is_graph__g(Char self) {
+    return isgraph(self);
+}
+
+Bool Char__is_xdigit__g(Char self) {
+    return isxdigit(self);
+}
+
+Bool Char__lower__g(Char self) {
+    return tolower(self);
+}
+
+Bool Char__upper__g(Char self) {
+    return toupper(self);
 }
 
 Bool Bool__init() {
