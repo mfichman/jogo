@@ -35,6 +35,7 @@ Class::Class(Location loc, Type* t, Type* mixins, String* cmt, Feature* f) :
     is_object_(false),
     is_value_(false),
     is_interface_(false),
+    is_mixin_(false),
     size_(0) {
 
     for (Feature* feat = features_; feat; feat = feat->next()) {
@@ -51,19 +52,24 @@ Class::Class(Location loc, Type* t, Type* mixins, String* cmt, Feature* f) :
     for (Type* mixin = mixins; mixin; mixin = mixin->next()) {
         if ("Object" == mixin->name()->string()) {
             is_object_ = true;
-            continue;
+            break;
         }
         if ("Interface" == mixin->name()->string()) {
             is_interface_ = true;
-            continue;
+            break;
         }
         if ("Value" == mixin->name()->string()) {
             is_value_ = true;
-            continue;
+            break;
+        }
+        if ("Mixin" == mixin->name()->string()) {
+            is_mixin_ = true;
+            break;
         }
     }
 }
 
+/* Constructor for union types */
 Class::Class(Location loc, Type* type, Type* alt) :
     Feature(loc),
     type_(type),
@@ -71,6 +77,7 @@ Class::Class(Location loc, Type* type, Type* alt) :
     is_object_(true),
     is_value_(false),
     is_interface_(false),
+    is_mixin_(false), 
     size_(0) {
 }
 
@@ -106,13 +113,33 @@ void Class::feature(Feature* feature) {
 }
 
 Attribute* Class::attribute(String* name) const {
-    std::map<String::Ptr, Attribute::Ptr>::const_iterator i = attributes_.find(name);
+    std::map<String::Ptr, Attribute::Ptr>::const_iterator i;
+    i = attributes_.find(name);
     return (i == attributes_.end()) ? 0 : i->second;
 }
 
 Function* Class::function(String* name) const {
-    std::map<String::Ptr, Function::Ptr>::const_iterator i = functions_.find(name);
-    return (i == functions_.end()) ? 0 : i->second;
+    // Searches for a function with name 'name' in this lass or in a mixin
+    // that was added to this class.
+    std::map<String::Ptr, Function::Ptr>::const_iterator i;
+    i = functions_.find(name);
+    if (i != functions_.end()) {
+        return i->second;
+    }
+    if (type()->is_proto()) {
+        return 0;
+    }
+
+    for (Type* mixin = mixins_; mixin; mixin = mixin->next()) {
+        Class* clazz = mixin->clazz();
+        if (clazz) {
+            Function* func = clazz->function(name);
+            if (func) {
+                return func;
+            } 
+        }
+    }
+    return 0;
 }
 
 bool Class::subtype(Class* other) const {

@@ -35,6 +35,7 @@ Parser::Parser(Environment* env) :
     error_(0) {
 
     input("Primitives");
+    input("Object");
     input("String");
     input("Coroutine");
 

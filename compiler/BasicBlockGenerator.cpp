@@ -965,33 +965,59 @@ struct SortJumpBuckets {
 
 void BasicBlockGenerator::dispatch_table(Class* feature) {
     // Generate the Pearson perfect hash that will be used for vtable lookups.
-    // FixMe: This is extremely haggard, because I couldn't find an algorithm
-    // for generating the Pearson hash permutation algorithm.  Supposedly,
-    // there is such an algorithm, but I couldn't find any literature on it.  
-    // This brute-force method of ensuring no collisions may fail in some 
-    // cases, which is a serious problem.
+    if (!feature->is_object()) {
+        return;
+    }
     
     // Initially set the size of the hash table to the number of functions.
     // The size of the table will grow to prevent collisions.
     int n = 0;
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+    for (Feature* f = feature->features(); f; f = f->next()) {
+        if (Function* func = dynamic_cast<Function*>(f)) {
             if (!func->is_constructor() && !func->is_destructor()) {
                 n++;
+            }
+        }
+    }
+    for (Type* m = feature->mixins(); m; m = m->next()) {
+        Class* clazz = m->clazz();   
+        for (Feature* f = clazz->features(); f; f = f->next()) {
+            if (Function* func = dynamic_cast<Function*>(f)) {
+                // Ignore functions that have been overidden
+                if (feature->function(func->name()) == func) {
+                    n++;
+                }
             }
         }
     }
     if (!n) { return; }
     n = max(10, n * 2);
 
+    File* file = feature->file();
+
     // Step 1: Place all keys into buckets using a simple hash.  There will
     // be collisions, but they will be resolved in steps 2-3.
     vector<JumpBucket> bucket(n);
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+    for (Feature* f = feature->features(); f; f = f->next()) {
+        if (Function* func = dynamic_cast<Function*>(f)) {
             if (!func->is_constructor() && !func->is_destructor()) {
                 uint64_t hash = fnv_hash(0, func->name()) % n;
                 bucket[hash].push_back(func);
+            }
+        }
+    }
+    for (Type* m = feature->mixins(); m; m = m->next()) {
+        Class* clazz = m->clazz();   
+        for (Feature* f = clazz->features(); f; f = f->next()) {
+            if (Function* func = dynamic_cast<Function*>(f)) {
+                // Ignore functions that have been overidden
+                if (feature->function(func->name()) == func) {
+                    uint64_t hash = fnv_hash(0, func->name()) % n;
+                    bucket[hash].push_back(func);
+                    if (func->file() != file) {
+                        file->dependency(func);
+                    }
+                }
             }
         }
     }
@@ -1001,8 +1027,8 @@ void BasicBlockGenerator::dispatch_table(Class* feature) {
     
     // Step 3: Attempt to place items in the buckets into empty slots in the
     // second jump table, starting with the largest buckets first.
-    vector<Function::Ptr> value(n);
-    vector<Function::Ptr> slots;
+    vector<Function*> value(n);
+    vector<Function*> slots;
     feature->jump1(n-1, 0);
     for (int i = 0; i < bucket.size(); i++) {
         if (bucket[i].size() <= 0) { break; }

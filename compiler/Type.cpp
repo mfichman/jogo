@@ -125,6 +125,24 @@ bool Type::subtype(Type* other) const {
     return true;
 }
 
+bool Type::is_proto() const {
+
+    std::string qn = qualified_name()->string();
+    if (qn == "Object") {
+        return true;
+    }
+    if (qn == "Value") {
+        return true;
+    }
+    if (qn == "Interface") {
+        return true;
+    }
+    if (qn == "Mixin") {
+        return true;
+    }
+    return false;
+}
+
 bool Type::is_no_type() const {
     return is_no_type_ || this == environment_->no_type();
 }
@@ -150,14 +168,26 @@ bool Type::is_primitive() const {
 }
 
 bool Type::is_interface() const {
+    std::string qn = qualified_name()->string();
+    if (qn == "Interface") {
+        return true;
+    }
     return clazz() && clazz()->is_interface();
 }
 
 bool Type::is_object() const {
+    std::string qn = qualified_name()->string();
+    if (qn == "Object") {
+        return true;
+    }
     return clazz() && clazz()->is_object();
 }
 
 bool Type::is_value() const {
+    std::string qn = qualified_name()->string();
+    if (qn == "Value") {
+        return true;
+    }
     return !is_generic() && clazz() && clazz()->is_value();
 }
 

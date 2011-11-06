@@ -1,0 +1,28 @@
+
+
+TestMixin < Mixin {
+    test() String {
+        ret "hello\n"
+    }
+}
+
+TestClass < Object, TestMixin {
+
+}
+
+TestInterface < Interface {
+
+    test() String
+    
+}
+
+main() Int {
+
+    Io::print(TestClass().test())
+
+
+    obj TestInterface = TestClass()
+    Io::print(obj.test())
+    ret 0
+
+}

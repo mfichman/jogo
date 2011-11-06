@@ -32,7 +32,7 @@ syn match apSymbol "[A-Za-z][a-zA-Z0-9]*:"
 "syn keyword apFunction @less @shift @unshift @power @complement @increment
 "syn keyword apFunction @decrement @dispatch  @compare
 
-syn match apFunction "[@][a-z][a-z]*"
+syn match apFunction "[@]\?[a-z0-9_][a-z0-9_]*(\@="
 
 syn match apType "[A-Z][A-Za-z0-9]*"
 syn match apFunction "[a-z][A-Za-z0-9_]*[=!?]\=\((.*{\)\@="

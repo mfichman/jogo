@@ -179,6 +179,7 @@ public:
     String* name() const { return type_->name(); }
     String* label() const { return label_; }
     bool is_object() const { return is_object_; }
+    bool is_mixin() const { return is_mixin_; }
     bool is_value() const { return is_value_; }
     bool is_interface() const { return is_interface_; }
     bool is_primitive() const { return type_->is_primitive(); }
@@ -211,6 +212,7 @@ private:
     bool is_object_;
     bool is_value_;
     bool is_interface_;
+    bool is_mixin_;
     int size_;
 };
 

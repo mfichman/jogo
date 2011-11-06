@@ -54,8 +54,6 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "extern "; emit_label("Object__dispatch"); out_ << "\n";
     out_ << "extern "; emit_label("Object__refcount_dec"); out_ << "\n";
     out_ << "extern "; emit_label("Object__refcount_inc"); out_ << "\n";
-    out_ << "extern "; emit_label("Object__hash__g"); out_ << "\n";
-    out_ << "extern "; emit_label("Object___equal"); out_ << "\n";
     out_ << "extern "; emit_label("Coroutine__yield"); out_ << "\n";
     out_ << "extern "; emit_label("Coroutine__grow_stack"); out_ << "\n";
     out_ << "extern "; emit_label("Coroutine__stack"); out_ << "\n";
@@ -85,7 +83,7 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     // Emit the functions and vtable for the class specified by 'feature'
     class_ = feature;
 
-    if (!feature->is_interface()) {
+    if (!feature->is_interface() && !feature->is_mixin()) {
         if (feature->location().file == file_) {
             emit_vtable(feature);
         }
@@ -214,20 +212,6 @@ void Intel64CodeGenerator::emit_vtable(Class* feature) {
 
     String* name = feature->label();
     Function* dtor = feature->function(env_->name("@destroy"));
-    Function* hashfn = feature->function(env_->name("hash?"));
-    Function* equalfn = feature->function(env_->name("@equal"));
-    String* hash;
-    String* equal;
-    if (hashfn) {
-        hash = hashfn->label(); 
-    } else {
-        hash = env_->name("Object__hash__g"); 
-    }
-    if (equalfn) {
-        equal = equalfn->label();
-    } else {
-        equal = env_->name("Object___equal");
-    }
 
     // Output the vtable label and global directive
     out_ << "section .data\n";
@@ -238,8 +222,6 @@ void Intel64CodeGenerator::emit_vtable(Class* feature) {
 
     // Emit the destructor, hash func, equals func, and vtable length
     out_ << "    dq "; emit_label(dtor->label()); out_ << "\n"; 
-    out_ << "    dq "; emit_label(hash); out_ << "\n";
-    out_ << "    dq "; emit_label(equal); out_ << "\n";
     out_ << "    dq " << feature->jump1s() << "\n";
 
     // Emit the first jump table

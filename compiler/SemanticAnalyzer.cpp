@@ -127,7 +127,7 @@ void SemanticAnalyzer::operator()(Class* feature) {
         env_->error();
     }
 
-    if (!feature->is_interface()) {
+    if (!feature->is_interface() && !feature->is_mixin()) {
         gen_destructor();
         if (!feature->is_primitive()) {
             gen_constructor(); 
@@ -166,7 +166,10 @@ void SemanticAnalyzer::operator()(Class* feature) {
                 env_->error();
                 break;
             }
-         
+        } else if(!m->is_proto()) {
+            err_ << m->location();
+            err_ << "Undefined type '" << m << "'\n";
+            env_->error();
         }
     }
 

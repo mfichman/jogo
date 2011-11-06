@@ -59,10 +59,25 @@ Hash[:k,:v] < Object {
         
     
     }
+
+    iter() {
+        # Returns an iterator for all the key-value pairs in this hash.
+        ret HashIter[:k,:v](self)
+    }   
+
+    values() {
+        # Returns an iterator for all the values in this hash.
+        ret HashValueIter[:k,:v](self)
+    }
+
+    keys() {
+        # Returns an iterator for all the keys in this hash.
+        ret HashKeyIter[:k,:v](self)
+    }
 }
 
 HashFunc[:k] < Interface {
-    # A hash function provides a mapping from an object to an interger, which 
+    # A hash function provides a mapping from an object to an integer, which 
     # can be used to insert an element into a hash.
 
     @call(key :k) Int
@@ -78,10 +93,34 @@ HashValueIter[:v] < Object {
     @init(coll Hash[:k,:v]) {
         hash = coll
     }
+
+    iter() {
+        return self
+    }
 }
 
-HashKeyIter[:k] < Object {
+HashKeyIter[:k,:v] < Object {
+    # Iterates over all the keys in the hash.  The values may be returned by
+    # this iterator in any order.
 
+    hash private Hash[:k,:v]
+    index private = 0
+
+    @init(coll Hash[:k,:v]) {
+        hash = coll
+    }
+
+    more?() Bool native {
+        # Returns true if the iteration has more elements.
+    }
+
+    next() :k {
+        # Returns the next key in the hash.
+    }
+
+    iter() { 
+        return self
+    }
 }
 
 HashIter[:k,:v] < Object {
@@ -98,11 +137,15 @@ HashIter[:k,:v] < Object {
     }
 
     more?() Bool native {
-        # Returns true if there are more elements in the array.
+        # Returns true if the iteration has more elements.
     }
 
     next() Pair[:k,:v] {
         # Returns the next pair in the hash.
+    }
+
+    iter() {
+        return self
     }
 }
 
