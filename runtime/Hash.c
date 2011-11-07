@@ -21,11 +21,16 @@
  */
 
 #include "Hash.h"
+#include "String.h"
 #include "Object.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-Hash Hash__init(Int capacity) {
+#define HASH_LOAD_FACTOR 0.7 
+#define HASH_GROWTH_FACTOR 2
+#define HASH_DEFAULT_CAPACITY 17
+
+Hash Hash__init() {
     Hash ret = calloc(sizeof(struct Hash), 1);
     if (!ret) {
         fprintf(stderr, "Out of memory");
@@ -34,13 +39,13 @@ Hash Hash__init(Int capacity) {
     }
     ret->_vtable = Hash__vtable;
     ret->_refcount = 1;
-    ret->data = calloc(sizeof(Object), capacity);
+    ret->capacity = HASH_DEFAULT_CAPACITY;
+    ret->data = calloc(sizeof(HashBucket), ret->capacity);
     if (!ret->data) {
         fprintf(stderr, "Out of memory");
         fflush(stderr);
         abort();
     }
-    ret->capacity = capacity;
     ret->count = 0;
     return ret; 
 }
@@ -48,14 +53,173 @@ Hash Hash__init(Int capacity) {
 void Hash__destroy(Hash self) {
     Int i = 0;
     for (; i < self->count; ++i) {
-        Object__refcount_dec(self->data[i]);
+        Object__refcount_dec(self->data[i].key);
+        Object__refcount_dec(self->data[i].value);
     }
     free(self->data);
     free(self);
 }
 
-Object Hash__bucket(Hash self, Int index) {
-    Object ret = self->data[index];
-    Object__refcount_inc(ret);
-    return ret;
+Object Hash__index(Hash self, Object key) {
+    if (!key) {
+        return 0;
+    }
+
+    Int i = Hash_hash(self, key) % self->capacity;
+    HashBucket* entry = self->data + i;
+    while (entry->key) {
+        if (Hash_equal(self, key, entry->key)) {
+            Object__refcount_inc(entry->value);
+            return entry->value;
+        }
+        i = (i + 1) % self->capacity;
+        entry = self->data + i; 
+    }
+    return 0;
 }
+
+void Hash__insert(Hash self, Object key, Object value) {
+    if (!key) {
+        return;
+    }
+
+    Int i = Hash_hash(self, key) % self->capacity;
+    HashBucket* entry = self->data + i;
+    while (entry->key) {
+        if (Hash_equal(self, key, entry->key)) {
+            if (!entry->value) {
+                self->count++;
+            }
+            Object__refcount_dec(entry->key);
+            Object__refcount_dec(entry->value);
+            entry->key = key; 
+            entry->value = value;
+            Object__refcount_inc(entry->key);
+            Object__refcount_inc(entry->value);
+            if (!entry->value) {
+                self->count--;
+            }
+            return;
+        }
+        i = (i + 1) % self->capacity;
+        entry = self->data + i;
+    }
+
+    if (!value) {
+        return;
+    }
+
+    entry->key = key;
+    entry->value = value;
+    Object__refcount_inc(entry->key);
+    Object__refcount_inc(entry->value);
+    self->count++;
+
+    Hash_rehash(self);
+}
+
+void Hash_rehash(Hash self) {
+    // Only re-hash the hash table if it is too small
+    if ((Float)self->count/(Float)self->capacity < HASH_LOAD_FACTOR) {
+        return;
+    }
+
+    HashBucket* old_data = self->data;
+    Int old_capacity = self->capacity;     
+    self->capacity *= HASH_GROWTH_FACTOR;
+    self->data = calloc(sizeof(HashBucket), self->capacity);
+    self->count = 0;
+
+    for (Int i = 0; i < old_capacity; i++) {
+        if (old_data[i].key) {
+            Hash__insert(self, old_data[i].key, old_data[i].value);
+        }
+    }
+
+    free(old_data);
+}
+
+Int Hash_hash(Hash self, Object key) {
+    static struct String hash_str = { String__vtable, 1, 5, "hash?" };  
+    typedef Int (*HashFunc)(Object);  
+
+    HashFunc func = Object__dispatch(key, &hash_str);
+    return func(key); 
+}
+
+Bool Hash_equal(Hash self, Object first, Object second) {
+    static struct String equal_str = { String__vtable, 1, 6, "@equal" };
+    typedef Bool (*EqualFunc)(Object, Object);
+
+    EqualFunc func = Object__dispatch(first, &equal_str);
+    return func(first, second);
+}
+
+Pair HashIter_next(HashIter self) {
+    while (self->index < self->hash->capacity) {
+        HashBucket* entry = self->hash->data + self->index;
+        self->index++;
+        if (entry->key && entry->value) {
+            return Pair__init(entry->key, entry->value);
+        }
+    }
+    return 0;
+}
+
+Bool HashIter_more__g(HashIter self) {
+    while (self->index < self->hash->capacity) {
+        HashBucket* entry = self->hash->data + self->index;
+        if (entry->key && entry->value) {
+            return 1;
+        }
+        self->index++;
+    }
+    return 0;
+}
+
+Object HashValueIter_next(HashValueIter self) {
+    while (self->index < self->hash->capacity) {
+        HashBucket* entry = self->hash->data + self->index;
+        self->index++;
+        if (entry->key && entry->value) {
+            Object__refcount_inc(entry->value);
+            return entry->value;
+        }
+    }
+    return 0;
+}
+
+Bool HashValueIter_more__g(HashValueIter self) {
+    while (self->index < self->hash->capacity) {
+        HashBucket* entry = self->hash->data + self->index;
+        if (entry->key && entry->value) {
+            return 1;
+        }
+        self->index++;
+    }
+    return 0;
+}
+
+Object HashKeyIter_next(HashKeyIter self) {
+    while (self->index < self->hash->capacity) {
+        HashBucket* entry = self->hash->data + self->index;
+        self->index++;
+        if (entry->key && entry->value) {
+            Object__refcount_inc(entry->key);
+            return entry->key;
+        }
+    }
+    return 0;
+}
+
+Bool HashKeyIter_more__g(HashKeyIter self) {
+    while (self->index < self->hash->capacity) {
+        HashBucket* entry = self->hash->data + self->index;
+        if (entry->key && entry->value) {
+            return 1;
+        }
+        self->index++;
+    }
+    return 0;
+}
+

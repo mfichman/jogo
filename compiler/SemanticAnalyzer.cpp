@@ -412,6 +412,10 @@ void SemanticAnalyzer::operator()(Member* expression) {
     }
 
     Class::Ptr clazz = type->is_self() ? class_.pointer() : type->clazz();
+    if (!clazz) {
+        expression->type(env_->no_type());
+        return;
+    }
     
     if (call) {
         // First lookup: check to see if the member with name 'id' is present

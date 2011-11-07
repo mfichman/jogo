@@ -24,6 +24,12 @@
 #define APOLLO_HASH_H
 
 #include "Primitives.h"
+#include "Pair.h"
+
+typedef struct HashBucket {
+    Object key;
+    Object value;
+} HashBucket;
 
 typedef struct Hash* Hash;
 struct Hash {
@@ -31,13 +37,49 @@ struct Hash {
     U64 _refcount;
     Int capacity;
     Int count;
-    Object* data;    
+    HashBucket* data;    
 };
 
-Hash Hash__init(Int capacity);
+Hash Hash__init();
 void Hash__destroy(Hash self);
-Object Hash__index(Hash self, Int index);
-void Hash__insert(Hash self, Int index, Object obj);
+Object Hash__index(Hash self, Object key);
+void Hash__insert(Hash self, Object key, Object value);
+void Hash_rehash(Hash self);
+Int Hash_hash(Hash self, Object obj);
+Bool Hash_equal(Hash self, Object first, Object second);
 extern void Hash__vtable();
+
+typedef struct HashIter* HashIter;
+struct HashIter {
+    Ptr _vtable;
+    U64 _refcount;
+    Hash hash;
+    Int index;
+};
+
+Pair HashIter_next(HashIter self);
+Bool HashIter_more__g(HashIter self);
+
+typedef struct HashValueIter* HashValueIter;
+struct HashValueIter {
+    Ptr _vtable;
+    U64 _refcount;
+    Hash hash;
+    Int index;
+};
+
+Object HashValueIter_next(HashValueIter self);
+Bool HashValueIter_more__g(HashValueIter self);
+
+typedef struct HashKeyIter* HashKeyIter;
+struct HashKeyIter {
+    Ptr _vtable;
+    U64 _refcount;
+    Hash hash;
+    Int index;
+};
+
+Object HashKeyIter_next(HashKeyIter self);
+Bool HashKeyIter_more__g(HashKeyIter self);
 
 #endif

@@ -25,7 +25,7 @@ Hash[:k,:v] < Object {
     # good hash function.  Worst case lookup is linear with respect to the
     # number of objects in the hash.
 
-    capacity private Int
+    capacity immutable Int
     # Returns the current capacity of the hash.
 
     count immutable Int
@@ -50,40 +50,50 @@ Hash[:k,:v] < Object {
         # no element associated with 'key'.
     }
 
-    @add(other Hash[:a]) Hash[:a] {
+    @add(other Hash[:k,:v]) Hash[:k,:v] {
         # Returns a new hash that is the union over the keys in this hash and
         # 'other'.  If there is a key present in both hashes, the associated
         # value in this hash takes takes precedence over the associated value
         # in 'other'.
-        new = Hash[:a]()
-        
-    
+        hash = Hash[:k,:v]()
+        for pair in self {
+            hash[pair.first] = pair.second
+        }
+        for pair in other {
+            hash[pair.first] = pair.second
+        }
+        ret hash
     }
 
-    iter() {
+    iter() HashIter[:k,:v] {
         # Returns an iterator for all the key-value pairs in this hash.
         ret HashIter[:k,:v](self)
     }   
 
-    values() {
+    values?() HashValueIter[:k,:v] {
         # Returns an iterator for all the values in this hash.
         ret HashValueIter[:k,:v](self)
     }
 
-    keys() {
+    keys?() HashKeyIter[:k,:v] {
         # Returns an iterator for all the keys in this hash.
         ret HashKeyIter[:k,:v](self)
     }
+
+    hash(element :k) native private Int {
+        # Returns the hash for 'element'
+    }
+
+    equal(first :k, second :v) native private Int {
+        # Compares 'first' and second' for equality
+    }
+
+    rehash() native private {
+        # Re-sizes the hash, and re-hashes all buckets.
+    }
 }
 
-HashFunc[:k] < Interface {
-    # A hash function provides a mapping from an object to an integer, which 
-    # can be used to insert an element into a hash.
-
-    @call(key :k) Int
-}
-
-HashValueIter[:v] < Object {
+HashValueIter[:k,:v] < Object {
     # Iterates over all the values in the hash.  The values may be returned by
     # this iterator in any order.
 
@@ -94,8 +104,21 @@ HashValueIter[:v] < Object {
         hash = coll
     }
 
-    iter() {
-        return self
+    more?() native Bool {
+        # Returns true if there are more values in the iteration
+    }
+
+    next() native :v {
+        # Returns the next value in the iteration.
+    }
+
+    reset() {
+        # Resets the iterator to point to the beginning of the collection.
+        index = 0
+    }
+
+    iter() HashValueIter[:k,:v] {
+        ret self
     }
 }
 
@@ -110,16 +133,21 @@ HashKeyIter[:k,:v] < Object {
         hash = coll
     }
 
-    more?() Bool native {
-        # Returns true if the iteration has more elements.
+    more?() native Bool {
+        # Returns true if there are more values in the iteration
     }
 
-    next() :k {
-        # Returns the next key in the hash.
+    next() native :k {
+        # Returns the next key in the iteration.
     }
 
-    iter() { 
-        return self
+    reset() {
+        # Resets the iterator to point to the beginning of the collection.
+        index = 0
+    }
+
+    iter() HashKeyIter[:k,:v] { 
+        ret self
     }
 }
 
@@ -136,16 +164,21 @@ HashIter[:k,:v] < Object {
         hash = coll 
     }
 
-    more?() Bool native {
-        # Returns true if the iteration has more elements.
+    more?() native Bool {
+        # Returns true if there are more values in the iteration
     }
 
-    next() Pair[:k,:v] {
-        # Returns the next pair in the hash.
+    next() native Pair[:k,:v] {
+        # Returns the next key in the iteration.
     }
 
-    iter() {
-        return self
+    reset() {
+        # Resets the iterator to point to the beginning of the collection.
+        index = 0
+    }
+
+    iter() HashIter[:k,:v] {
+        ret self
     }
 }
 

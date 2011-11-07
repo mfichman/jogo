@@ -38,6 +38,8 @@ Parser::Parser(Environment* env) :
     input("Object");
     input("String");
     input("Coroutine");
+    input("Pair");
+    input("Hash");
 
     for (int i = 0; i < env->inputs(); i++) {
         is_input_file_ = true;

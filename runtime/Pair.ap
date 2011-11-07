@@ -18,11 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-println(str String) native {
-    # Prints 'str' to standard output, and flushes the output.
-}
+Pair[:f,:s] < Object {
+    # A 2-tuple (pair) of objects.
 
-print(str String) native {
-    # Prints 'str' to standard output.  Does not flush the output.
-}
+    first :f # The first object in the pair
+    second :s # The second object in the pair
 
+    @init(one :f, two :s) {
+        first = one
+        second = two
+    }
+}
