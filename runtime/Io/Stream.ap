@@ -104,4 +104,3 @@ Stream < Object {
         # characters may be read or written.
     }
 }
-

@@ -28,5 +28,4 @@
 
 Io_Stream File_open(String path, String mode);
 
-
 #endif

@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #endif
 #include <stdio.h>
+#include <assert.h>
 
 Io_Stream File_open(String path, String mode) {
 #ifdef WINDOWS

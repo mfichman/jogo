@@ -4,7 +4,7 @@ import Array, Boot
 
 main() Int {
     # Write a message to standard output
-    stdout = Io::Stream(1)
+    stdout = Io::stdout()
     stdout.print('hello world\n')
 
     # Read in a message from a file using scan()
@@ -12,8 +12,12 @@ main() Int {
         hello = file.scan('\n')
         stdout.print("#{hello}\n")    
         while eof != file.peek() {
-            stdout.put('*'c)
-            stdout.put(file.get())
+            if file.peek() != '\r'c {
+                stdout.put('*'c)
+                stdout.put(file.get())
+            } else {
+                file.get()
+            }
         }
     } else {
         stdout.print('Could not open file!\n')

@@ -38,8 +38,10 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     if (!ReadFile((HANDLE)self->handle, buf, len, &read, 0)) {
         if (GetLastError() == ERROR_HANDLE_EOF) {
             // EOF
+            return;
         } else {
             // ERROR
+            printf("Read error: %d\n", GetLastError());
             return;
         }
     } else {
@@ -104,6 +106,7 @@ Int Io_Stream_peek(Io_Stream self) {
         buf->end = 0;
         Io_Stream_read(self, buf);
     }
+
     if (buf->begin >= buf->end) {
         return -1;
     } else {
@@ -190,7 +193,7 @@ void Io_Stream_close(Io_Stream self) {
     self->write_buf->begin = self->write_buf->end = 0;
     self->read_buf->begin = self->read_buf->end = 0;
 #ifdef WINDOWS
-    CloseHandle(self->handle);
+    CloseHandle((HANDLE)self->handle);
 #else
     close(self->handle);
 #endif

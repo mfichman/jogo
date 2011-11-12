@@ -21,7 +21,7 @@ def check(test, expected, output)
         print " Output";
         puts 
         puts "#{output}"
-        puts $?
+        puts "Return code: #{$?}"
         @failed = true
     end
 end
@@ -80,7 +80,7 @@ tests.each do |test|
         command = valgrind + " " + command;    
     end
     expected = File.open("#{test}.ap.out", "rb").read
-    output = `#{command} 2>&1`
+    output = `#{command.gsub(/\//, "\\")} 2>&1`
     check(test, expected, output)
     @total += 1
 end

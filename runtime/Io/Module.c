@@ -23,6 +23,45 @@
 #include "Io/Stream.h"
 #include "String.h"
 #include <stdio.h>
+#ifdef WINDOWS
+#include <windows.h>
+#endif
+
+Io_Stream Io_stderr() {
+    static Io_Stream err = 0;
+    if (!err) {
+#ifdef WINDOWS
+        err = Io_Stream__init((Int)GetStdHandle(STD_ERROR_HANDLE));
+#else
+        err = Io_Stream__init(2);
+#endif
+    }
+    return err;
+}
+
+Io_Stream Io_stdout() {
+    static Io_Stream out = 0;
+    if (!out) {
+#ifdef WINDOWS
+        out = Io_Stream__init((Int)GetStdHandle(STD_OUTPUT_HANDLE));
+#else
+        out = Io_Stream__init(1);
+#endif
+    }
+    return out;
+}
+
+Io_Stream Io_stdin() {
+    static Io_Stream in = 0;
+    if (!in) {
+#ifdef WINDOWS
+        in = Io_Stream__init((Int)GetStdHandle(STD_INPUT_HANDLE));
+#else
+        in = Io_Stream__init(0);
+#endif
+    }
+    return in;
+}
 
 void Io_println(String str) {
     // FIXME: Use Apollo streams

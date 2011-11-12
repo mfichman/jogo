@@ -60,6 +60,9 @@ Environment::Environment() :
 
     include(".");
     lib("apollo");
+#ifdef WINDOWS
+    lib("kernel32");
+#endif
 }
 
 String* Environment::name(const std::string& str) {

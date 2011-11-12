@@ -61,12 +61,14 @@ void Hash__destroy(Hash self) {
 }
 
 Object Hash__index(Hash self, Object key) {
+    Int i = 0;
+    HashBucket* entry = 0;
     if (!key) {
         return 0;
     }
 
-    Int i = Hash_hash(self, key) % self->capacity;
-    HashBucket* entry = self->data + i;
+    i = Hash_hash(self, key) % self->capacity;
+    entry = self->data + i;
     while (entry->key) {
         if (Hash_equal(self, key, entry->key)) {
             Object__refcount_inc(entry->value);
@@ -79,12 +81,14 @@ Object Hash__index(Hash self, Object key) {
 }
 
 void Hash__insert(Hash self, Object key, Object value) {
+    Int i = 0;
+    HashBucket* entry = 0;
     if (!key) {
         return;
     }
 
-    Int i = Hash_hash(self, key) % self->capacity;
-    HashBucket* entry = self->data + i;
+    i = Hash_hash(self, key) % self->capacity;
+    entry = self->data + i;
     while (entry->key) {
         if (Hash_equal(self, key, entry->key)) {
             if (!entry->value) {
@@ -120,17 +124,20 @@ void Hash__insert(Hash self, Object key, Object value) {
 
 void Hash_rehash(Hash self) {
     // Only re-hash the hash table if it is too small
+    HashBucket* old_data = 0;
+    Int old_capacity = 0;
+    Int i = 0;
     if ((Float)self->count/(Float)self->capacity < HASH_LOAD_FACTOR) {
         return;
     }
 
-    HashBucket* old_data = self->data;
-    Int old_capacity = self->capacity;     
+    old_data = self->data;
+    old_capacity = self->capacity;     
     self->capacity *= HASH_GROWTH_FACTOR;
     self->data = calloc(sizeof(HashBucket), self->capacity);
     self->count = 0;
 
-    for (Int i = 0; i < old_capacity; i++) {
+    for (i = 0; i < old_capacity; i++) {
         if (old_data[i].key) {
             Hash__insert(self, old_data[i].key, old_data[i].value);
         }

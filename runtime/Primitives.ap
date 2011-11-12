@@ -55,7 +55,7 @@ Int < Value {
         }
     }
 
-    abs() native Int {
+    abs?() native Int {
         # Returns the absolute value of 'self'
     }
 }

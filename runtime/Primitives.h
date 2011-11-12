@@ -46,7 +46,7 @@ Int Int__mul(Int self, Int other);
 Int Int__div(Int self, Int other);
 Int Int__neg(Int self);
 Int Int__mod(Int self, Int other);
-Int Int_compl(Int self);
+Int Int__compl(Int self);
 Bool Int__less(Int self, Int other);
 Bool Int__equal(Int self, Int other);
 
