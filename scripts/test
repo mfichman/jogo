@@ -80,7 +80,11 @@ tests.each do |test|
         command = valgrind + " " + command;    
     end
     expected = File.open("#{test}.ap.out", "rb").read
-    output = `#{command.gsub(/\//, "\\")} 2>&1`
+     
+    if ENV['OS'] == "Windows_NT"
+        command.gsub!(/\//, "\\")
+    end
+    output = `#{command} 2>&1`
     check(test, expected, output)
     @total += 1
 end
@@ -108,7 +112,7 @@ tests.each do |test|
     expected = File.open("#{test}.out", "rb").read
     exe = test.sub(/.c$/, "");
     output = ""
-    if ENV['OS'] = "Windows_NT"
+    if ENV['OS'] == "Windows_NT"
         command = "cl #{test} /Fe..\\build\\#{exe} /I:.. apollo.lib "
         command += "/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib 2>&1"
         output = `..\\build\\#{exe} 2>&1`
@@ -116,6 +120,7 @@ tests.each do |test|
         output = `gcc -g #{test} -o ../build/#{exe} -L../lib -lapollo -I.. 2>&1`
         output += `../build/#{exe} 2>&1`
     end
+
     check(test, expected, output)
     @total += 1
 end

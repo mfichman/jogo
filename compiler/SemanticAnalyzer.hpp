@@ -78,10 +78,10 @@ private:
     void enter_scope();
     void exit_scope();
     Expression::Ptr args(Expression* expr, Function* func, Type* receiver);
-    void gen_mutator(Attribute* feature);
-    void gen_accessor(Attribute* feature);
-    void gen_constructor();
-    void gen_destructor();
+    void mutator(Attribute* feature);
+    void accessor(Attribute* feature);
+    void constructor();
+    void destructor();
     Type* fix_generics(Type* parent, Type* type);
 
     Environment::Ptr env_;

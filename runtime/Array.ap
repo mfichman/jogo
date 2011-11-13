@@ -173,6 +173,10 @@ Array[:a] < Object {
         count = last
     }
 
+    clear() {
+        # Clears all the items from this array.
+    }
+
     iter() ArrayIter[:a] {
         # Returns an iterator over the elements in this array
         ret ArrayIter[:a](self)

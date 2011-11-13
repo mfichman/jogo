@@ -27,6 +27,31 @@ main() Int {
     }
     Io::println(hash.count.str)
 
+    i = 0
+    while i < 1000 {
+        str = i.str
+        hash[str] = nil
+        ++i
+    }
+    Io::println(hash.count.str)
+    
+    i = 0
+    while i < 1000 {
+        str = i.str
+        hash[str] = str
+        ++i
+    }
+    
+    i = 0
+    while i < 1000 {
+        str = i.str
+        if hash[str] != str {
+            Io::println('fail')
+        }
+        ++i
+    }
+    Io::println(hash.count.str)
+
     hash = Hash[String,String]()
     hash['a'] = '1'
     hash['b'] = '2'

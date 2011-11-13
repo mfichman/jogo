@@ -128,9 +128,9 @@ void SemanticAnalyzer::operator()(Class* feature) {
     }
 
     if (!feature->is_interface() && !feature->is_mixin()) {
-        gen_destructor();
+        destructor();
         if (!feature->is_primitive()) {
-            gen_constructor(); 
+            constructor(); 
         }
     }
 
@@ -993,8 +993,8 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     if (!feature->type()) {
         variable(new Variable(feature->name(), 0, initializer->type()));     
         feature->type(initializer->type());
-        gen_mutator(feature);
-        gen_accessor(feature);
+        mutator(feature);
+        accessor(feature);
         return;
     }
 
@@ -1012,8 +1012,8 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     }
 
     variable(new Variable(feature->name(), 0, feature->type()));
-    gen_mutator(feature);
-    gen_accessor(feature);
+    mutator(feature);
+    accessor(feature);
 }
 
 void SemanticAnalyzer::operator()(Closure* expression) {
@@ -1244,7 +1244,7 @@ void SemanticAnalyzer::exit_scope() {
     scope_.pop_back();
 }
 
-void SemanticAnalyzer::gen_constructor() {
+void SemanticAnalyzer::constructor() {
     // Check for a constructor, and generate one if it isn't present
     if (!class_->function(env_->name("@init"))) {
         String::Ptr nm = env_->name("@init");
@@ -1255,7 +1255,7 @@ void SemanticAnalyzer::gen_constructor() {
     }
 }
 
-void SemanticAnalyzer::gen_destructor() {
+void SemanticAnalyzer::destructor() {
     // Check for a destructor, and generate one if it isn't present
     if (!class_->function(env_->name("@destroy"))) {
         String::Ptr nm = env_->name("@destroy");
@@ -1268,7 +1268,7 @@ void SemanticAnalyzer::gen_destructor() {
     }
 }
 
-void SemanticAnalyzer::gen_accessor(Attribute* feature) {
+void SemanticAnalyzer::accessor(Attribute* feature) {
     // Insert a setter for the attribute if it doesn't already exist
     String::Ptr get = env_->name(feature->name()->string()+"?");
     if (!class_->function(get) && !feature->is_private()) {
@@ -1284,7 +1284,7 @@ void SemanticAnalyzer::gen_accessor(Attribute* feature) {
     }
 }
 
-void SemanticAnalyzer::gen_mutator(Attribute* feature) {
+void SemanticAnalyzer::mutator(Attribute* feature) {
     // Insert a getter for the attribute if it doesn't already exist
     String::Ptr set = env_->name(feature->name()->string()+"=");
     if (!class_->function(set) && !feature->is_immutable()

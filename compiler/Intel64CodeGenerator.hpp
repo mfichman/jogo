@@ -47,24 +47,24 @@ private:
     void operator()(Module* feature);
     void operator()(Function* function);
     void operator()(BasicBlock* block);
-    void emit_string(String* string);
-    void emit(const char* instr, Operand r1);
-    void emit(const char* instr, Operand r1, Operand r2);
-    void emit(const char* instr);
-    void emit(const char* instr, Operand r1, const char* label);
+    void string(String* string);
+    void instr(const char* instr, Operand r1);
+    void instr(const char* instr, Operand r1, Operand r2);
+    void instr(const char* instr);
+    void instr(const char* instr, Operand r1, const char* label);
 
-    void emit_vtable(Class* feature);
-    void emit_arith(const Instruction& instr);
-    void emit_load(Operand r1, Operand r2);
-    void emit_store(Operand r1, Operand r2);
+    void dispatch_table(Class* feature);
+    void arith(const Instruction& instr);
+    void load(Operand r1, Operand r2);
+    void store(Operand r1, Operand r2);
 
-    void emit_operand(Operand op);
-    void emit_register(Operand op);
-    void emit_addr(Operand addr);
-    void emit_literal(Operand lit);
-    void emit_label(Operand string);
-    void emit_label(const std::string& string);
-    void emit_stack_check(Function* feature);
+    void operand(Operand op);
+    void reg(Operand op);
+    void addr(Operand addr);
+    void literal(Operand lit);
+    void label(Operand string);
+    void label(const std::string& string);
+    void stack_check(Function* feature);
 
     Environment::Ptr env_;
     Machine::Ptr machine_;

@@ -42,29 +42,29 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "default rel\n";
     out_ << "section .data\n";
     for (String::Ptr s = env_->strings(); s; s = s->next()) {
-        emit_string(s);
+        string(s);
     }
     for (String::Ptr s = env_->integers(); s; s = s->next()) {
         out_ << "    lit" << (void*)s.pointer() << " dq " << s << "\n";
     }
 
     out_ << "section .text\n";
-    out_ << "extern "; emit_label("calloc"); out_ << "\n";
-    out_ << "extern "; emit_label("free"); out_ << "\n";
-    out_ << "extern "; emit_label("Object__dispatch"); out_ << "\n";
-    out_ << "extern "; emit_label("Object__refcount_dec"); out_ << "\n";
-    out_ << "extern "; emit_label("Object__refcount_inc"); out_ << "\n";
-    out_ << "extern "; emit_label("Coroutine__yield"); out_ << "\n";
-    out_ << "extern "; emit_label("Coroutine__grow_stack"); out_ << "\n";
-    out_ << "extern "; emit_label("Coroutine__stack"); out_ << "\n";
+    out_ << "extern "; label("calloc"); out_ << "\n";
+    out_ << "extern "; label("free"); out_ << "\n";
+    out_ << "extern "; label("Object__dispatch"); out_ << "\n";
+    out_ << "extern "; label("Object__refcount_dec"); out_ << "\n";
+    out_ << "extern "; label("Object__refcount_inc"); out_ << "\n";
+    out_ << "extern "; label("Coroutine__yield"); out_ << "\n";
+    out_ << "extern "; label("Coroutine__grow_stack"); out_ << "\n";
+    out_ << "extern "; label("Coroutine__stack"); out_ << "\n";
     if (file->name()->string() != "String.ap") {
-        out_ << "extern "; emit_label("String__vtable"); out_ << "\n";
+        out_ << "extern "; label("String__vtable"); out_ << "\n";
     }
     if (file->name()->string() != "Primitives.ap") {
-        out_ << "extern "; emit_label("Int__vtable"); out_ << "\n";
-        out_ << "extern "; emit_label("Float__vtable"); out_ << "\n";
-        out_ << "extern "; emit_label("Bool__vtable"); out_ << "\n";
-        out_ << "extern "; emit_label("Char__vtable"); out_ << "\n";
+        out_ << "extern "; label("Int__vtable"); out_ << "\n";
+        out_ << "extern "; label("Float__vtable"); out_ << "\n";
+        out_ << "extern "; label("Bool__vtable"); out_ << "\n";
+        out_ << "extern "; label("Char__vtable"); out_ << "\n";
     }
     for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
         f(this);
@@ -72,7 +72,7 @@ void Intel64CodeGenerator::operator()(File* file) {
 
     for (int i = 0; i < file->dependencies(); i++) {
         Function::Ptr func = file->dependency(i);
-        out_ << "extern "; emit_label(func->label()); out_ << "\n";
+        out_ << "extern "; label(func->label()); out_ << "\n";
     }
 
     out_->flush();
@@ -85,7 +85,7 @@ void Intel64CodeGenerator::operator()(Class* feature) {
 
     if (!feature->is_interface() && !feature->is_mixin()) {
         if (feature->location().file == file_) {
-            emit_vtable(feature);
+            dispatch_table(feature);
         }
     }
 
@@ -112,14 +112,14 @@ void Intel64CodeGenerator::operator()(Function* feature) {
         return;
     }
     if (feature->is_native()) {
-        out_ << "extern "; emit_label(feature->label()); out_ << "\n";
+        out_ << "extern "; label(feature->label()); out_ << "\n";
     } else if (feature->basic_blocks()) {
-        out_ << "global "; emit_label(feature->label()); out_ << "\n";
-        emit_label(feature->label()); out_ << ":\n";
+        out_ << "global "; label(feature->label()); out_ << "\n";
+        label(feature->label()); out_ << ":\n";
         out_ << "    push rbp\n"; 
         out_ << "    mov rbp, rsp\n";
 
-        emit_stack_check(feature);
+        stack_check(feature);
 
         if (feature->stack_vars()) {
             // Allocate space on the stack; ensure that the stack is aligned to
@@ -159,47 +159,47 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         out_ << block->label() << ":\n";
     }
     for (int i = 0; i < block->instrs(); i++) {
-        const Instruction& instr = block->instr(i);
-        Operand res = instr.result();
-        Operand a1 = instr.first();
-        Operand a2 = instr.second();
-        opcode_ = instr.opcode();
+        const Instruction& inst = block->instr(i);
+        Operand res = inst.result();
+        Operand a1 = inst.first();
+        Operand a2 = inst.second();
+        opcode_ = inst.opcode();
 
-        switch (instr.opcode()) {
-        case BNE: emit("cmp", a1, a2); emit("jne", branch->label()); break;
-        case BE: emit("cmp", a1, a2); emit("je", branch->label()); break;
-        case BZ: emit("cmp", a1, "0"); emit("je", branch->label()); break;
-        case BNZ: emit("cmp", a1, "0"); emit("jne", branch->label()); break; 
-        case BG: emit("cmp", a1, a2); emit("jg", branch->label()); break;
-        case BGE: emit("cmp", a1, a2); emit("jge", branch->label()); break;
-        case BL: emit("cmp", a1, a2); emit("jl", branch->label()); break;
-        case BLE: emit("cmp", a1, a2); emit("jle", branch->label()); break;
-        case CALL: emit("call", a1); break;
-        case JUMP: emit("jmp", branch->label()); break;
+        switch (inst.opcode()) {
+        case BNE: instr("cmp", a1, a2); instr("jne", branch->label()); break;
+        case BE: instr("cmp", a1, a2); instr("je", branch->label()); break;
+        case BZ: instr("cmp", a1, "0"); instr("je", branch->label()); break;
+        case BNZ: instr("cmp", a1, "0"); instr("jne", branch->label()); break; 
+        case BG: instr("cmp", a1, a2); instr("jg", branch->label()); break;
+        case BGE: instr("cmp", a1, a2); instr("jge", branch->label()); break;
+        case BL: instr("cmp", a1, a2); instr("jl", branch->label()); break;
+        case BLE: instr("cmp", a1, a2); instr("jle", branch->label()); break;
+        case CALL: instr("call", a1); break;
+        case JUMP: instr("jmp", branch->label()); break;
         case MOV: 
             if (res.temp() != a1.temp()) {
-                emit("mov", res, a1);
+                instr("mov", res, a1);
             }
             break;
-        case ADD: emit_arith(instr); break;
-        case SUB: emit_arith(instr); break;
-        case MUL: emit_arith(instr); break;
-        case DIV: emit_arith(instr); break;
-        case NEG: emit("mov", res, a1); emit("neg", res); break;
-        case PUSH: emit("push", a1); break;
-        case POP: emit("pop", res); break;
-        case STORE: emit("mov qword", a1, a2); break;
-        case LOAD: emit("mov qword", res, a1); break;
-        case NOTB: emit("mov", res, a1); emit("not", res); break;
-        case ANDB: emit("mov", res, a1); emit("and", res, a2); break;
-        case ORB: emit("mov", res, a1); emit("or", res, a2); break; 
-        case NOP: emit("nop"); break;
-        case RET: emit("leave"); emit("ret"); break;
+        case ADD: arith(inst); break;
+        case SUB: arith(inst); break;
+        case MUL: arith(inst); break;
+        case DIV: arith(inst); break;
+        case NEG: instr("mov", res, a1); instr("neg", res); break;
+        case PUSH: instr("push", a1); break;
+        case POP: instr("pop", res); break;
+        case STORE: instr("mov qword", a1, a2); break;
+        case LOAD: instr("mov qword", res, a1); break;
+        case NOTB: instr("mov", res, a1); instr("not", res); break;
+        case ANDB: instr("mov", res, a1); instr("and", res, a2); break;
+        case ORB: instr("mov", res, a1); instr("or", res, a2); break; 
+        case NOP: instr("nop"); break;
+        case RET: instr("leave"); instr("ret"); break;
         }
     }
 }
 
-void Intel64CodeGenerator::emit_vtable(Class* feature) {
+void Intel64CodeGenerator::dispatch_table(Class* feature) {
     // Output the class dispatch table for calling methods with dynamic
     // dispatch.  The format is as follows: 
     //
@@ -216,12 +216,12 @@ void Intel64CodeGenerator::emit_vtable(Class* feature) {
     // Output the vtable label and global directive
     out_ << "section .data\n";
     out_ << "global "; 
-    emit_label(name->string()+"__vtable"); 
+    label(name->string()+"__vtable"); 
     out_ << "\n";
-    emit_label(name->string()+"__vtable"); out_ << ":\n";
+    label(name->string()+"__vtable"); out_ << ":\n";
 
     // Emit the destructor, hash func, equals func, and vtable length
-    out_ << "    dq "; emit_label(dtor->label()); out_ << "\n"; 
+    out_ << "    dq "; label(dtor->label()); out_ << "\n"; 
     out_ << "    dq " << feature->jump1s() << "\n";
 
     // Emit the first jump table
@@ -233,7 +233,7 @@ void Intel64CodeGenerator::emit_vtable(Class* feature) {
     for (int i = 0; i < feature->jump2s(); i++) {
         if (feature->jump2(i)) {
             out_ << "    dq ";
-            emit_label(feature->jump2(i)->label());
+            label(feature->jump2(i)->label());
             out_ << "\n";
         } else {
             out_ << "    dq 0\n";
@@ -241,16 +241,16 @@ void Intel64CodeGenerator::emit_vtable(Class* feature) {
     }
 }
 
-void Intel64CodeGenerator::emit_arith(const Instruction& inst) {
+void Intel64CodeGenerator::arith(const Instruction& inst) {
     // Emits an arithmetic instruction.  Depending on the opcode and the
     // operands, the expression may have to be manipulated because all x86
     // instructions take only 2 arithmetic operands.
-    const char* instr;
+    const char* name;
     switch (inst.opcode()) {
-    case ADD: instr = "add"; break;
-    case SUB: instr = "sub"; break;
-    case MUL: instr = "mul"; break;
-    case DIV: instr = "div"; break;
+    case ADD: name = "add"; break;
+    case SUB: name = "sub"; break;
+    case MUL: name = "mul"; break;
+    case DIV: name = "div"; break;
     default: assert(false);
     }
 
@@ -260,72 +260,72 @@ void Intel64CodeGenerator::emit_arith(const Instruction& inst) {
     
     if (res.temp() == r1.temp()) {
         // t1 <- t1 - t2
-        emit(instr, r1, r2);
+        instr(name, r1, r2);
     } else if (res.temp() != r2.temp()) {
         // t1 <- t2 - t3
-        emit("mov", res, r1); 
-        emit(instr, res, r2);
+        instr("mov", res, r1); 
+        instr(name, res, r2);
     } else if (inst.opcode() == ADD || inst.opcode() == MUL) {
         // t1 <- t2 + t1
-        emit(instr, r2, r1);
+        instr(name, r2, r1);
     } else if (inst.opcode() == SUB) {
         // t1 <- t2 - t1 goes to t1 <- -t1 + t2; t1 <- -t1 
-        emit("neg", r1);
-        emit("add", r1, r2);
+        instr("neg", r1);
+        instr("add", r1, r2);
     } else {
         // t1 <- t2 / t1 
-        emit("push", r2);
-        emit(instr, r2, r1);
-        emit("mov", r1, r2);
-        emit("pop", r2);        
+        instr("push", r2);
+        instr(name, r2, r1);
+        instr("mov", r1, r2);
+        instr("pop", r2);        
     }
 }
 
-void Intel64CodeGenerator::emit(const char* instr, Operand r1, Operand r2) {
+void Intel64CodeGenerator::instr(const char* instr, Operand r1, Operand r2) {
     // Emits an instruction with two operands.
     out_ << "    " << instr << " ";
-    emit_operand(r1);
+    operand(r1);
     out_ << ", ";
-    emit_operand(r2);
+    operand(r2);
     out_ << "\n";
 }
 
-void Intel64CodeGenerator::emit(const char* instr, Operand r1) {
+void Intel64CodeGenerator::instr(const char* instr, Operand r1) {
     // Emits a single-operand instruction (either literal or register)
     out_ << "    " << instr << " ";
-    emit_operand(r1);
+    operand(r1);
     out_ << "\n";
 }
 
-void Intel64CodeGenerator::emit(const char* instr, Operand r1, const char* imm) {
+void Intel64CodeGenerator::instr(const char* instr, Operand r1, const char* imm) {
     // Instruction that operates on a register r1 and an immediate value. 
     out_ << "    " << instr << " ";
-    emit_register(r1);
+    reg(r1);
     out_ << ", " << imm << "\n";
 }
 
-void Intel64CodeGenerator::emit(const char* instr) {
+void Intel64CodeGenerator::instr(const char* instr) {
     // Emits a no-operand instruction.
     out_ << "    " << instr << "\n";
 }
 
-void Intel64CodeGenerator::emit_operand(Operand op) {
+void Intel64CodeGenerator::operand(Operand op) {
     // Emits any operand.  This function will automatically determine which
     // type of     operand to output.
     if (op.label()) {
-        emit_label(op);
+        label(op);
     } else if (op.literal()) {
-        emit_literal(op);
+        literal(op);
     } else if (op.indirect()) {
-        emit_addr(op);
+        addr(op);
     } else if (op.temp()) {
-        emit_register(op);
+        reg(op);
     } else {
         assert(!"Nil operand");
     } 
 }
 
-void Intel64CodeGenerator::emit_addr(Operand op) {
+void Intel64CodeGenerator::addr(Operand op) {
     // Emits the the address operand for a stack location as a an offset from
     // the base pointer (rbp).  No register should be specified in the operand,
     // as the register is understood to be rbp.  Likewise, the label and
@@ -351,7 +351,7 @@ void Intel64CodeGenerator::emit_addr(Operand op) {
     out_ << "]";
 }
 
-void Intel64CodeGenerator::emit_register(Operand op) {
+void Intel64CodeGenerator::reg(Operand op) {
     // Outputs a register, possibly with an address offset.  An operand passed
     // to this function should NOT have the literal or label fields set.
     assert(op.temp() < 0 && -op.temp() < machine_->regs());
@@ -363,7 +363,7 @@ void Intel64CodeGenerator::emit_register(Operand op) {
     out_ << machine_->reg(-op.temp());
 }
 
-void Intel64CodeGenerator::emit_literal(Operand literal) {
+void Intel64CodeGenerator::literal(Operand literal) {
     // Outputs the correct representation of a literal.  If the literal is a
     // number, and the length is less than 13 bits, then output the literal
     // directly in the instruction.  Otherwise, load it from the correct memory
@@ -400,7 +400,7 @@ void Intel64CodeGenerator::emit_literal(Operand literal) {
 }
 
 
-void Intel64CodeGenerator::emit_label(Operand op) {
+void Intel64CodeGenerator::label(Operand op) {
     // Emits a label, either as an operand or as an actual label at the
     // beginning of a code block.  No register/literal/addr fields should be
     // set on the operand.
@@ -409,10 +409,10 @@ void Intel64CodeGenerator::emit_label(Operand op) {
     assert(!op.addr()); 
     assert(op.label());
 
-    emit_label(op.label()->string());
+    label(op.label()->string());
 }
 
-void Intel64CodeGenerator::emit_label(const std::string& label) {
+void Intel64CodeGenerator::label(const std::string& label) {
     // Emits a label, either as an operand or as an actual label at the
     // beginning of a code block.
 
@@ -427,10 +427,10 @@ void Intel64CodeGenerator::emit_label(const std::string& label) {
     }
 }
 
-void Intel64CodeGenerator::emit_stack_check(Function* feature) {
+void Intel64CodeGenerator::stack_check(Function* feature) {
     // Emits a stack check, and code to dynamically grow the stack if it is
     // too small.
-    out_ << "    mov rax, ["; emit_label("Coroutine__stack"); out_ << "]\n";
+    out_ << "    mov rax, ["; label("Coroutine__stack"); out_ << "]\n";
     out_ << "    add rax, " << INTEL64_MIN_STACK << "\n"; 
     out_ << "    cmp rsp, rax\n"; 
     out_ << "    jge .l0\n";
@@ -441,25 +441,25 @@ void Intel64CodeGenerator::emit_stack_check(Function* feature) {
     int index = 0;
     for (Formal* f = feature->formals(); f; f = f->next()) {
         if (index < machine_->arg_regs()) {
-            emit("push", -machine_->arg_reg(index)->id()); 
+            instr("push", -machine_->arg_reg(index)->id()); 
             index++;
         } else {
             break;
         }
     }
 
-    out_ << "    call "; emit_label("Coroutine__grow_stack"); out_ << "\n";
+    out_ << "    call "; label("Coroutine__grow_stack"); out_ << "\n";
     out_ << "    mov rsp, rax\n";
     
     // Pop any argument registers that are used in the function.
     for (int i = index-1; i >= 0; i--) {
-        emit("pop", -machine_->arg_reg(i)->id());
+        instr("pop", -machine_->arg_reg(i)->id());
     }
 
-    emit_label(".l0:"); out_ << "\n";
+    label(".l0:"); out_ << "\n";
 }
 
-void Intel64CodeGenerator::emit_string(String* string) {
+void Intel64CodeGenerator::string(String* string) {
     // Output a string literal, and correctly process escape sequences.
 
     std::string in = string->string();
@@ -520,7 +520,7 @@ void Intel64CodeGenerator::emit_string(String* string) {
 
     out_ << "lit" << (void*)string << ": \n";  
     out_ << "    dq ";
-    emit_label("String__vtable");
+    label("String__vtable");
     out_ << "\n"; // vtable
     out_ << "    dq 1\n"; // reference count
     out_ << "    dq " << length << "\n";
