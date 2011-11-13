@@ -471,7 +471,7 @@ Type* Parser::type() {
         } 
         expect(Token::RIGHT_BRACKET);
     }
-    if (qn->string().empty()) {
+    if (qn->is_empty()) {
         return env_->no_type();
     } else {
         return new Type(loc, qn, generics, env_); 

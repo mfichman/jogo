@@ -64,8 +64,8 @@ void SemanticAnalyzer::operator()(Module* feature) {
     // Iterate through all functions and classes in the module, and check 
     // their semantics.  Ensure there are no duplicate functions or classes.
     std::set<String::Ptr> features;
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+    for (Feature* f = feature->features(); f; f = f->next()) {
+        if (Function* func = dynamic_cast<Function*>(f)) {
             if (features.find(func->name()) != features.end()) {
                 err_ << f->location();
                 err_ << "Duplicate definition of function '";
@@ -73,7 +73,7 @@ void SemanticAnalyzer::operator()(Module* feature) {
                 env_->error();
             }
             features.insert(func->name());
-        } else if (Class::Ptr clazz = dynamic_cast<Class*>(f.pointer())) {
+        } else if (Class* clazz = dynamic_cast<Class*>(f)) {
             if (clazz->is_closure()) {
                 continue;
             }
@@ -84,8 +84,17 @@ void SemanticAnalyzer::operator()(Module* feature) {
                 env_->error();
             }
             features.insert(clazz->name());
+        } else if (Constant* cons = dynamic_cast<Constant*>(f)) {
+            if (features.find(cons->name()) != features.end()) {
+                err_ << f->location();
+                err_ << "Duplicate definition of constant '";
+                err_ << cons->name() << "' in " << module_name << "\n";
+                env_->error();
+            }
+            features.insert(cons->name());
         }
-        f(this);
+        Feature::Ptr feat;
+        feat(this);
     }
     module_ = 0;
 }
@@ -193,15 +202,9 @@ void SemanticAnalyzer::operator()(Class* feature) {
     }
 
     // Iterate through all the features and generate accessors
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
-            attr(this);
-        }
-    }
-
     std::set<String::Ptr> features;
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
+    for (Feature* f = feature->features(); f; f = f->next()) {
+        if (Function* func = dynamic_cast<Function*>(f)) {
             if (features.find(func->name()) != features.end()) {
                 err_ << f->location();
                 err_ << "Duplicate definition of function '";
@@ -209,8 +212,25 @@ void SemanticAnalyzer::operator()(Class* feature) {
                 env_->error();
             }
             features.insert(func->name());
-            func(this);
+        } else if (Attribute* attr = dynamic_cast<Attribute*>(f)) {
+            if (features.find(attr->name()) != features.end()) {
+                err_ << f->location();
+                err_ << "Duplicate definition of attribute '";
+                err_ << attr->name() << "'\n";
+                env_->error();
+            }
+            features.insert(attr->name());
+        } else if (Constant* cons = dynamic_cast<Constant*>(f)) {
+            if (features.find(cons->name()) != features.end()) {
+                err_ << f->location();
+                err_ << "Duplicate definition of constant '";
+                err_ << cons->name() << "'\n";
+                env_->error();
+            }
+            features.insert(cons->name());
         }
+        Feature::Ptr feat = f;
+        feat(this);
     }
 
     exit_scope();
@@ -626,7 +646,7 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
     // identifier as a function.  That means either using the @call method,
     // or finding a function in the current class, or finding a function
     // in the current file scope.
-    if (var && scope->string().empty()) {
+    if (var && scope->is_empty()) {
         Class* clazz = var->type()->clazz();
         call->function(clazz->function(env_->name("@call")));
         if (!call->function()) {
@@ -643,7 +663,7 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
     // This case handles a function that is called without the 'self'
     // receiver, but is a function of the enclosing class.  In this case,
     // the 'self' receiver is inserted automatically.
-    if (class_ && !call->function() && scope->string().empty()) {
+    if (class_ && !call->function() && scope->is_empty()) {
         call->function(class_->function(id));
         if (call->function()) {
             Location loc = expression->location();
@@ -1025,13 +1045,6 @@ void SemanticAnalyzer::operator()(Constant* feature) {
 void SemanticAnalyzer::operator()(Attribute* feature) {
     // Select a slot for this attribute.
     feature->slot(slot_++);
-
-    if (variable(feature->name())) {
-        err_ << feature->location();
-        err_ << "Duplicate definition of attribute '";
-        err_ << feature->name() << "'\n";
-        env_->error();
-    }
 
     // Make sure that the attribute type conforms to the declared type of
     // the attribute, if there is one.

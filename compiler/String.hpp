@@ -36,6 +36,7 @@ public:
 
     const std::string& string() const { return string_; }
     String* next() const { return next_; }
+    bool is_empty() const { return string_.empty(); }
     void next(String* next) { next_ = next; }
     typedef Pointer<String> Ptr;
 
