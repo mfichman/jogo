@@ -68,8 +68,8 @@ public:
     // Note: The zero-id register is ALWAYS invalid.  It is not a real
     // register, and the allocator does not assign temporaries to it.
     //
-    // Caller reg = belongs to caller, must be saved before use
-    // Calee reg = belongs to callee, must be saved before call
+    // Caller reg = belongs to caller, must be saved before use, nonvolatile
+    // Calee reg = belongs to callee, must be saved before call, volatile
     
     Machine();
     Register* caller_reg(int index) const { return caller_reg_[index]; }

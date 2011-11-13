@@ -1,6 +1,6 @@
 
 main() Int {
-    stdout = Io::Stream(1)
+    stdout = Io::stdout()
     
     for char in 'the quick brown fox jumps over the lazy dog\n' {
         stdout.put(char)

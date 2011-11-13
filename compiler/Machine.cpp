@@ -42,6 +42,8 @@ Machine* Machine::intel64() {
 
     machine = new Machine;
 
+    // Volatile = callee reg
+    
     Register::Ptr rax = machine->reg("rax"); machine->callee_reg(rax); //1 VOL
     Register::Ptr rbx = machine->reg("rbx"); machine->caller_reg(rbx); //2
     Register::Ptr rcx = machine->reg("rcx"); machine->callee_reg(rcx); //3 VOL

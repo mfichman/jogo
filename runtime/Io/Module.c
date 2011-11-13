@@ -27,6 +27,7 @@
 #include <windows.h>
 #endif
 
+
 Io_Stream Io_stderr() {
     static Io_Stream err = 0;
     if (!err) {
@@ -36,6 +37,7 @@ Io_Stream Io_stderr() {
         err = Io_Stream__init(2);
 #endif
     }
+    err->_refcount++;
     return err;
 }
 
@@ -48,6 +50,7 @@ Io_Stream Io_stdout() {
         out = Io_Stream__init(1);
 #endif
     }
+    out->_refcount++;
     return out;
 }
 
@@ -60,26 +63,6 @@ Io_Stream Io_stdin() {
         in = Io_Stream__init(0);
 #endif
     }
+    in->_refcount++;
     return in;
-}
-
-void Io_println(String str) {
-    // FIXME: Use Apollo streams
-    if (str) {
-        fwrite(str->data, str->length, 1, stdout);
-    } else {
-        fwrite("nil", 3, 1, stdout);
-    }
-    fwrite("\n", 1, 1, stdout);
-    fflush(stdout);
-}
-
-void Io_print(String str) {
-    // FIXME: Use Apollo streams
-    if (str) {
-        fwrite(str->data, str->length, 1, stdout);
-    } else {
-        fwrite("nil", 3, 1, stdout);
-    }
-    fflush(stdout);
 }

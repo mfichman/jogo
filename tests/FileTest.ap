@@ -62,6 +62,7 @@ main() Int {
     stdout.put('\t'c)
     stdout.put('\n'c)
     stdout.put('\\'c)
+    stdout.flush()
     
     ret 0
 }

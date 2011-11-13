@@ -18,12 +18,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-println(str String) native {
+println(str String) {
     # Prints 'str' to standard output, and flushes the output.
+    if str {
+        stdout().println(str)
+    } else {
+        stdout().println('nil')
+    }
 }
 
-print(str String) native {
+print(str String) {
     # Prints 'str' to standard output.  Does not flush the output.
+    if str {
+        stdout().print(str)
+    } else {
+        stdout().print('nil')
+    }
 }
 
 stderr() native Stream {

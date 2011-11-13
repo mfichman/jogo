@@ -1,5 +1,5 @@
 
-#include "runtime/String.h"
+#include "../runtime/String.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,29 +17,30 @@ String String__init(const Char* literal) {
 }
 
 int main() {
-    String str1 = String__init("hello "); 
+    String str1, str2, str3, str4, str5, str6, str7, str8, str9;
+    str1 = String__init("hello "); 
     assert(String_length__g(str1) == 6);
-    String str2 = String__init("world!");
+    str2 = String__init("world!");
     assert(String_length__g(str2) == 6);
 
     // Concatenation
-    String str3 = String__add(str1, str2);
+    str3 = String__add(str1, str2);
     assert(String_length__g(str3) == 12);
     assert(strncmp(str3->data, "hello world!", 12) == 0);
     
     // Equality check
-    String str4 = String__init("hello world!");
-    String str5 = String__init("hello world?");
+    str4 = String__init("hello world!");
+    str5 = String__init("hello world?");
     assert(String__equal(str3, str4));
     assert(!String__equal(str3, str5));
 
     // Slice (substring)
-    String str6 = String_slice(str3, -1, 20);
+    str6 = String_slice(str3, -1, 20);
     assert(String__equal(str6, str3));
     assert(String_length__g(str6) == 12);
-    String str7 = String_slice(str3, 5, 1);
+    str7 = String_slice(str3, 5, 1);
     assert(String_length__g(str7) == 0);
-    String str8 = String_slice(str3, 2, 6);    
+    str8 = String_slice(str3, 2, 6);    
     assert(String_length__g(str8) == 4);
     assert(strncmp(str8->data, "llo ", 4) == 0);
 
@@ -52,10 +53,10 @@ int main() {
     assert('\0' == String__index(str3, 209));
 
     // Int -> String
-    String str = Int_str__g(1234);
-    assert(strncmp(str->data, "1234", 4) == 0);
-    str = Int_str__g(-1234567890);
-    assert(strncmp(str->data, "-1234567890", 11) == 0);
+    str9 = Int_str__g(1234);
+    assert(strncmp(str9->data, "1234", 4) == 0);
+    str9 = Int_str__g(-1234567890);
+    assert(strncmp(str9->data, "-1234567890", 11) == 0);
 
     return 0;
 }

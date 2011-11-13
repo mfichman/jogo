@@ -1,6 +1,6 @@
 
 main() Int {
-    output = Io::Stream(1)
+    output = Io::stdout()
     i = 0
     while i < 10 {
         output.println("#{i}")

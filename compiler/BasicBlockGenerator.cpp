@@ -894,32 +894,16 @@ void BasicBlockGenerator::func_return() {
 }
 
 void BasicBlockGenerator::refcount_inc(Operand var) {
-    // Emit code to increment the reference count for the object specified
-    // by 'temp'
-    int temp = var.temp();
-
-    // Insert a call expression to call the refcount_dec function 
-    if (machine_->arg_regs()) {
-        int val = 0;
-        block_->instr(MOV, -machine_->arg_reg(val)->id(), temp, 0);
-    } else {
-        push(temp);
-    }
+    // Emit code to increment the reference count for the object specified by
+    // 'temp'.  Insert a call expression to call the refcount_dec function 
+    push_arg(0, var);
     call(env_->name("Object__refcount_inc"));
 }
 
 void BasicBlockGenerator::refcount_dec(Operand var) {
-    // Emit code to decrement the reference count for the object specified
-    // by 'temp'
-    int temp = var.temp();
-
-    // Insert a call expression to call the refcount_dec function 
-    if (machine_->arg_regs()) {
-        int val = 0;
-        block_->instr(MOV, -machine_->arg_reg(val)->id(), temp, 0);
-    } else {
-        push(temp);
-    }
+    // Emit code to decrement the reference count for the object specified by
+    // 'temp'.  Insert a call expression to call the refcount_dec function 
+    push_arg(0, var);
     call(env_->name("Object__refcount_dec"));
 }
 
