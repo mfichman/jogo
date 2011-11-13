@@ -71,6 +71,28 @@ private:
     String::Ptr label_;
 };
 
+/* Represents a Constant initializer */
+class Constant : public Feature {
+public:
+    Constant(Location loc, String* nm, Flags f, Expression* init) :
+        Feature(loc, f),
+        name_(nm),
+        initializer_(init) {
+    }
+
+    String* name() const { return name_; }
+    Type* type() const { return type_; }
+    Expression* initializer() const { return initializer_; }
+    void type(Type* type) { type_ = type; } 
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Constant> Ptr;
+
+private:
+    String::Ptr name_;
+    Type::Ptr type_;
+    Expression::Ptr initializer_;
+};
+
 /* Class for instance variables (attributes) of a class or module */
 class Attribute : public Feature {
 public:
@@ -172,6 +194,7 @@ public:
     Feature* features() const { return features_; }    
     Attribute* attribute(String* name) const;
     Function* function(String* name) const;
+    Constant* constant(String* name) const;
     String* comment() const { return comment_; }
     Type* type() const { return type_; }
     Type* alternates() const { return alternates_; }
@@ -200,6 +223,7 @@ public:
 private:
     std::map<String::Ptr, Attribute::Ptr> attributes_;
     std::map<String::Ptr, Function::Ptr> functions_;
+    std::map<String::Ptr, Constant::Ptr> constants_;
     std::vector<int> jump1_;
     std::vector<Function::Ptr> jump2_;
     mutable std::map<Class*, bool> subtype_;
@@ -228,6 +252,7 @@ public:
     Feature* features() const { return features_; }
     Function* function(String* name) { return query(functions_, name); }
     Class* clazz(String* name) { return query(classes_, name); }
+    Constant* constant(String* name) { return query(constants_, name); }
     String* name() const { return name_; }    
     void feature(Feature* feature);
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -236,6 +261,7 @@ public:
 private:
     std::map<String::Ptr, Function::Ptr> functions_;
     std::map<String::Ptr, Class::Ptr> classes_;
+    std::map<String::Ptr, Constant::Ptr> constants_;
     String::Ptr name_; 
     Feature::Ptr features_;
     Environment* environment_;

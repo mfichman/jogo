@@ -168,6 +168,9 @@ Module* Parser::module() {
         case Token::OPERATOR:
             module_->feature(function());
             break;
+        case Token::CONSTANT:
+            module_->feature(constant());
+            break;
         case Token::TYPE:
             module_->feature(clazz()); 
             break;
@@ -322,9 +325,38 @@ Feature* Parser::feature() {
             func->formals(self);
         }
         return func;
+    } else if (token() == Token::CONSTANT) {
+        return constant();
     } else {
         return attribute(); 
     }
+}
+
+Constant* Parser::constant() {
+    // Parses a constant, either within a class or in the namespace of a module.
+    LocationAnchor loc(this);
+    String* id = 0;
+    if (token() == Token::CONSTANT) {
+        String* id = name(value());
+        next(); 
+    } else {
+        err_ << location() << "Expected a constant\n";
+        error();
+        id = name("");
+    }
+    Feature::Flags flags = Parser::flags();
+
+    // Read the initializer, which is not optional.
+    if (token() != Token::ASSIGN) {
+        err_ << location() << "Expected '='\n";
+        error();
+    } else {
+        next();
+    }
+    Expression::Ptr init = expression();
+    expect(Token::SEPARATOR); 
+   
+    return new Constant(loc, id, flags, init); 
 }
 
 Attribute* Parser::attribute() {
@@ -1058,6 +1090,9 @@ Expression* Parser::literal() {
         break;
     case Token::IDENTIFIER:
         expr = new Identifier(location(), name(""), name(value()));
+        break;
+    case Token::CONSTANT:
+        expr = new ConstantIdentifier(location(), name(""), name(value()));
         break;
     case Token::LEFT_PARENS:
         next();

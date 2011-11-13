@@ -57,6 +57,7 @@ private:
     Class* clazz();
     Feature* feature_list();
     Feature* feature();
+    Constant* constant();
     Function* function();
     Attribute* attribute();
     Function* method();

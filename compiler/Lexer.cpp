@@ -213,12 +213,20 @@ void Lexer::number_or_dot() {
 
 void Lexer::type_or_const() {
     // Reads in an identifier of the form [[:upper:]][[:alnum:]_]+
+    bool is_const = true;
     while (isalnum(char_) || char_ == '_') {
+        if (islower(char_)) {
+            is_const = false;
+        }
         read();
     }
     ignore_newline_ = false;
     expect_comment_ = false;
-    token(Token::TYPE);
+    if (is_const) {
+        token(Token::CONSTANT);
+    } else {
+        token(Token::TYPE);
+    }
 }
 
 void Lexer::ident_or_keyword() {
@@ -465,6 +473,7 @@ void Lexer::read() {
 
 Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {
     switch (token) {
+    case Token::CONSTANT: return out << "constant";
     case Token::OR: return out << "'or'"; 
     case Token::AND: return out << "'and'";
     case Token::XORB: return out << "'xor'";

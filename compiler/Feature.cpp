@@ -47,6 +47,10 @@ Class::Class(Location loc, Type* t, Type* mixins, String* cmt, Feature* f) :
             functions_[func->name()] = func;
             continue;
         }
+        if (Constant* cons = static_cast<Constant*>(feat)) {
+            constants_[cons->name()] = cons;
+            continue;
+        }   
     }
 
     for (Type* mixin = mixins; mixin; mixin = mixin->next()) {
@@ -110,12 +114,22 @@ void Class::feature(Feature* feature) {
         functions_[func->name()] = func;
         return;
     }
+    if (Constant* cons = dynamic_cast<Constant*>(feature)) {
+        constants_[cons->name()] = cons;
+        return;
+    } 
 }
 
 Attribute* Class::attribute(String* name) const {
     std::map<String::Ptr, Attribute::Ptr>::const_iterator i;
     i = attributes_.find(name);
     return (i == attributes_.end()) ? 0 : i->second;
+}
+
+Constant* Class::constant(String* name) const {
+    std::map<String::Ptr, Constant::Ptr>::const_iterator i;
+    i = constants_.find(name);
+    return (i == constants_.end()) ? 0 : i->second;
 }
 
 Function* Class::function(String* name) const {

@@ -52,6 +52,7 @@ private:
     void operator()(Construct* expression);
     void operator()(Member* expression);
     void operator()(Identifier* expression);
+    void operator()(ConstantIdentifier* expression);
     void operator()(Empty* expression);
     void operator()(Cast* expression);
     void operator()(Box* expression);
@@ -69,6 +70,7 @@ private:
     void operator()(Yield* statement);
     void operator()(Function* feature);
     void operator()(Attribute* feature);
+    void operator()(Constant* feature);
     void operator()(Import* feature);
     void operator()(Type* type);
     void operator()(Closure* expression);

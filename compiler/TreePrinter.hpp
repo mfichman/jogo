@@ -48,6 +48,7 @@ private:
     void operator()(Call* expression);
     void operator()(Construct* expression);
     void operator()(Identifier* expression);
+    void operator()(ConstantIdentifier* expression);
     void operator()(Empty* empty);
     void operator()(Let* statement);
     void operator()(Block* statement);
@@ -62,6 +63,7 @@ private:
     void operator()(Yield* statement);
     void operator()(Function* feature);
     void operator()(Attribute* feature);
+    void operator()(Constant* constant);
     void operator()(Import* feature);
     void operator()(Type* type);
     void operator()(HashLiteral* literal);

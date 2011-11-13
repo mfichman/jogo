@@ -39,6 +39,60 @@
 #endif
 
 
+Constant* File::constant(String* scope, String* name) {
+    // Returns the constant with the scope "scope" and the name "name".
+    // Searches through imports included in this file to attempt to find the
+    // constant.
+    if (scope && scope->string() != "") {
+        Module* module = environment_->module(scope);
+        // FIXME: If module lookup fails, then take the last segment and look
+        // for that class
+        Constant* cn = module ? module->constant(name) : 0;
+        if (cn) {
+            return cn;
+        }
+            
+        // Split the class name off the end of the scope string, and try to 
+        // look up the constant from within the class.    
+        String* class_name = 0;
+        size_t pos = scope->string().find_last_of(':');
+        if (pos == std::string::npos) {
+            class_name = scope;
+            scope = 0; 
+        } else {
+            class_name = environment_->name(scope->string().substr(0, pos-1));
+            scope = environment_->name(scope->string().substr(pos+1));
+        }
+        Class* clazz = File::clazz(scope, class_name);
+        return clazz ? clazz->constant(name) : 0;
+    }
+    
+    // Attempt to load the constant from the current module
+    Constant* cn = module_->constant(name);
+    if (cn) {
+        return cn;
+    }
+
+    // Search the imports for the constant
+    std::vector<Import::Ptr>::iterator i = imports_.begin();
+    for (; i != imports_.end(); i++) {
+        if ((*i)->is_qualified()) {
+            continue;
+        }
+        Module* m = environment_->module((*i)->scope());
+        if (!m) {
+            continue;
+        }
+        cn = m->constant(name);
+        if (cn) {
+            return cn;
+        }
+    }
+    
+    // Load from the global scope
+    return environment_->root()->constant(name);
+}
+
 Function* File::function(String* scope, String* name) {
     // Returns the function with the scope "scope" and name "name."  Searches
     // through imports included in this file to attempt to find the function.

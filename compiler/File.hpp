@@ -47,6 +47,7 @@ public:
     Function* dependency(int id) { return dependency_[id]; }
     Feature* features() const { return features_; }
     Function* function(String* scope, String* name);
+    Constant* constant(String* scope, String* name);
     Class* clazz(String* scope, String* name);
     String* name() const { return name_; }
     String* path() const { return path_; }

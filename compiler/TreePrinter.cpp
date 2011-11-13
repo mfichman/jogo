@@ -305,6 +305,15 @@ void TreePrinter::operator()(Construct* expression) {
     indent_level_--;
 }
 
+void TreePrinter::operator()(ConstantIdentifier* expression) {
+    indent_level_++;
+    out_ << "ConstantIdentifier\n";
+    print_tabs(); out_ << "name: ";
+    out_ << expression->identifier() << "\n";
+    indent_level_--; 
+}
+
+
 void TreePrinter::operator()(Identifier* expression) {
     indent_level_++;
     out_ << "Identifier\n";
@@ -467,6 +476,19 @@ void TreePrinter::operator()(Function* feature) {
     } else {
         out_ << "\n";
     }
+    indent_level_--;
+}
+
+void TreePrinter::operator()(Constant* feature) {
+    indent_level_++;
+    Expression::Ptr initializer = feature->initializer();
+    out_ << "Constant\n";
+    print_tabs(); out_ << "name: ";
+    out_ << feature->name() << "\n";
+    print_tabs(); out_ << "type: ";
+    out_ << feature->type() << "\n";
+    print_tabs(); out_ << "initializer: ";
+    initializer(this);
     indent_level_--;
 }
 

@@ -279,9 +279,29 @@ public:
 
     String* scope() const { return scope_; }
     String* identifier() const { return identifier_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Identifier> Ptr;
 
 private:
+    String::Ptr scope_;
+    String::Ptr identifier_;
+};
+
+/* Constant identifier access expression */
+class ConstantIdentifier : public Expression {
+public:
+    ConstantIdentifier(Location loc, String* scope, String* ident) :
+        Expression(loc),
+        scope_(scope),
+        identifier_(ident) {
+    }
+
+    String* scope() const { return scope_; }
+    String* identifier() const { return identifier_; }
     void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<ConstantIdentifier> Ptr;
+    
+private:
     String::Ptr scope_;
     String::Ptr identifier_;
 };

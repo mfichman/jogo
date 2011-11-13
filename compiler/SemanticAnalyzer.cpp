@@ -581,6 +581,23 @@ void SemanticAnalyzer::operator()(Construct* expression) {
     expression->arguments(args(expression->arguments(), constr, type));  
 }
 
+void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
+    String::Ptr id = expression->identifier();
+    String::Ptr scope = expression->scope();
+    
+    File::Ptr file = expression->file();
+    Constant::Ptr constant = file->constant(scope, id);
+    if (!constant) {
+        err_ << expression->location();
+        err_ << "Undefined constant '" << id << "'\n";
+        env_->error();
+        expression->type(env_->no_type());
+        return;
+    }
+    
+    expression->type(constant->type()); 
+}
+
 void SemanticAnalyzer::operator()(Identifier* expression) {
     // Determine the type of the identifier from the variable store.  If the
     // variable is undeclared, set the type of the expression to no-type to
@@ -613,7 +630,7 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
         call->function(clazz->function(env_->name("@call")));
         if (!call->function()) {
             err_ << expression->location();
-            err_ << "Object is not callbale\n";
+            err_ << "Object is not callable\n";
             env_->error();
         } else {
             call->receiver(expression);
@@ -971,6 +988,14 @@ void SemanticAnalyzer::operator()(Function* feature) {
     function_ = 0;
 }
 
+void SemanticAnalyzer::operator()(Constant* feature) {
+    // Analyze a constant value.
+    
+    Expression::Ptr initializer = feature->initializer();
+    initializer(this);
+    feature->type(initializer->type());
+}
+
 void SemanticAnalyzer::operator()(Attribute* feature) {
     // Select a slot for this attribute.
     feature->slot(slot_++);
@@ -1042,7 +1067,7 @@ void SemanticAnalyzer::operator()(Closure* expression) {
 
         // Add a new formal to the constructor; also add a statement to assign
         // the formal to the attribute stored in the closure object.
-        Identifier::Ptr arg = new Identifier(loc, env_->name(""), id); 
+        Expression::Ptr arg = new Identifier(loc, env_->name(""), id); 
         String::Ptr fid = env_->name("_"+id->string());
         Formal::Ptr formal = new Formal(loc, fid, var->type()); 
         Identifier::Ptr rhs = new Identifier(loc, env_->name(""), fid);

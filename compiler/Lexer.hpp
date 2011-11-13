@@ -35,6 +35,7 @@
 #undef FLOAT
 #undef ERROR
 #undef IN // gdmf windows...
+#undef CONSTANT
 
 /* Token type, containing an enumeration for all valid Apollo tokens */
 class Token { 
@@ -49,7 +50,7 @@ public:
         YIELD, FORK, ERROR, END, NONE, DOT, FLOAT, INTEGER, COMMA, COLON,
         LEFT_BRACKET, RIGHT_BRACKET, LEFT_PARENS, RIGHT_PARENS, COMPL, 
         STRING_BEGIN, STRING_END, CHAR, LEFT_BRACE, RIGHT_BRACE, MATCH, FUNC, 
-        PRIVATE, BOOL, NIL, EOF_LITERAL, IS 
+        PRIVATE, BOOL, NIL, EOF_LITERAL, IS, CONSTANT 
     };
 
     Token() : type_(NONE) {}
