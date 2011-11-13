@@ -329,6 +329,14 @@ void BasicBlockGenerator::operator()(Construct* expr) {
     }
 }
 
+void BasicBlockGenerator::operator()(Constant* expr) {
+}
+
+void BasicBlockGenerator::operator()(ConstantIdentifier* expr) {
+    Constant::Ptr cn = expr->constant();
+    return_ = load(Operand(cn->label())); 
+}
+
 void BasicBlockGenerator::operator()(Identifier* expr) {
     // Simply look up the value of the variable as stored previously.
     String::Ptr id = expr->identifier();
@@ -611,6 +619,8 @@ void BasicBlockGenerator::operator()(Function* feature) {
     if (feature->is_constructor()) {
         ctor_preamble(class_);
     }
+
+    // If this is main(), then emit the code to load constants FIXME.
 
     // Generate code for the body of the function.
     emit(feature->block());

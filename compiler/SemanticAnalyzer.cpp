@@ -100,7 +100,7 @@ void SemanticAnalyzer::operator()(Class* feature) {
 
     enter_scope();
 
-    // Calculate the label name for this function.
+    // Calculate the label name for this class.
     std::string name = module_->name()->string();
     if (!name.empty()) {
         name += "_";
@@ -595,6 +595,7 @@ void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
         return;
     }
     
+    expression->constant(constant);
     expression->type(constant->type()); 
 }
 
@@ -994,6 +995,31 @@ void SemanticAnalyzer::operator()(Constant* feature) {
     Expression::Ptr initializer = feature->initializer();
     initializer(this);
     feature->type(initializer->type());
+
+    std::string name = module_->name()->string();
+    if (class_) {
+        if (!name.empty()) {
+            name += "_";
+        }
+        name += class_->name()->string();
+    } 
+    if (!name.empty()) {
+        name += "_";
+    }
+    name += feature->name()->string();
+
+    std::string label;
+    label.reserve(name.length());
+    for (int i = 0; i < name.length(); i++) {
+        if (name[i] == ':') {
+            label += "_";
+            i++;
+        } else {
+            label += name[i];
+        }
+    }
+
+    feature->label(env_->name(label));
 }
 
 void SemanticAnalyzer::operator()(Attribute* feature) {

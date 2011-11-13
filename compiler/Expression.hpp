@@ -298,12 +298,15 @@ public:
 
     String* scope() const { return scope_; }
     String* identifier() const { return identifier_; }
+    Constant* constant() const { return constant_; }
+    void constant(Constant* constant) { constant_ = constant; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<ConstantIdentifier> Ptr;
     
 private:
     String::Ptr scope_;
     String::Ptr identifier_;
+    Constant* constant_;
 };
 
 /* Variable declaration */

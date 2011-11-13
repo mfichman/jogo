@@ -248,6 +248,9 @@ void Module::feature(Feature* feature) {
         functions_[func->name()] = func;
         return;
     }
+    if (Constant* cons = dynamic_cast<Constant*>(feature)) {
+        constants_[cons->name()] = cons;
+    }
 }
 
 std::string Import::file_name(const std::string& scope) {

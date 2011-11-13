@@ -41,6 +41,7 @@ public:
     void operator()(File* file);
 
 private:
+    void operator()(Constant* feature);
     void operator()(Class* unit);
     void operator()(Module* unit);
     void operator()(Formal* formal);
@@ -56,6 +57,7 @@ private:
     void operator()(Member* expression);
     void operator()(Construct* expression);
     void operator()(Identifier* expression);
+    void operator()(ConstantIdentifier* expression);
     void operator()(Empty* expression);
     void operator()(Cast* expression);
     void operator()(Box* expression);

@@ -337,7 +337,7 @@ Constant* Parser::constant() {
     LocationAnchor loc(this);
     String* id = 0;
     if (token() == Token::CONSTANT) {
-        String* id = name(value());
+        id = name(value());
         next(); 
     } else {
         err_ << location() << "Expected a constant\n";
