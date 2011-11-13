@@ -115,6 +115,7 @@ tests.each do |test|
     if ENV['OS'] == "Windows_NT"
         command = "cl #{test} /Fe..\\build\\#{exe} /I:.. apollo.lib "
         command += "/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib 2>&1"
+        `#{command}`
         output = `..\\build\\#{exe} 2>&1`
     else
         output = `gcc -g #{test} -o ../build/#{exe} -L../lib -lapollo -I.. 2>&1`
