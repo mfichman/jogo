@@ -1,0 +1,11 @@
+
+
+CONSTANT = 1
+
+main() Int {
+
+    var = CONSTANT
+    Io::print("#{var}")
+
+    ret 0
+}
