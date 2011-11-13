@@ -39,10 +39,10 @@ Environment::Environment() :
     errors_(0) {
 
     Location loc;
-    root_ = new Module(loc, name(""), this);
+    root_ = new Module(loc, this, name(""));
     builtin_file_ = new File(name(""), name(""), root_, this);
     loc.file = builtin_file_;
-    builtins_ = new Module(loc, name(""), this);
+    builtins_ = new Module(loc, this, name(""));
     void_type_ = new Type(loc, name("Void"), 0, this);
     bool_type_ = new Type(loc, name("Bool"), 0, this);
     int_type_ = new Type(loc, name("Int"), 0, this);

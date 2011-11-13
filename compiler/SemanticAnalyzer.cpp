@@ -109,25 +109,6 @@ void SemanticAnalyzer::operator()(Class* feature) {
 
     enter_scope();
 
-    // Calculate the label name for this class.
-    std::string name = module_->name()->string();
-    if (!name.empty()) {
-        name += "_";
-    }
-    name += class_->name()->string();
-    std::string label;
-    label.reserve(name.length());
-    for (int i = 0; i < name.length(); i++) {
-        if (name[i] == ':') {
-            label += '_';
-            i++;
-        } else {
-            label += name[i];
-        }
-    }
-
-    feature->label(env_->name(label));
-
     // Make sure that a module with this name doesn't already exist.
     if (env_->module(feature->type()->qualified_name())) {
         err_ << feature->location();
@@ -502,10 +483,7 @@ void SemanticAnalyzer::operator()(Member* expression) {
     assert(func->type() && "Attribute has no type");
     expression->type(fix_generics(expr->type(), func->type()));
     expression->function(func);   
-    
-    if (func->file() != expression->file()) {
-        expression->file()->dependency(func);
-    }
+    expression->file()->dependency(func);
 
     if (func->is_private()) {
         err_ << expression->location();
@@ -566,11 +544,8 @@ void SemanticAnalyzer::operator()(Call* expression) {
         expression->type(func->type());
     }
 
-    if (func->file() != expression->file()) {
-        expression->file()->dependency(func);
-    }
-
     // FIXME: Look up generics for function
+    expression->file()->dependency(func);
     expression->arguments(args(expression->arguments(), func, receiver));
 }
 
@@ -605,10 +580,7 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         err_ << "Constructor is private in class '" << type << "'\n";
         env_->error();  
     }
-    if (constr->file() != expression->file()) {
-        expression->file()->dependency(constr);
-    }
-
+    expression->file()->dependency(constr);
     expression->arguments(args(expression->arguments(), constr, type));  
 }
 
@@ -939,40 +911,6 @@ void SemanticAnalyzer::operator()(Function* feature) {
     function_ = feature;
     enter_scope();
 
-    // Calculate the label name for this function.
-    std::string name = module_->name()->string();
-    if (class_) {
-        if (!name.empty()) {
-            name += "_";
-        }
-        name += class_->name()->string();
-    }
-    if (!name.empty()) {
-        name += "_";
-    }
-    name += feature->name()->string();
-
-    std::string label;
-    label.reserve(name.length());
-    for (int i = 0; i < name.length(); i++) {
-        if (name[i] == '@') {
-            label += '_';
-        } else if (name[i] == '?') {
-            label += "__g";
-        } else if (name[i] == '!') {
-            label += "__w";
-        } else if (name[i] == '=') {
-            label += "__s";
-        } else if (name[i] == ':') {
-            label += "_";
-            i++;
-        } else {
-            label += name[i];
-        }
-    }
-
-    feature->label(env_->name(label));
-
     // Check all formal parameters, and add them as local variables
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
         Type::Ptr type = f->type();
@@ -1026,31 +964,6 @@ void SemanticAnalyzer::operator()(Constant* feature) {
     Expression::Ptr initializer = feature->initializer();
     initializer(this);
     feature->type(initializer->type());
-
-    std::string name = module_->name()->string();
-    if (class_) {
-        if (!name.empty()) {
-            name += "_";
-        }
-        name += class_->name()->string();
-    } 
-    if (!name.empty()) {
-        name += "_";
-    }
-    name += feature->name()->string();
-
-    std::string label;
-    label.reserve(name.length());
-    for (int i = 0; i < name.length(); i++) {
-        if (name[i] == ':') {
-            label += "_";
-            i++;
-        } else {
-            label += name[i];
-        }
-    }
-
-    feature->label(env_->name(label));
 }
 
 void SemanticAnalyzer::operator()(Attribute* feature) {
@@ -1134,7 +1047,8 @@ void SemanticAnalyzer::operator()(Closure* expression) {
         
         // Create a new attribute inside the closure object to store the 
         // variable.
-        Attribute::Ptr attr = new Attribute(loc, id, flags, var->type(), empty);
+        Type::Ptr type = var->type();
+        Attribute::Ptr attr = new Attribute(loc, env_, id, flags, type, empty);
         expression->clazz()->feature(attr); 
     }
 
@@ -1145,7 +1059,7 @@ void SemanticAnalyzer::operator()(Closure* expression) {
     Type::Ptr ret = env_->void_type();
     Block::Ptr block = new Block(loc, 0, stmts);
     String::Ptr name = env_->name("@init");
-    Function::Ptr ctor = new Function(loc, name, formals, 0, ret, block);
+    Function::Ptr ctor = new Function(loc, env_, name, formals, 0, ret, block);
     expression->clazz()->feature(ctor);
 
     Class::Ptr save_class_ = class_;
@@ -1326,7 +1240,7 @@ void SemanticAnalyzer::constructor() {
         Type::Ptr vt = env_->void_type();
         Location loc = class_->location();
         Block::Ptr block(new Block(loc, 0, 0));
-        class_->feature(new Function(loc, nm, 0, 0, vt, block));
+        class_->feature(new Function(loc, env_, nm, 0, 0, vt, block));
     }
 }
 
@@ -1339,7 +1253,7 @@ void SemanticAnalyzer::destructor() {
         Location loc = class_->location();
         Block::Ptr block(new Block(loc, 0, 0));
         Formal::Ptr self(new Formal(loc, env_->name("self"), st));
-        class_->feature(new Function(loc, nm, self, 0, vt, block));
+        class_->feature(new Function(loc, env_, nm, self, 0, vt, block));
     }
 }
 
@@ -1355,7 +1269,7 @@ void SemanticAnalyzer::accessor(Attribute* feature) {
         Type::Ptr st = env_->self_type();
         Type::Ptr ft = feature->type();
         Formal::Ptr self(new Formal(loc, env_->name("self"), st));
-        class_->feature(new Function(loc, get, self, 0, ft, block));
+        class_->feature(new Function(loc, env_, get, self, 0, ft, block));
     }
 }
 
@@ -1375,7 +1289,7 @@ void SemanticAnalyzer::mutator(Attribute* feature) {
         Formal::Ptr self(new Formal(loc, env_->name("self"), st));
         Formal::Ptr arg(new Formal(loc, env_->name("_arg0"), ft));
         self->next(arg);
-        class_->feature(new Function(loc, set, self, 0, vt, block));
+        class_->feature(new Function(loc, env_, set, self, 0, vt, block));
     }
 }
 

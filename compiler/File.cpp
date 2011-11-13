@@ -179,6 +179,18 @@ Class* File::clazz(String* scope, String* name) {
     return environment_->builtins()->clazz(name);
 }
 
+void File::dependency(Feature* feature) {
+    if (feature->file() == this) {
+        return;
+    }
+    for (size_t i = 0; i < dependency_.size(); i++) {
+        if (dependency_[i] == feature) {
+            return;
+        }
+    }
+    dependency_.push_back(feature);
+}
+
 void File::feature(Feature* feature) {
     if (!feature) {
         return;

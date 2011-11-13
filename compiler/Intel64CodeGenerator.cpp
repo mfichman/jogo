@@ -71,8 +71,8 @@ void Intel64CodeGenerator::operator()(File* file) {
     }
 
     for (int i = 0; i < file->dependencies(); i++) {
-        Function::Ptr func = file->dependency(i);
-        out_ << "extern "; label(func->label()); out_ << "\n";
+        Feature::Ptr feat = file->dependency(i);
+        out_ << "extern "; label(feat->label()); out_ << "\n";
     }
 
     out_->flush();

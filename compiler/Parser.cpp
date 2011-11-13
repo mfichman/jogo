@@ -96,7 +96,7 @@ void Parser::file(const std::string& prefix, const std::string& file) {
     String::Ptr scope = name(Import::scope_name(file));
     module_ = env_->module(scope);
     if (!module_) {
-        module_ = new Module(Location(), scope, env_);
+        module_ = new Module(Location(), env_, scope);
         env_->module(module_);
     }
 
@@ -242,7 +242,7 @@ Class* Parser::clazz() {
             err_ << token() << "'\n";
             error();
         }
-        return new Class(loc, new Type(loc, name(qn), 0, env_), alt);
+        return new Class(loc, env_, new Type(loc, name(qn), 0, env_), alt);
     } else if (token() == Token::LEFT_BRACKET) {
         // Parse generic type parameters
         next();
@@ -283,7 +283,7 @@ Class* Parser::clazz() {
     String::Ptr comment = Parser::comment(); 
     Feature::Ptr members = feature_list();
     expect(Token::RIGHT_BRACE);
-    return new Class(loc, type, mixins, comment, members);
+    return new Class(loc, env_, type, mixins, comment, members);
 }
 
 Feature* Parser::feature_list() {
@@ -356,7 +356,7 @@ Constant* Parser::constant() {
     Expression::Ptr init = expression();
     expect(Token::SEPARATOR); 
    
-    return new Constant(loc, id, flags, init); 
+    return new Constant(loc, env_, id, flags, init); 
 }
 
 Attribute* Parser::attribute() {
@@ -382,7 +382,7 @@ Attribute* Parser::attribute() {
     }
     expect(Token::SEPARATOR);
 
-    return new Attribute(loc, id, flags, type, init);
+    return new Attribute(loc, env_, id, flags, type, init);
 }
 
 Function* Parser::function() {
@@ -434,7 +434,7 @@ Function* Parser::function() {
     if (token() == Token::LEFT_BRACE) {
         block = Parser::block();
     }
-    return new Function(loc, id, formals, flags, ret, block);
+    return new Function(loc, env_, id, formals, flags, ret, block);
 }
 
 Type* Parser::type() {
@@ -586,7 +586,7 @@ void Parser::import() {
 
     while (token() == Token::TYPE) {
         String::Ptr scope = Parser::scope();
-        file_->feature(new Import(loc, scope, false));
+        file_->feature(new Import(loc, env_, scope, false));
         if (token() == Token::COMMA) {
             next();
         } else {
@@ -670,7 +670,7 @@ Expression* Parser::closure() {
 
     Type::Ptr type = new Type(loc, name(qn), 0, env_);
     Type::Ptr object = new Type(loc, name("Object"), 0, env_);
-    Class::Ptr clazz = new Class(loc, type, object, 0, func);
+    Class::Ptr clazz = new Class(loc, env_, type, object, 0, func);
     clazz->flags(Feature::CLOSURE);
     module_->feature(clazz);
     return new Closure(loc, func, clazz);
@@ -1037,7 +1037,7 @@ Expression* Parser::construct() {
             next();
             String::Ptr scope = type->qualified_name();
             String::Ptr id = identifier();
-            file_->feature(new Import(loc, scope, true));
+            file_->feature(new Import(loc, env_, scope, true));
             return new Identifier(loc, scope, id); 
         }
         

@@ -51,7 +51,7 @@ Type::Type(Location loc, String* qn, Generic* gen, Environment* env) :
 
     // Add an implicit (qualified) import if it doesn't already exist
     if (!scope_->string().empty() && !is_generic()) {
-        file()->feature(new Import(loc, scope_, true));
+        file()->feature(new Import(loc, env, scope_, true));
     }
 }
 

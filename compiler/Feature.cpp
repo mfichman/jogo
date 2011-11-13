@@ -26,12 +26,14 @@
 
 using namespace std;
 
-Class::Class(Location loc, Type* t, Type* mixins, String* cmt, Feature* f) :
-    Feature(loc),
-    type_(t),
+Class::Class(Location loc, Environment* env, Type* type, Type* mixins, 
+    String* comment, Feature* feature) :
+
+    Feature(loc, env, type->name()),
+    type_(type),
     mixins_(mixins),
-    comment_(cmt),
-    features_(f),
+    comment_(comment),
+    features_(feature),
     is_object_(false),
     is_value_(false),
     is_interface_(false),
@@ -39,17 +41,13 @@ Class::Class(Location loc, Type* t, Type* mixins, String* cmt, Feature* f) :
     size_(0) {
 
     for (Feature* feat = features_; feat; feat = feat->next()) {
+        feat->parent(this);
         if (Attribute* attr = dynamic_cast<Attribute*>(feat)) {
             attributes_[attr->name()] = attr;
-            continue;
-        }
-        if (Function* func = static_cast<Function*>(feat)) {
+        } else if (Function* func = static_cast<Function*>(feat)) {
             functions_[func->name()] = func;
-            continue;
-        }
-        if (Constant* cons = static_cast<Constant*>(feat)) {
+        } else if (Constant* cons = static_cast<Constant*>(feat)) {
             constants_[cons->name()] = cons;
-            continue;
         }   
     }
 
@@ -74,8 +72,8 @@ Class::Class(Location loc, Type* t, Type* mixins, String* cmt, Feature* f) :
 }
 
 /* Constructor for union types */
-Class::Class(Location loc, Type* type, Type* alt) :
-    Feature(loc),
+Class::Class(Location loc, Environment* env, Type* type, Type* alt) :
+    Feature(loc, env, type->name()),
     type_(type),
     alternates_(alt),
     is_object_(true),
@@ -104,6 +102,7 @@ void Class::feature(Feature* feature) {
         return;
     }
 
+    feature->parent(this);
     features_ = append(features_, feature);
 
     if (Attribute* attr = dynamic_cast<Attribute*>(feature)) {
@@ -238,6 +237,7 @@ void Module::feature(Feature* feature) {
         return;
     }
 
+    feature->parent(this);
     features_ = append(features_, feature);
 
     if (Class* clazz = dynamic_cast<Class*>(feature)) {
@@ -251,6 +251,37 @@ void Module::feature(Feature* feature) {
     if (Constant* cons = dynamic_cast<Constant*>(feature)) {
         constants_[cons->name()] = cons;
     }
+}
+
+String* Feature::label() const {
+    // Builds the label for a feature if it hasn't already been calculated.
+    if (label_) { return label_; }
+
+    std::string parent = parent_? parent_->label()->string() : "";
+    std::string name = parent.empty() ? "" : parent + "_";
+    name += Feature::name()->string();    
+
+    std::string label;
+    label.reserve(name.length());
+    for (size_t i = 0; i < name.length(); i++) {
+        if (name[i] == '@') {
+            label += '_';
+        } else if (name[i] == '?') {
+            label += "__g";
+        } else if (name[i] == '!') {
+            label += "__w";
+        } else if (name[i] == '=') {
+            label += "__s";
+        } else if (name[i] == ':') {
+            label += "_";
+            i++;
+        } else {
+            label += name[i];
+        }
+    }
+
+    label_ = env_->name(label);
+    return label_;
 }
 
 std::string Import::file_name(const std::string& scope) {

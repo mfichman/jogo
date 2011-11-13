@@ -44,7 +44,7 @@ public:
         is_input_file_(false) {  
     }
     
-    Function* dependency(int id) { return dependency_[id]; }
+    Feature* dependency(int id) { return dependency_[id]; }
     Feature* features() const { return features_; }
     Function* function(String* scope, String* name);
     Constant* constant(String* scope, String* name);
@@ -55,7 +55,7 @@ public:
     String* output() const { return output_; }
     int dependencies() { return dependency_.size(); }
     bool is_input_file() const { return is_input_file_; }
-    void dependency(Function* name) { dependency_.push_back(name); }
+    void dependency(Feature* name);
     void feature(Feature* feature);
     void next(File* next) { next_ = next; }
     void output(String* path) { output_ = path; }
@@ -83,7 +83,7 @@ private:
     File::Ptr next_;
     String::Ptr output_;
     bool is_input_file_;
-    std::vector<Function*> dependency_;
+    std::vector<Feature*> dependency_;
 };
 
 /* Directory iterator object */

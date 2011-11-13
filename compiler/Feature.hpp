@@ -37,15 +37,20 @@ class Feature : public TreeNode {
 public:
     typedef int Flags;
 
-    Feature(Location loc, Flags flags = 0) :
+    Feature(Location loc, Environment* env, String* name, Flags flags = 0) :
         TreeNode(loc),
-        flags_(flags) {
+        name_(name),
+        env_(env),
+        flags_(flags),
+        parent_(0) {
     }
 
+    String* name() const { return name_; }
     Feature* next() const { return next_; }
     Feature* last() const { return last_; }
     Flags flags() const { return flags_; }
-    String* label() const { return label_; }
+    String* label() const;
+    Feature* parent() const { return parent_; }
     bool is_private() const { return flags_ & PRIVATE; }
     bool is_native() const { return flags_ & NATIVE; }
     bool is_weak() const { return flags_ & WEAK; }
@@ -54,7 +59,7 @@ public:
     void next(Feature* next) { next_ = next; }
     void last(Feature* last) { last_ = last; }
     void flags(Flags flags) { flags_ = flags; }
-    void label(String* label) { label_ = label; }
+    void parent(Feature* parent) { parent_ = parent; }
     typedef Pointer<Feature> Ptr;
 
     static const int PRIVATE = 0x1;
@@ -65,22 +70,25 @@ public:
     static const int CLOSURE = 0x20;
 
 private:
+    String::Ptr name_;
     Feature::Ptr next_;
     Feature::Ptr last_;
+    Environment* env_;
     Flags flags_;
-    String::Ptr label_;
+    mutable String::Ptr label_;
+    Feature* parent_;
 };
 
 /* Represents a Constant initializer */
 class Constant : public Feature {
 public:
-    Constant(Location loc, String* nm, Flags f, Expression* init) :
-        Feature(loc, f),
-        name_(nm),
+    Constant(Location loc, Environment* env, String* name, Flags flags, 
+        Expression* init) :
+
+        Feature(loc, env, name, flags),
         initializer_(init) {
     }
 
-    String* name() const { return name_; }
     Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
     void type(Type* type) { type_ = type; } 
@@ -88,7 +96,6 @@ public:
     typedef Pointer<Constant> Ptr;
 
 private:
-    String::Ptr name_;
     Type::Ptr type_;
     Expression::Ptr initializer_;
 };
@@ -96,15 +103,15 @@ private:
 /* Class for instance variables (attributes) of a class or module */
 class Attribute : public Feature {
 public:
-    Attribute(Location loc, String* nm, Flags f, Type* t, Expression* init) :
-        Feature(loc, f),
-        name_(nm),
-		type_(t),
+    Attribute(Location loc, Environment* env, String* name, Flags flags, 
+        Type* type, Expression* init) :
+
+        Feature(loc, env, name, flags),
+		type_(type),
         initializer_(init),
         slot_(0) {
     }
 
-    String* name() const { return name_; }
 	Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
     int slot() const { return slot_; }
@@ -114,7 +121,6 @@ public:
     typedef Pointer<Attribute> Ptr;
 
 private:
-	String::Ptr name_;
     Type::Ptr type_;
     Expression::Ptr initializer_;
     int slot_;
@@ -123,20 +129,20 @@ private:
 /* Class for functions belonging to a class or module */
 class Function : public Feature {
 public:
-    Function(Location l, String* nm, Formal* fm, Flags f, Type* r, Block* b) :
-        Feature(l, f),
-        name_(nm),
-		formals_(fm),
-		type_(r),
-        block_(b),
+    Function(Location loc, Environment*env, String* name, Formal* formal, 
+        Flags flags, Type* ret, Block* block) :
+
+        Feature(loc, env, name, flags),
+		formals_(formal),
+		type_(ret),
+        block_(block),
         stack_vars_(0) {
 
         if (!block_ && !is_native()) {
-            flags(flags() | VIRTUAL);
+            Function::flags(Function::flags() | VIRTUAL);
         }
     }
 
-    String* name() const { return name_; }
 	Formal* formals() const { return formals_; }
 	Type* type() const { return type_; }
     Block* block() const { return block_; }
@@ -154,7 +160,6 @@ public:
     typedef Pointer<Function> Ptr;
 
 private:
-    String::Ptr name_;
 	Formal::Ptr formals_;
 	Type::Ptr type_;
     Block::Ptr block_;
@@ -165,8 +170,8 @@ private:
 /* Class for imports */
 class Import : public Feature {
 public:
-    Import(Location loc, String* scope, bool is_qualified) :
-        Feature(loc),
+    Import(Location loc, Environment* env, String* scope, bool is_qualified) :
+        Feature(loc, env, 0),
         file_name_(file_name(scope->string())),
         scope_(scope),
         is_qualified_(is_qualified) {
@@ -189,8 +194,9 @@ private:
 /* Represents a class object */
 class Class : public Feature {
 public:
-    Class(Location loc, Type* type, Type* mixins, String* cmt, Feature* feat);
-    Class(Location loc, Type* type, Type* alt);
+    Class(Location loc, Environment* env, Type* type, Type* mixins, 
+       String* comment, Feature* feat);
+    Class(Location loc, Environment* env, Type* type, Type* alt);
     Feature* features() const { return features_; }    
     Attribute* attribute(String* name) const;
     Function* function(String* name) const;
@@ -199,8 +205,6 @@ public:
     Type* type() const { return type_; }
     Type* alternates() const { return alternates_; }
     Type* mixins() const { return mixins_; }
-    String* name() const { return type_->name(); }
-    String* label() const { return label_; }
     bool is_object() const { return is_object_; }
     bool is_mixin() const { return is_mixin_; }
     bool is_value() const { return is_value_; }
@@ -216,7 +220,6 @@ public:
     void jump1(int index, int d);
     void jump2(int index, Function* func);
     void size(int size) { size_ = size; }
-    void label(String* label) { label_ = label; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Class> Ptr;
 
@@ -231,7 +234,6 @@ private:
     Type::Ptr alternates_;
     Type::Ptr mixins_;
     String::Ptr comment_;
-    String::Ptr label_;
     Feature::Ptr features_;
     bool is_object_;
     bool is_value_;
@@ -243,17 +245,14 @@ private:
 /* Module, contains classes, functions, etc. */
 class Module : public Feature {
 public:
-    Module(Location loc, String* name, Environment* env) :
-        Feature(loc),
-        name_(name),
-        environment_(env) {
+    Module(Location loc, Environment* env, String* name) :
+        Feature(loc, env, name) {
     }
 
     Feature* features() const { return features_; }
     Function* function(String* name) { return query(functions_, name); }
     Class* clazz(String* name) { return query(classes_, name); }
     Constant* constant(String* name) { return query(constants_, name); }
-    String* name() const { return name_; }    
     void feature(Feature* feature);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Module> Ptr; 
@@ -262,8 +261,6 @@ private:
     std::map<String::Ptr, Function::Ptr> functions_;
     std::map<String::Ptr, Class::Ptr> classes_;
     std::map<String::Ptr, Constant::Ptr> constants_;
-    String::Ptr name_; 
     Feature::Ptr features_;
-    Environment* environment_;
 };
 
