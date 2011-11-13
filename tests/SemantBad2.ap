@@ -43,6 +43,8 @@ Obj1 < Object {
     bill Int = bob
     obj2 Obj2
     one Int = obj2.two
+    CONST1 = CONST2
+    CONST2 = CONST1
 }
 
 Obj2 < Object {

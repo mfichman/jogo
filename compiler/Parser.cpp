@@ -289,7 +289,9 @@ Class* Parser::clazz() {
 Feature* Parser::feature_list() {
     // Parses the list of class members, functions, and attributes
     Feature* members = 0;
-    while (token() == Token::IDENTIFIER || token() == Token::OPERATOR) {
+    while (token() == Token::IDENTIFIER || token() == Token::OPERATOR
+                || token() == Token::CONSTANT) {
+
         members = append(members, feature());
         if (error_) {
             while (true) {

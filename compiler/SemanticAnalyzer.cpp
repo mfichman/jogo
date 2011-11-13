@@ -575,7 +575,12 @@ void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
     String::Ptr scope = expression->scope();
     
     File::Ptr file = expression->file();
-    Constant::Ptr constant = file->constant(scope, id);
+    Constant::Ptr constant;
+    if (class_ && scope->is_empty()) {
+        constant = class_->constant(id);
+    } else {
+        constant = file->constant(scope, id);
+    }
     if (!constant) {
         err_ << expression->location();
         err_ << "Undefined constant '" << id << "'\n";
@@ -583,6 +588,14 @@ void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
         expression->type(env_->no_type());
         return;
     }
+    if (constant->type() == env_->bottom_type()) {
+        err_ << expression->location();
+        err_ << "Illegal circular reference\n";
+        env_->error();
+        expression->type(env_->no_type());
+        return;
+    }
+    constant(this);
     
     expression->constant(constant);
     expression->type(constant->type()); 
@@ -959,8 +972,9 @@ void SemanticAnalyzer::operator()(Function* feature) {
 
 void SemanticAnalyzer::operator()(Constant* feature) {
     // Analyze a constant value.
-    
+    if (feature->initializer()->type()) { return; }
     Expression::Ptr initializer = feature->initializer();
+    feature->type(env_->bottom_type());
     initializer(this);
     feature->type(initializer->type());
 }
