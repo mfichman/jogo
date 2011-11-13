@@ -38,6 +38,12 @@ extern  _%1
 %define cextern extern
 %endif
 
+%ifdef WINDOWS
+%define ARG0 rcx
+%else
+%define ARG0 rdi
+%endif
+
 cglobal Coroutine__resume
 cglobal Coroutine__exit
 cglobal Coroutine__yield
@@ -47,12 +53,15 @@ cextern Coroutine__current;
 section .text
 
 Coroutine__resume:
-    ; Resume the coroutine passed in via rdi by saving the state of the current
+    ; Resume the coroutine passed in via ARG0 by saving the state of the current
     ; coroutine, and loading the other corountine's state.  Then, 'return' to
     ; the caller of the other coroutine's yield() invocation.
+    ; **** NOTE: If any of the 'push' instructions below change, then
+    ; Coroutine.c must also be modified!!!
     push rbp
     push rbx
     push rdi
+    push ARG0
     push r12
     push r13
     push r14
@@ -61,14 +70,15 @@ Coroutine__resume:
     push qword [Coroutine__stack]
     push qword [save_rsp]
     mov [save_rsp], rsp
-    mov rsp, [rdi+RSP_OFFSET]
-    mov [Coroutine__current], rdi
-    mov rax, [rdi+CURRENT_OFFSET]
+    mov rsp, [ARG0+RSP_OFFSET]
+    mov [Coroutine__current], ARG0
+    mov rax, [ARG0+CURRENT_OFFSET]
     mov [Coroutine__stack], rax;
     pop r15
     pop r14
     pop r13
     pop r12
+    pop ARG0
     pop rdi
     pop rbx
     pop rbp
@@ -77,25 +87,28 @@ Coroutine__resume:
 Coroutine__exit:
     ; This is the same as yield, except it sets the status code to '3' because
     ; the coroutine is finished.
-    mov rdi, [Coroutine__current]
-    mov qword [rdi+STATUS_OFFSET], 3
+    mov ARG0, [Coroutine__current]
+    mov qword [ARG0+STATUS_OFFSET], 3
     jmp Coroutine__yield
 
 Coroutine__yield:
     ; Yield to the calling coroutine by saving the state of the current
     ; coroutine, and loading the other coroutine's state.  Then, 'return' to
     ; the calling coroutine's resume() invocation.
+    ; **** NOTE: If any of the 'push' instructions below change, then
+    ; Coroutine.c must also be modified!!!
     push rbp
     push rbx
     push rdi
+    push ARG0
     push r12
     push r13
     push r14
     push r15
-    mov rdi, [Coroutine__current]
+    mov ARG0, [Coroutine__current]
     mov rax, [Coroutine__stack]
-    mov [rdi+CURRENT_OFFSET], rax
-    mov [rdi+RSP_OFFSET], rsp
+    mov [ARG0+CURRENT_OFFSET], rax
+    mov [ARG0+RSP_OFFSET], rsp
     mov rsp, [save_rsp]
     pop qword [save_rsp]
     pop qword [Coroutine__stack]
@@ -104,6 +117,7 @@ Coroutine__yield:
     pop r14
     pop r13
     pop r12
+    pop ARG0
     pop rdi
     pop rbx
     pop rbp

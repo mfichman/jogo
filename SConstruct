@@ -13,15 +13,15 @@ stack_size = '8192'
 if env['PLATFORM'] == 'darwin':
     env.Append(CXXFLAGS = '-DDARWIN')
     env.Append(CFLAGS = '-DDARWIN')
-    nasm = 'nasm -fmacho64 -o $TARGET $SOURCE'
+    nasm = 'nasm -dDARWIN -fmacho64 -o $TARGET $SOURCE'
 
 if env['PLATFORM'] == 'posix':
     env.Append(CXXFLAGS = '-DLINUX')
     env.Append(CFLAGS = '-DLINUX')
-    nasm = 'nasm -felf64 -o $TARGET $SOURCE'
+    nasm = 'nasm -dLINUX -felf64 -o $TARGET $SOURCE'
 
 if env['PLATFORM'] == 'win32':
-    nasm = 'nasm -fwin64 -o $TARGET $SOURCE'
+    nasm = 'nasm -DWINDOWS -fwin64 -o $TARGET $SOURCE'
     apollo = 'bin\\apollo.exe'
     bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
     if 'release' == build_mode:
