@@ -93,7 +93,7 @@ void SemanticAnalyzer::operator()(Module* feature) {
             }
             features.insert(cons->name());
         }
-        Feature::Ptr feat;
+        Feature::Ptr feat = f;
         feat(this);
     }
     module_ = 0;
@@ -201,8 +201,25 @@ void SemanticAnalyzer::operator()(Class* feature) {
         env_->error();
     }
 
-    // Iterate through all the features and generate accessors
     std::set<String::Ptr> features;
+
+    // Iterate through the attributes first, because attributes may be 
+    // referenced by functions.
+    for (Feature* f = feature->features(); f; f = f->next()) {
+        if (Attribute* attr = dynamic_cast<Attribute*>(f)) {
+            if (features.find(attr->name()) != features.end()) {
+                err_ << f->location();
+                err_ << "Duplicate definition of attribute '";
+                err_ << attr->name() << "'\n";
+                env_->error();
+            }
+            features.insert(attr->name());
+            Feature::Ptr feat = f;
+            feat(this);
+        }
+    }
+
+    // Iterate through all the features and generate accessors
     for (Feature* f = feature->features(); f; f = f->next()) {
         if (Function* func = dynamic_cast<Function*>(f)) {
             if (features.find(func->name()) != features.end()) {
@@ -212,14 +229,8 @@ void SemanticAnalyzer::operator()(Class* feature) {
                 env_->error();
             }
             features.insert(func->name());
-        } else if (Attribute* attr = dynamic_cast<Attribute*>(f)) {
-            if (features.find(attr->name()) != features.end()) {
-                err_ << f->location();
-                err_ << "Duplicate definition of attribute '";
-                err_ << attr->name() << "'\n";
-                env_->error();
-            }
-            features.insert(attr->name());
+            Feature::Ptr feat = f;
+            feat(this);
         } else if (Constant* cons = dynamic_cast<Constant*>(f)) {
             if (features.find(cons->name()) != features.end()) {
                 err_ << f->location();
@@ -228,9 +239,9 @@ void SemanticAnalyzer::operator()(Class* feature) {
                 env_->error();
             }
             features.insert(cons->name());
+            Feature::Ptr feat = f;
+            feat(this);
         }
-        Feature::Ptr feat = f;
-        feat(this);
     }
 
     exit_scope();
