@@ -88,11 +88,37 @@ private:
 
     Environment::Ptr env_;
     Stream::Ptr err_;
-    Module::Ptr module_;
     Class::Ptr class_;
     Function::Ptr function_;
     Type::Ptr return_; // Return value of the current block
     std::vector<Scope::Ptr> scope_;
-    int slot_;
+
+    friend class ContextAnchor;
 };
 
+/* This class saves the state of the semantic analyzer */
+class ContextAnchor {
+public:
+    ContextAnchor(SemanticAnalyzer* semant) : semant_(semant){
+        scope_.swap(semant->scope_);
+        class_ = semant->class_;
+        return_ = semant->return_;
+        function_ = semant->function_;
+        semant->enter_scope();
+    }
+
+    ~ContextAnchor() {
+        semant_->exit_scope();
+        semant_->function_ = function_;
+        semant_->return_ = return_;
+        semant_->class_ = class_;
+        scope_.swap(semant_->scope_);
+    }
+
+private:
+    SemanticAnalyzer* semant_;
+    std::vector<Scope::Ptr> scope_;
+    Class::Ptr class_;
+    Type::Ptr return_;
+    Function::Ptr function_;
+};

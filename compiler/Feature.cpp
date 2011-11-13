@@ -42,13 +42,6 @@ Class::Class(Location loc, Environment* env, Type* type, Type* mixins,
 
     for (Feature* feat = features_; feat; feat = feat->next()) {
         feat->parent(this);
-        if (Attribute* attr = dynamic_cast<Attribute*>(feat)) {
-            attributes_[attr->name()] = attr;
-        } else if (Function* func = static_cast<Function*>(feat)) {
-            functions_[func->name()] = func;
-        } else if (Constant* cons = static_cast<Constant*>(feat)) {
-            constants_[cons->name()] = cons;
-        }   
     }
 
     for (Type* mixin = mixins; mixin; mixin = mixin->next()) {
@@ -104,41 +97,29 @@ void Class::feature(Feature* feature) {
 
     feature->parent(this);
     features_ = append(features_, feature);
-
-    if (Attribute* attr = dynamic_cast<Attribute*>(feature)) {
-        attributes_[attr->name()] = attr;
-        return;
-    }
-    if (Function* func = dynamic_cast<Function*>(feature)) {
-        functions_[func->name()] = func;
-        return;
-    }
-    if (Constant* cons = dynamic_cast<Constant*>(feature)) {
-        constants_[cons->name()] = cons;
-        return;
-    } 
 }
 
 Attribute* Class::attribute(String* name) const {
-    std::map<String::Ptr, Attribute::Ptr>::const_iterator i;
-    i = attributes_.find(name);
-    return (i == attributes_.end()) ? 0 : i->second;
+    return dynamic_cast<Attribute*>(feature(name));
 }
 
 Constant* Class::constant(String* name) const {
-    std::map<String::Ptr, Constant::Ptr>::const_iterator i;
-    i = constants_.find(name);
-    return (i == constants_.end()) ? 0 : i->second;
+    return dynamic_cast<Constant*>(feature(name));
 }
 
 Function* Class::function(String* name) const {
-    // Searches for a function with name 'name' in this lass or in a mixin
+    return dynamic_cast<Function*>(feature(name));
+}
+
+Feature* Class::feature(String* name) const {
+    // Searches for a feature with name 'name' in this lass or in a mixin
     // that was added to this class.
-    std::map<String::Ptr, Function::Ptr>::const_iterator i;
-    i = functions_.find(name);
-    if (i != functions_.end()) {
-        return i->second;
+    for (Feature* f = features_; f; f = f->next()) {
+        if (f->name() == name) {
+            return f;
+        }
     }
+
     if (type()->is_proto()) {
         return 0;
     }
@@ -146,7 +127,7 @@ Function* Class::function(String* name) const {
     for (Type* mixin = mixins_; mixin; mixin = mixin->next()) {
         Class* clazz = mixin->clazz();
         if (clazz) {
-            Function* func = clazz->function(name);
+            Feature* func = clazz->feature(name);
             if (func) {
                 return func;
             } 
@@ -239,18 +220,27 @@ void Module::feature(Feature* feature) {
 
     feature->parent(this);
     features_ = append(features_, feature);
+}
 
-    if (Class* clazz = dynamic_cast<Class*>(feature)) {
-        classes_[clazz->name()] = clazz;
-        return;
+Feature* Module::feature(String* name) const {
+    for (Feature* f = features_; f; f = f->next()) {
+        if (f->name() == name) {
+            return f;
+        }
     }
-    if (Function* func = dynamic_cast<Function*>(feature)) {
-        functions_[func->name()] = func;
-        return;
-    }
-    if (Constant* cons = dynamic_cast<Constant*>(feature)) {
-        constants_[cons->name()] = cons;
-    }
+    return 0;
+}
+
+Class* Module::clazz(String* name) const {
+    return dynamic_cast<Class*>(feature(name));
+}
+
+Function* Module::function(String* name) const {
+    return dynamic_cast<Function*>(feature(name));
+}
+
+Constant* Module::constant(String* name) const {
+    return dynamic_cast<Constant*>(feature(name));
 }
 
 String* Feature::label() const {

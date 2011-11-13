@@ -38,3 +38,17 @@ native_function2() native Int {
 
 native_function3() native # OK
   
+Obj1 < Object {
+    bob Int = bill
+    bill Int = bob
+    obj2 Obj2
+    one Int = obj2.two
+}
+
+Obj2 < Object {
+    obj1 Obj1
+    two Int = obj1.one
+    test = bob
+    bob = test
+}
+

@@ -92,6 +92,7 @@ public:
     Type* int_type() const { return int_type_; }
     Type* string_type() const { return string_type_; }
     Type* no_type() const { return no_type_; }
+    Type* bottom_type() const { return bottom_type_; }
     Type* nil_type() const { return nil_type_; }
     Type* float_type() const { return float_type_; }
     Type* char_type() const { return char_type_; }
@@ -124,6 +125,7 @@ private:
     Type::Ptr int_type_;
     Type::Ptr string_type_;
     Type::Ptr no_type_;
+    Type::Ptr bottom_type_;
     Type::Ptr nil_type_;
     Type::Ptr float_type_;
     Type::Ptr char_type_;

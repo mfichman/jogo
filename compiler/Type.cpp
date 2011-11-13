@@ -97,6 +97,9 @@ bool Type::equals(Type* other) const {
 }
 
 bool Type::subtype(Type* other) const {
+    if (other->is_bottom_type() || is_bottom_type()) {
+        return false;
+    }
     if (other->is_any_type() || is_any_type()) {
         return true;
     }
@@ -145,6 +148,10 @@ bool Type::is_proto() const {
 
 bool Type::is_no_type() const {
     return is_no_type_ || this == environment_->no_type();
+}
+
+bool Type::is_bottom_type() const {
+    return this == environment_->bottom_type();
 }
 
 bool Type::is_nil_type() const {

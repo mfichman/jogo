@@ -39,7 +39,7 @@
 #endif
 
 
-Constant* File::constant(String* scope, String* name) {
+Feature* File::feature(String* scope, String* name) const {
     // Returns the constant with the scope "scope" and the name "name".
     // Searches through imports included in this file to attempt to find the
     // constant.
@@ -47,9 +47,9 @@ Constant* File::constant(String* scope, String* name) {
         Module* module = environment_->module(scope);
         // FIXME: If module lookup fails, then take the last segment and look
         // for that class
-        Constant* cn = module ? module->constant(name) : 0;
-        if (cn) {
-            return cn;
+        Feature* feat = module ? module->feature(name) : 0;
+        if (feat) {
+            return feat;
         }
             
         // Split the class name off the end of the scope string, and try to 
@@ -64,17 +64,17 @@ Constant* File::constant(String* scope, String* name) {
             scope = environment_->name(scope->string().substr(pos+1));
         }
         Class* clazz = File::clazz(scope, class_name);
-        return clazz ? clazz->constant(name) : 0;
+        return clazz ? clazz->feature(name) : 0;
     }
     
     // Attempt to load the constant from the current module
-    Constant* cn = module_->constant(name);
+    Feature* cn = module_->feature(name);
     if (cn) {
         return cn;
     }
 
     // Search the imports for the constant
-    std::vector<Import::Ptr>::iterator i = imports_.begin();
+    std::vector<Import::Ptr>::const_iterator i = imports_.begin();
     for (; i != imports_.end(); i++) {
         if ((*i)->is_qualified()) {
             continue;
@@ -83,100 +83,26 @@ Constant* File::constant(String* scope, String* name) {
         if (!m) {
             continue;
         }
-        cn = m->constant(name);
+        cn = m->feature(name);
         if (cn) {
             return cn;
         }
     }
     
     // Load from the global scope
-    return environment_->root()->constant(name);
+    return environment_->root()->feature(name);
 }
 
-Function* File::function(String* scope, String* name) {
-    // Returns the function with the scope "scope" and name "name."  Searches
-    // through imports included in this file to attempt to find the function.
-
-    if (scope && scope->string() != "") {
-        // The scope was specified, so load the function using the full scope
-        // specifier.
-        Module* module = environment_->module(scope);
-        return module ? module->function(name) : 0;
-    }
-
-    // Attempt to load the function from the current module
-    Function* fn = module_->function(name);
-    if (fn) {
-        return fn;
-    }
-
-    // Search the imports for the function in question 
-    std::vector<Import::Ptr>::iterator i = imports_.begin();
-    for (; i != imports_.end(); i++) {
-        if ((*i)->is_qualified()) {
-            continue;
-        }
-        Module* m = environment_->module((*i)->scope());
-        if (!m) {
-            continue;
-        }
-        fn = m->function(name);
-        if (fn) {
-            return fn;
-        }
-    }
-
-    // Load from the global scope
-    fn = environment_->root()->function(name);
-    if (fn) {
-        return fn;
-    }
-
-    // Load from the builtin scope 
-    return environment_->builtins()->function(name);
+Function* File::function(String* scope, String* name) const {
+    return dynamic_cast<Function*>(feature(scope, name));
 }
 
-Class* File::clazz(String* scope, String* name) {
-    // Returns the class with the scope "scope" and name "name."  Searches
-    // through imports included in this module to attempt to find the class.
+Class* File::clazz(String* scope, String* name) const {
+    return dynamic_cast<Class*>(feature(scope, name));
+}
 
-    if (scope && scope->string() != "") {
-        // The scope was specified, so load the class using the full scope
-        // specifier.
-        Module* module = environment_->module(scope);
-        return module ? module->clazz(name) : 0;
-    }
-
-    // Attempt to load the class from the current module
-    Class* cs = module_->clazz(name);
-    if (cs) {
-        return cs;
-    }
-
-    // Search the imports for the class in question 
-    std::vector<Import::Ptr>::iterator i = imports_.begin();
-    for (; i != imports_.end(); i++) {
-        if ((*i)->is_qualified()) {
-            continue;
-        }
-        Module* m = environment_->module((*i)->scope());
-        if (!m) {
-            continue;
-        }
-        cs = m->clazz(name);
-        if (cs) {
-            return cs;
-        }
-    }
-
-    // Load from the global scope
-    cs = environment_->root()->clazz(name);
-    if (cs) {
-        return cs;
-    }
-
-    // Load from the builtin scope 
-    return environment_->builtins()->clazz(name);
+Constant* File::constant(String* scope, String* name) const {
+    return dynamic_cast<Constant*>(feature(scope, name));
 }
 
 void File::dependency(Feature* feature) {

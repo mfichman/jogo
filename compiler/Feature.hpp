@@ -45,6 +45,7 @@ public:
         parent_(0) {
     }
 
+    virtual Feature* feature(String* name) { return 0; }
     String* name() const { return name_; }
     Feature* next() const { return next_; }
     Feature* last() const { return last_; }
@@ -198,6 +199,7 @@ public:
        String* comment, Feature* feat);
     Class(Location loc, Environment* env, Type* type, Type* alt);
     Feature* features() const { return features_; }    
+    Feature* feature(String* name) const;
     Attribute* attribute(String* name) const;
     Function* function(String* name) const;
     Constant* constant(String* name) const;
@@ -224,9 +226,6 @@ public:
     typedef Pointer<Class> Ptr;
 
 private:
-    std::map<String::Ptr, Attribute::Ptr> attributes_;
-    std::map<String::Ptr, Function::Ptr> functions_;
-    std::map<String::Ptr, Constant::Ptr> constants_;
     std::vector<int> jump1_;
     std::vector<Function::Ptr> jump2_;
     mutable std::map<Class*, bool> subtype_;
@@ -250,17 +249,15 @@ public:
     }
 
     Feature* features() const { return features_; }
-    Function* function(String* name) { return query(functions_, name); }
-    Class* clazz(String* name) { return query(classes_, name); }
-    Constant* constant(String* name) { return query(constants_, name); }
+    Feature* feature(String* name) const;
+    Function* function(String* name) const;
+    Class* clazz(String* name) const;
+    Constant* constant(String* name) const;
     void feature(Feature* feature);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Module> Ptr; 
 
 private:
-    std::map<String::Ptr, Function::Ptr> functions_;
-    std::map<String::Ptr, Class::Ptr> classes_;
-    std::map<String::Ptr, Constant::Ptr> constants_;
     Feature::Ptr features_;
 };
 

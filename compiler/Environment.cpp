@@ -49,6 +49,7 @@ Environment::Environment() :
     string_type_ = new Type(loc, name("String"), 0, this);
     nil_type_ = new Type(loc, name("Nil"), 0, this);
     no_type_ = new Type(loc, name("<<notype>>"), 0, this);
+    bottom_type_ = new Type(loc, name("<<bottomtype>>"), 0, this);
     float_type_ = new Type(loc, name("Float"), 0, this);
     char_type_ = new Type(loc, name("Char"), 0, this);
     byte_type_ = new Type(loc, name("Byte"), 0, this);

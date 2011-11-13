@@ -52,8 +52,6 @@ SemanticAnalyzer::SemanticAnalyzer(Environment* environment) :
 }
 
 void SemanticAnalyzer::operator()(Module* feature) {
-    module_ = feature;
-
     std::string module_name = feature->name()->string();
     if (module_name.empty()) {
         module_name = "root module";
@@ -96,18 +94,14 @@ void SemanticAnalyzer::operator()(Module* feature) {
         Feature::Ptr feat = f;
         feat(this);
     }
-    module_ = 0;
 }
 
 void SemanticAnalyzer::operator()(Class* feature) {
+    ContextAnchor anchor(this);
     class_ = feature;
-    slot_ = 2;
     // The initial 2 slots are for the following attributes, which every object
-    // has a pointer to:
-    // 1. refcount
-    // 2. vtable 
-
-    enter_scope();
+    // has a pointer to: 1. refcount  2. vtable 
+    int slot = 2;
 
     // Make sure that a module with this name doesn't already exist.
     if (env_->module(feature->type()->qualified_name())) {
@@ -194,6 +188,8 @@ void SemanticAnalyzer::operator()(Class* feature) {
                 err_ << attr->name() << "'\n";
                 env_->error();
             }
+            // Select a slot for this attribute.
+            attr->slot(slot++);
             features.insert(attr->name());
             Feature::Ptr feat = f;
             feat(this);
@@ -224,9 +220,6 @@ void SemanticAnalyzer::operator()(Class* feature) {
             feat(this);
         }
     }
-
-    exit_scope();
-    class_ = 0;
 }
 
 void SemanticAnalyzer::operator()(Formal* formal) {
@@ -452,24 +445,17 @@ void SemanticAnalyzer::operator()(Member* expression) {
     // Try to look up the attribute.  Then take the type from the attribute
     // and use it, if the attribute is public.
     Attribute::Ptr attr = clazz->attribute(id);
-    Function::Ptr func = clazz->function(env_->name(id->string()+"?")); 
-
-    // Force the attribute to be evaluated, if it hasn't already been
-    // evaluated.
-    if (!func) {
-        Class::Ptr save_class_ = class_;
-        Function::Ptr save_function_ = function_;
-        std::vector<Scope::Ptr> save_scope_; 
-        save_scope_.swap(scope_);
-        enter_scope();
-        class_ = clazz;
-        attr(this);
-        exit_scope();
-        class_ = save_class_;
-        function_ = save_function_;
-        save_scope_.swap(scope_);
-        func = clazz->function(env_->name(id->string()+"?")); 
+    if (attr && attr->type() == env_->bottom_type()) {
+        err_ << expression->location(); 
+        err_ << "Illegal circular reference\n";
+        env_-> error();
+        expression->type(env_->no_type());
+        return;
     }
+    if (attr) {
+        attr(this);
+    }
+    Function::Ptr func = clazz->function(env_->name(id->string()+"?")); 
 
     if (!func) {
         err_ << expression->location();
@@ -608,37 +594,50 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
     // prevent further error messages.
     String::Ptr id = expression->identifier();
     String::Ptr scope = expression->scope(); 
-    Variable::Ptr var = variable(id);
     Call::Ptr call = dynamic_cast<Call*>(expression->parent());
+    Type::Ptr type; // Class of the object stored in 'expression'
+
+    if (Variable::Ptr var = variable(id)) {
+        type = var->type();
+    } else if (class_ && scope->is_empty()) {
+        Attribute::Ptr attr = class_->attribute(id);
+        if (attr) {
+            if (attr->type() == env_->bottom_type()) {
+                err_ << expression->location();
+                err_ << "Illegal circular reference\n";
+                env_->error();      
+                expression->type(env_->no_type());
+                return;
+            }
+            attr(this);
+            type = attr->type();
+        }
+    }
 
     if (!call) {
         // First handle the simple case, which is that this is just a plain
         // local variable or attribute access.
-        if (!var) {
+        if (!type) {
             err_ << expression->location();
             err_ << "Undefined variable '" << id << "'\n";
             env_->error();
             expression->type(env_->no_type());
         } else {
-            expression->type(var->type());
+            expression->type(type);
         }
         return;
     }
 
-    // Parent is a function call; we need to try to evaluate this
-    // identifier as a function.  That means either using the @call method,
-    // or finding a function in the current class, or finding a function
-    // in the current file scope.
-    if (var && scope->is_empty()) {
-        Class* clazz = var->type()->clazz();
-        call->function(clazz->function(env_->name("@call")));
+    // Handle the case where a variable is called using the @call operator. 
+    if (type) {
+        call->function(type->clazz()->function(env_->name("@call")));
         if (!call->function()) {
             err_ << expression->location();
             err_ << "Object is not callable\n";
             env_->error();
         } else {
             call->receiver(expression);
-            expression->type(var->type());
+            expression->type(type);
         }
         return;
     }
@@ -646,7 +645,7 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
     // This case handles a function that is called without the 'self'
     // receiver, but is a function of the enclosing class.  In this case,
     // the 'self' receiver is inserted automatically.
-    if (class_ && !call->function() && scope->is_empty()) {
+    if (class_ && scope->is_empty()) {
         call->function(class_->function(id));
         if (call->function()) {
             Location loc = expression->location();
@@ -655,14 +654,14 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
             Identifier::Ptr self = new Identifier(loc, scope, name);
             self->type(env_->self_type());
             call->receiver(self);
+            return;
         }
     }
 
-    // This final case handles a qualified or unqualified call to a free
-    // function that is visible from the current file. 
-    if (!call->function()) {
-        call->function(call->file()->function(scope, id));
-    }
+    // Parent is a function call; we need to try to evaluate this identifier as
+    // a function.  In the first case, the identifier actually resolves
+    // directly to a function, so use it.
+    call->function(expression->file()->function(scope, id));
 
     // If all attempts to resolve the function fail, then it is missing.
     if (!call->function()) {
@@ -967,19 +966,24 @@ void SemanticAnalyzer::operator()(Constant* feature) {
 }
 
 void SemanticAnalyzer::operator()(Attribute* feature) {
-    // Select a slot for this attribute.
-    feature->slot(slot_++);
+    Expression::Ptr initializer = feature->initializer();
+    if (feature->type() && initializer->type()) { return; }
+
+    // Save the current class and variable scope.
+    ContextAnchor context(this);
+    class_ = dynamic_cast<Class*>(feature->parent());
 
     // Make sure that the attribute type conforms to the declared type of
-    // the attribute, if there is one.
-    Expression::Ptr initializer = feature->initializer();
+    // the attribute, if there is one.  Set the type to 'bottom' while 
+    // checking the initializer, in case there are circular references.
+    Type::Ptr save = feature->type();
+    feature->type(env_->bottom_type());
     initializer(this);
-
+    feature->type(save);
 
     // No explicitly declared type, but the initializer can be used to infer
     // the type.
     if (!feature->type()) {
-        variable(new Variable(feature->name(), 0, initializer->type()));     
         feature->type(initializer->type());
         mutator(feature);
         accessor(feature);
@@ -999,7 +1003,6 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
         env_->error();
     }
 
-    variable(new Variable(feature->name(), 0, feature->type()));
     mutator(feature);
     accessor(feature);
 }
@@ -1055,25 +1058,14 @@ void SemanticAnalyzer::operator()(Closure* expression) {
     Construct::Ptr constr = new Construct(loc, type, args);
     expression->construct(constr);
     
-
     Type::Ptr ret = env_->void_type();
     Block::Ptr block = new Block(loc, 0, stmts);
     String::Ptr name = env_->name("@init");
     Function::Ptr ctor = new Function(loc, env_, name, formals, 0, ret, block);
     expression->clazz()->feature(ctor);
 
-    Class::Ptr save_class_ = class_;
-    Function::Ptr save_function_ = function_;
-    std::vector<Scope::Ptr> save_scope_; 
-    save_scope_.swap(scope_);
-
     Class::Ptr clazz = expression->clazz();
     clazz(this);
-
-    class_ = save_class_;
-    function_ = save_function_;
-    save_scope_.swap(scope_);
-
     constr(this);
 }
 
@@ -1246,8 +1238,8 @@ void SemanticAnalyzer::constructor() {
 
 void SemanticAnalyzer::destructor() {
     // Check for a destructor, and generate one if it isn't present
-    if (!class_->function(env_->name("@destroy"))) {
-        String::Ptr nm = env_->name("@destroy");
+   String::Ptr nm = env_->name("@destroy");
+    if (!class_->function(nm)) {
         Type::Ptr st = env_->self_type();
         Type::Ptr vt = env_->void_type();
         Location loc = class_->location();

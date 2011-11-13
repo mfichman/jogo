@@ -46,9 +46,10 @@ public:
     
     Feature* dependency(int id) { return dependency_[id]; }
     Feature* features() const { return features_; }
-    Function* function(String* scope, String* name);
-    Constant* constant(String* scope, String* name);
-    Class* clazz(String* scope, String* name);
+    Feature* feature(String* scope, String* name) const;
+    Function* function(String* scope, String* name) const;
+    Constant* constant(String* scope, String* name) const;
+    Class* clazz(String* scope, String* name) const;
     String* name() const { return name_; }
     String* path() const { return path_; }
     File* next() const { return next_; }

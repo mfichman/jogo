@@ -2,3 +2,6 @@ SemantBad2.ap:4:1: Type name 'Sub1' conflicts with an existing module name
 SemantBad2.ap:11:1: Function 'test' must return a value
 SemantBad2.ap:17:5: Return must conform to type 'Int'
 SemantBad2.ap:35:1: Native function 'native_function2' has a body
+SemantBad2.ap:43:16: Illegal circular reference
+SemantBad2.ap:50:15: Illegal circular reference
+SemantBad2.ap:52:11: Illegal circular reference
