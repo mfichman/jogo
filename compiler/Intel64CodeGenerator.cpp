@@ -53,6 +53,7 @@ void Intel64CodeGenerator::operator()(File* file) {
         if (cons->type()->is_value() && !cons->type()->is_primitive()) {
             assert(!"Not supported");
         }
+        out_ << "global "; label(cons->label()); out_ << "\n";
         label(cons->label()); out_ << " dq 0\n";
     }
 

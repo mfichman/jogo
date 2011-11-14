@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+CoroutineStatus = NEW | RUNNING | SUSPENDED | DEAD
+
 Coroutine < Object {
     # Implements a coroutine, or lightweight cooperative thread.  The coroutine
     # semantics implemented by this class is intended to be similar to Lua's
@@ -31,7 +33,7 @@ Coroutine < Object {
     function immutable CoroutineFunc
     # This is the function that the coroutine will execute when it is run.
 
-    status immutable Int
+    status immutable CoroutineStatus
     # This attribute is set to NEW if the coroutine was just created, DEAD if
     # the coroutine has finished executing, SUSPENDED if the coroutine is not
     # the running coroutine, and RUNNING if the coroutine is the active

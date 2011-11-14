@@ -61,9 +61,9 @@ Coroutine Coroutine__init(Object func) {
         Int call = (Int)Object__dispatch(func, &call_str);
         ret->stack.stack[COROUTINE_STACK_SIZE-1] = exit;
         ret->stack.stack[COROUTINE_STACK_SIZE-2] = call;
-        ret->status = 0; // New coroutine status code 
+        ret->status = CoroutineStatus_NEW; // New coroutine status code 
     } else {
-        ret->status = 3; 
+        ret->status = CoroutineStatus_DEAD; 
     }
 
     return ret;
@@ -86,14 +86,16 @@ void Coroutine__destroy(Coroutine self) {
 void Coroutine__call(Coroutine self) {
     // Resumes a coroutine if it is still running.  Otherwise, returns
     // immediately.
-    if (self->status == 3 || self->status == 1) {
+    if (self->status == CoroutineStatus_DEAD) {
+        return;
+    } else if (self->status == CoroutineStatus_RUNNING) {
         // Coroutine is dead or already running
         return;
     } else {
-        self->status = 1;
+        self->status = CoroutineStatus_RUNNING;
         Coroutine__resume(self);
-        if (self->status != 3) {
-            self->status = 2;
+        if (self->status != CoroutineStatus_DEAD) {
+            self->status = CoroutineStatus_SUSPENDED;
         }
     }
 }

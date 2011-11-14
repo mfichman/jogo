@@ -47,8 +47,12 @@ extern  _%1
 cglobal Coroutine__resume
 cglobal Coroutine__exit
 cglobal Coroutine__yield
-cextern Coroutine__stack;
-cextern Coroutine__current;
+cextern Coroutine__stack
+cextern Coroutine__current
+cextern CoroutineStatus_NEW
+cextern CoroutineStatus_RUNNING
+cextern CoroutineStatus_SUSPENDED
+cextern CoroutineStatus_DEAD
 
 section .text
 
@@ -85,10 +89,11 @@ Coroutine__resume:
     ret
     
 Coroutine__exit:
-    ; This is the same as yield, except it sets the status code to '3' because
-    ; the coroutine is finished.
+    ; This is the same as yield, except it sets the status code to 'DEAD'
+    ; because the coroutine is finished.
     mov ARG0, [Coroutine__current]
-    mov qword [ARG0+STATUS_OFFSET], 3
+    mov rax, [CoroutineStatus_DEAD]
+    mov qword [ARG0+STATUS_OFFSET], rax
     jmp Coroutine__yield
 
 Coroutine__yield:

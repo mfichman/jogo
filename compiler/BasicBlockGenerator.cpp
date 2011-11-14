@@ -1202,5 +1202,6 @@ void BasicBlockGenerator::constants() {
         loc.indirect(true); 
         store(loc, emit(cons->initializer()));
         free_temps();
+        function_->file()->dependency(cons);
     }
 }

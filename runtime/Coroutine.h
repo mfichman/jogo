@@ -32,6 +32,11 @@ struct Coroutine_Stack {
 
 typedef struct Coroutine_Stack Coroutine_Stack;
 
+extern Int CoroutineStatus_NEW;
+extern Int CoroutineStatus_RUNNING;
+extern Int CoroutineStatus_SUSPENDED;
+extern Int CoroutineStatus_DEAD;
+
 struct Coroutine {
     Ptr _vtable; // 0
     U64 _refcount; // 8
