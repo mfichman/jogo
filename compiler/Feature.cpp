@@ -42,6 +42,9 @@ Class::Class(Location loc, Environment* env, Type* type, Type* mixins,
 
     for (Feature* feat = features_; feat; feat = feat->next()) {
         feat->parent(this);
+        if (!feature_[feat->name()]) {
+            feature_[feat->name()] = feat;
+        }        
     }
 
     for (Type* mixin = mixins; mixin; mixin = mixin->next()) {
@@ -97,27 +100,18 @@ void Class::feature(Feature* feature) {
 
     feature->parent(this);
     features_ = append(features_, feature);
-}
-
-Attribute* Class::attribute(String* name) const {
-    return dynamic_cast<Attribute*>(feature(name));
-}
-
-Constant* Class::constant(String* name) const {
-    return dynamic_cast<Constant*>(feature(name));
-}
-
-Function* Class::function(String* name) const {
-    return dynamic_cast<Function*>(feature(name));
+    if (!feature_[feature->name()]) {
+        feature_[feature->name()] = feature;
+    }
 }
 
 Feature* Class::feature(String* name) const {
     // Searches for a feature with name 'name' in this lass or in a mixin
     // that was added to this class.
-    for (Feature* f = features_; f; f = f->next()) {
-        if (f->name() == name) {
-            return f;
-        }
+
+    std::map<String::Ptr, Feature::Ptr>::const_iterator i = feature_.find(name);
+    if (i != feature_.end()) {
+        return i->second;
     }
 
     if (type()->is_proto()) {
@@ -220,27 +214,25 @@ void Module::feature(Feature* feature) {
 
     feature->parent(this);
     features_ = append(features_, feature);
-}
-
-Feature* Module::feature(String* name) const {
-    for (Feature* f = features_; f; f = f->next()) {
-        if (f->name() == name) {
-            return f;
-        }
+    if (!feature_[feature->name()]) {
+        feature_[feature->name()] = feature;
     }
-    return 0;
 }
 
-Class* Module::clazz(String* name) const {
+Class* Feature::clazz(String* name) const {
     return dynamic_cast<Class*>(feature(name));
 }
 
-Function* Module::function(String* name) const {
-    return dynamic_cast<Function*>(feature(name));
+Attribute* Feature::attribute(String* name) const {
+    return dynamic_cast<Attribute*>(feature(name));
 }
 
-Constant* Module::constant(String* name) const {
+Constant* Feature::constant(String* name) const {
     return dynamic_cast<Constant*>(feature(name));
+}
+
+Function* Feature::function(String* name) const {
+    return dynamic_cast<Function*>(feature(name));
 }
 
 String* Feature::label() const {

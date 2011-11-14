@@ -62,46 +62,29 @@ void SemanticAnalyzer::operator()(Module* feature) {
     // Iterate through all functions and classes in the module, and check 
     // their semantics.  Ensure there are no duplicate functions or classes.
     std::set<String::Ptr> features;
-    for (Feature* f = feature->features(); f; f = f->next()) {
-        if (Function* func = dynamic_cast<Function*>(f)) {
-            if (features.find(func->name()) != features.end()) {
-                err_ << f->location();
-                err_ << "Duplicate definition of function '";
-                err_ << func->name() << "' in " << module_name << "\n";
-                env_->error();
-            }
-            features.insert(func->name());
-        } else if (Class* clazz = dynamic_cast<Class*>(f)) {
-            if (clazz->is_closure()) {
-                continue;
-            }
-            if (features.find(clazz->name()) != features.end()) {
-                err_ << f->location();
-                err_ << "Duplicate definition of class '";
-                err_ << clazz->name() << "' in " << module_name << "\n";
-                env_->error();
-            }
-            features.insert(clazz->name());
-        } else if (Constant* cons = dynamic_cast<Constant*>(f)) {
-            if (features.find(cons->name()) != features.end()) {
-                err_ << f->location();
-                err_ << "Duplicate definition of constant '";
-                err_ << cons->name() << "' in " << module_name << "\n";
-                env_->error();
-            }
-            features.insert(cons->name());
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (Class::Ptr clazz = dynamic_cast<Class*>(f.pointer())) {
+            if (clazz->is_closure()) { continue; }
         }
-        Feature::Ptr feat = f;
-        feat(this);
+        f(this);
     }
 }
 
 void SemanticAnalyzer::operator()(Class* feature) {
-    ContextAnchor anchor(this);
-    class_ = feature;
     // The initial 2 slots are for the following attributes, which every object
     // has a pointer to: 1. refcount  2. vtable 
+    ContextAnchor anchor(this);
+    class_ = feature;
     int slot = 2;
+
+    // Make sure that there isn't a duplicate of this class.
+    Feature::Ptr parent = feature->parent();
+    if (parent->clazz(feature->name()) != feature) {
+        err_ << feature->location();
+        err_ << "Duplicate definition of class '";
+        err_ << feature->name() << "'\n";
+        env_->error();
+    }
 
     // Make sure that a module with this name doesn't already exist.
     if (env_->module(feature->type()->qualified_name())) {
@@ -176,49 +159,18 @@ void SemanticAnalyzer::operator()(Class* feature) {
         env_->error();
     }
 
-    std::set<String::Ptr> features;
-
     // Iterate through the attributes first, because attributes may be 
     // referenced by functions.
     for (Feature* f = feature->features(); f; f = f->next()) {
         if (Attribute* attr = dynamic_cast<Attribute*>(f)) {
-            if (features.find(attr->name()) != features.end()) {
-                err_ << f->location();
-                err_ << "Duplicate definition of attribute '";
-                err_ << attr->name() << "'\n";
-                env_->error();
-            }
             // Select a slot for this attribute.
             attr->slot(slot++);
-            features.insert(attr->name());
-            Feature::Ptr feat = f;
-            feat(this);
         }
     }
 
     // Iterate through all the features and generate accessors
-    for (Feature* f = feature->features(); f; f = f->next()) {
-        if (Function* func = dynamic_cast<Function*>(f)) {
-            if (features.find(func->name()) != features.end()) {
-                err_ << f->location();
-                err_ << "Duplicate definition of function '";
-                err_ << func->name() << "'\n";
-                env_->error();
-            }
-            features.insert(func->name());
-            Feature::Ptr feat = f;
-            feat(this);
-        } else if (Constant* cons = dynamic_cast<Constant*>(f)) {
-            if (features.find(cons->name()) != features.end()) {
-                err_ << f->location();
-                err_ << "Duplicate definition of constant '";
-                err_ << cons->name() << "'\n";
-                env_->error();
-            }
-            features.insert(cons->name());
-            Feature::Ptr feat = f;
-            feat(this);
-        }
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        f(this);
     }
 }
 
@@ -920,8 +872,17 @@ void SemanticAnalyzer::operator()(Function* feature) {
     // first, followed by the function body.  If the function belongs to an
     // an interface, the function should not have a body.
     Block::Ptr block = feature->block();
+    Feature::Ptr parent = feature->parent();
     function_ = feature;
     enter_scope();
+
+    // Check for duplicate functions with the same name
+    if (parent->feature(feature->name()) != feature) {
+        err_ << feature->location();
+        err_ << "Duplicate definition of function '";
+        err_ << feature->name() << "'\n";
+        env_->error();
+    }
 
     // Check all formal parameters, and add them as local variables
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
@@ -972,8 +933,17 @@ void SemanticAnalyzer::operator()(Function* feature) {
 
 void SemanticAnalyzer::operator()(Constant* feature) {
     // Analyze a constant value.
-    if (feature->initializer()->type()) { return; }
     Expression::Ptr initializer = feature->initializer();
+    Feature::Ptr parent = feature->parent();
+    if (initializer->type()) { return; }
+
+    if (parent->feature(feature->name()) != feature) {
+        err_ << feature->location();
+        err_ << "Duplicate definition of constant '";
+        err_ << feature->name() << "'\n";
+        env_->error();
+    }
+
     feature->type(env_->bottom_type());
     initializer(this);
     feature->type(initializer->type());
@@ -981,11 +951,20 @@ void SemanticAnalyzer::operator()(Constant* feature) {
 
 void SemanticAnalyzer::operator()(Attribute* feature) {
     Expression::Ptr initializer = feature->initializer();
+    Feature::Ptr parent = feature->parent();
     if (feature->type() && initializer->type()) { return; }
 
     // Save the current class and variable scope.
     ContextAnchor context(this);
     class_ = dynamic_cast<Class*>(feature->parent());
+
+    // Check for duplicate attributes
+    if (parent->feature(feature->name()) != feature) {
+        err_ << feature->location();
+        err_ << "Duplicate definition of attribute '";
+        err_ << feature->name() << "'\n";
+        env_->error();
+    } 
 
     // Make sure that the attribute type conforms to the declared type of
     // the attribute, if there is one.  Set the type to 'bottom' while 
