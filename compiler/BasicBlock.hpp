@@ -65,6 +65,7 @@ public:
     int temp() const { return temp_; }
     int addr() const { return addr_; }
     bool indirect() const { return indirect_; }
+    void indirect(bool indirect) { indirect_ = indirect; }
     void temp(int temp) { temp_ = temp; }
 
 private:

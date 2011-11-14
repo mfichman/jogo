@@ -81,7 +81,9 @@ void CopyPropagator::operator()(BasicBlock* block) {
             if (MOV == instr.opcode() && (j = lit.find(first)) != lit.end()) {
                 // If the RHS of a MOV can be replaced by a literal, then
                 // morph it into a load for that literal
-                instr.first(j->second);
+                Operand repl = j->second;
+                repl.indirect(instr.first().indirect());
+                instr.first(repl);
                 instr.opcode(LOAD);
             }
             if ((j = eq.find(first)) != eq.end()) {
@@ -115,11 +117,11 @@ void CopyPropagator::operator()(BasicBlock* block) {
                     rhs = j->second;
                 }
             }
-            if (rhs.temp() > 0) {
+            if (rhs.temp() > 0 && !rhs.indirect()) {
                 eq[result] = rhs;
             }
         } 
-        if (LOAD == instr.opcode()) {
+        if (LOAD == instr.opcode() && !instr.first().indirect()) {
             int result = instr.result().temp();
             lit[result] = instr.first();
         }

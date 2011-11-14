@@ -27,13 +27,13 @@
 using namespace std;
 
 Class::Class(Location loc, Environment* env, Type* type, Type* mixins, 
-    String* comment, Feature* feature) :
+    String* comment, Feature* feat) :
 
     Feature(loc, env, type->name()),
     type_(type),
     mixins_(mixins),
     comment_(comment),
-    features_(feature),
+    features_(feat),
     is_object_(false),
     is_value_(false),
     is_interface_(false),
@@ -63,6 +63,17 @@ Class::Class(Location loc, Environment* env, Type* type, Type* mixins,
         if ("Mixin" == mixin->name()->string()) {
             is_mixin_ = true;
             break;
+        }
+        if ("Enum" == mixin->name()->string()) {
+            Location loc;
+            String::Ptr name = env->name("@equal");
+            Type::Ptr ret = env->bool_type();
+            Formal::Ptr self(new Formal(loc, env->name("self"), type)); 
+            self->next(new Formal(loc, env->name("other"), type)); 
+            Feature::Flags flags = Feature::NATIVE;
+            feature(new Function(loc, env, name, self, flags, ret, 0));
+            is_enum_ = true;
+            is_value_ = true;
         }
     }
 }

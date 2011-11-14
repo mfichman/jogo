@@ -71,11 +71,9 @@ void SemanticAnalyzer::operator()(Module* feature) {
 }
 
 void SemanticAnalyzer::operator()(Class* feature) {
-    // The initial 2 slots are for the following attributes, which every object
-    // has a pointer to: 1. refcount  2. vtable 
+    // Analyze a class, including its child attributes and functions.
     ContextAnchor anchor(this);
     class_ = feature;
-    int slot = 2;
 
     // Make sure that there isn't a duplicate of this class.
     Feature::Ptr parent = feature->parent();
@@ -159,17 +157,19 @@ void SemanticAnalyzer::operator()(Class* feature) {
         env_->error();
     }
 
-    // Iterate through the attributes first, because attributes may be 
-    // referenced by functions.
-    for (Feature* f = feature->features(); f; f = f->next()) {
-        if (Attribute* attr = dynamic_cast<Attribute*>(f)) {
-            // Select a slot for this attribute.
-            attr->slot(slot++);
-        }
-    }
-
-    // Iterate through all the features and generate accessors
+    // Iterate through all the features and generate accessors.  Also, select
+    // a numeric value for each enum constant within the class
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
+            attr->slot(class_->next_slot());
+        } else if (Constant::Ptr cons = dynamic_cast<Constant*>(f.pointer())) {
+            if (!cons->initializer()) {
+                String::Ptr str(env_->integer(stringify(class_->next_enum())));
+                IntegerLiteral::Ptr lit(new IntegerLiteral(Location(), str));
+                lit->type(class_->type()); 
+                cons->initializer(lit);
+            }
+        }
         f(this);
     }
 }
@@ -548,9 +548,11 @@ void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
         return;
     }
     constant(this);
+    file->dependency(constant);
     
     expression->constant(constant);
     expression->type(constant->type()); 
+    assert(expression->type());
 }
 
 void SemanticAnalyzer::operator()(Identifier* expression) {
@@ -935,7 +937,7 @@ void SemanticAnalyzer::operator()(Constant* feature) {
     // Analyze a constant value.
     Expression::Ptr initializer = feature->initializer();
     Feature::Ptr parent = feature->parent();
-    if (initializer->type()) { return; }
+    if (initializer && feature->type() && initializer->type()) { return; }
 
     if (parent->feature(feature->name()) != feature) {
         err_ << feature->location();
@@ -947,6 +949,8 @@ void SemanticAnalyzer::operator()(Constant* feature) {
     feature->type(env_->bottom_type());
     initializer(this);
     feature->type(initializer->type());
+    feature->file()->constant(feature);
+    env_->constant(feature);
 }
 
 void SemanticAnalyzer::operator()(Attribute* feature) {

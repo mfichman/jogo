@@ -42,7 +42,9 @@ public:
         name_(name),
         env_(env),
         flags_(flags),
-        parent_(0) {
+        parent_(0),
+        next_slot_(2), // 2: 1 for dispatch table, 1 for refcount
+        next_enum_(0) {
     }
 
     virtual Feature* feature(String* name) const { return 0; }
@@ -65,6 +67,8 @@ public:
     void last(Feature* last) { last_ = last; }
     void flags(Flags flags) { flags_ = flags; }
     void parent(Feature* parent) { parent_ = parent; }
+    int next_slot() { return next_slot_++; }
+    int next_enum() { return next_enum_++; }
     typedef Pointer<Feature> Ptr;
 
     static const int PRIVATE = 0x1;
@@ -82,6 +86,8 @@ private:
     Flags flags_;
     mutable String::Ptr label_;
     Feature* parent_;
+    int next_slot_;
+    int next_enum_;
 };
 
 /* Represents a Constant initializer */
@@ -97,6 +103,7 @@ public:
     Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
     void type(Type* type) { type_ = type; } 
+    void initializer(Expression* init) { initializer_ = init; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Constant> Ptr;
 
@@ -134,7 +141,7 @@ private:
 /* Class for functions belonging to a class or module */
 class Function : public Feature {
 public:
-    Function(Location loc, Environment*env, String* name, Formal* formal, 
+    Function(Location loc, Environment* env, String* name, Formal* formal, 
         Flags flags, Type* ret, Block* block) :
 
         Feature(loc, env, name, flags),
@@ -209,6 +216,7 @@ public:
     Type* alternates() const { return alternates_; }
     Type* mixins() const { return mixins_; }
     bool is_object() const { return is_object_; }
+    bool is_enum() const { return is_enum_; }
     bool is_mixin() const { return is_mixin_; }
     bool is_value() const { return is_value_; }
     bool is_interface() const { return is_interface_; }
@@ -240,6 +248,7 @@ private:
     bool is_value_;
     bool is_interface_;
     bool is_mixin_;
+    bool is_enum_;
     int size_;
 };
 

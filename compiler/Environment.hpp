@@ -47,6 +47,7 @@ public:
     Module* module(String* scope);
     Module* modules() const { return modules_; }
     File* file(String* name);
+    Constant* constant(int index) { return constant_[index]; }
     const std::string& include(int index) { return include_[index]; }
     const std::string& input(int index) { return input_[index]; }
     const std::string& lib(int index) { return lib_[index]; }
@@ -66,6 +67,7 @@ public:
     int includes() { return include_.size(); }
     int inputs() { return input_.size(); }
     int libs() { return lib_.size(); }
+    int constants() { return constant_.size(); }
     void include(const std::string& path) { include_.push_back(path); }
     void input(const std::string& path) { input_.push_back(path); }
     void lib(const std::string& path) { lib_.push_back(path); }
@@ -82,6 +84,7 @@ public:
     void execute(bool execute) { execute_ = execute; }
     void module(Module* module);
     void file(File* name);
+    void constant(Constant* cons) { constant_.push_back(cons); }
     void error(const std::string& error) { errors_++; }
     void error() { errors_++; }
     const Location& location() const;
@@ -111,6 +114,7 @@ private:
     std::vector<std::string> include_;
     std::vector<std::string> input_;
     std::vector<std::string> lib_;
+    std::vector<Constant::Ptr> constant_;
 
     File::Ptr builtin_file_;
     File::Ptr files_;

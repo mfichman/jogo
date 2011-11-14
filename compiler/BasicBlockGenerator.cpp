@@ -330,11 +330,15 @@ void BasicBlockGenerator::operator()(Construct* expr) {
 }
 
 void BasicBlockGenerator::operator()(Constant* expr) {
+    // Nothing here, because constants get output in the scope of the main
+    // block.
 }
 
 void BasicBlockGenerator::operator()(ConstantIdentifier* expr) {
     Constant::Ptr cn = expr->constant();
-    return_ = load(Operand(cn->label())); 
+    Operand loc(cn->label());
+    loc.indirect(true);
+    return_ = load(loc);
 }
 
 void BasicBlockGenerator::operator()(Identifier* expr) {
@@ -620,7 +624,12 @@ void BasicBlockGenerator::operator()(Function* feature) {
         ctor_preamble(class_);
     }
 
-    // If this is main(), then emit the code to load constants FIXME.
+    // If this is main(), then emit the code to load constants.
+    String::Ptr name = feature->name();
+    Feature::Ptr parent = feature->parent();
+    if (name->string() == "main" && parent->name()->string() == "") {
+        constants();
+    }
 
     // Generate code for the body of the function.
     emit(feature->block());
@@ -1186,3 +1195,12 @@ void BasicBlockGenerator::free_temps() {
     object_temp_.clear();
 }
 
+void BasicBlockGenerator::constants() {
+    for (int i = 0; i < env_->constants(); i++) {
+        Constant::Ptr cons = env_->constant(i);
+        Operand loc(cons->label());
+        loc.indirect(true); 
+        store(loc, emit(cons->initializer()));
+        free_temps();
+    }
+}

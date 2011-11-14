@@ -1,11 +1,27 @@
 
+Fruit < Enum {
+    BANANA
+    APPLE
+    ORANGE
+    GRAPE
+}
 
-CONSTANT = 1
+CONSTANT1 = 1
+CONSTANT2 = 2900999
 
 main() Int {
 
-    var = CONSTANT
-    Io::print("#{var}")
+    var = CONSTANT1
+    Io::print("#{var}\n")
+    Io::print("#{CONSTANT2}\n")
+    var2 = Fruit::APPLE
+
+    if var2 == Fruit::APPLE {
+        Io::print("apple\n")
+    }
+    if var2 == Fruit::GRAPE {
+        Io::print("fail\n")
+    }
 
     ret 0
 }

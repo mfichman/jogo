@@ -33,12 +33,13 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
 }
 
 void Intel64CodeGenerator::operator()(File* file) {
+    // Output a translation unit, which can include constants, classes,
+    // literals, forward declarations, and function definitions.
     if (env_->errors()) {
         return;
     }
-
     file_ = file;
-    
+
     out_ << "default rel\n";
     out_ << "section .data\n";
     for (String::Ptr s = env_->strings(); s; s = s->next()) {
@@ -46,6 +47,13 @@ void Intel64CodeGenerator::operator()(File* file) {
     }
     for (String::Ptr s = env_->integers(); s; s = s->next()) {
         out_ << "    lit" << (void*)s.pointer() << " dq " << s << "\n";
+    }
+    for (int i = 0; i < file->constants(); i++) {
+        Constant::Ptr cons = file->constant(i);
+        if (cons->type()->is_value() && !cons->type()->is_primitive()) {
+            assert(!"Not supported");
+        }
+        label(cons->label()); out_ << " dq 0\n";
     }
 
     out_ << "section .text\n";
@@ -409,7 +417,13 @@ void Intel64CodeGenerator::label(Operand op) {
     assert(!op.addr()); 
     assert(op.label());
 
+    if (op.indirect()) {
+        out_ << "[";
+    }
     label(op.label()->string());
+    if (op.indirect()) {
+        out_ << "]";
+    }
 }
 
 void Intel64CodeGenerator::label(const std::string& label) {

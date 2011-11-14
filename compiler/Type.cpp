@@ -143,6 +143,9 @@ bool Type::is_proto() const {
     if (qn == "Mixin") {
         return true;
     }
+    if (qn == "Enum") {
+        return true;
+    }
     return false;
 }
 
@@ -171,7 +174,10 @@ bool Type::is_generic() const {
 }
 
 bool Type::is_primitive() const {
-    return is_int() || is_float() || is_bool() || is_char() || is_byte();
+    if (is_int() || is_float() || is_bool() || is_char() || is_byte()) {
+        return true;
+    }
+    return is_enum();
 }
 
 bool Type::is_interface() const {
@@ -196,6 +202,14 @@ bool Type::is_value() const {
         return true;
     }
     return !is_generic() && clazz() && clazz()->is_value();
+}
+
+bool Type::is_enum() const {
+    std::string qn = qualified_name()->string();
+    if (qn == "Enum") {
+        return true;
+    }
+    return clazz() && clazz()->is_enum();
 }
 
 bool Type::is_byte() const {

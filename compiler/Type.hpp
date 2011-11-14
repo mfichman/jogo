@@ -51,6 +51,7 @@ public:
     bool is_float() const;
     bool is_interface() const;
     bool is_object() const;
+    bool is_enum() const;
     bool is_value() const;
     bool is_boolifiable() const;
     bool is_void() const;

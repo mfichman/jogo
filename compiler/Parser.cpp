@@ -349,13 +349,11 @@ Constant* Parser::constant() {
     Feature::Flags flags = Parser::flags();
 
     // Read the initializer, which is not optional.
-    if (token() != Token::ASSIGN) {
-        err_ << location() << "Expected '='\n";
-        error();
-    } else {
+    Expression::Ptr init;
+    if (token() == Token::ASSIGN) {
         next();
+        init = expression();
     }
-    Expression::Ptr init = expression();
     expect(Token::SEPARATOR); 
    
     return new Constant(loc, env_, id, flags, init); 
@@ -1031,16 +1029,24 @@ Expression* Parser::member() {
 }
 
 Expression* Parser::construct() {
-    // Constructor expression, i.e., type ( arg? (, arg)*)
+    // Constructor expression, i.e., type ( arg? (, arg)*).  This function
+    // also handles qualified constants and identifiers, since these
+    // expressions all start with the same prefix.
     LocationAnchor loc(this);
     if (token() == Token::TYPE) {
         Type::Ptr type = Parser::type();
         if (token() == Token::SCOPE) {
             next();
             String::Ptr scope = type->qualified_name();
-            String::Ptr id = identifier();
-            file_->feature(new Import(loc, env_, scope, true));
-            return new Identifier(loc, scope, id); 
+            if (token() == Token::CONSTANT) {
+                String::Ptr id = env_->name(value());
+                next();
+                return new ConstantIdentifier(loc, scope, id); 
+            } else {
+                String::Ptr id = identifier();
+                file_->feature(new Import(loc, env_, scope, true));
+                return new Identifier(loc, scope, id); 
+            }
         }
         
         // Read in the ctor arguments

@@ -54,12 +54,15 @@ public:
     String* path() const { return path_; }
     File* next() const { return next_; }
     String* output() const { return output_; }
+    Constant* constant(int index) { return constant_[index]; }
     int dependencies() { return dependency_.size(); }
+    int constants() { return constant_.size(); }
     bool is_input_file() const { return is_input_file_; }
     void dependency(Feature* name);
     void feature(Feature* feature);
     void next(File* next) { next_ = next; }
     void output(String* path) { output_ = path; }
+    void constant(Constant* constant) { constant_.push_back(constant); }
     void is_input_file(bool input) { is_input_file_ = input; }
     typedef Pointer<File> Ptr;
 
@@ -85,6 +88,7 @@ private:
     String::Ptr output_;
     bool is_input_file_;
     std::vector<Feature*> dependency_;
+    std::vector<Constant*> constant_;
 };
 
 /* Directory iterator object */

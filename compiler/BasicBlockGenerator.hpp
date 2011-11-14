@@ -249,6 +249,7 @@ private:
     void dtor_epilog(Function* func);
     void free_temps();
     void calculate_size(Class* clazz);
+    void constants();
     Operand bool_expr(Expression* expr);
     Operand pop_ret();
 
