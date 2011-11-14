@@ -57,6 +57,10 @@ private:
     Class* clazz();
     Feature* feature_list();
     Feature* feature();
+    Generic* generic_list();
+    Type* mixin_list();
+    Type* alternate_list(); 
+    Feature* constant_list();
     Constant* constant();
     Function* function();
     Attribute* attribute();

@@ -208,6 +208,7 @@ class Class : public Feature {
 public:
     Class(Location loc, Environment* env, Type* type, Type* mixins, 
        String* comment, Feature* feat);
+    Class(Location loc, Environment* env, Type* type, Feature* feat);
     Class(Location loc, Environment* env, Type* type, Type* alt);
     Feature* features() const { return features_; }    
     Feature* feature(String* name) const;

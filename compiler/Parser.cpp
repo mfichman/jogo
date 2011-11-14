@@ -216,8 +216,6 @@ Class* Parser::clazz() {
 
     // Read in the name of the class, and any generic parameters
     String::Ptr id = scope(); 
-    Generic::Ptr generics;
-
     std::string qn = module_->name()->string();
     if (qn.empty()) {
         qn = id->string();
@@ -228,55 +226,25 @@ Class* Parser::clazz() {
     if (token() == Token::ASSIGN) {
         // Parse a union declaration, e.g. type = type | type | type
         next();
-        Type::Ptr alt;
-        while (token() == Token::TYPE) {
-            alt = append(alt, Parser::type()); 
-            if (token() == Token::ORB) {
-                next(); 
-            } else {
-                break;
-            }
-        } 
-        if (!alt) {
-            err_ << location() << "Expected a type name, not '";
+        Type::Ptr type = new Type(loc, name(qn), 0, env_);
+        switch (token()) {
+        case Token::TYPE:
+            return new Class(loc, env_, type, alternate_list());
+        case Token::CONSTANT:
+            return new Class(loc, env_, type, constant_list()); 
+        default:
+            err_ << location() << "Expected a type or constant, not ";
             err_ << token() << "'\n";
             error();
         }
-        return new Class(loc, env_, new Type(loc, name(qn), 0, env_), alt);
-    } else if (token() == Token::LEFT_BRACKET) {
-        // Parse generic type parameters
-        next();
-        while (token() == Token::TYPEVAR) {
-            LocationAnchor loc(this);
-            Type::Ptr type = new Type(loc, name(value()), 0, env_);
-            generics = append(generics, new Generic(type));
-            next();
-            if (token() == Token::COMMA) {
-                next();
-            } else {
-                break;
-            }
-        }
-        if (!generics) {
-            err_ << location() << "Expected a generic type, not '";
-            err_ << token() << "'\n";
-            error();
-        }
-        expect(Token::RIGHT_BRACKET);
     }
+
+    Generic::Ptr generics = generic_list();
     Type::Ptr type = new Type(loc, name(qn), generics, env_);
     
     // Parse the type list
     expect(Token::LESS);
-    Type::Ptr mixins;
-    while (token() == Token::TYPE) {
-        mixins = append(mixins, Parser::type());
-        if (token() == Token::COMMA) {
-            next();
-        } else {
-            break;
-        }
-    }
+    Type::Ptr mixins = mixin_list();
     expect(Token::LEFT_BRACE);
 
     // Parse the comment, if present
@@ -354,7 +322,6 @@ Constant* Parser::constant() {
         next();
         init = expression();
     }
-    expect(Token::SEPARATOR); 
    
     return new Constant(loc, env_, id, flags, init); 
 }
@@ -1062,6 +1029,86 @@ Expression* Parser::construct() {
     }
 }
 
+Generic* Parser::generic_list() {
+    // Returns a list of generic variables, including the brackets.  For
+    // example: [:a, :b, :c]
+    if (token() != Token::LEFT_BRACKET) {
+        return 0;
+    }
+    next();
+
+    // Parse one generic parameter per iteration of this loop
+    Generic* generics = 0;
+    while (token() == Token::TYPEVAR) {
+        LocationAnchor loc(this);
+        Type::Ptr type = new Type(loc, name(value()), 0, env_);
+        generics = append(generics, new Generic(type));
+        next();
+        if (token() == Token::COMMA) {
+            next();
+        } else {
+            break;
+        }
+    }
+    if (!generics) {
+        err_ << location() << "Expected a generic type, not '";
+        err_ << token() << "'\n";
+        error();
+    }
+    expect(Token::RIGHT_BRACKET);
+    return generics;
+}
+
+Feature* Parser::constant_list() {
+    // Parses a list of alternates in a union def, i.e., A | B | C
+    Feature* alt = 0; 
+    while (token() == Token::CONSTANT) {
+        alt = append(alt, static_cast<Feature*>(Parser::constant())); 
+        if (token() == Token::ORB) {
+            next(); 
+        } else {
+            return alt;
+        }
+    } 
+    err_ << location() << "Expected a type name, not '";
+    err_ << token() << "'\n";
+    error();
+    return alt;
+}
+
+Type* Parser::alternate_list() {
+    // Parses a list of alternates in a union def, i.e., A | B | C
+    Type* alt = 0; 
+    while (token() == Token::TYPE) {
+        alt = append(alt, Parser::type()); 
+        if (token() == Token::ORB) {
+            next(); 
+        } else {
+            return alt;
+        }
+    } 
+    err_ << location() << "Expected a type name, not '";
+    err_ << token() << "'\n";
+    error();
+    return alt;
+}
+
+Type* Parser::mixin_list() {
+    // Parses a list of mixins in a class definition, i.e., A, B, C
+    Type* mixins = 0;
+    while (token() == Token::TYPE) {
+        mixins = append(mixins, Parser::type());
+        if (token() == Token::COMMA) {
+            next();
+        } else {
+            return mixins;
+        }
+    }
+    //err_ << location() << "Expected a type name, not '";
+    //err_ << token() << "'\n";
+    //error();
+    return mixins;
+}
 
 Expression* Parser::literal() {
     // Parses a literal expression, variable, or parenthesized expression

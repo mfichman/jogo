@@ -6,6 +6,13 @@ Fruit < Enum {
     GRAPE
 }
 
+Fruit2 = BANANA | APPLE | ORANGE | GRAPE
+# Bob = String | Int
+
+Nested < Object {
+    bob = Fruit::BANANA
+}
+
 CONSTANT1 = 1
 CONSTANT2 = 2900999
 
@@ -22,6 +29,8 @@ main() Int {
     if var2 == Fruit::GRAPE {
         Io::print("fail\n")
     }
+
+    var3 = Fruit2::APPLE
 
     ret 0
 }

@@ -38,6 +38,7 @@ Class::Class(Location loc, Environment* env, Type* type, Type* mixins,
     is_value_(false),
     is_interface_(false),
     is_mixin_(false),
+    is_enum_(false),
     size_(0) {
 
     for (Feature* feat = features_; feat; feat = feat->next()) {
@@ -87,7 +88,29 @@ Class::Class(Location loc, Environment* env, Type* type, Type* alt) :
     is_value_(false),
     is_interface_(false),
     is_mixin_(false), 
+    is_enum_(false),
     size_(0) {
+}
+
+/* Constructor for enum types */
+Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
+    Feature(loc, env, type->name()),
+    type_(type),
+    features_(feat),
+    is_object_(false),
+    is_value_(true),
+    is_interface_(false),
+    is_mixin_(false), 
+    is_enum_(true),
+    size_(0) {
+
+    for (Feature* feat = features_; feat; feat = feat->next()) {
+        feat->parent(this);
+        if (!feature_[feat->name()]) {
+            feature_[feat->name()] = feat;
+        }        
+    }
+
 }
 
 void Class::jump1(int index, int d) {
