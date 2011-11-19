@@ -400,18 +400,6 @@ void TreePrinter::operator()(Return* statement) {
     indent_level_--;
 }
 
-void TreePrinter::operator()(When* statement) {
-    indent_level_++;
-    Expression::Ptr guard = statement->guard();
-    Statement::Ptr block = statement->block();
-    out_ << "When\n";
-    print_tabs(); out_ << "guard: ";
-    guard(this);
-    print_tabs(); out_ << "block: ";
-    block(this);
-    indent_level_--; 
-}
-
 void TreePrinter::operator()(Case* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();
@@ -419,9 +407,25 @@ void TreePrinter::operator()(Case* statement) {
     print_tabs(); out_ << "guard: ";
     guard(this);
 
+    int i = 0;
+    for (Statement::Ptr s = statement->children(); s; s = s->next()) {
+        print_tabs(); out_ << "child" << i << ": ";
+        s(this);
+        i++;
+    }
+    indent_level_--; 
+}
+
+void TreePrinter::operator()(Match* statement) {
+    indent_level_++;
+    Expression::Ptr guard = statement->guard();
+    out_ << "Match\n";
+    print_tabs(); out_ << "guard: ";
+    guard(this);
+
     int i = 0; 
-    for (Statement::Ptr b = statement->branches(); b; b = b->next()) {
-        print_tabs(); out_ << "branch" << i << ": ";
+    for (Statement::Ptr b = statement->cases(); b; b = b->next()) {
+        print_tabs(); out_ << "case" << i << ": ";
         b(this);
         i++;
     }

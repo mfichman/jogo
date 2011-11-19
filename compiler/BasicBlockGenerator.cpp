@@ -558,14 +558,43 @@ void BasicBlockGenerator::operator()(Return* statement) {
     free_temps();
 }
 
-void BasicBlockGenerator::operator()(When* statement) {
-    assert(!"Not implemented");
+void BasicBlockGenerator::operator()(Match* statement) {
+    // Emit one conditional for each branch in the match statement.
+    Operand guard = emit(statement->guard());
+    BasicBlock::Ptr done_block = basic_block();  
+    BasicBlock::Ptr next_block = basic_block();
+    free_temps();
+
+    for (Statement::Ptr t = statement->cases(); t; t = t->next()) {
+        emit(next_block);
+
+        Case::Ptr branch = static_cast<Case*>(t.pointer());
+        BasicBlock::Ptr true_block = basic_block();
+        if (t->next()) {
+            next_block = basic_block();
+        } else {
+            next_block = done_block;
+        }
+        
+        // Emit the guard expression for this branch.
+        Operand result = emit(branch->guard());  
+        free_temps();
+        bne(guard, result, next_block, true_block);
+        emit(true_block);
+
+        // Now emit the statements to be run if this branch is true, then jump
+        // to the end of the case statement.
+        for (Statement::Ptr s = branch->children(); s; s = s->next()) {
+            s(this);
+        } 
+        jump(done_block); 
+    }
+
+    emit(done_block);
     free_temps();
 }
 
 void BasicBlockGenerator::operator()(Case* statement) {
-    assert(!"Not implemented");
-    free_temps();
 }
 
 void BasicBlockGenerator::operator()(Fork* statement) {

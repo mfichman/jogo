@@ -52,7 +52,7 @@ class ConstantIdentifier;
 class Case;
 class Simple;
 class Block;
-class When;
+class Match;
 class Assignment;
 class Until;
 class While;

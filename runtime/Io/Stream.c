@@ -31,17 +31,19 @@
 #include <stdio.h>
 
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
+    // Read characters from the stream until 'buffer' is full, an I/O error 
+    // is raised, or the end of the input is reached.
+
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->capacity - buffer->end;
 #ifdef WINDOWS
     DWORD read = 0;
     if (!ReadFile((HANDLE)self->handle, buf, len, &read, 0)) {
         if (GetLastError() == ERROR_HANDLE_EOF) {
-            // EOF
+            self->status = Io_StreamStatus_EOF;
             return;
         } else {
-            // ERROR
-            printf("Read error: %d\n", GetLastError());
+            self->status = Io_StreamStatus_ERROR;
             return;
         }
     } else {
@@ -50,11 +52,9 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 #else
     Int ret = read(self->handle, buf, len);
     if (ret == 0) {
-        // EOF
-        return;
+        self->status = Io_StreamStatus_EOF;
     } else if (ret == -1) {
-        // ERROR
-        return;
+        self->status = Io_StreamStatus_ERROR;
     } else {
         buffer->end += ret;
     }
@@ -62,12 +62,15 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 }
 
 void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
+    // Write characters from the buffer into the stream until 'buffer' is full,
+    // an I/O error is raised, or the stream is closed.
+
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->end - buffer->begin;
 #ifdef WINDOWS
     DWORD written = 0;
     if (!WriteFile((HANDLE)self->handle, buf, len, &written, 0)) {
-        // ERROR
+        self->status = Io_StreamStatus_ERROR;
         return;
     } else {
         buffer->begin += written;
@@ -77,7 +80,6 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
     if (ret == 0) {
         return;
     } else if (ret == -1) {
-        // ERROR
         return;
     } else {
         buffer->begin += ret;
@@ -86,6 +88,10 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
 }
 
 Int Io_Stream_get(Io_Stream self) {
+    // Read a single character from the stream.  Returns EOF if the end of the
+    // stream has been reached.  If an error occurs while reading from the
+    // stream, then 'status' will be set to 'ERROR.'
+
     Io_Buffer buf = self->read_buf;
     if (buf->begin == buf->end) {
         buf->begin = 0;
@@ -93,6 +99,7 @@ Int Io_Stream_get(Io_Stream self) {
         Io_Stream_read(self, buf);
     }
     if (buf->begin >= buf->end) {
+        // EOF
         return -1;
     } else {
         return buf->data[buf->begin++];
@@ -100,6 +107,10 @@ Int Io_Stream_get(Io_Stream self) {
 }
 
 Int Io_Stream_peek(Io_Stream self) {
+    // Return the next character that would be read from the stream.  Returns
+    // EOF if the end of the file has been reached.  If an error occurs while
+    // reading from the stream, then 'status' will be set to 'ERROR.'
+
     Io_Buffer buf = self->read_buf;
     if (buf->begin == buf->end) {
         buf->begin = 0;
@@ -108,6 +119,7 @@ Int Io_Stream_peek(Io_Stream self) {
     }
 
     if (buf->begin >= buf->end) {
+        // EOF
         return -1;
     } else {
         return buf->data[buf->begin];
@@ -115,6 +127,9 @@ Int Io_Stream_peek(Io_Stream self) {
 }
 
 void Io_Stream_put(Io_Stream self, Char ch) {
+    // Insert a single character into the stream.  If an error occurs while 
+    // writing to the stream, then 'status' will be set to 'ERROR.'
+
     Io_Buffer buf = self->write_buf;
     if (buf->end == buf->capacity) {
         Io_Stream_write(self, buf);
@@ -129,6 +144,7 @@ void Io_Stream_put(Io_Stream self, Char ch) {
 String Io_Stream_scan(Io_Stream self, String delim) {
     // Read in characters until one of the characters in 'delim' is found,
     // then return all the characters read so far.
+
     Int length = 16;
     String ret = malloc(sizeof(struct String) + length + 1); 
     if (!ret) {
@@ -178,6 +194,9 @@ String Io_Stream_scan(Io_Stream self, String delim) {
 }
 
 void Io_Stream_print(Io_Stream self, String str) {
+    // Print the characters of 'str' to the stream.  If an error occurs while
+    // writing 'str', then 'status' will be set to ERROR.
+
     Int i = 0;
     for (; i < str->length; i++) {
         Io_Stream_put(self, str->data[i]);
@@ -186,10 +205,15 @@ void Io_Stream_print(Io_Stream self, String str) {
 }
 
 void Io_Stream_flush(Io_Stream self) {
+    // Forces all buffered characters to be written to the stream.
+
     Io_Stream_write(self, self->write_buf); 
 }
 
 void Io_Stream_close(Io_Stream self) {
+    // Forces all buffered characters to be written to the stream, and closes
+    // the stream.
+
     Io_Stream_flush(self);
     self->write_buf->begin = self->write_buf->end = 0;
     self->read_buf->begin = self->read_buf->end = 0;

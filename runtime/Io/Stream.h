@@ -33,8 +33,12 @@ struct Io_Stream {
     Int handle;
     Io_Buffer read_buf;
     Io_Buffer write_buf;
-    Int flags;
+    Int status;
 };
+
+extern Int Io_StreamStatus_OK;
+extern Int Io_StreamStatus_ERROR;
+extern Int Io_StreamStatus_EOF;
 
 Io_Stream Io_Stream__init(Int handle);
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer);

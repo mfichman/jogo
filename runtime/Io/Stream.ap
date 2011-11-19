@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+StreamStatus = OK | ERROR | EOF
+
 Stream < Object {
     # This object is used to perform buffered character I/O on a file.  It can
     # be used to read from any device or input that the OS supports for the
@@ -28,6 +30,8 @@ Stream < Object {
 
     read_buf private = Buffer(1024)
     write_buf private = Buffer(1024)
+
+    status = StreamStatus::OK
 
     @init(desc Int) {
         # Initializes a new stream, with 'handle' being an opaque pointer to

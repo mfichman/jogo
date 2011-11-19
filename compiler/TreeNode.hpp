@@ -72,7 +72,7 @@ public:
     virtual void operator()(Conditional* statement) {}
     virtual void operator()(Assignment* statement) {}
     virtual void operator()(Return* statement) {}
-    virtual void operator()(When* statement) {}
+    virtual void operator()(Match* statement) {}
     virtual void operator()(Yield* statement) {}
     virtual void operator()(Fork* statement) {}
     virtual void operator()(Case* statement) {}

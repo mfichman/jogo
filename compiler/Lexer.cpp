@@ -29,7 +29,6 @@ Lexer::Lexer(Environment* env) :
     char_(0) {
 
     keyword_["and"] = Token::AND;
-    keyword_["case"] = Token::CASE;
     keyword_["else"] = Token::ELSE;
     keyword_["for"] = Token::FOR;
     keyword_["fork"] = Token::FORK;
@@ -39,6 +38,7 @@ Lexer::Lexer(Environment* env) :
     keyword_["immutable"] = Token::IMMUTABLE;
     keyword_["import"] = Token::IMPORT;
     keyword_["let"] = Token::LET;
+    keyword_["match"] = Token::MATCH;
     keyword_["native"] = Token::NATIVE;
     keyword_["not"] = Token::NOT;
     keyword_["or"] = Token::OR;
@@ -48,8 +48,8 @@ Lexer::Lexer(Environment* env) :
     keyword_["ret"] = Token::RETURN;
     keyword_["until"] = Token::UNTIL;
     keyword_["weak"] = Token::WEAK; 
+    keyword_["with"] = Token::WITH;
     keyword_["while"] = Token::WHILE;
-    keyword_["when"] = Token::WHEN;
     keyword_["xor"] = Token::XORB;
     keyword_["yield"] = Token::YIELD;
     keyword_["is"] = Token::IS;
@@ -345,7 +345,7 @@ void Lexer::operator_or_typevar() {
             token(Token::EQUAL);
         } else if (char_ == '~') {
             read();
-            token(Token::MATCH);
+            token(Token::MATCH_OP);
         } else {
             token(Token::ASSIGN);
         }
@@ -520,8 +520,8 @@ Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {
     case Token::SEPARATOR: return out << "end of line";
     case Token::BACKTICK: return out << "'`'";
     case Token::SEMICOLON: return out << "';'";
-    case Token::WHEN: return out << "'when'";
-    case Token::CASE: return out << "'case'";
+    case Token::MATCH: return out << "'match'";
+    case Token::WITH: return out << "'with'";
     case Token::WHILE: return out << "'while'";
     case Token::ELSE: return out << "'else'";
     case Token::UNTIL: return out << "'until'";
@@ -537,7 +537,7 @@ Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {
     case Token::RIGHT_PARENS: return out << "')'";
     case Token::LEFT_BRACE: return out << "'{'";
     case Token::RIGHT_BRACE: return out << "'}'";
-    case Token::MATCH: return out << "'=~'";
+    case Token::MATCH_OP: return out << "'=~'";
     case Token::COMPL: return out << "'~'";
     case Token::STRING_BEGIN: return out << "string";
     case Token::STRING_END: return out << "string";

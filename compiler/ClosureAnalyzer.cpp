@@ -150,19 +150,20 @@ void ClosureAnalyzer::operator()(Return* statement) {
     expr(this);
 }
 
-void ClosureAnalyzer::operator()(When* statement) {
+void ClosureAnalyzer::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
-    Statement::Ptr block = statement->block();
     guard(this);
-    block(this);
+    for (Statement::Ptr c = statement->children(); c; c = c->next()) {
+        c(this);
+    }
 }
 
-void ClosureAnalyzer::operator()(Case* statement) {
+void ClosureAnalyzer::operator()(Match* statement) {
     // Recursively check the guard expression and all of the child statements.
     Expression::Ptr guard = statement->guard();
     guard(this);
     
-    for (Statement::Ptr b = statement->branches(); b; b = b->next()) {
+    for (Statement::Ptr b = statement->cases(); b; b = b->next()) {
         b(this);
     }
 }

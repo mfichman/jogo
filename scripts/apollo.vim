@@ -5,11 +5,9 @@
 " URL: http://stanford.edu/~mfichman
 " Release Coordinator: Matt Fichman <matt.fichman@gmail.com>
 
-syn keyword apKeyword import case when public private static native while
-syn keyword apKeyword if for let ret return xor and or in else until pass not
-syn keyword apKeyword func break def fork immutable weak is
-
-syn keyword apKeyword class struct interface yield 
+syn keyword apKeyword import public private static native while
+syn keyword apKeyword if for let ret xor and or in else until pass not
+syn keyword apKeyword func break immutable weak is yield match with 
 
 syn keyword apTodo contained TODO FIXME XXX
 
@@ -24,21 +22,16 @@ syn region apInterpolation matchgroup=apStringDelim start="#{" end="}" contained
 
 
 syn keyword apConstant true false nil self eof
-syn match apSymbol "[A-Za-z][a-zA-Z0-9]*:"
 
-
-"syn keyword apFunction @init @destroy @add @subtract @divide @mulitply
-"syn keyword apFunction @index @modulus @bitand @bitor @bitxor @equal
-"syn keyword apFunction @less @shift @unshift @power @complement @increment
-"syn keyword apFunction @decrement @dispatch  @compare
 
 syn match apFunction "[@]\?[a-z0-9_][a-z0-9_]*(\@="
 
-syn match apType "[A-Z][A-Za-z0-9]*"
 syn match apFunction "[a-z][A-Za-z0-9_]*[=!?]\=\((.*{\)\@="
 syn match apFunction "[a-z][A-Za-z0-9_]*[=!?]\=\([^\)]*func\)\@="
 syn match apString ":\@<!:[a-z][a-z0-9_]*"
 "syn match apFunction "\.\@<=[a-z][A-Za-z0-9_]*[=!?]\=\>"
+syn match apType "[A-Z][A-Za-z0-9]*"
+syn match apConstant "[A-Z][A-Z0-9_]*[a-z]\@!"
 
 
 syn keyword apOperator + - / * <> == != ^ ?

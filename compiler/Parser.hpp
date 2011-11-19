@@ -68,6 +68,9 @@ private:
     String* identifier();
     Type* type();
     Block* block();
+    Match* match();
+    Case* case_list();
+    Case* single_case();
     String* scope();
     String* comment();
     Feature::Flags flags();

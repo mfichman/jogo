@@ -479,10 +479,9 @@ Block* Parser::block() {
     while (token() != Token::RIGHT_BRACE && token() != Token::END) {
         statements = append(statements, statement());
         if (error_) {
-            while (token() != Token::SEPARATOR && token() != Token::END) {
-                if (token() == Token::RIGHT_BRACE) {
-                    break;
-                }
+            while (token() != Token::SEPARATOR && token() != Token::END
+                && token() != Token::RIGHT_BRACE) {
+
                 next();
             }
             next();
@@ -521,6 +520,7 @@ Statement* Parser::statement() {
     case Token::WHILE: return while_loop();
     case Token::FOR: return for_loop();
     case Token::LET: return let();
+    case Token::MATCH: return match();
     case Token::RETURN: {
         next();
         if (token() == Token::SEPARATOR) {
@@ -540,6 +540,57 @@ Statement* Parser::statement() {
         return new Simple(loc, expr);
     }
     }
+}
+
+Match* Parser::match() {
+    // Parses a match expression, i.e., match expr { ... }
+    LocationAnchor loc(this);
+    expect(Token::MATCH);
+    Expression::Ptr guard = expression();
+    expect(Token::LEFT_BRACE);
+    Case::Ptr cases = case_list();
+    expect(Token::RIGHT_BRACE);
+    return new Match(loc, guard, cases);
+}
+
+Case* Parser::case_list() {
+    // Parses a single case block, e.g., expr: statement*
+    LocationAnchor loc(this);
+    
+    Case* cases = 0;
+    while (token() != Token::RIGHT_BRACE && token() != Token::END) {
+        cases = append(cases, single_case());
+    }
+    return cases;
+}
+
+Case* Parser::single_case() {
+    // Matches a single case block, i.e., guard: statement, statement, etc.
+    LocationAnchor loc(this);
+    expect(Token::WITH);
+    Statement::Ptr statements;
+    Expression::Ptr guard = expression();
+    expect(Token::COLON);
+
+    while (token() != Token::RIGHT_BRACE && token() != Token::WITH 
+        && token() != Token::END) {
+
+        statements = append(statements, statement());
+        if (error_) {
+            while (token() != Token::SEPARATOR && token() != Token::END
+                && token() == Token::RIGHT_BRACE || token() == Token::WITH) {
+
+                next();
+            }
+            next();
+            error_ = 0;
+        } else if (token() == Token::SEPARATOR) {   
+            next();
+        } else {
+            break;
+        }
+    }
+    return new Case(loc, guard, statements);
 }
 
 void Parser::import() {
@@ -1221,17 +1272,14 @@ Statement* Parser::let() {
     while (token() == Token::COMMA) {
         assign = append(assign, assignment());
     } 
-    Block::Ptr block = Parser::block();
-    return new Let(loc, assign, block); 
+    return new Let(loc, assign, block()); 
 }
 
 Statement* Parser::while_loop() {
     // While loop: while expr block
     LocationAnchor loc(this);
     expect(Token::WHILE);
-    Expression::Ptr guard = expression();
-    Statement::Ptr block = Parser::block();
-    return new While(loc, guard, block); 
+    return new While(loc, expression(), block()); 
 }
 
 Statement* Parser::for_loop() {

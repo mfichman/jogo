@@ -62,44 +62,6 @@ private:
     Expression::Ptr expression_;
 };
 
-/* When statement */
-class When : public Statement {
-public:
-    When(Location loc, Expression* guard, Statement* block) : 
-        Statement(loc),
-        guard_(guard),
-        block_(block) {
-    }
-
-    Expression* guard() const { return guard_; }
-    Statement* block() const { return block_; }
-    void operator()(Functor* functor) { functor->operator()(this); }
-    typedef Pointer<When> Ptr;
-
-private:
-    Expression::Ptr guard_;
-    Statement::Ptr block_;
-};
-
-/* Case statement */
-class Case : public Statement {
-public:
-    Case(Location loc, Expression* guard, When* branches) :
-        Statement(loc),
-		guard_(guard),
-        branches_(branches) {
-    }
-
-	Expression* guard() const { return guard_; }
-    When* branches() const { return branches_; }
-    void operator()(Functor* functor) { functor->operator()(this); }
-    typedef Pointer<Case> Ptr;
-
-private:
-	Expression::Ptr guard_;
-    When::Ptr branches_;
-};
-
 /* Block statement */
 class Block : public Statement {
 public:
@@ -117,6 +79,45 @@ public:
 private:
     String::Ptr comment_;
     Statement::Ptr children_;
+};
+
+/* Case statement */
+class Case : public Statement {
+public:
+    Case(Location loc, Expression* guard, Statement* children) :
+        Statement(loc),
+        guard_(guard),
+        children_(children) {
+
+    }
+
+    Expression* guard() const { return guard_; }
+    Statement* children() const { return children_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Case> Ptr;
+
+private:
+    Expression::Ptr guard_;
+    Statement::Ptr children_;
+};
+
+/* Match statement */
+class Match : public Statement {
+public:
+    Match(Location loc, Expression* guard, Case* cases) : 
+        Statement(loc),
+        guard_(guard),
+        cases_(cases) {
+    }
+
+    Expression* guard() const { return guard_; }
+    Case* cases() const { return cases_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Match> Ptr;
+
+private:
+    Expression::Ptr guard_;
+    Case::Ptr cases_;
 };
 
 /* While loop */

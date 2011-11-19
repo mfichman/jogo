@@ -836,13 +836,6 @@ void SemanticAnalyzer::operator()(Return* statement) {
     }
 }
 
-void SemanticAnalyzer::operator()(When* statement) {
-    Expression::Ptr guard = statement->guard();
-    Statement::Ptr block = statement->block();
-    guard(this);
-    block(this);
-}
-
 void SemanticAnalyzer::operator()(Fork* statement) {
     assert(!"Not supported");
 }
@@ -855,13 +848,22 @@ void SemanticAnalyzer::operator()(Yield* statement) {
 void SemanticAnalyzer::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
     guard(this);
+    for (Statement::Ptr s = statement->children(); s; s = s->next()) {
+        s(this);
+    }
+}
 
-    for (Statement::Ptr b = statement->branches(); b; b = b->next()) {
+
+void SemanticAnalyzer::operator()(Match* statement) {
+    Expression::Ptr guard = statement->guard();
+    guard(this);
+
+    for (Statement::Ptr b = statement->cases(); b; b = b->next()) {
         b(this);
-        When::Ptr when = static_cast<When*>(b.pointer());
-        if (!guard->type()->equals(when->guard()->type())) {
+        Case::Ptr with = static_cast<Case*>(b.pointer());
+        if (!guard->type()->equals(with->guard()->type())) {
             err_ << statement->location();
-            err_ << "Case expression does not conform to type '";
+            err_ << "Match expression does not conform to type '";
             err_ << guard->type() << "'";
             err_ << "\n";
             env_->error();
