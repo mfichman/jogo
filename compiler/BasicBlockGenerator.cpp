@@ -77,7 +77,8 @@ void BasicBlockGenerator::operator()(StringLiteral* expr) {
     // Load a pointer to the string from the string table.  Strings must
     // always be loaded first, since they are specified by address.
     return_ = load(expr);
-    refcount_inc(return_);
+    //refcount_inc(return_);
+    //object_temp_.push_back(return_);
 }
 
 void BasicBlockGenerator::operator()(NilLiteral* expr) {
@@ -523,10 +524,11 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         if (!declared) {
             declared = expr->type();
         }
-        Variable::Ptr var = new Variable(id, mov(return_), declared);
+        //Variable::Ptr var = new Variable(id, mov(return_), declared);
+        Variable::Ptr var = new Variable(id, return_, declared);
         variable(var);
         if (!declared->is_value()) {
-            refcount_inc(var->operand());
+            refcount_inc(return_);
         }
     }
 }
@@ -595,6 +597,7 @@ void BasicBlockGenerator::operator()(Match* statement) {
 }
 
 void BasicBlockGenerator::operator()(Case* statement) {
+    // Pass, handled by match
 }
 
 void BasicBlockGenerator::operator()(Fork* statement) {
@@ -943,7 +946,18 @@ void BasicBlockGenerator::func_return() {
 
 void BasicBlockGenerator::refcount_inc(Operand var) {
     // Emit code to increment the reference count for the object specified by
-    // 'temp'.  Insert a call expression to call the refcount_dec function 
+    // 'temp'.  Insert a call expression to call the refcount_dec function.  If
+    // the variable is already in the temp list, then the current function has
+    // already incremented the refcount for that object -- so just remove it
+    // from the temp list instead of calling refcount_inc.
+    for (int i = 0; i < object_temp_.size(); i++) {
+        if (object_temp_[i].temp() == var.temp()) { 
+            std::swap(object_temp_[i], object_temp_.back());
+            object_temp_.pop_back();
+            return;
+        }
+    }
+
     push_arg(0, var);
     call(env_->name("Object__refcount_inc"));
 }

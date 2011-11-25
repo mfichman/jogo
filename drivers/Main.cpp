@@ -40,7 +40,7 @@
 Machine::Ptr machine = Machine::intel64();
 Environment::Ptr env(new Environment());
 BasicBlockGenerator::Ptr bgen(new BasicBlockGenerator(env, machine));
-CopyPropagator::Ptr copy(new CopyPropagator(env));
+CopyPropagator::Ptr copy(new CopyPropagator(env, machine));
 DeadCodeEliminator::Ptr elim(new DeadCodeEliminator(env, machine));
 BasicBlockPrinter::Ptr bprint(new BasicBlockPrinter(env, machine));
 RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));

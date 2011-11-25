@@ -29,7 +29,7 @@
 /* Propagates copies (MOV) throughout a basic block */
 class CopyPropagator : public TreeNode::Functor {
 public:
-    CopyPropagator(Environment* env);
+    CopyPropagator(Environment* env, Machine* machine);
 
     typedef Pointer<CopyPropagator> Ptr;
     void operator()(File* file);
@@ -41,4 +41,5 @@ public:
 private:
     Environment::Ptr env_;
     File::Ptr file_;
+    Machine::Ptr machine_;
 };

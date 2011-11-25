@@ -22,8 +22,9 @@
 
 #include "CopyPropagator.hpp"
 
-CopyPropagator::CopyPropagator(Environment* env) :
-    env_(env) {
+CopyPropagator::CopyPropagator(Environment* env, Machine* machine) :
+    env_(env),
+    machine_(machine) {
 
 }
 
