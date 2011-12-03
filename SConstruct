@@ -12,7 +12,7 @@ env.Append(ENV = os.environ)
 build_mode = ARGUMENTS.get('mode', 'debug')
 stack_size = '8192'
 major_version = '0'
-minor_version = '1'
+minor_version = '2'
 revision = '0'
 version = major_version + '.' + minor_version + '.' + revision
 
@@ -109,6 +109,8 @@ pkgmaker = '/Developer/Applications/Utilities/PackageMaker.app/Contents/MacOs/Pa
     --version ' + version + '\
     --out "Apollo ' + version + '.pkg"'
 
+dpkg = 'dpkg -b dist/root apollo-' + version + '.deb'
+
 
 if 'pkg' in COMMAND_LINE_TARGETS:
     for f in library_headers:
@@ -133,7 +135,9 @@ if 'pkg' in COMMAND_LINE_TARGETS:
         pkg = env.Command('pkg', apollo, pkgmaker)
     
     if env['PLATFORM'] == 'posix':
-        pass
+        copy = env.Command('dist/root/DEBIAN', 'dist/deb/DEBIAN', Copy('$TARGET', '$SOURCE'))
+        env.Depends('pkg', copy)
+        pkg = env.Command('pkg', apollo, dpkg)
 
     if env['PLATFORM'] == 'win32':
         path = os.path.join(dist_path, 'LICENSE.txt')
