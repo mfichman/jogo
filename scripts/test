@@ -118,7 +118,7 @@ tests.each do |test|
         `#{command}`
         output = `..\\build\\#{exe} 2>&1`
     else
-        output = `gcc -g #{test} -o ../build/#{exe} -L../lib -lapollo -I.. 2>&1`
+        output = `gcc -lm -g #{test} -o ../build/#{exe} -L../lib -lapollo -I.. 2>&1`
         output += `../build/#{exe} 2>&1`
     end
 

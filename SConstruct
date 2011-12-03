@@ -60,6 +60,7 @@ else:
     else:
         env.Append(CXXFLAGS = '-g')
         env.Append(CFLAGS = '-g')
+    env.Append(LDFLAGS = '-lm')
     env.Append(CXXFLAGS = '-DCOROUTINE_STACK_SIZE='+stack_size)
     env.Append(CXXFLAGS = '-Wall -Werror -pedantic -ansi')
     env.Append(CXXFLAGS = '-Wno-unused')

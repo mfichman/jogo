@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
     ss << "/NOLOGO /MACHINE:amd64 ";
     ss << obj_files << " /OUT:" << exe_file << ".exe ";
 #elif defined(LINUX)
-    ss << "gcc -m64 " << obj_files << " -o " << exe_file;
+    ss << "gcc -m64 -lm " << obj_files << " -o " << exe_file;
 #elif defined(DARWIN)
     ss << "gcc -Wl,-no_pie " << obj_files << " -o " << exe_file;
     // FIXME: Remove dynamic-no-pic once rel addressing is fixed

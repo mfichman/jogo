@@ -578,7 +578,7 @@ Case* Parser::single_case() {
         statements = append(statements, statement());
         if (error_) {
             while (token() != Token::SEPARATOR && token() != Token::END
-                && token() == Token::RIGHT_BRACE || token() == Token::WITH) {
+                && (token() == Token::RIGHT_BRACE || token() == Token::WITH)) {
 
                 next();
             }
