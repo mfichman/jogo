@@ -30,7 +30,11 @@ if env['PLATFORM'] == 'posix':
 
 # Windows-specific build settings ############################################
 if env['PLATFORM'] == 'win32':
-    nsis = '"' + os.environ['PROGRAMFILES'] + '\\NSIS\\makensis.exe"'
+    nsis = '"' + os.environ['PROGRAMFILES'] + '\\NSIS\\makensis.exe"\
+         -DVERSION='+version + '\
+         -V2\
+         dist\\win\\Apollo.nsi'
+
     nasm = 'nasm -DWINDOWS -fwin64 -o $TARGET $SOURCE'
     bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
     if 'release' == build_mode:
@@ -99,15 +103,11 @@ library_files = env.Glob('lib/*')
 
 
 pkgmaker = '/Developer/Applications/Utilities/PackageMaker.app/Contents/MacOs/PackageMaker\
+    --doc dist/pkg/Apollo.pmdoc\
     --title Apollo\
     --version ' + version + '\
-    --root dist/root\
-    --out /usr/local\
-    --target 10.5\
-    --id org.apollo.pkg\
     --out "Apollo ' + version + '.pkg"'
 
-nsis = nsis + ' -DVERSION='+version + ' -V2 Apollo.nsi'
 
 if 'pkg' in COMMAND_LINE_TARGETS:
     for f in library_headers:
@@ -129,11 +129,6 @@ if 'pkg' in COMMAND_LINE_TARGETS:
 
 
     if env['PLATFORM'] == 'darwin':
-        path = 'dist/Resources/License.rtf'
-        copy = env.Command(path, 'LICENSE.txt', Copy('$TARGET', '$SOURCE'))
-        path = 'dist/Resources/ReadMe.rtf'
-        copy = env.Command(path, 'README.txt', Copy('$TARGET', '$SOURCE'))
-        env.Depends('pkg', copy)
         pkg = env.Command('pkg', apollo, pkgmaker)
     
     if env['PLATFORM'] == 'posix':
@@ -144,7 +139,7 @@ if 'pkg' in COMMAND_LINE_TARGETS:
         copy = env.Command(path, 'LICENSE.txt', Copy('$TARGET', '$SOURCE'))
         env.Depends('pkg', copy)
         path = os.path.join(dist_path, 'README.txt')
-        copy = env.Command(path, 'README.txt', Copy('$TARGET', '$SOURCE'))
+        copy = env.Command(path, 'README.md', Copy('$TARGET', '$SOURCE'))
         env.Depends('pkg', copy)
         pkg = env.Command('pkg', apollo, nsis)
 
