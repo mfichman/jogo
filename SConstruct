@@ -1,5 +1,7 @@
 import os
 
+# Build specification for the Apollo Programming Language ####################
+
 VariantDir('build/compiler', 'compiler', duplicate=0)
 VariantDir('build/drivers', 'drivers', duplicate=0)
 VariantDir('build/runtime', 'runtime', duplicate=0)
@@ -11,7 +13,8 @@ build_mode = ARGUMENTS.get('mode', 'debug')
 stack_size = '8192'
 major_version = '0'
 minor_version = '1'
-version = major_version + '.' + minor_version
+revision = '0'
+version = major_version + '.' + minor_version + '.' + revision
 
 # OS X-specific build settings ###############################################
 if env['PLATFORM'] == 'darwin':
@@ -100,7 +103,7 @@ pkgMaker = '/Developer/Applications/Utilities/PackageMaker.app/Contents/MacOs/Pa
     --out /usr/local\
     --target 10.5\
     --id org.apollo.pkg\
-    --out Apollo ' + version + '.pkg'
+    --out "Apollo ' + version + '.pkg"'
 
 if 'pkg' in COMMAND_LINE_TARGETS:
     for f in library_headers:
