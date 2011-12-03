@@ -23,7 +23,7 @@ UninstallIcon "${NSISDIR}\contrib\graphics\icons\orange-uninstall.ico"
 
 Section "Main"
     SetOutPath $INSTDIR
-    File /r /x *.ilk /x *.pdb "dist\*"
+    File /r /x *.ilk /x *.pdb "dist\root\*"
 
     WriteUninstaller "$INSTDIR\Uninstall.exe"
     
@@ -32,9 +32,22 @@ Section "Main"
     WriteRegStr HKLM ${REGKEY} "URLInfoAbout" "https://github.com/mfichman/apollo"
     WriteRegStr HKLM ${REGKEY} "URLUpdateInfo" "https://github.com/mfichman/apollo"
     WriteRegStr HKLM ${REGKEY} "UninstallString" "$INSTDIR/Uninstall.exe"
+
+    ; Set APOLLO_HOME environment variable
+    ; Include for some of the windows messages defines
+    !include "winmessages.nsh"
+    ; HKLM (all users) vs HKCU (current user) defines
+    !define env_hklm 'HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"'
+    !define env_hkcu 'HKCU "Environment"'
+    ; Set variable
+    WriteRegExpandStr ${env_hklm} "APOLLO_HOME" $INSTDIR
+    ; Make sure windows knows about the change
+    SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
 SectionEnd
 
 Section "un.Main"
     DeleteRegKey HKLM ${REGKEY}
+    DeleteRegValue ${env_hklm} "APOLLO_HOME"
+    SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
     RMDIR /r "$INSTDIR"
 SectionEnd

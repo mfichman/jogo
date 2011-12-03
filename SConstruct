@@ -31,8 +31,8 @@ if env['PLATFORM'] == 'posix':
 # Windows-specific build settings ############################################
 if env['PLATFORM'] == 'win32':
     nsis = '"' + os.environ['PROGRAMFILES'] + '\\NSIS\\makensis.exe"\
-         -DVERSION='+version + '\
-         -V2\
+         /DVERSION='+version + '\
+         /V2 /NOCD \
          dist\\win\\Apollo.nsi'
 
     nasm = 'nasm -DWINDOWS -fwin64 -o $TARGET $SOURCE'
@@ -51,7 +51,7 @@ if env['PLATFORM'] == 'win32':
     env.Append(CFLAGS = '/DCOROUTINE_STACK_SIZE='+stack_size)
     env.Append(CFLAGS = '/DWINDOWS')
     env.Append(CFLAGS = '/Iruntime')
-    dist_path = 'dist'
+    dist_path = 'dist\\root'
 else:
     bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.o')
     if 'release' == build_mode:
