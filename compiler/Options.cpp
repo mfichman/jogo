@@ -130,7 +130,8 @@ Options::Options(Environment* env, int argc, char** argv) {
 
 void Options::print_version() {
     Stream::Ptr out = Stream::stout();
-    out << "Apollo version 0.1.0, compiled on "__DATE__ << " " << __TIME__ << "\n";
+    out << "Apollo version " << VERSION << ", compiled on ";
+    out << __DATE__ << " " << __TIME__ << "\n";
     out->flush();
 }
 

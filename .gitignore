@@ -10,6 +10,7 @@ src/compiler-c/apollo
 bin/*
 lib/*
 build/*
+dist/*
 *.orig
 *.output
 *.o
@@ -17,3 +18,7 @@ build/*
 *~
 *dblite
 *.exrc
+*.pkg
+*.deb
+*.rpm
+*.msi

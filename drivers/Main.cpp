@@ -145,6 +145,13 @@ int main(int argc, char** argv) {
     program_path = argv[0];
     Options(env, argc, argv);
 
+#ifndef WINDOWS
+    env->include("/usr/local/include/apollo");
+#else
+    std::string program_files = getenv("PROGRAMFILES");
+    env->include(program_files + "\\Apollo\\include\\apollo");
+#endif
+
     // Run the compiler.  Output to a temporary file if the compiler will
     // continue on to another stage; otherwise, output the file directly.
     Parser::Ptr parser(new Parser(env));
