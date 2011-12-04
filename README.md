@@ -3,7 +3,7 @@ Apollo Compiler
 
 Apollo is a compiler for an experimental programming language.
 
-* Quick Tour: https://github.com/mfichman/apollo/wiki
+* Quick Tour: https://github.com/mfichman/apollo/wiki/Quick-Tour-of-the-Apollo-Programming-Language
 * Tutorial: https://github.com/mfichman/apollo/wiki
 
 Downloads
