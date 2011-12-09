@@ -1,8 +1,9 @@
 !include MUI.nsh
+!include dist\win\EnvVarUpdate.nsh
 
 !define REGKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Asteroids"
 name "Apollo"
-OutFile "Apollo-${VERSION}.exe"
+OutFile "apollo-${VERSION}.exe"
 InstallDir "$PROGRAMFILES\Apollo"
 LicenseData License.txt
 ShowInstDetails show
@@ -42,12 +43,16 @@ Section "Main"
     ; Set variable
     WriteRegExpandStr ${env_hklm} "APOLLO_HOME" $INSTDIR
     ; Make sure windows knows about the change
-    SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+    ;SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+
+    ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "%APOLLO_HOME%\bin"
 SectionEnd
 
 Section "un.Main"
     DeleteRegKey HKLM ${REGKEY}
     DeleteRegValue ${env_hklm} "APOLLO_HOME"
-    SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+    ${un.EnvVarUpdate} $0 "PATH" "A" "HKLM" "%APOLLO_HOME%\bin"
+
+    ;SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
     RMDIR /r "$INSTDIR"
 SectionEnd

@@ -76,7 +76,11 @@ def setup_deps()
     else
         puts "Package manager not supported." 
     end
-    `sudo gem install highline json`
+    if system 'which sudo'
+        `sudo gem install highline json`
+    else 
+        `gem install highline json_pure`
+    end
 end
 
 setup_vim

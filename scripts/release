@@ -52,7 +52,7 @@ http.start do
         :name => @file,
         :description => "Apollo #{@version} for #{@os}",
         :size => File.size(@file),
-        :content_type => "text/plain"
+        :content_type => "application/x-binary"
     }.to_json
     @upload = JSON.parse(http.request(post).body)
 end
