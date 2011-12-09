@@ -923,7 +923,7 @@ Expression* Parser::mult() {
 }
 
 Expression* Parser::unary() {
-    // Unary boolean not and logical complement
+    // Unary boolean not and logical complement (e.g.: (not|~|-) expr)
     LocationAnchor loc(this);
     switch (token().type()) {
     case Token::NOT: {
@@ -1279,7 +1279,8 @@ Statement* Parser::while_loop() {
     // While loop: while expr block
     LocationAnchor loc(this);
     expect(Token::WHILE);
-    return new While(loc, expression(), block()); 
+	Expression* expr = expression(); // Must be separate (order of eval)
+    return new While(loc, expr, block()); 
 }
 
 Statement* Parser::for_loop() {

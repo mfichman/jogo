@@ -420,8 +420,8 @@ void SemanticAnalyzer::operator()(Member* expression) {
     
     assert(func->type() && "Attribute has no type");
     expression->type(fix_generics(expr->type(), func->type()));
-    expression->function(func);   
-    expression->file()->dependency(func);
+    expression->function(func);
+	expression->file()->dependency(func);
 
     if (func->is_private()) {
         err_ << expression->location();

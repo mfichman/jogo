@@ -165,6 +165,7 @@ public:
     bool is_constructor() const { return name()->string() == "@init"; }
     bool is_destructor() const { return name()->string() == "@destroy"; }
     bool is_virtual() const { return flags() & VIRTUAL; }
+	bool is_primitive_op() const;
     void stack_vars_inc() { stack_vars_++; }
     void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
     void formals(Formal* formals) { formals_ = formals; }

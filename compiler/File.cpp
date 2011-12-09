@@ -109,6 +109,11 @@ void File::dependency(Feature* feature) {
     if (feature->file() == this) {
         return;
     }
+	if (Function* func = dynamic_cast<Function*>(feature)) {
+		if (func->is_primitive_op()) {
+			return;
+		}
+	}
     for (size_t i = 0; i < dependency_.size(); i++) {
         if (dependency_[i] == feature) {
             return;

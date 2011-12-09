@@ -241,6 +241,13 @@ bool Function::covariant(Function* other) const {
     return true;
 }
 
+bool Function::is_primitive_op() const {
+	// Returns true if this function is a primitive operand, which is output
+	// directly into machine code.
+	Class* clazz = dynamic_cast<Class*>(parent());
+	return clazz && clazz->is_primitive() && name()->string()[0] == '@';
+}
+
 void Module::feature(Feature* feature) {
     if (!feature) {
         return;
