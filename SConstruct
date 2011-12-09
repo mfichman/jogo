@@ -107,7 +107,7 @@ pkgmaker = '/Developer/Applications/Utilities/PackageMaker.app/Contents/MacOs/Pa
     --doc dist/pkg/Apollo.pmdoc\
     --title Apollo\
     --version ' + version + '\
-    --out "Apollo ' + version + '.pkg"'
+    --out "apollo-' + version + '.pkg"'
 
 dpkg = 'dpkg -b dist/root apollo-' + version + '.deb'
 
@@ -150,3 +150,6 @@ if 'pkg' in COMMAND_LINE_TARGETS:
 
     env.Depends(pkg, lib)
 
+if 'release' in COMMAND_LINE_TARGETS:
+    release = env.Command('release', apollo, 'ruby scripts/release '+version)
+    env.Depends('pkg', release)

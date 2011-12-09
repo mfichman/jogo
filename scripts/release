@@ -1,0 +1,96 @@
+#!/usr/bin/ruby
+# This script uploads a new release to the downloads section fo the GitHub
+# repository for the Apollo project.  Argument = version #
+
+require 'net/http'
+require 'net/https'
+require 'rubygems'
+require 'json'
+require 'highline/import'
+
+@version = ARGV[0]
+@username = "mfichman" #ask("Username: ")
+@password = "Aegis387!" #ask("Password: ") { |q| q.echo = false }
+@repo = '/repos/mfichman/apollo'
+@github = 'api.github.com'
+@amazon = 'github.s3.amazonaws.com'
+@downloads = "#{@repo}/downloads"
+
+case RUBY_PLATFORM
+when /darwin|mac/ 
+    @file = "apollo-#{@version}.pkg"
+    @os = "OS X"
+when /mswin|mingw/ 
+    @file = "apollo-#{@version}.exe"
+    @os = "Windows"
+when /debian|ubuntu/ 
+    @file = "apollo-#{@version}.deb"
+    @os = "Linux"
+end
+
+http = Net::HTTP.new(@github, 443)
+http.use_ssl = true
+http.start do 
+    puts "Connecting to #{@github}"
+    JSON.parse(http.get(@downloads).body).each do |file|
+        # Get the list of downloads, and determine if the download is already
+        # there but should be overwritten
+        if file['name'] == @file
+            path = "#{@downloads}/#{file['id']}"
+            puts "Deleting #{path}"
+            del = Net::HTTP::Delete.new(path)
+            del.basic_auth(@username, @password)
+            res = http.request(del)
+        end
+    end
+
+    # Post the release package metadata to GitHub
+    puts "Posting new upload"
+    post = Net::HTTP::Post.new(@downloads)
+    post.basic_auth(@username, @password)
+    post.body = {
+        :name => @file,
+        :description => "Apollo #{@version} for #{@os}",
+        :size => File.size(@file),
+        :content_type => "text/plain"
+    }.to_json
+    @upload = JSON.parse(http.request(post).body)
+end
+
+#http = Net::HTTP.new('localhost', 8080)
+http = Net::HTTP.new(@amazon, 443)
+http.use_ssl = true
+http.start do
+    # Upload the file to Amazon
+    puts "Uploading file"
+    post = Net::HTTP::Post.new("/")
+
+    BOUNDARY = "----------------------0xdeadbeef1987foobar"
+    data = [
+        ['key', @upload['path']],
+        ['acl', @upload['acl']],
+        ['success_action_status', '201'],
+        ['Filename', @upload['name']],
+        ['AWSAccessKeyId', @upload['accesskeyid']],
+        ['Policy', @upload['policy']],
+        ['Signature', @upload['signature']],
+        ['Content-Type', 'application/x-binary'],
+        ['file', File.open(@file, 'rb').read]
+    ]
+
+    body = []
+    data.each do |pair|
+        body << "--#{BOUNDARY}\r\n"
+        body << "Content-Disposition: form-data; name=\"#{pair[0]}\"\r\n"
+        body << "\r\n"
+        body << pair[1]
+        body << "\r\n"
+    end
+    body << "--#{BOUNDARY}--"
+
+    post.body = body.join
+    post['Content-Type'] = "multipart/form-data; boundary=#{BOUNDARY}"
+    
+    puts http.request(post)
+end
+    

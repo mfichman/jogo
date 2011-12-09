@@ -31,20 +31,20 @@ MarkdownGenerator::MarkdownGenerator(Environment* env) :
 }
 
 void MarkdownGenerator::operator()(Module* feature) {
+    std::string qn = feature->qualified_name()->string(); 
+    Stream::Ptr out = new Stream(env_->output()+FILE_SEPARATOR+qn+".md");
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        out_ = out;
         f(this); // lol
     }
+    out->flush();
 }
 
 void MarkdownGenerator::operator()(Class* feature) {
-    String* qn = feature->type()->qualified_name();
+    out_ << "## [[" << feature->qualified_name()->string() << "]]\n";
 
-    if (feature->type()->is_primitive()) {
-        return;
-    }
-
-    out_ = new Stream(env_->output()+FILE_SEPARATOR+qn->string()+".md"); 
-
+    std::string qn = feature->qualified_name()->string();
+    out_ = new Stream(env_->output()+FILE_SEPARATOR+qn+".md"); 
     if (feature->comment()) {
         out_ << feature->comment() << '\n';
     }
@@ -70,8 +70,10 @@ void MarkdownGenerator::operator()(Function* feature) {
             out_ << ", ";
         }
     }
-    out_ << ")\n";
-    if(feature->block()) {
+    out_ << ") ";
+    operator()(feature->type());
+    out_ << "\n";
+    if(feature->block() && feature->block()->comment()) {
         out_ << feature->block()->comment() << '\n';
     } else {
         out_ << "_No comment_\n";
@@ -82,10 +84,10 @@ void MarkdownGenerator::operator()(Type* type) {
     if (!type) { return; }
 
     out_ << "[[";
-    if (type->scope()->string().empty()) {
-        out_ << type->name();
+    if (type->clazz()) {
+        out_ << type->clazz()->qualified_name();
     } else {
-        out_ << type->scope() << "::" << type->name();
+        out_ << type->name();
     }
     out_ << "]]";
     
