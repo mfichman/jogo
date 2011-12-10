@@ -5,8 +5,8 @@
 import httplib, json, getpass, sys, os, base64, mimetypes
 
 version = sys.argv[1]
-username = 'mfichman' #raw_input('Username: ')
-password = 'J3tr0cks!' #getpass.getpass()
+username = raw_input('Username: ')
+password = getpass.getpass()
 repo = '/repos/mfichman/apollo'
 github = 'api.github.com'
 amazon = 'github.s3.amazonaws.com'
