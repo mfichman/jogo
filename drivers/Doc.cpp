@@ -23,6 +23,7 @@
 #include "Environment.hpp"
 #include "Parser.hpp"
 #include "Options.hpp"
+#include "SemanticAnalyzer.hpp"
 #include "MarkdownGenerator.hpp"
 
 int main(int argc, char** argv) {
@@ -34,7 +35,7 @@ int main(int argc, char** argv) {
     // Run the compiler.  Output to a temporary file if the compiler will
     // continue on to another stage; otherwise, output the file directly.
     Parser::Ptr parser(new Parser(env));
-
+    SemanticAnalyzer::Ptr semant(new SemanticAnalyzer(env));
     MarkdownGenerator::Ptr md(new MarkdownGenerator(env));
 
     return 0;

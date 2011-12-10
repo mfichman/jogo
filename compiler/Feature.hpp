@@ -57,6 +57,7 @@ public:
     Feature* last() const { return last_; }
     Flags flags() const { return flags_; }
     String* label() const;
+    String* qualified_name() const;
     Feature* parent() const { return parent_; }
     bool is_private() const { return flags_ & PRIVATE; }
     bool is_native() const { return flags_ & NATIVE; }

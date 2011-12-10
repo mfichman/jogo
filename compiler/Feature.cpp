@@ -269,11 +269,20 @@ Function* Feature::function(String* name) const {
     return dynamic_cast<Function*>(feature(name));
 }
 
+String* Feature::qualified_name() const {
+    // Returns the qualified name fo this feature
+
+    std::string parent = parent_ ? parent_->label()->string() : "";
+    std::string name = parent.empty() ? "" : parent + "::";
+    name += Feature::name()->string(); 
+    return env_->name(name);
+}
+
 String* Feature::label() const {
     // Builds the label for a feature if it hasn't already been calculated.
     if (label_) { return label_; }
 
-    std::string parent = parent_? parent_->label()->string() : "";
+    std::string parent = parent_ ? parent_->label()->string() : "";
     std::string name = parent.empty() ? "" : parent + "_";
     name += Feature::name()->string();    
 

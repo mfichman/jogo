@@ -5,7 +5,7 @@
 \pard\pardeftab720\sl380\sa260
 
 \f0\fs26 \cf0 This installer will guide you through the process of installing the Apollo Programming Language.\
-IMPORTANT PREREQUISITE: You must have Xcode 3.0 or later installed before you continue.  Apple's Xcode developer package includes basic developer tools, such as the make utility and a C compiler.  Xcode can be installed off your Mac OS X installation DVD or be downloaded from {\field{\*\fldinst{HYPERLINK "http://developer.apple.com/"}}{\fldrslt http://developer.apple.com/}}.\
+IMPORTANT PREREQUISITE: You must have Xcode 3.0 or later installed before you continue.  Apple's Xcode developer package includes basic developer tools, such as the make utility and a C compiler.  Xcode can be installed off your Mac OS X installation DVD or downloaded from {\field{\*\fldinst{HYPERLINK "http://developer.apple.com/"}}{\fldrslt http://developer.apple.com/}}.\
 IMPORTANT PREREQUISITE: You must have the Netwide Assembler (NASM) 2.0.7 or later installed before you continue.  NASM can be downloaded from {\field{\*\fldinst{HYPERLINK "http://www.nasm.us/"}}{\fldrslt http://www.nasm.us/}}.}]]></resource><resource mime-type="text/rtf" kind="embedded" type="conclusion"><![CDATA[{\rtf1\ansi\ansicpg1252\cocoartf1138\cocoasubrtf230
 {\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 Menlo-Regular;}
 {\colortbl;\red255\green255\blue255;}
