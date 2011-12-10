@@ -1,138 +1,120 @@
-#!/usr/bin/ruby
+#!/usr/bin/python
 
-require 'optparse'
+import optparse, os, subprocess, re, sys, glob
 
-@failed = false
-@options = {}
-@total = 0
+parser = optparse.OptionParser()
+parser.add_option('-f', '--full', action='store_true', 
+    help='Run all tests, including memcheck')
+parser.add_option('-v', '--verbose', action='store_true',  
+    help='Print test status')
+(options, tests) = parser.parse_args()
 
-def check(test, expected, output)    
-    expected.gsub!(/\r/, '')
-    output.gsub!(/\r/, '')
+os.chdir('tests')
 
-    if output != expected # || $? != 0
-        (1..79).each { putc '-' }        
-        puts
-        puts "FAILED TEST: #{test}"
-        (1..70).each { putc '-' }        
-        puts " Expected"
-        puts "#{expected}"
-        (1..72).each { putc '-' }   
-        print " Output";
-        puts 
-        puts "#{output}"
-        puts "Return code: #{$?}"
-        @failed = true
-    end
-end
+total = 0
+fail = False
 
-# Parse command line options to enable/disable valigrind, etc.
-OptionParser.new do |opts|
-    opts.on('-f', '--full', 'Run all tests, including memchecker') do |v|
-        @options[:full] = v
-    end
-    opts.on('-v', '--verbose', 'Print test status') do |v|
-        @options[:verbose] = v
-    end
-end.parse!
+if len(tests) == 0:
+    # If no tests are passed as parameters, then glob on the test dir to run 
+    # all the tests.
+    tests = glob.glob('*.ap') + glob.glob('*.c') + glob.glob('*.py')
 
-Dir.chdir('tests')
+def check(test, expected, output):
+    # Checks to make sure the output for the test matches the expected output.
+    global fail
+    expected = expected.replace('\r', '')
+    output = output.replace('\r', '')
 
-if ARGV.empty?
-    tests = Dir.glob('*.ap') + Dir.glob('*.c') + Dir.glob('*.rb')
-else
-    tests = ARGV
-end
+    if output != expected:
+        print(''.join(['-' for i in range(79)]))
+        print('FAILED TEST: ' + test)
+        print(''.join(['-' for i in range(70)])+' Expected')
+        print(' Expected')
+        print(expected)
+        print(''.join(['-' for i in range(72)])+' Output')
+        print(output)
+        fail = True
 
-# Compilation tests.  Compile an Apollo source file, and potentially run the
-# resulting program.
-tests.each do |test|
-    next if /.ap$/ !~ test
+def shell(command):
+    # Runs 'command' and returns the result.  Sets the 'fail' flag if the 
+    # command failed.
+    global Fail
+    proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    return proc.stdout.read()
 
-    if @options[:verbose]
-        puts test
-    end
-
-    test = test.sub(/.ap$/, "")
-
+def apollo_test(test):
+    # Run a compilation test.  Compile and Apollo source file, and potentially
+    # run the resulting program.
+    test = re.sub(r'.ap$', '', test)
     flags = ""
-    run = false
-    File.open(test+".ap") do |file|
-        file.each_line do |line|
-            case line
-            when /^# aptest print_ast on/ 
-                flags += " --dump-ast"
-            when /^# aptest print_ir on/ 
-                flags += " --dump-ir"
-            end
-        end
-    end
-    if flags.empty?
-        flags += " -e" 
-        run = true
-    end
-    flags += " -m -d ../build  --optimize"
-    command = "../bin/apollo #{test} -i ../runtime -i ../lib #{flags}"
-    if @options[:full]
-        valgrind = "valgrind -q --leak-check=full"
-        valgrind = valgrind + " --suppressions=../scripts/valgrind.supp" 
-        #valgrind = valgrind + " --gen-suppressions=all"
-        command = valgrind + " " + command;    
-    end
-    expected = File.open("#{test}.ap.out", "rb").read
-     
-    if ENV['OS'] == "Windows_NT"
-        command.gsub!(/\//, "\\")
-    end
-    output = `#{command} 2>&1`
+    run = False
+    for line in open(test + '.ap'):
+        if re.search(r'^# aptest print_ast on', line):
+            flags += ' --dump-ast'
+        elif re.search(r'^# aptest print_ir on', line):
+            flags += ' --dump-ir'
+        
+    if flags == '':
+        flags += ' -e'
+        run = True
+    flags += ' -m -d ../build --optimize'
+    command = '../bin/apollo ' + test + ' -i ../runtime -i ../lib ' + flags
+    if options.full:
+        valgrind = 'valgrind -q --leak-check=full'
+        valgrind += ' --suppressions=../scripts/valgrind.supp'
+        command = valgrind + ' ' + command
+    expected = open(test + '.ap.out', 'rb').read() 
+    if sys.platform == 'win32':
+        command = command.replace('/', '\\')
+    output = shell(command + ' 2>&1')
     check(test, expected, output)
-    @total += 1
-end
-
-# Ruby tests.  Useful for various miscellaneous tests that are not easily
-# expressed in C++.
-tests.each do |test|
-    next if /.rb$/ !~ test
-    if @options[:verbose]
-        puts test
-    end
     
-    expected = File.open("#{test}.out", "rb").read
-    output = `ruby #{test} 2>&1`
-    check(test, expected, output)
-    @total += 1
-end
 
-# C++ tests.  Used primarily for unit tests and to test the runtime library.
-tests.each do |test|
-    next if /.c$/ !~ test
-    if @options[:verbose]
-        puts test
-    end
-    expected = File.open("#{test}.out", "rb").read
-    exe = test.sub(/.c$/, "");
+def python_test(test):
+    # Run a Python test.  Useful for various msicellaneous tests that are not
+    # easily expressed in C++.
+    expected = open(test + '.out', 'rb').read()
+    output = shell('python ' + test + ' 2>&1')
+    check(test, expected, output)
+
+def native_test(test):
+    # C/C++ tests.  Used primarily for unit tests and to test the runtime
+    # library.
+    expected = open(test + '.out', 'rb').read()
+    exe = re.sub(r'.c$', '', test)
     output = ""
-    if ENV['OS'] == "Windows_NT"
-        command = "cl #{test} /Fe..\\build\\#{exe} /I:.. apollo.lib "
-        command += "/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib 2>&1"
-        `#{command}`
-        output = `..\\build\\#{exe} 2>&1`
-    else
-        output = `gcc -lm -g #{test} -o ../build/#{exe} -L../lib -lapollo -I.. 2>&1`
-        output += `../build/#{exe} 2>&1`
-    end
-
+    if sys.platform == 'win32':
+        command = 'cl ' + test + ' /Fe..\\build\\' + exe + ' /I:.. apollo.lib '
+        command += '/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib 2>&1'
+        os.popen(command).read()
+        output = shell('..\\build\\' + exe + ' 2>&1')
+    else:
+        command = 'gcc -lm -g ' + test + ' -o ../build/' + exe + ' -L../lib '
+        command += '-lapollo -I .. 2>&1'
+        os.popen(command).read()
+        output += shell('../build/' + exe + ' 2>&1')
     check(test, expected, output)
-    @total += 1
-end
-
-# Finally, check for errors.  If there was an error, exit with code -1 to stop
-# the whole build.
-if @failed 
-    exit(-1)
-elsif @options[:verbose]
-    puts "All #{@total} tests passed."
-end
 
 
 
+for test in tests:
+    # Iterate through all the tests, and run the correct callback for each
+    # test type.
+    print(test)
+    if re.search(r'.ap$', test):
+        apollo_test(test)
+        total += 1
+    elif re.search(r'.py$', test):
+        python_test(test)
+        total += 1
+    elif re.search(r'.c$', test):
+        native_test(test)
+        total += 1
+
+if fail:
+    # Finally, check for errors.  If there was an error, exit with code 1 to
+    # stop the whole build.
+    sys.exit(1)
+else:
+    print('All ' + str(total) + ' tests passed.')
+        

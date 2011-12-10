@@ -1,87 +1,81 @@
-#!/usr/bin/ruby
+#!/usr/bin/python
 
-require 'fileutils'
-require 'set'
-require 'rbconfig'
+import os, sys, sets, shutil
 
-def setup_vim()
-    home = ENV['HOME']
-    options = Set.new
-    FileUtils.touch(File.join(home, ".vimrc"))
-    File.open(File.join(home, ".vimrc")).each_line do |line|
-        options.add(line.strip)
-    end
+def mkdir_p(path):
+    # Make a directory, and ignore the error if the directory already exists.
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
 
-    options.add "au BufNew,BufRead *.ll setf lex"
-    options.add "syntax on"
-    options.add "set tabstop=4"
-    options.add "set expandtab"
-    options.add "colors molokai"
-    options.add "set noerrorbells"
-    options.add "set number"
-    options.add "set nowrap"
-    options.add "set t_Co=256"
 
-    File.open(File.join(home, ".vimrc"), "w") do |file|
-        options.each do |option|
-            file.puts option
-        end
-    end
+def setup_vim():
+    # Write default VIM options to the .vimrc file.  Be sure to preserve any
+    # existing options, and remove duplicates.
+    home = os.environ['HOME']
+    options = sets.Set()
+    try:
+        for line in open(os.path.join(home, '.vimrc')):
+            options.add(line.strip())
+    except IOError:
+        pass
 
-    vimhome = home
-    if ENV['OS'] == 'Windows_NT'
-        vimhome = File.join(vimhome, "vimfiles")
-    else
-        vimhome = File.join(vimhome, ".vim")
-    end
+    options.add('au BufNew,BufRead *.ll setf lex')
+    options.add('set ruler')
+    options.add('syntax on')
+    options.add('set tabstop=4')
+    options.add('set expandtab')
+    options.add('colors molokai')
+    options.add('set noerrorbells')
+    options.add('set number')
+    options.add('set nowrap')
+    options.add('set t_Co=256')
 
-    begin
-        FileUtils.rm File.join(vimhome, "syntax", "apollo.vim")
-    rescue
-    end
-    FileUtils.mkdir_p File.join(vimhome, "syntax")
-    FileUtils.cp(
-        File.join("scripts", "apollo.vim"), 
-        File.join(vimhome, "syntax"))
+    with open(os.path.join(home, '.vimrc'), 'w') as f:
+        f.write('\n'.join(options))
 
-    begin
-        FileUtils.rm File.join(vimhome, "ftdetect", "apollo.vim")
-    rescue
-    end
-    FileUtils.mkdir_p File.join(vimhome, "ftdetect")
-    FileUtils.cp(
-        File.join("scripts", "ftdetect.vim"),
-        File.join(vimhome, "ftdetect", "apollo.vim"))
+    # Write the other vim files (syntax, colors, etc).
+    vimhome = ''
+    if sys.platform == 'win32':
+        vimhome = os.path.join(home, 'vimfiles')
+    else:
+        vimhome = os.path.join(home, '.vim')
+    
+    # Copy the vim syntax file
+    mkdir_p(os.path.join(vimhome, 'syntax'))
+    shutil.copy(
+        os.path.join('scripts', 'apollo.vim'),
+        os.path.join(vimhome, 'syntax', 'apollo.vim'))
 
-    FileUtils.mkdir_p File.join(vimhome, "colors")
-    FileUtils.cp(
-        File.join("scripts", "molokai.vim"), 
-        File.join(vimhome, "colors"))
-    FileUtils.cp(
-        File.join("scripts", "earendel.vim"),
-        File.join(vimhome, "colors"))
-end
+    # Copy the ftdetect file
+    mkdir_p(os.path.join(vimhome, 'ftdetect'))
+    shutil.copy(
+        os.path.join('scripts', 'ftdetect.vim'),
+        os.path.join(vimhome, 'ftdetect', 'apollo.vim'))
 
-def setup_deps()
+    # Copy the colors file
+    mkdir_p(os.path.join(vimhome, 'colors'))
+    shutil.copy(
+        os.path.join('scripts', 'molokai.vim'),
+        os.path.join(vimhome, 'colors'))
+    shutil.copy(
+        os.path.join('scripts', 'earendel.vim'),    
+        os.path.join(vimhome, 'colors'))
 
-    puts "Installing dependencies"
-    if system 'which apt-get'
-        `sudo apt-get install scons valgrind vim nasm` 
-    elsif system 'which yum'
-        `sudo yum install scons valgrind vim nasm`
-    elsif system 'which brew'
-        `brew install scons`
-        `brew install nasm`
-        #`brew install valgrind` # Not supported yet
-    else
-        puts "Package manager not supported." 
-    end
-    if system 'which sudo'
-        `sudo gem install highline json`
-    else 
-        `gem install highline json_pure`
-    end
-end
+def setup_deps():
+    # Install all dependencies needed for development
+    print('Installing dependencies')
+    if os.system('which apt-get') == 0:
+        os.system('sudo apt-get install scons valgrind vim nasm')
+    elif os.system('which yum') == 0:
+        os.system('sudo yum install scons valgrind vim nasm')
+    elif os.system('which brew') == 0:
+        os.system('brew install scons')
+        os.system('brew install nasm')
+    else:
+        print('Package manager not supported.')
 
-setup_vim
-setup_deps
+
+setup_vim()
+setup_deps()

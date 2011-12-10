@@ -1,96 +1,104 @@
-#!/usr/bin/ruby
-# This script uploads a new release to the downloads section fo the GitHub
+#!/usr/bin/python
+# This script uploads a new release to the downloads section of the GitHub
 # repository for the Apollo project.  Argument = version #
 
-require 'net/http'
-require 'net/https'
-require 'rubygems'
-require 'json'
-require 'highline/import'
+import httplib, json, getpass, sys, os, base64, mimetypes
 
-@version = ARGV[0]
-@username = ask("Username: ")
-@password = ask("Password: ") { |q| q.echo = false }
-@repo = '/repos/mfichman/apollo'
-@github = 'api.github.com'
-@amazon = 'github.s3.amazonaws.com'
-@downloads = "#{@repo}/downloads"
+version = sys.argv[1]
+username = 'mfichman' #raw_input('Username: ')
+password = 'J3tr0cks!' #getpass.getpass()
+repo = '/repos/mfichman/apollo'
+github = 'api.github.com'
+amazon = 'github.s3.amazonaws.com'
+downloads = repo + '/downloads'
 
-case RUBY_PLATFORM
-when /darwin|mac/ 
-    @file = "apollo-#{@version}.pkg"
-    @os = "OS X"
-when /mswin|mingw/ 
-    @file = "apollo-#{@version}.exe"
-    @os = "Windows"
-when /debian|ubuntu/ 
-    @file = "apollo-#{@version}.deb"
-    @os = "Linux"
-end
+if sys.platform == 'win32':
+    pkg = 'apollo-'+version+'.exe'
+    system = 'Windows'
+elif sys.platform == 'darwin':
+    pkg = 'apollo-'+version+'.pkg'
+    system = 'OS X'
+elif sys.platform == 'linux':
+    pkg = 'apollo-'+version+'.deb'
+    system = 'Linux'
 
-http = Net::HTTP.new(@github, 443)
-http.use_ssl = true
-http.start do 
-    puts "Connecting to #{@github}"
-    JSON.parse(http.get(@downloads).body).each do |file|
-        # Get the list of downloads, and determine if the download is already
-        # there but should be overwritten
-        if file['name'] == @file
-            path = "#{@downloads}/#{file['id']}"
-            puts "Deleting #{path}"
-            del = Net::HTTP::Delete.new(path)
-            del.basic_auth(@username, @password)
-            res = http.request(del)
-        end
-    end
 
-    # Post the release package metadata to GitHub
-    puts "Posting new upload"
-    post = Net::HTTP::Post.new(@downloads)
-    post.basic_auth(@username, @password)
-    post.body = {
-        :name => @file,
-        :description => "Apollo #{@version} for #{@os}",
-        :size => File.size(@file),
-        :content_type => "application/x-binary"
-    }.to_json
-    @upload = JSON.parse(http.request(post).body)
-end
+def basic_auth(req, username, password):
+    code = base64.encodestring(username + ':' + password).replace('\n', '')
+    req.putheader('Authorization', 'Basic ' + code)
 
-#http = Net::HTTP.new('localhost', 8080)
-http = Net::HTTP.new(@amazon, 443)
-http.use_ssl = true
-http.start do
-    # Upload the file to Amazon
-    puts "Uploading file"
-    post = Net::HTTP::Post.new("/")
 
-    BOUNDARY = "----------------------0xdeadbeef1987foobar"
-    data = [
-        ['key', @upload['path']],
-        ['acl', @upload['acl']],
-        ['success_action_status', '201'],
-        ['Filename', @upload['name']],
-        ['AWSAccessKeyId', @upload['accesskeyid']],
-        ['Policy', @upload['policy']],
-        ['Signature', @upload['signature']],
-        ['Content-Type', 'application/x-binary'],
-        ['file', File.open(@file, 'rb').read]
-    ]
+# Open an HTTP connection to the GiHub API server (v3)
+print('Connecting to ' + github)
+http = httplib.HTTPSConnection(github, 443)
+http.putrequest('GET', downloads)
+http.endheaders()
+http.send('')
+res = http.getresponse()
+data = json.loads(res.read())
 
-    body = []
-    data.each do |pair|
-        body << "--#{BOUNDARY}\r\n"
-        body << "Content-Disposition: form-data; name=\"#{pair[0]}\"\r\n"
-        body << "\r\n"
-        body << pair[1]
-        body << "\r\n"
-    end
-    body << "--#{BOUNDARY}--"
+for item in data:
+    # Get the list of downloads, and determine if the download is already there
+    # but should be overwritten
+    if item['name'] == pkg:
+        path = downloads + '/' + str(item['id'])
+        print('Deleting ' + path)
+        http.putrequest('DELETE', path)
+        basic_auth(http, username, password)
+        http.endheaders()
+        http.send('')
+        res = http.getresponse()
+        res.read()
 
-    post.body = body.join
-    post['Content-Type'] = "multipart/form-data; boundary=#{BOUNDARY}"
-    
-    puts http.request(post)
-end
-    
+# Now post the new upload resource
+http.putrequest('POST', downloads, False, True)
+basic_auth(http, username, password)
+http.putheader('Content-Type', 'application/x-www-form-urlencoded')
+http.putheader('Accept', '*/*')
+body = json.dumps({ 
+    'name': pkg,
+    'description': 'Apollo ' + version + ' for ' + system,
+    'size': os.path.getsize(pkg),
+    'content_type': mimetypes.guess_type(pkg)[0] })
+http.putheader('Content-Length', str(len(body)))
+http.endheaders()
+http.send(body)
+res = http.getresponse()
+upload = json.loads(res.read())
+http.close()
+
+# Generate the message body
+print('Uploading file')
+BOUNDARY = '---------------------------0xdeadbeef1987foobar'
+data = [
+    ['key', upload['path']],
+    ['acl', upload['acl']],
+    ['success_action_status', '201'],
+    ['Filename', upload['name']],
+    ['AWSAccessKeyId', upload['accesskeyid']],
+    ['Policy', upload['policy']],
+    ['Signature', upload['signature']],
+    ['Content-Type', upload['mime_type']],
+    ['file', open(pkg, 'rb').read()]
+]
+body = bytearray()
+for pair in data:
+    body.extend('--' + BOUNDARY + '\r\n')
+    body.extend('Content-Disposition: form-data; name="' + pair[0] + '"\r\n')
+    body.extend('\r\n')
+    body.extend(bytes(pair[1]))
+    body.extend('\r\n')
+body.extend('--' + BOUNDARY + '--')
+
+# Now open a connection to the Amazon AWS server
+http = httplib.HTTPSConnection(amazon, 443)
+http.putrequest('POST', '/')
+http.putheader('Content-Type', 'multipart/form-data; boundary='+BOUNDARY)
+http.putheader('Content-Length', str(len(body)))
+http.endheaders()
+http.send(body)
+res = http.getresponse()
+print(res.msg)
+print(res.read())
+http.close()
+
