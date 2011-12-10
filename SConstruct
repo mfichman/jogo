@@ -86,11 +86,11 @@ lib = env.StaticLibrary('lib/apollo', library_src)
 
 # Test commands ##############################################################
 if 'check' in COMMAND_LINE_TARGETS:
-    check = env.Command('check', apollo, 'ruby scripts/test --verbose')
+    check = env.Command('check', apollo, 'python scripts/test --verbose')
     env.Depends(check, lib)
 
 if 'test' in COMMAND_LINE_TARGETS:
-    test = env.Command('test', apollo, 'ruby scripts/test --full --verbose')
+    test = env.Command('test', apollo, 'python scripts/test --full --verbose')
     env.Depends(test, lib)
 
 # Distribution ###############################################################
@@ -151,5 +151,5 @@ if 'pkg' in COMMAND_LINE_TARGETS:
     env.Depends(pkg, lib)
 
 if 'release' in COMMAND_LINE_TARGETS:
-    release = env.Command('release', apollo, 'ruby scripts/release '+version)
+    release = env.Command('release', apollo, 'python scripts/release '+version)
     env.Depends('pkg', release)
