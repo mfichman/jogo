@@ -9,8 +9,8 @@ require 'json'
 require 'highline/import'
 
 @version = ARGV[0]
-@username = "mfichman" #ask("Username: ")
-@password = "Aegis387!" #ask("Password: ") { |q| q.echo = false }
+@username = ask("Username: ")
+@password = ask("Password: ") { |q| q.echo = false }
 @repo = '/repos/mfichman/apollo'
 @github = 'api.github.com'
 @amazon = 'github.s3.amazonaws.com'
