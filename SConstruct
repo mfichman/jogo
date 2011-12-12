@@ -111,9 +111,9 @@ pkgmaker = '/Developer/Applications/Utilities/PackageMaker.app/Contents/MacOs/Pa
 
 dpkg = 'dpkg -b dist/root apollo-' + version + '.deb'
 
-rpmbuild = 'rpmbuild\
-    --define="version ' + version + '"\
-    --define="_topdir /dist/root
+#rpmbuild = 'rpmbuild\
+#    --define="version ' + version + '"\
+#    --define="_topdir /dist/root
 
 
 if 'pkg' in COMMAND_LINE_TARGETS:
