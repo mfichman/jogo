@@ -12,13 +12,13 @@ github = 'api.github.com'
 amazon = 'github.s3.amazonaws.com'
 downloads = repo + '/downloads'
 
-if sys.platform == 'win32':
+if 'win32' in sys.platform:
     pkg = 'apollo-'+version+'.exe'
     system = 'Windows'
-elif sys.platform == 'darwin':
+elif 'darwin' in sys.platform:
     pkg = 'apollo-'+version+'.pkg'
     system = 'OS X'
-elif sys.platform == 'linux':
+elif 'linux' in sys.platform:
     pkg = 'apollo-'+version+'.deb'
     system = 'Linux'
 
