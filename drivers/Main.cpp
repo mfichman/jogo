@@ -79,7 +79,7 @@ void output(File* file) {
     }
  
     if (env->verbose()) {
-        Stream::stout() << "Compiling " << out_file << "\n";
+        //Stream::stout() << "Compiling " << out_file << "\n";
     }
     
     if (!env->assemble() || !env->link() || env->make()) {
@@ -133,6 +133,9 @@ void output(File* file) {
 #elif defined(DARWIN)
     ss << "nasm -fmacho64 " << asm_file << " -o " << obj_file;
 #endif 
+    if (env->verbose()) {
+        Stream::stout() << ss.str() << "\n";
+    }
     if (system(ss.str().c_str())) {
         exit(1);
     }
@@ -187,7 +190,7 @@ int main(int argc, char** argv) {
     ss << "/NOLOGO /MACHINE:amd64 ";
     ss << obj_files << " /OUT:" << exe_file << ".exe ";
 #elif defined(LINUX)
-    ss << "gcc -m64 -lm " << obj_files << " -o " << exe_file;
+    ss << "gcc -m64 " << obj_files << " -o " << exe_file;
 #elif defined(DARWIN)
     ss << "gcc -Wl,-no_pie " << obj_files << " -o " << exe_file;
     // FIXME: Remove dynamic-no-pic once rel addressing is fixed
@@ -208,6 +211,9 @@ int main(int argc, char** argv) {
 #endif
         }
     }
+#ifdef LINUX
+    ss << " -lm"; // Math library must be included last for some reason
+#endif
 
     if (env->verbose()) {
         Stream::stout() << ss.str() << "\n";

@@ -29,7 +29,6 @@ def check(test, expected, output):
         print(''.join(['-' for i in range(79)]))
         print('FAILED TEST: ' + test)
         print(''.join(['-' for i in range(70)])+' Expected')
-        print(' Expected')
         print(expected)
         print(''.join(['-' for i in range(72)])+' Output')
         print(output)
@@ -89,9 +88,9 @@ def native_test(test):
         os.popen(command).read()
         output = shell('..\\build\\' + exe + ' 2>&1')
     else:
-        command = 'gcc -lm -g ' + test + ' -o ../build/' + exe + ' -L../lib '
-        command += '-lapollo -I .. 2>&1'
-        os.popen(command).read()
+        command = 'gcc -g ' + test + ' -o ../build/' + exe + ' -L../lib '
+        command += '-lapollo -lm -I .. 2>&1'
+        print(os.popen(command).read())
         output += shell('../build/' + exe + ' 2>&1')
     check(test, expected, output)
 

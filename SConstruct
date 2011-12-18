@@ -25,7 +25,7 @@ if env['PLATFORM'] == 'darwin':
 # Linux-specific build settings ##############################################
 if env['PLATFORM'] == 'posix':
     env.Append(CXXFLAGS = '-DLINUX')
-    env.Append(CFLAGS = '-DLINUX')
+    env.Append(CFLAGS = '-DLINUX -m64 -lm')
     nasm = 'nasm -dLINUX -felf64 -o $TARGET $SOURCE'
 
 # Windows-specific build settings ############################################
@@ -110,6 +110,10 @@ pkgmaker = '/Developer/Applications/Utilities/PackageMaker.app/Contents/MacOs/Pa
     --out "apollo-' + version + '.pkg"'
 
 dpkg = 'dpkg -b dist/root apollo-' + version + '.deb'
+
+#rpmbuild = 'rpmbuild\
+#    --define="version ' + version + '"\
+#    --define="_topdir /dist/root
 
 
 if 'pkg' in COMMAND_LINE_TARGETS:
