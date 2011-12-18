@@ -31,6 +31,9 @@ def setup_vim():
     options.add('set number')
     options.add('set nowrap')
     options.add('set t_Co=256')
+    options.add('set guioptions-=m')
+    options.add('set guioptions-=r')
+    options.add('set guioptions-=T')
 
     with open(os.path.join(home, '.vimrc'), 'w') as f:
         f.write('\n'.join(options))
