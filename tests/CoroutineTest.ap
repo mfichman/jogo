@@ -24,6 +24,7 @@ main() Int {
         nested()
 
         while true {
+            str = String()
             i = i + 1
             boot_print_int(i)
             boot_print_str('\n')

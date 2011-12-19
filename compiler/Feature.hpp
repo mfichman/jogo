@@ -149,19 +149,25 @@ public:
 		formals_(formal),
 		type_(ret),
         block_(block),
-        stack_vars_(0) {
+        stack_vars_(0),
+		throw_spec_(UNKNOWN) {
 
         if (!block_ && !is_native()) {
             Function::flags(Function::flags() | VIRTUAL);
         }
     }
 
+	enum ThrowSpec { UNKNOWN, THROW, NOTHROW };
+
 	Formal* formals() const { return formals_; }
 	Type* type() const { return type_; }
     Block* block() const { return block_; }
     BasicBlock* basic_block(int index) { return basic_block_[index]; }
-    int basic_blocks() { return basic_block_.size(); }
-    int stack_vars() { return stack_vars_; }
+	Function* called_func(int index) { return called_func_[index]; }
+	ThrowSpec throw_spec() const;
+    int basic_blocks() const { return basic_block_.size(); }
+    int stack_vars() const { return stack_vars_; }
+	int called_funcs() const { return called_func_.size(); }
     bool covariant(Function* other) const;
     bool is_constructor() const { return name()->string() == "@init"; }
     bool is_destructor() const { return name()->string() == "@destroy"; }
@@ -170,6 +176,8 @@ public:
     void stack_vars_inc() { stack_vars_++; }
     void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
     void formals(Formal* formals) { formals_ = formals; }
+	void throw_spec(ThrowSpec spec) { throw_spec_ = spec; }
+	void called_func(Function* func);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
 
@@ -178,7 +186,9 @@ private:
 	Type::Ptr type_;
     Block::Ptr block_;
     std::vector<BasicBlock::Ptr> basic_block_;
+	std::vector<Function*> called_func_;
     int stack_vars_;
+	mutable ThrowSpec throw_spec_;
 };
 
 /* Class for imports */

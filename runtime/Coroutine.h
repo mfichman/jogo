@@ -52,13 +52,14 @@ struct Coroutine {
 typedef struct Coroutine* Coroutine;
 
 Coroutine Coroutine__init(Object function);
-void Coroutine__resume(Coroutine self);
 void Coroutine__yield();
 void Coroutine__exit();
+void Coroutine__call(Coroutine self);
 Ptr Coroutine__grow_stack();
 
 extern Coroutine_Stack* Coroutine__stack;
 extern Coroutine Coroutine__current;
 extern void Coroutine__vtable();
+extern Int Exception__current;
 
 #endif

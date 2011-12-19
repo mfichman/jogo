@@ -248,6 +248,35 @@ bool Function::is_primitive_op() const {
 	return clazz && clazz->is_primitive() && name()->string()[0] == '@';
 }
 
+Function::ThrowSpec Function::throw_spec() const {
+	// Returns THROW if this function can throw an exception; otherwise
+	// returns NOTHROW.  The result is computed lazily, but all of the 
+	// children must be added to the called_func array or the computation
+	// will be reset.
+	if (throw_spec_ != UNKNOWN) {
+		return throw_spec_;
+	}
+	if (is_virtual()) {
+		throw_spec_ = THROW;
+		return throw_spec_;
+	}
+	for (int i = 0; i < called_func_.size(); i++) {
+		if (called_func_[i]->throw_spec() == THROW) {
+			throw_spec_ = THROW;
+			return throw_spec_;
+		}
+	}
+	
+	throw_spec_ = NOTHROW;
+	return throw_spec_;
+}
+
+void Function::called_func(Function* func) {
+	// Reset the throw_spec, because adding a new function that throws
+	// could cause this function to throw.
+	called_func_.push_back(func);
+}
+
 void Module::feature(Feature* feature) {
     if (!feature) {
         return;

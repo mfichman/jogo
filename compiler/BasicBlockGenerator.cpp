@@ -608,6 +608,7 @@ void BasicBlockGenerator::operator()(Fork* statement) {
 void BasicBlockGenerator::operator()(Yield* statament) {
 //    free_temps();
     call(env_->name("Coroutine__yield")); 
+	exception_catch();
 }
 
 void BasicBlockGenerator::operator()(Function* feature) {
@@ -636,7 +637,10 @@ void BasicBlockGenerator::operator()(Function* feature) {
             stack(f->name(), stack_.size()+1); 
         } else {
             // Variable is passed by register; precolor the temporary for this
-            // formal parameter by using a negative number.
+            // formal parameter by using a negative number.  Passing NULL for
+			// the type of the variable prevents it from being garbage collected
+			// at the end of the scope (which is what we want for function 
+			// parameters).
             int reg = -machine_->arg_reg(index)->id();
             variable(new Variable(f->name(), mov(reg), 0));
 
@@ -731,6 +735,34 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
     } else {
         return_ = 0;
     }
+	if (func->throw_spec() == Function::THROW) {
+		exception_catch();
+	}
+}
+
+void BasicBlockGenerator::exception_catch() {
+	// If the function can throw an exception, then generate the landing pad and
+	// return.  Currently, only an exception throw is allowed, to support cleaning
+	// up coroutines.
+	String::Ptr name = env_->name("Exception__current");
+	static Constant::Ptr current(new Constant(Location(), env_, name, 0, 0));
+
+	function_->file()->dependency(current);
+	Operand loc(name);
+	loc.indirect(true);
+	Operand val = load(loc);
+
+	// Branch to the continuation if there was no exception.
+	BasicBlock::Ptr except_block = basic_block();
+	BasicBlock::Ptr done_block = basic_block(); 
+	bz(val, done_block, except_block);
+
+	// Handle the exception by returning from the function.
+	emit(except_block);
+	func_return();
+
+	// Start a new code block that continues after the exception check.
+	emit(done_block);
 }
 
 void BasicBlockGenerator::native_operator(Call* expr) {
@@ -808,7 +840,6 @@ int BasicBlockGenerator::stack(String* name) {
     } else {
         return 0;
     }
-    
 }
 
 void BasicBlockGenerator::variable(Variable* var) {
@@ -829,23 +860,13 @@ void BasicBlockGenerator::exit_scope() {
     // to perform cleanup at the end of the scope.
     Scope::Ptr scope = scope_.back();
 
-    // Remove variables in reverse order!
-    for (int i = scope->variables()-1; i >= 0; i--) { 
-        scope_cleanup(scope->variable(i));
-    }
-
-    if (!scope->has_return()) {
+    if (!scope->has_return()) {    
+		// Remove variables in reverse order!
+		for (int i = scope->variables()-1; i >= 0; i--) { 
+			scope_cleanup(scope->variable(i));
+		}
         scope_.pop_back();
         return;
-    }
-
-    // Search backwards through the vector and clean up variables in the 
-    // containing scope.
-    for (int j = scope_.size()-2; j > 1; j--) {
-        Scope::Ptr s = scope_[j];
-        for (int i = s->variables()-1; i >= 0; i--) {
-            scope_cleanup(s->variable(i));
-        }
     }
 
     func_return();
@@ -915,6 +936,16 @@ void BasicBlockGenerator::scope_cleanup(Variable* var) {
 }
 
 void BasicBlockGenerator::func_return() {
+    // Search backwards through the vector and clean up variables in the 
+    // containing scope.  Do NOT clean up variables in the top scope; those
+	// variables are parameters and they are anchored (hence j > 1).
+    for (int j = scope_.size()-1; j > 0; j--) {
+        Scope::Ptr s = scope_[j];
+        for (int i = s->variables()-1; i >= 0; i--) {
+            scope_cleanup(s->variable(i));
+        }
+    }
+
     // Emit an actual return.  Emit code to return the value saved in the var
     // '_ret' if the variable has been set.
     Operand retval = scope_.back()->return_val();

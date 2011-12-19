@@ -1,0 +1,50 @@
+# This test creates a coroutine which yields with destructors on the call
+# stack.  When the coroutine is freed, the objects on the call stack should
+# also be freed, so that there is no memory leak.
+ 
+StackObj < Object {
+    num Int
+
+    @init(num Int) {
+        self.num = num
+    }
+
+    @destroy() {
+        Io::println("destroyed #{num}")
+    }
+}
+
+
+one() {
+    stack = StackObj(1)
+    two()
+    Io::println("FAIL1")
+}
+
+two() {
+    # Execution should never reach the line after the subroutine call.
+    stack = StackObj(2)
+    three()
+    Io::println("FAIL2")
+}
+
+three() {
+    # Execution should never reach the line after the yield.
+    stack = StackObj(3)
+    yield
+    Io::println("FAIL3")
+}
+
+run() {
+    coro = Coroutine() func() {
+        one()
+    }
+    coro()
+}
+
+
+main() Int {
+    run()
+    Io::println("done")
+    ret 0
+}

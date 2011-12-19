@@ -29,6 +29,7 @@
 
 Coroutine Coroutine__current = 0;
 Coroutine_Stack* Coroutine__stack = 0;
+Int Exception__current = 0;
 
 Coroutine Coroutine__init(Object func) {
     // Initializes a function with a new stack and instruction pointer. When
@@ -70,9 +71,16 @@ Coroutine Coroutine__init(Object func) {
 }
 
 void Coroutine__destroy(Coroutine self) {
-    // Free the stack, and the pointer to the closure object so that no memory
-    // is leaked.
     Coroutine_Stack* stack = 0;
+
+	// Set the exception flag, then resume the coroutine and unwind the stack,
+	// calling destructors for objects referenced by the coroutine.
+	Int save_except = Exception__current;
+	Exception__current = 1;
+	Coroutine__call(self);
+	
+	// Free the stack, and the pointer to the closure object so that no memory
+    // is leaked.
     for (stack = self->stack.next; stack;) {
         Coroutine_Stack* temp = stack;
         stack = stack->next;
@@ -81,6 +89,8 @@ void Coroutine__destroy(Coroutine self) {
 
     Object__refcount_dec(self->function);
     free(self);
+
+	Exception__current = save_except;
 }
 
 void Coroutine__call(Coroutine self) {

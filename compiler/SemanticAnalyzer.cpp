@@ -422,6 +422,9 @@ void SemanticAnalyzer::operator()(Member* expression) {
     expression->type(fix_generics(expr->type(), func->type()));
     expression->function(func);
 	expression->file()->dependency(func);
+	if (function_) {
+		function_->called_func(func);
+	}
 
     if (func->is_private()) {
         err_ << expression->location();
@@ -485,6 +488,9 @@ void SemanticAnalyzer::operator()(Call* expression) {
     // FIXME: Look up generics for function
     expression->file()->dependency(func);
     expression->arguments(args(expression->arguments(), func, receiver));
+	if (function_) {
+		function_->called_func(func);
+	}
 }
 
 void SemanticAnalyzer::operator()(Construct* expression) {
@@ -520,6 +526,9 @@ void SemanticAnalyzer::operator()(Construct* expression) {
     }
     expression->file()->dependency(constr);
     expression->arguments(args(expression->arguments(), constr, type));  
+	if (function_) {
+		function_->called_func(constr);
+	}
 }
 
 void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
@@ -843,6 +852,10 @@ void SemanticAnalyzer::operator()(Fork* statement) {
 void SemanticAnalyzer::operator()(Yield* statement) {
     // Nothing to check
     assert("Not supported" && !statement->expression());
+
+	// A yield statement can throw an exception; therefore, the enclosing 
+	// function can also throw an exception.
+	function_->throw_spec(Function::THROW);
 }
 
 void SemanticAnalyzer::operator()(Case* statement) {
@@ -853,8 +866,9 @@ void SemanticAnalyzer::operator()(Case* statement) {
     }
 }
 
-
 void SemanticAnalyzer::operator()(Match* statement) {
+	// Check a match statement.  First by check the guard, and then by ensure 
+	// that each case expression has the same type as the guard.
     Expression::Ptr guard = statement->guard();
     guard(this);
 

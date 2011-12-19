@@ -240,6 +240,7 @@ private:
     void call(Function* func, Expression* args);
     void native_operator(Call* expression);
     void scope_cleanup(Variable* var);
+	void exception_catch();
     void refcount_inc(Operand var);
     void refcount_dec(Operand var);
     void dispatch_table(Class* clazz);

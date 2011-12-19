@@ -60,7 +60,6 @@ public:
     void return_val(Operand val) { return_val_ = val; }
     void has_return(bool ret) { has_return_ = ret; }
     void variable(Variable* variable);
-    BasicBlock* cleanup() const { return cleanup_; }
     Operand return_val() const { return return_val_; }
     bool has_return() const { return has_return_; }
     Variable* variable(String* name) const;
@@ -70,7 +69,6 @@ public:
     typedef Pointer<Scope> Ptr;
 
 private:
-    BasicBlock::Ptr cleanup_; // Block for inserting stack cleanup code
     bool has_return_;
     Operand return_val_;
     std::vector<Variable::Ptr> variable_;
