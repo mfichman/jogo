@@ -260,6 +260,7 @@ Function::ThrowSpec Function::throw_spec() const {
 		throw_spec_ = THROW;
 		return throw_spec_;
 	}
+    throw_spec_ = NOTHROW;
 	for (int i = 0; i < called_func_.size(); i++) {
 		if (called_func_[i]->throw_spec() == THROW) {
 			throw_spec_ = THROW;
@@ -267,7 +268,6 @@ Function::ThrowSpec Function::throw_spec() const {
 		}
 	}
 	
-	throw_spec_ = NOTHROW;
 	return throw_spec_;
 }
 

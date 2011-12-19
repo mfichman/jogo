@@ -55,6 +55,7 @@ Coroutine Coroutine__init(Object function);
 void Coroutine__yield();
 void Coroutine__exit();
 void Coroutine__call(Coroutine self);
+void Coroutine__resume(); // ASM
 Ptr Coroutine__grow_stack();
 
 extern Coroutine_Stack* Coroutine__stack;
