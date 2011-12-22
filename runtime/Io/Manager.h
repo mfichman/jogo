@@ -20,24 +20,23 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_ARRAY_H
-#define APOLLO_ARRAY_H
+#ifndef APOLLO_IO_MANAGER_H
+#define APOLLO_IO_MANAGER_H
 
 #include "Primitives.h"
+#include "Queue.h"
 
-typedef struct Array* Array;
-struct Array {
+typedef struct Io_Manager* Io_Manager;
+struct Io_Manager {
     Ptr _vtable;
     U64 _refcount;
-    Int capacity;
-    Int count;
-    Object* data;    
+    Queue scheduled;
+    Int handle;
 };
 
-Array Array__init(Int capacity);
-void Array__destroy(Array self);
-Object Array__index(Array self, Int index);
-void Array__insert(Array self, Int index, Object obj);
-extern void Array__vtable();
+Io_Manager Io_Manager__init();
+void Io_Manager__destroy();
+void Io_Manager_poll();
+extern void Io_Manager__vtable();
 
 #endif

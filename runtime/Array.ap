@@ -32,9 +32,9 @@ Array[:a] < Object {
     # Returns the number of elements in this array.
 
     @init(capacity Int) native {
-        # Creates a new buffer with capacity for 'size' elements.  Regardless
-        # of the initial capacity, the number of elements in the array will
-        # always be zero after construction.
+        # Creates a new buffer with capacity for 'capacity' elements.
+        # Regardless of the initial capacity, the number of elements in the
+        # array will always be zero after construction.
     }
 
     @destroy() native {
@@ -171,6 +171,11 @@ Array[:a] < Object {
             ++i
         }
         count = last
+    }
+
+    empty?() Bool {
+        # Returns true if the array is empty
+        ret count == 0
     }
 
     clear() {

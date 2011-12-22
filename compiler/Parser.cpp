@@ -40,6 +40,8 @@ Parser::Parser(Environment* env) :
     input("Coroutine");
     input("Pair");
     input("Hash");
+	input("Task");
+	input("Queue");
 
     for (int i = 0; i < env->inputs(); i++) {
         is_input_file_ = true;
@@ -231,7 +233,7 @@ Class* Parser::clazz() {
         case Token::TYPE:
             return new Class(loc, env_, type, alternate_list());
         case Token::CONSTANT:
-            return new Class(loc, env_, type, constant_list()); 
+			return new Class(loc, env_, type, constant_list()); 
         default:
             err_ << location() << "Expected a type or constant, not ";
             err_ << token() << "'\n";
@@ -316,7 +318,7 @@ Constant* Parser::constant() {
     }
     Feature::Flags flags = Parser::flags();
 
-    // Read the initializer, which is not optional.
+    // Read the initializer, which is optional.
     Expression::Ptr init;
     if (token() == Token::ASSIGN) {
         next();

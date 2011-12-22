@@ -108,9 +108,19 @@ Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
         feat->parent(this);
         if (!feature_[feat->name()]) {
             feature_[feat->name()] = feat;
-        }        
-    }
+        }
 
+		// For each constant, add an initializer if it doesn't already have one.  Assign
+		// enum IDs in sequence.
+		if (Constant::Ptr cons = dynamic_cast<Constant*>(feat)) {
+            if (!cons->initializer()) {
+                String::Ptr str(env->integer(stringify(next_enum())));
+                IntegerLiteral::Ptr lit(new IntegerLiteral(Location(), str));
+                lit->type(type); 
+                cons->initializer(lit);
+            }
+        }
+    }
 }
 
 void Class::jump1(int index, int d) {

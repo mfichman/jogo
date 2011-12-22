@@ -25,18 +25,18 @@
 
 #include "Primitives.h"
 
+typedef struct Coroutine_Stack Coroutine_Stack;
 struct Coroutine_Stack {
     Int stack[COROUTINE_STACK_SIZE];
     struct Coroutine_Stack* next; // Pointer to the next stack
 };
-
-typedef struct Coroutine_Stack Coroutine_Stack;
 
 extern Int CoroutineStatus_NEW;
 extern Int CoroutineStatus_RUNNING;
 extern Int CoroutineStatus_SUSPENDED;
 extern Int CoroutineStatus_DEAD;
 
+typedef struct Coroutine* Coroutine;
 struct Coroutine {
     Ptr _vtable; // 0
     U64 _refcount; // 8
@@ -49,10 +49,9 @@ struct Coroutine {
     Coroutine_Stack stack;
 };
 
-typedef struct Coroutine* Coroutine;
-
 Coroutine Coroutine__init(Object function);
 void Coroutine__yield();
+void Coroutine__yield_main();
 void Coroutine__exit();
 void Coroutine__call(Coroutine self);
 void Coroutine__resume(); // ASM

@@ -18,36 +18,21 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-println(str String) {
-    # Prints 'str' to standard output, and flushes the output.
-    if str {
-        stdout().println(str)
-    } else {
-        stdout().println('nil')
+Task < Object {
+    # A task is essentially a named coroutine.  A task differs from a coroutine
+    # in that when it is created, it is added to the Io::Manager's scheduled
+    # task list.  Tasks cannot be invoked manually like coroutines; they are
+    # only invoked when the Io::Manager schedules the task.
+
+    coroutine immutable Coroutine
+    # This coroutine contains the current execution state of the task.
+
+    @init(start TaskFunc) {
+        coroutine = Coroutine(start)
+        Io::manager().task(self)        
     }
 }
 
-print(str String) {
-    # Prints 'str' to standard output.  Does not flush the output.
-    if str {
-        stdout().print(str)
-    } else {
-        stdout().print('nil')
-    }
-}
-
-stderr() native Stream {
-    # Returns the standard error stream
-}
-
-stdout() native Stream {
-    # Returns the standard output stream
-}
-
-stdin() native Stream {
-    # Returns the standard input stream
-}
-
-manager() native Manager {
-    # Returns the default Io::Manager
+TaskFunc < Interface {
+    @call()
 }

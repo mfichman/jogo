@@ -50,6 +50,8 @@ Module
       child0: Return
         expression: IntegerLiteral(0)
 Module
+  name: Io
+Module
   name: 
   feature0: Class
     name: Import3

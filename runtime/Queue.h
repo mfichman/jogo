@@ -20,24 +20,41 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_ARRAY_H
-#define APOLLO_ARRAY_H
+#ifndef APOLLO_QUEUE_H
+#define APOLLO_QUEUE_H
 
 #include "Primitives.h"
 
-typedef struct Array* Array;
-struct Array {
+typedef struct Queue* Queue;
+struct Queue {
     Ptr _vtable;
     U64 _refcount;
     Int capacity;
+    Int front;
+    Int back;
     Int count;
-    Object* data;    
+    Object* data;
 };
 
-Array Array__init(Int capacity);
-void Array__destroy(Array self);
-Object Array__index(Array self, Int index);
-void Array__insert(Array self, Int index, Object obj);
-extern void Array__vtable();
+Queue Queue__init(Int capacity);
+void Queue__destroy(Queue self);
+void Queue_enq(Queue self, Object obj);
+Object Queue_deq(Queue self);
+Object Queue_first__g(Queue self);
+Object Queue_last__g(Queue self);
+Int Queue_count__g(Queue self);
+extern void Queue__vtable();
+
+typedef struct QueueIter* QueueIter;
+struct QueueIter {
+    Ptr _vtable;
+    U64 _refcount;
+    Queue queue;
+    Int index;
+    Int count;
+};
+
+Bool QueueIter_more__g(QueueIter self);
+Object QueueIter_next(QueueIter self);
 
 #endif

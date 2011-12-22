@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2010 Matt Fichman
  *
@@ -20,58 +21,57 @@
  * IN THE SOFTWARE.
  */
 
-#include "Io/Stream.h"
 #include "Io/Manager.h"
-#include "String.h"
-#include <stdio.h>
-#ifdef WINDOWS
+#include "Coroutine.h"
+#ifndef WINDOWS
+#include <unistd.h>
+#else
 #include <windows.h>
 #endif
+#include <stdlib.h>
+#include <stdio.h>
 
-Io_Manager Io_manager() {
-    static Io_Manager manager = 0;
-    if (!manager) {
-        manager = Io_Manager__init();
+
+Io_Manager Io_Manager__init() {
+    // Initialize an event manager, and allocate an I/O completion port.
+    Io_Manager ret = calloc(sizeof(struct Io_Manager), 1);
+    if (!ret) {
+        fprintf(stderr, "Out of memory");
+        fflush(stderr);
+        abort();
     }
-    manager->_refcount++;
-    return manager;
-}
-
-Io_Stream Io_stderr() {
-    static Io_Stream err = 0;
-    if (!err) {
+    ret->_vtable = Io_Manager__vtable;
+    ret->_refcount = 1;
+    ret->scheduled = Queue__init(0);
 #ifdef WINDOWS
-        err = Io_Stream__init((Int)GetStdHandle(STD_ERROR_HANDLE));
+    ret->handle = (Int)CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 1);
 #else
-        err = Io_Stream__init(2);
+    ret->handle = 0;
 #endif
-    }
-    err->_refcount++;
-    return err;
+    return ret;
 }
 
-Io_Stream Io_stdout() {
-    static Io_Stream out = 0;
-    if (!out) {
+void Io_Manager__destroy(Io_Manager self) {
+    Queue__destroy(self->scheduled);
 #ifdef WINDOWS
-        out = Io_Stream__init((Int)GetStdHandle(STD_OUTPUT_HANDLE));
+    CloseHandle((HANDLE)self->handle);
 #else
-        out = Io_Stream__init(1);
 #endif
-    }
-    out->_refcount++;
-    return out;
+    free(self);
 }
 
-Io_Stream Io_stdin() {
-    static Io_Stream in = 0;
-    if (!in) {
+void Io_Manager_poll(Io_Manager self) {
+    // Poll for an I/O event, and then resume the coroutine associated with
+    // that event.
 #ifdef WINDOWS
-        in = Io_Stream__init((Int)GetStdHandle(STD_INPUT_HANDLE));
-#else
-        in = Io_Stream__init(0);
-#endif
+    DWORD bytes = 0;
+    ULONG_PTR coro = 0;
+    OVERLAPPED* evt = 0;
+    HANDLE handle = (HANDLE)self->handle;
+    GetQueuedCompletionStatus(handle, &bytes, &coro, &evt, INFINITE);
+    if (evt) {
+        Coroutine__call((Coroutine)coro); // Will return later
     }
-    in->_refcount++;
-    return in;
+#endif
 }
+

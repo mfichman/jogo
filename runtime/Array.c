@@ -26,6 +26,7 @@
 #include <stdio.h>
 
 #undef Int
+#define ARRAY_DEFAULT_SIZE 16
 
 Array Array__init(Int capacity) {
     Array ret = calloc(sizeof(struct Array), 1);
@@ -36,6 +37,9 @@ Array Array__init(Int capacity) {
     }
     ret->_vtable = Array__vtable;
     ret->_refcount = 1;
+    if (capacity <= 0) {
+        capacity = ARRAY_DEFAULT_SIZE;
+    }
     ret->data = calloc(sizeof(Object), capacity);
     if (!ret->data) {
         fprintf(stderr, "Out of memory");
@@ -69,9 +73,7 @@ Object Array__index(Array self, Int index) {
 }
 
 void Array__insert(Array self, Int index, Object obj) {
-    if (!obj || index < 0) {
-        return;
-    }
+    if (!obj || index < 0) { return; }
 
     if (index >= self->capacity) {
         // Array needs to be resized, so double the size of the array, and 
@@ -98,13 +100,11 @@ void Array__insert(Array self, Int index, Object obj) {
         free(self->data);   
         self->data = temp;
     }
-    if (index >= self->count) {
-        // Array doesn't need to be resized; just increment the count and 
-        // insert the element
-        self->count = index+1;
-    }
 
     self->data[index] = obj;
+    if (index >= self->count) {
+        self->count = index+1;
+    }
     Object__refcount_inc(obj);
 }
 

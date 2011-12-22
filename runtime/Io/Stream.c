@@ -72,7 +72,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
             if (Io_StreamMode_BLOCKING != self->mode) {
                 // Yield to the event manager.  FIXME: Return immediately if
                 // the mode is set to ASYNC.
-                Coroutine__yield();
+                Coroutine__yield_main();
             }
             SetLastError(ERROR_SUCCESS);
             GetOverlappedResult(handle, evt, &read, 1);
@@ -118,7 +118,7 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
             if (Io_StreamMode_BLOCKING != self->mode) {
                 // Yield to the event manager.  FIXME: Return immediately if
                 // the mode is set to ASYNC.
-                Coroutine__yield();
+                Coroutine__yield_main();
             }
             SetLastError(ERROR_SUCCESS);
             GetOverlappedResult(handle, evt, &written, 1);

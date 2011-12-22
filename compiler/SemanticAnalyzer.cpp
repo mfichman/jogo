@@ -462,7 +462,7 @@ void SemanticAnalyzer::operator()(Call* expression) {
     expression->type(func->type());
 
     // Check to make sure the resolved function is not private
-    if (func->is_private()) {
+	if (func->is_private() && !expression->receiver()->type()->is_self()) {
         err_ << expression->location();
         err_ << "Function '" << func->name() << "' is private in class '";
         err_ << expression->receiver()->type() << "'\n";

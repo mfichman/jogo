@@ -31,6 +31,8 @@ Coroutine Coroutine__current = 0;
 Coroutine_Stack* Coroutine__stack = 0;
 Int Exception__current = 0;
 
+void Coroutine__yield_main() {}
+
 Coroutine Coroutine__init(Object func) {
     // Initializes a function with a new stack and instruction pointer. When
     // the coroutine is resumed, it will begin executing at 'function' with its
