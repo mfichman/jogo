@@ -35,6 +35,7 @@
 Io_Stream File_open(String path, String mode) {
 #ifdef WINDOWS
     DWORD share = FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE;
+    DWORD flags = FILE_FLAG_OVERLAPPED;
     DWORD access = 0;
     DWORD create = 0;
     HANDLE ret = 0;
@@ -63,7 +64,7 @@ Io_Stream File_open(String path, String mode) {
     } else {
         return 0;
     }
-    ret = CreateFile(path->data, access, share, 0, create, 0, 0);
+    ret = CreateFile(path->data, access, share, 0, create, flags, 0);
     if (ret == INVALID_HANDLE_VALUE) {
         // ERROR
         return 0;

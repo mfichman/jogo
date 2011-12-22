@@ -53,6 +53,7 @@ private:
     void operator()(Block* statement);
     void operator()(Simple* statement);
     void operator()(Let* let);
+	void operator()(Member* member);
     void operator()(While* statement);
     void operator()(Conditional* statement);
     void operator()(Assignment* statement);

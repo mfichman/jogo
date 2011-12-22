@@ -30,6 +30,30 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+Io_Stream Io_Stream__init(Int desc) {
+    // Initializes a new stream.
+    Io_Stream ret = calloc(sizeof(struct Io_Stream), 1);
+    if (!ret) {
+        fprintf(stderr, "Out of memory");
+        fflush(stderr);
+        abort();
+    }
+    ret->_vtable = Io_Stream__vtable;
+    ret->_refcount = 1;
+    ret->handle = desc; 
+    ret->read_buf = Io_Buffer__init(1024);
+    ret->write_buf = Io_Buffer__init(1024);
+    ret->status = Io_StreamStatus_OK;
+    ret->mode = Io_StreamMode_BLOCKING;
+
+#ifdef WINDOWS 
+    // Associate the handle with an IO completion port.
+    //CreateIoCompletionPort(ret->handle, Kernel_manager()->iocp, ret, 0);
+#endif
+
+    return ret;
+}
+
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     // Read characters from the stream until 'buffer' is full, an I/O error 
     // is raised, or the end of the input is reached.
@@ -37,18 +61,34 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->capacity - buffer->end;
 #ifdef WINDOWS
+    OVERLAPPED* evt = &self->overlapped;
     DWORD read = 0;
-    if (!ReadFile((HANDLE)self->handle, buf, len, &read, 0)) {
-        if (GetLastError() == ERROR_HANDLE_EOF) {
+    HANDLE handle = (HANDLE)self->handle;
+    Int ret = 0;
+
+    // Read from the file, async or syncronously
+    if (!ReadFile(handle, buf, len, &read, evt)) {
+        if (ERROR_IO_PENDING == GetLastError()) {
+            if (Io_StreamMode_BLOCKING != self->mode) {
+                // Yield to the event manager.  FIXME: Return immediately if
+                // the mode is set to ASYNC.
+                Coroutine__yield();
+            }
+            SetLastError(ERROR_SUCCESS);
+            GetOverlappedResult(handle, evt, &read, 1);
+        }
+        if (ERROR_HANDLE_EOF == GetLastError()) {
+            // End-of-file has been reached.
             self->status = Io_StreamStatus_EOF;
             return;
-        } else {
+        } else if (ERROR_SUCCESS != GetLastError()) {
+            // Some other error; set the error code.
             self->status = Io_StreamStatus_ERROR;
             return;
         }
-    } else {
-        buffer->end += read;
     }
+    self->overlapped.Offset += read;
+    buffer->end += read;
 #else
     Int ret = read(self->handle, buf, len);
     if (ret == 0) {
@@ -68,13 +108,29 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->end - buffer->begin;
 #ifdef WINDOWS
+    OVERLAPPED* evt = &self->overlapped;
     DWORD written = 0;
-    if (!WriteFile((HANDLE)self->handle, buf, len, &written, 0)) {
-        self->status = Io_StreamStatus_ERROR;
-        return;
-    } else {
-        buffer->begin += written;
+    HANDLE handle = (HANDLE)self->handle;
+
+    // Write to the file, async or synchronously
+    if (!WriteFile(handle, buf, len, &written, evt)) {
+        if (ERROR_IO_PENDING == GetLastError()) {
+            if (Io_StreamMode_BLOCKING != self->mode) {
+                // Yield to the event manager.  FIXME: Return immediately if
+                // the mode is set to ASYNC.
+                Coroutine__yield();
+            }
+            SetLastError(ERROR_SUCCESS);
+            GetOverlappedResult(handle, evt, &written, 1);
+        }
+        if (ERROR_SUCCESS != GetLastError()) {
+            // Set the error flag
+            self->status = Io_StreamStatus_ERROR;
+            return;
+        }
     }
+    self->overlapped.Offset += written; 
+    buffer->begin += written;
 #else
     Int ret = write(self->handle, buf, len);
     if (ret == 0) {

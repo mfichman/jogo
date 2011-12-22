@@ -25,6 +25,9 @@
 
 #include "Primitives.h"
 #include "Io/Buffer.h"
+#ifdef WINDOWS
+#include "windows.h"
+#endif
 
 typedef struct Io_Stream* Io_Stream;
 struct Io_Stream {
@@ -34,11 +37,19 @@ struct Io_Stream {
     Io_Buffer read_buf;
     Io_Buffer write_buf;
     Int status;
+    Int mode;
+#ifdef WINDOWS
+    OVERLAPPED overlapped;
+#endif
 };
 
 extern Int Io_StreamStatus_OK;
 extern Int Io_StreamStatus_ERROR;
 extern Int Io_StreamStatus_EOF;
+
+extern Int Io_StreamMode_ASYNC;
+extern Int Io_StreamMode_SYNC;
+extern Int Io_StreamMode_BLOCKING;
 
 Io_Stream Io_Stream__init(Int handle);
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer);
@@ -50,5 +61,6 @@ String Io_Stream_scan(Io_Stream self, String delim);
 void Io_Stream_print(Io_Stream self, String str);
 void Io_Stream_flush(Io_Stream self);
 void Io_Stream_close(Io_Stream self);
+extern void Io_Stream__vtable();
 
 #endif

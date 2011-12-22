@@ -103,6 +103,11 @@ void ClosureAnalyzer::operator()(Simple* statement) {
     expression(this);
 }
 
+void ClosureAnalyzer::operator()(Member* expression) {
+	Expression::Ptr child = expression->expression();
+	child(this);
+}
+
 void ClosureAnalyzer::operator()(Let* expression) {
     enter_scope();
     Statement::Ptr block = expression->block();

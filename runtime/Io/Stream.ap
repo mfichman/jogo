@@ -19,6 +19,19 @@
 # SOFTWARE.
 
 StreamStatus = OK | ERROR | EOF
+# Encodes the current status of the I/O stream.  OK: Stream is in the normal 
+# state and is ready for I/O.  ERROR: The stream is in an invalid state, either
+# because a socket or file descriptor is closed, or due to an error raised by
+# the underlying file descriptor.  EOF: The stream is at the end of the file,
+# and no more bytes may be read.
+
+StreamMode = ASYNC | SYNC | BLOCKING
+# The stream mode manages how I/O is handled by the runtime.  ASYNC: Stream
+# read/write operations return immediately, but the I/O operation will not
+# finish until later; the wait() function must be called to retrieve the stream
+# status.  SYNC: Stream operations block the current coroutine.  BLOCKING:
+# Stream operations block the process.  SYNC is the default.  BLOCKING mode is
+# not recommended for most applications.
 
 Stream < Object {
     # This object is used to perform buffered character I/O on a file.  It can
@@ -28,16 +41,16 @@ Stream < Object {
     handle immutable Int
     # Opaque handle to the underlying file descriptor.
 
-    read_buf private = Buffer(1024)
-    write_buf private = Buffer(1024)
+    read_buf private Buffer
+    write_buf private Buffer
 
-    status = StreamStatus::OK
+    status StreamStatus
+    mode StreamMode
 
-    @init(desc Int) {
+    @init(desc Int) native {
         # Initializes a new stream, with 'handle' being an opaque pointer to
         # the OS file descriptor.  Note that if 'handle' is invalid, then
         # subsequent reads and writes will fail, and 'err' will be set.
-        handle = desc
     }
 
     @destroy() {

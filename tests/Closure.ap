@@ -1,5 +1,3 @@
-import Boot
-
 Callable < Interface {
     @call()
 }
@@ -16,34 +14,39 @@ test(f Callable) {
 
 main() Int {
 
-    hello = 'hello world\n'
+    hello = 'hello world'
 
     sample = func(x Int) {
-        boot_print_int(x)
-        boot_print_str(hello)
+        Io::print(x.str)
+        Io::println(hello)
     }
 
     sample(10)
 
     test(func() {
-        boot_print_str("one")
-        boot_print_str(hello)
+        Io::print("one")
+        Io::println(hello)
     })
     test() func() {
-        boot_print_str("two")
-        boot_print_str(hello)
+        Io::print("two")
+        Io::println(hello)
     }
 
     obj = Test()
     obj.test(func() {
-        boot_print_str("three")
-        boot_print_str(hello)
+        Io::print("three")
+        Io::println(hello)
     })
 
     obj.test() func() {
-        boot_print_str("four")
-        boot_print_str(hello)
+        Io::print("four")
+        Io::println(hello)
     }
+
+    sample2 = func() {
+        Io::println(hello.str)
+    }
+    sample2()
 
     ret 0
 }

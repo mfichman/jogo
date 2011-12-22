@@ -214,6 +214,9 @@ int main(int argc, char** argv) {
 #ifdef LINUX
     ss << " -lm"; // Math library must be included last for some reason
 #endif
+#ifdef WINDOWS
+    ss << " kernel32.lib";
+#endif
 
     if (env->verbose()) {
         Stream::stout() << ss.str() << "\n";
