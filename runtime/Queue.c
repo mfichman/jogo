@@ -106,20 +106,19 @@ Object Queue_deq(Queue self) {
     self->data[self->back] = 0;
     self->back = (self->back+1) % self->capacity;
     self->count--;
-    
-    // We must decrement the object's refcount, but we DON'T want to free it
-    // if the refcount is zero, since the calling function will automatically
-    // obtain ownership of the new object.
-    obj->_refcount--;
     return obj;
 }
 
 Object Queue_first__g(Queue self) {
-    return self->data[self->front];
+    Object obj = self->data[self->front]; 
+    Object__refcount_inc(obj);
+    return obj;
 }
 
 Object Queue_last__g(Queue self) {
-    return self->data[self->back];
+    Object obj = self->data[self->back];
+    Object__refcount_inc(obj);
+    return obj;
 }
 
 Bool QueueIter_more__g(QueueIter self) {
@@ -131,6 +130,7 @@ Object QueueIter_next(QueueIter self) {
         Object obj = self->queue->data[self->index];
         self->index = (self->index+1) % self->queue->capacity;
         self->count++;
+        Object__refcount_inc(obj);
         return obj;
     } else { 
         return 0;
