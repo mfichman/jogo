@@ -174,6 +174,7 @@ public:
     bool is_virtual() const { return flags() & VIRTUAL; }
 	bool is_primitive_op() const;
     void stack_vars_inc() { stack_vars_++; }
+    void stack_vars(int value) { stack_vars_ = value; }
     void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
     void formals(Formal* formals) { formals_ = formals; }
 	void throw_spec(ThrowSpec spec) { throw_spec_ = spec; }

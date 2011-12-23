@@ -113,7 +113,7 @@ void BasicBlockGenerator::operator()(Box* expr) {
     String::Ptr size = env_->integer(stringify(clazz->size()));
     push_arg(1, load(new IntegerLiteral(Location(), one)));
     push_arg(0, load(new IntegerLiteral(Location(), size)));
-    call(env_->name("calloc"));        
+    call(env_->name("calloc"), 1);
 
     return_ = pop_ret();
     object_temp_.push_back(return_);
@@ -323,7 +323,7 @@ void BasicBlockGenerator::operator()(Construct* expr) {
     }
 
     // Insert a call expression, then pop the return value off the stack.
-    call(func->label());
+    call(func->label(), args.size());
     return_ = pop_ret();
     if (!expr->type()->is_value()) {
         object_temp_.push_back(return_);
@@ -607,18 +607,14 @@ void BasicBlockGenerator::operator()(Fork* statement) {
 
 void BasicBlockGenerator::operator()(Yield* statament) {
 //    free_temps();
-    call(env_->name("Coroutine__yield")); 
+    call(env_->name("Coroutine__yield"), 0); 
 	exception_catch();
 }
 
 void BasicBlockGenerator::operator()(Function* feature) {
     // If the function is just a prototype, don't emit any code.
-    if (!feature->block() || feature->is_native()) {
-        return;
-    }
-    if (feature->location().file != file_) {
-        return;
-    }
+    if (!feature->block() || feature->is_native()) { return; }
+    if (feature->location().file != file_) { return; }
 
     // Reset the temporaries for the function.
     temp_ = 0;
@@ -632,24 +628,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // to a temporary.
     int index = 0;
     for (Formal* f = feature->formals(); f; f = f->next()) {
-        if (index >= machine_->arg_regs()) {
-            // Variable is passed on the stack
-            stack(f->name(), stack_.size()+1); 
-        } else {
-            // Variable is passed by register; precolor the temporary for this
-            // formal parameter by using a negative number.  Passing NULL for
-			// the type of the variable prevents it from being garbage collected
-			// at the end of the scope (which is what we want for function 
-			// parameters).
-            int reg = -machine_->arg_reg(index)->id();
-            variable(new Variable(f->name(), mov(reg), 0));
-
-            // On Windows, the value is also passed with a backing location on
-            // the stack.
-#ifdef WINDOWS
-            stack(f->name(), stack_.size()+1);
-#endif
-        }
+        save_arg(index, f);
         index++;
     } 
 
@@ -710,7 +689,7 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
         String::Ptr name = env_->string(func->name()->string());
         push_arg(1, load(new StringLiteral(Location(), name)));
         push_arg(0, val[0]); // Receiver
-        call(env_->name("Object__dispatch"));
+        call(env_->name("Object__dispatch"), 2);
         fnptr = pop_ret();
     } 
 
@@ -720,11 +699,11 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
 
     if (func->is_virtual()) {
         // Dynamic dispatch: call the function pointer.
-        call(fnptr);
+        call(fnptr, val.size());
     } else {
         // Static dispatch: insert a call expression, then pop the return value
         // off the stack.
-        call(func->label());
+        call(func->label(), val.size());
     }
 
     if (!func->type()->is_void()) {
@@ -735,6 +714,7 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
     } else {
         return_ = 0;
     }
+
 	if (func->throw_spec() == Function::THROW) {
 		exception_catch();
 	}
@@ -990,14 +970,35 @@ void BasicBlockGenerator::refcount_inc(Operand var) {
     }
 
     push_arg(0, var);
-    call(env_->name("Object__refcount_inc"));
+    call(env_->name("Object__refcount_inc"), 1);
 }
 
 void BasicBlockGenerator::refcount_dec(Operand var) {
     // Emit code to decrement the reference count for the object specified by
     // 'temp'.  Insert a call expression to call the refcount_dec function 
     push_arg(0, var);
-    call(env_->name("Object__refcount_dec"));
+    call(env_->name("Object__refcount_dec"), 1);
+}
+
+void BasicBlockGenerator::save_arg(int i, Formal* formal) {
+    if (i >= machine_->arg_regs()) {
+        // Variable is passed on the stack
+        stack(formal->name(), stack_.size()+1); 
+    } else {
+        // Variable is passed by register; precolor the temporary for this
+        // formal parameter by using a negative number.  Passing NULL for
+		// the type of the variable prevents it from being garbage collected
+		// at the end of the scope (which is what we want for function 
+		// parameters).
+        int reg = -machine_->arg_reg(i)->id();
+        variable(new Variable(formal->name(), mov(reg), 0));
+
+        // On Windows, the value is also passed with a backing location on
+        // the stack.
+#ifdef WINDOWS
+        stack(formal->name(), stack_.size()+1);
+#endif
+    }
 }
 
 void BasicBlockGenerator::push_arg(int i, Operand op) {
@@ -1014,6 +1015,18 @@ void BasicBlockGenerator::push_arg(int i, Operand op) {
         push(op);
 #endif
     }        
+}
+
+void BasicBlockGenerator::pop_args(int num) {
+    if (num <= 0) { return; }
+#ifdef WINDOWS
+    popn(num);
+#else
+    if (num > machine_->arg_regs()) {
+        popn(num - machine_->arg_regs());
+    }
+#endif
+    
 }
 
 Operand BasicBlockGenerator::pop_ret() {
@@ -1189,7 +1202,7 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
         String::Ptr size = env_->integer(stringify(clazz->size()));
         push_arg(1, load(new IntegerLiteral(Location(), one)));
         push_arg(0, load(new IntegerLiteral(Location(), size)));
-        call(env_->name("calloc"));        
+        call(env_->name("calloc"), 2); 
  
         // Obtain a pointer to the 'self' object, and store it in the 'self'
         // variable.
@@ -1256,7 +1269,7 @@ void BasicBlockGenerator::dtor_epilog(Function* feature) {
 
     if (class_->is_object()) {
         push_arg(0, variable(env_->name("self"))->operand());
-        call(env_->name("free"));
+        call(env_->name("free"), 1);
     }
 }
 

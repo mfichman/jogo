@@ -159,6 +159,12 @@ private:
         block_->instr(POP, ++temp_, 0, 0);    
         return temp_;
     }
+
+    void popn(int num) {
+        String::Ptr val = env_->integer(stringify(num)); 
+        Operand op(new IntegerLiteral(Location(), val));
+        block_->instr(POPN, 0, op, 0);
+    }
     
     void push(Operand t2) {
         block_->instr(PUSH, 0, t2, 0);    
@@ -168,8 +174,9 @@ private:
         block_->instr(STORE, 0, addr, value);    
     }
 
-    void call(Operand func) {
+    void call(Operand func, int nargs) {
         block_->instr(CALL, 0, func, 0);
+        pop_args(nargs);
     }
     
     void ret() {
@@ -246,6 +253,8 @@ private:
     void dispatch_table(Class* clazz);
     void func_return();
     void push_arg(int i, Operand arg);
+    void save_arg(int i, Formal* formal);
+    void pop_args(int count);
     void ctor_preamble(Class* clazz);
     void dtor_epilog(Function* func);
     void free_temps();

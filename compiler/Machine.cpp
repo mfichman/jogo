@@ -27,8 +27,8 @@ Machine::Machine() {
     word_size_ = 0;
 }
 
-Register* Machine::reg(const std::string& name, bool allocatable) {
-    reg_.push_back(new Register(name, reg_.size(), allocatable));
+Register* Machine::reg(const std::string& name) {
+    reg_.push_back(new Register(name, reg_.size()));
     return reg_.back();
 }
 
@@ -63,7 +63,7 @@ Machine* Machine::intel64() {
     Register::Ptr r13 = machine->reg("r13"); machine->caller_reg(r13); //12
     Register::Ptr r14 = machine->reg("r14"); machine->caller_reg(r14); //13
     Register::Ptr r15 = machine->reg("r15"); machine->caller_reg(r15); //14
-        
+
     machine->return_reg(rax);
 
 #ifdef WINDOWS

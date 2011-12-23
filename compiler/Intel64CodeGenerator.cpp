@@ -197,6 +197,10 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case NEG: instr("mov", res, a1); instr("neg", res); break;
         case PUSH: instr("push", a1); break;
         case POP: instr("pop", res); break;
+        case POPN:
+            out_ << "    add rsp, ";
+            out_ << machine_->word_size() << "*" << a1 << "\n";
+            break;  
         case STORE: instr("mov qword", a1, a2); break;
         case LOAD: instr("mov qword", res, a1); break;
         case NOTB: instr("mov", res, a1); instr("not", res); break;
@@ -336,7 +340,7 @@ void Intel64CodeGenerator::operand(Operand op) {
 
 void Intel64CodeGenerator::addr(Operand op) {
     // Emits the the address operand for a stack location as a an offset from
-    // the base pointer (rbp).  No register should be specified in the operand,
+    // the base pointer (rbp).  No register need be specified in the operand,
     // as the register is understood to be rbp.  Likewise, the label and
     // literal fields should also be nil.
     assert(!op.literal());

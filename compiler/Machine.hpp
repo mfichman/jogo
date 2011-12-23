@@ -30,21 +30,18 @@
 /* Represents a general-purpose register in a machine architecture */
 class Register : public Object {
 public:
-    Register(const std::string& name, int id, bool allocatable) :
+    Register(const std::string& name, int id) :
         name_(name),
-        id_(id),
-        allocatable_(allocatable) {
+        id_(id) {
     }
 
     const std::string& name() { return name_; }
     int id() const { return id_; }
-    bool allocatable() const { return allocatable_; }
     typedef Pointer<Register> Ptr;
 
 private:
     std::string name_;
     int id_; 
-    bool allocatable_;
 };
 
 inline Stream::Ptr operator<<(Stream::Ptr out, Register* reg) {
@@ -77,6 +74,7 @@ public:
     Register* arg_reg(int index) const { return arg_reg_[index]; }
     Register* return_reg(int index) const { return return_reg_[index]; }
     Register* reg(int id) const { return reg_[id]; }
+    Register* sp_reg() const { return sp_reg_; }
     int caller_regs() const { return caller_reg_.size(); }
     int callee_regs() const { return callee_reg_.size(); }
     int arg_regs() const { return arg_reg_.size(); }
@@ -87,7 +85,8 @@ public:
     void callee_reg(Register* reg) { callee_reg_.push_back(reg); }
     void arg_reg(Register* reg) { arg_reg_.push_back(reg); }
     void return_reg(Register* reg) { return_reg_.push_back(reg); }
-    Register* reg(const std::string& name, bool allocatable=true);
+    void sp_reg(Register* reg) { sp_reg_ = reg; }
+    Register* reg(const std::string& name);
     void word_size(int size) { word_size_ = size; }
     typedef Pointer<Machine> Ptr;
 
@@ -99,6 +98,7 @@ private:
     std::vector<Register::Ptr> arg_reg_;
     std::vector<Register::Ptr> return_reg_;
     std::vector<Register::Ptr> reg_;
+    Register::Ptr sp_reg_;
     int word_size_;
 };
 

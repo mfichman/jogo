@@ -48,8 +48,8 @@ Queue Queue__init(Int capacity) {
         abort();
     }
     ret->capacity = capacity;
-    ret->front = 0; // Points to the next open slot
-    ret->back = 0; // Points to the 
+    ret->front = capacity-1; // Points to the next open slot
+    ret->back = capacity-1; // Points to the 
     return ret;
 }
 
@@ -66,11 +66,11 @@ void Queue_enq(Queue self, Object obj) {
     // Enqueue a new object at the head of the array, resizing the backing
     // buffer if necessary  
     if (!obj) { return; }    
-    if ((self->front == self->back) && self->count) {
+    if (self->count >= self->capacity) {
         // Queue needs to be resized, so double the size of the array, and
         // then copy the array elements over.
+        Int old_capacity = self->capacity;
         Int i = 0;
-        Int j = 0;
         Object* temp = 0;
         self->capacity *= 2;
         temp = calloc(sizeof(Object), self->capacity);
@@ -81,12 +81,11 @@ void Queue_enq(Queue self, Object obj) {
         }
         
         // Copy data to the new buffer
-        for (i = self->front; i != self->back; i = ((i+1) % self->capacity)) {
-            temp[j] = self->data[i];  
-            ++j;
+        for (i = 0; i < self->count; ++i) {
+            temp[i] = self->data[(self->back+i+1) % old_capacity]; 
         }
-        self->front = self->count+1;
-        self->back = 0;
+        self->front = self->count-1;
+        self->back = self->capacity-1;
         free(self->data);
         self->data = temp;
     } 
@@ -102,9 +101,9 @@ Object Queue_deq(Queue self) {
     Object obj = 0;
     if (!self->count) { return 0; }
 
+    self->back = (self->back+1) % self->capacity;
     obj = self->data[self->back];
     self->data[self->back] = 0;
-    self->back = (self->back+1) % self->capacity;
     self->count--;
     return obj;
 }
@@ -116,7 +115,7 @@ Object Queue_first__g(Queue self) {
 }
 
 Object Queue_last__g(Queue self) {
-    Object obj = self->data[self->back];
+    Object obj = self->data[(self->back+1) % self->capacity];
     Object__refcount_inc(obj);
     return obj;
 }
