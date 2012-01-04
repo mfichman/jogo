@@ -188,7 +188,7 @@ void Io_Stream_put(Io_Stream self, Char ch) {
 
     Io_Buffer buf = self->write_buf;
     if (buf->end == buf->capacity) {
-        Io_Stream_write(self, buf);
+        Io_Stream_flush(self);
     }
     if (buf->end >= buf->capacity) {
         return;
@@ -262,8 +262,11 @@ void Io_Stream_print(Io_Stream self, String str) {
 
 void Io_Stream_flush(Io_Stream self) {
     // Forces all buffered characters to be written to the stream.
-
-    Io_Stream_write(self, self->write_buf); 
+    while (self->write_buf->end != self->write_buf->begin) {
+        Io_Stream_write(self, self->write_buf); 
+    }
+    self->write_buf->begin = 0;
+    self->write_buf->end = 0;
 }
 
 void Io_Stream_close(Io_Stream self) {

@@ -1204,7 +1204,11 @@ Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec
         env_->error();
     }
     if (formal) {
-        err_ << args->location();
+        if (args) {
+            err_ << args->location();
+        } else {
+            err_ << Location();
+        }
         err_ << "Not enough arguments to function '" << id << "'\n";
         env_->error();
     }

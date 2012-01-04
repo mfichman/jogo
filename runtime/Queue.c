@@ -48,8 +48,8 @@ Queue Queue__init(Int capacity) {
         abort();
     }
     ret->capacity = capacity;
-    ret->front = capacity-1; // Points to the next open slot
-    ret->back = capacity-1; // Points to the 
+    ret->back = capacity-1; // Points to the next open slot
+    ret->front = capacity-1; // Points to the 
     return ret;
 }
 
@@ -63,7 +63,7 @@ void Queue__destroy(Queue self) {
 }
 
 void Queue_enq(Queue self, Object obj) {
-    // Enqueue a new object at the head of the array, resizing the backing
+    // Enqueue a new object at the head of the array, resizing the fronting
     // buffer if necessary  
     if (!obj) { return; }    
     if (self->count >= self->capacity) {
@@ -82,15 +82,15 @@ void Queue_enq(Queue self, Object obj) {
         
         // Copy data to the new buffer
         for (i = 0; i < self->count; ++i) {
-            temp[i] = self->data[(self->back+i+1) % old_capacity]; 
+            temp[i] = self->data[(self->front+i+1) % old_capacity]; 
         }
-        self->front = self->count-1;
-        self->back = self->capacity-1;
+        self->back = self->count-1;
+        self->front = self->capacity-1;
         free(self->data);
         self->data = temp;
     } 
-    self->front = (self->front+1) % self->capacity;
-    self->data[self->front] = obj; 
+    self->back = (self->back+1) % self->capacity;
+    self->data[self->back] = obj; 
     self->count++;
     Object__refcount_inc(obj); 
 }
@@ -101,21 +101,21 @@ Object Queue_deq(Queue self) {
     Object obj = 0;
     if (!self->count) { return 0; }
 
-    self->back = (self->back+1) % self->capacity;
-    obj = self->data[self->back];
-    self->data[self->back] = 0;
+    self->front = (self->front+1) % self->capacity;
+    obj = self->data[self->front];
+    self->data[self->front] = 0;
     self->count--;
     return obj;
 }
 
 Object Queue_first__g(Queue self) {
-    Object obj = self->data[self->front]; 
+    Object obj = self->data[(self->front+1) % self->capacity];
     Object__refcount_inc(obj);
     return obj;
 }
 
 Object Queue_last__g(Queue self) {
-    Object obj = self->data[(self->back+1) % self->capacity];
+    Object obj = self->data[self->back]; 
     Object__refcount_inc(obj);
     return obj;
 }
@@ -126,9 +126,9 @@ Bool QueueIter_more__g(QueueIter self) {
 
 Object QueueIter_next(QueueIter self) {
     if (self->count < self->queue->count) {
-        Object obj = self->queue->data[self->index];
         self->index = (self->index+1) % self->queue->capacity;
         self->count++;
+        Object obj = self->queue->data[self->index];
         Object__refcount_inc(obj);
         return obj;
     } else { 

@@ -38,6 +38,50 @@
 #include <errno.h>
 #endif
 
+String* File::integer(const std::string& str) {
+    // Returns a name if it exists, otherwise, a new one is created.
+
+	std::map<std::string, String::Ptr>::iterator i = integer_.find(str);
+	if (i == integer_.end()) {
+		String* name = new String(str);
+        name->next(integers_);
+        integers_ = name;
+		integer_.insert(std::make_pair(str, name));	
+		return name;
+	} else {
+		return i->second;
+	}
+}
+
+String* File::floating(const std::string& str) {
+    // Returns a name if it exists, otherwise, a new one is created.
+
+	std::map<std::string, String::Ptr>::iterator i = floating_.find(str);
+	if (i == floating_.end()) {
+		String* name = new String(str);
+        name->next(floats_);
+        floats_ = name;
+		floating_.insert(std::make_pair(str, name));	
+		return name;
+	} else {
+		return i->second;
+	}
+}
+
+String* File::string(const std::string& str) {
+    // Returns a name if it exists, otherwise, a new one is created.
+
+	std::map<std::string, String::Ptr>::iterator i = string_.find(str);
+	if (i == string_.end()) {
+		String* name = new String(str);
+        name->next(strings_);
+        strings_ = name; 
+		string_.insert(std::make_pair(str, name));	
+		return name;
+	} else {
+		return i->second;
+	}
+}
 
 Feature* File::feature(String* scope, String* name) const {
     // Returns the constant with the scope "scope" and the name "name".

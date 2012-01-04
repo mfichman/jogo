@@ -55,6 +55,12 @@ public:
     File* next() const { return next_; }
     String* output() const { return output_; }
     Constant* constant(int index) { return constant_[index]; }
+    String* integer(const std::string& str);
+    String* floating(const std::string& str);
+    String* string(const std::string& str);
+    String* integers() const { return integers_; }
+    String* floats() const { return floats_; }
+    String* strings() const { return strings_; }
     int dependencies() { return dependency_.size(); }
     int constants() { return constant_.size(); }
     bool is_input_file() const { return is_input_file_; }
@@ -89,6 +95,12 @@ private:
     bool is_input_file_;
     std::vector<Feature*> dependency_;
     std::vector<Constant*> constant_;
+    std::map<std::string, String::Ptr> integer_;
+    std::map<std::string, String::Ptr> floating_;
+    std::map<std::string, String::Ptr> string_;
+    String::Ptr strings_;
+    String::Ptr integers_;
+    String::Ptr floats_;
 };
 
 /* Directory iterator object */

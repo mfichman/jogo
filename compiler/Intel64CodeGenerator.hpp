@@ -64,6 +64,7 @@ private:
     void literal(Operand lit);
     void label(Operand string);
     void label(const std::string& string);
+    void align();
     void stack_check(Function* feature);
 
     Environment::Ptr env_;

@@ -64,6 +64,10 @@ Queue[:a] < Object {
         # Returns true if the queue is empty.
         ret count == 0
     }
+
+    iter() QueueIter[:a] {
+        ret QueueIter[:a](self)
+    }
 }
 
 QueueIter[:a] < Object {

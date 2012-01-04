@@ -35,18 +35,20 @@ Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
 void Intel64CodeGenerator::operator()(File* file) {
     // Output a translation unit, which can include constants, classes,
     // literals, forward declarations, and function definitions.
-    if (env_->errors()) {
-        return;
-    }
+    if (env_->errors()) { return; }
     file_ = file;
 
     out_ << "default rel\n";
     out_ << "section .data\n";
+    align();
     for (String::Ptr s = env_->strings(); s; s = s->next()) {
         string(s);
     }
     for (String::Ptr s = env_->integers(); s; s = s->next()) {
-        out_ << "    lit" << (void*)s.pointer() << " dq " << s << "\n";
+        out_ << "lit" << (void*)s.pointer() << ":\n";
+        out_ << "    dq " << s << "\n";
+        out_ << "    dq " << s << "\n";
+        align();
     }
     for (int i = 0; i < file->constants(); i++) {
         Constant::Ptr cons = file->constant(i);
@@ -99,7 +101,6 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     }
 
     // Now output the function defs
-    out_ << "section .text\n";
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
@@ -123,6 +124,7 @@ void Intel64CodeGenerator::operator()(Function* feature) {
     if (feature->is_native()) {
         out_ << "extern "; label(feature->label()); out_ << "\n";
     } else if (feature->basic_blocks()) {
+        out_ << "section .text\n";
         out_ << "global "; label(feature->label()); out_ << "\n";
         label(feature->label()); out_ << ":\n";
         out_ << "    push rbp\n"; 
@@ -146,7 +148,7 @@ void Intel64CodeGenerator::operator()(Function* feature) {
         // Make sure that the text section is gets re-aligned at the end of the
         // function, because the instruction stream can cause it be become
         // unaligned.
-        out_ << "    align 8\n";
+        align();
     }
 
 }
@@ -201,8 +203,48 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
             out_ << "    add rsp, ";
             out_ << machine_->word_size() << "*" << a1 << "\n";
             break;  
-        case STORE: instr("mov qword", a1, a2); break;
-        case LOAD: instr("mov qword", res, a1); break;
+        case STORE:
+            // FIXME: Simplify the code path for labels, loads, stores,
+            // literals, etc.
+            // Convert literals to just labels with indirect flag set?
+            // Disallow indirect operations on labels?
+            // Investigate why leaq doesn't work
+            if (a1.label() && a1.indirect()) {
+                out_ << "    mov qword rax, ";
+                label(a1.label()->string());
+                out_ << "\n";
+                out_ << "    mov qword [rax], ";
+                operand(a2);
+                out_ << "\n";
+            } else {
+                instr("mov qword", a1, a2);
+            }
+            break;
+        case LOAD:
+            if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(a1.literal())) {
+                out_ << "    mov qword ";
+                operand(res);
+                out_ << ", lit" << (void*)le->value() << "\n";
+                out_ << "    mov qword ";
+                operand(res);
+                out_ << ", [";
+                operand(res);
+                out_ << "]\n";
+            } else if(a1.label() && a1.indirect()) {
+                out_ << "    mov qword ";
+                operand(res);
+                out_ << ", ";
+                label(a1.label()->string());
+                out_ << "\n";
+                out_ << "    mov qword ";
+                operand(res);
+                out_ << ", [";
+                operand(res);
+                out_ << "]\n";
+            } else {
+                instr("mov qword", res, a1); 
+            }
+            break;
         case NOTB: instr("mov", res, a1); instr("not", res); break;
         case ANDB: instr("mov", res, a1); instr("and", res, a2); break;
         case ORB: instr("mov", res, a1); instr("or", res, a2); break; 
@@ -228,6 +270,7 @@ void Intel64CodeGenerator::dispatch_table(Class* feature) {
 
     // Output the vtable label and global directive
     out_ << "section .data\n";
+    align();
     out_ << "global "; 
     label(name->string()+"__vtable"); 
     out_ << "\n";
@@ -252,6 +295,7 @@ void Intel64CodeGenerator::dispatch_table(Class* feature) {
             out_ << "    dq 0\n";
         }
     }
+    align();
 }
 
 void Intel64CodeGenerator::arith(const Instruction& inst) {
@@ -378,7 +422,7 @@ void Intel64CodeGenerator::reg(Operand op) {
 
 void Intel64CodeGenerator::literal(Operand literal) {
     // Outputs the correct representation of a literal.  If the literal is a
-    // number, and the length is less than 13 bits, then output the literal
+    // number, and the length is less than 32 bits, then output the literal
     // directly in the instruction.  Otherwise, load it from the correct memory
     // address for the literal.
 
@@ -386,15 +430,9 @@ void Intel64CodeGenerator::literal(Operand literal) {
     assert(!literal.temp());
     assert(expr);
 
-    //assert(!dynamic_cast<StringLiteral*>(expr));
-    // String literals can't be loaded immediately due to the requirement for
-    // RIP-relative addressing on 64-bit systems.  Instead, the address to the
-    // string must be loaded using LEA first (i.e., LOAD in the IR language).
-
     if (StringLiteral* le = dynamic_cast<StringLiteral*>(expr)) {
         out_ << "lit" << (void*)le->value();
-    }
-    if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(expr)) {
+    } else if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(expr)) {
         out_ << le->value();
     } else if (NilLiteral* le = dynamic_cast<NilLiteral*>(expr)) {
         out_ << "0";
@@ -446,10 +484,14 @@ void Intel64CodeGenerator::label(const std::string& label) {
     }
 }
 
+void Intel64CodeGenerator::align() {
+    out_ << "    align 8\n";
+}
+
 void Intel64CodeGenerator::stack_check(Function* feature) {
     // Emits a stack check, and code to dynamically grow the stack if it is
     // too small.
-    out_ << "    mov rax, ["; label("Coroutine__stack"); out_ << "]\n";
+    out_ << "    mov rax, [rel "; label("Coroutine__stack"); out_ << "]\n";
     out_ << "    add rax, " << INTEL64_MIN_STACK << "\n"; 
     out_ << "    cmp rsp, rax\n"; 
     out_ << "    jge .l0\n";
@@ -544,5 +586,5 @@ void Intel64CodeGenerator::string(String* string) {
     out_ << "    dq 1\n"; // reference count
     out_ << "    dq " << length << "\n";
     out_ << "    db " << out << "\n";
-    out_ << "    align 8\n";
+    align();
 }
