@@ -203,48 +203,13 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
             out_ << "    add rsp, ";
             out_ << machine_->word_size() << "*" << a1 << "\n";
             break;  
-        case STORE:
+        case STORE: store_hack(a1, a2); break;
             // FIXME: Simplify the code path for labels, loads, stores,
             // literals, etc.
             // Convert literals to just labels with indirect flag set?
             // Disallow indirect operations on labels?
             // Investigate why leaq doesn't work
-            if (a1.label() && a1.indirect()) {
-                out_ << "    mov qword rax, ";
-                label(a1.label()->string());
-                out_ << "\n";
-                out_ << "    mov qword [rax], ";
-                operand(a2);
-                out_ << "\n";
-            } else {
-                instr("mov qword", a1, a2);
-            }
-            break;
-        case LOAD:
-            if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(a1.literal())) {
-                out_ << "    mov qword ";
-                operand(res);
-                out_ << ", lit" << (void*)le->value() << "\n";
-                out_ << "    mov qword ";
-                operand(res);
-                out_ << ", [";
-                operand(res);
-                out_ << "]\n";
-            } else if(a1.label() && a1.indirect()) {
-                out_ << "    mov qword ";
-                operand(res);
-                out_ << ", ";
-                label(a1.label()->string());
-                out_ << "\n";
-                out_ << "    mov qword ";
-                operand(res);
-                out_ << ", [";
-                operand(res);
-                out_ << "]\n";
-            } else {
-                instr("mov qword", res, a1); 
-            }
-            break;
+        case LOAD: load_hack(res, a1); break;
         case NOTB: instr("mov", res, a1); instr("not", res); break;
         case ANDB: instr("mov", res, a1); instr("and", res, a2); break;
         case ORB: instr("mov", res, a1); instr("or", res, a2); break; 
@@ -486,6 +451,45 @@ void Intel64CodeGenerator::label(const std::string& label) {
 
 void Intel64CodeGenerator::align() {
     out_ << "    align 8\n";
+}
+
+void Intel64CodeGenerator::store_hack(Operand a1, Operand a2) {
+    if (a1.label() && a1.indirect()) {
+        out_ << "    mov qword rax, ";
+        label(a1.label()->string());
+        out_ << "\n";
+        out_ << "    mov qword [rax], ";
+        operand(a2);
+        out_ << "\n";
+    } else {
+        instr("mov qword", a1, a2);
+    }
+}
+
+void Intel64CodeGenerator::load_hack(Operand res, Operand a1) {
+    if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(a1.literal())) {
+        out_ << "    mov qword ";
+        operand(res);
+        out_ << ", lit" << (void*)le->value() << "\n";
+        out_ << "    mov qword ";
+        operand(res);
+        out_ << ", [";
+        operand(res);
+        out_ << "]\n";
+    } else if(a1.label() && a1.indirect()) {
+        out_ << "    mov qword ";
+        operand(res);
+        out_ << ", ";
+        label(a1.label()->string());
+        out_ << "\n";
+        out_ << "    mov qword ";
+        operand(res);
+        out_ << ", [";
+        operand(res);
+        out_ << "]\n";
+    } else {
+        instr("mov qword", res, a1); 
+    }
 }
 
 void Intel64CodeGenerator::stack_check(Function* feature) {

@@ -67,6 +67,10 @@ private:
     void align();
     void stack_check(Function* feature);
 
+    void store_hack(Operand a1, Operand a2);
+    void load_hack(Operand res, Operand a1);
+    
+
     Environment::Ptr env_;
     Machine::Ptr machine_;
     Class::Ptr class_;
