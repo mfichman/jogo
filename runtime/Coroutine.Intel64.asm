@@ -18,11 +18,10 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ; SOFTWARE.
 
+
 default rel
 
-%define RSP_OFFSET 40; Stack pointer
-%define STATUS_OFFSET 24
-%define CURRENT_OFFSET 48 
+%define RSP_OFFSET 32; Stack pointer
 
 %ifidn __OUTPUT_FORMAT__,macho64
 %macro  cglobal 1 
@@ -40,95 +39,44 @@ extern  _%1
 
 %ifdef WINDOWS
 %define ARG0 rcx
+%define ARG1 rdx
 %else
 %define ARG0 rdi
+%define ARG1 rsi
 %endif
 
-cglobal Coroutine__resume
-cglobal Coroutine__exit
-cglobal Coroutine__yield
+cglobal Coroutine__swap
 cextern Coroutine__stack
 cextern Coroutine__current
-cextern CoroutineStatus_NEW
-cextern CoroutineStatus_RUNNING
-cextern CoroutineStatus_SUSPENDED
-cextern CoroutineStatus_DEAD
 
 section .text
-
-Coroutine__resume:
+Coroutine__swap: ; (from, to)
     ; Resume the coroutine passed in via ARG0 by saving the state of the current
     ; coroutine, and loading the other corountine's state.  Then, 'return' to
     ; the caller of the other coroutine's yield() invocation.
     ; **** NOTE: If any of the 'push' instructions below change, then
     ; Coroutine.c must also be modified!!!
+    mov [Coroutine__current], ARG1
+    ; Set the 'current coroutine' equal to ARG1
+
+    push qword [Coroutine__stack] ; Save the top-of-stack pointer
     push rbp
     push rbx
+    push rcx
     push rdi
-    push ARG0
     push r12
     push r13
     push r14
     push r15
-    push qword [Coroutine__current]
-    push qword [Coroutine__stack]
-    push qword [save_rsp]
-    mov [save_rsp], rsp
-    mov rsp, [ARG0+RSP_OFFSET]
-    mov [Coroutine__current], ARG0
-    mov rax, [ARG0+CURRENT_OFFSET]
-    mov [Coroutine__stack], rax;
+    mov [ARG0+RSP_OFFSET], rsp ; Save the sp for 'from'
+    mov rsp, [ARG1+RSP_OFFSET] ; Restore the sp for 'to'
     pop r15
     pop r14
     pop r13
     pop r12
-    pop ARG0
     pop rdi
+    pop rcx
     pop rbx
     pop rbp
+    pop qword [Coroutine__stack] ; Restore the top-of-stack pointer
     ret
-    
-Coroutine__exit:
-    ; This is the same as yield, except it sets the status code to 'DEAD'
-    ; because the coroutine is finished.
-    mov ARG0, [Coroutine__current]
-    mov rax, [CoroutineStatus_DEAD]
-    mov qword [ARG0+STATUS_OFFSET], rax
-    jmp Coroutine__yield
-
-Coroutine__yield:
-    ; Yield to the calling coroutine by saving the state of the current
-    ; coroutine, and loading the other coroutine's state.  Then, 'return' to
-    ; the calling coroutine's resume() invocation.
-    ; **** NOTE: If any of the 'push' instructions below change, then
-    ; Coroutine.c must also be modified!!!
-    push rbp
-    push rbx
-    push rdi
-    push ARG0
-    push r12
-    push r13
-    push r14
-    push r15
-    mov ARG0, [Coroutine__current]
-    mov rax, [Coroutine__stack]
-    mov [ARG0+CURRENT_OFFSET], rax
-    mov [ARG0+RSP_OFFSET], rsp
-    mov rsp, [save_rsp]
-    pop qword [save_rsp]
-    pop qword [Coroutine__stack]
-    pop qword [Coroutine__current]
-    pop r15
-    pop r14
-    pop r13
-    pop r12
-    pop ARG0
-    pop rdi
-    pop rbx
-    pop rbp
-    ret
-    
-section .bss
-
-save_rsp resq 1
-

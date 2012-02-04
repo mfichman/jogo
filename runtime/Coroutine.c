@@ -27,18 +27,18 @@
 #include <stdio.h>
 #include <assert.h>
 
-Coroutine Coroutine__current = 0;
-Coroutine_Stack* Coroutine__stack = 0;
+struct Coroutine Coroutine__main;
+Coroutine Coroutine__current = &Coroutine__main;
+Coroutine_Stack Coroutine__stack = 0;
 Int Exception__current = 0;
-
-void Coroutine__yield_main() {}
 
 Coroutine Coroutine__init(Object func) {
     // Initializes a function with a new stack and instruction pointer. When
     // the coroutine is resumed, it will begin executing at 'function' with its
     // own stack.
-    Int stack_index = COROUTINE_STACK_SIZE - 2 - 8; 
+    Int stack_index = COROUTINE_STACK_SIZE - 2 - 1 - 8; 
     // -2 is for the two return addresses that are initially on the stack
+    // -1 is for the top-of-stack pointer
     // -16 is for the initial values of RBP + caller regs
     
     Coroutine ret = calloc(sizeof(struct Coroutine), 1); 
@@ -47,23 +47,27 @@ Coroutine Coroutine__init(Object func) {
         fflush(stderr);
         abort();
     }
-
+    ret->stack = calloc(sizeof(struct Coroutine_Stack), 1);
+    if (!ret->stack) {
+        fprintf(stderr, "Out of memory");
+        fflush(stderr);
+        abort();
+    }
+    
     ret->_vtable = Coroutine__vtable;
     ret->_refcount = 1; 
     ret->function = func;
-    ret->current = &ret->stack;
-    ret->stack_size = COROUTINE_STACK_SIZE;
-
-    ret->sp = (Int)(ret->stack.stack + stack_index); // ESP = R6
-    ret->stack.next = 0;
+    ret->caller = 0;
+    ret->sp = (Int)(ret->stack->data + stack_index); // ESP = R6
 
     Object__refcount_inc(func);
     if (func) {
         static struct String call_str = { String__vtable, 1, 5, "@call" };
         Int exit = (Int)Coroutine__exit;
         Int call = (Int)Object__dispatch(func, &call_str);
-        ret->stack.stack[COROUTINE_STACK_SIZE-1] = exit;
-        ret->stack.stack[COROUTINE_STACK_SIZE-2] = call;
+        ret->stack->data[COROUTINE_STACK_SIZE-1] = exit;
+        ret->stack->data[COROUTINE_STACK_SIZE-2] = call;
+        ret->stack->data[COROUTINE_STACK_SIZE-3] = (Int)ret->stack->data;
         ret->status = CoroutineStatus_NEW; // New coroutine status code 
     } else {
         ret->status = CoroutineStatus_DEAD; 
@@ -73,7 +77,7 @@ Coroutine Coroutine__init(Object func) {
 }
 
 void Coroutine__destroy(Coroutine self) {
-    Coroutine_Stack* stack = 0;
+    Coroutine_Stack stack = 0;
 
 	// Set the exception flag, then resume the coroutine and unwind the stack,
 	// calling destructors for objects referenced by the coroutine.
@@ -83,8 +87,8 @@ void Coroutine__destroy(Coroutine self) {
 	
 	// Free the stack, and the pointer to the closure object so that no memory
     // is leaked.
-    for (stack = self->stack.next; stack;) {
-        Coroutine_Stack* temp = stack;
+    for (stack = self->stack; stack;) {
+        Coroutine_Stack temp = stack;
         stack = stack->next;
         free(temp);
     }
@@ -112,6 +116,38 @@ void Coroutine__call(Coroutine self) {
     }
 }
 
+void Coroutine__resume(Coroutine self) {
+    // Resumes a coroutine, and sets the 'caller' coroutine to the current 
+    // coroutine.
+    if (self) {
+        self->status = CoroutineStatus_RUNNING;
+        self->caller = Coroutine__current;
+        Coroutine__swap(Coroutine__current, self);
+        self->caller = 0; 
+    }
+}
+
+void Coroutine__exit() {
+    // Yields the the current coroutine to the coroutine's caller.  This is a
+    // no-op if the coroutine is the main coroutine.
+    if (Coroutine__current && Coroutine__current->caller) {
+        Coroutine__current->status = CoroutineStatus_DEAD;
+        Coroutine__swap(Coroutine__current, Coroutine__current->caller);
+    } else {
+        // If there is no caller, then exit.
+        exit(0);
+    }
+}
+
+void Coroutine__yield() {
+    // Yields the the current coroutine to the coroutine's caller.  This is a
+    // no-op if the coroutine is the main coroutine.
+    if (Coroutine__current && Coroutine__current->caller) {
+        Coroutine__current->status = CoroutineStatus_SUSPENDED;
+        Coroutine__swap(Coroutine__current, Coroutine__current->caller);
+    }
+}
+
 Ptr Coroutine__grow_stack() {
     // Grows the coroutine stack, and keeps track of the next stack pointer.
     // Returns the pointer to the next stack.  Each function call has a section
@@ -123,10 +159,7 @@ Ptr Coroutine__grow_stack() {
         Coroutine__stack->next = calloc(sizeof(Coroutine_Stack), 1); 
         Coroutine__stack->next->next = 0;
     }
-    if (Coroutine__current) {
-        Coroutine__current->stack_size += COROUTINE_STACK_SIZE;
-    }
     Coroutine__stack = Coroutine__stack->next;
-    return Coroutine__stack->stack+COROUTINE_STACK_SIZE-2;
+    return Coroutine__stack->data + COROUTINE_STACK_SIZE - 2;
 }
 

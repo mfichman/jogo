@@ -79,7 +79,7 @@ void output(File* file) {
     }
  
     if (env->verbose()) {
-        //Stream::stout() << "Compiling " << out_file << "\n";
+        Stream::stout() << "Compiling " << out_file << "\n";
     }
     
     if (!env->assemble() || !env->link() || env->make()) {
@@ -134,7 +134,7 @@ void output(File* file) {
     ss << "nasm -fmacho64 " << asm_file << " -o " << obj_file;
 #endif 
     if (env->verbose()) {
-        Stream::stout() << ss.str() << "\n";
+        //Stream::stout() << ss.str() << "\n";
     }
     if (system(ss.str().c_str())) {
         exit(1);
@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
 #endif
 
     if (env->verbose()) {
-        Stream::stout() << ss.str() << "\n";
+        //Stream::stout() << ss.str() << "\n";
     }
 
     if (system(ss.str().c_str())) { return 1; }
