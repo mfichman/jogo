@@ -42,7 +42,11 @@ struct Coroutine {
     U64 _refcount; // 8
     Object function;  //16
     Int status; // 24
-    Int sp; // 32
+
+    // NOTE: If the offset of this field changes, the assembly must be modified
+    // accordingly. 
+    Int sp; // 32 
+
     Coroutine caller; // 40
     Coroutine_Stack stack; // 48
 };

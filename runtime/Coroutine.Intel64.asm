@@ -23,6 +23,9 @@ default rel
 
 %define RSP_OFFSET 32; Stack pointer
 
+; OS X prefixes all symbol names with '_', so to interoperate with C, we need
+; to add '_' prefixes to all symbol names.  This macro takes care of the
+; required name mangling.
 %ifidn __OUTPUT_FORMAT__,macho64
 %macro  cglobal 1 
 global  _%1 
@@ -37,6 +40,8 @@ extern  _%1
 %define cextern extern
 %endif
 
+; Windows and Linux/OS X have different calling conventions, so function
+; arguments will be in different registers.
 %ifdef WINDOWS
 %define ARG0 rcx
 %define ARG1 rdx
@@ -46,7 +51,15 @@ extern  _%1
 %endif
 
 cglobal Coroutine__swap
-cextern Coroutine__stack
+
+; Pointer to the current top-of-stack.  This is used to determine space
+; remaining on the stack, so that a new stack segment can be allocated if
+; necessary.  See Coroutine__grow_stack().
+cextern Coroutine__stack 
+
+; Pointer to the current coroutine.  Used by Coroutine__resume() to set the
+; 'caller' of the coroutine that is being resumed, and by Coroutine__yield() to
+; switch from the current coroutine to the caller.
 cextern Coroutine__current
 
 section .text
