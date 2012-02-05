@@ -156,7 +156,7 @@ Ptr Coroutine__grow_stack() {
     // stack pointer will be allocated.  Note that this doesn't protect against
     // calls to native functions using more stack then they should. 
     if (!Coroutine__stack->next) {
-        Coroutine__stack->next = calloc(sizeof(Coroutine_Stack), 1); 
+        Coroutine__stack->next = calloc(sizeof(struct Coroutine_Stack), 1); 
         Coroutine__stack->next->next = 0;
     }
     Coroutine__stack = Coroutine__stack->next;

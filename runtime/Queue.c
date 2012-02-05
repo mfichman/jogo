@@ -126,9 +126,10 @@ Bool QueueIter_more__g(QueueIter self) {
 
 Object QueueIter_next(QueueIter self) {
     if (self->count < self->queue->count) {
+        Object obj = 0;
         self->index = (self->index+1) % self->queue->capacity;
         self->count++;
-        Object obj = self->queue->data[self->index];
+        obj = self->queue->data[self->index];
         Object__refcount_inc(obj);
         return obj;
     } else { 
