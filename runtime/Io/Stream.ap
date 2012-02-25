@@ -25,13 +25,16 @@ StreamStatus = OK | ERROR | EOF
 # the underlying file descriptor.  EOF: The stream is at the end of the file,
 # and no more bytes may be read.
 
-StreamMode = ASYNC | SYNC | BLOCKING
+StreamMode = ASYNC | BLOCKING
 # The stream mode manages how I/O is handled by the runtime.  ASYNC: Stream
 # read/write operations return immediately, but the I/O operation will not
 # finish until later; the wait() function must be called to retrieve the stream
 # status.  SYNC: Stream operations block the current coroutine.  BLOCKING:
 # Stream operations block the process.  SYNC is the default.  BLOCKING mode is
 # not recommended for most applications.
+
+StreamType = FILE | SOCKET | CONSOLE
+# The type of underlying file descriptor that is attached to the stream.
 
 Stream < Object {
     # This object is used to perform buffered character I/O on a file.  It can
@@ -42,12 +45,28 @@ Stream < Object {
     # Opaque handle to the underlying file descriptor.
 
     read_buf private Buffer
+    # Bytes buffered for input.  The stream buffers input bytes to avoid 
+    # invoking a system call for each read.
+
     write_buf private Buffer
+    # Bytes buffered for output.  The stream buffers output bytes to avoid 
+    # invoking a system call for each write.
 
     status StreamStatus
-    mode StreamMode
+    # The current status of the stream; either OK, ERROR, or EOF.
 
-    @init(desc Int) native {
+    mode StreamMode
+    # The current mode of the stream, as described above; either SYNC, ASYNC,
+    # or BLOCKING.  Controls the type of I/O that will be executed for the 
+    # stream.
+
+    type immutable StreamType
+    # True if the stream is a console handle    
+
+    coroutine private Coroutine
+    # Coroutine that is blocked waiting for I/O from this stream
+
+    @init(desc Int, type StreamType) native {
         # Initializes a new stream, with 'handle' being an opaque pointer to
         # the OS file descriptor.  Note that if 'handle' is invalid, then
         # subsequent reads and writes will fail, and 'err' will be set.
@@ -64,14 +83,17 @@ Stream < Object {
         # 'n' is equal to the 'length' field of 'buffer'.  If data is already
         # buffered to the internal buffer, that data will be copied into
         # 'buffer' first before an attempt to read more bytes from the OS is
-        # made.
+        # made.  This function implements an unbuffered read; the bytes
+        # returned by the OS-level read call go directly into the buffer.
     }
 
     write(buffer Buffer) native {
         # Writes the data in 'buffer', and blocks until all the bytes are
         # written or the 'err' flag is set.  If data is already buffered in the
         # internal buffer, then 'flush()' will be called before writing
-        # 'buffer' to the output stream.
+        # 'buffer' to the output stream.  This function implements an
+        # unbuffered write; the bytes will go directly to the OS-level write
+        # system call.
     }
 
     get() native Char {

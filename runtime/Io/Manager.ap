@@ -30,7 +30,7 @@ Manager < Object {
     # current coroutine yields or blocks on I/O.   When a task has finished
     # running, the task is removed from the task queue. 
 
-    scheduled Queue[Task]
+    scheduled Queue[Coroutine]
     # Set of tasks that are active and waiting to be scheduled.
 
     handle Int
@@ -48,7 +48,7 @@ Manager < Object {
         # event polling.
     }
 
-    task(task Task) {
+    task(task Coroutine) {
         # Adds this task to the list of tasks waiting to be scheduled.  The
         # task will be run when all other tasks are blocked or if a task yields
         # and the task is first on the task list.  If the task blocks to do
@@ -68,9 +68,8 @@ Manager < Object {
             # external event (file I/O, timer, etc.)
             while scheduled.count > 0 {
                 next = scheduled.deq()
-                coro = next.coroutine
-                coro()
-                #if next.coroutine.status == CoroutineStatus::SUSPENDED {
+                next.resume()
+                #if next.status == CoroutineStatus::SUSPENDED {
                 #    scheduled.enq(next)
                 #}
             }
@@ -80,8 +79,9 @@ Manager < Object {
         }
     }
 
-    poll() private native {
+    poll() native {
         # Poll for an I/O request.  This function will block until an I/O
         # operation finishes.
     }
 }
+

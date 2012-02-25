@@ -40,7 +40,6 @@ Parser::Parser(Environment* env) :
     input("Coroutine");
     input("Pair");
     input("Hash");
-	input("Task");
 	input("Queue");
 
     for (int i = 0; i < env->inputs(); i++) {

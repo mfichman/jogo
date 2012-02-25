@@ -39,4 +39,7 @@ void Io_Manager__destroy();
 void Io_Manager_poll();
 extern void Io_Manager__vtable();
 
+void Io_wait();
+Io_Manager Io_manager();
+
 #endif

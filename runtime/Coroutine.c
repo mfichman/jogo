@@ -99,32 +99,17 @@ void Coroutine__destroy(Coroutine self) {
 	Exception__current = save_except;
 }
 
-void Coroutine__call(Coroutine self) {
-    // Resumes a coroutine if it is still running.  Otherwise, returns
-    // immediately.
-    if (self->status == CoroutineStatus_DEAD) {
-        return;
-    } else if (self->status == CoroutineStatus_RUNNING) {
-        // Coroutine is dead or already running
-        return;
-    } else {
-        self->status = CoroutineStatus_RUNNING;
-        Coroutine__resume(self);
-        if (self->status != CoroutineStatus_DEAD) {
-            self->status = CoroutineStatus_SUSPENDED;
-        }
-    }
-}
-
-void Coroutine__resume(Coroutine self) {
+void Coroutine_resume(Coroutine self) {
     // Resumes a coroutine, and sets the 'caller' coroutine to the current 
-    // coroutine.
-    if (self) {
-        self->status = CoroutineStatus_RUNNING;
-        self->caller = Coroutine__current;
-        Coroutine__swap(Coroutine__current, self);
-        self->caller = 0; 
-    }
+    // coroutine.  Returns immediately if the coroutine is DEAD or nil.
+    if (!self) { return; }
+    if (self->status == CoroutineStatus_DEAD) { return; }
+    if (self->status == CoroutineStatus_RUNNING) { return; }
+
+    self->status = CoroutineStatus_RUNNING;
+    self->caller = Coroutine__current;
+    Coroutine__swap(Coroutine__current, self);
+    self->caller = 0; 
 }
 
 void Coroutine__exit() {

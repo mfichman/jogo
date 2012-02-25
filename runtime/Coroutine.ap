@@ -52,7 +52,15 @@ Coroutine < Object {
         # Deallocates the coroutine, and releases the closure.
     }
 
-    @call() native {
+    @call() {
+        # This function starts or resumes a coroutine.  If the coroutine is
+        # new, then the execution begins starting at 'function'.  If the
+        # coroutine is dead, then this function has no effect.  Otherwise, the
+        # execution resumes from the last yield.
+        resume()
+    }
+
+    resume() native {
         # This function starts or resumes a coroutine.  If the coroutine is
         # new, then the execution begins starting at 'function'.  If the
         # coroutine is dead, then this function has no effect.  Otherwise, the

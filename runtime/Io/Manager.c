@@ -22,6 +22,7 @@
  */
 
 #include "Io/Manager.h"
+#include "Io/Stream.h"
 #include "Coroutine.h"
 #ifndef WINDOWS
 #include <unistd.h>
@@ -44,7 +45,7 @@ Io_Manager Io_Manager__init() {
     ret->_refcount = 1;
     ret->scheduled = Queue__init(0);
 #ifdef WINDOWS
-    ret->handle = (Int)CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 1);
+    ret->handle = (Int)CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
 #else
     ret->handle = 0;
 #endif
@@ -65,13 +66,20 @@ void Io_Manager_poll(Io_Manager self) {
     // that event.
 #ifdef WINDOWS
     DWORD bytes = 0;
-    ULONG_PTR coro = 0;
+    ULONG_PTR stream = 0;
     OVERLAPPED* evt = 0;
     HANDLE handle = (HANDLE)self->handle;
-    GetQueuedCompletionStatus(handle, &bytes, &coro, &evt, INFINITE);
+    if (Coroutine__current != &Coroutine__main) {
+        fprintf(stderr, "Io::Manager::poll() called by user coroutine");
+        fflush(stderr);
+        abort();
+    }
+    printf("Getting queued completion status\n");
+    GetQueuedCompletionStatus(handle, &bytes, &stream, &evt, INFINITE);
     if (evt) {
-        Coroutine__call((Coroutine)coro); // Will return later
+        printf("Bytes: %d\n", bytes);
+        Io_Stream_resume((Io_Stream)stream);
+        // Will return later to the main coroutine
     }
 #endif
 }
-
