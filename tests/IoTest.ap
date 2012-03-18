@@ -1,0 +1,44 @@
+
+import Boot
+
+main() Int {
+#    coro1 = Coroutine() func() {
+#        stdin = Io::stdin()
+#        stdout = Io::stdout()
+#        stdout.println("Entering coro1")
+#        line = stdin.scanln()
+#        stdout.println(line)
+#        stdout.println("Exiting scanln")
+#        stdout.println("Exiting coro1")
+#    }
+
+    stdout = Io::stdout()
+    coro1 = Coroutine() func() {
+        stdout.println("coro1")
+        if file = File::open('FileTest.txt', 'r') {
+            file.mode = Io::StreamMode::ASYNC
+            line1 = file.scanln()
+            stdout.println(line1)
+            line2 = file.scanln()
+            stdout.println(line2)
+        }
+    }
+
+    coro2 = Coroutine() func() {
+        stdout.println("coro2")
+        if file = File::open('FileTest.txt', 'r') {
+            #file.mode = Io::StreamMode::ASYNC
+            hello = file.scanln()
+            stdout.println(hello)
+        } else {
+            stdout.print('Could not open file!\n')
+        }
+    }
+    
+    coro1()
+    coro2()
+
+    Io::manager().run()
+    Io::manager().shutdown()
+    ret 0
+}

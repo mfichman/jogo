@@ -32,7 +32,8 @@ Parser::Parser(Environment* env) :
 	env_(env),
     err_(Stream::sterr()),
     lexer_(new Lexer(env)),
-    error_(0) {
+    error_(0),
+	is_input_file_(false) {
 
     input("Primitives");
     input("Object");

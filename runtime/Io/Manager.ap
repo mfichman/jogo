@@ -38,6 +38,10 @@ Manager < Object {
     # BSD-based systems, it is a kqueue fd; for Linux, it is an epoll fd; and
     # for Windows, it is an I/O completion port.
 
+    waiting private Int
+    # Number of coroutines waiting on I/O.  FixMe: Make this a set of waiting
+    # coroutines rather than a single int.
+
     @init() native private {
         # Initializes a new manager.  Most applications need only one I/O
         # manager, which can be accessed via the Event::manager() constant.
@@ -62,7 +66,7 @@ Manager < Object {
         # Run the event loop.  Select a coroutine from the 'scheduled' queue,
         # and begin executing it.  If there are no more tasks, and no
         # outstanding I/O requests, then return.
-        while true {
+        while waiting > 0 {
             # Dequeue scheduled tasks until the entire queue is empty.  At that
             # point, all coroutines have either exited, or are waiting on some
             # external event (file I/O, timer, etc.)
@@ -82,6 +86,11 @@ Manager < Object {
     poll() native {
         # Poll for an I/O request.  This function will block until an I/O
         # operation finishes.
+    }
+
+    shutdown() native {
+        # Shuts down the I/O manager; no additional I/O operations can be done
+        # after this method is called.
     }
 }
 

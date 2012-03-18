@@ -52,13 +52,22 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
     ret->read_buf = Io_Buffer__init(1024);
     ret->write_buf = Io_Buffer__init(1024);
     ret->status = Io_StreamStatus_OK;
-    ret->mode = Io_StreamMode_BLOCKING; //Io_StreamMode_ASYNC;//Io_StreamMode_BLOCKING;
+    ret->mode = Io_StreamMode_BLOCKING;
     ret->type = type;
     ret->coroutine = 0;
 
 #ifdef WINDOWS 
-    // Associate the handle with an IO completion port.
-    // CreateIoCompletionPort((HANDLE)ret->handle, iocp, (ULONG_PTR)ret, 0);
+    // Associate the handle with an IO completion port.  The Io::Manager
+    // expects the completion key below to be a pointer to an Io::Stream
+    // object with an attached coroutine that will be resumed when an I/O
+    // operation is complete. 
+    if (ret->type != Io_StreamType_CONSOLE) {
+        CreateIoCompletionPort((HANDLE)ret->handle, iocp, (ULONG_PTR)ret, 0);
+        ret->overlapped.hEvent = CreateEvent(NULL, TRUE, 0, NULL);
+        // A manual reset event is used because ReadFile and WriteFile set 
+        // the event to the nonsignalled state automatically
+    }
+    
     // FixMe: The IoManager needs to expect that the completion key is a
     // string.  Probably need to add an Io::Event interface with a callback
     // func that can be dynamically invoked.  In this case, it would call the
@@ -71,33 +80,44 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
 void Io_Stream_resume(Io_Stream self) {
     // Resumes the coroutine the previously blocked while waiting for I/O
     // operations on this stream to complete.
+    assert(self->coroutine);
     Coroutine__swap(Coroutine__current, self->coroutine);
 }
 
 void Io_Stream_handle_console(Io_Stream self) {
     // Handle a console I/O event by enqueuing an I/O completion packet to the
     // I/O completion port. 
+    Byte* buf = self->read_buf->data + self->read_buf->begin;
+    Int len = self->read_buf->capacity - self->read_buf->end;
 #ifdef WINDOWS
+    DWORD read = 0;
     HANDLE iocp = (HANDLE)Io_manager()->handle;
-    DWORD bytes = 0; // GetOverlappedResult will return the real value for this
     ULONG_PTR key = (ULONG_PTR)self;
-    PostQueuedCompletionStatus(iocp, bytes, key, &self->overlapped);
+    HANDLE handle = (HANDLE)self->handle;
+    ReadFile(handle, buf, len, &read, 0);
+
+    //if(!WaitForSingleObject(handle, INFINITE)) {
+    //    printf("fail\n");
+    //}
+    self->read_buf->end += read;
+    PostQueuedCompletionStatus(iocp, read, key, 0);
 #endif
 }
 
-Int Io_Stream_register_console(Io_Stream self) {
+void Io_Stream_register_console(Io_Stream self) {
     // Completion ports cannot be used with Windows; instead, we have to wait
     // on another thread for the console I/O to unblock, and then post a
     // completion packet to the I/O completion port from there.
 #ifdef WINDOWS
-    HANDLE wait = INVALID_HANDLE_VALUE;
-    HANDLE handle = (HANDLE)self->handle;
-    WAITORTIMERCALLBACK cb = (WAITORTIMERCALLBACK)Io_Stream_handle_console;
-    ULONG flags = WT_EXECUTEINWAITTHREAD|WT_EXECUTEONLYONCE;
-    RegisterWaitForSingleObject(&wait, handle, cb, self, INFINITE, flags); 
-    return (Int)wait;
+    LPTHREAD_START_ROUTINE cb = (LPTHREAD_START_ROUTINE)Io_Stream_handle_console;
+    QueueUserWorkItem(cb, self, WT_EXECUTEINPERSISTENTTHREAD);
+//    HANDLE wait = INVALID_HANDLE_VALUE;
+//    HANDLE handle = (HANDLE)self->handle;
+//    WAITORTIMERCALLBACK cb = (WAITORTIMERCALLBACK)Io_Stream_handle_console;
+//    ULONG flags = WT_EXECUTEONLYONCE|WT_EXECUTEINPERSISTENTTHREAD;
+//    RegisterWaitForSingleObject(&wait, handle, cb, self, INFINITE, flags);
+//    return (Int)wait;
 #endif
-    return 0;
 }   
 
 void Io_Stream_wait(Io_Stream self) {
@@ -106,7 +126,9 @@ void Io_Stream_wait(Io_Stream self) {
     assert(!self->coroutine);
     self->coroutine = Coroutine__current;
     Object__refcount_inc(self->coroutine);
+    Io_manager()->waiting++;
     Coroutine__swap(Coroutine__current, &Coroutine__main);
+    Io_manager()->waiting--;
     Object__refcount_dec(self->coroutine);
     self->coroutine = 0;
 }
@@ -123,14 +145,18 @@ Int Io_Stream_result(Io_Stream self) {
 #ifdef WINDOWS
     HANDLE handle = (HANDLE)self->handle;
     DWORD bytes = 0;
-    if (ERROR_IO_PENDING == GetLastError()) {
+
+    while (ERROR_IO_PENDING == GetLastError()) {
         // Yield to the event manager if async mode is enabled; otherwise,
         // block the entire process.
-        if (Io_StreamMode_BLOCKING != self->mode) {
+        if (Io_StreamMode_BLOCKING == self->mode) {
+            SetLastError(ERROR_SUCCESS);
+            GetOverlappedResult(handle, &self->overlapped, &bytes, 1);
+        } else {
             Io_Stream_wait(self);
+            SetLastError(ERROR_SUCCESS);
+            GetOverlappedResult(handle, &self->overlapped, &bytes, 0);
         }
-        SetLastError(ERROR_SUCCESS);
-        GetOverlappedResult(handle, &self->overlapped, &bytes, 1);
     }
     if (ERROR_HANDLE_EOF == GetLastError()) {
         // End-of-file has been reached.
@@ -160,18 +186,22 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     Int ret = 0;
 
     // Read from the file, async or syncronously
-/*
-    HANDLE wait = 0;
-    if (Io_StreamType_CONSOLE == self->type) {
-        wait = (HANDLE)Io_Stream_register_console(self);
-        printf("Reading from console, waiting on result\n");
-        Io_Stream_wait(self);
+//    if (Io_StreamType_CONSOLE == self->type) {
+//        Io_Stream_register_console(self);
+//        Io_Stream_wait(self);
+//    }
+    
+    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
+    Bool is_console = (Io_StreamType_CONSOLE == self->type);
+    if (is_blocking && !is_console) {
+        // Set the low-order bit of the event if the handle is in blocking
+        // mode.  This prevents a completion port notification from being 
+        // queued for the I/O operation.
+        (Int)(self->overlapped.hEvent) |= 0x1;
+    } else if (!is_console) {
+        (Int)(self->overlapped.hEvent) &= ~0x1;
     }
-    FixMe: Console blocks!
-    if (wait) {
-        UnregisterWait(wait);
-    }
-*/
+
     if (!ReadFile(handle, buf, len, &read, &self->overlapped)) {
         read = Io_Stream_result(self);
     }
@@ -198,8 +228,19 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
 #ifdef WINDOWS
     HANDLE handle = (HANDLE)self->handle;
     DWORD written = 0;
-
     // Write to the file, async or synchronously
+    
+    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
+    Bool is_console = (Io_StreamType_CONSOLE == self->type);
+    if (is_blocking && !is_console) {
+        // Set the low-order bit of the event if the handle is in blocking
+        // mode.  This prevents a completion port notification from being 
+        // queued for the I/O operation.
+        (Int)(self->overlapped.hEvent) |= 0x1;
+    } else if (!is_console) {
+        (Int)(self->overlapped.hEvent) &= ~0x1;
+    }
+
     if (!WriteFile(handle, buf, len, &written, &self->overlapped)) {
         written = Io_Stream_result(self);
     }
@@ -353,6 +394,7 @@ void Io_Stream_close(Io_Stream self) {
     self->read_buf->begin = self->read_buf->end = 0;
 #ifdef WINDOWS
     CloseHandle((HANDLE)self->handle);
+    CloseHandle((HANDLE)self->overlapped.hEvent);
 #else
     close(self->handle);
 #endif

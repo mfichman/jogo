@@ -32,11 +32,13 @@ struct Io_Manager {
     U64 _refcount;
     Queue scheduled;
     Int handle;
+    Int waiting;
 };
 
 Io_Manager Io_Manager__init();
 void Io_Manager__destroy();
-void Io_Manager_poll();
+void Io_Manager_poll(Io_Manager self);
+void Io_Manager_shutdown(Io_Manager self);
 extern void Io_Manager__vtable();
 
 void Io_wait();

@@ -44,6 +44,7 @@ Io_Manager Io_Manager__init() {
     ret->_vtable = Io_Manager__vtable;
     ret->_refcount = 1;
     ret->scheduled = Queue__init(0);
+    ret->waiting = 0;
 #ifdef WINDOWS
     ret->handle = (Int)CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
 #else
@@ -52,12 +53,16 @@ Io_Manager Io_Manager__init() {
     return ret;
 }
 
-void Io_Manager__destroy(Io_Manager self) {
-    Queue__destroy(self->scheduled);
+void Io_Manager_shutdown(Io_Manager self) {
 #ifdef WINDOWS
     CloseHandle((HANDLE)self->handle);
 #else
 #endif
+}
+
+void Io_Manager__destroy(Io_Manager self) {
+    Io_Manager_shutdown(self);
+    Queue__destroy(self->scheduled);
     free(self);
 }
 
@@ -74,12 +79,8 @@ void Io_Manager_poll(Io_Manager self) {
         fflush(stderr);
         abort();
     }
-    printf("Getting queued completion status\n");
     GetQueuedCompletionStatus(handle, &bytes, &stream, &evt, INFINITE);
-    if (evt) {
-        printf("Bytes: %d\n", bytes);
-        Io_Stream_resume((Io_Stream)stream);
-        // Will return later to the main coroutine
-    }
+    Io_Stream_resume((Io_Stream)stream);
+    // Will return later to the main coroutine
 #endif
 }

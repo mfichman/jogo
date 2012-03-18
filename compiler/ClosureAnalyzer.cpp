@@ -69,6 +69,9 @@ void ClosureAnalyzer::operator()(Unary* expression) {
 
 void ClosureAnalyzer::operator()(Call* expression) {
     // Simply check the arguments recursively.
+	Expression::Ptr expr = expression->expression();
+	expr(this);
+
     for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
         a(this);
     }

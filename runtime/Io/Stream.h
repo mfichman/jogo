@@ -68,10 +68,10 @@ String Io_Stream_scan(Io_Stream self, String delim);
 void Io_Stream_print(Io_Stream self, String str);
 void Io_Stream_flush(Io_Stream self);
 void Io_Stream_close(Io_Stream self);
-Int Io_Stream_register_console(Io_Stream self);
-Int Io_Stream_result(Io_Stream self);
+void Io_Stream_register_console(Io_Stream self);
 void Io_Stream_wait(Io_Stream self);
 void Io_Stream_resume(Io_Stream self);
+Int Io_Stream_result(Io_Stream self);
 extern void Io_Stream__vtable();
 
 #endif

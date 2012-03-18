@@ -104,8 +104,9 @@ Feature* File::feature(String* scope, String* name) const {
             class_name = scope;
             scope = 0; 
         } else {
-            class_name = environment_->name(scope->string().substr(0, pos-1));
-            scope = environment_->name(scope->string().substr(pos+1));
+			String* full = scope;
+            scope = environment_->name(full->string().substr(0, pos-1));
+            class_name = environment_->name(full->string().substr(pos+1));
         }
         Class* clazz = File::clazz(scope, class_name);
         return clazz ? clazz->feature(name) : 0;
