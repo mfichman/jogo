@@ -37,7 +37,6 @@ def check(test, expected, output):
 def shell(command):
     # Runs 'command' and returns the result.  Sets the 'fail' flag if the 
     # command failed.
-    global Fail
     proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     return proc.stdout.read()
 

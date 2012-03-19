@@ -1,8 +1,6 @@
 Test1.ap:7:23: Undeclared function 'f'
 Test1.ap:8:24: Function 'foo' not found in class 'Int'
 Module
-  name: Io
-Module
   name: 
   feature0: Class
     name: Test1

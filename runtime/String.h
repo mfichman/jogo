@@ -35,6 +35,8 @@ struct String {
 Char String__index(String self, Int index);
 String String__add(String self, String string);
 String String_slice(String self, Int begin, Int end);
+String String_prefix(String self, Int end);
+String String_suffix(String self, Int begin);
 Int String_length__g(String self);
 Bool String__equal(String self, String string);
 String String_uppercase__g(String self);

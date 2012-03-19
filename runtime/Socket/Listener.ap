@@ -26,5 +26,44 @@ Listener < Object {
     # Handle to the underlying socket descriptor.
 
     addr = Addr("")    
-    # Address that hte socket is bound to.  Note that setting 
+    # Address that the socket is bound to.  Note that setting this value will
+    # close the current listening socket and reopen the socket using the new
+    # address.
+
+    backlog = 16
+    # Hint used to limit the number of outstanding connections in the socket's
+    # listening queue.  This corresponds to the traditional 'backlog' parameter
+    # to the Berkeley sockets listen() function call.
+
+    coroutine private Coroutine
+    # The coroutine that the listener is currently blocking (while executing an
+    # accept() call).
+
+    @destroy() {
+        # Destroys the socket, and closes the listening port.
+        self.close()
+    } 
+
+    accept() native Stream {
+        # Waits for a client to connect to the listening socket, and returns a
+        # new handle to the established stream.  This call will block the 
+        # current coroutine.
+    }
+
+    addr=(addr Addr) native {
+        # Binds the socket to the given address.  The socket may be rebound
+        # to new address by setting the addr field.
+    }
+
+    close() native {
+        # Closes the listening socket.
+    }
+
+    resume() native {
+        # Resumes the waiting socket.
+    }
+
+    reuse_addr=(flag Bool) native {
+        # Set to true of enable the SO_REUSEADDR option.
+    }
 }

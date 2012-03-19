@@ -223,6 +223,7 @@ void BasicBlockGenerator::operator()(Binary* expr) {
         // Don't use the 'real' true branch; on true we want to emit the    
         // test for the second side of the and
         Operand left = emit(expr->left(), left_true, false_, false);
+        free_temps();
         if (!block_->is_terminated()) {
             if (invert_guard_) {
                 bnz(left, false_, left_true);
@@ -241,6 +242,7 @@ void BasicBlockGenerator::operator()(Binary* expr) {
         // Don't use the 'real' false branch; on false we want to emit
         // the test for the second side of the or
         Operand left = emit(expr->left(), true_, left_false, true);
+        free_temps();
         if (!block_->is_terminated()) {
             if (invert_guard_) {
                 bz(left, true_, left_false);
@@ -779,12 +781,14 @@ void BasicBlockGenerator::native_operator(Call* expr) {
     } else if (id == "@compl") {
         assert(!"Not implemented");
     } else if (id == "@equal") {
+        free_temps();
         if (invert_branch_) {
             be(args[0], args[1], true_, false_);
         } else {
             bne(args[0], args[1], false_, true_);
         }
     } else if (id == "@less") {
+        free_temps();
         if (invert_branch_) {
             bl(args[0], args[1], true_, false_);
         } else {

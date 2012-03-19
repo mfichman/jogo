@@ -20,49 +20,26 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_COROUTINE_H
-#define APOLLO_COROUTINE_H
+#ifndef APOLLO_SOCKET_STREAM_H
+#define APOLLO_SOCKET_STREAM_H
 
 #include "Primitives.h"
+#include "Io/Stream.h"
+#include "Socket/Module.h"
+#include "Coroutine.h"
 
-typedef struct Coroutine_Stack* Coroutine_Stack;
-struct Coroutine_Stack {
-    Int data[COROUTINE_STACK_SIZE];
-    struct Coroutine_Stack* next; // Pointer to the next stack
+typedef struct Socket_Stream* Socket_Stream;
+struct Socket_Stream {
+    Ptr _vtable;
+    U64 _refcount;
+    Io_Stream stream;
+    Socket_Addr addr;
+    Socket_Addr peer;
+    Coroutine coroutine;
 };
 
-extern Int CoroutineStatus_NEW;
-extern Int CoroutineStatus_RUNNING;
-extern Int CoroutineStatus_SUSPENDED;
-extern Int CoroutineStatus_DEAD;
-
-typedef struct Coroutine* Coroutine;
-struct Coroutine {
-    Ptr _vtable; // 0
-    U64 _refcount; // 8
-    Object function;  //16
-    Int status; // 24
-
-    // NOTE: If the offset of this field changes, the assembly must be modified
-    // accordingly. 
-    Int sp; // 32 
-
-    Coroutine caller; // 40
-    Coroutine_Stack stack; // 48
-};
-
-Coroutine Coroutine__init(Object function);
-void Coroutine_resume(Coroutine self); 
-void Coroutine__swap(Coroutine from, Coroutine to);
-void Coroutine__yield();
-void Coroutine__exit();
-void Coroutine__call(Coroutine self);
-Ptr Coroutine__grow_stack();
-
-extern Coroutine_Stack Coroutine__stack;
-extern Coroutine Coroutine__current;
-extern struct Coroutine Coroutine__main;
-extern void Coroutine__vtable();
-extern Int Exception__current;
+Socket_Stream Socket_Stream__init();
+void Socket_Stream_close(Socket_Stream self);
+void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr);
 
 #endif

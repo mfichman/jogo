@@ -124,8 +124,8 @@ private:
     Stream::Ptr err_;
     Lexer::Ptr lexer_;
     Location last_location_;
-    bool is_input_file_;
     int error_;
+    bool is_input_file_;
 
 };
 

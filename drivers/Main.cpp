@@ -91,12 +91,12 @@ void output(File* file) {
         copy->operator()(file);
         elim->operator()(file); 
     }
-    if (env->dump_ir()) {
+    if (env->dump_ir() && file->is_input_file()) {
         bprint->out(new Stream(env->output()));
         bprint->operator()(file);
     } 
     alloc->operator()(file);
-    if (env->dump_ir()) {
+    if (env->dump_ir() && file->is_input_file()) {
         bprint->out(new Stream(env->output()));
         bprint->operator()(file);
         return;

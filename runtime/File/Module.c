@@ -69,7 +69,7 @@ Io_Stream File_open(String path, String mode) {
         // ERROR
         return 0;
     } else {
-        return Io_Stream__init((Int)ret);
+        return Io_Stream__init((Int)ret, Io_StreamType_FILE);
     }
 #else
     Int flags = 0;
@@ -98,7 +98,7 @@ Io_Stream File_open(String path, String mode) {
         // ERROR
         return 0;
     } else {
-        return Io_Stream__init(ret);
+        return Io_Stream__init(ret, Io_StreamType_FILE);
     }
 #endif
     return 0;

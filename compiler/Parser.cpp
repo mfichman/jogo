@@ -32,7 +32,8 @@ Parser::Parser(Environment* env) :
 	env_(env),
     err_(Stream::sterr()),
     lexer_(new Lexer(env)),
-    error_(0) {
+    error_(0),
+	is_input_file_(false) {
 
     input("Primitives");
     input("Object");
@@ -40,7 +41,6 @@ Parser::Parser(Environment* env) :
     input("Coroutine");
     input("Pair");
     input("Hash");
-	input("Task");
 	input("Queue");
 
     for (int i = 0; i < env->inputs(); i++) {

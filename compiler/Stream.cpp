@@ -86,7 +86,9 @@ Stream::~Stream() {
     // standard input/output/error stream.
     flush();
 #ifdef WINDOWS
-    CloseHandle(fd_);
+	if(fd_ != GetStdHandle(STD_OUTPUT_HANDLE)) {
+		CloseHandle(fd_);
+	}
 #else
     if (fd_ != 1 && fd_ != 0 && fd_ != 2) {
         ::close(fd_);
@@ -132,9 +134,10 @@ void Stream::write_direct(const char* data, int len) {
     int offset = 0;
     do {
 #ifdef WINDOWS
-        DWORD written;
+        DWORD written = 0;
         if (!WriteFile(fd_, data, len, &written, 0)) {
             error_ = true;
+			std::cerr << GetLastError() << std::endl;
             return;
         }
 #else

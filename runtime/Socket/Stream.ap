@@ -34,17 +34,15 @@ Stream < Object {
     # flush the stream, disconnect the socket from the current peer, and
     # reconnect the socket to the new peer.
 
+    coroutine private Coroutine
+    # The coroutine that is currently blocked on I/O from this socket.
+
     # FIXME: Add enum error codes
 
-    @init() native {
+    @init() {
         # Creates a new socket that is not connected to any remote host.  The
         # new socket is not bound to any local port or interface until the
         # 'addr' attribute is set.
-    }
-
-    @destroy() {
-        # Closes the socket if it is still open.
-        self.close()
     }
 
     close() native {

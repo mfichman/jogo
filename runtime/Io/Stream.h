@@ -20,10 +20,11 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_STREAM_H
-#define APOLLO_STREAM_H
+#ifndef APOLLO_IO_STREAM_H
+#define APOLLO_IO_STREAM_H
 
 #include "Primitives.h"
+#include "Coroutine.h"
 #include "Io/Buffer.h"
 #ifdef WINDOWS
 #include "windows.h"
@@ -38,10 +39,14 @@ struct Io_Stream {
     Io_Buffer write_buf;
     Int status;
     Int mode;
+    Int type;
+    Coroutine coroutine;
 #ifdef WINDOWS
     OVERLAPPED overlapped;
 #endif
 };
+
+typedef Int Io_StreamMode;
 
 extern Int Io_StreamStatus_OK;
 extern Int Io_StreamStatus_ERROR;
@@ -51,7 +56,11 @@ extern Int Io_StreamMode_ASYNC;
 extern Int Io_StreamMode_SYNC;
 extern Int Io_StreamMode_BLOCKING;
 
-Io_Stream Io_Stream__init(Int handle);
+extern Int Io_StreamType_FILE;
+extern Int Io_StreamType_CONSOLE;
+extern Int Io_StreamType_SOCKET;
+
+Io_Stream Io_Stream__init(Int handle, Int type);
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer);
 void Io_Stream_write(Io_Stream self, Io_Buffer buffer);
 Int Io_Stream_get(Io_Stream self);
@@ -61,6 +70,12 @@ String Io_Stream_scan(Io_Stream self, String delim);
 void Io_Stream_print(Io_Stream self, String str);
 void Io_Stream_flush(Io_Stream self);
 void Io_Stream_close(Io_Stream self);
+void Io_Stream_register_console(Io_Stream self);
+void Io_Stream_wait(Io_Stream self);
+void Io_Stream_resume(Io_Stream self);
+void Io_Stream_mode__s(Io_Stream self, Io_StreamMode mode);
+Int Io_Stream_result(Io_Stream self);
+void Io_Stream__destroy(Io_Stream self);
 extern void Io_Stream__vtable();
 
 #endif

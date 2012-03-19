@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2010 Matt Fichman
  *
@@ -22,12 +21,19 @@
  */
 
 #include "Io/Manager.h"
+#include "Io/Stream.h"
 #include "Coroutine.h"
+#include "String.h"
+#include "Object.h"
 #ifndef WINDOWS
 #include <unistd.h>
+#include <errno.h>
 #else
 #include <windows.h>
 #endif
+#ifdef DARWIN
+#include <sys/event.h>
+#endif 
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -43,35 +49,67 @@ Io_Manager Io_Manager__init() {
     ret->_vtable = Io_Manager__vtable;
     ret->_refcount = 1;
     ret->scheduled = Queue__init(0);
-#ifdef WINDOWS
-    ret->handle = (Int)CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 1);
+    ret->waiting = 0;
+#if defined(WINDOWS)
+    ret->handle = (Int)CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
+#elif defined(DARWIN)
+    ret->handle = (Int)kqueue();
 #else
     ret->handle = 0;
 #endif
     return ret;
 }
 
-void Io_Manager__destroy(Io_Manager self) {
-    Queue__destroy(self->scheduled);
+void Io_Manager_shutdown(Io_Manager self) {
 #ifdef WINDOWS
     CloseHandle((HANDLE)self->handle);
 #else
+    close(self->handle);
 #endif
+}
+
+void Io_Manager__destroy(Io_Manager self) {
+    Io_Manager_shutdown(self);
+    Queue__destroy(self->scheduled);
     free(self);
 }
 
 void Io_Manager_poll(Io_Manager self) {
     // Poll for an I/O event, and then resume the coroutine associated with
     // that event.
+    static struct String resume_str = { String__vtable, 1, 6, "resume" };
+    typedef void (*ResumeFunc)(Object);
+
 #ifdef WINDOWS
     DWORD bytes = 0;
-    ULONG_PTR coro = 0;
+    ULONG_PTR udata = 0;
     OVERLAPPED* evt = 0;
     HANDLE handle = (HANDLE)self->handle;
-    GetQueuedCompletionStatus(handle, &bytes, &coro, &evt, INFINITE);
-    if (evt) {
-        Coroutine__call((Coroutine)coro); // Will return later
+#endif
+
+    if (Coroutine__current != &Coroutine__main) {
+        fprintf(stderr, "Io::Manager::poll() called by user coroutine");
+        fflush(stderr);
+        abort();
     }
+
+#if defined(WINDOWS)
+    GetQueuedCompletionStatus(handle, &bytes, &udata, &evt, INFINITE);
+    ResumeFunc func = Object__dispatch((Object)udata, &resume_str);
+    func((Object)udata);
+
+#elif defined(DARWIN)
+    struct kevent event;
+    int res = kevent(self->handle, 0, 0, &event, 1, NULL);
+    if (res < 0) {
+        fprintf(stderr, "%d\n", errno);
+        fflush(stderr);
+        abort();
+    } else if (res == 0) {
+        return;
+    }
+    ResumeFunc func = Object__dispatch(event.udata, &resume_str);
+    func((Object)event.udata);
+#else
 #endif
 }
-

@@ -13,8 +13,6 @@ SemantBad.ap:81:9: Too many arguments for type 'One'
 SemantBad.ap:85:9: Not enough arguments for type 'Two'
 SemantBad.ap:86:11: Not enough arguments for type 'Two'
 Module
-  name: Io
-Module
   name: 
   feature0: Function
     name: foo

@@ -18,65 +18,66 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-Datagram < Object {
-    # The Socket::Datagram class implements a connectionless socket (e.g.,
-    # UDP).  Usually, a new datagram socket is created using the
-    # Socket::datagram function, but datagram sockets can also be created
-    # directly using the constructor below.
-
-    handle immutable Int
-    # Handle to the underlying socket descriptor.
-
-    addr = Addr("")
-    # Address that the socket is bound to.  If this value is set and the socket
-    # is already bound to an address, then this function will close the socket
-    # and rebind it to the new address.  If the address is not sent when the
-    # socket is first written to, then the system will allocate a port for the
-    # socket and bind the socket to any available network interface.
-
-    peer = Addr("")
-    # If set, then this is the address that is used when 'send' is called.
-
-    @init() native {
-        # Creates a new socket that is not bound to any local port or 
-        # interface.  Setting the 'addr' field will bind the socket to a new
-        # port.
-    }
-
-    @destroy() {
-        # Closes the socket if it is still open.
-        self.close()
-    }
-
-    send(buffer Io::Buffer) {
-        # Sends the packet stored in 'buffer' to the address specified by
-        # 'peer'.  This function will block the current coroutine until the
-        # packet has been sent.
-        sendto(peer, buffer);
-    }
-
-    send_to(peer Addr, buffer Io::Buffer) native {
-        # Sends the packet stored in 'buffer' to the address specified by
-        # 'peer'.  This function will block the current coroutine until the
-        # packet has been sent.
-    }
-    
-    recv(buffer Io::Buffer) native {
-        # Receives data into 'buffer'.  If there is not enough space remaining
-        # in the buffer, then the extra message data will be dropped.
-    }
-
-    recv_from(buffer Io::Buffer) native Addr {
-        # Receives data into 'buffer'.  If there is not enough space remaining
-        # in the buffer, then the extra message data will be dropped.  Returns the
-        # address of the peer that sent the data.
-    }
-
-    addr=(local Addr) native {
-        # Binds the socket to address 'local'.
-    }
-    
-    close() native {
-        # Closes the socket.
-    }
-}
+#Datagram < Object {
+#    # The Socket::Datagram class implements a connectionless socket (e.g.,
+#    # UDP).  Usually, a new datagram socket is created using the
+#    # Socket::datagram function, but datagram sockets can also be created
+#    # directly using the constructor below.
+#
+#    handle immutable Int
+#    # Handle to the underlying socket descriptor.
+#
+#    addr = Addr("")
+#    # Address that the socket is bound to.  If this value is set and the socket
+#    # is already bound to an address, then this function will close the socket
+#    # and rebind it to the new address.  If the address is not sent when the
+#    # socket is first written to, then the system will allocate a port for the
+#    # socket and bind the socket to any available network interface.
+#
+#    peer = Addr("")
+#    # If set, then this is the address that is used when 'send' is called.
+#
+#    @init() native {
+#        # Creates a new socket that is not bound to any local port or 
+#        # interface.  Setting the 'addr' field will bind the socket to a new
+#        # port.
+#    }
+#
+#    @destroy() {
+#        # Closes the socket if it is still open.
+#        self.close()
+#    }
+#
+#    send(buffer Io::Buffer) {
+#        # Sends the packet stored in 'buffer' to the address specified by
+#        # 'peer'.  This function will block the current coroutine until the
+#        # packet has been sent.
+#        sendto(peer, buffer)
+#    }
+#
+#    sendto(peer Addr, buffer Io::Buffer) native {
+#        # Sends the packet stored in 'buffer' to the address specified by
+#        # 'peer'.  This function will block the current coroutine until the
+#        # packet has been sent.
+#    }
+#    
+#    recv(buffer Io::Buffer) {
+#        # Receives data into 'buffer'.  If there is not enough space remaining
+#        # in the buffer, then the extra message data will be dropped.
+#        recvfrom(nil, buffer)
+#    }
+#
+#    recvfrom(peer Addr, buffer Io::Buffer) native {
+#        # Receives data into 'buffer'.  If there is not enough space remaining
+#        # in the buffer, then the extra message data will be dropped.  Returns
+#        # the address of the peer that sent the data.
+#    }
+#
+#    addr=(local Addr) native {
+#        # Binds the socket to address 'local'.
+#    }
+#    
+#    close() native {
+#        # Closes the socket.
+#    }
+#}

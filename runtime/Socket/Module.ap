@@ -46,6 +46,15 @@ Addr < Object {
         # Initializes this IP address by parsing 'str'.  If the parsing fails,
         # then the 'valid' attribute will be set to false.
     }
+    
+    @equals(other Addr) Bool {
+        ret self and other and (ip == other.ip) and (port == other.port)
+    }
+
+    host?() native String {
+        # Returns the hostname associated with the socket's IP address.  Lazily
+        # calls gethostbyname() to determine the hostname.
+    }
 }
 # FIXME: Addr should be a value type
 
@@ -65,10 +74,10 @@ listen(addr String) Listener {
     ret socket
 }
 
-datagram(addr String) Datagram {
-    # Creates a new datagram (UDP) socket and binds it to 'addr'.
-    socket = Datagram()
-    socket.addr = Addr(addr)
-    ret socket
-}
-
+#datagram(addr String) Datagram {
+#    # Creates a new datagram (UDP) socket and binds it to 'addr'.
+#    socket = Datagram()
+#    socket.addr = Addr(addr)
+#    ret socket
+#}
+#

@@ -36,10 +36,11 @@ Coroutine Coroutine__init(Object func) {
     // Initializes a function with a new stack and instruction pointer. When
     // the coroutine is resumed, it will begin executing at 'function' with its
     // own stack.
-    Int stack_index = COROUTINE_STACK_SIZE - 2 - 1 - 8; 
+    Int stack_index = COROUTINE_STACK_SIZE - 2 - 1 - 15 - 1; 
     // -2 is for the two return addresses that are initially on the stack
     // -1 is for the top-of-stack pointer
-    // -16 is for the initial values of RBP + caller regs
+    // -15 is for the initial values of RBP + caller regs
+    // -1 is for initial arg to @call
     
     Coroutine ret = calloc(sizeof(struct Coroutine), 1); 
     if (!ret) {
@@ -68,6 +69,7 @@ Coroutine Coroutine__init(Object func) {
         ret->stack->data[COROUTINE_STACK_SIZE-1] = exit;
         ret->stack->data[COROUTINE_STACK_SIZE-2] = call;
         ret->stack->data[COROUTINE_STACK_SIZE-3] = (Int)ret->stack->data;
+        ret->stack->data[COROUTINE_STACK_SIZE-4] = (Int)func;
         ret->status = CoroutineStatus_NEW; // New coroutine status code 
     } else {
         ret->status = CoroutineStatus_DEAD; 
@@ -83,7 +85,10 @@ void Coroutine__destroy(Coroutine self) {
 	// calling destructors for objects referenced by the coroutine.
 	Int save_except = Exception__current;
 	Exception__current = 1;
-	Coroutine__call(self);
+
+    if (self->status == CoroutineStatus_SUSPENDED) {
+	    Coroutine__call(self);
+    }
 	
 	// Free the stack, and the pointer to the closure object so that no memory
     // is leaked.
@@ -99,32 +104,17 @@ void Coroutine__destroy(Coroutine self) {
 	Exception__current = save_except;
 }
 
-void Coroutine__call(Coroutine self) {
-    // Resumes a coroutine if it is still running.  Otherwise, returns
-    // immediately.
-    if (self->status == CoroutineStatus_DEAD) {
-        return;
-    } else if (self->status == CoroutineStatus_RUNNING) {
-        // Coroutine is dead or already running
-        return;
-    } else {
-        self->status = CoroutineStatus_RUNNING;
-        Coroutine__resume(self);
-        if (self->status != CoroutineStatus_DEAD) {
-            self->status = CoroutineStatus_SUSPENDED;
-        }
-    }
-}
-
-void Coroutine__resume(Coroutine self) {
+void Coroutine_resume(Coroutine self) {
     // Resumes a coroutine, and sets the 'caller' coroutine to the current 
-    // coroutine.
-    if (self) {
-        self->status = CoroutineStatus_RUNNING;
-        self->caller = Coroutine__current;
-        Coroutine__swap(Coroutine__current, self);
-        self->caller = 0; 
-    }
+    // coroutine.  Returns immediately if the coroutine is DEAD or nil.
+    if (!self) { return; }
+    if (self->status == CoroutineStatus_DEAD) { return; }
+    if (self->status == CoroutineStatus_RUNNING) { return; }
+
+    self->status = CoroutineStatus_RUNNING;
+    self->caller = Coroutine__current;
+    Coroutine__swap(Coroutine__current, self);
+    self->caller = 0; 
 }
 
 void Coroutine__exit() {
@@ -133,9 +123,10 @@ void Coroutine__exit() {
     if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_DEAD;
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
-    } else {
-        // If there is no caller, then exit.
-        exit(0);
+    } else if(Coroutine__current) {
+        Coroutine__current->status = CoroutineStatus_DEAD;
+        Coroutine__swap(Coroutine__current, &Coroutine__main);
+        // If there is no caller, then yield to the main coroutine.
     }
 }
 
@@ -156,7 +147,7 @@ Ptr Coroutine__grow_stack() {
     // stack pointer will be allocated.  Note that this doesn't protect against
     // calls to native functions using more stack then they should. 
     if (!Coroutine__stack->next) {
-        Coroutine__stack->next = calloc(sizeof(Coroutine_Stack), 1); 
+        Coroutine__stack->next = calloc(sizeof(struct Coroutine_Stack), 1); 
         Coroutine__stack->next->next = 0;
     }
     Coroutine__stack = Coroutine__stack->next;
