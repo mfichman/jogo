@@ -59,7 +59,6 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
     ret->status = Io_StreamStatus_OK;
     ret->mode = Io_StreamMode_BLOCKING;
     ret->type = type;
-    ret->coroutine = 0;
 
 #ifdef WINDOWS 
     // Associate the handle with an IO completion port.  The Io::Manager
@@ -67,8 +66,8 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
     // object with an attached coroutine that will be resumed when an I/O
     // operation is complete. 
     if (ret->type != Io_StreamType_CONSOLE) {
-        CreateIoCompletionPort((HANDLE)ret->handle, iocp, (ULONG_PTR)ret, 0);
-        ret->overlapped.hEvent = CreateEvent(NULL, TRUE, 0, NULL);
+        CreateIoCompletionPort((HANDLE)ret->handle, iocp, 0, 0);
+        ret->op.overlapped.hEvent = CreateEvent(NULL, TRUE, 0, NULL);
         // A manual reset event is used because ReadFile and WriteFile set 
         // the event to the nonsignalled state automatically
     }
@@ -78,15 +77,7 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
     // func that can be dynamically invoked.  In this case, it would call the
     // current coroutine.
 #endif
-
     return ret;
-}
-
-void Io_Stream_resume(Io_Stream self) {
-    // Resumes the coroutine the previously blocked while waiting for I/O
-    // operations on this stream to complete.
-    assert(self->coroutine);
-    Coroutine__swap(Coroutine__current, self->coroutine);
 }
 
 void Io_Stream_handle_console(Io_Stream self) {
@@ -125,19 +116,6 @@ void Io_Stream_register_console(Io_Stream self) {
 #endif
 }   
 
-void Io_Stream_wait(Io_Stream self) {
-    // Waits for the current I/O operation on the stream to complete by
-    // yielding to the main coroutine. 
-    assert(!self->coroutine);
-    self->coroutine = Coroutine__current;
-    Object__refcount_inc((Object)self->coroutine);
-    Io_manager()->waiting++;
-    Coroutine__swap(Coroutine__current, &Coroutine__main);
-    Io_manager()->waiting--;
-    Object__refcount_dec((Object)self->coroutine);
-    self->coroutine = 0;
-}
-
 Int Io_Stream_result(Io_Stream self) {
     // Gets the result of an asycnchronous I/O operation, and returns the
     // number of bytes read/written.  Yields the current coroutine to the event
@@ -156,11 +134,11 @@ Int Io_Stream_result(Io_Stream self) {
         // block the entire process.
         if (Io_StreamMode_BLOCKING == self->mode) {
             SetLastError(ERROR_SUCCESS);
-            GetOverlappedResult(handle, &self->overlapped, &bytes, 1);
+            GetOverlappedResult(handle, &self->op.overlapped, &bytes, 1);
         } else {
-            Io_Stream_wait(self);
+            Coroutine__iowait();
             SetLastError(ERROR_SUCCESS);
-            GetOverlappedResult(handle, &self->overlapped, &bytes, 0);
+            GetOverlappedResult(handle, &self->op.overlapped, &bytes, 0);
         }
     }
     if (ERROR_HANDLE_EOF == GetLastError()) {
@@ -191,26 +169,22 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     Int ret = 0;
 
     // Read from the file, async or syncronously
-//    if (Io_StreamType_CONSOLE == self->type) {
-//        Io_Stream_register_console(self);
-//        Io_Stream_wait(self);
-//    }
-    
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
     if (is_blocking && !is_console) {
         // Set the low-order bit of the event if the handle is in blocking
         // mode.  This prevents a completion port notification from being 
         // queued for the I/O operation.
-        (Int)(self->overlapped.hEvent) |= 0x1;
+        (Int)(self->op.overlapped.hEvent) |= 0x1;
     } else if (!is_console) {
-        (Int)(self->overlapped.hEvent) &= ~0x1;
+        (Int)(self->op.overlapped.hEvent) &= ~0x1;
     }
 
-    if (!ReadFile(handle, buf, len, &read, &self->overlapped)) {
+    self->op.coroutine = Coroutine__current;
+    if (!ReadFile(handle, buf, len, &read, &self->op.overlapped)) {
         read = Io_Stream_result(self);
     }
-    self->overlapped.Offset += read;
+    self->op.overlapped.Offset += read;
     buffer->end += read;
 #else
 #ifdef DARWIN
@@ -219,14 +193,14 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         Int kqfd = Io_manager()->handle;
         Int fd = self->handle;
         Int flags = EV_ADD|EV_ONESHOT;
-        EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, self); 
+        EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Current__coroutine); 
         int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
             fprintf(stderr, "kevent: %d\n", errno);
             fflush(stderr);
             abort();
         }
-        Io_Stream_wait(self);
+        Coroutine__iowait();
     }
 #endif
 
@@ -258,15 +232,16 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
         // Set the low-order bit of the event if the handle is in blocking
         // mode.  This prevents a completion port notification from being 
         // queued for the I/O operation.
-        (Int)(self->overlapped.hEvent) |= 0x1;
+        (Int)(self->op.overlapped.hEvent) |= 0x1;
     } else if (!is_console) {
-        (Int)(self->overlapped.hEvent) &= ~0x1;
+        (Int)(self->op.overlapped.hEvent) &= ~0x1;
     }
 
-    if (!WriteFile(handle, buf, len, &written, &self->overlapped)) {
+    self->op.coroutine = Coroutine__current;
+    if (!WriteFile(handle, buf, len, &written, &self->op.overlapped)) {
         written = Io_Stream_result(self);
     }
-    self->overlapped.Offset += written; 
+    self->op.overlapped.Offset += written; 
     buffer->begin += written;
 #else
 #ifdef DARWIN
@@ -275,14 +250,14 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
         Int kqfd = Io_manager()->handle;
         Int fd = self->handle;
         Int flags = EV_ADD|EV_ONESHOT;
-        EV_SET(&ev, fd, EVFILT_WRITE, flags, 0, 0, self); 
+        EV_SET(&ev, fd, EVFILT_WRITE, flags, 0, 0, Current__coroutine); 
         int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
             fprintf(stderr, "kevent: %d\n", errno);
             fflush(stderr);
             abort();
         }
-        Io_Stream_wait(self);
+        Coroutine__iowait();
     }
 #endif
 
@@ -432,8 +407,12 @@ void Io_Stream_close(Io_Stream self) {
     self->write_buf->begin = self->write_buf->end = 0;
     self->read_buf->begin = self->read_buf->end = 0;
 #ifdef WINDOWS
-    CloseHandle((HANDLE)self->handle);
-    CloseHandle((HANDLE)self->overlapped.hEvent);
+    if (Io_StreamType_SOCKET == self->type) {
+        closesocket((SOCKET)self->handle);
+    } else {
+        CloseHandle((HANDLE)self->handle);
+    }
+    CloseHandle((HANDLE)self->op.overlapped.hEvent);
 #else
     close(self->handle);
 #endif

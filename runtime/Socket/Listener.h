@@ -28,6 +28,10 @@
 #include "Socket/Module.h"
 #include "Socket/Stream.h"
 
+#ifdef WINDOWS
+#include <windows.h>
+#endif
+
 typedef struct Socket_Listener* Socket_Listener;
 struct Socket_Listener {
     Ptr _vtable;
@@ -38,10 +42,11 @@ struct Socket_Listener {
     Coroutine coroutine;
 };
 
+Socket_Listener Socket_Listener__init();
 Socket_Stream Socket_Listener_accept(Socket_Listener self);
 void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr);
 void Socket_Listener_close(Socket_Listener self);
-void Socket_Listener_resume(Socket_Listener self);
 void Socket_Listener_reuse_addr__s(Socket_Listener self, Bool flag);
+extern void Socket_Listener__vtable();
 
 #endif 

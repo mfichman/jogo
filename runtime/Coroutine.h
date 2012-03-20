@@ -54,6 +54,7 @@ struct Coroutine {
 Coroutine Coroutine__init(Object function);
 void Coroutine_resume(Coroutine self); 
 void Coroutine__swap(Coroutine from, Coroutine to);
+void Coroutine__iowait();
 void Coroutine__yield();
 void Coroutine__exit();
 void Coroutine__call(Coroutine self);

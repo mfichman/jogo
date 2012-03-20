@@ -35,7 +35,6 @@ struct Socket_Stream {
     Io_Stream stream;
     Socket_Addr addr;
     Socket_Addr peer;
-    Coroutine coroutine;
 };
 
 Socket_Stream Socket_Stream__init();

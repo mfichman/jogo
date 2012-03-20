@@ -41,6 +41,15 @@
 Io_Manager Io_Manager__init() {
     // Initialize an event manager, and allocate an I/O completion port.
     Io_Manager ret = calloc(sizeof(struct Io_Manager), 1);
+#ifdef WINDOWS
+    WORD version = MAKEWORD(2, 2);
+    WSADATA data;
+    if (WSAStartup(version, &data) != 0) {
+        fprintf(stderr, "WSAStartup() failed\n");
+        fflush(stderr);
+        abort();
+    }
+#endif
     if (!ret) {
         fprintf(stderr, "Out of memory");
         fflush(stderr);
@@ -62,7 +71,13 @@ Io_Manager Io_Manager__init() {
 
 void Io_Manager_shutdown(Io_Manager self) {
 #ifdef WINDOWS
+    HANDLE handle = (HANDLE)self->handle;
+    DWORD bytes = 0;
+    ULONG_PTR udata = 0;
+    Io_Overlapped* op = 0;
+    OVERLAPPED** evt = (OVERLAPPED**)&op;
     CloseHandle((HANDLE)self->handle);
+    exit(0);
 #else
     close(self->handle);
 #endif
@@ -72,19 +87,20 @@ void Io_Manager__destroy(Io_Manager self) {
     Io_Manager_shutdown(self);
     Queue__destroy(self->scheduled);
     free(self);
+#ifdef WINDOWS
+    WSACleanup();
+#endif
 }
 
 void Io_Manager_poll(Io_Manager self) {
     // Poll for an I/O event, and then resume the coroutine associated with
     // that event.
-    static struct String resume_str = { String__vtable, 1, 6, "resume" };
-    typedef void (*ResumeFunc)(Object);
-
 #ifdef WINDOWS
+    HANDLE handle = (HANDLE)self->handle;
     DWORD bytes = 0;
     ULONG_PTR udata = 0;
-    OVERLAPPED* evt = 0;
-    HANDLE handle = (HANDLE)self->handle;
+    Io_Overlapped* op = 0;
+    OVERLAPPED** evt = (OVERLAPPED**)&op;
 #endif
 
     if (Coroutine__current != &Coroutine__main) {
@@ -94,10 +110,8 @@ void Io_Manager_poll(Io_Manager self) {
     }
 
 #if defined(WINDOWS)
-    GetQueuedCompletionStatus(handle, &bytes, &udata, &evt, INFINITE);
-    ResumeFunc func = Object__dispatch((Object)udata, &resume_str);
-    func((Object)udata);
-
+    GetQueuedCompletionStatus(handle, &bytes, &udata, evt, INFINITE);
+    Coroutine_resume(op->coroutine);
 #elif defined(DARWIN)
     struct kevent event;
     int res = kevent(self->handle, 0, 0, &event, 1, NULL);
@@ -108,8 +122,7 @@ void Io_Manager_poll(Io_Manager self) {
     } else if (res == 0) {
         return;
     }
-    ResumeFunc func = Object__dispatch(event.udata, &resume_str);
-    func((Object)event.udata);
+    Coroutine_resume((Coroutine)event.udata);
 #else
 #endif
 }

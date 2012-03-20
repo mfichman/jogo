@@ -21,6 +21,7 @@
  */
 
 #include "Coroutine.h"
+#include "Io/Manager.h"
 #include "Object.h"
 #include "String.h"
 #include <stdlib.h>
@@ -152,5 +153,17 @@ Ptr Coroutine__grow_stack() {
     }
     Coroutine__stack = Coroutine__stack->next;
     return Coroutine__stack->data + COROUTINE_STACK_SIZE - 2;
+}
+
+void Coroutine__iowait() {
+    // Causes this coroutine to wait until I/O is available.  Note: calling
+    // this function if no I/O is pending will cause the Coroutine to block
+    // indefinitely. 
+    Coroutine__current->status = CoroutineStatus_SUSPENDED;
+    Object__refcount_inc((Object)Coroutine__current);
+    Io_manager()->waiting++;
+    Coroutine__swap(Coroutine__current, &Coroutine__main);
+    Io_manager()->waiting--;
+    Object__refcount_dec((Object)Coroutine__current); 
 }
 

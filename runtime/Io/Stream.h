@@ -26,9 +26,7 @@
 #include "Primitives.h"
 #include "Coroutine.h"
 #include "Io/Buffer.h"
-#ifdef WINDOWS
-#include "windows.h"
-#endif
+#include "Io/Manager.h"
 
 typedef struct Io_Stream* Io_Stream;
 struct Io_Stream {
@@ -40,9 +38,8 @@ struct Io_Stream {
     Int status;
     Int mode;
     Int type;
-    Coroutine coroutine;
 #ifdef WINDOWS
-    OVERLAPPED overlapped;
+    Io_Overlapped op;
 #endif
 };
 
@@ -71,7 +68,6 @@ void Io_Stream_print(Io_Stream self, String str);
 void Io_Stream_flush(Io_Stream self);
 void Io_Stream_close(Io_Stream self);
 void Io_Stream_register_console(Io_Stream self);
-void Io_Stream_wait(Io_Stream self);
 void Io_Stream_resume(Io_Stream self);
 void Io_Stream_mode__s(Io_Stream self, Io_StreamMode mode);
 Int Io_Stream_result(Io_Stream self);

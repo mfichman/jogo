@@ -35,6 +35,7 @@ Parser::Parser(Environment* env) :
     error_(0),
 	is_input_file_(false) {
 
+    // FIXME: These files should have their symbols in the lib file
     input("Primitives");
     input("Object");
     input("String");
@@ -42,6 +43,7 @@ Parser::Parser(Environment* env) :
     input("Pair");
     input("Hash");
 	input("Queue");
+    input("Io");
 
     for (int i = 0; i < env->inputs(); i++) {
         is_input_file_ = true;

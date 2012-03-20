@@ -20,6 +20,12 @@
  * IN THE SOFTWARE.
  */
 
+#ifdef WINDOWS
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#endif
+
 #include "Socket/Listener.h"
 #include "Io/Manager.h"
 #include "Object.h"
@@ -27,9 +33,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 #ifdef WINDOWS
 #include <windows.h>
-#include <winsock2.h>
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -40,37 +46,86 @@
 #include <sys/event.h>
 #endif
 
-void* memset(void* src, int value, size_t num);
-
 Socket_Stream Socket_Listener_accept(Socket_Listener self) {
     // Waits for a client to connect, then returns a pointer to the established
-    // connection.
+    // connection.  The code below is a bit tricky, because Windows expects the
+    // call to accept() to happen before the I/O event can be triggered.  For
+    // Unix systems, the wait happens first, and then accept() is used to
+    // receive the incoming socket afterwards.
+    Socket_Stream stream = 0;
 
 #if defined(WINDOWS)
-#elif defined(DARWIN)
-    struct kevent ev;
-    Int kqfd = Io_manager()->handle;  
-    Int fd = self->handle;
-    Int flags = EV_ADD|EV_ONESHOT;
-    EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, self);
-    int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
-    if (ret < 0) {
-        fprintf(stderr, "kevent: %d\n", errno);
+    // Begin the call to accept() by creating a new socket and issuing a call 
+    // to AcceptEx.
+    char buffer[(sizeof(struct sockaddr_in)+16)*2];
+    DWORD socklen = sizeof(struct sockaddr_in)+16;
+    DWORD read = 0;
+    DWORD code = SIO_GET_EXTENSION_FUNCTION_POINTER;
+    GUID guid = WSAID_ACCEPTEX;
+    LPFN_ACCEPTEX AcceptEx = 0;
+    DWORD bytes = 0;
+    DWORD len = sizeof(AcceptEx);
+    Io_Overlapped op;
+    OVERLAPPED* evt = &op.overlapped;
+
+    // Create a new socket for AcceptEx to use when a peer connects.
+    SOCKET ls = self->handle;
+    SOCKET sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (sd < 0) {
+        fprintf(stderr, "socket() failed\n");
         fflush(stderr);
         abort();
     }
 
-    assert(!self->coroutine);
-    self->coroutine = Coroutine__current;
-    Object__refcount_inc((Object)self->coroutine);
-    Io_manager()->waiting++;
-    Coroutine__swap(Coroutine__current, &Coroutine__main);
-    Io_manager()->waiting--;
-    Object__refcount_dec((Object)self->coroutine);
-    self->coroutine = 0;
+    // Get a pointer to the AcceptEx() function.
+    WSAIoctl(sd, code, &guid, sizeof(guid), &AcceptEx, len, &bytes, 0, 0);
+    
+    // Initialize the OVERLAPPED structure that contains the user I/O data used
+    // to resume the coroutine when AcceptEx completes. 
+    memset(&op, 0, sizeof(op));
+    op.coroutine = Coroutine__current;
+
+    // Now call ConnectEx to begin accepting peer connections.  The call will
+    // return immediately, allowing this function to yield to the I/O manager.
+    if (!AcceptEx(ls, sd, buffer, 0, socklen, socklen, &read, evt)) {
+        while (ERROR_IO_PENDING == GetLastError()) {
+            // Wait for the I/O manager to yield after polling the I/O
+            // completion port, and then get the result.
+            Coroutine__iowait();
+            SetLastError(ERROR_SUCCESS);
+            GetOverlappedResult((HANDLE)sd, evt, &bytes, 1);
+        } 
+        if (ERROR_SUCCESS != GetLastError()) {
+           fprintf(stderr, "%d\n", GetLastError());
+           fprintf(stderr, "AcceptEx() failed\n");
+           fflush(stderr);
+           abort();
+        }
+    }
+
+#elif defined(DARWIN)
+    // Register to wait for a READ event, which signals that we can call 
+    // accept() without blocking.
+    struct kevent ev;
+    int kqfd = Io_manager()->handle;  
+    int fd = self->handle;
+    int flags = EV_ADD|EV_ONESHOT;
+    EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Coroutine__current);
+    int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
+    if (ret < 0) {
+        fprintf(stderr, "kevent() failed\n", errno);
+        fflush(stderr);
+        abort();
+    }
 #else
 #endif
 
+#ifndef WINDOWS
+    // Wait until the socket becomes readable.  At that point, there will be
+    // a peer waiting in the accept queue.
+    Coroutine__iowait();
+
+    // Accept the peer, and create a new stream socket.
     struct sockaddr_in sin;
     socklen_t len = sizeof(sin);
     int sd = accept(self->handle, (struct sockaddr*)&sin, &len);
@@ -79,8 +134,9 @@ Socket_Stream Socket_Listener_accept(Socket_Listener self) {
         fflush(stderr);
         abort();
     }  
+#endif
 
-    Socket_Stream stream = Socket_Stream__init();
+    stream = Socket_Stream__init();
     stream->stream = Io_Stream__init(sd, Io_StreamType_SOCKET);
     return stream;
 }
@@ -90,6 +146,11 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     // open, or the socket cannot listen on the specified port, or the socket
     // is unable to bind to a port, then the status of the socket listener will
     // be updated to indicate the error code.
+    struct sockaddr_in sin;
+#ifdef WINDOWS
+    HANDLE iocp = (HANDLE)Io_manager()->handle;
+#endif
+
     if (self->handle && Socket_Addr__equals(self->addr, addr)) { return; }
     if (self->handle) {
         close(self->handle);
@@ -97,29 +158,30 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     }
     if (!addr) { return; }
     
-    int sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (sd < 0) { 
+    self->handle = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (self->handle < 0) { 
         fprintf(stderr, "socket() failed\n");
         fflush(stderr);
         abort();
     }
     
-    struct sockaddr_in sin;
-    memset(&sin, 0, sizeof(sin));
-    sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = htonl(INADDR_ANY); //htonl(addr->ip);
-    sin.sin_port = htons(addr->port);
-
-    self->handle = sd;
+#ifdef WINDOWS
+    CreateIoCompletionPort((HANDLE)self->handle, iocp, 0, 0); 
+#endif
     Socket_Listener_reuse_addr__s(self, 1);
     
-    if (bind(sd, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = htonl(INADDR_ANY);
+    sin.sin_port = htons(addr->port);
+
+    if (bind(self->handle, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
         fprintf(stderr, "bind() failed\n");
         fflush(stderr);
         abort();
     } 
 
-    if (listen(sd, self->backlog) < 0) {
+    if (listen(self->handle, self->backlog) < 0) {
         fprintf(stderr, "listen() failed\n");
         fflush(stderr);
         abort();
@@ -131,22 +193,19 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
 }
 
 void Socket_Listener_close(Socket_Listener self) {
+#ifdef WINDOWS
+    CloseHandle((HANDLE)self->handle);
+#else
     close(self->handle);
+#endif
     self->handle = 0;
 }
 
-void Socket_Listener_resume(Socket_Listener self) {
-    assert(self->coroutine);
-    Coroutine__swap(Coroutine__current, self->coroutine);
-}
-
 void Socket_Listener_reuse_addr__s(Socket_Listener self, Bool flag) {
-    if (!self->handle) {
-        return;
-    } 
     Int sd = self->handle;
-
-    if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag)) < 0) {
+    int len = sizeof(flag);
+    if (!sd) { return; } 
+    if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (const char*)&flag, len) < 0) {
         fprintf(stderr, "setsockopt() failed\n");
         fflush(stderr);
         abort();

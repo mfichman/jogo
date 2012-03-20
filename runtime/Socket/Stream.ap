@@ -1,5 +1,3 @@
-# Copyright (c) 2010 Matt Fichman
-#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -33,9 +31,6 @@ Stream < Object {
     # The address of the remote peer.  Note that writing to this value will
     # flush the stream, disconnect the socket from the current peer, and
     # reconnect the socket to the new peer.
-
-    coroutine private Coroutine
-    # The coroutine that is currently blocked on I/O from this socket.
 
     # FIXME: Add enum error codes
 

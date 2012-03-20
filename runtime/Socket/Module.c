@@ -28,8 +28,8 @@
 #include <stdlib.h>
 
 #ifdef WINDOWS
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -43,6 +43,12 @@
 Socket_Addr Socket_Addr__init(String str) {
     // Initialies a new socket address (IP address, port port ID pair).
     Socket_Addr ret = calloc(sizeof(struct Socket_Addr), 1);
+    Char* c = 0;
+    String host_str = 0;
+    String port_str = 0;
+    struct in_addr in; 
+    memset(&in, 0, sizeof(in));
+
     if (!ret) {
         fprintf(stderr, "Out of memory\n");
         fflush(stderr);
@@ -53,45 +59,48 @@ Socket_Addr Socket_Addr__init(String str) {
     ret->host = 0;
     ret->ip = 0;
     ret->port = 0;
-    ret->valid = 1;
+    ret->valid = 0;
 
     // Split the address string on the ':' character.  The substring before the
     // first ':' is the host name, and the substring after the ':' is the port
     // number.
-    Char* c = 0;
     for (c = str->data; (*c != ':') && (*c != '\0'); ++c) {}
     if (*c != ':') { 
         ret->valid = 0;
         return ret;
     }
-    String host_str = String_prefix(str, c - str->data);
-    String port_str = String_suffix(str, c - str->data + 1);
+    host_str = String_prefix(str, c - str->data);
 
     // Attempt to translate the hostname as a dotted quad first.  Then, try to
     // translate the hostname as a DNS name.
-    struct in_addr in; 
     if (inet_pton(AF_INET, host_str->data, &in) != 1) { 
         struct addrinfo* res = 0;
+        struct sockaddr_in* sin = 0;
         if (getaddrinfo(host_str->data, 0, 0, &res) != 0) {
-            ret->valid = 0;
+            Object__refcount_dec(host_str);
             return ret;
         }
-        struct sockaddr_in* sin = (struct sockaddr_in*)res->ai_addr;
-        in = sin->sin_addr; 
+        Object__refcount_dec(host_str);
+
+        for(; res; res = res->ai_next) {
+            sin = (struct sockaddr_in*)res->ai_addr;
+            if (sin->sin_addr.s_addr) {
+                in = sin->sin_addr; 
+            }
+        }
+        freeaddrinfo(res);
     }
 
     // Parse the port number, and make sure that it is in range.
-    Int port = atoi(port_str->data); 
-    if (!port || port > 0xFFFF) {
-        ret->valid = 0;
+    port_str = String_suffix(str, c - str->data + 1);
+    ret->port = atoi(port_str->data); 
+    Object__refcount_dec(port_str);
+    if (!ret->port || ret->port > 0xFFFF) {
         return ret;
     }
 
-    ret->port = port;
     ret->ip = ntohl(in.s_addr);
     ret->valid = 1;
-
-
     return ret;
 }
 

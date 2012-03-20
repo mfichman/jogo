@@ -111,6 +111,7 @@ void TreePrinter::operator()(Module* feature) {
 }
 
 void TreePrinter::operator()(Class* feature) {
+
     indent_level_++; 
     out_ << "Class\n";
     print_tabs(); out_ << "name: " << feature->name() << "\n";

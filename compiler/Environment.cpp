@@ -62,7 +62,9 @@ Environment::Environment() :
     include(".");
     lib("apollo");
 #ifdef WINDOWS
-    lib("kernel32");
+    lib("ws2_32");
+    lib("mswsock");
+    lib("wsock32");
 #endif
 }
 
