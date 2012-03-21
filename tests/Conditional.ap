@@ -1,14 +1,12 @@
 
-import Boot
-
 conditional1() Int {
     a = true
     if a {
-        boot_print_str("one\n")
+        Boot::print_str("one\n")
     } else {
-        boot_print_str("X\n")
+        Boot::print_str("X\n")
     }
-    boot_print_str("two\n")
+    Boot::print_str("two\n")
     ret 0
 }
 
@@ -16,13 +14,13 @@ conditional2() Int {
     a = true
     b = false
     if a {
-        boot_print_str("three\n")
+        Boot::print_str("three\n")
     } else if b {
-        boot_print_str("X\n")
+        Boot::print_str("X\n")
     } else {
-        boot_print_str("X\n")
+        Boot::print_str("X\n")
     }
-    boot_print_str("four\n")
+    Boot::print_str("four\n")
     ret 0
 }
 
@@ -30,18 +28,18 @@ conditional3() Int {
     a = true
     b = false
     if b {
-        boot_print_str("X\n")
+        Boot::print_str("X\n")
     } else {
         if b {
-            boot_print_str("X\n")
+            Boot::print_str("X\n")
         } else if a {
-            boot_print_str("five\n")
+            Boot::print_str("five\n")
         } else {
-            boot_print_str("X\n")
+            Boot::print_str("X\n")
         }
-        boot_print_str("six\n")
+        Boot::print_str("six\n")
     }
-    boot_print_str("seven\n")
+    Boot::print_str("seven\n")
     ret 0
 }
 

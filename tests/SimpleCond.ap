@@ -1,4 +1,3 @@
-import Boot
 
 main() Int {
     a = true
@@ -6,15 +5,15 @@ main() Int {
     
     # Test true/false branching with no nesting
     if a {
-        boot_print_str("true\n")
+        Boot::print_str("true\n")
     } else {
-        boot_print_str("false\n")
+        Boot::print_str("false\n")
     }
 
     if b {
-        boot_print_str("true\n")
+        Boot::print_str("true\n")
     } else {
-        boot_print_str("false\n")
+        Boot::print_str("false\n")
     }
 
     ret 0

@@ -1,4 +1,3 @@
-import Boot
 
 test_enq_deq1() {
     queue = Queue[String](0)

@@ -1,5 +1,5 @@
 
-import Boot, Coroutine
+import Coroutine
 
 countdown(num Int) {
     if num != 0 {
@@ -14,9 +14,9 @@ main() Int {
     
         nested = Coroutine() func() {
             countdown(40960) # Check to make sure the stack grows
-            boot_print_str('hello ')
+            Boot::print_str('hello ')
             yield
-            boot_print_str('world\n')
+            Boot::print_str('world\n')
         }
         nested()
         nested()
@@ -26,8 +26,8 @@ main() Int {
         while true {
             str = String()
             i = i + 1
-            boot_print_int(i)
-            boot_print_str('\n')
+            Boot::print_int(i)
+            Boot::print_str('\n')
             yield
         }
        

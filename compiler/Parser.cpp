@@ -122,6 +122,10 @@ void Parser::file(const std::string& prefix, const std::string& file) {
     }
     is_input_file_ = false;
 
+    if (env_->verbose()) {
+        std::cout << "Parsing " << actual_file << std::endl;
+    }
+
     // Begin parsing
     lexer_->input(file_);
     error_ = 0;

@@ -644,7 +644,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // If this is main(), then emit the code to load constants.
     String::Ptr name = feature->name();
     Feature::Ptr parent = feature->parent();
-    if (name->string() == "main" && parent->name()->string() == "") {
+    if (name->string() == "main" && parent->name()->string() == "Boot") {
         constants();
     }
 

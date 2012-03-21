@@ -62,7 +62,14 @@ void Lexer::input(File* file) {
     location_.last_line = 0;
     location_.last_column = 0;
     input_.close();
-    input_.open(file->path()->string().c_str());
+	input_.clear();
+    input_.open(file->path()->string().c_str(), std::ios::in);
+	if (!input_) {
+		err_ << "Could not open " << file->path()->string() << "\n";
+		env_->error();
+		return;
+	}
+
     line_ = 1;
     column_ = -1;
     char_ = 0;

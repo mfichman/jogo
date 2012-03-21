@@ -1,24 +1,22 @@
 
-import Boot
-
 Ctor1 < Object {
 
     @init() {
-        boot_print_str("1\n")
+        Boot::print_str("1\n")
     }
 
     @destroy() {
-        boot_print_str("4\n")
+        Boot::print_str("4\n")
     }
 }
 
 Ctor2 < Object {
     @init(int Int) {
-        boot_print_int(int)
-        boot_print_str("\n")
+        Boot::print_int(int)
+        Boot::print_str("\n")
     }
     @destroy() {
-        boot_print_str("3\n")
+        Boot::print_str("3\n")
     }
 }
 

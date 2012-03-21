@@ -36,7 +36,5 @@ main() Int {
     server()
     client()
 
-    Io::manager().run()
-    Io::manager().shutdown()
     ret 0
 }

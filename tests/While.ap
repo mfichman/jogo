@@ -1,12 +1,11 @@
 
-import Boot
 
 main() Int {
     i = 10
 
     while i != 0 {
-        boot_print_int(i)
-        boot_print_str("\n")
+        Boot::print_int(i)
+        Boot::print_str("\n")
         i = i - 1
     }
     ret 0

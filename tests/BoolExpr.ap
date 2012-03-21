@@ -1,43 +1,41 @@
-import Boot
-
 boolexpr1() {
     a = true
     b = false
 
     if a and a {
-        boot_print_str("1\n")
+        Boot::print_str("1\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if a and b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("2\n")
+        Boot::print_str("2\n")
     }
     
     if a or b {
-        boot_print_str("3\n")
+        Boot::print_str("3\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if a or a {
-        boot_print_str("4\n")
+        Boot::print_str("4\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if b or a {
-        boot_print_str("5\n")
+        Boot::print_str("5\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if b or b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("6\n")
+        Boot::print_str("6\n")
     }
 }
 
@@ -46,38 +44,38 @@ boolexpr2() {
     b = false
 
     if (a and a) or b {
-        boot_print_str("7\n")
+        Boot::print_str("7\n")
     }
     if (b and b) or a {
-        boot_print_str("8\n")
+        Boot::print_str("8\n")
     }
     if (a and b) or a {
-        boot_print_str("9\n")
+        Boot::print_str("9\n")
     } 
     if (b and a) or b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
     if (a or a) and b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("10\n")
+        Boot::print_str("10\n")
     }
     if (a or b) and a {
-        boot_print_str("11\n")
+        Boot::print_str("11\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
     if (b or b) and a {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
     if b or b or a {
-        boot_print_str("12\n")
+        Boot::print_str("12\n")
     }
     if a and b or a {
-        boot_print_str("13\n")
+        Boot::print_str("13\n")
     }
     if (a and b) or a and (b or a) {
-        boot_print_str("14\n")
+        Boot::print_str("14\n")
     }
 }
 
@@ -86,13 +84,13 @@ boolexpr3() {
     b = false
 
     if (a and b) or b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else if a or b {
-        boot_print_str("15\n")
+        Boot::print_str("15\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
-    boot_print_str("16\n")
+    Boot::print_str("16\n")
 }
 
 boolexpr4() {
@@ -101,24 +99,24 @@ boolexpr4() {
     c = 2
 
     if a == b {
-        boot_print_str("17\n")
+        Boot::print_str("17\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
     if a != b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("18\n")
+        Boot::print_str("18\n")
     }
     if a == c {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("19\n")
+        Boot::print_str("19\n")
     }
     if a != c {
-        boot_print_str("20\n")
+        Boot::print_str("20\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 }
 
@@ -129,62 +127,62 @@ boolexpr5() {
     d = false
 
     if a < b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("21\n")
+        Boot::print_str("21\n")
     }
     if a < c {
-        boot_print_str("22\n")
+        Boot::print_str("22\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if c or a < b {
-        boot_print_str("23\n")
+        Boot::print_str("23\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if d or a < b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("24\n")
+        Boot::print_str("24\n")
     }
 
     if c or a < c {
-        boot_print_str("25\n")
+        Boot::print_str("25\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
    
     if d or a < c {
-        boot_print_str("26\n")
+        Boot::print_str("26\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
     
     if c and a < b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("27\n")
+        Boot::print_str("27\n")
     }
 
     if d and a < b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("28\n")
+        Boot::print_str("28\n")
     }
 
     if c and a < c {
-        boot_print_str("29\n")
+        Boot::print_str("29\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if d and a < c {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("30\n")
+        Boot::print_str("30\n")
     }
 }
 
@@ -194,36 +192,36 @@ boolexpr6() {
     c = 2
 
     if a <= b {
-        boot_print_str("31\n")
+        Boot::print_str("31\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
     if c <= a {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("32\n")
+        Boot::print_str("32\n")
     }
 
     if a > b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("33\n")
+        Boot::print_str("33\n")
     }
     if c > b {
-        boot_print_str("34\n")
+        Boot::print_str("34\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
     
     if a >= b {
-        boot_print_str("35\n")
+        Boot::print_str("35\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
     if b >= c {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("36\n")
+        Boot::print_str("36\n")
     }
     
 }
@@ -233,84 +231,84 @@ boolexpr7() {
     b = 0
 
     if not 1 {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("37\n")
+        Boot::print_str("37\n")
     }
 
     if not (a and b) {
-        boot_print_str("38\n")
+        Boot::print_str("38\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if not (a and not b) {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("39\n")
+        Boot::print_str("39\n")
     }
     if a and not b {
-        boot_print_str("40\n")
+        Boot::print_str("40\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if not not a {
-        boot_print_str("41\n")
+        Boot::print_str("41\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if not (not a and not b) {
-        boot_print_str("42\n")
+        Boot::print_str("42\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if not a and not b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("43\n")
+        Boot::print_str("43\n")
     }
 
     if not a or b {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("44\n")
+        Boot::print_str("44\n")
     }
 
     if not a or not b {
-        boot_print_str("45\n")
+        Boot::print_str("45\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 
     if not (not a or not b) {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("46\n")
+        Boot::print_str("46\n")
     }
 
     if not ((not a or b) and (a and not b)) {
-        boot_print_str("47\n")
+        Boot::print_str("47\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
 }
 
 boolexpr8() {
     result = 1 < 2
     if result {
-        boot_print_str("48\n")
+        Boot::print_str("48\n")
     } else {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     }
    
     result = 1 < 2 and false
     if result {
-        boot_print_str("fail\n")
+        Boot::print_str("fail\n")
     } else {
-        boot_print_str("49\n")
+        Boot::print_str("49\n")
     }
 
     test(1 > 2)
@@ -320,9 +318,9 @@ boolexpr8() {
 test(value Bool) {
 
     if (value) {
-        boot_print_str("true\n")
+        Boot::print_str("true\n")
     } else {
-        boot_print_str("false\n")
+        Boot::print_str("false\n")
     }
 }
 

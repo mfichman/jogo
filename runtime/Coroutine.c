@@ -88,7 +88,12 @@ void Coroutine__destroy(Coroutine self) {
 	Exception__current = 1;
 
     if (self->status == CoroutineStatus_SUSPENDED) {
+		// Temporarily re-increment the refcount so that there's no double 
+		// free; otherwise, the reference counting in resume() would cause
+		// the coroutine to be destroyed twice.
+		self->_refcount++;
 	    Coroutine__call(self);
+		self->_refcount--;
     }
 	
 	// Free the stack, and the pointer to the closure object so that no memory
@@ -112,15 +117,19 @@ void Coroutine_resume(Coroutine self) {
     if (self->status == CoroutineStatus_DEAD) { return; }
     if (self->status == CoroutineStatus_RUNNING) { return; }
 
+    // Note: The coroutine's refcount gets incremented by one while the 
+    // coroutine is running, so that the coroutine won't get freed while its
+    // stack is active.
     self->status = CoroutineStatus_RUNNING;
+    Object__refcount_inc((Object)self);
     self->caller = Coroutine__current;
     Coroutine__swap(Coroutine__current, self);
     self->caller = 0; 
+    Object__refcount_dec((Object)self);
 }
 
 void Coroutine__exit() {
-    // Yields the the current coroutine to the coroutine's caller.  This is a
-    // no-op if the coroutine is the main coroutine.
+    // Yields the the current coroutine to the coroutine's caller.
     if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_DEAD;
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
@@ -162,8 +171,24 @@ void Coroutine__iowait() {
     Coroutine__current->status = CoroutineStatus_SUSPENDED;
     Object__refcount_inc((Object)Coroutine__current);
     Io_manager()->waiting++;
-    Coroutine__swap(Coroutine__current, &Coroutine__main);
+    //Coroutine__swap(Coroutine__current, &Coroutine__main);
+    Coroutine__yield();
     Io_manager()->waiting--;
     Object__refcount_dec((Object)Coroutine__current); 
 }
+
+void Coroutine__ioresume(Coroutine self) {
+    // Resume the coroutine, but preserve the caller.
+    if (!self) { return; }
+    if (self->status == CoroutineStatus_DEAD) { return; }
+    if (self->status == CoroutineStatus_RUNNING) { return; }
+
+    // Note: The coroutine's refcount gets incremented by one while the 
+    // coroutine is running, so that the coroutine won't get freed while its
+    // stack is active.
+    self->status = CoroutineStatus_RUNNING;
+    Object__refcount_inc((Object)self);
+    Coroutine__swap(Coroutine__current, self);
+    Object__refcount_dec((Object)self);
+}   
 

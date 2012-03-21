@@ -111,7 +111,7 @@ void Io_Manager_poll(Io_Manager self) {
 
 #if defined(WINDOWS)
     GetQueuedCompletionStatus(handle, &bytes, &udata, evt, INFINITE);
-    Coroutine_resume(op->coroutine);
+    Coroutine__ioresume(op->coroutine);
 #elif defined(DARWIN)
     struct kevent event;
     int res = kevent(self->handle, 0, 0, &event, 1, NULL);
@@ -122,7 +122,7 @@ void Io_Manager_poll(Io_Manager self) {
     } else if (res == 0) {
         return;
     }
-    Coroutine_resume((Coroutine)event.udata);
+    Coroutine__ioresume((Coroutine)event.udata);
 #else
 #endif
 }

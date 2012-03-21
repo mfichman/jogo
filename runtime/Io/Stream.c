@@ -57,7 +57,7 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
     ret->read_buf = Io_Buffer__init(1024);
     ret->write_buf = Io_Buffer__init(1024);
     ret->status = Io_StreamStatus_OK;
-    ret->mode = Io_StreamMode_BLOCKING;
+    ret->mode = Io_StreamMode_ASYNC;
     ret->type = type;
 
 #ifdef WINDOWS 

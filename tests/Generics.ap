@@ -1,7 +1,4 @@
 
-import Boot
-
-
 Container[:a] < Object {
     value :a
 
@@ -19,16 +16,16 @@ main() Int {
 
     value = "hello world\n"
     container = Container[String](value)
-    boot_print_str(container.value)
+    Boot::print_str(container.value)
     container.value = "goodbye world\n"
-    boot_print_str(container.value)
+    Boot::print_str(container.value)
 
     obj = Container2[String, Container[String]]()
     obj.value1 = "hello world\n"
     obj.value2 = container
 
-    boot_print_str(obj.value1)
-    boot_print_str(obj.value2.value)
+    Boot::print_str(obj.value1)
+    Boot::print_str(obj.value2.value)
     
     ret 0
 }

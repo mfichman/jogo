@@ -1,6 +1,4 @@
 
-import Boot
-
 main() Int {
 #    coro1 = Coroutine() func() {
 #        stdin = Io::stdin()
@@ -16,7 +14,6 @@ main() Int {
     coro1 = Coroutine() func() {
         stdout.println("coro1")
         if file = File::open('FileTest.txt', 'r') {
-            file.mode = Io::StreamMode::ASYNC
             line1 = file.scanln()
             stdout.println(line1)
             line2 = file.scanln()
@@ -27,7 +24,7 @@ main() Int {
     coro2 = Coroutine() func() {
         stdout.println("coro2")
         if file = File::open('FileTest.txt', 'r') {
-            #file.mode = Io::StreamMode::ASYNC
+            file.mode = Io::StreamMode::BLOCKING
             hello = file.scanln()
             stdout.println(hello)
         } else {
@@ -38,7 +35,5 @@ main() Int {
     coro1()
     coro2()
 
-    Io::manager().run()
-    Io::manager().shutdown()
     ret 0
 }

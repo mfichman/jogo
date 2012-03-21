@@ -33,7 +33,6 @@ Type::Type(Location loc, String* qn, Generic* gen, Environment* env) :
     qualified_name_(qn),
     is_no_type_(false) {
 
-    
     if (qn->string()[0] != ':') {
        // Compute the scope and name of the type by splitting on the '::' token.
        size_t scope_end = qn->string().find_last_of(':');

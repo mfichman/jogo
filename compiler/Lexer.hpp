@@ -104,7 +104,7 @@ private:
 
     Environment::Ptr env_;
     Stream::Ptr err_;
-    std::fstream input_;
+    std::ifstream input_;
     Token token_[LEXER_LOOKAHEAD];
     Location location_;
     int front_;
