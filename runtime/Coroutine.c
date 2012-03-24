@@ -133,7 +133,7 @@ void Coroutine__exit() {
     if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_DEAD;
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
-    } else if(Coroutine__current) {
+    } else if (Coroutine__current) {
         Coroutine__current->status = CoroutineStatus_DEAD;
         Coroutine__swap(Coroutine__current, &Coroutine__main);
         // If there is no caller, then yield to the main coroutine.
@@ -146,7 +146,10 @@ void Coroutine__yield() {
     if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_SUSPENDED;
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
-    }
+    } else if (Coroutine__current) {
+		Coroutine__current->status = CoroutineStatus_SUSPENDED;
+		Coroutine__swap(Coroutine__current, &Coroutine__main);
+	}
 }
 
 Ptr Coroutine__grow_stack() {

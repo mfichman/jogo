@@ -367,6 +367,10 @@ String Io_Stream_scan(Io_Stream self, String delim) {
             free(ret);
             ret = exp;
         }
+        if (next == -1) {
+            ret->data[ret->length] = '\0';
+            return ret;
+        }
         for (c = delim->data; *c; ++c) {
             if (*c == next) {
                 ret->data[ret->length] = '\0';
