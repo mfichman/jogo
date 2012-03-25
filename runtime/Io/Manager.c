@@ -110,6 +110,8 @@ void Io_Manager_poll(Io_Manager self) {
     }
 
 #if defined(WINDOWS)
+    SetLastError(ERROR_SUCCESS);
+    self->iobytes = 0;
     if (!GetQueuedCompletionStatus(handle, &bytes, &udata, evt, INFINITE)) {
         if (ERROR_HANDLE_EOF != GetLastError()) {
             fprintf(stderr, "GetQueuedCompletionStatus() failed\n");
@@ -118,6 +120,7 @@ void Io_Manager_poll(Io_Manager self) {
             abort();
         }
     }
+    self->iobytes = bytes;
     Coroutine__ioresume(op->coroutine);
 #elif defined(DARWIN)
     struct kevent event;

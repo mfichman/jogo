@@ -67,15 +67,10 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
     // operation is complete. 
     if (ret->type != Io_StreamType_CONSOLE) {
         CreateIoCompletionPort((HANDLE)ret->handle, iocp, 0, 0);
-        ret->op.overlapped.hEvent = CreateEvent(NULL, TRUE, 0, NULL);
+        ret->op.overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
         // A manual reset event is used because ReadFile and WriteFile set 
         // the event to the nonsignalled state automatically
     }
-    
-    // FixMe: The IoManager needs to expect that the completion key is a
-    // string.  Probably need to add an Io::Event interface with a callback
-    // func that can be dynamically invoked.  In this case, it would call the
-    // current coroutine.
 #endif
     return ret;
 }
@@ -116,7 +111,7 @@ void Io_Stream_register_console(Io_Stream self) {
 #endif
 }   
 
-Int Io_Stream_result(Io_Stream self) {
+Int Io_Stream_result(Io_Stream self, Int bytes) {
     // Gets the result of an asycnchronous I/O operation, and returns the
     // number of bytes read/written.  Yields the current coroutine to the event
     // loop while waiting for an event to complete.  The coroutine should
@@ -127,18 +122,21 @@ Int Io_Stream_result(Io_Stream self) {
     // outstanding. 
 #if defined(WINDOWS)
     HANDLE handle = (HANDLE)self->handle;
-    DWORD bytes = 0;
+	Bool is_console = (Io_StreamType_CONSOLE == self->type);
+	Bool has_io = (Io_StreamMode_ASYNC == self->mode) && !is_console;
 
-    while (ERROR_IO_PENDING == GetLastError()) {
+    while (ERROR_IO_PENDING == GetLastError() || has_io) {
         // Yield to the event manager if async mode is enabled; otherwise,
         // block the entire process.
-        if (Io_StreamMode_BLOCKING == self->mode) {
+        if (Io_StreamMode_BLOCKING == self->mode) {	
+			DWORD count = 0;
             SetLastError(ERROR_SUCCESS);
-            GetOverlappedResult(handle, &self->op.overlapped, &bytes, 1);
+            GetOverlappedResult(handle, &self->op.overlapped, &count, 1);
+			bytes = count;
         } else {
             Coroutine__iowait();
-            SetLastError(ERROR_SUCCESS);
-            GetOverlappedResult(handle, &self->op.overlapped, &bytes, 0);
+            bytes = Io_Manager_iobytes__g(Io_manager());
+			has_io = 0;
         }
     }
     if (ERROR_HANDLE_EOF == GetLastError()) {
@@ -181,9 +179,9 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     }
 
     self->op.coroutine = Coroutine__current;
-    if (!ReadFile(handle, buf, len, &read, &self->op.overlapped)) {
-        read = Io_Stream_result(self);
-    }
+    SetLastError(ERROR_SUCCESS);
+    ReadFile(handle, buf, len, &read, &self->op.overlapped);
+	read = Io_Stream_result(self, read);
     self->op.overlapped.Offset += read;
     buffer->end += read;
 #else
@@ -238,9 +236,9 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
     }
 
     self->op.coroutine = Coroutine__current;
-    if (!WriteFile(handle, buf, len, &written, &self->op.overlapped)) {
-        written = Io_Stream_result(self);
-    }
+    SetLastError(ERROR_SUCCESS);
+    WriteFile(handle, buf, len, &written, &self->op.overlapped);
+    written = Io_Stream_result(self, written);
     self->op.overlapped.Offset += written; 
     buffer->begin += written;
 #else
@@ -283,6 +281,7 @@ Int Io_Stream_get(Io_Stream self) {
         buf->end = 0;
         Io_Stream_read(self, buf);
     }
+
     if (buf->begin >= buf->end) {
         // EOF
         return -1;

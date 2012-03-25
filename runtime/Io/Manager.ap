@@ -42,6 +42,9 @@ Manager < Object {
     # Number of coroutines waiting on I/O.  FixMe: Make this a set of waiting
     # coroutines rather than a single int.
 
+    iobytes immutable Int
+    # Number of bytes read by the last I/O operation, if available.
+
     @init() native private {
         # Initializes a new manager.  Most applications need only one I/O
         # manager, which can be accessed via the Event::manager() constant.

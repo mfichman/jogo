@@ -132,7 +132,7 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
             // completion port, and then get the result.
             Coroutine__iowait();
             SetLastError(ERROR_SUCCESS);
-            GetOverlappedResult((HANDLE)sd, evt, &bytes, 1);
+            //GetOverlappedResult((HANDLE)sd, evt, &bytes, 1);
         } 
         if (ERROR_SUCCESS != GetLastError()) {
            fprintf(stderr, "%d\n", GetLastError());
