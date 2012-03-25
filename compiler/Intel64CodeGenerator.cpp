@@ -60,8 +60,8 @@ void Intel64CodeGenerator::operator()(File* file) {
     }
 
     out_ << "section .text\n";
-    out_ << "extern "; label("calloc"); out_ << "\n";
-    out_ << "extern "; label("free"); out_ << "\n";
+    out_ << "extern "; label("Boot_calloc"); out_ << "\n";
+    out_ << "extern "; label("Boot_free"); out_ << "\n";
     out_ << "extern "; label("Object__dispatch"); out_ << "\n";
     out_ << "extern "; label("Object__refcount_dec"); out_ << "\n";
     out_ << "extern "; label("Object__refcount_inc"); out_ << "\n";

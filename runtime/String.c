@@ -21,6 +21,7 @@
  */
 
 #include "String.h"
+#include "Boot\Module.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -34,7 +35,23 @@ Char String__index(String self, Int index) {
     } else {
         return index < self->length ? self->data[index] : '\0';
     }
+}
 
+String String_expand(String self, Int length) {
+    // Creates a copy of 'self', expending the underlying buffer to the maximum
+    // of 'length' and 'self->length'.
+    Int len = sizeof(struct String) + max(length, self->length) + 1;
+    String ret = Boot_malloc(len);
+    Char* c = ret->data;
+    Int i = 0;
+    ret->_vtable = String__vtable;
+    ret->_refcount = 1;
+    ret->length = self->length;
+    for (i = 0; i < self->length; ++i) {
+        *c++ = self->data[i];
+    }
+    ret->data[ret->length] = '\0';
+    return ret;
 }
 
 String String__add(String self, String string) {
@@ -49,12 +66,7 @@ String String__add(String self, String string) {
     Char* c = 0;
     Int i = 0;
 
-    String ret = malloc(sizeof(struct String) + length + 1); 
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
+    String ret = Boot_malloc(sizeof(struct String) + length + 1); 
     ret->_vtable = self->_vtable;
     ret->_refcount = 1;
     ret->length = length;
@@ -86,12 +98,7 @@ String String_slice(String self, Int begin, Int end) {
     if (begin < 0) { begin = 0; }
 
     length = end - begin;
-    ret = malloc(sizeof(struct String) + length + 1);
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
+    ret = Boot_malloc(sizeof(struct String) + length + 1);
     ret->_vtable = self->_vtable;
     ret->_refcount = 1;
     ret->length = length; 
@@ -133,7 +140,7 @@ String String_uppercase__g(String self) {
     Char *c = 0;
     Int i = 0;
 
-    String ret = malloc(sizeof(struct String) + self->length + 1);
+    String ret = Boot_malloc(sizeof(struct String) + self->length + 1);
     ret->length = self->length;
 
     c = ret->data;
@@ -150,7 +157,7 @@ String String_lowercase__g(String self) {
     Char* c = 0;
     Int i = 0;
 
-    String ret = malloc(sizeof(struct String) + self->length + 1);
+    String ret = Boot_malloc(sizeof(struct String) + self->length + 1);
     ret->length = self->length;
 
     c = ret->data;

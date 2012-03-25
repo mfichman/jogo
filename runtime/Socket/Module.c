@@ -22,6 +22,7 @@
 
 
 #include "Socket/Module.h"
+#include "Boot/Module.h"
 #include "String.h"
 
 #include <stdio.h>
@@ -42,18 +43,13 @@
 
 Socket_Addr Socket_Addr__init(String str) {
     // Initialies a new socket address (IP address, port port ID pair).
-    Socket_Addr ret = calloc(sizeof(struct Socket_Addr), 1);
+    Socket_Addr ret = Boot_calloc(sizeof(struct Socket_Addr));
     Char* c = 0;
     String host_str = 0;
     String port_str = 0;
     struct in_addr in; 
     memset(&in, 0, sizeof(in));
 
-    if (!ret) {
-        fprintf(stderr, "Out of memory\n");
-        fflush(stderr);
-        abort();
-    }
     ret->_vtable = Socket_Addr__vtable;
     ret->_refcount = 1;
     ret->host = 0;

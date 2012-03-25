@@ -20,35 +20,14 @@
  * IN THE SOFTWARE.
  */
 
-#include "Io/Buffer.h"
-#include "Boot/Module.h"
-#include <stdlib.h>
-#include <stdio.h>
+#ifndef APOLLO_BOOT_H
+#define APOLLO_BOOT_H
 
+#include "Primitives.h"
 
-Io_Buffer Io_Buffer__init(Int capacity) {
-    Io_Buffer ret = Boot_calloc(sizeof(struct Io_Buffer) + capacity);
-    ret->_vtable = Io_Buffer__vtable;
-    ret->_refcount = 1;
-    ret->capacity = capacity;
-    ret->begin = 0;
-    ret->end = 0;
-    return ret; 
-}
+Ptr Boot_malloc(Int size);
+Ptr Boot_calloc(Int size);
+void Boot_free(Ptr memory);
+void Boot_abort();
 
-Byte Io_Buffer__index(Io_Buffer self, Int index) {
-    if (index < self->begin || index >= self->end) {
-        return 0;
-    } else {
-        return self->data[self->begin+index];
-    }
-}
-
-void Io_Buffer__insert(Io_Buffer self, Int index, Byte byte) {
-    if (index < self->begin || index >= self->end) {
-        return;
-    } else {
-        self->data[index] = byte;
-    }
-}
-
+#endif

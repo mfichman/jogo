@@ -21,6 +21,7 @@
  */
 
 #include "Queue.h"
+#include "Boot\Module.h"
 #include "Object.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -30,24 +31,11 @@
 Queue Queue__init(Int capacity) {
     // Allocate space for the queue struct, then allocate an array for the
     // actual data.
-    Queue ret = calloc(sizeof(struct Queue), 1);
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
+    Queue ret = Boot_calloc(sizeof(struct Queue));
     ret->_vtable = Queue__vtable;
     ret->_refcount = 1;
-    if (capacity <= 0) {
-        capacity = QUEUE_DEFAULT_SIZE;
-    }
-    ret->data = calloc(sizeof(Object), capacity);
-    if (!ret->data) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
-    ret->capacity = capacity;
+    ret->capacity = capacity <= 0 ? QUEUE_DEFAULT_SIZE : capacity;
+    ret->data = Boot_calloc(sizeof(Object)*ret->capacity);
     ret->back = capacity-1; // Points to the next open slot
     ret->front = capacity-1; // Points to the 
     return ret;
@@ -58,8 +46,8 @@ void Queue__destroy(Queue self) {
     for (; i < self->count; ++i) {
         Object__refcount_dec(self->data[i]);
     }
-    free(self->data);
-    free(self);
+    Boot_free(self->data);
+    Boot_free(self);
 }
 
 void Queue_enq(Queue self, Object obj) {
@@ -73,12 +61,7 @@ void Queue_enq(Queue self, Object obj) {
         Int i = 0;
         Object* temp = 0;
         self->capacity *= 2;
-        temp = calloc(sizeof(Object), self->capacity);
-        if (!temp) {
-            fprintf(stderr, "Out of memory");       
-            fflush(stderr);
-            abort();
-        }
+        temp = Boot_calloc(sizeof(Object)*self->capacity);
         
         // Copy data to the new buffer
         for (i = 0; i < self->count; ++i) {
@@ -86,7 +69,7 @@ void Queue_enq(Queue self, Object obj) {
         }
         self->back = self->count-1;
         self->front = self->capacity-1;
-        free(self->data);
+        Boot_free(self->data);
         self->data = temp;
     } 
     self->back = (self->back+1) % self->capacity;

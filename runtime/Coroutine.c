@@ -22,6 +22,7 @@
 
 #include "Coroutine.h"
 #include "Io/Manager.h"
+#include "Boot/Module.h"
 #include "Object.h"
 #include "String.h"
 #include <stdlib.h>
@@ -43,19 +44,8 @@ Coroutine Coroutine__init(Object func) {
     // -15 is for the initial values of RBP + caller regs
     // -1 is for initial arg to @call
     
-    Coroutine ret = calloc(sizeof(struct Coroutine), 1); 
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
-    ret->stack = calloc(sizeof(struct Coroutine_Stack), 1);
-    if (!ret->stack) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
-    
+    Coroutine ret = Boot_calloc(sizeof(struct Coroutine)); 
+    ret->stack = Boot_calloc(sizeof(struct Coroutine_Stack));
     ret->_vtable = Coroutine__vtable;
     ret->_refcount = 1; 
     ret->function = func;
@@ -101,11 +91,11 @@ void Coroutine__destroy(Coroutine self) {
     for (stack = self->stack; stack;) {
         Coroutine_Stack temp = stack;
         stack = stack->next;
-        free(temp);
+        Boot_free(temp);
     }
 
     Object__refcount_dec(self->function);
-    free(self);
+    Boot_free(self);
 
 	Exception__current = save_except;
 }
@@ -160,7 +150,7 @@ Ptr Coroutine__grow_stack() {
     // stack pointer will be allocated.  Note that this doesn't protect against
     // calls to native functions using more stack then they should. 
     if (!Coroutine__stack->next) {
-        Coroutine__stack->next = calloc(sizeof(struct Coroutine_Stack), 1); 
+        Coroutine__stack->next = Boot_calloc(sizeof(struct Coroutine_Stack)); 
         Coroutine__stack->next->next = 0;
     }
     Coroutine__stack = Coroutine__stack->next;

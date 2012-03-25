@@ -113,7 +113,7 @@ void BasicBlockGenerator::operator()(Box* expr) {
     String::Ptr size = env_->integer(stringify(clazz->size()));
     push_arg(1, load(new IntegerLiteral(Location(), one)));
     push_arg(0, load(new IntegerLiteral(Location(), size)));
-    call(env_->name("calloc"), 1);
+    call(env_->name("Boot_calloc"), 1);
 
     return_ = pop_ret();
     object_temp_.push_back(return_);
@@ -1206,7 +1206,7 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
         String::Ptr size = env_->integer(stringify(clazz->size()));
         push_arg(1, load(new IntegerLiteral(Location(), one)));
         push_arg(0, load(new IntegerLiteral(Location(), size)));
-        call(env_->name("calloc"), 2); 
+        call(env_->name("Boot_calloc"), 2); 
  
         // Obtain a pointer to the 'self' object, and store it in the 'self'
         // variable.
@@ -1273,7 +1273,7 @@ void BasicBlockGenerator::dtor_epilog(Function* feature) {
 
     if (class_->is_object()) {
         push_arg(0, variable(env_->name("self"))->operand());
-        call(env_->name("free"), 1);
+        call(env_->name("Boot_free"), 1);
     }
 }
 

@@ -25,6 +25,7 @@
 #include "Coroutine.h"
 #include "String.h"
 #include "Object.h"
+#include "Boot/Module.h"
 #ifndef WINDOWS
 #include <unistd.h>
 #include <errno.h>
@@ -45,12 +46,7 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
 #ifdef WINDOWS
     HANDLE iocp = (HANDLE)Io_manager()->handle; 
 #endif
-    Io_Stream ret = calloc(sizeof(struct Io_Stream), 1);
-    if (!ret) {
-        fprintf(stderr, "Out of memory\n");
-        fflush(stderr);
-        abort();
-    }
+    Io_Stream ret = Boot_calloc(sizeof(struct Io_Stream));
     ret->_vtable = Io_Stream__vtable;
     ret->_refcount = 1;
     ret->handle = desc; 
@@ -192,11 +188,9 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         Int fd = self->handle;
         Int flags = EV_ADD|EV_ONESHOT;
         EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Current__coroutine); 
-        int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
+        Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
-            fprintf(stderr, "kevent: %d\n", errno);
-            fflush(stderr);
-            abort();
+            Boot_abort();
         }
         Coroutine__iowait();
     }
@@ -249,11 +243,9 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
         Int fd = self->handle;
         Int flags = EV_ADD|EV_ONESHOT;
         EV_SET(&ev, fd, EVFILT_WRITE, flags, 0, 0, Current__coroutine); 
-        int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
+        Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
-            fprintf(stderr, "kevent: %d\n", errno);
-            fflush(stderr);
-            abort();
+            Boot_abort();
         }
         Coroutine__iowait();
     }
@@ -329,13 +321,8 @@ String Io_Stream_scan(Io_Stream self, String delim) {
     // Read in characters until one of the characters in 'delim' is found,
     // then return all the characters read so far.
 
-    Int length = 16;
-    String ret = malloc(sizeof(struct String) + length + 1); 
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
+    Int length = 32;
+    String ret = Boot_malloc(sizeof(struct String) + length + 1); 
     ret->_vtable = String__vtable;
     ret->_refcount = 1;
     ret->length = 0;
@@ -346,25 +333,10 @@ String Io_Stream_scan(Io_Stream self, String delim) {
         Char* c = 0;
         // Resize the string if necessary
         if (ret->length >= length) {
-            String exp = 0;
-            Char* c = 0;
-            Int i = 0;
-            length *= 2;
-            exp = malloc(sizeof(struct String) + length + 1);
-            if (!exp) {
-                fprintf(stderr, "Out of memory");
-                fflush(stderr);
-                abort();
-            }
-            exp->_vtable = String__vtable;
-            exp->_refcount = 1;
-            exp->length = ret->length;
-            c = exp->data;
-            for (i = 0; i < ret->length; i++) {
-                *c++ = ret->data[i];
-            } 
-            free(ret);
+            String exp = String_expand(ret, length*2);            
+            Boot_free(ret);
             ret = exp;
+            length = length*2;
         }
         if (next == -1) {
             ret->data[ret->length] = '\0';

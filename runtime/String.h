@@ -34,6 +34,7 @@ struct String {
 
 Char String__index(String self, Int index);
 String String__add(String self, String string);
+String String_expand(String self, Int length);
 String String_slice(String self, Int begin, Int end);
 String String_prefix(String self, Int end);
 String String_suffix(String self, Int begin);

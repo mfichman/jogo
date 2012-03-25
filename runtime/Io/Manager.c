@@ -22,6 +22,7 @@
 
 #include "Io/Manager.h"
 #include "Io/Stream.h"
+#include "Boot/Module.h"
 #include "Coroutine.h"
 #include "String.h"
 #include "Object.h"
@@ -40,21 +41,14 @@
 
 Io_Manager Io_Manager__init() {
     // Initialize an event manager, and allocate an I/O completion port.
-    Io_Manager ret = calloc(sizeof(struct Io_Manager), 1);
+    Io_Manager ret = Boot_calloc(sizeof(struct Io_Manager));
 #ifdef WINDOWS
     WORD version = MAKEWORD(2, 2);
     WSADATA data;
     if (WSAStartup(version, &data) != 0) {
-        fprintf(stderr, "WSAStartup() failed\n");
-        fflush(stderr);
-        abort();
+        Boot_abort();
     }
 #endif
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
     ret->_vtable = Io_Manager__vtable;
     ret->_refcount = 1;
     ret->scheduled = Queue__init(0);
@@ -86,7 +80,7 @@ void Io_Manager_shutdown(Io_Manager self) {
 void Io_Manager__destroy(Io_Manager self) {
     Io_Manager_shutdown(self);
     Queue__destroy(self->scheduled);
-    free(self);
+    Boot_free(self);
 #ifdef WINDOWS
     WSACleanup();
 #endif
