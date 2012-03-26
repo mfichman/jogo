@@ -1,0 +1,12 @@
+
+
+main() Int {
+
+    file = File::open("NotFound.txt", "r")
+    if file.error {
+        Io::println("File not found.")
+    } else {
+        Io::println("File found.")
+    }
+    ret 0
+}
