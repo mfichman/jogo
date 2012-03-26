@@ -39,10 +39,10 @@ Addr < Object {
     # The host's port number; must be 16-bit value.  FIXME: Should be a Port
     # value type.
 
-    valid immutable Bool
-    # Set to false if the address is not valid.
+    error immutable Int
+    # Set if the address is not valid.
 
-    @init(str String) native {
+    @init(str String, port Int) native {
         # Initializes this IP address by parsing 'str'.  If the parsing fails,
         # then the 'valid' attribute will be set to false.
     }
@@ -58,19 +58,19 @@ Addr < Object {
 }
 # FIXME: Addr should be a value type
 
-connect(peer String) Stream {
+connect(peer String, port Int) Stream {
     # Creates a new stream (TCP) socket and attempts to connect to 'peer'.
     # This function will block the current coroutine until the connection is
     # established or the connection fails.
     socket = Stream()
-    socket.peer = Addr(peer)
+    socket.peer = Addr(peer, port)
     ret socket
 }
 
-listen(addr String) Listener {
+listen(addr String, port Int) Listener {
     # Creates a listener (TCP) socket, and binds it to 'addr'.
     socket = Listener()
-    socket.addr = Addr(addr)
+    socket.addr = Addr(addr, port)
     ret socket
 }
 

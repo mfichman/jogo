@@ -10,7 +10,7 @@ main() Int {
 #    } 
     client = Coroutine() func() {
         stdout.println('connecting')
-        sd = Socket::connect('localhost:9999')
+        sd = Socket::connect('localhost', 9999)
 #        sd.stream.print('GET /index.html HTTP/1.1\n')
 #        sd.stream.print('Connection: close\n')
 #        sd.stream.print('\n')
@@ -24,7 +24,7 @@ main() Int {
     }
 
     server = Coroutine() func() {
-        ls = Socket::listen('localhost:9999')
+        ls = Socket::listen('localhost', 9999)
         stdout.println('accepting')
         sd = ls.accept()
         stdout.println('accepted')

@@ -106,14 +106,7 @@ void Io_Manager_poll(Io_Manager self) {
 #if defined(WINDOWS)
     SetLastError(ERROR_SUCCESS);
     self->iobytes = 0;
-    if (!GetQueuedCompletionStatus(handle, &bytes, &udata, evt, INFINITE)) {
-        if (ERROR_HANDLE_EOF != GetLastError()) {
-            fprintf(stderr, "GetQueuedCompletionStatus() failed\n");
-            fprintf(stderr, "%d\n", GetLastError());
-            fflush(stderr);
-            abort();
-        }
-    }
+    GetQueuedCompletionStatus(handle, &bytes, &udata, evt, INFINITE);
     self->iobytes = bytes;
     Coroutine__ioresume(op->coroutine);
 #elif defined(DARWIN)

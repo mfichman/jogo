@@ -1,0 +1,11 @@
+
+main() Int {
+
+    socket = Socket::connect("localhost", 8181)
+    if socket.stream.error {
+        Io::println("Connection refused")
+    } else {
+        Io::println("No error")
+    }
+    ret 0
+}

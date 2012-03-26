@@ -32,10 +32,10 @@ struct Socket_Addr {
     String host;
     Int ip;
     Int port;
-    Bool valid;  
+    Int error; 
 };
 
-Socket_Addr Socket_Addr__init(String str);
+Socket_Addr Socket_Addr__init(String str, Int port);
 String Socket_Addr_host__g(Socket_Addr self);
 Bool Socket_Addr__equals(Socket_Addr self, Socket_Addr other);
 extern void Socket_Addr__vtable();

@@ -41,12 +41,10 @@
 #include <fcntl.h>
 #endif
 
-Socket_Addr Socket_Addr__init(String str) {
-    // Initialies a new socket address (IP address, port port ID pair).
+Socket_Addr Socket_Addr__init(String str, Int port) {
+    // Initialies a new socket address (IP address, port ID pair).
     Socket_Addr ret = Boot_calloc(sizeof(struct Socket_Addr));
     Char* c = 0;
-    String host_str = 0;
-    String port_str = 0;
     struct in_addr in; 
     memset(&in, 0, sizeof(in));
 
@@ -54,30 +52,22 @@ Socket_Addr Socket_Addr__init(String str) {
     ret->_refcount = 1;
     ret->host = 0;
     ret->ip = 0;
-    ret->port = 0;
-    ret->valid = 0;
-
-    // Split the address string on the ':' character.  The substring before the
-    // first ':' is the host name, and the substring after the ':' is the port
-    // number.
-    for (c = str->data; (*c != ':') && (*c != '\0'); ++c) {}
-    if (*c != ':') { 
-        ret->valid = 0;
-        return ret;
-    }
-    host_str = String_prefix(str, c - str->data);
+    ret->port = port;
+    ret->error = 0;
 
     // Attempt to translate the hostname as a dotted quad first.  Then, try to
     // translate the hostname as a DNS name.
-    if (inet_pton(AF_INET, host_str->data, &in) != 1) { 
+    if (inet_pton(AF_INET, str->data, &in) != 1) { 
         struct addrinfo* res = 0;
         struct sockaddr_in* sin = 0;
-        if (getaddrinfo(host_str->data, 0, 0, &res) != 0) {
-            Object__refcount_dec(host_str);
+        if (getaddrinfo(str->data, 0, 0, &res) != 0) {
+#ifdef WINDOWS
+            ret->error = GetLastError();
+#else
+            ret->error = errno;
+#endif
             return ret;
         }
-        Object__refcount_dec(host_str);
-
         for(; res; res = res->ai_next) {
             sin = (struct sockaddr_in*)res->ai_addr;
             if (sin->sin_addr.s_addr) {
@@ -88,15 +78,16 @@ Socket_Addr Socket_Addr__init(String str) {
     }
 
     // Parse the port number, and make sure that it is in range.
-    port_str = String_suffix(str, c - str->data + 1);
-    ret->port = atoi(port_str->data); 
-    Object__refcount_dec(port_str);
-    if (!ret->port || ret->port > 0xFFFF) {
+    if (ret->port > 0xFFFF) {
+#ifdef WINDOWS
+        ret->error = ERROR_INVALID_PARAMETER;
+#else
+        ret->error = EINVAL;
+#endif
         return ret;
     }
 
     ret->ip = ntohl(in.s_addr);
-    ret->valid = 1;
     return ret;
 }
 
