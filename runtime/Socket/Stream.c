@@ -89,19 +89,21 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
 
     // Allocate a socket
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (sd < 0) {
-        fprintf(stderr, "socket() failed\n");
-        fflush(stderr);
-        abort();
-    }
-#ifdef WINDOWS
-    // Get a pointer to the ConnectEx() function.  Sigh.  Windows.
-    WSAIoctl(sd, code, &guid, sizeof(guid), &ConnectEx, len, &bytes, 0, 0);
 
     // Call the Io::Stream constructor.  This will associate the socket with an
     // I/O completion port, which is necessary for the ConnectEx call below.
     self->stream = Io_Stream__init(sd, Io_StreamType_SOCKET);
     Io_Stream_mode__s(self->stream, Io_StreamMode_ASYNC);
+    if (sd < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = GetLastError();     
+        return;
+    }
+#ifdef WINDOWS
+    // Get a pointer to the ConnectEx() function.  Sigh.  Windows.  This 
+    // function never blocks, however, so we don't have to worry about I/O 
+    // completion ports.
+    WSAIoctl(sd, code, &guid, sizeof(guid), &ConnectEx, len, &bytes, 0, 0);
 
     // Initialize the OVERLAPPED structure that contains the user I/O data used
     // to resume the coroutine when ConnectEx completes.
@@ -114,10 +116,10 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = htonl(INADDR_ANY);
     sin.sin_port = 0;
-    if (bind(sd, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
-        fprintf(stderr, "bind() failed\n");
-        fflush(stderr);
-        abort();
+    if (bind(sd, (struct sockaddr*)&sin, sizeof(sin)) != 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = GetLastError();
+        return;
     }
 
     // Now call ConnectEx to begin connecting the socket.  The call will return
@@ -127,42 +129,42 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     sin.sin_addr.s_addr = htonl(addr->ip);
     sin.sin_port = htons(addr->port);
     if (!ConnectEx(sd, (struct sockaddr*)&sin, sizeof(sin), 0, 0, 0, evt)) { 
-        while (ERROR_IO_PENDING == GetLastError()) {
+        if (ERROR_IO_PENDING == GetLastError()) {
             // Wait for the I/O manager to yield after polling the I/O
             // completion port, and then get the result.
             Coroutine__iowait();
-            SetLastError(ERROR_SUCCESS);
-            //GetOverlappedResult((HANDLE)sd, evt, &bytes, 1);
         } 
         if (ERROR_SUCCESS != GetLastError()) {
-           fprintf(stderr, "%d\n", GetLastError());
-           fprintf(stderr, "AcceptEx() failed\n");
-           fflush(stderr);
-           abort();
+            self->stream->status = Io_StreamStatus_ERROR;
+            self->stream->error = GetLastError();
+            return;
         }
     }
 
 #else
-    self->stream = Io_Stream__init(sd, Io_StreamType_SOCKET);
-    Io_Stream_mode__s(self->stream, Io_StreamMode_ASYNC);
-
+    // Set the socket in non-blocking mode, so that the call to connect() below
+    // does not block.
     if (fcntl(sd, F_SETFL, O_NONBLOCK) < 0) {
-        fprintf(stderr, "fcntl() failed\n");
-        fflush(stderr);
-        abort();
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = GetLastError();
+        return;
     }
 
+    // Call connect() asynchronously.  The kqueue or epoll call will indicate
+    // when the connection is complete.
     memset(&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = htonl(addr->ip);
     sin.sin_port = htons(addr->port);
     ret = connect(sd, (struct sockaddr*)&sin, sizeof(sin));
     if (ret < 0 && errno != EINPROGRESS) {
-        fprintf(stderr, "%d\n", WSAGetLastError());
-        fprintf(stderr, "connect() failed\n");
-        fflush(stderr);
-        abort();
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = errno;
+        return;
     }
+
+    // FIXME: Should wait for readable here?
+    
 #endif
 } 
 

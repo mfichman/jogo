@@ -27,6 +27,16 @@
 #include <assert.h>
 #include <ctype.h>
 
+String String_alloc(Int length) {
+    // Allocates a string with buffer size 'length+1', but with length zero.
+    // The string has enough storage allocated to store 'length' characters.
+    String ret = Boot_calloc(sizeof(struct String) + length + 1);
+    ret->_vtable = String__vtable;
+    ret->_refcount = 1;
+    ret->length = 0;
+    return ret;
+}
+
 Char String__index(String self, Int index) {
     // All index operations are checked.  If the index is off the end of the
     // string, then return the NUL character.

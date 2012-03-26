@@ -142,6 +142,7 @@ Int Io_Stream_result(Io_Stream self, Int bytes) {
     } else if (ERROR_SUCCESS != GetLastError()) {
         // Some other error; set the error code.
         self->status = Io_StreamStatus_ERROR;
+        self->error = GetLastError();
         return 0;
     } else {
         return bytes;
@@ -190,7 +191,8 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Current__coroutine); 
         Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
-            Boot_abort();
+            self->error = errno;
+            return;
         }
         Coroutine__iowait();
     }
@@ -201,6 +203,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         self->status = Io_StreamStatus_EOF;
     } else if (ret == -1) {
         self->status = Io_StreamStatus_ERROR;
+        self->error = errno;
     } else {
         buffer->end += ret;
     }
@@ -245,17 +248,17 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
         EV_SET(&ev, fd, EVFILT_WRITE, flags, 0, 0, Current__coroutine); 
         Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
-            Boot_abort();
+            self->error = errno;
+            return;
         }
         Coroutine__iowait();
     }
 #endif
 
     Int ret = write(self->handle, buf, len);
-    if (ret == 0) {
-        return;
-    } else if (ret == -1) {
-        return;
+    if (ret == -1) {
+        self->status = Io_StreamStatus_ERROR;
+        self->errno = error;
     } else {
         buffer->begin += ret;
     }
@@ -322,10 +325,7 @@ String Io_Stream_scan(Io_Stream self, String delim) {
     // then return all the characters read so far.
 
     Int length = 32;
-    String ret = Boot_malloc(sizeof(struct String) + length + 1); 
-    ret->_vtable = String__vtable;
-    ret->_refcount = 1;
-    ret->length = 0;
+    String ret = String_alloc(length);
 
     while (1) {
         // Loop until we find a delimiter somewhere in the input stream

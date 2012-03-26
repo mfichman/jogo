@@ -38,6 +38,7 @@ struct Io_Stream {
     Int status;
     Int mode;
     Int type;
+    Int error;
 #ifdef WINDOWS
     Io_Overlapped op;
 #endif

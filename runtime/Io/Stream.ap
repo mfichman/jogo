@@ -61,7 +61,10 @@ Stream < Object {
     # stream.
 
     type immutable StreamType
-    # True if the stream is a console handle    
+    # True if the stream is a console handle.    
+
+    error immutable Int
+    # The last error raised by this stream.
 
     @init(desc Int, type StreamType) native {
         # Initializes a new stream, with 'handle' being an opaque pointer to

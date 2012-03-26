@@ -13,23 +13,27 @@ main() Int {
     stdout = Io::stdout()
     coro1 = Coroutine() func() {
         stdout.println("coro1")
-        if file = File::open('FileTest.txt', 'r') {
-            line1 = file.scanln()
-            stdout.println(line1)
-            line2 = file.scanln()
-            stdout.println(line2)
+        file = File::open('FileTest.txt', 'r')
+        if file.error {
+            Io::println(Os::strerror(file.error))
+            ret
         }
+        line1 = file.scanln()
+        stdout.println(line1)
+        line2 = file.scanln()
+        stdout.println(line2)
     }
 
     coro2 = Coroutine() func() {
         stdout.println("coro2")
-        if file = File::open('FileTest.txt', 'r') {
-            file.mode = Io::StreamMode::BLOCKING
-            hello = file.scanln()
-            stdout.println(hello)
-        } else {
-            stdout.print('Could not open file!\n')
+        file = File::open('FileTest.txt', 'r')
+        if file.error {
+            Io::println(Os::strerror(file.error))
+            ret
         }
+        file.mode = Io::StreamMode::BLOCKING
+        hello = file.scanln()
+        stdout.println(hello)
     }
     
     coro1()

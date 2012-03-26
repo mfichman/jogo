@@ -32,6 +32,7 @@ struct String {
     Char data[];
 };
 
+String String_alloc(Int length);
 Char String__index(String self, Int index);
 String String__add(String self, String string);
 String String_expand(String self, Int length);
