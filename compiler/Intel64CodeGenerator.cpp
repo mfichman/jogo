@@ -60,6 +60,7 @@ void Intel64CodeGenerator::operator()(File* file) {
     }
 
     out_ << "section .text\n";
+    out_ << "extern "; label("Boot_abort"); out_ << "\n";
     out_ << "extern "; label("Boot_calloc"); out_ << "\n";
     out_ << "extern "; label("Boot_free"); out_ << "\n";
     out_ << "extern "; label("Object__dispatch"); out_ << "\n";

@@ -571,6 +571,7 @@ void BasicBlockGenerator::operator()(Match* statement) {
 
     for (Statement::Ptr t = statement->cases(); t; t = t->next()) {
         emit(next_block);
+        enter_scope();
 
         Case::Ptr branch = static_cast<Case*>(t.pointer());
         BasicBlock::Ptr true_block = basic_block();
@@ -591,7 +592,10 @@ void BasicBlockGenerator::operator()(Match* statement) {
         for (Statement::Ptr s = branch->children(); s; s = s->next()) {
             s(this);
         } 
-        jump(done_block); 
+        exit_scope();
+        if (!block_->is_terminated()) {
+            jump(done_block); 
+        }
     }
 
     emit(done_block);

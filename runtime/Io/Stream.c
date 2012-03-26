@@ -362,7 +362,6 @@ void Io_Stream_print(Io_Stream self, String str) {
     for (; i < str->length; i++) {
         Io_Stream_put(self, str->data[i]);
     }
-    Io_Stream_flush(self);
 }
 
 void Io_Stream_flush(Io_Stream self) {

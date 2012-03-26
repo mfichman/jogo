@@ -23,5 +23,6 @@ main() Int {
 
     obj TestInterface = TestClass()
     Io::print(obj.test())
+    Io::stdout().flush()
     ret TestClass().hash 
 }

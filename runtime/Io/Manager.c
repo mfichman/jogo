@@ -113,9 +113,7 @@ void Io_Manager_poll(Io_Manager self) {
     struct kevent event;
     int res = kevent(self->handle, 0, 0, &event, 1, NULL);
     if (res < 0) {
-        fprintf(stderr, "%d\n", errno);
-        fflush(stderr);
-        abort();
+        Boot_abort();
     } else if (res == 0) {
         return;
     }

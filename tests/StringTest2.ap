@@ -16,6 +16,7 @@ main() Int {
     stdout.print("#{"hello".starts_with('hello2')}\n")
     stdout.print("#{"hello".ends_with('llo')}\n")
     stdout.print("#{"hello".ends_with('2hello')}\n")
+    stdout.flush()
 
     ret 0
 }
