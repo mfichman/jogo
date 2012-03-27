@@ -29,8 +29,10 @@
 
 #ifdef WINDOWS
 #define FILE_SEPARATOR '\\'
+#define FILE_SEPARATOR_STR "\\"
 #else
 #define FILE_SEPARATOR '/'
+#define FILE_SEPARATOR_STR "/"
 #endif
 
 /* Basic file operations and utilites */

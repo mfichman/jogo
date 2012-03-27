@@ -21,6 +21,8 @@
  */
 
 #include "Coroutine.h"
+#include "Io/Manager.h"
+#include "Boot/Module.h"
 #include "Object.h"
 #include "String.h"
 #include <stdlib.h>
@@ -42,19 +44,8 @@ Coroutine Coroutine__init(Object func) {
     // -15 is for the initial values of RBP + caller regs
     // -1 is for initial arg to @call
     
-    Coroutine ret = calloc(sizeof(struct Coroutine), 1); 
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
-    ret->stack = calloc(sizeof(struct Coroutine_Stack), 1);
-    if (!ret->stack) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
-    
+    Coroutine ret = Boot_calloc(sizeof(struct Coroutine)); 
+    ret->stack = Boot_calloc(sizeof(struct Coroutine_Stack));
     ret->_vtable = Coroutine__vtable;
     ret->_refcount = 1; 
     ret->function = func;
@@ -87,7 +78,12 @@ void Coroutine__destroy(Coroutine self) {
 	Exception__current = 1;
 
     if (self->status == CoroutineStatus_SUSPENDED) {
+		// Temporarily re-increment the refcount so that there's no double 
+		// free; otherwise, the reference counting in resume() would cause
+		// the coroutine to be destroyed twice.
+		self->_refcount++;
 	    Coroutine__call(self);
+		self->_refcount--;
     }
 	
 	// Free the stack, and the pointer to the closure object so that no memory
@@ -95,11 +91,11 @@ void Coroutine__destroy(Coroutine self) {
     for (stack = self->stack; stack;) {
         Coroutine_Stack temp = stack;
         stack = stack->next;
-        free(temp);
+        Boot_free(temp);
     }
 
     Object__refcount_dec(self->function);
-    free(self);
+    Boot_free(self);
 
 	Exception__current = save_except;
 }
@@ -111,19 +107,23 @@ void Coroutine_resume(Coroutine self) {
     if (self->status == CoroutineStatus_DEAD) { return; }
     if (self->status == CoroutineStatus_RUNNING) { return; }
 
+    // Note: The coroutine's refcount gets incremented by one while the 
+    // coroutine is running, so that the coroutine won't get freed while its
+    // stack is active.
     self->status = CoroutineStatus_RUNNING;
+    Object__refcount_inc((Object)self);
     self->caller = Coroutine__current;
     Coroutine__swap(Coroutine__current, self);
     self->caller = 0; 
+    Object__refcount_dec((Object)self);
 }
 
 void Coroutine__exit() {
-    // Yields the the current coroutine to the coroutine's caller.  This is a
-    // no-op if the coroutine is the main coroutine.
+    // Yields the the current coroutine to the coroutine's caller.
     if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_DEAD;
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
-    } else if(Coroutine__current) {
+    } else if (Coroutine__current) {
         Coroutine__current->status = CoroutineStatus_DEAD;
         Coroutine__swap(Coroutine__current, &Coroutine__main);
         // If there is no caller, then yield to the main coroutine.
@@ -136,7 +136,10 @@ void Coroutine__yield() {
     if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_SUSPENDED;
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
-    }
+    } else if (Coroutine__current) {
+		Coroutine__current->status = CoroutineStatus_SUSPENDED;
+		Coroutine__swap(Coroutine__current, &Coroutine__main);
+	}
 }
 
 Ptr Coroutine__grow_stack() {
@@ -147,10 +150,38 @@ Ptr Coroutine__grow_stack() {
     // stack pointer will be allocated.  Note that this doesn't protect against
     // calls to native functions using more stack then they should. 
     if (!Coroutine__stack->next) {
-        Coroutine__stack->next = calloc(sizeof(struct Coroutine_Stack), 1); 
+        Coroutine__stack->next = Boot_calloc(sizeof(struct Coroutine_Stack)); 
         Coroutine__stack->next->next = 0;
     }
     Coroutine__stack = Coroutine__stack->next;
     return Coroutine__stack->data + COROUTINE_STACK_SIZE - 2;
 }
+
+void Coroutine__iowait() {
+    // Causes this coroutine to wait until I/O is available.  Note: calling
+    // this function if no I/O is pending will cause the Coroutine to block
+    // indefinitely. 
+    Coroutine__current->status = CoroutineStatus_SUSPENDED;
+    Object__refcount_inc((Object)Coroutine__current);
+    Io_manager()->waiting++;
+    //Coroutine__swap(Coroutine__current, &Coroutine__main);
+    Coroutine__yield();
+    Io_manager()->waiting--;
+    Object__refcount_dec((Object)Coroutine__current); 
+}
+
+void Coroutine__ioresume(Coroutine self) {
+    // Resume the coroutine, but preserve the caller.
+    if (!self) { return; }
+    if (self->status == CoroutineStatus_DEAD) { return; }
+    if (self->status == CoroutineStatus_RUNNING) { return; }
+
+    // Note: The coroutine's refcount gets incremented by one while the 
+    // coroutine is running, so that the coroutine won't get freed while its
+    // stack is active.
+    self->status = CoroutineStatus_RUNNING;
+    Object__refcount_inc((Object)self);
+    Coroutine__swap(Coroutine__current, self);
+    Object__refcount_dec((Object)self);
+}   
 

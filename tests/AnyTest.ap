@@ -109,7 +109,7 @@ main() Int {
         Io::print("pass\n")
     }
     
-
+    Io::stdout().flush()
     ret 0
 }
 

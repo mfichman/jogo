@@ -23,6 +23,7 @@
 #include "Hash.h"
 #include "String.h"
 #include "Object.h"
+#include "Boot\Module.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -31,21 +32,11 @@
 #define HASH_DEFAULT_CAPACITY 17
 
 Hash Hash__init() {
-    Hash ret = calloc(sizeof(struct Hash), 1);
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
+    Hash ret = Boot_calloc(sizeof(struct Hash));
     ret->_vtable = Hash__vtable;
     ret->_refcount = 1;
     ret->capacity = HASH_DEFAULT_CAPACITY;
-    ret->data = calloc(sizeof(HashBucket), ret->capacity);
-    if (!ret->data) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
+    ret->data = Boot_calloc(sizeof(HashBucket)*ret->capacity);
     ret->count = 0;
     return ret; 
 }
@@ -56,8 +47,8 @@ void Hash__destroy(Hash self) {
         Object__refcount_dec(self->data[i].key);
         Object__refcount_dec(self->data[i].value);
     }
-    free(self->data);
-    free(self);
+    Boot_free(self->data);
+    Boot_free(self);
 }
 
 Object Hash__index(Hash self, Object key) {
@@ -134,7 +125,7 @@ void Hash_rehash(Hash self) {
     old_data = self->data;
     old_capacity = self->capacity;     
     self->capacity *= HASH_GROWTH_FACTOR;
-    self->data = calloc(sizeof(HashBucket), self->capacity);
+    self->data = Boot_calloc(sizeof(HashBucket)*self->capacity);
     self->count = 0;
 
     for (i = 0; i < old_capacity; i++) {
@@ -143,7 +134,7 @@ void Hash_rehash(Hash self) {
         }
     }
 
-    free(old_data);
+    Boot_free(old_data);
 }
 
 Int Hash_hash(Hash self, Object key) {

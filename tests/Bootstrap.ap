@@ -1,8 +1,6 @@
 
-import Boot
-
 main() Int {
-    boot_print_str("hello, world!\n")
-    boot_print_str("boot it!\n")
+    Boot::print_str("hello, world!\n")
+    Boot::print_str("boot it!\n")
     ret 0
 }

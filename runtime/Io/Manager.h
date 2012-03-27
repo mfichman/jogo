@@ -24,7 +24,11 @@
 #define APOLLO_IO_MANAGER_H
 
 #include "Primitives.h"
+#include "Coroutine.h"
 #include "Queue.h"
+#ifdef WINDOWS
+#include <windows.h>
+#endif
 
 typedef struct Io_Manager* Io_Manager;
 struct Io_Manager {
@@ -33,12 +37,21 @@ struct Io_Manager {
     Queue scheduled;
     Int handle;
     Int waiting;
+    Int iobytes;
 };
+
+#ifdef WINDOWS
+typedef struct Io_Overlapped {
+    OVERLAPPED overlapped;
+    Coroutine coroutine;
+} Io_Overlapped;
+#endif
 
 Io_Manager Io_Manager__init();
 void Io_Manager__destroy();
 void Io_Manager_poll(Io_Manager self);
 void Io_Manager_shutdown(Io_Manager self);
+Int Io_manager_iobytes__g(Io_Manager self);
 extern void Io_Manager__vtable();
 
 void Io_wait();

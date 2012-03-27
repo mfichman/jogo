@@ -20,25 +20,14 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_SOCKET_STREAM_H
-#define APOLLO_SOCKET_STREAM_H
+#ifndef APOLLO_BOOT_H
+#define APOLLO_BOOT_H
 
 #include "Primitives.h"
-#include "Io/Stream.h"
-#include "Socket/Module.h"
-#include "Coroutine.h"
 
-typedef struct Socket_Stream* Socket_Stream;
-struct Socket_Stream {
-    Ptr _vtable;
-    U64 _refcount;
-    Io_Stream stream;
-    Socket_Addr addr;
-    Socket_Addr peer;
-};
-
-Socket_Stream Socket_Stream__init();
-void Socket_Stream_close(Socket_Stream self);
-void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr);
+Ptr Boot_malloc(Int size);
+Ptr Boot_calloc(Int size);
+void Boot_free(Ptr memory);
+void Boot_abort();
 
 #endif

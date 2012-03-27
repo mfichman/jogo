@@ -20,18 +20,28 @@
  * IN THE SOFTWARE.
  */
 
+#include "Primitives.h"
 #include "String.h"
 #include "Object.h"
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef WINDOWS
+#include <windows.h>
+#endif
 
-void boot_print_ptr(Object object) {
+extern int main();
+
+void Boot_Main__call(Object self) {
+    main();
+}
+
+void Boot_print_ptr(Object object) {
     // Writes a pointer value to stdout, and then flushes it.
     fprintf(stdout, "%p, vtable: %p", object, object->_vtable);
     fflush(stdout);
 }
 
-void boot_print_str(String string) {
+void Boot_print_str(String string) {
     // Write string to stdout.  This is function is here for convenience's 
     // sake.  Once a full-fledged IO framework has been written, this function
     // will really only be useful for simple output.
@@ -40,7 +50,7 @@ void boot_print_str(String string) {
     fflush(stdout);
 }
 
-void boot_print_int(Int integer) {
+void Boot_print_int(Int integer) {
     // Print an integer to stdout.  This function is here only to run initial
     // tests on the compiler, and isn't part of the public API.
 
@@ -52,7 +62,7 @@ void boot_print_int(Int integer) {
     fflush(stdout);
 }
 
-void boot_print_char(Char character) {
+void Boot_print_char(Char character) {
     // Print a character to stdout.  This function is not part of the public 
     // API for the Apollo library.
 
@@ -60,8 +70,54 @@ void boot_print_char(Char character) {
     fflush(stdout);
 }
 
-void boot_dummy(int a, int b, int c) {
-    boot_print_int(a);
-    boot_print_int(b);
-    boot_print_int(c);
+void Boot_dummy(Int a, Int b, Int c) {
+    Boot_print_int(a);
+    Boot_print_int(b);
+    Boot_print_int(c);
 }
+
+Ptr Boot_malloc(Int size) {
+    // Allocates 'size' bytes of memory, and aborts if the memory couldn't be
+    // allocated.
+    Ptr ret = malloc(size);
+    if (!ret) {
+        fprintf(stderr, "Out of memory\n");
+        fflush(stderr);
+        abort();
+    }
+    return ret;
+}
+
+Ptr Boot_calloc(Int size) {
+    // Allocates 'size' byte of zeroed memory, and aborts if the memory
+    // couldn't be allocated.
+    Ptr ret = calloc(size, 1);
+    if (!ret) {
+        fprintf(stderr, "Out of memory\n");
+        fflush(stderr);
+        abort();
+    }
+    return ret;
+}
+
+void Boot_free(Ptr memory) {
+    // Frees the memory at address 'memory'
+    free(memory);
+}
+
+void Boot_abort() {
+    // Aborts the process after printing the last system error message.
+#ifdef WINDOWS
+    DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM;
+    DWORD id = GetLastError(); 
+    LPTSTR buffer = 0;
+    
+    FormatMessage(flags, 0, id, 0, (LPTSTR)&buffer, 1, 0);
+    fprintf(stderr, "%s\n", buffer);
+#else
+    fprintf(stderr, "%s\n", strerror(errno));
+#endif
+    fflush(stderr);
+    abort();
+}
+

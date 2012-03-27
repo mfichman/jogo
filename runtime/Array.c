@@ -22,6 +22,7 @@
 
 #include "Array.h"
 #include "Object.h"
+#include "Boot/Module.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -29,23 +30,13 @@
 #define ARRAY_DEFAULT_SIZE 16
 
 Array Array__init(Int capacity) {
-    Array ret = calloc(sizeof(struct Array), 1);
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
+    Array ret = Boot_calloc(sizeof(struct Array));
     ret->_vtable = Array__vtable;
     ret->_refcount = 1;
     if (capacity <= 0) {
         capacity = ARRAY_DEFAULT_SIZE;
     }
-    ret->data = calloc(sizeof(Object), capacity);
-    if (!ret->data) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
+    ret->data = Boot_calloc(sizeof(Object)*capacity);
     ret->capacity = capacity;
     ret->count = 0;
     return ret; 
@@ -56,9 +47,8 @@ void Array__destroy(Array self) {
     for (; i < self->count; ++i) {
         Object__refcount_dec(self->data[i]);
     }
-    free(self->data);
-    free(self);
-    
+    Boot_free(self->data);
+    Boot_free(self);
 }
 
 Object Array__index(Array self, Int index) {

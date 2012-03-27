@@ -22,14 +22,15 @@
 
 
 #include "Socket/Module.h"
+#include "Boot/Module.h"
 #include "String.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #ifdef WINDOWS
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -40,58 +41,53 @@
 #include <fcntl.h>
 #endif
 
-Socket_Addr Socket_Addr__init(String str) {
-    // Initialies a new socket address (IP address, port port ID pair).
-    Socket_Addr ret = calloc(sizeof(struct Socket_Addr), 1);
-    if (!ret) {
-        fprintf(stderr, "Out of memory\n");
-        fflush(stderr);
-        abort();
-    }
+Socket_Addr Socket_Addr__init(String str, Int port) {
+    // Initialies a new socket address (IP address, port ID pair).
+    Socket_Addr ret = Boot_calloc(sizeof(struct Socket_Addr));
+    Char* c = 0;
+    struct in_addr in; 
+    memset(&in, 0, sizeof(in));
+
     ret->_vtable = Socket_Addr__vtable;
     ret->_refcount = 1;
     ret->host = 0;
     ret->ip = 0;
-    ret->port = 0;
-    ret->valid = 1;
-
-    // Split the address string on the ':' character.  The substring before the
-    // first ':' is the host name, and the substring after the ':' is the port
-    // number.
-    Char* c = 0;
-    for (c = str->data; (*c != ':') && (*c != '\0'); ++c) {}
-    if (*c != ':') { 
-        ret->valid = 0;
-        return ret;
-    }
-    String host_str = String_prefix(str, c - str->data);
-    String port_str = String_suffix(str, c - str->data + 1);
+    ret->port = port;
+    ret->error = 0;
 
     // Attempt to translate the hostname as a dotted quad first.  Then, try to
     // translate the hostname as a DNS name.
-    struct in_addr in; 
-    if (inet_pton(AF_INET, host_str->data, &in) != 1) { 
+    if (inet_pton(AF_INET, str->data, &in) != 1) { 
         struct addrinfo* res = 0;
-        if (getaddrinfo(host_str->data, 0, 0, &res) != 0) {
-            ret->valid = 0;
+        struct sockaddr_in* sin = 0;
+        if (getaddrinfo(str->data, 0, 0, &res) != 0) {
+#ifdef WINDOWS
+            ret->error = GetLastError();
+#else
+            ret->error = errno;
+#endif
             return ret;
         }
-        struct sockaddr_in* sin = (struct sockaddr_in*)res->ai_addr;
-        in = sin->sin_addr; 
+        for(; res; res = res->ai_next) {
+            sin = (struct sockaddr_in*)res->ai_addr;
+            if (sin->sin_addr.s_addr) {
+                in = sin->sin_addr; 
+            }
+        }
+        freeaddrinfo(res);
     }
 
     // Parse the port number, and make sure that it is in range.
-    Int port = atoi(port_str->data); 
-    if (!port || port > 0xFFFF) {
-        ret->valid = 0;
+    if (ret->port > 0xFFFF) {
+#ifdef WINDOWS
+        ret->error = ERROR_INVALID_PARAMETER;
+#else
+        ret->error = EINVAL;
+#endif
         return ret;
     }
 
-    ret->port = port;
     ret->ip = ntohl(in.s_addr);
-    ret->valid = 1;
-
-
     return ret;
 }
 

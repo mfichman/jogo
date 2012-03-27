@@ -1,11 +1,8 @@
 
-import Boot
-
-
 count_down(n Int) {
     if (n) {
-        boot_print_int(n)
-        boot_print_str("\n")
+        Boot::print_int(n)
+        Boot::print_str("\n")
         count_down(n-1)
     }
 }

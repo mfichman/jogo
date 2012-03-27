@@ -71,7 +71,7 @@ def apollo_test(test):
 def python_test(test):
     # Run a Python test.  Useful for various msicellaneous tests that are not
     # easily expressed in C++.
-    expected = open(test + '.out', 'rb').read()
+    expected = open(test + '.out', 'r').read()
     output = shell('python ' + test + ' 2>&1')
     check(test, expected, output)
 

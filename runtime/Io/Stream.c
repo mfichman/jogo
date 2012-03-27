@@ -25,6 +25,7 @@
 #include "Coroutine.h"
 #include "String.h"
 #include "Object.h"
+#include "Boot/Module.h"
 #ifndef WINDOWS
 #include <unistd.h>
 #include <errno.h>
@@ -45,21 +46,15 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
 #ifdef WINDOWS
     HANDLE iocp = (HANDLE)Io_manager()->handle; 
 #endif
-    Io_Stream ret = calloc(sizeof(struct Io_Stream), 1);
-    if (!ret) {
-        fprintf(stderr, "Out of memory\n");
-        fflush(stderr);
-        abort();
-    }
+    Io_Stream ret = Boot_calloc(sizeof(struct Io_Stream));
     ret->_vtable = Io_Stream__vtable;
     ret->_refcount = 1;
     ret->handle = desc; 
     ret->read_buf = Io_Buffer__init(1024);
     ret->write_buf = Io_Buffer__init(1024);
     ret->status = Io_StreamStatus_OK;
-    ret->mode = Io_StreamMode_BLOCKING;
+    ret->mode = Io_StreamMode_ASYNC;
     ret->type = type;
-    ret->coroutine = 0;
 
 #ifdef WINDOWS 
     // Associate the handle with an IO completion port.  The Io::Manager
@@ -67,26 +62,13 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
     // object with an attached coroutine that will be resumed when an I/O
     // operation is complete. 
     if (ret->type != Io_StreamType_CONSOLE) {
-        CreateIoCompletionPort((HANDLE)ret->handle, iocp, (ULONG_PTR)ret, 0);
-        ret->overlapped.hEvent = CreateEvent(NULL, TRUE, 0, NULL);
+        CreateIoCompletionPort((HANDLE)ret->handle, iocp, 0, 0);
+        ret->op.overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
         // A manual reset event is used because ReadFile and WriteFile set 
         // the event to the nonsignalled state automatically
     }
-    
-    // FixMe: The IoManager needs to expect that the completion key is a
-    // string.  Probably need to add an Io::Event interface with a callback
-    // func that can be dynamically invoked.  In this case, it would call the
-    // current coroutine.
 #endif
-
     return ret;
-}
-
-void Io_Stream_resume(Io_Stream self) {
-    // Resumes the coroutine the previously blocked while waiting for I/O
-    // operations on this stream to complete.
-    assert(self->coroutine);
-    Coroutine__swap(Coroutine__current, self->coroutine);
 }
 
 void Io_Stream_handle_console(Io_Stream self) {
@@ -125,20 +107,7 @@ void Io_Stream_register_console(Io_Stream self) {
 #endif
 }   
 
-void Io_Stream_wait(Io_Stream self) {
-    // Waits for the current I/O operation on the stream to complete by
-    // yielding to the main coroutine. 
-    assert(!self->coroutine);
-    self->coroutine = Coroutine__current;
-    Object__refcount_inc((Object)self->coroutine);
-    Io_manager()->waiting++;
-    Coroutine__swap(Coroutine__current, &Coroutine__main);
-    Io_manager()->waiting--;
-    Object__refcount_dec((Object)self->coroutine);
-    self->coroutine = 0;
-}
-
-Int Io_Stream_result(Io_Stream self) {
+Int Io_Stream_result(Io_Stream self, Int bytes) {
     // Gets the result of an asycnchronous I/O operation, and returns the
     // number of bytes read/written.  Yields the current coroutine to the event
     // loop while waiting for an event to complete.  The coroutine should
@@ -149,18 +118,21 @@ Int Io_Stream_result(Io_Stream self) {
     // outstanding. 
 #if defined(WINDOWS)
     HANDLE handle = (HANDLE)self->handle;
-    DWORD bytes = 0;
+	Bool is_console = (Io_StreamType_CONSOLE == self->type);
+	Bool has_io = (Io_StreamMode_ASYNC == self->mode) && !is_console;
 
-    while (ERROR_IO_PENDING == GetLastError()) {
+    while (ERROR_IO_PENDING == GetLastError() || has_io) {
         // Yield to the event manager if async mode is enabled; otherwise,
         // block the entire process.
-        if (Io_StreamMode_BLOCKING == self->mode) {
+        if (Io_StreamMode_BLOCKING == self->mode) {	
+			DWORD count = 0;
             SetLastError(ERROR_SUCCESS);
-            GetOverlappedResult(handle, &self->overlapped, &bytes, 1);
+            GetOverlappedResult(handle, &self->op.overlapped, &count, 1);
+			bytes = count;
         } else {
-            Io_Stream_wait(self);
-            SetLastError(ERROR_SUCCESS);
-            GetOverlappedResult(handle, &self->overlapped, &bytes, 0);
+            Coroutine__iowait();
+            bytes = Io_Manager_iobytes__g(Io_manager());
+			has_io = 0;
         }
     }
     if (ERROR_HANDLE_EOF == GetLastError()) {
@@ -170,6 +142,7 @@ Int Io_Stream_result(Io_Stream self) {
     } else if (ERROR_SUCCESS != GetLastError()) {
         // Some other error; set the error code.
         self->status = Io_StreamStatus_ERROR;
+        self->error = GetLastError();
         return 0;
     } else {
         return bytes;
@@ -191,26 +164,22 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     Int ret = 0;
 
     // Read from the file, async or syncronously
-//    if (Io_StreamType_CONSOLE == self->type) {
-//        Io_Stream_register_console(self);
-//        Io_Stream_wait(self);
-//    }
-    
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
     if (is_blocking && !is_console) {
         // Set the low-order bit of the event if the handle is in blocking
         // mode.  This prevents a completion port notification from being 
         // queued for the I/O operation.
-        (Int)(self->overlapped.hEvent) |= 0x1;
+        (Int)(self->op.overlapped.hEvent) |= 0x1;
     } else if (!is_console) {
-        (Int)(self->overlapped.hEvent) &= ~0x1;
+        (Int)(self->op.overlapped.hEvent) &= ~0x1;
     }
 
-    if (!ReadFile(handle, buf, len, &read, &self->overlapped)) {
-        read = Io_Stream_result(self);
-    }
-    self->overlapped.Offset += read;
+    self->op.coroutine = Coroutine__current;
+    SetLastError(ERROR_SUCCESS);
+    ReadFile(handle, buf, len, &read, &self->op.overlapped);
+	read = Io_Stream_result(self, read);
+    self->op.overlapped.Offset += read;
     buffer->end += read;
 #else
 #ifdef DARWIN
@@ -219,14 +188,13 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         Int kqfd = Io_manager()->handle;
         Int fd = self->handle;
         Int flags = EV_ADD|EV_ONESHOT;
-        EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, self); 
-        int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
+        EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Current__coroutine); 
+        Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
-            fprintf(stderr, "kevent: %d\n", errno);
-            fflush(stderr);
-            abort();
+            self->error = errno;
+            return;
         }
-        Io_Stream_wait(self);
+        Coroutine__iowait();
     }
 #endif
 
@@ -235,6 +203,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         self->status = Io_StreamStatus_EOF;
     } else if (ret == -1) {
         self->status = Io_StreamStatus_ERROR;
+        self->error = errno;
     } else {
         buffer->end += ret;
     }
@@ -258,15 +227,16 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
         // Set the low-order bit of the event if the handle is in blocking
         // mode.  This prevents a completion port notification from being 
         // queued for the I/O operation.
-        (Int)(self->overlapped.hEvent) |= 0x1;
+        (Int)(self->op.overlapped.hEvent) |= 0x1;
     } else if (!is_console) {
-        (Int)(self->overlapped.hEvent) &= ~0x1;
+        (Int)(self->op.overlapped.hEvent) &= ~0x1;
     }
 
-    if (!WriteFile(handle, buf, len, &written, &self->overlapped)) {
-        written = Io_Stream_result(self);
-    }
-    self->overlapped.Offset += written; 
+    self->op.coroutine = Coroutine__current;
+    SetLastError(ERROR_SUCCESS);
+    WriteFile(handle, buf, len, &written, &self->op.overlapped);
+    written = Io_Stream_result(self, written);
+    self->op.overlapped.Offset += written; 
     buffer->begin += written;
 #else
 #ifdef DARWIN
@@ -275,22 +245,20 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
         Int kqfd = Io_manager()->handle;
         Int fd = self->handle;
         Int flags = EV_ADD|EV_ONESHOT;
-        EV_SET(&ev, fd, EVFILT_WRITE, flags, 0, 0, self); 
-        int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
+        EV_SET(&ev, fd, EVFILT_WRITE, flags, 0, 0, Current__coroutine); 
+        Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
-            fprintf(stderr, "kevent: %d\n", errno);
-            fflush(stderr);
-            abort();
+            self->error = errno;
+            return;
         }
-        Io_Stream_wait(self);
+        Coroutine__iowait();
     }
 #endif
 
     Int ret = write(self->handle, buf, len);
-    if (ret == 0) {
-        return;
-    } else if (ret == -1) {
-        return;
+    if (ret == -1) {
+        self->status = Io_StreamStatus_ERROR;
+        self->errno = error;
     } else {
         buffer->begin += ret;
     }
@@ -308,6 +276,7 @@ Int Io_Stream_get(Io_Stream self) {
         buf->end = 0;
         Io_Stream_read(self, buf);
     }
+
     if (buf->begin >= buf->end) {
         // EOF
         return -1;
@@ -355,16 +324,8 @@ String Io_Stream_scan(Io_Stream self, String delim) {
     // Read in characters until one of the characters in 'delim' is found,
     // then return all the characters read so far.
 
-    Int length = 16;
-    String ret = malloc(sizeof(struct String) + length + 1); 
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
-    ret->_vtable = String__vtable;
-    ret->_refcount = 1;
-    ret->length = 0;
+    Int length = 32;
+    String ret = String_alloc(length);
 
     while (1) {
         // Loop until we find a delimiter somewhere in the input stream
@@ -372,25 +333,14 @@ String Io_Stream_scan(Io_Stream self, String delim) {
         Char* c = 0;
         // Resize the string if necessary
         if (ret->length >= length) {
-            String exp = 0;
-            Char* c = 0;
-            Int i = 0;
-            length *= 2;
-            exp = malloc(sizeof(struct String) + length + 1);
-            if (!exp) {
-                fprintf(stderr, "Out of memory");
-                fflush(stderr);
-                abort();
-            }
-            exp->_vtable = String__vtable;
-            exp->_refcount = 1;
-            exp->length = ret->length;
-            c = exp->data;
-            for (i = 0; i < ret->length; i++) {
-                *c++ = ret->data[i];
-            } 
-            free(ret);
+            String exp = String_expand(ret, length*2);            
+            Boot_free(ret);
             ret = exp;
+            length = length*2;
+        }
+        if (next == -1) {
+            ret->data[ret->length] = '\0';
+            return ret;
         }
         for (c = delim->data; *c; ++c) {
             if (*c == next) {
@@ -412,7 +362,6 @@ void Io_Stream_print(Io_Stream self, String str) {
     for (; i < str->length; i++) {
         Io_Stream_put(self, str->data[i]);
     }
-    Io_Stream_flush(self);
 }
 
 void Io_Stream_flush(Io_Stream self) {
@@ -432,8 +381,12 @@ void Io_Stream_close(Io_Stream self) {
     self->write_buf->begin = self->write_buf->end = 0;
     self->read_buf->begin = self->read_buf->end = 0;
 #ifdef WINDOWS
-    CloseHandle((HANDLE)self->handle);
-    CloseHandle((HANDLE)self->overlapped.hEvent);
+    if (Io_StreamType_SOCKET == self->type) {
+        closesocket((SOCKET)self->handle);
+    } else {
+        CloseHandle((HANDLE)self->handle);
+    }
+    CloseHandle((HANDLE)self->op.overlapped.hEvent);
 #else
     close(self->handle);
 #endif

@@ -1,72 +1,71 @@
-import Boot
 
 func1(a Int, b Int, c Int) {
-    boot_print_int(a)
-    boot_print_int(b)
-    boot_print_int(c)
-    boot_print_str("\n")
+    Boot::print_int(a)
+    Boot::print_int(b)
+    Boot::print_int(c)
+    Boot::print_str("\n")
 }
 
 func2(a Int, b Int, c Int, d Int) {
-    boot_print_int(a)
-    boot_print_int(b)
-    boot_print_int(c)
-    boot_print_int(d)
-    boot_print_str("\n")
+    Boot::print_int(a)
+    Boot::print_int(b)
+    Boot::print_int(c)
+    Boot::print_int(d)
+    Boot::print_str("\n")
 }
 
 func3(a Int, b Int, c Int, d Int, e Int) {
-    boot_print_int(a)
-    boot_print_int(b)
-    boot_print_int(c)
-    boot_print_int(d)
-    boot_print_int(e)
-    boot_print_str("\n")
+    Boot::print_int(a)
+    Boot::print_int(b)
+    Boot::print_int(c)
+    Boot::print_int(d)
+    Boot::print_int(e)
+    Boot::print_str("\n")
 }
 
 func4(a Int, b Int, c Int, d Int, e Int, f Int) {
-    boot_print_int(a)
-    boot_print_int(b)
-    boot_print_int(c)
-    boot_print_int(d)
-    boot_print_int(e)
-    boot_print_int(f)
-    boot_print_str("\n")
+    Boot::print_int(a)
+    Boot::print_int(b)
+    Boot::print_int(c)
+    Boot::print_int(d)
+    Boot::print_int(e)
+    Boot::print_int(f)
+    Boot::print_str("\n")
 }
 
 func5(a Int, b Int, c Int, d Int, e Int, f Int, g Int) {
-    boot_print_int(a)
-    boot_print_int(b)
-    boot_print_int(c)
-    boot_print_int(d)
-    boot_print_int(e)
-    boot_print_int(f)
-    boot_print_int(g)
-    boot_print_str("\n")
+    Boot::print_int(a)
+    Boot::print_int(b)
+    Boot::print_int(c)
+    Boot::print_int(d)
+    Boot::print_int(e)
+    Boot::print_int(f)
+    Boot::print_int(g)
+    Boot::print_str("\n")
 }
 
 func6(a Int, b Int, c Int, d Int, e Int, f Int, g Int, h Int) {
-    boot_print_int(a)
-    boot_print_int(b)
-    boot_print_int(c)
-    boot_print_int(d)
-    boot_print_int(e)
-    boot_print_int(f)
-    boot_print_int(g)
-    boot_print_int(h)
-    boot_print_str("\n")
+    Boot::print_int(a)
+    Boot::print_int(b)
+    Boot::print_int(c)
+    Boot::print_int(d)
+    Boot::print_int(e)
+    Boot::print_int(f)
+    Boot::print_int(g)
+    Boot::print_int(h)
+    Boot::print_str("\n")
 }
 
 func7(a Int, b Int, c Int, d Int, e Int, f Int, g Int, h Int) {
-    boot_print_int(h)
-    boot_print_int(g)
-    boot_print_int(f)
-    boot_print_int(e)
-    boot_print_int(d)
-    boot_print_int(c)
-    boot_print_int(b)
-    boot_print_int(a)
-    boot_print_str("\n")
+    Boot::print_int(h)
+    Boot::print_int(g)
+    Boot::print_int(f)
+    Boot::print_int(e)
+    Boot::print_int(d)
+    Boot::print_int(c)
+    Boot::print_int(b)
+    Boot::print_int(a)
+    Boot::print_str("\n")
 }
 
 main() Int {

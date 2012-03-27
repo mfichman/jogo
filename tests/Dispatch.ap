@@ -1,6 +1,4 @@
 
-import Boot
-
 Stringlike < Interface {
     slice(begin Int, end Int) String
     prefix(end Int) String
@@ -10,7 +8,7 @@ Stringlike < Interface {
 main() Int {
 
     str Stringlike = "hello world\n"
-    boot_print_str(str.slice(6, 11) + "\n")
-    boot_print_str(str.prefix(5) + "\n")
+    Boot::print_str(str.slice(6, 11) + "\n")
+    Boot::print_str(str.prefix(5) + "\n")
     ret 0
 }

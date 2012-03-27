@@ -69,13 +69,16 @@ void output(File* file) {
 
     std::string name = File::no_ext_name(file->name()->string());
     std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
+    std::string boot_main = "Boot"FILE_SEPARATOR_STR"Main";
+    // FIXME: Temporary fix so that 'main' is recompiled every time to ensure
+    // that the static initialization is done properly.
 
     if (env->make() && env->link()) {
         time_t t1 = File::mtime(out_file + ".apo");
         time_t t2 = File::mtime(file->path()->string());
         time_t t3 = File::mtime(program_path);
         file->output(env->name(out_file + ".apo"));
-        if (t1 >= t2 && t1 >=t3) { return; }
+        if (t1 >= t2 && t1 >=t3 && name != boot_main) { return; }
     }
  
     if (env->verbose()) {
@@ -134,7 +137,7 @@ void output(File* file) {
     ss << "nasm -fmacho64 " << asm_file << " -o " << obj_file;
 #endif 
     if (env->verbose()) {
-        //Stream::stout() << ss.str() << "\n";
+        Stream::stout() << ss.str() << "\n";
     }
     if (system(ss.str().c_str())) {
         exit(1);
@@ -152,14 +155,20 @@ int main(int argc, char** argv) {
     env->include("/usr/local/include/apollo");
 #else
     std::string program_files = getenv("PROGRAMFILES");
+    std::string program_files_x86 = getenv("PROGRAMFILES(x86)");
     env->include(program_files + "\\Apollo\\include\\apollo");
+    env->include(program_files_x86 + "\\Apollo\\include\\apollo");
+    env->include(program_files + "\\Apollo\\lib");
+    env->include(program_files_x86 + "\\Apollo\\lib");
 #endif
+    env->input("Boot::Main");
 
     // Run the compiler.  Output to a temporary file if the compiler will
     // continue on to another stage; otherwise, output the file directly.
     Parser::Ptr parser(new Parser(env));
     SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
     Stream::sterr()->flush();
+
     if (env->dump_ast()) {
         Stream::Ptr out(new Stream(env->output()));
         TreePrinter::Ptr print(new TreePrinter(env, out));
@@ -186,8 +195,8 @@ int main(int argc, char** argv) {
 
     std::stringstream ss;
 #if defined(WINDOWS)    
-    ss << "link.exe /DEBUG /ENTRY:main" << " /SUBSYSTEM:console ";
-    ss << "/NOLOGO /MACHINE:amd64 ";
+    ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:amd64 ";
+    ss << "/ENTRY:Boot_main ";
     ss << obj_files << " /OUT:" << exe_file << ".exe ";
 #elif defined(LINUX)
     ss << "gcc -m64 " << obj_files << " -o " << exe_file;
@@ -205,7 +214,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < env->includes(); i++) {
         if (File::is_dir(env->include(i))) {
 #ifdef WINDOWS
-            ss << " /LIBPATH:" << env->include(i);
+            ss << " /LIBPATH:\"" << env->include(i) << "\"";
 #else
             ss << " -L" << env->include(i);  
 #endif
@@ -219,9 +228,8 @@ int main(int argc, char** argv) {
 #endif
 
     if (env->verbose()) {
-        //Stream::stout() << ss.str() << "\n";
+        Stream::stout() << ss.str() << "\n";
     }
-
     if (system(ss.str().c_str())) { return 1; }
     if (!env->make()) {
         for (File::Ptr file = env->files(); file; file = file->next()) {
@@ -238,6 +246,9 @@ int main(int argc, char** argv) {
 #else
     ss << exe_file;
 #endif
+    if(env->verbose()) {
+        Stream::stout() << ss.str() << "\n";
+    }
     int ret = system(ss.str().c_str());
     remove(exe_file.c_str());
     return ret;

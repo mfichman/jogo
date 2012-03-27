@@ -84,6 +84,7 @@ main() Int {
 
     int Int = union2
     Io::print("#{int}\n")
+    Io::stdout().flush()
 
     ret 0
 }

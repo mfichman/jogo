@@ -18,13 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-Event < Interface {
-    # Interface used to register various I/O operations with the I/O manager.
-    # The resume() function below is called to continue with processing after
-    # a wait has completed.
-    resume()
-}
-
 Manager < Object {
     # The Io::Manager coordinates coroutines that have blocked waiting for I/O,
     # and provides the core asynchronous I/O implementation.  The Io::Manager is
@@ -48,6 +41,9 @@ Manager < Object {
     waiting private Int
     # Number of coroutines waiting on I/O.  FixMe: Make this a set of waiting
     # coroutines rather than a single int.
+
+    iobytes immutable Int
+    # Number of bytes read by the last I/O operation, if available.
 
     @init() native private {
         # Initializes a new manager.  Most applications need only one I/O
@@ -98,11 +94,6 @@ Manager < Object {
     shutdown() native {
         # Shuts down the I/O manager; no additional I/O operations can be done
         # after this method is called.
-    }
-
-    wait(event Event) {
-        
-         
     }
 }
 

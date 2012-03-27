@@ -1,4 +1,6 @@
 Module
+  name: Boot
+Module
   name: Sub1
   feature0: Class
     name: Test
@@ -49,6 +51,8 @@ Module
     block: Block
       child0: Return
         expression: IntegerLiteral(0)
+Module
+  name: Io
 Module
   name: 
   feature0: Class

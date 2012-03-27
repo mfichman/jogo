@@ -21,17 +21,13 @@
  */
 
 #include "Io/Buffer.h"
+#include "Boot/Module.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 
 Io_Buffer Io_Buffer__init(Int capacity) {
-    Io_Buffer ret = calloc(sizeof(struct Io_Buffer) + capacity, 1);
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
+    Io_Buffer ret = Boot_calloc(sizeof(struct Io_Buffer) + capacity);
     ret->_vtable = Io_Buffer__vtable;
     ret->_refcount = 1;
     ret->capacity = capacity;

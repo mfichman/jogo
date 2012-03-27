@@ -1,6 +1,6 @@
 
 
-import Array, Boot
+import Array
 
 main() Int {
     # Write a message to standard output
@@ -8,7 +8,8 @@ main() Int {
     stdout.print('hello world\n')
 
     # Read in a message from a file using scan()
-    if file = File::open('FileTest.txt', 'r') {
+    file = File::open('FileTest.txt', 'r')
+    if not file.error {
         hello = file.scan('\n')
         stdout.print("#{hello}\n")    
         while eof != file.peek() {
@@ -20,7 +21,7 @@ main() Int {
             }
         }
     } else {
-        stdout.print('Could not open file!\n')
+        Io::println(Os::strerror(file.error))
     }
 
     array = Array[String](10)

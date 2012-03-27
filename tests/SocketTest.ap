@@ -4,18 +4,19 @@ main() Int {
     stdout = Io::stdout()
 
 #    server = Coroutine() func() {
-#        stdout.println("coro1")
-#        sd = Socket::listen("localhost:9999")        
+#        stdout.println('coro1')
+#        sd = Socket::listen('localhost:9999')        
 #        sock = sd.accept()
 #    } 
     client = Coroutine() func() {
-        sd = Socket::connect("localhost:9999")
-#        sd.stream.print("GET /index.html HTTP/1.1\n")
-#        sd.stream.print("Connection: close\n")
-#        sd.stream.print("\n")
+        stdout.println('connecting')
+        sd = Socket::connect('localhost', 9999)
+#        sd.stream.print('GET /index.html HTTP/1.1\n')
+#        sd.stream.print('Connection: close\n')
+#        sd.stream.print('\n')
 #        sd.stream.flush()
         
-        stdout.println("connect")
+        stdout.println('connected')
         while eof != sd.stream.peek() {
             stdout.put(sd.stream.get())
         }
@@ -23,11 +24,11 @@ main() Int {
     }
 
     server = Coroutine() func() {
-        ls = Socket::listen("localhost:9999")
-        stdout.println("connecting")
+        ls = Socket::listen('localhost', 9999)
+        stdout.println('accepting')
         sd = ls.accept()
         stdout.println('accepted')
-        sd.stream.print("hello world\n")
+        sd.stream.print('hello world\n')
         stdout.println('printed')
         sd.stream.flush()
     }
@@ -35,6 +36,5 @@ main() Int {
     server()
     client()
 
-    Io::manager().run()
     ret 0
 }

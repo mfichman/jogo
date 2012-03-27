@@ -38,9 +38,12 @@ Io_Stream File_open(String path, String mode) {
     DWORD flags = FILE_FLAG_OVERLAPPED;
     DWORD access = 0;
     DWORD create = 0;
-    HANDLE ret = 0;
+    HANDLE fd = INVALID_HANDLE_VALUE;
+    DWORD error = ERROR_INVALID_PARAMETER;
+    Io_Stream ret = 0;
+    Bool modeOk = 1;
     if (mode->length < 1) {
-        return 0;
+        modeOk = 0;
     } else if (mode->data[0] == 'r') {
         access = GENERIC_READ;
         create = OPEN_EXISTING;
@@ -51,7 +54,7 @@ Io_Stream File_open(String path, String mode) {
         access = GENERIC_WRITE;
         create = OPEN_ALWAYS;
     } else if (mode->length < 2) {
-        return 0;
+        modeOk = 0;
     } else if (mode->data[0] == 'r' && mode->data[1] == '+') {
         access = GENERIC_READ|GENERIC_WRITE;
         create = OPEN_EXISTING;
@@ -62,19 +65,26 @@ Io_Stream File_open(String path, String mode) {
         access = GENERIC_READ|GENERIC_WRITE;
         create = OPEN_ALWAYS;
     } else {
-        return 0;
+        modeOk = 0;
     }
-    ret = CreateFile(path->data, access, share, 0, create, flags, 0);
-    if (ret == INVALID_HANDLE_VALUE) {
-        // ERROR
-        return 0;
-    } else {
-        return Io_Stream__init((Int)ret, Io_StreamType_FILE);
+    if (modeOk) {
+        fd = CreateFile(path->data, access, share, 0, create, flags, 0);
+        error = GetLastError();
     }
+    ret = Io_Stream__init((Int)fd, Io_StreamType_FILE);
+    if (fd == INVALID_HANDLE_VALUE) {
+        ret->status = Io_StreamStatus_ERROR;
+        ret->error = error;
+    }
+    return ret;
 #else
     Int flags = 0;
+    Int fd = -1;
+    Bool modeOk = 1;
+    Int error = EINVAL;
+
     if (mode->length < 1) {
-        return 0;
+        modeOk = 0;
     } else if (mode->data[0] == 'r') {
         flags = O_RDONLY;
     } else if (mode->data[0] ==  'w') {
@@ -82,7 +92,7 @@ Io_Stream File_open(String path, String mode) {
     } else if (mode->data[0] == 'a') {
         flags = O_WRONLY|O_CREAT|O_APPEND; 
     } else if (mode->length < 2) {
-        return 0;
+        modeOk = 0;
     } else if (mode->data[0] == 'r' && mode->data[1] == '+') {
         flags = O_RDWR;
     } else if (mode->data[0] == 'w' && mode->data[1] == '+') {
@@ -90,16 +100,17 @@ Io_Stream File_open(String path, String mode) {
     } else if (mode->data[0] == 'a' && mode->data[1] == '+') {
         flags = O_RDWR|O_CREAT|O_APPEND;
     } else {
-        return 0;
+        modeOk = 0;
     }
-
-    Int ret = open(path->data, flags, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-    if (ret == -1) {
-        // ERROR
-        return 0;
-    } else {
-        return Io_Stream__init(ret, Io_StreamType_FILE);
+    if (modeOk) {
+        fd = open(path->data, flags, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+        error = errno;
     }
+    ret = Io_Stream__init(fd, Io_StreamType_FILE);
+    if (fd == -1) {
+        ret->status = Io_StreamStatus_ERROR;
+        ret->error = error;
+    }
+    return ret;
 #endif
-    return 0;
 }

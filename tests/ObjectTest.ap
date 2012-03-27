@@ -1,4 +1,3 @@
-import Boot
 
 TestObject < Object {
 
@@ -23,18 +22,18 @@ TestObject < Object {
 main() Int {
     test = TestObject()
     
-    boot_print_int(test.bar?())
-    boot_print_str("\n")
+    Boot::print_int(test.bar?())
+    Boot::print_str("\n")
     if test.baz?() {
-        boot_print_str("true\n")
+        Boot::print_str("true\n")
     } else {
-        boot_print_str("false\n")
+        Boot::print_str("false\n")
     }
-    boot_print_int(test.initialized) 
-    boot_print_str("\n")
+    Boot::print_int(test.initialized) 
+    Boot::print_str("\n")
     test.initialized = 2910
-    boot_print_int(test.initialized) 
-    boot_print_str("\n")
+    Boot::print_int(test.initialized) 
+    Boot::print_str("\n")
     
     ret 0
 }

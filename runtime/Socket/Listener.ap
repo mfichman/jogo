@@ -25,19 +25,18 @@ Listener < Object {
     handle immutable Int
     # Handle to the underlying socket descriptor.
 
-    addr = Addr("")    
+    addr Addr   
     # Address that the socket is bound to.  Note that setting this value will
     # close the current listening socket and reopen the socket using the new
     # address.
 
-    backlog = 16
+    backlog Int = 16
     # Hint used to limit the number of outstanding connections in the socket's
     # listening queue.  This corresponds to the traditional 'backlog' parameter
     # to the Berkeley sockets listen() function call.
 
-    coroutine private Coroutine
-    # The coroutine that the listener is currently blocking (while executing an
-    # accept() call).
+    coroutine Coroutine
+    # The coroutine that this listener is blocked on during accept().
 
     @destroy() {
         # Destroys the socket, and closes the listening port.
@@ -57,10 +56,6 @@ Listener < Object {
 
     close() native {
         # Closes the listening socket.
-    }
-
-    resume() native {
-        # Resumes the waiting socket.
     }
 
     reuse_addr=(flag Bool) native {

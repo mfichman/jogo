@@ -117,6 +117,7 @@ Stream::Ptr Stream::stout() {
 void Stream::write(const char* data, int len) {
     // Writes 'data' to the stream.  This function buffers the output for
     // better low-level write performance.
+	if (len == 0) { return; }
     if (buffer_.size() + len > buffer_.capacity()) {
         flush();
     }

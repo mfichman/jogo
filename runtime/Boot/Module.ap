@@ -21,9 +21,8 @@
 Empty < Interface {
 }
 
-boot_print_str(string String) native
-boot_print_int(integer Int) native
-boot_print_char(char Char) native
-boot_print_ptr(int Empty) native
-boot_dummy(a Int, b Int, c Int) native
-
+print_str(string String) native
+print_int(integer Int) native
+print_char(char Char) native
+print_ptr(int Empty) native
+dummy(a Int, b Int, c Int) native

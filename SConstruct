@@ -12,7 +12,7 @@ env.Append(ENV = os.environ)
 build_mode = ARGUMENTS.get('mode', 'debug')
 stack_size = '8192'
 major_version = '0'
-minor_version = '2'
+minor_version = '3'
 revision = '0'
 version = major_version + '.' + minor_version + '.' + revision
 
@@ -120,7 +120,10 @@ if 'pkg' in COMMAND_LINE_TARGETS:
     for f in library_headers:
         path = f.path.split(os.path.sep)
         path = os.path.join(*path[1:])
-        path = os.path.join(dist_path, 'include/apollo', path)
+        path = os.path.join(dist_path, 'include', 'apollo', path)
+
+        print(path)
+        print(f)
         copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
         env.Depends('pkg', copy)
     
