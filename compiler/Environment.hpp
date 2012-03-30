@@ -62,6 +62,7 @@ public:
     bool dump_liveness() const { return dump_liveness_; }
     bool dump_ast() const { return dump_ast_; }
     bool verbose() const { return verbose_; }
+    const std::string& generator() const { return generator_; }
     
     int errors() { return errors_; }
     int includes() { return include_.size(); }
@@ -82,6 +83,7 @@ public:
     void link(bool link) { link_ = link; }
     void assemble(bool assemble) { assemble_ = assemble; }
     void execute(bool execute) { execute_ = execute; }
+    void generator(const std::string& gen) { generator_ = gen; }
     void module(Module* module);
     void file(File* name);
     void constant(Constant* cons) { constant_.push_back(cons); }
@@ -149,6 +151,7 @@ private:
     bool assemble_;
     bool execute_;
     bool verbose_;
+    std::string generator_;
 
     int errors_;
 };

@@ -49,6 +49,7 @@ Options::Options(Environment* env, int argc, char** argv) {
             else if ("m" == flag) { flag = "make"; }
             else if ("h" == flag) { flag = "help"; }
             else if ("d" == flag) { flag = "output-dir"; }
+            else if ("g" == flag) { flag = "generator"; }
             else {
                 print_usage();
                 err << "Unknown flag '" << argv[i] << "'\n\n";
@@ -109,6 +110,8 @@ Options::Options(Environment* env, int argc, char** argv) {
                 env->output_dir(argv[i]);
             } else if ("library" == flag) {
                 env->lib(argv[i]);
+            } else if ("generator" == flag) {
+                env->generator(argv[i]);
             } else {
                 break;
             }
@@ -117,6 +120,13 @@ Options::Options(Environment* env, int argc, char** argv) {
             break;
         }
     } 
+
+    if (env->generator() != "Intel64" && env->generator() != "C") {
+        print_usage();
+        err << "Invalid code generator (options: Intel64, C)\n\n";
+        err->flush();
+        exit(1);
+    }
 
     if (!env->inputs()) {
         print_usage();
@@ -148,6 +158,7 @@ void Options::print_usage() {
     out << "   -d, --output-dir DIR Output directory for object files.\n";
     out << "   -h, --help           Print this help message.\n";
     out << "   -v, --verbose        Print extra information during compilation.\n";
+    out << "   -g, --generator GEN  Use code generator GEN.\n";
     out << "   --dump-ir            Output the intermediate representation.\n";
     out << "   --dump-ast           Output the abstract syntax tree.\n";
     out << "   --dump-liveness      Output liveness info when printing the IR.\n";

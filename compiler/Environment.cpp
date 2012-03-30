@@ -36,6 +36,7 @@ Environment::Environment() :
     assemble_(true),
     execute_(false),
     verbose_(false),
+    generator_("Intel64"),
     errors_(0) {
 
     Location loc;

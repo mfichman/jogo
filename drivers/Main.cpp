@@ -26,6 +26,7 @@
 #include "BasicBlockGenerator.hpp"
 #include "RegisterAllocator.hpp"
 #include "Intel64CodeGenerator.hpp"
+#include "CCodeGenerator.hpp"
 #include "BasicBlockPrinter.hpp"
 #include "DeadCodeEliminator.hpp"
 #include "File.hpp"
@@ -44,7 +45,8 @@ CopyPropagator::Ptr copy(new CopyPropagator(env, machine));
 DeadCodeEliminator::Ptr elim(new DeadCodeEliminator(env, machine));
 BasicBlockPrinter::Ptr bprint(new BasicBlockPrinter(env, machine));
 RegisterAllocator::Ptr alloc(new RegisterAllocator(env, machine));
-Intel64CodeGenerator::Ptr cgen(new Intel64CodeGenerator(env));
+Intel64CodeGenerator::Ptr intel64gen(new Intel64CodeGenerator(env));
+CCodeGenerator::Ptr cgen(new CCodeGenerator(env));
 std::string program_path;
 
 std::string tempnam() {
@@ -58,6 +60,116 @@ std::string tempnam() {
 #else
     return std::string(tmpnam(0));
 #endif
+}
+
+void output_intel64(File* file) {
+    // Outputs an object file for 'file' using the Intel64 code generator
+    // and the NASM assembler.
+
+    if (env->optimize()) {
+        copy->operator()(file);
+        elim->operator()(file); 
+    }
+    if (env->dump_ir() && file->is_input_file()) {
+        bprint->out(new Stream(env->output()));
+        bprint->operator()(file);
+    } 
+    alloc->operator()(file);
+    if (env->dump_ir() && file->is_input_file()) {
+        bprint->out(new Stream(env->output()));
+        bprint->operator()(file);
+        return;
+    } 
+
+    std::string name = File::no_ext_name(file->name()->string());
+    std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
+    std::string asm_file = env->assemble() ? tempnam() : out_file + ".asm";
+    file->output(env->name(asm_file));
+    intel64gen->out(new Stream(asm_file));
+    if (intel64gen->out()->error()) {
+        Stream::sterr() << asm_file << ": " << intel64gen->out()->message() << "\n";  
+        Stream::sterr()->flush();
+        Stream::stout()->flush();
+        exit(1);
+    }
+    intel64gen->operator()(file);
+
+    if (!env->assemble()) { return; }
+
+    // Run the assembler.  Output to a non-temp file if the compiler will stop
+    // at the assembly stage
+    std::string obj_file;
+    if (env->link() && !env->make()) {
+        obj_file = tempnam();
+    } else {
+        obj_file = out_file + ".apo";
+    }
+    file->output(env->name(obj_file));
+    std::stringstream ss;
+#if defined(WINDOWS)
+    ss << "nasm -fwin64 " << asm_file << " -o " << obj_file;
+#elif defined(LINUX)
+    ss << "nasm -felf64 " << asm_file << " -o " << obj_file;
+#elif defined(DARWIN)
+    ss << "nasm -fmacho64 " << asm_file << " -o " << obj_file;
+#endif 
+    if (env->verbose()) {
+        Stream::stout() << ss.str() << "\n";
+    }
+    if (system(ss.str().c_str())) {
+        exit(1);
+    }
+    remove(asm_file.c_str());
+}
+
+void output_c(File* file) {
+    // Outputs an object file for 'file' using the C code generator and the
+    // platform-native C compiler.
+    std::string name = File::no_ext_name(file->name()->string());
+    std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
+    std::string c_file = env->assemble() ? tempnam() : out_file + ".apc";
+    file->output(env->name(c_file));
+    cgen->out(new Stream(c_file));
+    if (cgen->out()->error()) {
+        Stream::sterr() << c_file << ": " << cgen->out()->message() << "\n";
+        Stream::sterr()->flush();
+        Stream::stout()->flush();
+        exit(1);
+    }
+    cgen->operator()(file);
+    
+    if (!env->assemble()) { return; }
+
+    // Run the C compiler.  Output to a non-temp file if the compiler will
+    // stop at the 'assembly' stage.
+    std::string obj_file;
+    if (env->link() && !env->make()) {
+        obj_file = tempnam();
+    } else {
+        obj_file = out_file + ".apo";
+    }
+    
+    std::stringstream ss;
+#if defined(WINDOWS)
+    ss << "cl.exe " << c_file << " /c /TC /Fo:" << obj_file;
+    if (env->optimize()) {
+        ss << " /O2";
+    }
+#else
+    ss << "gcc " << c_file << " -c -o " << obj_file;
+    if (env->optimize()) {
+        ss << " -O2";
+    } else {
+        ss << " -O1 -g";
+    }
+#endif
+    if (env->verbose()) {
+        Stream::stout() << ss.str() << "\n";
+    }
+    if (system(ss.str().c_str())) {
+        exit(1);
+    }
+    remove(c_file.c_str());
 }
 
 void output(File* file) {
@@ -90,59 +202,12 @@ void output(File* file) {
     }
 
     bgen->operator()(file);
-    if (env->optimize()) {
-        copy->operator()(file);
-        elim->operator()(file); 
-    }
-    if (env->dump_ir() && file->is_input_file()) {
-        bprint->out(new Stream(env->output()));
-        bprint->operator()(file);
-    } 
-    alloc->operator()(file);
-    if (env->dump_ir() && file->is_input_file()) {
-        bprint->out(new Stream(env->output()));
-        bprint->operator()(file);
-        return;
-    } 
 
-    std::string asm_file = env->assemble() ? tempnam() : out_file + ".asm";
-    file->output(env->name(asm_file));
-    cgen->out(new Stream(asm_file));
-    if (cgen->out()->error()) {
-        Stream::sterr() << asm_file << ": " << cgen->out()->message() << "\n";  
-        Stream::sterr()->flush();
-        Stream::stout()->flush();
-        exit(1);
+    if (env->generator() == "Intel64") {
+        output_intel64(file);
+    } else if (env->generator() == "C") {
+        output_c(file);
     }
-
-    cgen->operator()(file);
-
-    if (!env->assemble()) { return; }
-
-    // Run the assembler.  Output to a non-temp file if the compiler will stop
-    // at the assembly stage
-    std::string obj_file;
-    if (env->link() && !env->make()) {
-        obj_file = tempnam();
-    } else {
-        obj_file = out_file + ".apo";
-    }
-    file->output(env->name(obj_file));
-    std::stringstream ss;
-#if defined(WINDOWS)
-    ss << "nasm -fwin64 " << asm_file << " -o " << obj_file;
-#elif defined(LINUX)
-    ss << "nasm -felf64 " << asm_file << " -o " << obj_file;
-#elif defined(DARWIN)
-    ss << "nasm -fmacho64 " << asm_file << " -o " << obj_file;
-#endif 
-    if (env->verbose()) {
-        Stream::stout() << ss.str() << "\n";
-    }
-    if (system(ss.str().c_str())) {
-        exit(1);
-    }
-    remove(asm_file.c_str());
 }
 
 int main(int argc, char** argv) {

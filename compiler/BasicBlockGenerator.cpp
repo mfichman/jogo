@@ -675,7 +675,7 @@ void BasicBlockGenerator::operator()(Type* feature) {
 void BasicBlockGenerator::call(Function* func, Expression* args) {
     // Push objects in anticipation of the call instruction.  Arguments must be
     // pushed in reverse order.
-    vector<Operand> val;
+    std::vector<Operand> val;
     Formal::Ptr formal = func->formals();
     for (Expression::Ptr a = args; a; a = a->next()) {
         Type::Ptr ft = formal->type();
