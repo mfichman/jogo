@@ -51,6 +51,15 @@ void Array__destroy(Array self) {
     Boot_free(self);
 }
 
+void Array_clear(Array self) {
+    Int i = 0;
+    for (; i < self->count; ++i) {
+        Object__refcount_dec(self->data[i]);
+        self->data[i] = 0;
+    } 
+    self->count = 0;
+}
+
 Object Array__index(Array self, Int index) {
     if (index < 0 || index >= self->count) {
         return 0;
@@ -63,7 +72,8 @@ Object Array__index(Array self, Int index) {
 }
 
 void Array__insert(Array self, Int index, Object obj) {
-    if (!obj || index < 0) { return; }
+    if (index < 0) { return; }
+
 
     if (index >= self->capacity) {
         // Array needs to be resized, so double the size of the array, and 
@@ -91,6 +101,7 @@ void Array__insert(Array self, Int index, Object obj) {
         self->data = temp;
     }
 
+    Object__refcount_dec(self->data[index]);
     self->data[index] = obj;
     if (index >= self->count) {
         self->count = index+1;

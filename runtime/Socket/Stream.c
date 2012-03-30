@@ -60,7 +60,6 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     // to or written from.  This function is tricky because Windows expects
     // a call to ConnectEx before the wait() on the I/O completion port,
     // whereas the wait() happens before the call to connect() on Unix systems.
-    int blocking = 1;
     int sd = 0;
     int ret = 0;
     struct sockaddr_in sin;
@@ -96,7 +95,11 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     Io_Stream_mode__s(self->stream, Io_StreamMode_ASYNC);
     if (sd < 0) {
         self->stream->status = Io_StreamStatus_ERROR;
+#ifdef WINDOWS
         self->stream->error = GetLastError();     
+#else
+        self->stream->error = errno;
+#endif
         return;
     }
 #ifdef WINDOWS
@@ -146,7 +149,11 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     // does not block.
     if (fcntl(sd, F_SETFL, O_NONBLOCK) < 0) {
         self->stream->status = Io_StreamStatus_ERROR;
+#ifdef WINDOWS
         self->stream->error = GetLastError();
+#else
+        self->stream->error = errno;
+#endif
         return;
     }
 

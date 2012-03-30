@@ -77,6 +77,10 @@ Int Int__init() {
     return 0;
 }
 
+Int Int_max(Int self, Int other) {
+    return self > other ? self : other;
+}
+
 Int Int__add(Int self, Int other) {
     return self + other;
 }

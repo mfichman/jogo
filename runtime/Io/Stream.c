@@ -188,7 +188,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         Int kqfd = Io_manager()->handle;
         Int fd = self->handle;
         Int flags = EV_ADD|EV_ONESHOT;
-        EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Current__coroutine); 
+        EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Coroutine__current); 
         Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
             self->error = errno;
@@ -245,20 +245,20 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
         Int kqfd = Io_manager()->handle;
         Int fd = self->handle;
         Int flags = EV_ADD|EV_ONESHOT;
-        EV_SET(&ev, fd, EVFILT_WRITE, flags, 0, 0, Current__coroutine); 
+        EV_SET(&ev, fd, EVFILT_WRITE, flags, 0, 0, Coroutine__current); 
         Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
             self->error = errno;
             return;
         }
-        Coroutine__iowait();
+        //Coroutine__iowait();
     }
 #endif
 
     Int ret = write(self->handle, buf, len);
     if (ret == -1) {
         self->status = Io_StreamStatus_ERROR;
-        self->errno = error;
+        self->error = errno;
     } else {
         buffer->begin += ret;
     }

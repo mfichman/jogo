@@ -39,12 +39,12 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+extern void* memset(void*, int, size_t);
 #endif
 
 Socket_Addr Socket_Addr__init(String str, Int port) {
     // Initialies a new socket address (IP address, port ID pair).
     Socket_Addr ret = Boot_calloc(sizeof(struct Socket_Addr));
-    Char* c = 0;
     struct in_addr in; 
     memset(&in, 0, sizeof(in));
 
