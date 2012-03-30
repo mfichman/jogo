@@ -27,6 +27,9 @@
 #include <stdlib.h>
 #ifdef WINDOWS
 #include <windows.h>
+#else
+#include <errno.h>
+extern char *strerror(int errnum);
 #endif
 
 extern int main();

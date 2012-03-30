@@ -41,6 +41,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <errno.h>
+extern void* memset(void*, int, size_t);
 #endif
 #ifdef DARWIN
 #include <sys/event.h>
@@ -113,7 +114,7 @@ Socket_Stream Socket_Listener_accept(Socket_Listener self) {
     EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Coroutine__current);
     int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
     if (ret < 0) {
-        fprintf(stderr, "kevent() failed\n", errno);
+        fprintf(stderr, "kevent() failed %d\n", errno);
         fflush(stderr);
         abort();
     }

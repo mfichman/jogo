@@ -58,7 +58,7 @@ void Coroutine__yield();
 void Coroutine__exit();
 void Coroutine__call(Coroutine self);
 void Coroutine__iowait();
-void Coroutine__iowresume(Coroutine self);
+void Coroutine__ioresume(Coroutine self);
 Ptr Coroutine__grow_stack();
 
 extern Coroutine_Stack Coroutine__stack;

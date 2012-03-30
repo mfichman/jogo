@@ -21,8 +21,9 @@
  */
 
 #include "String.h"
-#include "Boot\Module.h"
+#include "Boot/Module.h"
 #include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
@@ -50,7 +51,7 @@ Char String__index(String self, Int index) {
 String String_expand(String self, Int length) {
     // Creates a copy of 'self', expending the underlying buffer to the maximum
     // of 'length' and 'self->length'.
-    Int len = sizeof(struct String) + max(length, self->length) + 1;
+    Int len = sizeof(struct String) + Int_max(length, self->length) + 1;
     String ret = Boot_malloc(len);
     Char* c = ret->data;
     Int i = 0;

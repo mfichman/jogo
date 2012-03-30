@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <errno.h>
 #endif
 #include <stdio.h>
 #include <assert.h>
@@ -106,7 +107,7 @@ Io_Stream File_open(String path, String mode) {
         fd = open(path->data, flags, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
         error = errno;
     }
-    ret = Io_Stream__init(fd, Io_StreamType_FILE);
+    Io_Stream ret = Io_Stream__init(fd, Io_StreamType_FILE);
     if (fd == -1) {
         ret->status = Io_StreamStatus_ERROR;
         ret->error = error;
