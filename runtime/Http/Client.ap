@@ -1,0 +1,88 @@
+# Copyright (c) 2010 Matt Fichman
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+Method = GET | HEAD | POST | PUT | DELETE | TRACE | CONNECT
+
+Request < Object {
+    # The request object stores information about the type of request that will
+    # be sent to the server.  Request objects may be reused multiple times for
+    # efficiency.
+
+    method = Method::GET
+    # The method to use for communication with the server.
+
+    path String
+    # Path to the resource requested by the server. FIXME: Replace this with a 
+    # Uri object, for added type safety.
+
+    headers immutable = Hash[String, String]()
+    # Set of headers to use with the request.  A few headers are set by
+    # default, but may be overridden:
+    # * Connection: close
+    # * User-Agent: Apollo HTTP Client
+    # * Accept-Charset: utf-8
+    # * Accept-Encoding: identity 
+
+    @init() {
+        headers["Connection"] = "close"
+        headers["User-Agent"] = "Apollo HTTP Client"
+        headers["Accept-Charset"] = "utf-8"
+        headers["Accept-encoding"] = "identity"
+    }
+}
+
+Client < Object {
+    # A client object outputs request objects to the stream specified by the
+    # 'stream' attribute.  Optionally, a client can be created via the Http
+    # module factory functions (i.e., Http::open).
+    
+    socket immutable Socket::Stream
+    # The stream to be used for issuing requests. 
+
+    @init(host String, port Int) {
+        # Initializes a new HTTP client object 
+        socket = Socket::connect(host, port)
+    }
+
+    request(request Request) {
+        # Issues a new request using the given IO stream.
+        method = methodstr(request.method)
+        stream = socket.stream
+        stream.print("#{method} #{request.path} HTTP/1.1\n")
+        for header in request.headers {
+            stream.print("#{header.first}: #{header.second}\n")
+        }
+        stream.print("\n")
+        stream.flush()
+    }
+
+    methodstr(method Method) private String {
+        # Returns the Method enumeration as a string.
+        match method {
+        with Method::GET: ret "GET"
+        with Method::HEAD: ret "HEAD"
+        with Method::POST: ret "POST"
+        with Method::PUT: ret "PUT"
+        with Method::DELETE: ret "DELETE"
+        with Method::TRACE: ret "TRACE"
+        with Method::CONNECT: ret "CONNECT"
+        } 
+    }
+}
