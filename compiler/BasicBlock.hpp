@@ -33,15 +33,19 @@ class Operand {
 public:
     Operand(String* label) 
         : label_(label), temp_(0), addr_(0), indirect_(false) {
+        // This constructor is only used for CALL instructions and instructions
+        // that load a label directly.
     }
     Operand(Expression* literal) 
         : literal_(literal), temp_(0), addr_(0), indirect_(false) {
+        // This constructor is used for operands created via literal expr.
     }
     Operand() 
         : temp_(0), addr_(0), indirect_(false) {
     }
     Operand(int temp) 
         : temp_(temp), addr_(0), indirect_(false) {
+        // Constructs an operand from an integer temporary variable.
     }
 
     static Operand addr(int addr) { 
@@ -69,11 +73,12 @@ public:
     void temp(int temp) { temp_ = temp; }
 
 private:
-    Expression::Ptr literal_;
+    Expression::Ptr literal_; // Literal expr, if this is a literal
     String::Ptr label_; // FixMe: Should not be necessary...needed for CALL
-    int temp_;
-    int addr_;
-    bool indirect_;
+    Type::Ptr type_; // Type of the value held in the operand
+    int temp_; // Temporary variable ID (negative = machine register)
+    int addr_; // Address offset (in words)
+    bool indirect_; // Set to true if this is an indirect memory access
 };
 
 Stream::Ptr operator<<(Stream::Ptr out, const Operand& op);
@@ -81,8 +86,9 @@ Stream::Ptr operator<<(Stream::Ptr out, const Operand& op);
 /* Enumeration of opcodes available to the TAC code */
 enum Opcode { 
     MOV, ADD, SUB, MUL, DIV, NEG, ANDB, ORB, PUSH, POP, LOAD, STORE, NOTB,
-    CALL, JUMP, BNE, BE, BNZ, BZ, BG, BL, BGE, BLE, RET, NOP, POPN
+    CALL, JUMP, BNE, BE, BNZ, BZ, BG, BL, BGE, BLE, RET, NOP, POPN 
     // Note: BNE through BLE must be contiguous
+    // Note: FIELD is used to encode a structure field access.
 };
 
 /* Class for liveness information related to the instruction */

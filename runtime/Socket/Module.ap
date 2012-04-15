@@ -18,46 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-Addr < Object {
-    # Stores the IP address and port number of a host.  An Addr object can be
-    # constructed from a string, which is in the format 'ip.ip.ip.ip:port' for
-    # an IPv4 address and '[ipv6]:port' for an IPv6 address.  A hostname can
-    # also be used in place of an IP address, in which case the IP address is
-    # looked up automatically.
-
-    host immutable String
-    # The hostname corresponding to 'ip'.  If 'ip' is set through the
-    # constructor, then the system will look up the hostname when this
-    # attribute is first accessed.
-
-    ip immutable Int
-    # The host's IPv4 or IPv6 address.  If 'host' is set through the
-    # constructor, then the system will look up the IP address when this
-    # attribute is first accessed.
-
-    port immutable Int 
-    # The host's port number; must be 16-bit value.  FIXME: Should be a Port
-    # value type.
-
-    error immutable Int
-    # Set if the address is not valid.
-
-    @init(str String, port Int) native {
-        # Initializes this IP address by parsing 'str'.  If the parsing fails,
-        # then the 'valid' attribute will be set to false.
-    }
-    
-    @equals(other Addr) Bool {
-        ret self and other and (ip == other.ip) and (port == other.port)
-    }
-
-    host?() native String {
-        # Returns the hostname associated with the socket's IP address.  Lazily
-        # calls gethostbyname() to determine the hostname.
-    }
-}
-# FIXME: Addr should be a value type
-
 connect(peer String, port Int) Stream {
     # Creates a new stream (TCP) socket and attempts to connect to 'peer'.
     # This function will block the current coroutine until the connection is

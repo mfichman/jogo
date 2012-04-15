@@ -158,14 +158,19 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->capacity - buffer->end;
+    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
+    Bool is_console = (Io_StreamType_CONSOLE == self->type);
 #ifdef WINDOWS
     DWORD read = 0;
     HANDLE handle = (HANDLE)self->handle;
     Int ret = 0;
+#endif
+    
+    if (self->status == Io_StreamStatus_EOF) { return; }
+
+#ifdef WINDOWS
 
     // Read from the file, async or syncronously
-    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
-    Bool is_console = (Io_StreamType_CONSOLE == self->type);
     if (is_blocking && !is_console) {
         // Set the low-order bit of the event if the handle is in blocking
         // mode.  This prevents a completion port notification from being 
@@ -183,11 +188,11 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     buffer->end += read;
 #else
 #ifdef DARWIN
-    if(Io_StreamMode_ASYNC == self->mode) {
+    if(!is_blocking && !is_console) {
         struct kevent ev;
         Int kqfd = Io_manager()->handle;
         Int fd = self->handle;
-        Int flags = EV_ADD|EV_ONESHOT;
+        Int flags = EV_ADD|EV_ONESHOT|EV_EOF;
         EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Coroutine__current); 
         Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
@@ -206,6 +211,9 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         self->error = errno;
     } else {
         buffer->end += ret;
+        if (Io_manager()->iobytes <= len) {
+            self->status = Io_StreamStatus_EOF;
+        }
     }
 #endif
 }
@@ -216,13 +224,13 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
 
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->end - buffer->begin;
+    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
+    Bool is_console = (Io_StreamType_CONSOLE == self->type);
 #ifdef WINDOWS
     HANDLE handle = (HANDLE)self->handle;
     DWORD written = 0;
     // Write to the file, async or synchronously
     
-    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
-    Bool is_console = (Io_StreamType_CONSOLE == self->type);
     if (is_blocking && !is_console) {
         // Set the low-order bit of the event if the handle is in blocking
         // mode.  This prevents a completion port notification from being 
@@ -240,18 +248,18 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
     buffer->begin += written;
 #else
 #ifdef DARWIN
-    if(Io_StreamMode_ASYNC == self->mode) {
+    if(!is_blocking && !is_console) {
         struct kevent ev;
         Int kqfd = Io_manager()->handle;
         Int fd = self->handle;
-        Int flags = EV_ADD|EV_ONESHOT;
+        Int flags = EV_ADD|EV_ONESHOT|EV_EOF;
         EV_SET(&ev, fd, EVFILT_WRITE, flags, 0, 0, Coroutine__current); 
         Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
             self->error = errno;
             return;
         }
-        //Coroutine__iowait();
+        Coroutine__iowait();
     }
 #endif
 

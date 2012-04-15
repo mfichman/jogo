@@ -30,8 +30,10 @@ using namespace std;
 BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
     env_(env),
     machine_(mach),
+    invert_branch_(false),
+    invert_guard_(false),
+    temp_(0),
     label_(0) {
-
 }
 
 void BasicBlockGenerator::operator()(File* file) {
@@ -654,7 +656,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
 
     // Generate code for the body of the function.
     emit(feature->block());
-    if (feature->type()->is_void() || function_->is_constructor()) {
+    if (feature->type()->is_void() || feature->is_constructor()) {
         func_return();
     }
     exit_scope();
@@ -1237,10 +1239,7 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
     for (Feature::Ptr f = clazz->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             Expression::Ptr init = attr->initializer();
-            if (!init) {
-                continue;
-            }
-            if (dynamic_cast<Empty*>(init.pointer())) {
+            if (!init || dynamic_cast<Empty*>(init.pointer())) {
                 continue;
             }
             Operand value = emit(init);

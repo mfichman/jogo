@@ -79,17 +79,27 @@ private:
 
 	void call(Function* function, Expression* expr);
     void dispatch_table(Class* feature);
-    void function_signature(Function* feature); 
+    void func_sig(Function* feature); 
+    void class_decl(Class* feature);
+    void class_def(Class* feature);
     void enter_scope();
     void exit_scope();
     void ctor_preamble(Class* feature);
     void scope_cleanup(Variable* variable);
+    void native_operator(Call* expr);
     void func_return();
     void dtor_epilog(Function* function);
+    void constants();
     void refcount_inc(Operand var);
     void refcount_dec(Operand var);
-	Operand emit(Expression* expr);
 	void line() { out_ << std::string(indent_, ' '); }
+    void brace() { out_ << "{ "; braces_++; }
+    void source_line(TreeNode* node);
+	Operand emit(Expression* expr);
+    Operand emit(Expression* expr, int yes, int no, bool inv);
+    Operand alloc_temp(Type* type);
+    Variable* variable(String* name);
+    void variable(Variable* var);
 
     Environment::Ptr env_;
     File::Ptr file_;
@@ -97,8 +107,19 @@ private:
     Class::Ptr class_;
     Function::Ptr function_;
     std::vector<Scope::Ptr> scope_;
+    std::set<String::Ptr> variable_;
 	Operand op_;
+    Operand return_;
+
 	int indent_;
+    int braces_;
+
+    int label_;
+
+    int true_;
+    int false_;
+    bool invert_guard_;
+    bool invert_branch_;
 };
 
 class IndentAnchor {

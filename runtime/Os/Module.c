@@ -21,8 +21,16 @@
  */
 
 #include "Primitives.h"
+#include "String.h"
+#include "Boot/Module.h"
 #ifdef WINDOWS
 #include <windows.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <errno.h>
 #endif
 
 String Os_strerror(Int error) {
@@ -32,13 +40,20 @@ String Os_strerror(Int error) {
     DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;
     LPTSTR buffer = ret->data;
     ret->length = FormatMessage(flags, 0, error, 0, buffer, 1024, 0);
-    if (!ret->length) {
-        Boot_abort(); 
+    if (ret->length) {
+        return ret;
     }
 #else
-    if (strerror_r(error, ret->data, ret->length)) {
-        Boot_abort();
+    if (!strerror_r(error, ret->data, 1024)) {
+        return ret;
     }
+    const char* msg = gai_strerror(error);
+    if (msg) {
+        strncpy(ret->data, msg, 1024);
+        ret->length = strlen(ret->data);
+        return ret;
+   }
 #endif
-    return ret;
+    Boot_abort();
+    return 0;
 }

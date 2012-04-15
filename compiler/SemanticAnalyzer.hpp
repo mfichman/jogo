@@ -121,4 +121,5 @@ private:
     Class::Ptr class_;
     Type::Ptr return_;
     Function::Ptr function_;
+    File::Ptr file_;
 };

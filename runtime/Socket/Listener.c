@@ -41,7 +41,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <errno.h>
-extern void* memset(void*, int, size_t);
 #endif
 #ifdef DARWIN
 #include <sys/event.h>

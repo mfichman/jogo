@@ -75,6 +75,10 @@ void SemanticAnalyzer::operator()(Class* feature) {
     ContextAnchor anchor(this);
     class_ = feature;
 
+    if (feature->file()) {
+        feature->file()->dependency(feature);
+    }
+
     // Make sure that there isn't a duplicate of this class.
     Feature::Ptr parent = feature->parent();
     if (parent->clazz(feature->name()) != feature) {
@@ -606,7 +610,10 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
 
     // Handle the case where a variable is called using the @call operator. 
     if (type) {
-        call->function(type->clazz()->function(env_->name("@call")));
+        Class* clazz = type->clazz();
+        if(clazz) {
+            call->function(clazz->function(env_->name("@call")));
+        }
         if (!call->function()) {
             err_ << expression->location();
             err_ << "Object is not callable\n";
@@ -1000,6 +1007,9 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
         feature->type(initializer->type());
         mutator(feature);
         accessor(feature);
+        if (feature->file()) {
+            feature->file()->dependency(feature->type()->clazz());
+        }
         return;
     }
 
@@ -1090,6 +1100,9 @@ void SemanticAnalyzer::operator()(Type* type) {
     // all generics that are part of the type to make sure that they resolve.
     if (type->is_self() || type->is_no_type() || type->is_void()) {
         return;
+    }
+    if (type->file()) {
+        type->file()->dependency(type->clazz());
     }
 
     if (type->is_generic() && class_) {

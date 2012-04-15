@@ -100,7 +100,7 @@ Stream < Object {
         # Returns the next character in the input stream. 
     }
 
-    put(char Char) native {
+    put(character Char) native {
         # Writes 'char' to the output buffer.  The character is not guaranteed
         # to be written to the output stream until 'flush()' is called.
     }

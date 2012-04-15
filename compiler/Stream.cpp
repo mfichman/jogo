@@ -29,6 +29,8 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdexcept>
+#include <cerrno>
 #endif
 
 Stream::Stream(const std::string& file) : error_(false) {

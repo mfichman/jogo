@@ -151,9 +151,10 @@ Constant* File::constant(String* scope, String* name) const {
 }
 
 void File::dependency(Feature* feature) {
-    if (feature->file() == this) {
-        return;
-    }
+    // Add a feature as a dependency of the file, unless it is already listed.
+    // FIXME: Uses a linear search, which may result in poor performance for
+    // long lists of dependencies.
+    if (!this || !feature) { return; }
 	if (Function* func = dynamic_cast<Function*>(feature)) {
 		if (func->is_primitive_op()) {
 			return;
@@ -164,6 +165,7 @@ void File::dependency(Feature* feature) {
             return;
         }
     }
+    
     dependency_.push_back(feature);
 }
 

@@ -29,6 +29,7 @@
 #include "Io/Stream.h"
 #include "Io/Manager.h"
 #include "Object.h"
+#include "String.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,8 +47,6 @@
 #ifdef DARWIN
 #include <sys/event.h>
 #endif
-
-void* memset(void* src, int value, size_t num);
 
 void Socket_Stream_close(Socket_Stream self) {
     // Closes underlying I/O stream for the socket.
@@ -170,7 +169,22 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
         return;
     }
 
-    // FIXME: Should wait for readable here?
+    struct kevent ev;
+    Int kqfd = Io_manager()->handle;
+    Int flags = EV_ADD|EV_ONESHOT|EV_EOF;
+    EV_SET(&ev, sd, EVFILT_WRITE, flags, 0, 0, Coroutine__current); 
+    ret = kevent(kqfd, &ev, 1, 0, 0, 0);
+    if (ret < 0) {
+        self->stream->error = errno;
+        return;
+    }
+
+    // Need to do this to get the error code
+    Coroutine__iowait();
+    ret = read(sd, 0, 0);
+    if (ret < 0) {
+        self->stream->error = errno;
+    }
     
 #endif
 } 

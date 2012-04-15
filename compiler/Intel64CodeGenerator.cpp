@@ -84,7 +84,9 @@ void Intel64CodeGenerator::operator()(File* file) {
 
     for (int i = 0; i < file->dependencies(); i++) {
         Feature::Ptr feat = file->dependency(i);
-        out_ << "extern "; label(feat->label()); out_ << "\n";
+        if (feat->file() != file) {
+            out_ << "extern "; label(feat->label()); out_ << "\n";
+        }
     }
 
     out_->flush();
@@ -438,14 +440,22 @@ void Intel64CodeGenerator::label(Operand op) {
 void Intel64CodeGenerator::label(const std::string& label) {
     // Emits a label, either as an operand or as an actual label at the
     // beginning of a code block.
+    std::string actual_label;
+    if (label == "main") {
+        actual_label = "main_";
+    } else if (label == "Boot_main") {
+        actual_label = "main";
+    } else {
+        actual_label = label;
+    }
 
-    if (label[0] == '.') {
-        out_ << label;
+    if (actual_label[0] == '.') {
+        out_ << actual_label;
     } else {
 #if defined(DARWIN)
-        out_ << "_" << label;
+        out_ << "_" << actual_label;
 #else
-        out_ << label;
+        out_ << actual_label;
 #endif   
     }
 }

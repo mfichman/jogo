@@ -32,10 +32,10 @@
 extern char *strerror(int errnum);
 #endif
 
-extern int main();
+extern int main_();
 
 void Boot_Main__call(Object self) {
-    main();
+    main_();
 }
 
 void Boot_print_ptr(Object object) {

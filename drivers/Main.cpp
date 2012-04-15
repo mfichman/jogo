@@ -102,7 +102,7 @@ void output_intel64(File* file) {
     if (env->link() && !env->make()) {
         obj_file = tempnam();
     } else {
-        obj_file = out_file + ".apo";
+        obj_file = out_file + ".ap.o";
     }
     file->output(env->name(obj_file));
     std::stringstream ss;
@@ -127,7 +127,7 @@ void output_c(File* file) {
     // platform-native C compiler.
     std::string name = File::no_ext_name(file->name()->string());
     std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
-    std::string c_file = env->assemble() ? tempnam() : out_file + ".apc";
+    std::string c_file = out_file + ".ap.c";//(env->assemble() ? tempnam() : out_file) + ".ap.c";
     file->output(env->name(c_file));
     cgen->out(new Stream(c_file));
     if (cgen->out()->error()) {
@@ -137,7 +137,10 @@ void output_c(File* file) {
         exit(1);
     }
     cgen->operator()(file);
-    
+    if (env->verbose()) {
+        Stream::stout()->flush();
+    }
+
     if (!env->assemble()) { return; }
 
     // Run the C compiler.  Output to a non-temp file if the compiler will
@@ -146,30 +149,42 @@ void output_c(File* file) {
     if (env->link() && !env->make()) {
         obj_file = tempnam();
     } else {
-        obj_file = out_file + ".apo";
+        obj_file = out_file + ".ap.o";
     }
-    
+    file->output(env->name(obj_file)); 
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << "cl.exe " << c_file << " /c /TC /Fo:" << obj_file;
     if (env->optimize()) {
         ss << " /O2";
+    } else {
+        ss << " /O0";
     }
 #else
     ss << "gcc " << c_file << " -c -o " << obj_file;
     if (env->optimize()) {
         ss << " -O2";
     } else {
-        ss << " -O1 -g";
+        ss << " -O0 -g";
     }
 #endif
+    for (int i = 0; i < env->includes(); i++) {
+        if (File::is_dir(env->include(i))) {
+#if defined(WINDOWS)
+            ss << " /I " << env->include(i); 
+#else
+            ss << " -I " << env->include(i);
+#endif
+        }
+    }
     if (env->verbose()) {
         Stream::stout() << ss.str() << "\n";
+        Stream::stout()->flush();
     }
     if (system(ss.str().c_str())) {
         exit(1);
     }
-    remove(c_file.c_str());
+    //remove(c_file.c_str());
 }
 
 void output(File* file) {
@@ -186,10 +201,10 @@ void output(File* file) {
     // that the static initialization is done properly.
 
     if (env->make() && env->link()) {
-        time_t t1 = File::mtime(out_file + ".apo");
+        time_t t1 = File::mtime(out_file + ".ap.o");
         time_t t2 = File::mtime(file->path()->string());
         time_t t3 = File::mtime(program_path);
-        file->output(env->name(out_file + ".apo"));
+        file->output(env->name(out_file + ".ap.o"));
         if (t1 >= t2 && t1 >=t3 && name != boot_main) { return; }
     }
  
@@ -261,7 +276,6 @@ int main(int argc, char** argv) {
     std::stringstream ss;
 #if defined(WINDOWS)    
     ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:amd64 ";
-    ss << "/ENTRY:Boot_main ";
     ss << obj_files << " /OUT:" << exe_file << ".exe ";
 #elif defined(LINUX)
     ss << "gcc -m64 " << obj_files << " -o " << exe_file;

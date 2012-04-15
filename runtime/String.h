@@ -24,6 +24,7 @@
 #define APOLLO_STRING_H
 
 #include "Primitives.h"
+#include <stdlib.h>
 
 struct String {
     Ptr _vtable;
@@ -46,6 +47,13 @@ String String_lowercase__g(String self);
 Int String_int__g(String self);
 Float String_float_g(String self);
 Int String_hash__g(String self);
-extern void String__vtable();
+extern Int String__vtable[];
+
+// These functions are from the C standard library, duplicated here because
+// String.h clashes with the C library string.h
+int strerror_r(int, char*, size_t);
+char* strncpy(char*, const char*, size_t);
+size_t strlen(const char*);
+void* memset(void*, int, size_t);
 
 #endif

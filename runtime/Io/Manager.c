@@ -20,6 +20,7 @@
  * IN THE SOFTWARE.
  */
 
+
 #include "Io/Manager.h"
 #include "Io/Stream.h"
 #include "Boot/Module.h"
@@ -37,7 +38,6 @@
 #endif 
 #include <stdlib.h>
 #include <stdio.h>
-
 
 Io_Manager Io_Manager__init() {
     // Initialize an event manager, and allocate an I/O completion port.
@@ -112,6 +112,7 @@ void Io_Manager_poll(Io_Manager self) {
 #elif defined(DARWIN)
     struct kevent event;
     int res = kevent(self->handle, 0, 0, &event, 1, NULL);
+    self->iobytes = event.data;
     if (res < 0) {
         Boot_abort();
     } else if (res == 0) {
