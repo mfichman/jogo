@@ -85,6 +85,7 @@ private:
     void constructor();
     void destructor();
     Type* fix_generics(Type* parent, Type* type);
+    void assign_enums(Class* clazz);
 
     Environment::Ptr env_;
     Stream::Ptr err_;

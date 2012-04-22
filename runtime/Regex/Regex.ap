@@ -28,22 +28,3 @@ Regex < Object {
     }          
 }
 
-InstrType = NOP | CHAR | MATCH | SPLIT | JUMP
-
-Instr < Object {
-    # An NFA state for the regex virtual machine.  An NFA is used internally
-    # by the regex compiler to generate a DFA for a regular expression.
-
-    type InstrType
-    # Initializes this instruction. 
-
-    char Char 
-    # Transition character for this state.  If char is -1, then this is a 
-    # "match" instruction.  If char is -2, then this is a "split" instruction.
-    # If char is -3, then this is a "jump" instruction. 
-
-    target Int
-    # Target for "jump" or "split" type instructions.  This is an index into
-    # the internal array stored in the Regex object.
-}
-

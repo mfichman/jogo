@@ -89,11 +89,10 @@ Thread < Object {
 }
 
 Match < Object {
-
     thread private Thread
 }
 
 Thread < Object {
-    # An NFA thread for the regex virtual machine.  This is roughly a replacement
+    # An NFA thread for the regex virtual machine. 
 }
 

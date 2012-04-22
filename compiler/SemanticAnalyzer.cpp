@@ -161,18 +161,13 @@ void SemanticAnalyzer::operator()(Class* feature) {
         env_->error();
     }
 
+    assign_enums(feature);
+
     // Iterate through all the features and generate accessors.  Also, select
     // a numeric value for each enum constant within the class
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             attr->slot(class_->next_slot());
-        } else if (Constant::Ptr cons = dynamic_cast<Constant*>(f.pointer())) {
-            if (!cons->initializer()) {
-                String::Ptr str(env_->integer(stringify(class_->next_enum())));
-                IntegerLiteral::Ptr lit(new IntegerLiteral(Location(), str));
-                lit->type(class_->type()); 
-                cons->initializer(lit);
-            }
         }
         f(this);
     }
@@ -548,7 +543,11 @@ void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
     }
     if (!constant) {
         err_ << expression->location();
-        err_ << "Undefined constant '" << id << "'\n";
+        err_ << "Undefined constant '";
+        if (scope && !scope->string().empty()) {
+             err_ << scope << "::";
+        }
+        err_ << id << "'\n";
         env_->error();
         expression->type(env_->no_type());
         return;
@@ -1346,4 +1345,41 @@ Type* SemanticAnalyzer::fix_generics(Type* parent, Type* type) {
     } 
     String* qn = type->qualified_name();
     return new Type(type->location(), qn, first, env_);
+}
+
+void SemanticAnalyzer::assign_enums(Class* feature) {
+    // Assigns values to enums and checks to ensure that there are no duplicates.
+    bool has_auto_enum = false;
+    int next_enum_value = 0;
+
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (Constant::Ptr cons = dynamic_cast<Constant*>(f.pointer())) {
+            if (!cons->initializer()) {
+                // Case 1: Auto-assigned enum constant value (no initializer
+                // expression)
+                String::Ptr str(env_->integer(stringify(next_enum_value++)));
+                IntegerLiteral::Ptr lit(new IntegerLiteral(Location(), str));
+                lit->type(feature->type()); 
+                cons->initializer(lit);
+                has_auto_enum = true;
+            } else if (feature->is_enum()) {
+                // Case 2: Manually-assigned enum constant value (initializer 
+                // expression present).
+                Expression* init = cons->initializer();
+                if (IntegerLiteral::Ptr lit = dynamic_cast<IntegerLiteral*>(init)) {
+                    std::stringstream ss(lit->value()->string());
+                    int value;
+                    ss >> value;
+                    next_enum_value = std::max(next_enum_value, value+1);
+                    if (has_auto_enum) {
+                        err_ << lit->location();
+                        err_ << "Explicit enum constants defined ";
+                        err_ << "after auto enum constant(s)\n";
+                        env_->error();
+                    }
+                    lit->type(feature->type());
+                }
+            }
+        }
+    }
 }

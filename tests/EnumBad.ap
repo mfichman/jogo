@@ -1,0 +1,17 @@
+
+
+Manual < Enum {
+    FRUIT
+    PEAR
+    APPLE
+    MANGO = 99
+}
+
+main() Int {
+
+    x = HELLO
+    y = FRUIT
+    z = Bob::MANGO
+
+    ret 0
+}

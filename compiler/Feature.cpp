@@ -112,14 +112,7 @@ Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
 
 		// For each constant, add an initializer if it doesn't already have one.  Assign
 		// enum IDs in sequence.
-		if (Constant::Ptr cons = dynamic_cast<Constant*>(feat)) {
-            if (!cons->initializer()) {
-                String::Ptr str(env->integer(stringify(next_enum())));
-                IntegerLiteral::Ptr lit(new IntegerLiteral(Location(), str));
-                lit->type(type); 
-                cons->initializer(lit);
-            }
-        }
+
     }
 }
 

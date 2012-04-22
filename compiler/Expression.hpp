@@ -60,6 +60,7 @@ public:
         value_(value) {
     }
     String* value() const { return value_; } 
+    typedef Pointer<StringLiteral> Ptr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -74,6 +75,7 @@ public:
         value_(value) {
     }
     String* value() const { return value_; } 
+    typedef Pointer<IntegerLiteral> Ptr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -84,6 +86,7 @@ private:
 class NilLiteral : public Expression {
 public:
     NilLiteral(Location loc) : Expression(loc) {}
+    typedef Pointer<NilLiteral> Ptr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -97,6 +100,7 @@ public:
         value_(value) {
     }
     String* value() const { return value_; } 
+    typedef Pointer<FloatLiteral> Ptr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }

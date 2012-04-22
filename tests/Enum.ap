@@ -1,0 +1,40 @@
+
+
+Auto1 < Enum {
+    PEACH
+    PEAR
+    APPLE
+}
+
+Auto2 = PEACH | PEAR | APPLE
+
+
+Manual < Enum {
+    MANGO = 99
+    PEACH 
+    PEAR
+    APPLE
+}
+
+
+
+main() Int {
+    if (Auto1::PEACH == Auto1::PEAR) {
+        Io::println("Fail: Non-unique auto-assigned constants")
+    }
+    if (Auto1::PEACH == Auto1::APPLE) {
+        Io::println("Fail: Non-unique auto-assigned constants")
+    }
+    if (Manual::MANGO == Manual::PEACH) {
+        Io::println("Fail: Non-unique auto-assigned constants")
+    }
+    if (Manual::MANGO == Manual::PEAR) {
+        Io::println("Fail: Non-unique auto-assigned constants")
+    }
+    if (Manual::MANGO == Manual::APPLE) {
+        Io::println("Fail: Non-unique auto-assigned constants")
+    }
+
+
+    ret 0
+}

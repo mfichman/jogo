@@ -43,8 +43,7 @@ public:
         env_(env),
         flags_(flags),
         parent_(0),
-        next_slot_(2), // 2: 1 for dispatch table, 1 for refcount
-        next_enum_(0) {
+        next_slot_(2) { // 2: 1 for dispatch table, 1 for refcount
     }
 
     virtual Feature* feature(String* name) const { return 0; }
@@ -69,7 +68,6 @@ public:
     void flags(Flags flags) { flags_ = flags; }
     void parent(Feature* parent) { parent_ = parent; }
     int next_slot() { return next_slot_++; }
-    int next_enum() { return next_enum_++; }
     typedef Pointer<Feature> Ptr;
 
     static const int PRIVATE = 0x1;
@@ -88,7 +86,6 @@ private:
     mutable String::Ptr label_;
     Feature* parent_;
     int next_slot_;
-    int next_enum_;
 };
 
 /* Represents a Constant initializer */
