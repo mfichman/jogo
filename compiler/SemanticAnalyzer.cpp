@@ -524,7 +524,18 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         env_->error();  
     }
     expression->file()->dependency(constr);
-    expression->arguments(args(expression->arguments(), constr, type));  
+    
+    if (clazz->is_enum()) {
+        err_ << expression->location();
+        err_ << "Enums do not have constructors\n";
+        env_->error();
+    } else if (!constr) {
+        err_ << expression->location();
+        err_ << "Class '" << type << "' has no constructor\n";
+        env_->error();
+    } else {
+        expression->arguments(args(expression->arguments(), constr, type));  
+    }
 	if (function_) {
 		function_->called_func(constr);
 	}

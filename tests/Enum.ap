@@ -17,8 +17,13 @@ Manual < Enum {
 }
 
 
-
 main() Int {
+    x Manual
+
+    if (x != Manual::MANGO) {
+        Io::println("Fail: Stack var not assigned to default enum val")
+    } 
+
     if (Auto1::PEACH == Auto1::PEAR) {
         Io::println("Fail: Non-unique auto-assigned constants")
     }

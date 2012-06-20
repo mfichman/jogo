@@ -8,7 +8,7 @@ Manual < Enum {
 }
 
 main() Int {
-
+    w = Manual()
     x = HELLO
     y = FRUIT
     z = Bob::MANGO

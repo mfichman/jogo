@@ -1,4 +1,5 @@
 EnumBad.ap:7:13: Explicit enum constants defined after auto enum constant(s)
+EnumBad.ap:11:9: Enums do not have constructors
 EnumBad.ap:12:9: Undefined constant 'HELLO'
 EnumBad.ap:13:9: Undefined constant 'FRUIT'
 EnumBad.ap:14:9: Undefined constant 'Bob::MANGO'

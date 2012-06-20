@@ -116,6 +116,19 @@ Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
     }
 }
 
+String* Class::default_enum_value() const {
+    // Returns the first (default) value in the enumeration.
+    for (Feature* feat = features_; feat; feat = feat->next()) {
+        if (Constant* cons = dynamic_cast<Constant*>(feat)) {
+            Expression* init = cons->initializer();
+            if (IntegerLiteral* lit = dynamic_cast<IntegerLiteral*>(init)) {
+                return lit->value();
+            }
+        }
+    }
+    return env()->integer("0");
+}
+
 void Class::jump1(int index, int d) {
     if (index >= jump1_.size()) {
         jump1_.resize(index+1);

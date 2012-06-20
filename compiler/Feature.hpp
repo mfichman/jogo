@@ -58,6 +58,7 @@ public:
     String* label() const;
     String* qualified_name() const;
     Feature* parent() const { return parent_; }
+    Environment* env() const { return env_; }
     bool is_private() const { return flags_ & PRIVATE; }
     bool is_native() const { return flags_ & NATIVE; }
     bool is_weak() const { return flags_ & WEAK; }
@@ -226,6 +227,7 @@ public:
     Type* type() const { return type_; }
     Type* alternates() const { return alternates_; }
     Type* mixins() const { return mixins_; }
+    String* default_enum_value() const;
     bool is_object() const { return is_object_; }
     bool is_enum() const { return is_enum_; }
     bool is_mixin() const { return is_mixin_; }

@@ -486,7 +486,13 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
 
     Expression::Ptr init = expr->initializer();
     if (dynamic_cast<Empty*>(init.pointer())) {
-        return_ = env_->integer("0");
+        String::Ptr value;
+        if (expr->type()->is_enum()) {
+            value = expr->type()->clazz()->default_enum_value();
+        } else {
+            value = env_->integer("0");
+        }
+        return_ = new IntegerLiteral(Location(), value);
     } else if (init->type()->is_bool()) {
         return_ = bool_expr(init.pointer());
     } else {
@@ -528,9 +534,7 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         if (!declared) {
             declared = expr->type();
         }
-        //Variable::Ptr var = new Variable(id, mov(return_), declared);
-        Variable::Ptr var = new Variable(id, return_, declared);
-        variable(var);
+        variable(new Variable(id, move(return_), declared));
         if (!declared->is_value()) {
             refcount_inc(return_);
         }

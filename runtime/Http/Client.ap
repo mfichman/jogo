@@ -120,7 +120,6 @@ Response < Object {
         match value {
         with 100: ret Status::CONTINUE
         with 101: ret Status::SWITCHING_PROTOCOLS
-    
         }
     }
 }
