@@ -534,7 +534,7 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         if (!declared) {
             declared = expr->type();
         }
-        variable(new Variable(id, move(return_), declared));
+        variable(new Variable(id, mov(return_), declared));
         if (!declared->is_value()) {
             refcount_inc(return_);
         }
