@@ -108,10 +108,9 @@ Response < Object {
 
     @init(stream Io::Stream) {
         # Parses a new request from the given stream.
-        version = stream.scan(" ")
-        code = stream.scan(" ")
-    #    status = code.
-
+        #version = stream.scan(" ")
+        #stream.scan(" ") # = status
+        #message = stream.scanln()
     }
 
     strstatus(value Int) private Status {
@@ -137,7 +136,7 @@ Client < Object {
         socket = Socket::connect(host, port)
     }
 
-    request(request Request) {
+    request(request Request) Response {
         # Issues a new request using the given IO stream.
         method = methodstr(request.method)
         stream = socket.stream
@@ -147,6 +146,7 @@ Client < Object {
         }
         stream.print("\n")
         stream.flush()
+        ret Response(stream)
     }
 
     methodstr(method Method) private String {

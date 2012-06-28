@@ -66,6 +66,7 @@ Int Io_Stream_peek(Io_Stream self);
 void Io_Stream_put(Io_Stream self, Char ch);
 String Io_Stream_scan(Io_Stream self, String delim);
 void Io_Stream_print(Io_Stream self, String str);
+void Io_Stream_pipe(Io_Stream self, Io_Stream input);
 void Io_Stream_flush(Io_Stream self);
 void Io_Stream_close(Io_Stream self);
 void Io_Stream_register_console(Io_Stream self);

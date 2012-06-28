@@ -739,6 +739,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
     String::Ptr id = expr->identifier();
     Variable::Ptr var = variable(id);
     Type::Ptr type = var ? var->type() : 0;
+    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
 
     Expression::Ptr init = expr->initializer();
     init(this);
@@ -786,6 +787,13 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
             env_->error();
             return;
         }
+        // The variable is already declared as an attribute.
+        if (attr) {
+            err_ << expr->location();
+            err_ << "Local variable declaration shadows attribute\n";
+            env_->error();      
+            return;
+        }
         if (!init->type()) {
             return; 
         }
@@ -815,6 +823,16 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
             err_ << init->location();
             err_ << "Expression does not conform to type '";
             err_ << type << "' in assignment of '" << id << "'\n";
+            env_->error();
+            return;
+        }
+    
+        // The variable is an attribute, but the type does not match the type
+        // of the attribute that is being assigned
+        if (attr && !init->type()->subtype(attr->type())) {
+            err_ << init->location();
+            err_ << "Expression does not conform to type '";
+            err_ << attr->type() << "' in assignment of '" << id << "'\n";
             env_->error();
             return;
         }

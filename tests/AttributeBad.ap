@@ -1,0 +1,11 @@
+
+BadAttribute < Object {
+
+
+    bad_attribute String
+
+    @init() {
+        bad_attribute = 1 # Should cause a type error
+        bad_attribute Any # Shadows attribute (not allowed for now)
+    }
+}

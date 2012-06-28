@@ -20,6 +20,7 @@
  * IN THE SOFTWARE.
  */
 
+#include "Io/Module.h"
 #include "Io/Stream.h"
 #include "Io/Manager.h"
 #include "String.h"

@@ -137,6 +137,10 @@ Stream < Object {
         # Writes any characters in the internal output buffer to the output
         # stream.
     }
+
+    pipe(input Stream) native {
+        # Reads all bytes from 'input' and outputs to this stream.
+    }
     
     close() native {
         # Calls 'flush()' then closes the file descriptor, so that no more

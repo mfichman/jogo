@@ -23,6 +23,7 @@
 
 #include "Io/Manager.h"
 #include "Io/Stream.h"
+#include "Io/Module.h"
 #include "Boot/Module.h"
 #include "Coroutine.h"
 #include "String.h"
@@ -75,6 +76,8 @@ void Io_Manager_shutdown(Io_Manager self) {
 #else
     close(self->handle);
 #endif
+    Io_Stream_flush(Io_stdout());
+    Io_Stream_flush(Io_stderr());
 }
 
 void Io_Manager__destroy(Io_Manager self) {
@@ -96,7 +99,6 @@ void Io_Manager_poll(Io_Manager self) {
     Io_Overlapped* op = 0;
     OVERLAPPED** evt = (OVERLAPPED**)&op;
 #endif
-
     if (Coroutine__current != &Coroutine__main) {
         fprintf(stderr, "Io::Manager::poll() called by user coroutine");
         fflush(stderr);

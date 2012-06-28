@@ -211,7 +211,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         self->error = errno;
     } else {
         buffer->end += ret;
-        if (Io_manager()->iobytes <= len) {
+        if (self->type == Io_StreamType_FILE && Io_manager()->iobytes <= len) {
             self->status = Io_StreamStatus_EOF;
         }
     }
@@ -372,9 +372,36 @@ void Io_Stream_print(Io_Stream self, String str) {
     }
 }
 
+void Io_Stream_pipe(Io_Stream self, Io_Stream input) {
+    // Pipes all input from 'input' to 'self'.  If 'input' is null, does
+    // nothing.
+    if (!input) { return; }
+
+    // Flush the receiver's output buffer first, so that output has the correct
+    // ordering.
+    Io_Stream_flush(self);
+    
+    // Read from 'input'; then write directly from the input buffer buffer
+    // without doing any byte-copies.
+    while (input->status == Io_StreamStatus_OK) {
+        while (input->read_buf->end != input->read_buf->begin) {
+            if (self->status == Io_StreamStatus_ERROR) {
+                return;
+            }
+            Io_Stream_write(self, input->read_buf); 
+        }
+        input->read_buf->begin = 0;
+        input->read_buf->end = 0;
+        Io_Stream_read(input, input->read_buf);   
+    }
+}
+
 void Io_Stream_flush(Io_Stream self) {
     // Forces all buffered characters to be written to the stream.
     while (self->write_buf->end != self->write_buf->begin) {
+        if (self->status == Io_StreamStatus_ERROR) {
+            return;
+        }
         Io_Stream_write(self, self->write_buf); 
     }
     self->write_buf->begin = 0;
