@@ -1303,3 +1303,4 @@ void BasicBlockGenerator::constants() {
         function_->file()->dependency(cons);
     }
 }
+
