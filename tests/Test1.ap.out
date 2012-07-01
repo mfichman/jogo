@@ -3,6 +3,8 @@ Test1.ap:8:24: Function 'foo' not found in class 'Int'
 Module
   name: Boot
 Module
+  name: Regex
+Module
   name: Io
 Module
   name: 

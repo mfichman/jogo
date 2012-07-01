@@ -1,0 +1,14 @@
+
+
+main() Int {
+
+#    re = /hello/
+
+    if /abc+/ =~ "abcccc" {
+    }
+    #    Io::println("pass")
+    #} else {
+    #    Io::println("fail")
+    #}
+    ret 0
+}

@@ -40,10 +40,12 @@ Parser::Parser(Environment* env) :
     input("Object");
     input("String");
     input("Coroutine");
+    input("Array");
     input("Io");
     input("Pair");
     input("Hash");
 	input("Queue");
+    input("Regex");
 
     for (int i = 0; i < env->inputs(); i++) {
         is_input_file_ = true;
@@ -803,6 +805,12 @@ Expression* Parser::equality() {
             expr = new Is(loc, expr, type());
             break;
         }
+        case Token::MATCH_OP: {
+            next();
+            Expression* right = relational();
+            expr = op(loc, "@match", expr, right);
+            break;
+        }
         default: 
             return expr;
         }
@@ -1215,6 +1223,8 @@ Expression* Parser::literal() {
         return expr;  
     case Token::STRING_BEGIN:
         return string();
+    case Token::REGEX:
+        return regex(); 
     default:
         if (!error_) {
             err_ << location() << "Unexpected " << token() << "\n";
@@ -1224,6 +1234,15 @@ Expression* Parser::literal() {
     }
     next();
     return expr;
+}
+
+Expression* Parser::regex() {
+    // Returns an expression constructing a Regex object from a Regex literal.
+    LocationAnchor loc(this);
+    Type::Ptr type = new Type(loc, name("Regex::Regex"), 0, env_);
+    Expression::Ptr arg = new StringLiteral(loc, env_->string(value()));
+    next();
+    return new Construct(loc, type, arg);
 }
 
 Expression* Parser::string() {
@@ -1245,7 +1264,7 @@ Expression* Parser::string() {
         }
         
     }
-    Expression* tmp = new StringLiteral(location(), env_->string(value()));
+    Expression::Ptr tmp = new StringLiteral(location(), env_->string(value()));
     expect(Token::STRING_END);
     expr = op(loc, "@add", expr, tmp);
     return expr;

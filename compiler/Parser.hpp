@@ -82,6 +82,7 @@ private:
     Statement* for_loop();
     Statement* let();
 
+    Expression* regex();
     Expression* string();
     Expression* expression();
     Expression* expression_list();

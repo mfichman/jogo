@@ -1,6 +1,8 @@
 Module
   name: Boot
 Module
+  name: Regex
+Module
   name: Io
 Module
   name: 

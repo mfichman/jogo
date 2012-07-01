@@ -50,7 +50,7 @@ public:
         YIELD, FORK, ERROR, END, NONE, DOT, FLOAT, INTEGER, COMMA, COLON,
         LEFT_BRACKET, RIGHT_BRACKET, LEFT_PARENS, RIGHT_PARENS, COMPL, 
         STRING_BEGIN, STRING_END, CHAR, LEFT_BRACE, RIGHT_BRACE, MATCH, FUNC, 
-        PRIVATE, BOOL, NIL, EOF_LITERAL, IS, CONSTANT, WITH, MATCH_OP
+        PRIVATE, BOOL, NIL, EOF_LITERAL, IS, CONSTANT, WITH, MATCH_OP, REGEX
     };
 
     Token() : type_(NONE) {}
@@ -64,6 +64,7 @@ public:
     std::string& value() { return value_; }
     const Location& location() const { return location_; }
     const std::string& value() const { return value_; }
+    bool is_operator() const;
     void value(const std::string& value) { value_ = value; }
     void location(const Location& loc) { location_ = loc; }
 
@@ -92,6 +93,7 @@ private:
     void token(Token::Type type) { token_[front_] = type; }
     void value(const std::string& value) { token_[front_].value(value); }
 
+    void regex();
     void number_or_dot();
     void special();
     void ident_or_keyword();

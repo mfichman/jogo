@@ -25,5 +25,6 @@ Compiler < Object {
     compile(str String) Regex {
         # Compiles the regular expression in 'str' to a regular expression 
         # object.
+        ret nil
     } 
 }

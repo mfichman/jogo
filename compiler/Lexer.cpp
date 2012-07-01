@@ -125,6 +125,9 @@ void Lexer::next() {
             value("");
             token(Token::SEPARATOR);
             ignore_newline_ = true;
+        } else if (char_ == '/' && token(-1).is_operator()) {
+            regex();
+            expect_comment_ = false; 
         } else if (isdigit(char_)) {
             number_or_dot();
             expect_comment_ = false;
@@ -183,6 +186,21 @@ void Lexer::comment() {
         read();
     }
     value(tmp);
+}
+
+void Lexer::regex() {
+    // Reads a full regex, e.g., /.*/, with escape characters.
+    read();
+    while (char_ != '/') {
+        if (char_ == '\\') {
+            read();
+        }
+        read();
+    }
+    read(); 
+    token(Token::REGEX);    
+    value(value().substr(1, value().length()-2));
+    ignore_newline_ = false;
 }
 
 void Lexer::number_or_dot() {
@@ -480,6 +498,7 @@ void Lexer::read() {
 
 Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {
     switch (token) {
+    case Token::REGEX: return out << "regex";
     case Token::CONSTANT: return out << "constant";
     case Token::OR: return out << "'or'"; 
     case Token::AND: return out << "'and'";
@@ -562,4 +581,39 @@ Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {
     case Token::DOT: return out << "'.'";
     }
     return out;
+}
+
+bool Token::is_operator() const {
+    switch (*this) {
+    case Token::AND:
+    case Token::XORB:
+    case Token::ANDB:
+    case Token::ASSIGN:
+    case Token::EQUAL:
+    case Token::LESS:
+    case Token::GREATER:
+    case Token::LESS_OR_EQ:
+    case Token::COMPARE:
+    case Token::LEFT_SHIFT:
+    case Token::RIGHT_SHIFT:
+    case Token::IS:
+    case Token::ADD:
+    case Token::SUB:
+    case Token::MUL:
+    case Token::DIV:
+    case Token::MOD:
+    case Token::NOT:
+    case Token::POW:
+    case Token::INCREMENT:
+    case Token::DECREMENT:
+    case Token::LEFT_PARENS:
+    case Token::RIGHT_PARENS:
+    case Token::COMPL:
+    case Token::IF:
+    case Token::WHILE:
+    case Token::ELSE:
+        return true;
+    default:
+        return false;
+    }
 }

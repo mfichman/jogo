@@ -22,7 +22,7 @@ Matcher < Object {
     # Matches strings with regular expressions.  The @match operator returns
     # a match object if a match is found; otherwise, nil is returned.  
     
-    thread = Array[Thread]() 
+    thread = Array[Thread](0) 
     # An array of threads, with at most one for each state in the NFA.  This
     # array is equal in length to the size of the NFA; the individual threads
     # are used to store the locations of running threads within the NFA. 
@@ -43,24 +43,26 @@ Matcher < Object {
 
         for char in str {
             for th in thread {
-                instr = regex.instr(th.index)
-                match instr.type {
-                InstrType::NOP:
-                    
-                InstrType::CHAR:    
-                    # Regular character instruction
-
-                InstrType::MATCH:
-                    # Match instruction
-
-                InstrType::SPLIT:
-                    # Split instruction
-
-                InstrType::JUMP:
-                    # Jump instruction
-                }
+#                instr = regex.instr(th.index)
+#                match instr.type {
+#                InstrType::NOP:
+#                    
+#                InstrType::CHAR:    
+#                    # Regular character instruction
+#
+#                InstrType::MATCH:
+#                    # Match instruction
+#
+#                InstrType::SPLIT:
+#                    # Split instruction
+#
+#                InstrType::JUMP:
+#                    # Jump instruction
+#                }
+#            }
             }
         }
+        ret nil
     }
 }
 
@@ -81,18 +83,16 @@ Thread < Object {
 
     begin(index Int) Int {
         # Returns the beginning of submatch with index 'index.'
+        ret 0
     }
 
     end(index Int) Int {
         # Returns the end of the submatch with index 'index.'
+        ret 0
     }
 }
 
 Match < Object {
     thread private Thread
-}
-
-Thread < Object {
-    # An NFA thread for the regex virtual machine. 
 }
 

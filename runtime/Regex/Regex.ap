@@ -22,7 +22,11 @@ Regex < Object {
     # A compiled representation of a regular expression.  Regular expressions
     # are used to match arbitrary strings.
 
-    @match(str String) Bool {
+    @init(regex String) {
+        # Constructs a new regular expression from the given string.
+    } 
+
+    @match(str String) Match {
         # Returns true if this regular expression matches 'str'
         ret Matcher(self) =~ str
     }          
