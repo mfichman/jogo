@@ -29,6 +29,8 @@
 #include <vector>
 #include <map>
 
+class Scope;
+
 /* Variable structure, used to store info about assigned vars in a scope */
 class Variable : public Object {
 public:
@@ -36,19 +38,23 @@ public:
         name_(name),
         operand_(op),
         type_(type),
+        scope_(0),
         is_immutable_(immut) {
     }
 
     String* name() const { return name_; }
     Operand operand() const { return operand_; }
     Type* type() const { return type_; }
+    Scope* scope() const { return scope_; }
     bool is_immutable() const { return is_immutable_; }
+    void scope(Scope* scope) { scope_ = scope; }
     typedef Pointer<Variable> Ptr;
 
 private:
     String::Ptr name_;
     Operand operand_;
     Type::Ptr type_; 
+    Scope* scope_;
     bool is_immutable_;
 };
 

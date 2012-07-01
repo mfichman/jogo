@@ -1277,8 +1277,22 @@ Statement* Parser::let() {
     LocationAnchor loc(this);
     expect(Token::LET);
     Assignment::Ptr assign = assignment(); 
+    if(!assign->declared_type()) {
+        // This forces a new variable to be declared (i.e., if there is a
+        // second variable that shadows this assignment in the enclosing scope,
+        // then this "let" statement will declare a new variable rather than 
+        // reusing the old one).
+        assign->declared_type(env_->no_type());
+    }
     while (token() == Token::COMMA) {
         assign = append(assign, assignment());
+        if(!assign->declared_type()) {
+            // This forces a new variable to be declared (i.e., if there is a
+            // second variable that shadows this assignment in the enclosing
+            // scope, then this "let" statement will declare a new variable
+            // rather than reusing the old one).
+            assign->declared_type(env_->no_type());
+        }
     } 
     return new Let(loc, assign, block()); 
 }
@@ -1305,7 +1319,7 @@ Statement* Parser::for_loop() {
 
     // _i = guard.iter()
     Expression* t1 = op(loc, "iter", guard, 0);
-    Assignment* t2 = new Assignment(loc, i, 0, t1);
+    Assignment* t2 = new Assignment(loc, i, env_->no_type(), t1);
 
     // while (_i.more()) 
     Expression* t3 = new Identifier(loc, name(""), i);
@@ -1314,7 +1328,7 @@ Statement* Parser::for_loop() {
     // id = _i.next()    
     Expression* t5 = new Identifier(loc, name(""), i);
     Expression* t6 = op(loc, "next", t5, 0);
-    Simple* t7 = new Simple(loc, new Assignment(loc, id, 0, t6));
+    Simple* t7 = new Simple(loc, new Assignment(loc, id, env_->no_type(), t6));
 
     t7->next(block);
     

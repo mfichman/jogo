@@ -503,7 +503,7 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
     Variable::Ptr var = variable(id);
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
 
-    if (var) {
+    if (var && !expr->declared_type()) {
         // Assignment to a local var that has already been initialized once in
         // the current scope.
         Type::Ptr type = var->type();
@@ -531,7 +531,7 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         // Assignment to a local var that has not yet been initialized in the
         // current scope.
         Type::Ptr declared = expr->declared_type();
-        if (!declared) {
+        if (!declared || declared == env_->no_type()) {
             declared = expr->type();
         }
         variable(new Variable(id, mov(return_), declared));

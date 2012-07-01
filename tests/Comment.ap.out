@@ -66,6 +66,7 @@ Module
           expression: Assignment
             name: x
             type: String
+            declared: <<null>>
             initializer: Identifier
               name: _arg0
     feature6: Function

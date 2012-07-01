@@ -23,6 +23,7 @@
 #include "Scope.hpp"
 
 void Scope::variable(Variable* variable) { 
+    variable->scope(this);
     variable_.push_back(variable);
 }
 

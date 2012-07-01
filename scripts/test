@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import optparse, os, subprocess, re, sys, glob
+import optparse, os, subprocess, re, sys, glob, difflib
 
 parser = optparse.OptionParser()
 parser.add_option('-f', '--full', action='store_true', 
@@ -11,6 +11,7 @@ parser.add_option('-v', '--verbose', action='store_true',
 
 os.chdir('tests')
 
+fail_file = open('../build/test.fail', 'w')
 total = 0
 fail = False
 
@@ -26,12 +27,25 @@ def check(test, expected, output):
     output = output.replace('\r', '')
 
     if output != expected:
+        fail_file.write(test+'\n')
         print(''.join(['-' for i in range(79)]))
         print('FAILED TEST: ' + test)
-        print(''.join(['-' for i in range(70)])+' Expected')
-        print(expected)
-        print(''.join(['-' for i in range(72)])+' Output')
-        print(output)
+        print(''.join(['-' for i in range(79)]))
+        expected_lines = expected.split('\n')
+        output_lines = output.split('\n')
+        print('\n'.join(difflib.unified_diff(
+            expected_lines, 
+            output_lines, 
+            lineterm='',
+            fromfile='Expected output',
+            tofile='Actual output')))
+        print(''.join(['-' for i in range(79)]))
+        
+        #print(''.join(['-' for i in range(70)])+' Expected')
+        #print(''.join(['-' for i in range(70)])+' Expected')
+        #print(expected)
+        #print(''.join(['-' for i in range(72)])+' Output')
+        #print(output)
         fail = True
 
 def shell(command):
@@ -65,7 +79,7 @@ def apollo_test(test):
     if sys.platform == 'win32':
         command = command.replace('/', '\\')
     output = shell(command + ' 2>&1')
-    check(test, expected, output)
+    check(test+'.ap', expected, output)
     
 
 def python_test(test):
@@ -73,7 +87,7 @@ def python_test(test):
     # easily expressed in C++.
     expected = open(test + '.out', 'r').read()
     output = shell('python ' + test + ' 2>&1')
-    check(test, expected, output)
+    check(test+'.py', expected, output)
 
 def native_test(test):
     # C/C++ tests.  Used primarily for unit tests and to test the runtime
@@ -89,11 +103,9 @@ def native_test(test):
     else:
         command = 'gcc -g ' + test + ' -o ../build/' + exe + ' -L../lib '
         command += '-lapollo -lm -I .. 2>&1'
-        print(os.popen(command).read())
+        os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
-    check(test, expected, output)
-
-
+    check(test+'.c', expected, output)
 
 for test in tests:
     # Iterate through all the tests, and run the correct callback for each

@@ -259,7 +259,7 @@ Class* Type::clazz() const {
 
 Stream::Ptr operator<<(Stream::Ptr out, const Type* type) {
     if (!type) {
-        return out << "<<notype>>";
+        return out << "<<null>>";
     }   
     if (type->scope()->string().empty()) {
         out << type->name();

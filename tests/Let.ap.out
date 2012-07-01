@@ -19,6 +19,7 @@ Module
           variable0: Assignment
             name: a
             type: Int
+            declared: Int
             initializer: IntegerLiteral(0)
           block: Block
     feature1: Function

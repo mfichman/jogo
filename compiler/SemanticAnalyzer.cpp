@@ -738,7 +738,8 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
 
     String::Ptr id = expr->identifier();
     Variable::Ptr var = variable(id);
-    Type::Ptr type = var ? var->type() : 0;
+    Type::Ptr declared = expr->declared_type();
+    Type::Ptr type = (var && declared != env_->no_type()) ? var->type() : 0;
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
 
     Expression::Ptr init = expr->initializer();
@@ -749,10 +750,14 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         expr->type(expr->declared_type());
     }
 
-    if (expr->declared_type()) {
-        Type::Ptr type = expr->declared_type();
-        type(this);
-        if (!type->clazz()) {
+    if (declared && declared != env_->no_type()) {
+        // If declared_type == no_type, then the variable declaration has no
+        // true declared type, but it defines a new variable regardless of
+        // whether or not the variable is already shadowed by another variable.
+        declared(this);
+        // Check to make sure the declared type is valid; if it isn't, then
+        // set the variable to no_type and return.
+        if (!declared->clazz()) {
             variable(new Variable(id, 0, env_->no_type()));
             return;
         }
@@ -775,13 +780,15 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         return;
     }
     
-    Type::Ptr declared = expr->declared_type();
-    if (declared) {
+    if (declared && declared != env_->no_type()) {
+        // If declared_type == no_type, then the variable declaration has no
+        // true declared type, but it defines a new variable regardless of
+        // whether or not the variable is already shadowed by another variable.
         variable(new Variable(id, 0, declared));
 
         // The variable was declared with an explicit type, but the variable
         // already exists.
-        if (type) {
+        if (type && scope() == var->scope()) {
             err_ << expr->location();
             err_ << "Duplicate definition of variable '" << id << "'\n";
             env_->error();
@@ -1271,8 +1278,10 @@ Variable* SemanticAnalyzer::variable(String* name) {
 }
 
 void SemanticAnalyzer::variable(Variable* var) {
+    assert(env_->errors()||var->type()!=env_->no_type());
     assert(scope_.size());
     scope_.back()->variable(var);
+    assert(var->scope()==scope());
 }
 
 void SemanticAnalyzer::enter_scope() {

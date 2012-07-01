@@ -74,6 +74,7 @@ Module
           expression: Assignment
             name: t
             type: TypeChecker
+            declared: <<null>>
             initializer: Construct
               type: TypeChecker
         child1: Statement
@@ -95,6 +96,7 @@ Module
           expression: Assignment
             name: a
             type: Int
+            declared: <<null>>
             initializer: Call
               expression: Member
                 identifier: check1
@@ -106,6 +108,7 @@ Module
           expression: Assignment
             name: b
             type: Int
+            declared: <<null>>
             initializer: Call
               expression: Member
                 identifier: @add
@@ -118,22 +121,26 @@ Module
           expression: Assignment
             name: c
             type: CycleType1
+            declared: CycleType1
             initializer: Empty
         child5: Statement
           expression: Assignment
             name: d
             type: CycleType2
+            declared: CycleType2
             initializer: Empty
         child6: Statement
           expression: Assignment
             name: c
             type: CycleType2
+            declared: <<null>>
             initializer: Identifier
               name: d
         child7: Statement
           expression: Assignment
             name: d
             type: CycleType1
+            declared: <<null>>
             initializer: Identifier
               name: c
         child8: Statement
@@ -152,6 +159,7 @@ Module
           expression: Assignment
             name: e
             type: Bool
+            declared: Bool
             initializer: Empty
         child10: Conditional
           guard: Binary

@@ -1,3 +1,4 @@
+alloc: 0
 alloc: 3
 alloc: 1
 alloc: 2
@@ -32,3 +33,4 @@ free: 16
 free: 15
 free: 4
 free: 3
+free: 0

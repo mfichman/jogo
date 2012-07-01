@@ -387,6 +387,8 @@ void TreePrinter::operator()(Assignment* statement) {
     out_ << statement->identifier() << "\n";
     print_tabs(); out_ << "type: ";
     out_ << statement->type() << "\n";
+    print_tabs(); out_ << "declared: ";
+    out_ << statement->declared_type() << "\n";
     print_tabs(); out_ << "initializer: ";
     initializer(this);
     indent_level_--; 

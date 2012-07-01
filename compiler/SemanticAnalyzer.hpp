@@ -75,6 +75,7 @@ private:
     void operator()(Type* type);
     void operator()(Closure* expression);
 
+    Scope* scope() const { return scope_.back(); }
     Variable* variable(String* name);
     void variable(Variable* var);
     void enter_scope();

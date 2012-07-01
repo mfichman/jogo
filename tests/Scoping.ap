@@ -1,0 +1,44 @@
+# Tests for proper scoping of variables in many cases.
+import Array
+
+main() Int {
+    outer = 0
+    array = Array[String](10)
+    array.push("one")
+    array.push("two")
+
+    let outer String = "hello" {
+        Io::println(outer)
+    }
+    Io::println(outer.str)
+
+    let outer = "goodbye" {
+        Io::println(outer)
+    }
+    Io::println(outer.str)
+
+    for outer in array {
+        Io::println(outer)
+    }
+    Io::println(outer.str)
+
+    if true {
+        outer = 9
+        Io::println(outer.str)
+    }
+    Io::println(outer.str)
+
+    while outer != 0 {
+        outer = 0
+        Io::println(outer.str)
+    }
+    Io::println(outer.str)
+
+    if true {
+        outer String = "hello"
+        Io::println(outer)
+    }
+    Io::println(outer.str)
+
+    ret 0
+}

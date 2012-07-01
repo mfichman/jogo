@@ -162,6 +162,7 @@ Module
         expression: Assignment
           name: a
           type: Int
+          declared: Int
           initializer: IntegerLiteral(10)
       child2: Return
         expression: Identifier
@@ -178,6 +179,7 @@ Module
         expression: Assignment
           name: a
           type: Int
+          declared: <<null>>
           initializer: IntegerLiteral(10)
   feature6: Class
     name: Container
@@ -224,6 +226,7 @@ Module
           expression: Assignment
             name: value
             type: :b
+            declared: <<null>>
             initializer: Identifier
               name: _arg0
     feature5: Function
@@ -268,6 +271,7 @@ Module
           expression: Assignment
             name: one
             type: One[String,String]
+            declared: <<null>>
             initializer: Identifier
               name: _arg0
     feature4: Function
@@ -316,6 +320,7 @@ Module
           expression: Assignment
             name: two
             type: Two[String]
+            declared: <<null>>
             initializer: Identifier
               name: _arg0
     feature5: Function
@@ -342,6 +347,7 @@ Module
           expression: Assignment
             name: three
             type: Two
+            declared: <<null>>
             initializer: Identifier
               name: _arg0
     feature7: Function

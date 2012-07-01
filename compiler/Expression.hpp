@@ -328,6 +328,7 @@ public:
     String* identifier() const { return identifier_; }
     Type* declared_type() { return declared_type_; }
     Expression* initializer() const { return initializer_; }
+    void declared_type(Type* type) { declared_type_ = type; }
     void initializer(Expression* expr) { initializer_ = expr; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Assignment> Ptr;

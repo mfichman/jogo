@@ -66,6 +66,7 @@ test3(a Counter, b Counter) {
 }
 
 main() Int {
+    obj1 = Counter(0)
     obj3 = test1()
 
     let obj1 = Counter(1) {

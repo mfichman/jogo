@@ -19,11 +19,13 @@ Module
           expression: Assignment
             name: one
             type: Int
+            declared: Int
             initializer: Empty
         child1: Statement
           expression: Assignment
             name: two
             type: Int
+            declared: Int
             initializer: IntegerLiteral(0)
     feature1: Function
       name: @destroy
