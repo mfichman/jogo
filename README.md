@@ -11,7 +11,7 @@ Downloads
 
 * Debian: [apollo-0.2.0.deb](https://github.com/downloads/mfichman/apollo/apollo-0.2.0.deb)
 * OS X: [apollo-0.2.0.pkg](https://github.com/downloads/mfichman/apollo/apollo-0.2.0.pkg)
-* Windows: [apllo-0.2.0.exe](https://github.com/downloads/mfichman/apollo/apollo-0.2.0.exe)
+* Windows: [apollo-0.2.0.exe](https://github.com/downloads/mfichman/apollo/apollo-0.2.0.exe)
 
 
 Building
