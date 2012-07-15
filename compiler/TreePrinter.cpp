@@ -94,14 +94,21 @@ void TreePrinter::print_comment(String* comment) {
 }
 
 void TreePrinter::operator()(Module* feature) {
+    File::Ptr file = feature->file();
+    std::string name = feature->qualified_name()->string();
+    if (!name.empty() && (!file || file->is_interface_file())) {
+        return;
+    }
+    if (name == "Boot") {
+        return;
+    }
+
     indent_level_++;
     out_ << "Module\n";
     print_tabs(); out_ << "name: " << feature->name() << "\n";
     int i = 0;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        const Location& loc = f->location();
-        std::string runtime = std::string("..")+FILE_SEPARATOR+"runtime";
-        if (loc.file->path()->string().find(runtime) != 0) {
+        if (!f->file()->is_interface_file()) {
             print_tabs(); out_ << "feature" << i << ": ";
             f(this);
             i++;
@@ -518,7 +525,7 @@ void TreePrinter::operator()(Import* feature) {
     print_tabs(); out_ << "file: ";
     out_ << feature->file_name() << "\n";
     print_tabs(); out_ << "scope: ";
-    out_ << feature->scope() << "\n";
+    out_ << feature->qualified_name() << "\n";
     indent_level_--;
 }
 

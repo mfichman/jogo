@@ -36,6 +36,7 @@ Environment::Environment() :
     assemble_(true),
     execute_(false),
     verbose_(false),
+    no_default_mods_(false),
     generator_("Intel64"),
     errors_(0) {
 
@@ -61,7 +62,6 @@ Environment::Environment() :
     module(root_);
 
     include(".");
-    lib("apollo");
 #ifdef WINDOWS
     lib("ws2_32");
     lib("mswsock");
@@ -157,4 +157,8 @@ void Environment::module(Module* module) {
     module_[module->name()] = module;
     module->next(modules_);
     modules_ = module;
+}
+
+bool Environment::gen_library() const { 
+    return File::base_name(output_).find("lib") == 0; 
 }

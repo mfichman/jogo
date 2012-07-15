@@ -8,6 +8,7 @@ VariantDir('build/runtime', 'runtime', duplicate=0)
 
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(ENV = os.environ)
+env.Append(APFLAGS = '-m -i runtime -d build/runtime --no-default-mods')
 
 build_mode = ARGUMENTS.get('mode', 'debug')
 stack_size = '8192'
@@ -15,6 +16,7 @@ major_version = '0'
 minor_version = '3'
 revision = '0'
 version = major_version + '.' + minor_version + '.' + revision
+
 
 # OS X-specific build settings ###############################################
 if env['PLATFORM'] == 'darwin':
@@ -35,8 +37,10 @@ if env['PLATFORM'] == 'win32':
          /V2 /NOCD \
          dist\\win\\Apollo.nsi'
 
+    aplib = 'bin/apollo $APFLAGS -o $TARGET $SOURCE'
     nasm = 'nasm -DWINDOWS -fwin64 -o $TARGET $SOURCE'
-    bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
+    nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
+    aplib_bld = Builder(action = aplib, src_suffix = '.ap', prefix = 'lib', suffix = ".lib") 
     if 'release' == build_mode:
         env.Append(CXXFLAGS = '/O2')
         env.Append(CFLAGS = '/O2')
@@ -53,7 +57,9 @@ if env['PLATFORM'] == 'win32':
     env.Append(CFLAGS = '/Iruntime')
     dist_path = 'dist\\root'
 else:
-    bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.o')
+    aplib = 'bin/apollo $APFLAGS -o $TARGET $SOURCE'
+    nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.o')
+    aplib_bld = Builder(action = aplib, src_suffix = '.ap', prefix = 'lib', suffix = ".a")
     if 'release' == build_mode:
         env.Append(CXXFLAGS = '-O3')
         env.Append(CFLAGS = '-O3')
@@ -70,7 +76,8 @@ else:
     env.Append(CFLAGS = '-Wall -Werror -std=c99 -Iruntime')
     dist_path = 'dist/root/usr/local'
 
-env.Append(BUILDERS = { 'NASM': bld })
+env.Append(BUILDERS = { 'NASM': nasm_bld })
+env.Append(BUILDERS = { 'APLIB': aplib_bld })
 
 # Compiler build #############################################################
 compiler_src = env.Glob('build/compiler/*.cpp')
@@ -78,11 +85,14 @@ apollo = env.Program('bin/apollo', compiler_src + ['build/drivers/Main.cpp'])
 apdoc = env.Program('bin/apdoc', compiler_src+ ['build/drivers/Doc.cpp'])
 
 # Library/runtime build ######################################################
-library_src = env.Glob('build/runtime/*/*.c') 
-library_src += env.Glob('build/runtime/*.c')
-library_src += env.NASM(env.Glob('build/runtime/*/*.asm'))
-library_src += env.NASM(env.Glob('build/runtime/*.asm'))
-lib = env.StaticLibrary('lib/apollo', library_src)
+#library_src = env.Glob('build/runtime/*/*.c') 
+#library_src += env.Glob('build/runtime/*.c')
+#library_src += env.NASM(env.Glob('build/runtime/*/*.asm'))
+#library_src += env.NASM(env.Glob('build/runtime/*.asm'))
+#lib = env.StaticLibrary('lib/apollo', library_src)
+lib = env.APLIB('lib/apollo', 'build/runtime/Apollo.ap')
+env.Depends(lib, apollo)
+env.Depends(lib, 'build/runtime/Coroutine.Intel64.o')
 
 # Test commands ##############################################################
 if 'check' in COMMAND_LINE_TARGETS:

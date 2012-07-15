@@ -47,11 +47,6 @@ Type::Type(Location loc, String* qn, Generic* gen, Environment* env) :
         name_ = qn;
         scope_ = environment_->name("");
     }
-
-    // Add an implicit (qualified) import if it doesn't already exist
-    if (!scope_->string().empty() && !is_generic()) {
-        file()->feature(new Import(loc, env, scope_, true));
-    }
 }
 
 Type* Type::generic(String* name) const {
@@ -258,11 +253,20 @@ Class* Type::clazz() const {
 
 
 Stream::Ptr operator<<(Stream::Ptr out, const Type* type) {
+    // Outputs the fully-qualified type for 'type', including all generics, and
+    // recursively outputs the fully-qualified name for any generic parameters,
+    // or type variables if used.
     if (!type) {
         return out << "<<null>>";
     }   
+    
     if (type->scope()->string().empty()) {
-        out << type->name();
+        Class* clazz = type->file()->clazz(0, type->name());
+        if (clazz) {
+            out << clazz->qualified_name();
+        } else {
+            out << type->name();
+        }
     } else {
         out << type->scope() << "::" << type->name();
     }

@@ -89,9 +89,9 @@ void SemanticAnalyzer::operator()(Class* feature) {
     }
 
     // Make sure that a module with this name doesn't already exist.
-    if (env_->module(feature->type()->qualified_name())) {
+    if (env_->module(feature->qualified_name())) {
         err_ << feature->location();
-        err_ << "Type name '" << feature->type()->qualified_name();
+        err_ << "Type name '" << feature->qualified_name();
         err_ << "' conflicts with an existing module name\n"; 
         env_->error();
     }
@@ -735,14 +735,13 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
     // Ensure that a variable is not duplicated, or re-initialized with a 
     // different type.  This function handles both assignment and variable
     // initialization.
-
     String::Ptr id = expr->identifier();
     Variable::Ptr var = variable(id);
     Type::Ptr declared = expr->declared_type();
     Type::Ptr type = (var && declared != env_->no_type()) ? var->type() : 0;
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
-
     Expression::Ptr init = expr->initializer();
+
     init(this);
     if (init->type()) {
         expr->type(init->type());
@@ -784,78 +783,9 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         // If declared_type == no_type, then the variable declaration has no
         // true declared type, but it defines a new variable regardless of
         // whether or not the variable is already shadowed by another variable.
-        variable(new Variable(id, 0, declared));
-
-        // The variable was declared with an explicit type, but the variable
-        // already exists.
-        if (type && scope() == var->scope()) {
-            err_ << expr->location();
-            err_ << "Duplicate definition of variable '" << id << "'\n";
-            env_->error();
-            return;
-        }
-        // The variable is already declared as an attribute.
-        if (attr) {
-            err_ << expr->location();
-            err_ << "Local variable declaration shadows attribute\n";
-            env_->error();      
-            return;
-        }
-        if (!init->type()) {
-            return; 
-        }
-
-        // The variable was declared with an explicit type, and the init
-        // does not conform to that type.
-        if (!init->type()->subtype(declared)) {
-            err_ << init->location();
-            err_ << "Expression does not conform to type '";
-            err_ << declared << "'\n";
-            env_->error();
-            return;
-        }
-
-        // Initializer is of the 'Any' type or an alternate type, but the
-        // declared type is not equal.  Insert a cast expression.
-        if (init->type()->is_alt_type() && !declared->equals(init->type())) {
-            expr->initializer(new Cast(init->location(), declared, init));
-        } else if (init->type()->is_value() && declared->is_alt_type()) {
-            expr->initializer(new Box(init->location(), init->type(), init));
-        }
-
+        initial_assignment(expr);
     } else {
-        // The variable was already declared, but the init type is not
-        // compatible with the variable type.
-        if (type && !init->type()->subtype(type)) {
-            err_ << init->location();
-            err_ << "Expression does not conform to type '";
-            err_ << type << "' in assignment of '" << id << "'\n";
-            env_->error();
-            return;
-        }
-    
-        // The variable is an attribute, but the type does not match the type
-        // of the attribute that is being assigned
-        if (attr && !init->type()->subtype(attr->type())) {
-            err_ << init->location();
-            err_ << "Expression does not conform to type '";
-            err_ << attr->type() << "' in assignment of '" << id << "'\n";
-            env_->error();
-            return;
-        }
-
-        // Initializer is of the 'Any' type, but the variable type is not.
-        // Insert a cast expression.
-        if (type) {
-            Type::Ptr it = init->type();
-            if (it->is_alt_type() && !type->equals(init->type())) {
-                expr->initializer(new Cast(init->location(), type, init));
-            } else if (it->is_value() && type->is_alt_type()) {
-                expr->initializer(new Box(init->location(), it, init));
-            }
-        } else {
-            variable(new Variable(id, 0, init->type())); 
-        }
+        secondary_assignment(expr);
     }
 }
 
@@ -957,6 +887,8 @@ void SemanticAnalyzer::operator()(Function* feature) {
     Type::Ptr type = feature->type();
     type(this);
 
+    File::Ptr file = feature->location().file;
+    bool is_lib_def = file && file->is_interface_file();
     bool is_interface = class_ && class_->is_interface();
     bool is_native = feature->is_native();
 
@@ -981,7 +913,7 @@ void SemanticAnalyzer::operator()(Function* feature) {
             err_ << "' must return a value\n";     
             env_->error();
         }
-    } else if (!block && !is_interface && !is_native) {
+    } else if (!block && !is_interface && !is_native && !is_lib_def) {
         err_ << feature->location();
         err_ << "Function '" << feature->name() << "' has no body\n";
         env_->error();
@@ -1290,6 +1222,98 @@ void SemanticAnalyzer::enter_scope() {
 
 void SemanticAnalyzer::exit_scope() {
     scope_.pop_back();
+}
+
+void SemanticAnalyzer::initial_assignment(Assignment* expr) {
+    // Checks the initial assignment of a variable for type-correctness.
+    String::Ptr id = expr->identifier();
+    Variable::Ptr var = variable(id);
+    Type::Ptr declared = expr->declared_type();
+    Type::Ptr type = (var && declared != env_->no_type()) ? var->type() : 0;
+    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
+    Expression::Ptr init = expr->initializer();
+
+    variable(new Variable(id, 0, declared));
+
+    // The variable was declared with an explicit type, but the variable
+    // already exists.
+    if (type && scope() == var->scope()) {
+        err_ << expr->location();
+        err_ << "Duplicate definition of variable '" << id << "'\n";
+        env_->error();
+        return;
+    }
+    // The variable is already declared as an attribute.
+    if (attr) {
+        err_ << expr->location();
+        err_ << "Local variable declaration shadows attribute\n";
+        env_->error();      
+        return;
+    }
+    if (!init->type()) {
+        return; 
+    }
+
+    // The variable was declared with an explicit type, and the init
+    // does not conform to that type.
+    if (!init->type()->subtype(declared)) {
+        err_ << init->location();
+        err_ << "Expression does not conform to type '";
+        err_ << declared << "'\n";
+        env_->error();
+        return;
+    }
+
+    // Initializer is of the 'Any' type or an alternate type, but the
+    // declared type is not equal.  Insert a cast expression.
+    if (init->type()->is_alt_type() && !declared->equals(init->type())) {
+        expr->initializer(new Cast(init->location(), declared, init));
+    } else if (init->type()->is_value() && declared->is_alt_type()) {
+        expr->initializer(new Box(init->location(), init->type(), init));
+    }
+}
+
+void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
+    // Checks an assignment to a variable that has already been defined.
+    String::Ptr id = expr->identifier();
+    Variable::Ptr var = variable(id);
+    Type::Ptr declared = expr->declared_type();
+    Type::Ptr type = (var && declared != env_->no_type()) ? var->type() : 0;
+    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
+    Expression::Ptr init = expr->initializer();
+
+    // The variable was already declared, but the init type is not
+    // compatible with the variable type.
+    if (type && !init->type()->subtype(type)) {
+        err_ << init->location();
+        err_ << "Expression does not conform to type '";
+        err_ << type << "' in assignment of '" << id << "'\n";
+        env_->error();
+        return;
+    }
+
+    // The variable is an attribute, but the type does not match the type
+    // of the attribute that is being assigned
+    if (attr && !init->type()->subtype(attr->type())) {
+        err_ << init->location();
+        err_ << "Expression does not conform to type '";
+        err_ << attr->type() << "' in assignment of '" << id << "'\n";
+        env_->error();
+        return;
+    }
+
+    // Initializer is of the 'Any' type, but the variable type is not.
+    // Insert a cast expression.
+    if (type) {
+        Type::Ptr it = init->type();
+        if (it->is_alt_type() && !type->equals(init->type())) {
+            expr->initializer(new Cast(init->location(), type, init));
+        } else if (it->is_value() && type->is_alt_type()) {
+            expr->initializer(new Box(init->location(), it, init));
+        }
+    } else {
+        variable(new Variable(id, 0, init->type())); 
+    }
 }
 
 void SemanticAnalyzer::constructor() {

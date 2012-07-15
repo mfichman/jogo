@@ -43,7 +43,8 @@ public:
         path_(path),
         module_(module),
         environment_(env),
-        is_input_file_(false) {  
+        is_input_file_(false),
+        is_output_file_(true) {  
     }
     
     Feature* dependency(int id) { return dependency_[id]; }
@@ -56,6 +57,7 @@ public:
     String* path() const { return path_; }
     File* next() const { return next_; }
     String* output() const { return output_; }
+    String* native_output() const { return native_output_; }
     Constant* constant(int index) { return constant_[index]; }
     String* integer(const std::string& str);
     String* floating(const std::string& str);
@@ -66,12 +68,16 @@ public:
     int dependencies() { return dependency_.size(); }
     int constants() { return constant_.size(); }
     bool is_input_file() const { return is_input_file_; }
+    bool is_output_file() const { return is_output_file_ && !is_interface_file(); }
+    bool is_interface_file() const { return ext(name_->string())==".api"; }
     void dependency(Feature* name);
     void feature(Feature* feature);
     void next(File* next) { next_ = next; }
     void output(String* path) { output_ = path; }
+    void native_output(String* path) { native_output_ = path; }
     void constant(Constant* constant) { constant_.push_back(constant); }
     void is_input_file(bool input) { is_input_file_ = input; }
+    void is_output_file(bool output) { is_output_file_ = output; }
     typedef Pointer<File> Ptr;
 
     class Iterator;
@@ -94,7 +100,9 @@ private:
     std::vector<Import::Ptr> imports_; 
     File::Ptr next_;
     String::Ptr output_;
+    String::Ptr native_output_;
     bool is_input_file_;
+    bool is_output_file_;
     std::vector<Feature*> dependency_;
     std::vector<Constant*> constant_;
     std::map<std::string, String::Ptr> integer_;

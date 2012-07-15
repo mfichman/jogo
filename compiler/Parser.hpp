@@ -42,27 +42,32 @@ public:
     Location location() const { return lexer_->loc(); }
     Location last_location() const { return last_location_; } 
     void input(const std::string& file);
+    void library(const std::string& file);
     typedef Pointer<Parser> Ptr;
 
 private:
+    void file_alias(const std::string& import); 
     void file(const std::string& prefix, const std::string& file);
     void dir(const std::string& prefix, const std::string& dir);
+    void implicit_import(Type* type);
+    void implicit_import(String* scope);
+    void module_feature(Feature* feature, String* scope);
 
     String* name(const std::string& name) { return env_->name(name); }
     void next();
     void error() { error_++; env_->error(); }
     bool expect(Token token);
 
+    Class* clazz(String* scope);
     Module* module();
-    Class* clazz();
+    Function* function();
+    Constant* constant();
     Feature* feature_list();
     Feature* feature();
     Generic* generic_list();
     Type* mixin_list();
     Type* alternate_list(); 
     Feature* constant_list();
-    Constant* constant();
-    Function* function();
     Attribute* attribute();
     Function* method();
     String* identifier();
@@ -71,6 +76,7 @@ private:
     Match* match();
     Case* case_list();
     Case* single_case();
+    String* maybe_scope();
     String* scope();
     String* comment();
     Feature::Flags flags();

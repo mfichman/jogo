@@ -75,7 +75,6 @@ public:
     static const int NATIVE = 0x2;
     static const int WEAK = 0x4;
     static const int IMMUTABLE = 0x8;
-    static const int VIRTUAL = 0x10;
     static const int CLOSURE = 0x20;
 
 private:
@@ -149,10 +148,6 @@ public:
         block_(block),
         stack_vars_(0),
 		throw_spec_(UNKNOWN) {
-
-        if (!block_ && !is_native()) {
-            Function::flags(Function::flags() | VIRTUAL);
-        }
     }
 
 	enum ThrowSpec { UNKNOWN, THROW, NOTHROW };
@@ -169,7 +164,7 @@ public:
     bool covariant(Function* other) const;
     bool is_constructor() const { return name()->string() == "@init"; }
     bool is_destructor() const { return name()->string() == "@destroy"; }
-    bool is_virtual() const { return flags() & VIRTUAL; }
+    bool is_virtual() const;
 	bool is_primitive_op() const;
     void stack_vars_inc() { stack_vars_++; }
     void stack_vars(int value) { stack_vars_ = value; }

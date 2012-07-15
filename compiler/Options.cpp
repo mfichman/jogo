@@ -94,6 +94,10 @@ Options::Options(Environment* env, int argc, char** argv) {
             } else if ("version" == flag) {
                 print_version();
                 exit(0); 
+            } else if ("no-default-mods" == flag) {
+                env->no_default_mods(true);
+                // Debugger flag that prevents default modules from getting
+                // loaded automatically by the parser.
             } else {
                 break;
             }

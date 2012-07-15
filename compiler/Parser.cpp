@@ -36,52 +36,70 @@ Parser::Parser(Environment* env) :
 	is_input_file_(false) {
 
     // FIXME: These files should have their symbols in the lib file
-    input("Primitives");
-    input("Object");
-    input("String");
-    input("Coroutine");
-    input("Array");
-    input("Io");
-    input("Pair");
-    input("Hash");
-	input("Queue");
-    input("Regex");
-
+    for (int i = 0; i < env->libs(); i++) {
+        library(env->lib(i));   
+    }
     for (int i = 0; i < env->inputs(); i++) {
         is_input_file_ = true;
         input(env->input(i));
     }
 }
 
+void Parser::library(const std::string& import) {
+    // Reads in a library file given by "import" (not including the .api
+    // extension, which is automatically added)
+
+    std::string file = "lib" + import + ".api";
+    std::vector<std::string> tests;
+
+    for (int i = 0; i < env_->includes(); i++) {
+        const std::string& prefix = env_->include(i);
+        if (File::is_reg(prefix + FILE_SEPARATOR + file)) {
+            Parser::file(prefix, file); 
+            return;
+        }
+        tests.push_back(prefix + FILE_SEPARATOR  + file);
+    }
+    env_->error("Could not find library " + import);
+    err_ << "Library '" << import << "' not found:\n";
+    error();
+    for (int i = 0; i < tests.size(); i++) {
+        err_ << "    no file '" << tests[i] << "'\n";
+        error();
+    }
+}
+
+
 void Parser::input(const std::string& import) {
     // Reads in a file or directory after searching through the list of include
     // paths.  The includes paths are searched in the order they are specified,
     // so if duplicate files are present in two include directories, then only
     // the first will be parsed.
-
     std::string file = Import::file_name(import); 
     std::vector<std::string> tests;
+    if (env_->file(name(file))) {
+        return;
+    }
 
+    // File has not been loaded yet.  Search through all the given include
+    // directories to find it.  
     for (int i = 0; i < env_->includes(); i++) {
         const std::string& prefix = env_->include(i);
         if (File::ext(file) != ".ap") {
             if (File::is_reg(prefix + FILE_SEPARATOR + file + ".ap")) {
-                std::vector<std::string>().swap(tests);
                 Parser::file(prefix, file + ".ap");
                 return;
             }
         } else {
             if (File::is_reg(prefix + FILE_SEPARATOR + file)) {
-                std::vector<std::string>().swap(tests);
                 Parser::file(prefix, file);
                 return; 
             } 
         }
         if (File::is_dir(prefix + FILE_SEPARATOR + file)) {
-            std::vector<std::string>().swap(tests);
             Parser::dir(prefix, file);
             return;
-        }   
+        }
         tests.push_back(prefix + FILE_SEPARATOR + file + ".ap");
         tests.push_back(prefix + FILE_SEPARATOR + file);
     }
@@ -94,15 +112,31 @@ void Parser::input(const std::string& import) {
     }
 }
 
+void Parser::file_alias(const std::string& import) {
+    // Creates an alias for a file, so that the parser doesn't try to load a
+    // file for the module again.  This aliases the file for "import" to the
+    // current file's name, or the empty string if there is no current file.
+    if (!file_->is_interface_file()) {
+        return;
+    }
+    String::Ptr fs = name(Import::file_name(import));
+    if (!env_->file(fs)) {
+        Module::Ptr module = env_->module(name(import));
+        File::Ptr file = new File(fs, file_->path(), module, env_);
+        file->is_input_file(false);
+        file->is_output_file(false);
+        env_->file(file);
+    } 
+}
+
 void Parser::file(const std::string& prefix, const std::string& file) {
     // Begin parsing a module file if it doesn't already exist.
-
 
     // The module can be loaded from the dir components of the file name
     String::Ptr scope = name(Import::scope_name(file));
     module_ = env_->module(scope);
     if (!module_) {
-        module_ = new Module(Location(), env_, scope);
+        module_ = new Module(location(), env_, scope);
         env_->module(module_);
     }
 
@@ -134,10 +168,12 @@ void Parser::file(const std::string& prefix, const std::string& file) {
     module();
 
     // Now parse other modules that depend on the unit that was added
-    for (Feature* f = file_->features(); f; f = f->next()) {
-        if (Import* import = dynamic_cast<Import*>(f)) {
-            input(import->scope()->string());
-        }
+    if (!file_->is_interface_file()) {
+       for (Feature* f = file_->features(); f; f = f->next()) {
+           if (Import* import = dynamic_cast<Import*>(f)) {
+               input(import->scope()->string());
+           }
+       }
     }
 }
 
@@ -171,18 +207,16 @@ Module* Parser::module() {
     // Parses a module, which can consist of classes, functions, and import
     // statements.
     while (token() != Token::END) {
+        String* scope = maybe_scope();
         switch (token()) {
         case Token::IDENTIFIER:
-            module_->feature(function());
-            break;
-        case Token::OPERATOR:
-            module_->feature(function());
+            module_feature(function(), scope);
             break;
         case Token::CONSTANT:
-            module_->feature(constant());
+            module_feature(constant(), scope);
             break;
         case Token::TYPE:
-            module_->feature(clazz()); 
+            module_feature(clazz(scope), scope); 
             break;
         case Token::IMPORT:
             import();
@@ -219,28 +253,37 @@ bool Parser::expect(Token token) {
     }
 }
 
-Class* Parser::clazz() {
+Class* Parser::clazz(String* scope) {
     // This function parses a class or interface definition, containing methods
     // and attributes.
     LocationAnchor loc(this);
 
     // Read in the name of the class, and any generic parameters
-    String::Ptr id = scope(); 
-    std::string qn = module_->name()->string();
-    if (qn.empty()) {
-        qn = id->string();
-    } else {
-        qn += "::" + id->string();
+    std::string qn = value();
+    if (token() != Token::TYPE) {
+        err_ << location() << "Expected a type name, not '";
+        err_ << token() << "'\n";
+        qn = "";
     }
+    if (!scope->string().empty()) {
+        qn = scope->string() + "::" + qn;
+    }
+    next();
+
 
     if (token() == Token::ASSIGN) {
         // Parse a union declaration, e.g. type = type | type | type
         next();
+
+        // This is the LHS of the union decl, i.e., LHS in type = ... so we
+        // don't need an implicit import here 
         Type::Ptr type = new Type(loc, name(qn), 0, env_);
         switch (token()) {
         case Token::TYPE:
+            file_alias(type->qualified_name()->string());
             return new Class(loc, env_, type, alternate_list());
         case Token::CONSTANT:
+            file_alias(type->qualified_name()->string());
 			return new Class(loc, env_, type, constant_list()); 
         default:
             err_ << location() << "Expected a type or constant, not ";
@@ -261,6 +304,7 @@ Class* Parser::clazz() {
     String::Ptr comment = Parser::comment(); 
     Feature::Ptr members = feature_list();
     expect(Token::RIGHT_BRACE);
+    file_alias(type->qualified_name()->string());
     return new Class(loc, env_, type, mixins, comment, members);
 }
 
@@ -417,6 +461,9 @@ Function* Parser::function() {
 Type* Parser::type() {
     // Parses a type name, including generics.  A type has the following 
     // syntax: id [type (, type)+]?
+
+    // Read in a type variable, i.e., :a, :b, etc.  These only appear in class
+    // definitions for classes with type variables.
     LocationAnchor loc(this);
     if (token() == Token::TYPEVAR) {
         String* id = name(value());
@@ -451,8 +498,24 @@ Type* Parser::type() {
     if (qn->is_empty()) {
         return env_->no_type();
     } else {
-        return new Type(loc, qn, generics, env_); 
+        Type* type = new Type(loc, qn, generics, env_); 
+        implicit_import(type);
+        return type;
     }
+}
+
+String* Parser::maybe_scope() {
+    // Parses a scope name, i.e., (id ::)+.  If the tokens at the current input
+    // do not match this pattern, then this function returns the scope of the
+    // current module.  This function does NOT parse the last component after
+    // the last :: operator.
+    std::string scope;
+    while (token() == Token::TYPE && token(1) == Token::SCOPE) {
+        scope += value();
+        next();
+        next();
+    }
+    return scope.empty() ? module_->name() : name(scope);
 }
 
 String* Parser::scope() {
@@ -1077,9 +1140,8 @@ Expression* Parser::construct() {
                 next();
                 return new ConstantIdentifier(loc, scope, id); 
             } else {
-                String::Ptr id = identifier();
-                file_->feature(new Import(loc, env_, scope, true));
-                return new Identifier(loc, scope, id); 
+                implicit_import(type->qualified_name());
+                return new Identifier(loc, scope, identifier()); 
             }
         }
         
@@ -1242,6 +1304,7 @@ Expression* Parser::regex() {
     Type::Ptr type = new Type(loc, name("Regex::Regex"), 0, env_);
     Expression::Ptr arg = new StringLiteral(loc, env_->string(value()));
     next();
+    implicit_import(type);
     return new Construct(loc, type, arg);
 }
 
@@ -1355,6 +1418,32 @@ Statement* Parser::for_loop() {
     While* t10 = new While(loc, t4, new Block(loc, 0, t7)); 
     return new Let(loc, t2, t10);
 }
+
+void Parser::module_feature(Feature* feature, String* scope) {
+    // If the scope of the feature is fully-qualified, then use that to select
+    // the module.  Otherwise, insert the feature into the current module. 
+    Module::Ptr module = env_->module(scope);
+    if (!module) {
+        module = new Module(Location(), env_, scope);
+        env_->module(module);
+    } 
+    module->feature(feature);
+}
+
+void Parser::implicit_import(Type* type) {
+    // Adds an implicit import for 'type' to the parse tree, if necessary.
+    if (!type->is_generic()) {
+        implicit_import(type->scope());
+    }
+}
+
+void Parser::implicit_import(String* scope) {
+    if (!scope->string().empty()) {
+        file_alias(scope->string());
+        file_->feature(new Import(Location(), env_, scope, true));
+    }
+}
+ 
 
 Expression* Parser::op(const LocationAnchor& loc, const std::string& op, 
                        Expression* a, Expression* b) {

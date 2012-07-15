@@ -34,6 +34,7 @@
 #include "TreePrinter.hpp"
 #include "Machine.hpp"
 #include "Options.hpp"
+#include "InterfaceGenerator.hpp"
 
 #include <iostream>
 #include <cstdlib>
@@ -122,12 +123,59 @@ void output_intel64(File* file) {
     remove(asm_file.c_str());
 }
 
+void compile_c(const std::string& c_file, const std::string& obj_file) {
+    // Compiles a C source file, using the compiler flags specified by the
+    // command-line options.
+    std::stringstream ss;
+#if defined(WINDOWS)
+    ss << "cl.exe " << c_file << " /c /TC /Fo:" << obj_file;
+    if (env->optimize()) {
+        ss << " /O2";
+    } else {
+        ss << " /O0";
+    }
+    ss << " /DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
+#else
+    ss << "gcc " << c_file << " -c -o " << obj_file;
+    if (env->optimize()) {
+        ss << " -O2";
+    } else {
+        ss << " -O0 -g";
+    }
+    ss << " -DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
+#ifdef WINDOWS
+    ss << " /DWINDOWS";
+#elif defined(DARWIN)
+    ss << " -DDARWIN";
+#elif defined(LINUX)
+    ss << " -DLINUX -m64 -lm";
+#endif
+
+#endif
+    for (int i = 0; i < env->includes(); i++) {
+        if (File::is_dir(env->include(i))) {
+#if defined(WINDOWS)
+            ss << " /I " << env->include(i); 
+#else
+            ss << " -I " << env->include(i);
+#endif
+        }
+    }
+    if (env->verbose()) {
+        Stream::stout() << ss.str() << "\n";
+        Stream::stout()->flush();
+    }
+    if (system(ss.str().c_str())) {
+        exit(1);
+    }
+}
+
 void output_c(File* file) {
     // Outputs an object file for 'file' using the C code generator and the
     // platform-native C compiler.
     std::string name = File::no_ext_name(file->name()->string());
     std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
-    std::string c_file = out_file + ".ap.c";//(env->assemble() ? tempnam() : out_file) + ".ap.c";
+    std::string c_file = (env->assemble() ? tempnam() : out_file) + ".ap.c";
     file->output(env->name(c_file));
     cgen->out(new Stream(c_file));
     if (cgen->out()->error()) {
@@ -152,39 +200,40 @@ void output_c(File* file) {
         obj_file = out_file + ".ap.o";
     }
     file->output(env->name(obj_file)); 
-    std::stringstream ss;
-#if defined(WINDOWS)
-    ss << "cl.exe " << c_file << " /c /TC /Fo:" << obj_file;
-    if (env->optimize()) {
-        ss << " /O2";
-    } else {
-        ss << " /O0";
+    compile_c(c_file, obj_file);
+    remove(c_file.c_str());
+}
+
+void compile_native(File* file) {
+    // Compiles the native version of this file, if it exists.
+    if (!env->assemble()) {
+        return;
     }
-#else
-    ss << "gcc " << c_file << " -c -o " << obj_file;
-    if (env->optimize()) {
-        ss << " -O2";
-    } else {
-        ss << " -O0 -g";
+
+    std::string name = File::no_ext_name(file->name()->string()); 
+    std::string c_file = File::no_ext_name(file->path()->string()) + ".c";
+    std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
+    std::string obj_file = out_file + ".o";
+
+    if (!File::is_reg(c_file)) {
+        return;
     }
-#endif
-    for (int i = 0; i < env->includes(); i++) {
-        if (File::is_dir(env->include(i))) {
-#if defined(WINDOWS)
-            ss << " /I " << env->include(i); 
-#else
-            ss << " -I " << env->include(i);
-#endif
-        }
+    File::mkdir(File::dir_name(out_file));
+    file->native_output(env->name(obj_file));
+
+    // Check to make sure that the .o file hasn't been compiled already.
+    if (env->make() && env->link()) {
+        time_t t1 = File::mtime(c_file);
+        time_t t2 = File::mtime(obj_file);
+        time_t t3 = File::mtime(program_path);
+        if (t1 >= t2 && t1 >= t3) { return; }
     }
+    
     if (env->verbose()) {
-        Stream::stout() << ss.str() << "\n";
-        Stream::stout()->flush();
+        Stream::stout() << "Compiling " << out_file << ".c\n";
     }
-    if (system(ss.str().c_str())) {
-        exit(1);
-    }
-    //remove(c_file.c_str());
+
+    compile_c(c_file, obj_file);
 }
 
 void output(File* file) {
@@ -193,6 +242,7 @@ void output(File* file) {
     if (!env->make() && !env->link() && !file->is_input_file()) {
         return;
     }
+    compile_native(file);
 
     std::string name = File::no_ext_name(file->name()->string());
     std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
@@ -205,11 +255,11 @@ void output(File* file) {
         time_t t2 = File::mtime(file->path()->string());
         time_t t3 = File::mtime(program_path);
         file->output(env->name(out_file + ".ap.o"));
-        if (t1 >= t2 && t1 >=t3 && name != boot_main) { return; }
+        if (t1 >= t2 && t1 >= t3 && name != boot_main) { return; }
     }
  
     if (env->verbose()) {
-        Stream::stout() << "Compiling " << out_file << "\n";
+        Stream::stout() << "Compiling " << out_file << ".ap\n";
     }
     
     if (!env->assemble() || !env->link() || env->make()) {
@@ -241,7 +291,12 @@ int main(int argc, char** argv) {
     env->include(program_files + "\\Apollo\\lib");
     env->include(program_files_x86 + "\\Apollo\\lib");
 #endif
-    env->input("Boot::Main");
+    if (!env->no_default_mods()) {
+        env->lib("apollo");
+    }
+    if (!env->gen_library() && !env->no_default_mods()) {
+        env->input("Boot::Main");
+    }
 
     // Run the compiler.  Output to a temporary file if the compiler will
     // continue on to another stage; otherwise, output the file directly.
@@ -257,18 +312,31 @@ int main(int argc, char** argv) {
     if (env->errors()) { return 1; }
 
     for (File::Ptr file = env->files(); file; file = file->next()) {
-        output(file);
+        if (file->is_output_file()) {
+            output(file);
+        }
     }     
     if (env->dump_ir()) { return 0; }
     if (env->errors()) { return 1; }
     if (!env->link()) { return 0; }
 
+    std::string base_output = File::no_ext_name(env->output());
+    if (env->gen_library()) {
+        Stream::Ptr out(new Stream(base_output+".api"));
+        InterfaceGenerator::Ptr igen(new InterfaceGenerator(env, out));
+    }
+
     // Run the linker.  Always output to the given output file name.
     std::string obj_files;
     for (File::Ptr file = env->files(); file; file = file->next()) {
-        obj_files += file->output()->string() + " ";
+        if (file->is_output_file()) {
+            obj_files += file->output()->string() + " ";
+            if (file->native_output()) {
+                obj_files += file->native_output()->string() + " ";
+            }
+        }
     } 
-    std::string exe_file = env->execute() ? tempnam() : env->output();
+    std::string exe_file = env->execute() ? tempnam() : base_output;
     if (exe_file == "-") {
         exe_file = "out";
     }
@@ -278,25 +346,42 @@ int main(int argc, char** argv) {
     ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:amd64 ";
     ss << obj_files << " /OUT:" << exe_file << ".exe ";
 #elif defined(LINUX)
-    ss << "gcc -m64 " << obj_files << " -o " << exe_file;
+    if (File::base_name(exe_file).find("libapollo") == 0) {
+        obj_files += "build/runtime/Coroutine.Intel64.o";
+    }
+    if (env->gen_library()) {
+        ss << "ar rcs " << exe_file << ".a " << obj_files;
+    } else {
+        ss << "gcc -m64 " << obj_files << " -o " << exe_file;
+    }
 #elif defined(DARWIN)
-    ss << "gcc -Wl,-no_pie " << obj_files << " -o " << exe_file;
+    if (File::base_name(exe_file).find("libapollo") == 0) {
+        obj_files += "build/runtime/Coroutine.Intel64.o";
+    }
+    if (env->gen_library()) {
+        ss << "ar rcs " << exe_file << ".a " << obj_files; 
+    } else {
+        ss << "gcc -Wl,-no_pie " << obj_files << " -o " << exe_file;
+    }
     // FIXME: Remove dynamic-no-pic once rel addressing is fixed
 #endif
-    for (int i = 0; i < env->libs(); i++) {
+
+    if (!env->gen_library()) {
+        for (int i = 0; i < env->libs(); i++) {
 #ifdef WINDOWS
-        ss << " " << env->lib(i) << ".lib";
+            ss << " " << env->lib(i) << ".lib";
 #else
-        ss << " -l" << env->lib(i);
+            ss << " -l" << env->lib(i);
 #endif
-    }
-    for (int i = 0; i < env->includes(); i++) {
-        if (File::is_dir(env->include(i))) {
+        }
+        for (int i = 0; i < env->includes(); i++) {
+            if (File::is_dir(env->include(i))) {
 #ifdef WINDOWS
-            ss << " /LIBPATH:\"" << env->include(i) << "\"";
+                ss << " /LIBPATH:\"" << env->include(i) << "\"";
 #else
-            ss << " -L" << env->include(i);  
+                ss << " -L" << env->include(i);  
 #endif
+            }
         }
     }
 #ifdef LINUX
@@ -312,7 +397,9 @@ int main(int argc, char** argv) {
     if (system(ss.str().c_str())) { return 1; }
     if (!env->make()) {
         for (File::Ptr file = env->files(); file; file = file->next()) {
-            remove(file->output()->string().c_str());   
+            if (file->output()) {
+                remove(file->output()->string().c_str());   
+            }
         }
     }
 

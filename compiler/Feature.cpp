@@ -264,6 +264,12 @@ bool Function::is_primitive_op() const {
 	return clazz && clazz->is_primitive() && name()->string()[0] == '@';
 }
 
+bool Function::is_virtual() const {
+    // Returns true if the function is virtual.
+    Class* clazz = dynamic_cast<Class*>(parent());
+    return clazz && clazz->is_interface();
+}
+
 Function::ThrowSpec Function::throw_spec() const {
 	// Returns THROW if this function can throw an exception; otherwise
 	// returns NOTHROW.  The result is computed lazily, but all of the 
@@ -322,9 +328,9 @@ Function* Feature::function(String* name) const {
 }
 
 String* Feature::qualified_name() const {
-    // Returns the qualified name fo this feature
+    // Returns the qualified name for this feature
 
-    std::string parent = parent_ ? parent_->label()->string() : "";
+    std::string parent = parent_ ? parent_->qualified_name()->string() : "";
     std::string name = parent.empty() ? "" : parent + "::";
     name += Feature::name()->string(); 
     return env_->name(name);

@@ -134,7 +134,7 @@ void Lexer::next() {
         } else if (isupper(char_)) {
             type_or_const();
             expect_comment_ = false;
-        } else if (islower(char_)) {
+        } else if (islower(char_) || char_ == '_') {
             ident_or_keyword();
             expect_comment_ = false;
         } else if (char_ == '@') {

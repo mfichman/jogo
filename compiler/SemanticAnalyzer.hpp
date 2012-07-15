@@ -81,6 +81,8 @@ private:
     void enter_scope();
     void exit_scope();
     Expression::Ptr args(Expression* expr, Function* func, Type* receiver);
+    void initial_assignment(Assignment* expr);
+    void secondary_assignment(Assignment* expr); 
     void mutator(Attribute* feature);
     void accessor(Attribute* feature);
     void constructor();

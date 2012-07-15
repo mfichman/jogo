@@ -84,9 +84,9 @@ String* File::string(const std::string& str) {
 }
 
 Feature* File::feature(String* scope, String* name) const {
-    // Returns the constant with the scope "scope" and the name "name".
+    // Returns the feature with the scope "scope" and the name "name".
     // Searches through imports included in this file to attempt to find the
-    // constant.
+    // feature.
     if (scope && scope->string() != "") {
         Module* module = environment_->module(scope);
         // FIXME: If module lookup fails, then take the last segment and look
@@ -119,12 +119,11 @@ Feature* File::feature(String* scope, String* name) const {
     }
 
     // Search the imports for the constant
-    std::vector<Import::Ptr>::const_iterator i = imports_.begin();
-    for (; i != imports_.end(); i++) {
-        if ((*i)->is_qualified()) {
+    for (size_t i = 0; i < imports_.size(); ++i) {
+        if (imports_[i]->is_qualified()) {
             continue;
         }
-        Module* m = environment_->module((*i)->scope());
+        Module* m = environment_->module(imports_[i]->scope());
         if (!m) {
             continue;
         }
@@ -170,20 +169,25 @@ void File::dependency(Feature* feature) {
 }
 
 void File::feature(Feature* feature) {
+    // Adds a new feature to the file.  If the feature is an import, only add
+    // the import once for each inclusion.
     if (!feature) {
         return;
     }
 
-    features_ = append(features_, feature);
-
-    if (Import* import = dynamic_cast<Import*>(feature)) {
+    if (Import::Ptr import = dynamic_cast<Import*>(feature)) {
         if (import->scope()->string().empty()) {
             return;
         }
-
+        // Check to make sure the import isn't already in the list. 
+        for (size_t i = 0; i < imports_.size(); ++i) {
+            if (imports_[i]->scope()->string() == import->scope()->string()) {
+                return;
+            }
+        }
         imports_.push_back(import);
-        return;
     }
+    features_ = append(features_, feature);
 }
 
 time_t File::mtime(const std::string& name) {

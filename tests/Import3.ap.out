@@ -1,6 +1,4 @@
 Module
-  name: Boot
-Module
   name: Sub1
   feature0: Class
     name: Test
@@ -52,10 +50,6 @@ Module
       child0: Return
         expression: IntegerLiteral(0)
 Module
-  name: Regex
-Module
-  name: Io
-Module
   name: 
   feature0: Class
     name: Import3
@@ -84,9 +78,9 @@ Module
           name: test
     feature4: Attribute
       name: var5
-      type: Test
+      type: Sub2::Test
       initializer: Construct
-        type: Test
+        type: Sub2::Test
     feature5: Attribute
       name: var6
       type: Int
