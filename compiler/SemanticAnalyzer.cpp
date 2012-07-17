@@ -936,9 +936,14 @@ void SemanticAnalyzer::operator()(Constant* feature) {
         env_->error();
     }
 
+    Class::Ptr clazz = dynamic_cast<Class*>(parent.pointer());
     feature->type(env_->bottom_type());
-    initializer(this);
-    feature->type(initializer->type());
+    if(initializer) {
+        initializer(this);
+        feature->type(initializer->type());
+    } else if(clazz->is_enum()) {
+        feature->type(clazz->type());
+    }
     feature->file()->constant(feature);
     env_->constant(feature);
 }
@@ -946,7 +951,7 @@ void SemanticAnalyzer::operator()(Constant* feature) {
 void SemanticAnalyzer::operator()(Attribute* feature) {
     Expression::Ptr initializer = feature->initializer();
     Feature::Ptr parent = feature->parent();
-    if (feature->type() && initializer->type()) { return; }
+    if (feature->type() && (!initializer || initializer->type())) { return; }
 
     // Save the current class and variable scope.
     ContextAnchor context(this);

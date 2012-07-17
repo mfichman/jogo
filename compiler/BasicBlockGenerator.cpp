@@ -618,7 +618,6 @@ void BasicBlockGenerator::operator()(Fork* statement) {
 }
 
 void BasicBlockGenerator::operator()(Yield* statament) {
-//    free_temps();
     call(env_->name("Coroutine__yield"), 0); 
 	exception_catch();
 }
@@ -1159,7 +1158,7 @@ void BasicBlockGenerator::dispatch_table(Class* feature) {
     for (int i = 0; i < value.size(); i++) {
         feature->jump2(i, value[i]);
     }
-/*
+/*  Dump hash values
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
             if (func->is_destructor() || func->is_constructor()) { 

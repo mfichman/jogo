@@ -243,6 +243,7 @@ public:
     typedef Pointer<Class> Ptr;
 
 private:
+    void gen_equal_method();
     std::vector<int> jump1_;
     std::vector<Function::Ptr> jump2_;
     mutable std::map<Class*, bool> subtype_;

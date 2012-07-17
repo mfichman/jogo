@@ -76,9 +76,9 @@ Manager < Object {
             while scheduled.count > 0 {
                 next = scheduled.deq()
                 next.resume()
-                #if next.status == CoroutineStatus::SUSPENDED {
-                #    scheduled.enq(next)
-                #}
+                if next.status == CoroutineStatus::SUSPENDED {
+                    scheduled.enq(next)
+                }
             }
         
             # All coroutines are sleeping; poll.

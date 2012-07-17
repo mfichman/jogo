@@ -66,15 +66,10 @@ Class::Class(Location loc, Environment* env, Type* type, Type* mixins,
             break;
         }
         if ("Enum" == mixin->name()->string()) {
-            Location loc;
-            String::Ptr name = env->name("@equal");
-            Type::Ptr ret = env->bool_type();
-            Formal::Ptr self(new Formal(loc, env->name("self"), type)); 
-            self->next(new Formal(loc, env->name("other"), type)); 
-            Feature::Flags flags = Feature::NATIVE;
-            feature(new Function(loc, env, name, self, flags, ret, 0));
             is_enum_ = true;
             is_value_ = true;
+            gen_equal_method();
+            break;
         }
     }
 }
@@ -106,13 +101,20 @@ Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
 
     for (Feature* feat = features_; feat; feat = feat->next()) {
         feat->parent(this);
-        if (!feature_[feat->name()]) {
-            feature_[feat->name()] = feat;
-        }
+        feature_[feat->name()] = feat;
+    }
+    gen_equal_method();
+}
 
-		// For each constant, add an initializer if it doesn't already have one.  Assign
-		// enum IDs in sequence.
-
+void Class::gen_equal_method() {
+    // Generates an automatic @equal method when necessary.
+    String::Ptr name = env()->name("@equal");
+    if(!feature(name)) {
+        Type::Ptr ret = env()->bool_type();
+        Formal::Ptr self(new Formal(location(), env()->name("self"), type())); 
+        self->next(new Formal(location(), env()->name("other"), type())); 
+        Feature::Flags flags = Feature::NATIVE;
+        feature(new Function(location(), env(), name, self, flags, ret, 0));
     }
 }
 

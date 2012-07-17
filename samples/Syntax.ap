@@ -1,69 +1,72 @@
 
 
-window = SF::Window(SF::VideoMode(1200, 800, 32), "Window")
-timer = SF::Clock()
-manager = SFR::ResourceManager()
-deferred-renderer = SFR::DeferredRenderer(manager)
-shadow-renderer = SFR::ShadowRenderer(manager)
-updater = SFR::TransformUpdater()
-null-renderer = SFR::NullRenderer()
-world = new SFR::World()
-flat-renderer = new SFR::FlatRenderer(manager)
-texture-renderer = new SFR::TextureRenderer(manager)
-camera = SFR::TransformNode()
+window = Sf::Window(Sf::VideoMode(1200, 800, 32), "Window")
+timer = Sf::Clock()
+manager = Sfr::ResourceManager()
+deferred_renderer = Sfr::DeferredRenderer(manager)
+shadow_renderer = Sfr::ShadowRenderer(manager)
+updater = Sfr::TransformUpdater()
+null_renderer = Sfr::NullRenderer()
+world = new Sfr::World()
+flat_renderer = new Sfr::FlatRenderer(manager)
+texture_renderer = new Sfr::TextureRenderer(manager)
+camera = Sfr::TransformNode()
 
-init-window() {
-    error = glewInit()
-    if (GLEW-OK != error) {
+init_window() {
+    error = glew_init()
+    if (GLEW_OK != error) {
         throw RuntimeError("This program requires OpenGL 3.0")
     }
-    glViewport(0, 0, window.width(), window.height())
+    glviewport(0, 0, window.width(), window.height())
 }
 
-init-camera() {
+init_camera() {
     camera.child(world.camera())
     world.root().child(camera)
 }
 
-init-lights() {
-    light1 = SFR::HemiLight()
-    light1.linear-attenuation(0.1)
-    light1.diffuse-color(SFR::Color(.8, .8, .8, 1.))
-    light1.back-diffuse-color(SFR::Color(.01, .01, .01, 1.))
+init_lights() {
+    light1 = Sfr::HemiLight()
+    light1.linear_attenuation(0.1)
+    light1.diffuse_color(Sfr::Color(.8, .8, .8, 1.))
+    light1.back_diffuse_color(Sfr::Color(.01, .01, .01, 1.))
 }
 
-init-lights() {
+init_lights() {
 
-    light1 = new SFR::HemiLight()
-    light1.linear-attenuation(.1)
-    light1.diffuse-color(SFR::Color(.8, .8, .8, 1.))
-    light1.direction(SFR::Color(1., 0., 0.))
+    if init_lights() {
+    }
 
-    for i in (-ROWS/2)..(ROWS/2) {
-        for j in (-COLS/2)..(COLS/2) {
-            target = SFR::DepthRenderTarget(512, 512)
+    light1 = new Sfr::HemiLight()
+    light1.linear_attenuation(.1)
+    light1.diffuse_color(Sfr::Color(.8, .8, .8, 1.))
+    light1.direction(Sfr::Color(1., 0., 0.))
+
+    for i in (_ROWS/2)..(ROWS/2) {
+        for j in (_COLS/2)..(COLS/2) {
+            target = Sfr::DepthRenderTarget(512, 512)
             
-            light = SFR::SpotLight()
-            light.spot-cutoff(20.) 
-            light.linear-attenuation(.04)
-            light.specular-color(SFR::Color(.4, .4, 1., 1.))
-            light.direction(SFR::Vector(0, -1, 0))
-            light.shadow-map(target);
+            light = Sfr::SpotLight()
+            light.spot_cutoff(20.) 
+            light.linear_attenuation(.04)
+            light.specular_color(Sfr::Color(.4, .4, 1., 1.))
+            light.direction(Sfr::Vector(0, _1, 0))
+            light.shadow_map(target);
 
-            node = SFR::TransformNode()
-            node.position(SFR::Vector(i * 2, 7, j * 5 + 1))
+            node = Sfr::TransformNode()
+            node.position(Sfr::Vector(i * 2, 7, j * 5 + 1))
             node.child(light)
     
-            world->root()->child(node)
+            world.root.child(node)
         }
     }
     
     updater(world)
-    shadow-renderer(world)
+    shadow_renderer(world)
 }
 
-handle-input() {
-    evt:SF::Event
+handle_input() {
+    evt:Sf::Event
     
     while (window.event()) {
         switch (event.type()) {
