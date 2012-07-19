@@ -200,6 +200,7 @@ public:
     bool is_qualified() const { return is_qualified_; }
     static std::string file_name(const std::string& scope);
     static std::string scope_name(const std::string& file);
+    static std::string parent_scope(const std::string& scope);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Import> Ptr;
 

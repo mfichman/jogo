@@ -32,15 +32,13 @@ Parser::Parser(Environment* env) :
 	env_(env),
     err_(Stream::sterr()),
     lexer_(new Lexer(env)),
-    error_(0),
-	is_input_file_(false) {
+    error_(0) {
 
     // FIXME: These files should have their symbols in the lib file
     for (int i = 0; i < env->libs(); i++) {
         library(env->lib(i));   
     }
     for (int i = 0; i < env->inputs(); i++) {
-        is_input_file_ = true;
         input(env->input(i));
     }
 }
@@ -49,7 +47,7 @@ void Parser::library(const std::string& import) {
     // Reads in a library file given by "import" (not including the .api
     // extension, which is automatically added)
 
-    std::string file = "lib" + import + ".api";
+    std::string file = import + ".api";
     std::vector<std::string> tests;
 
     for (int i = 0; i < env_->includes(); i++) {
@@ -86,6 +84,10 @@ void Parser::input(const std::string& import) {
     for (int i = 0; i < env_->includes(); i++) {
         const std::string& prefix = env_->include(i);
         if (File::ext(file) != ".ap") {
+            if (File::is_reg(prefix + FILE_SEPARATOR + file + ".api")) {
+                Parser::file(prefix, file + ".api");
+                return;
+            }
             if (File::is_reg(prefix + FILE_SEPARATOR + file + ".ap")) {
                 Parser::file(prefix, file + ".ap");
                 return;
@@ -99,7 +101,8 @@ void Parser::input(const std::string& import) {
         if (File::is_dir(prefix + FILE_SEPARATOR + file)) {
             Parser::dir(prefix, file);
             return;
-        }
+        } 
+        tests.push_back(prefix + FILE_SEPARATOR + file + ".api");
         tests.push_back(prefix + FILE_SEPARATOR + file + ".ap");
         tests.push_back(prefix + FILE_SEPARATOR + file);
     }
@@ -116,7 +119,7 @@ void Parser::file_alias(const std::string& import) {
     // Creates an alias for a file, so that the parser doesn't try to load a
     // file for the module again.  This aliases the file for "import" to the
     // current file's name, or the empty string if there is no current file.
-    if (!file_->is_interface_file()) {
+    if (!file_->is_interface_file() || import.empty()) {
         return;
     }
     String::Ptr fs = name(Import::file_name(import));
@@ -153,13 +156,35 @@ void Parser::file(const std::string& prefix, const std::string& file) {
         return;
     } else {
         file_ = new File(fs, name(actual_file), module_, env_);
-        file_->is_input_file(is_input_file_);
+        
+        // The file is an input file if the corresponding scope was specified 
+        // on input, or if the parent scope was specified on input.
+        std::string parent = scope->string();
+        std::string self = File::base_name(File::no_ext_name(file));
+        if (!parent.empty()) {
+            self = parent + "::" + self;
+        }
+        for (int i = 0; i < env_->inputs(); i++) {
+            std::string input = env_->input(i);
+            if (input == self || input == parent) {
+                file_->is_input_file(true);
+                break;
+            }  
+        }
+        if (self == "Boot::Main") {
+            file_->is_input_file(true);
+        }
+        
+        file_->is_input_file();
         env_->file(file_);
     }
-    is_input_file_ = false;
 
     if (env_->verbose()) {
-        std::cout << "Parsing " << actual_file << std::endl;
+        std::cout << "Parsing " << actual_file;
+        if (file_->is_input_file()) {
+            std::cout << "*";
+        }
+        std::cout << std::endl;
     }
 
     // Begin parsing
@@ -208,6 +233,7 @@ Module* Parser::module() {
     // statements.
     while (token() != Token::END) {
         String* scope = maybe_scope();
+        file_alias(scope->string());
         switch (token()) {
         case Token::IDENTIFIER:
             module_feature(function(), scope);

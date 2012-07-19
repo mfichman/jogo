@@ -7,10 +7,10 @@ Usage: apollo [OPTIONS] FILE...
    -o, --output FILE    Write compiler output to FILE.
    -i, --include DIR    Add the directory DIR to the source search path.
    -m, --make           Compile input files and out-of-date dependencies.
-   -d, --output-dir DIR Output directory for object files.
    -h, --help           Print this help message.
    -v, --verbose        Print extra information during compilation.
    -g, --generator GEN  Use code generator GEN.
+   --build-dir DIR      Output directory for object files.
    --dump-ir            Output the intermediate representation.
    --dump-ast           Output the abstract syntax tree.
    --dump-liveness      Output liveness info when printing the IR.
@@ -25,10 +25,10 @@ Usage: apollo [OPTIONS] FILE...
    -o, --output FILE    Write compiler output to FILE.
    -i, --include DIR    Add the directory DIR to the source search path.
    -m, --make           Compile input files and out-of-date dependencies.
-   -d, --output-dir DIR Output directory for object files.
    -h, --help           Print this help message.
    -v, --verbose        Print extra information during compilation.
    -g, --generator GEN  Use code generator GEN.
+   --build-dir DIR      Output directory for object files.
    --dump-ir            Output the intermediate representation.
    --dump-ast           Output the abstract syntax tree.
    --dump-liveness      Output liveness info when printing the IR.

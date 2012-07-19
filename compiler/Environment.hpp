@@ -34,17 +34,17 @@
 class Environment : public Object {
 public:
     Environment();
-    String* name(const std::string& str);
-    String* integer(const std::string& str);
-    String* floating(const std::string& str);
-    String* string(const std::string& str);
+    String* name(const std::string& str) const;
+    String* integer(const std::string& str) const;
+    String* floating(const std::string& str) const;
+    String* string(const std::string& str) const;
     String* integers() const { return integers_; }
     String* floats() const { return floats_; }
     String* strings() const { return strings_; }
     File* files() const { return files_; }
     Module* root() const { return root_; }
     Module* builtins() const { return builtins_; }
-    Module* module(String* scope);
+    Module* module(String* scope) const;
     Module* modules() const { return modules_; }
     File* file(String* name);
     Constant* constant(int index) { return constant_[index]; }
@@ -52,7 +52,7 @@ public:
     const std::string& input(int index) { return input_[index]; }
     const std::string& lib(int index) { return lib_[index]; }
     const std::string& output() const { return output_; }
-    const std::string& output_dir() const { return output_dir_; }
+    const std::string& build_dir() const { return build_dir_; }
     bool make() const { return make_; }
     bool optimize() const { return optimize_; }
     bool link() const { return link_; }
@@ -63,7 +63,7 @@ public:
     bool dump_ast() const { return dump_ast_; }
     bool verbose() const { return verbose_; }
     bool gen_library() const;
-    bool no_default_mods() const { return no_default_mods_; }
+    bool no_default_libs() const { return no_default_libs_; }
     const std::string& generator() const { return generator_; }
     
     int errors() { return errors_; }
@@ -75,7 +75,7 @@ public:
     void input(const std::string& path) { input_.push_back(path); }
     void lib(const std::string& path) { lib_.push_back(path); }
     void output(const std::string& path) { output_ = path; }
-    void output_dir(const std::string& path) { output_dir_ = path; }
+    void build_dir(const std::string& path) { build_dir_ = path; }
     void dump_ir(bool dump) { dump_ir_ = dump; }
     void dump_liveness(bool dump) { dump_liveness_ = dump; }
     void dump_ast(bool dump) { dump_ast_ = dump; }
@@ -85,7 +85,7 @@ public:
     void link(bool link) { link_ = link; }
     void assemble(bool assemble) { assemble_ = assemble; }
     void execute(bool execute) { execute_ = execute; }
-    void no_default_mods(bool no) { no_default_mods_ = no; }
+    void no_default_libs(bool no) { no_default_libs_ = no; }
     void generator(const std::string& gen) { generator_ = gen; }
     void module(Module* module);
     void file(File* name);
@@ -110,10 +110,10 @@ public:
     Type* any_type() const { return any_type_; }
 
 private:
-    std::map<std::string, String::Ptr> name_;
-    std::map<std::string, String::Ptr> integer_;
-    std::map<std::string, String::Ptr> floating_;
-    std::map<std::string, String::Ptr> string_;
+    mutable std::map<std::string, String::Ptr> name_;
+    mutable std::map<std::string, String::Ptr> integer_;
+    mutable std::map<std::string, String::Ptr> floating_;
+    mutable std::map<std::string, String::Ptr> string_;
     std::map<String::Ptr, Module::Ptr> module_;
     std::map<String::Ptr, File::Ptr> file_;
     std::vector<std::string> include_;
@@ -123,9 +123,9 @@ private:
 
     File::Ptr builtin_file_;
     File::Ptr files_;
-    String::Ptr strings_;
-    String::Ptr integers_;
-    String::Ptr floats_;
+    mutable String::Ptr strings_;
+    mutable String::Ptr integers_;
+    mutable String::Ptr floats_;
     Module::Ptr root_;
     Module::Ptr builtins_;
     Module::Ptr modules_;
@@ -144,7 +144,7 @@ private:
     Type::Ptr any_type_;
 
     std::string output_;
-    std::string output_dir_;
+    std::string build_dir_;
     bool dump_ast_;
     bool dump_ir_;
     bool dump_liveness_;
@@ -154,7 +154,7 @@ private:
     bool assemble_;
     bool execute_;
     bool verbose_;
-    bool no_default_mods_;
+    bool no_default_libs_;
     std::string generator_;
 
     int errors_;

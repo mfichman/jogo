@@ -44,12 +44,13 @@ void InterfaceGenerator::operator()(Class* feature) {
 
     if (feature->is_enum()) {
         out_ << "Enum";
-    }
-    for (Type::Ptr t = feature->mixins(); t; t = t->next()) {
-        out_ << t->qualified_name();
-        if (t->next()) {
-            out_ << ", ";
-        }
+    } else {
+       for (Type::Ptr t = feature->mixins(); t; t = t->next()) {
+           out_ << t->qualified_name();
+           if (t->next()) {
+               out_ << ", ";
+           }
+       }
     }
     out_ << " {\n";
     indent_level_++;

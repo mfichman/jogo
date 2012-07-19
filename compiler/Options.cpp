@@ -48,7 +48,6 @@ Options::Options(Environment* env, int argc, char** argv) {
             else if ("e" == flag) { flag = "execute"; }
             else if ("m" == flag) { flag = "make"; }
             else if ("h" == flag) { flag = "help"; }
-            else if ("d" == flag) { flag = "output-dir"; }
             else if ("g" == flag) { flag = "generator"; }
             else {
                 print_usage();
@@ -94,8 +93,8 @@ Options::Options(Environment* env, int argc, char** argv) {
             } else if ("version" == flag) {
                 print_version();
                 exit(0); 
-            } else if ("no-default-mods" == flag) {
-                env->no_default_mods(true);
+            } else if ("no-default-libs" == flag) {
+                env->no_default_libs(true);
                 // Debugger flag that prevents default modules from getting
                 // loaded automatically by the parser.
             } else {
@@ -110,8 +109,8 @@ Options::Options(Environment* env, int argc, char** argv) {
                 env->include(argv[i]); 
             } else if ("output" == flag) {
                 env->output(argv[i]);
-            } else if ("output-dir" == flag) {
-                env->output_dir(argv[i]);
+            } else if ("build-dir" == flag) {
+                env->build_dir(argv[i]);
             } else if ("library" == flag) {
                 env->lib(argv[i]);
             } else if ("generator" == flag) {
@@ -159,10 +158,10 @@ void Options::print_usage() {
     out << "   -o, --output FILE    Write compiler output to FILE.\n";
     out << "   -i, --include DIR    Add the directory DIR to the source search path.\n";
     out << "   -m, --make           Compile input files and out-of-date dependencies.\n";
-    out << "   -d, --output-dir DIR Output directory for object files.\n";
     out << "   -h, --help           Print this help message.\n";
     out << "   -v, --verbose        Print extra information during compilation.\n";
     out << "   -g, --generator GEN  Use code generator GEN.\n";
+    out << "   --build-dir DIR      Output directory for object files.\n";
     out << "   --dump-ir            Output the intermediate representation.\n";
     out << "   --dump-ast           Output the abstract syntax tree.\n";
     out << "   --dump-liveness      Output liveness info when printing the IR.\n";

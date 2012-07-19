@@ -101,7 +101,9 @@ Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
 
     for (Feature* feat = features_; feat; feat = feat->next()) {
         feat->parent(this);
-        feature_[feat->name()] = feat;
+        if (!feature_[feat->name()]) {
+            feature_[feat->name()] = feat;
+        }        
     }
     gen_equal_method();
 }
@@ -391,7 +393,7 @@ std::string Import::scope_name(const std::string& file) {
     // 'Foo/Bar.ap' would have scope name 'Foo'.
 
     size_t pos = file.find_last_of(FILE_SEPARATOR);
-    if (pos == string::npos) {
+    if (pos == std::string::npos) {
         return "";
     }
     std::string dir = file.substr(0, pos);
@@ -408,4 +410,18 @@ std::string Import::scope_name(const std::string& file) {
         }
     }
     return name;
+}
+
+std::string Import::parent_scope(const std::string& scope) {
+    // Given the import (a::b) return the parent scope (a).
+
+    size_t pos = scope.find_last_of(':');
+    if (pos == std::string::npos) {
+        return "";
+    }    
+    if (pos > 0 && scope[pos-1] == ':') {
+        return scope.substr(0, pos-1);
+    } else {
+        return scope;
+    }
 }

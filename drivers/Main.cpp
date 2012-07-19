@@ -83,7 +83,7 @@ void output_intel64(File* file) {
     } 
 
     std::string name = File::no_ext_name(file->name()->string());
-    std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
+    std::string out_file = env->build_dir() + FILE_SEPARATOR + name;
     std::string asm_file = env->assemble() ? tempnam() : out_file + ".asm";
     file->output(env->name(asm_file));
     intel64gen->out(new Stream(asm_file));
@@ -103,7 +103,7 @@ void output_intel64(File* file) {
     if (env->link() && !env->make()) {
         obj_file = tempnam();
     } else {
-        obj_file = out_file + ".ap.o";
+        obj_file = out_file + ".apo";
     }
     file->output(env->name(obj_file));
     std::stringstream ss;
@@ -116,6 +116,7 @@ void output_intel64(File* file) {
 #endif 
     if (env->verbose()) {
         Stream::stout() << ss.str() << "\n";
+        Stream::stout()->flush();
     }
     if (system(ss.str().c_str())) {
         exit(1);
@@ -174,7 +175,7 @@ void output_c(File* file) {
     // Outputs an object file for 'file' using the C code generator and the
     // platform-native C compiler.
     std::string name = File::no_ext_name(file->name()->string());
-    std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
+    std::string out_file = env->build_dir() + FILE_SEPARATOR + name;
     std::string c_file = (env->assemble() ? tempnam() : out_file) + ".ap.c";
     file->output(env->name(c_file));
     cgen->out(new Stream(c_file));
@@ -197,7 +198,7 @@ void output_c(File* file) {
     if (env->link() && !env->make()) {
         obj_file = tempnam();
     } else {
-        obj_file = out_file + ".ap.o";
+        obj_file = out_file + ".apo";
     }
     file->output(env->name(obj_file)); 
     compile_c(c_file, obj_file);
@@ -212,7 +213,7 @@ void compile_native(File* file) {
 
     std::string name = File::no_ext_name(file->name()->string()); 
     std::string c_file = File::no_ext_name(file->path()->string()) + ".c";
-    std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
+    std::string out_file = env->build_dir() + FILE_SEPARATOR + name;
     std::string obj_file = out_file + ".o";
 
     if (!File::is_reg(c_file)) {
@@ -237,7 +238,7 @@ void compile_native(File* file) {
 }
 
 void output(File* file) {
-    // Process 'file' and output the requested output path.  Multiple files 
+    // Process 'file' and  the requested output path.  Multiple files 
     // may go through this function if the multi-compile option is enabled.
     if (!env->make() && !env->link() && !file->is_input_file()) {
         return;
@@ -245,16 +246,16 @@ void output(File* file) {
     compile_native(file);
 
     std::string name = File::no_ext_name(file->name()->string());
-    std::string out_file = env->output_dir() + FILE_SEPARATOR + name;
+    std::string out_file = env->build_dir() + FILE_SEPARATOR + name;
     std::string boot_main = "Boot"FILE_SEPARATOR_STR"Main";
     // FIXME: Temporary fix so that 'main' is recompiled every time to ensure
     // that the static initialization is done properly.
 
     if (env->make() && env->link()) {
-        time_t t1 = File::mtime(out_file + ".ap.o");
+        time_t t1 = File::mtime(out_file + ".apo");
         time_t t2 = File::mtime(file->path()->string());
         time_t t3 = File::mtime(program_path);
-        file->output(env->name(out_file + ".ap.o"));
+        file->output(env->name(out_file + ".apo"));
         if (t1 >= t2 && t1 >= t3 && name != boot_main) { return; }
     }
  
@@ -283,6 +284,7 @@ int main(int argc, char** argv) {
 
 #ifndef WINDOWS
     env->include("/usr/local/include/apollo");
+    env->include("/usr/local/lib");
 #else
     std::string program_files = getenv("PROGRAMFILES");
     std::string program_files_x86 = getenv("PROGRAMFILES(x86)");
@@ -291,16 +293,17 @@ int main(int argc, char** argv) {
     env->include(program_files + "\\Apollo\\lib");
     env->include(program_files_x86 + "\\Apollo\\lib");
 #endif
-    if (!env->no_default_mods()) {
+    if (!env->no_default_libs()) {
         env->lib("apollo");
-    }
-    if (!env->gen_library() && !env->no_default_mods()) {
-        env->input("Boot::Main");
     }
 
     // Run the compiler.  Output to a temporary file if the compiler will
-    // continue on to another stage; otherwise, output the file directly.
+    // continue on to another stage; otherwise,  the file directly.
     Parser::Ptr parser(new Parser(env));
+    if (!env->gen_library() && !env->no_default_libs()) {
+        parser->input("Boot::Main");
+    }
+
     SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
     Stream::sterr()->flush();
 
@@ -326,7 +329,7 @@ int main(int argc, char** argv) {
         InterfaceGenerator::Ptr igen(new InterfaceGenerator(env, out));
     }
 
-    // Run the linker.  Always output to the given output file name.
+    // Run the linker.  Always  to the given output file name.
     std::string obj_files;
     for (File::Ptr file = env->files(); file; file = file->next()) {
         if (file->is_output_file()) {
@@ -336,32 +339,41 @@ int main(int argc, char** argv) {
             }
         }
     } 
-    std::string exe_file = env->execute() ? tempnam() : base_output;
-    if (exe_file == "-") {
-        exe_file = "out";
+    std::string out_file = env->execute() ? tempnam() : base_output;
+    if (out_file == "-") {
+        out_file = "out";
     }
+#ifndef WINDOWS
+    if (env->gen_library()) {
+        std::string base_name = File::base_name(out_file);
+        std::string dir_name = File::dir_name(out_file);
+        out_file = dir_name + FILE_SEPARATOR + "lib" + base_name;
+    }
+#endif
 
     std::stringstream ss;
 #if defined(WINDOWS)    
     ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:amd64 ";
-    ss << obj_files << " /OUT:" << exe_file << ".exe ";
+    ss << obj_files << " /OUT:" << out_file << ".exe ";
 #elif defined(LINUX)
-    if (File::base_name(exe_file).find("libapollo") == 0) {
+    if (File::base_name(out_file).find("libapollo") == 0) {
         obj_files += "build/runtime/Coroutine.Intel64.o";
     }
     if (env->gen_library()) {
-        ss << "ar rcs " << exe_file << ".a " << obj_files;
+        remove((out_file+".a").c_str());
+        ss << "ar rcs " << out_file << ".a " << obj_files;
     } else {
-        ss << "gcc -m64 " << obj_files << " -o " << exe_file;
+        ss << "gcc -m64 " << obj_files << " -o " << out_file;
     }
 #elif defined(DARWIN)
-    if (File::base_name(exe_file).find("libapollo") == 0) {
+    if (File::base_name(out_file).find("libapollo") == 0) {
         obj_files += "build/runtime/Coroutine.Intel64.o";
     }
     if (env->gen_library()) {
-        ss << "ar rcs " << exe_file << ".a " << obj_files; 
+        remove((out_file+".a").c_str());
+        ss << "ar rcs " << out_file << ".a " << obj_files; 
     } else {
-        ss << "gcc -Wl,-no_pie " << obj_files << " -o " << exe_file;
+        ss << "gcc -Wl,-no_pie " << obj_files << " -o " << out_file;
     }
     // FIXME: Remove dynamic-no-pic once rel addressing is fixed
 #endif
@@ -408,14 +420,14 @@ int main(int argc, char** argv) {
     // Run the program, if the -e flag was specified.
     ss.str("");
 #ifdef WINDOWS
-    ss << exe_file << ".exe";
+    ss << out_file << ".exe";
 #else
-    ss << exe_file;
+    ss << out_file;
 #endif
     if(env->verbose()) {
         Stream::stout() << ss.str() << "\n";
     }
     int ret = system(ss.str().c_str());
-    remove(exe_file.c_str());
+    remove(out_file.c_str());
     return ret;
 }

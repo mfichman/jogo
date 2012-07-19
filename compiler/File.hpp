@@ -68,7 +68,9 @@ public:
     int dependencies() { return dependency_.size(); }
     int constants() { return constant_.size(); }
     bool is_input_file() const { return is_input_file_; }
-    bool is_output_file() const { return is_output_file_ && !is_interface_file(); }
+    bool is_output_file() const { return is_output_file_ 
+        && !is_interface_file() 
+        && is_input_file_; }
     bool is_interface_file() const { return ext(name_->string())==".api"; }
     void dependency(Feature* name);
     void feature(Feature* feature);

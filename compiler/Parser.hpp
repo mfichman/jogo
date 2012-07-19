@@ -132,8 +132,6 @@ private:
     Lexer::Ptr lexer_;
     Location last_location_;
     int error_;
-    bool is_input_file_;
-
 };
 
 class LocationAnchor {

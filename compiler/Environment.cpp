@@ -26,7 +26,7 @@
 
 Environment::Environment() :
     output_("-"),
-    output_dir_("build"),
+    build_dir_("build"),
     dump_ast_(false),
     dump_ir_(false),
     dump_liveness_(false),
@@ -36,7 +36,7 @@ Environment::Environment() :
     assemble_(true),
     execute_(false),
     verbose_(false),
-    no_default_mods_(false),
+    no_default_libs_(false),
     generator_("Intel64"),
     errors_(0) {
 
@@ -69,7 +69,7 @@ Environment::Environment() :
 #endif
 }
 
-String* Environment::name(const std::string& str) {
+String* Environment::name(const std::string& str) const {
     // Returns a name if it exists, otherwise, a new one is created.
 
 	std::map<std::string, String::Ptr>::iterator i = name_.find(str);
@@ -82,7 +82,7 @@ String* Environment::name(const std::string& str) {
 	}
 }
 
-String* Environment::integer(const std::string& str) {
+String* Environment::integer(const std::string& str) const {
     // Returns a name if it exists, otherwise, a new one is created.
 
 	std::map<std::string, String::Ptr>::iterator i = integer_.find(str);
@@ -97,7 +97,7 @@ String* Environment::integer(const std::string& str) {
 	}
 }
 
-String* Environment::floating(const std::string& str) {
+String* Environment::floating(const std::string& str) const {
     // Returns a name if it exists, otherwise, a new one is created.
 
 	std::map<std::string, String::Ptr>::iterator i = floating_.find(str);
@@ -112,7 +112,7 @@ String* Environment::floating(const std::string& str) {
 	}
 }
 
-String* Environment::string(const std::string& str) {
+String* Environment::string(const std::string& str) const {
     // Returns a name if it exists, otherwise, a new one is created.
 
 	std::map<std::string, String::Ptr>::iterator i = string_.find(str);
@@ -127,9 +127,9 @@ String* Environment::string(const std::string& str) {
 	}
 }
 
-Module* Environment::module(String* scope) {
+Module* Environment::module(String* scope) const {
     // Look up a module by file_name path
-    std::map<String::Ptr, Module::Ptr>::iterator i = module_.find(scope);
+    std::map<String::Ptr, Module::Ptr>::const_iterator i = module_.find(scope);
     if (i == module_.end()) {
         return 0;
     } else {
@@ -160,5 +160,10 @@ void Environment::module(Module* module) {
 }
 
 bool Environment::gen_library() const { 
-    return File::base_name(output_).find("lib") == 0; 
+    // If the loaded source does not have a "main" function, then generate a 
+    // library instead of a program.
+    Module::Ptr top = module(name("")); 
+    Function::Ptr main = top->function(name("main")); 
+    return !main; 
 }
+
