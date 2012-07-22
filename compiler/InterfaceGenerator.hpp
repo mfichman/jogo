@@ -31,6 +31,7 @@ class InterfaceGenerator : public TreeNode::Functor {
 public:
     InterfaceGenerator(Environment* env, Stream* out=Stream::stout());
     typedef Pointer<InterfaceGenerator> Ptr;
+    void operator()(File* file);
 
 private:
     void operator()(Module* feature);
@@ -42,5 +43,6 @@ private:
     Environment::Ptr env_;
     Class::Ptr class_;
     Stream::Ptr out_;
+    File::Ptr file_;
     int indent_level_;
 };

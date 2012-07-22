@@ -39,7 +39,7 @@ public:
     class Functor;
     virtual void operator()(Functor *functor)=0;
 
-private:
+protected:
     Location location_;
 };
 

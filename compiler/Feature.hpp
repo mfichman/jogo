@@ -265,18 +265,20 @@ private:
 /* Module, contains classes, functions, etc. */
 class Module : public Feature {
 public:
-    Module(Location loc, Environment* env, String* name) :
-        Feature(loc, env, name) {
-    }
+    Module(Location loc, Environment* env, String* name); 
 
     Feature* features() const { return features_; }
     Feature* feature(String* name) const { return query(feature_, name); }
+    bool is_input() const { return is_input_; }
+    void is_input(bool input) { is_input_ = input; }
     void feature(Feature* feature);
+    void location(Location location) { location_ = location; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Module> Ptr; 
 
 private:
     Feature::Ptr features_;
     std::map<String::Ptr, Feature::Ptr> feature_;
+    bool is_input_;
 };
 

@@ -303,6 +303,14 @@ void Function::called_func(Function* func) {
 	called_func_.push_back(func);
 }
 
+Module::Module(Location loc, Environment* env, String* name) :
+    Feature(loc, env, name),
+    is_input_(env->is_input(name->string())) {
+    if (name->string() == "Boot") {
+        is_input_ = false;
+    }
+}
+
 void Module::feature(Feature* feature) {
     if (!feature) {
         return;

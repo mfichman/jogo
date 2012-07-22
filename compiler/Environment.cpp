@@ -167,3 +167,14 @@ bool Environment::gen_library() const {
     return !main; 
 }
 
+
+bool Environment::is_input(const std::string& import) const {
+    // Returns true if the module name given by 'import' was an input given on
+    // the command line.
+    for (int i = 0; i < inputs(); i++) {
+        if (input(i) == import) {
+            return true;
+        }
+    }
+    return false;
+}

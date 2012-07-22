@@ -48,9 +48,9 @@ public:
     Module* modules() const { return modules_; }
     File* file(String* name);
     Constant* constant(int index) { return constant_[index]; }
-    const std::string& include(int index) { return include_[index]; }
-    const std::string& input(int index) { return input_[index]; }
-    const std::string& lib(int index) { return lib_[index]; }
+    const std::string& include(int index) const { return include_[index]; }
+    const std::string& input(int index) const { return input_[index]; }
+    const std::string& lib(int index) const { return lib_[index]; }
     const std::string& output() const { return output_; }
     const std::string& build_dir() const { return build_dir_; }
     bool make() const { return make_; }
@@ -64,13 +64,14 @@ public:
     bool verbose() const { return verbose_; }
     bool gen_library() const;
     bool no_default_libs() const { return no_default_libs_; }
+    bool is_input(const std::string& input) const;
     const std::string& generator() const { return generator_; }
     
-    int errors() { return errors_; }
-    int includes() { return include_.size(); }
-    int inputs() { return input_.size(); }
-    int libs() { return lib_.size(); }
-    int constants() { return constant_.size(); }
+    int errors() const { return errors_; }
+    int includes() const { return include_.size(); }
+    int inputs() const { return input_.size(); }
+    int libs() const { return lib_.size(); }
+    int constants() const { return constant_.size(); }
     void include(const std::string& path) { include_.push_back(path); }
     void input(const std::string& path) { input_.push_back(path); }
     void lib(const std::string& path) { lib_.push_back(path); }

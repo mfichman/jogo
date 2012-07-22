@@ -27,10 +27,22 @@ InterfaceGenerator::InterfaceGenerator(Environment* env, Stream* out) :
     out_(out),
     indent_level_(0) {
 
-    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
-        m(this);
+    for (File::Ptr f = env_->files(); f; f = f->next()) {
+        if (f->is_output_file()) {
+            this->operator()(f);
+        }
     }
     out_->flush();
+}
+
+void InterfaceGenerator::operator()(File* file) {
+    if (env_->errors()) { return; }
+    file_ = file;
+
+    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
+        f(this);
+    }
+    file_ = 0;
 }
 
 void InterfaceGenerator::operator()(Module* feature) {
@@ -40,6 +52,7 @@ void InterfaceGenerator::operator()(Module* feature) {
 }
 
 void InterfaceGenerator::operator()(Class* feature) {
+    if (feature->file() != file_) { return; }
     out_ << feature->type() << " < ";
 
     if (feature->is_enum()) {
@@ -62,11 +75,13 @@ void InterfaceGenerator::operator()(Class* feature) {
 }
 
 void InterfaceGenerator::operator()(Constant* constant) {
+    if (constant->file() != file_) { return; }
     print_tabs();
     out_ << constant->name() << "\n";
 }
 
 void InterfaceGenerator::operator()(Function* function) {
+    if (function->file() != file_) { return; }
     print_tabs();
     if (dynamic_cast<Module*>(function->parent())) {
         out_ << function->qualified_name() << "(";

@@ -84,12 +84,17 @@ void Parser::input(const std::string& import) {
     for (int i = 0; i < env_->includes(); i++) {
         const std::string& prefix = env_->include(i);
         if (File::ext(file) != ".ap") {
-            if (File::is_reg(prefix + FILE_SEPARATOR + file + ".api")) {
-                Parser::file(prefix, file + ".api");
+            const std::string base = prefix + FILE_SEPARATOR + file;
+            if (File::is_dir(base)) {
+                Parser::dir(prefix, file);
+                return;
+            } 
+            if (File::is_reg(base + ".ap")) {
+                Parser::file(prefix, file + ".ap");
                 return;
             }
-            if (File::is_reg(prefix + FILE_SEPARATOR + file + ".ap")) {
-                Parser::file(prefix, file + ".ap");
+            if (!env_->is_input(import) && File::is_reg(base + ".api")) {
+                Parser::file(prefix, file + ".api");
                 return;
             }
         } else {
@@ -98,13 +103,9 @@ void Parser::input(const std::string& import) {
                 return; 
             } 
         }
-        if (File::is_dir(prefix + FILE_SEPARATOR + file)) {
-            Parser::dir(prefix, file);
-            return;
-        } 
+        tests.push_back(prefix + FILE_SEPARATOR + file);
         tests.push_back(prefix + FILE_SEPARATOR + file + ".api");
         tests.push_back(prefix + FILE_SEPARATOR + file + ".ap");
-        tests.push_back(prefix + FILE_SEPARATOR + file);
     }
     env_->error("Could not find " + import);
     err_ << "Module '" << import << "' not found:\n";
@@ -165,7 +166,7 @@ void Parser::file(const std::string& prefix, const std::string& file) {
             self = parent + "::" + self;
         }
         for (int i = 0; i < env_->inputs(); i++) {
-            std::string input = env_->input(i);
+            std::string input = File::no_ext_name(env_->input(i));
             if (input == self || input == parent) {
                 file_->is_input_file(true);
                 break;
@@ -174,11 +175,8 @@ void Parser::file(const std::string& prefix, const std::string& file) {
         if (self == "Boot::Main") {
             file_->is_input_file(true);
         }
-        
-        file_->is_input_file();
         env_->file(file_);
     }
-
     if (env_->verbose()) {
         std::cout << "Parsing " << actual_file;
         if (file_->is_input_file()) {
@@ -1450,7 +1448,7 @@ void Parser::module_feature(Feature* feature, String* scope) {
     // the module.  Otherwise, insert the feature into the current module. 
     Module::Ptr module = env_->module(scope);
     if (!module) {
-        module = new Module(Location(), env_, scope);
+        module = new Module(location(), env_, scope);
         env_->module(module);
     } 
     module->feature(feature);

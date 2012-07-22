@@ -379,6 +379,20 @@ int main(int argc, char** argv) {
 #endif
 
     if (!env->gen_library()) {
+        // Link all modules that are required by the binary.  These libraries
+        // are linked in addition to the native libraries specified on the
+        // command line.
+        for (Feature* f = env->modules(); f; f = f->next()) {
+            Module* m = dynamic_cast<Module*>(f);
+            File::Ptr file = m->file();
+            std::string fn = file ? File::base_name(file->name()->string()) : "";
+            std::string mn = m->name()->string();
+            if (!m->is_input() && fn != "apollo" && !mn.empty()) {
+                env->lib(m->name()->string());  
+            }
+        }
+
+        // Add all libraries to the linker command.
         for (int i = 0; i < env->libs(); i++) {
 #ifdef WINDOWS
             ss << " " << env->lib(i) << ".lib";
@@ -391,7 +405,7 @@ int main(int argc, char** argv) {
 #ifdef WINDOWS
                 ss << " /LIBPATH:\"" << env->include(i) << "\"";
 #else
-                ss << " -L" << env->include(i);  
+                ss << " -L" << env->include(i);
 #endif
             }
         }

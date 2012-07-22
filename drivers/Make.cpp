@@ -83,8 +83,8 @@ int main(int argc, char** argv) {
 
     for (int i = 0; i < env->inputs(); i++) {
         std::stringstream ss;
-        ss << "bin/apollo " << "-o lib/" << env->input(i) << " -i src -m ";
-        ss << "-d build " << env->input(i) << " -i lib -i runtime";
+        ss << "bin/apollo " << "-o lib/" << env->input(i) << " -i lib -i src -m ";
+        ss << "--build-dir build " << env->input(i) << " -i runtime";
         // FIXME: Use the real apollo 
         if (env->verbose()) {
             ss << " -v";
