@@ -48,7 +48,6 @@ public:
     }
     
     Feature* dependency(int id) { return dependency_[id]; }
-    Feature* features() const { return features_; }
     Feature* feature(String* scope, String* name) const;
     Function* function(String* scope, String* name) const;
     Constant* constant(String* scope, String* name) const;
@@ -65,15 +64,18 @@ public:
     String* integers() const { return integers_; }
     String* floats() const { return floats_; }
     String* strings() const { return strings_; }
+    Import* import(int index) { return import_[index]; }
+    Feature* feature(int index) { return feature_[index]; }
+    int imports() const { return import_.size(); }
+    int features() const { return feature_.size(); }
     int dependencies() { return dependency_.size(); }
     int constants() { return constant_.size(); }
     bool is_input_file() const { return is_input_file_; }
-    bool is_output_file() const { return is_output_file_ 
-        && !is_interface_file() 
-        && is_input_file_; }
+    bool is_output_file() const;
     bool is_interface_file() const { return ext(name_->string())==".api"; }
     void dependency(Feature* name);
-    void feature(Feature* feature);
+    void import(Import* import) { import_.push_back(import); }
+    void feature(Feature* feature) { feature_.push_back(feature); }
     void next(File* next) { next_ = next; }
     void output(String* path) { output_ = path; }
     void native_output(String* path) { native_output_ = path; }
@@ -94,19 +96,19 @@ public:
     static time_t mtime(const std::string& file);
 
 private:
-    Feature::Ptr features_;
     String::Ptr name_;
     String::Ptr path_;
     Module::Ptr module_;
     Environment* environment_;
-    std::vector<Import::Ptr> imports_; 
     File::Ptr next_;
     String::Ptr output_;
     String::Ptr native_output_;
     bool is_input_file_;
     bool is_output_file_;
-    std::vector<Feature*> dependency_;
-    std::vector<Constant*> constant_;
+    std::vector<Import::Ptr> import_; 
+    std::vector<Feature::Ptr> feature_;
+    std::vector<Feature::Ptr> dependency_;
+    std::vector<Constant::Ptr> constant_;
     std::map<std::string, String::Ptr> integer_;
     std::map<std::string, String::Ptr> floating_;
     std::map<std::string, String::Ptr> string_;

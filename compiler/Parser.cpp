@@ -192,11 +192,9 @@ void Parser::file(const std::string& prefix, const std::string& file) {
 
     // Now parse other modules that depend on the unit that was added
     if (!file_->is_interface_file()) {
-       for (Feature* f = file_->features(); f; f = f->next()) {
-           if (Import* import = dynamic_cast<Import*>(f)) {
-               input(import->scope()->string());
-           }
-       }
+        for (int i = 0; i < file_->imports(); i++) {
+            input(file_->import(i)->scope()->string());
+        }
     }
 }
 
@@ -700,8 +698,13 @@ void Parser::import() {
     }
 
     while (token() == Token::TYPE) {
+        // Add a new non-qualified import; any type that is in the imported
+        // module will be added to the file's namespace.  If a qualified import
+        // already exists, then make that import non-qualified.
         String::Ptr scope = Parser::scope();
-        file_->feature(new Import(loc, env_, scope, false));
+        Import::Ptr import = new Import(loc, scope, false);
+        module_->import(import);
+        file_->import(import);
         if (token() == Token::COMMA) {
             next();
         } else {
@@ -1462,12 +1465,15 @@ void Parser::implicit_import(Type* type) {
 }
 
 void Parser::implicit_import(String* scope) {
-    if (!scope->string().empty()) {
+    // Adds a new import to the module/file if it hasn't been added already. 
+    Import::Ptr import = module_->import(scope); 
+    if (!scope->string().empty() && !import) {
+        import = new Import(location(), scope, true);
+        module_->import(import);
+        file_->import(import);
         file_alias(scope->string());
-        file_->feature(new Import(Location(), env_, scope, true));
     }
 }
- 
 
 Expression* Parser::op(const LocationAnchor& loc, const std::string& op, 
                        Expression* a, Expression* b) {

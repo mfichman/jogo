@@ -119,11 +119,11 @@ Feature* File::feature(String* scope, String* name) const {
     }
 
     // Search the imports for the constant
-    for (size_t i = 0; i < imports_.size(); ++i) {
-        if (imports_[i]->is_qualified()) {
+    for (size_t i = 0; i < import_.size(); ++i) {
+        if (import_[i]->is_qualified()) {
             continue;
         }
-        Module* m = environment_->module(imports_[i]->scope());
+        Module* m = environment_->module(import_[i]->scope());
         if (!m) {
             continue;
         }
@@ -166,28 +166,6 @@ void File::dependency(Feature* feature) {
     }
     
     dependency_.push_back(feature);
-}
-
-void File::feature(Feature* feature) {
-    // Adds a new feature to the file.  If the feature is an import, only add
-    // the import once for each inclusion.
-    if (!feature) {
-        return;
-    }
-
-    if (Import::Ptr import = dynamic_cast<Import*>(feature)) {
-        if (import->scope()->string().empty()) {
-            return;
-        }
-        // Check to make sure the import isn't already in the list. 
-        for (size_t i = 0; i < imports_.size(); ++i) {
-            if (imports_[i]->scope()->string() == import->scope()->string()) {
-                return;
-            }
-        }
-        imports_.push_back(import);
-    }
-    features_ = append(features_, feature);
 }
 
 time_t File::mtime(const std::string& name) {
@@ -236,6 +214,10 @@ bool File::is_native_lib(const std::string& name) {
 #endif
 
     return false;
+}
+
+bool File::is_output_file() const {
+    return is_output_file_ && !is_interface_file() && is_input_file_;
 }
 
 std::string File::base_name(const std::string& file) {

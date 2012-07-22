@@ -29,6 +29,7 @@
 #include "Formal.hpp"
 #include "Type.hpp"
 #include "BasicBlock.hpp"
+#include "Import.hpp"
 #include <vector>
 
 
@@ -185,31 +186,6 @@ private:
 	mutable ThrowSpec throw_spec_;
 };
 
-/* Class for imports */
-class Import : public Feature {
-public:
-    Import(Location loc, Environment* env, String* scope, bool is_qualified) :
-        Feature(loc, env, 0),
-        file_name_(file_name(scope->string())),
-        scope_(scope),
-        is_qualified_(is_qualified) {
-    }
-        
-    const std::string& file_name() const { return file_name_; }
-    String* scope() const { return scope_; }
-    bool is_qualified() const { return is_qualified_; }
-    static std::string file_name(const std::string& scope);
-    static std::string scope_name(const std::string& file);
-    static std::string parent_scope(const std::string& scope);
-    void operator()(Functor* functor) { functor->operator()(this); }
-    typedef Pointer<Import> Ptr;
-
-private:
-    std::string file_name_;
-    String::Ptr scope_;
-    bool is_qualified_;
-};
-
 /* Represents a class object */
 class Class : public Feature {
 public:
@@ -253,6 +229,7 @@ private:
     Type::Ptr mixins_;
     String::Ptr comment_;
     Feature::Ptr features_;
+    Import::Ptr imports_;
     std::map<String::Ptr, Feature::Ptr> feature_;
     bool is_object_;
     bool is_value_;
@@ -269,16 +246,21 @@ public:
 
     Feature* features() const { return features_; }
     Feature* feature(String* name) const { return query(feature_, name); }
+    Import* imports() const { return imports_; }
+    Import* import(String* name) const { return query(import_, name); }
     bool is_input() const { return is_input_; }
     void is_input(bool input) { is_input_ = input; }
     void feature(Feature* feature);
+    void import(Import* import);
     void location(Location location) { location_ = location; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Module> Ptr; 
 
 private:
     Feature::Ptr features_;
+    Import::Ptr imports_;
     std::map<String::Ptr, Feature::Ptr> feature_;
+    std::map<String::Ptr, Import::Ptr> import_;
     bool is_input_;
 };
 

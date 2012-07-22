@@ -324,6 +324,9 @@ int main(int argc, char** argv) {
     if (!env->link()) { return 0; }
 
     std::string base_output = File::no_ext_name(env->output());
+    if (base_output == "-") {
+        base_output = "out";
+    }
     if (env->gen_library()) {
         Stream::Ptr out(new Stream(base_output+".api"));
         InterfaceGenerator::Ptr igen(new InterfaceGenerator(env, out));
@@ -340,9 +343,6 @@ int main(int argc, char** argv) {
         }
     } 
     std::string out_file = env->execute() ? tempnam() : base_output;
-    if (out_file == "-") {
-        out_file = "out";
-    }
 #ifndef WINDOWS
     if (env->gen_library()) {
         std::string base_name = File::base_name(out_file);

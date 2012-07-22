@@ -525,7 +525,7 @@ void TreePrinter::operator()(Import* feature) {
     print_tabs(); out_ << "file: ";
     out_ << feature->file_name() << "\n";
     print_tabs(); out_ << "scope: ";
-    out_ << feature->qualified_name() << "\n";
+    out_ << feature->scope() << "\n";
     indent_level_--;
 }
 

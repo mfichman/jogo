@@ -323,6 +323,18 @@ void Module::feature(Feature* feature) {
     }
 }
 
+void Module::import(Import* import) {
+    if (!import) {
+        return; 
+    }
+
+    Import::Ptr im(import);
+    if (!import_[import->scope()]) {
+        import_[import->scope()] = import;
+        imports_ = append(imports_, import);
+    }
+}
+
 Class* Feature::clazz(String* name) const {
     return dynamic_cast<Class*>(feature(name));
 }
@@ -379,57 +391,3 @@ String* Feature::label() const {
     return label_;
 }
 
-std::string Import::file_name(const std::string& scope) {
-    // Converts a module name to the name of the file that contains the 
-    // module.
-    std::string out;
-    for (size_t i = 1; i <= scope.length(); i++) {    
-        if (scope[i-1] == ':' && scope[i] == ':') {
-            out += FILE_SEPARATOR;
-            i++;
-        } else {
-            out += scope[i-1];
-        }
-    }
-
-    return out;
-}
-
-std::string Import::scope_name(const std::string& file) {
-    // Given the file name, returns the module's scope name.  This is equal
-    // to the directory name with the '/' replaced by '::'.  For example,
-    // 'Foo/Bar.ap' would have scope name 'Foo'.
-
-    size_t pos = file.find_last_of(FILE_SEPARATOR);
-    if (pos == std::string::npos) {
-        return "";
-    }
-    std::string dir = file.substr(0, pos);
-    std::string name;
-    for (size_t i = 0; i < dir.size(); i++) {
-        if (!isalnum(dir[i])) {
-            if (dir[i] == FILE_SEPARATOR) {
-                name += "::";
-            } else {
-                return name;
-            }
-        } else {
-            name += dir[i];
-        }
-    }
-    return name;
-}
-
-std::string Import::parent_scope(const std::string& scope) {
-    // Given the import (a::b) return the parent scope (a).
-
-    size_t pos = scope.find_last_of(':');
-    if (pos == std::string::npos) {
-        return "";
-    }    
-    if (pos > 0 && scope[pos-1] == ':') {
-        return scope.substr(0, pos-1);
-    } else {
-        return scope;
-    }
-}
