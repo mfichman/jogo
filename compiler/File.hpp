@@ -42,7 +42,7 @@ public:
         name_(name),
         path_(path),
         module_(module),
-        environment_(env),
+        env_(env),
         is_input_file_(false),
         is_output_file_(true) {  
     }
@@ -55,8 +55,6 @@ public:
     String* name() const { return name_; }
     String* path() const { return path_; }
     File* next() const { return next_; }
-    String* output() const { return output_; }
-    String* native_output() const { return native_output_; }
     Constant* constant(int index) { return constant_[index]; }
     String* integer(const std::string& str);
     String* floating(const std::string& str);
@@ -73,12 +71,19 @@ public:
     bool is_input_file() const { return is_input_file_; }
     bool is_output_file() const;
     bool is_interface_file() const { return ext(name_->string())==".api"; }
+    bool is_up_to_date(const std::string& ext) const;
+    std::string input(const std::string& ext) const;
+    std::string output(const std::string& ext = ".apo") const;
+    std::string asm_file() const { return output(".asm"); }
+    std::string c_file() const { return output(".c"); }
+    std::string o_file() const { return output(".o"); }
+    std::string apo_file() const { return output(".apo"); }
+    std::string api_file() const { return output(".api"); }
+    std::string native_file() const { return input(".c"); }
     void dependency(Feature* name);
     void import(Import* import) { import_.push_back(import); }
     void feature(Feature* feature) { feature_.push_back(feature); }
     void next(File* next) { next_ = next; }
-    void output(String* path) { output_ = path; }
-    void native_output(String* path) { native_output_ = path; }
     void constant(Constant* constant) { constant_.push_back(constant); }
     void is_input_file(bool input) { is_input_file_ = input; }
     void is_output_file(bool output) { is_output_file_ = output; }
@@ -88,6 +93,7 @@ public:
     static bool is_dir(const std::string& file);
     static bool is_reg(const std::string& file);
     static bool is_native_lib(const std::string& file);
+    static bool is_up_to_date(const std::string& in, const std::string& out);
     static std::string base_name(const std::string& file);
     static std::string ext(const std::string& file);
     static std::string no_ext_name(const std::string& file);
@@ -99,10 +105,8 @@ private:
     String::Ptr name_;
     String::Ptr path_;
     Module::Ptr module_;
-    Environment* environment_;
+    Environment* env_;
     File::Ptr next_;
-    String::Ptr output_;
-    String::Ptr native_output_;
     bool is_input_file_;
     bool is_output_file_;
     std::vector<Import::Ptr> import_; 

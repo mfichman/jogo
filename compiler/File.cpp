@@ -88,7 +88,7 @@ Feature* File::feature(String* scope, String* name) const {
     // Searches through imports included in this file to attempt to find the
     // feature.
     if (scope && scope->string() != "") {
-        Module* module = environment_->module(scope);
+        Module* module = env_->module(scope);
         // FIXME: If module lookup fails, then take the last segment and look
         // for that class
         Feature* feat = module ? module->feature(name) : 0;
@@ -105,8 +105,8 @@ Feature* File::feature(String* scope, String* name) const {
             scope = 0; 
         } else {
 			String* full = scope;
-            scope = environment_->name(full->string().substr(0, pos-1));
-            class_name = environment_->name(full->string().substr(pos+1));
+            scope = env_->name(full->string().substr(0, pos-1));
+            class_name = env_->name(full->string().substr(pos+1));
         }
         Class* clazz = File::clazz(scope, class_name);
         return clazz ? clazz->feature(name) : 0;
@@ -123,7 +123,7 @@ Feature* File::feature(String* scope, String* name) const {
         if (import_[i]->is_qualified()) {
             continue;
         }
-        Module* m = environment_->module(import_[i]->scope());
+        Module* m = env_->module(import_[i]->scope());
         if (!m) {
             continue;
         }
@@ -134,7 +134,7 @@ Feature* File::feature(String* scope, String* name) const {
     }
     
     // Load from the global scope
-    return environment_->root()->feature(name);
+    return env_->root()->feature(name);
 }
 
 Function* File::function(String* scope, String* name) const {
@@ -168,6 +168,22 @@ void File::dependency(Feature* feature) {
     dependency_.push_back(feature);
 }
 
+std::string File::input(const std::string& ext) const {
+    return File::no_ext_name(path_->string()) + ext;
+}
+
+std::string File::output(const std::string& ext) const {
+    std::string name = File::no_ext_name(name_->string());
+    return env_->build_dir() + FILE_SEPARATOR + name + ext;
+}
+
+bool File::is_up_to_date(const std::string& ext) const {
+    time_t t1 = mtime(output(ext));
+    time_t t2 = mtime(path_->string()); 
+    time_t t3 = mtime(env_->program_path());
+    return t1 >= t2 && t1 >= t3;
+}
+
 time_t File::mtime(const std::string& name) {
     struct stat info;
     if (stat(name.c_str(), &info)) {
@@ -175,7 +191,14 @@ time_t File::mtime(const std::string& name) {
     } else {
         return info.st_mtime;
     }
+}
 
+bool File::is_up_to_date(const std::string& in, const std::string& out) {
+    // Return true if the output file is older than both the input file and the
+    // compiler binary.
+    time_t t1 = mtime(out);
+    time_t t2 = mtime(in); 
+    return t1 >= t2;
 }
 
 bool File::is_dir(const std::string& name) {

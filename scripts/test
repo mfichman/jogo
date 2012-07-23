@@ -69,7 +69,7 @@ def apollo_test(test):
     if flags == '':
         flags += ' -e'
         run = True
-    flags += ' -m --build-dir ../build --optimize'
+    flags += ' -m --build-dir ../build/runtime --optimize -o ../build/test'
     command = '../bin/apollo ' + test + ' -i ../runtime -i ../lib ' + flags
     if options.full:
         valgrind = 'valgrind -q --leak-check=full'
@@ -80,14 +80,13 @@ def apollo_test(test):
         command = command.replace('/', '\\')
     output = shell(command + ' 2>&1')
     check(test+'.ap', expected, output)
-    
 
 def python_test(test):
     # Run a Python test.  Useful for various msicellaneous tests that are not
     # easily expressed in C++.
     expected = open(test + '.out', 'r').read()
     output = shell('python ' + test + ' 2>&1')
-    check(test+'.py', expected, output)
+    check(test, expected, output)
 
 def native_test(test):
     # C/C++ tests.  Used primarily for unit tests and to test the runtime

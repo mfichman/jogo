@@ -31,30 +31,22 @@ BasicBlockPrinter::BasicBlockPrinter(Environment* env, Machine* mach) :
 }
 
 void BasicBlockPrinter::operator()(File* file) {
-    if (env_->errors()) {
-        return;
+    if (env_->errors()) { return; }
+    for (int i = 0; i < file->features(); i++) {
+        file->feature(i)->operator()(this);
     }
-    file_ = file;
-    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
-        f(this);
-    }
-    file_ = 0;
     out_->flush();
 }
 
 void BasicBlockPrinter::operator()(Module* feature) {
     module_ = feature;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        const Location& loc = f->location();
         f(this);
     } 
     module_ = 0;
 }
 
 void BasicBlockPrinter::operator()(Class* feature) {
-    if (feature->location().file != file_) {
-        return;
-    }
     class_ = feature;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
@@ -63,9 +55,6 @@ void BasicBlockPrinter::operator()(Class* feature) {
 }
 
 void BasicBlockPrinter::operator()(Function* feature) {
-    if (feature->location().file != file_) {
-        return;
-    } 
     liveness_->operator()(feature);
 
     if (feature->basic_blocks()) {

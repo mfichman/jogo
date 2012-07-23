@@ -944,7 +944,6 @@ void SemanticAnalyzer::operator()(Constant* feature) {
     } else if(clazz->is_enum()) {
         feature->type(clazz->type());
     }
-    feature->file()->constant(feature);
     env_->constant(feature);
 }
 

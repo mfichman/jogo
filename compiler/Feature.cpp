@@ -85,6 +85,7 @@ Class::Class(Location loc, Environment* env, Type* type, Type* alt) :
     is_mixin_(false), 
     is_enum_(false),
     size_(0) {
+
 }
 
 /* Constructor for enum types */
@@ -235,6 +236,24 @@ bool Class::subtype(Class* other) const {
     return true;
 }
 
+Constant::Constant(Location loc, Environment* env, String* name, Flags flags, 
+    Expression* init) :
+
+    Feature(loc, env, name, flags),
+    initializer_(init) {
+}
+
+Function::Function(Location loc, Environment* env, String* name, Formal* formal, 
+    Flags flags, Type* ret, Block* block) :
+
+    Feature(loc, env, name, flags),
+	formals_(formal),
+	type_(ret),
+    block_(block),
+    stack_vars_(0),
+	throw_spec_(UNKNOWN) {
+}
+
 bool Function::covariant(Function* other) const {
     // Returns true if this function is covariant, i.e., its return type is the
     // same as or a subtype of 'other.'  The arguments must match exactly.
@@ -334,6 +353,36 @@ void Module::import(Import* import) {
         imports_ = append(imports_, import);
     }
 }
+
+bool Module::is_up_to_date() const {
+    // Return true if the module is up to date, that is, if all dependent
+    // source files have a later modification time than the output file.
+    std::string out = function(env()->name("main")) ? lib_file() : exe_file();
+    for (int i = 0; i < files(); i++) {
+        if (!File::is_up_to_date(file(i)->path()->string(), out)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::string Module::lib_file() const {
+    std::string dir = env()->output() + FILE_SEPARATOR + "lib";
+#ifdef WINDOWS
+    return dir + FILE_SEPARATOR + name()->string() + ".lib";
+#else
+    return dir + FILE_SEPARATOR + "lib" + name()->string() + ".a";
+#endif
+}
+
+std::string Module::exe_file() const {
+    std::string dir = env()->output() + FILE_SEPARATOR + "bin";
+#ifdef WINDOWS
+    return dir + FILE_SEPARATOR + name()->string() + ".exe";
+#else
+    return dir + FILE_SEPARATOR + name()->string();
+#endif
+} 
 
 Class* Feature::clazz(String* name) const {
     return dynamic_cast<Class*>(feature(name));

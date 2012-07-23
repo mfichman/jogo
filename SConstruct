@@ -112,7 +112,7 @@ library_src = ' '.join([
 ])
 
 coroutine = env.NASM('build/runtime/Coroutine.Intel64.asm')
-lib = env.Command('aplib', apollo, 'bin/apollo $APFLAGS -o lib/apollo ' + library_src)
+lib = env.Command('aplib', apollo, 'bin/apollo $APFLAGS -o lib/Apollo ' + library_src)
 env.Depends(lib, apollo)
 env.Depends(lib, coroutine)
 

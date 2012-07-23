@@ -40,19 +40,15 @@ void BasicBlockGenerator::operator()(File* file) {
     if (env_->errors()) {
         return;
     }
-    file_ = file;
-    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
-        f(this);
-    }    
-    file_ = 0;
+
+    for (int i = 0; i < file->features(); i++) {
+        file->feature(i)->operator()(this); 
+    }
 }
 
 void BasicBlockGenerator::operator()(Class* feature) {
     // Output intermediate-level code for the class given by 'feature'.  
     // This function also sets up the vtable for the class.
-    if (feature->location().file != file_) {
-        return;
-    }
     class_ = feature;
     calculate_size(feature);
     enter_scope();
@@ -625,7 +621,6 @@ void BasicBlockGenerator::operator()(Yield* statament) {
 void BasicBlockGenerator::operator()(Function* feature) {
     // If the function is just a prototype, don't emit any code.
     if (!feature->block() || feature->is_native()) { return; }
-    if (feature->location().file != file_) { return; }
 
     // Reset the temporaries for the function.
     temp_ = 0;

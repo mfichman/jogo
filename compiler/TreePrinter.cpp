@@ -94,12 +94,8 @@ void TreePrinter::print_comment(String* comment) {
 }
 
 void TreePrinter::operator()(Module* feature) {
-    File::Ptr file = feature->file();
     std::string name = feature->qualified_name()->string();
-    if (!name.empty() && (!file || file->is_interface_file())) {
-        return;
-    }
-    if (name == "Boot") {
+    if (!name.empty() || name == "Boot") {
         return;
     }
 

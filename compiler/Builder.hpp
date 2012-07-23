@@ -45,17 +45,24 @@ public:
     Builder(Environment* env);
     typedef Pointer<Builder> Ptr;
     
-    void operator()(Module* module) {}
+    void operator()(Module* module);
     void operator()(File* file);
+    int errors() const { return errors_; }
 
 private:
+    void modular_build();
+    void monolithic_build();
+    void link(Module* module);
+    void link(const std::string& in, const std::string& out);
+    void archive(Module* module);
+    void archive(const std::string& in, const std::string& out);
+    void irgen(File* file); 
+    void cgen(File* file);
+    void intel64gen(File* file);
+    void cc(const std::string& in, const std::string& out);
+    void nasm(const std::string& in, const std::string& out);
+    void execute(const std::string& exe);
+
     Environment::Ptr env_;
-    Parser::Ptr parser_;
-    Machine::Ptr machine_;
-    BasicBlockGenerator::Ptr bgen_;
-    CopyPropagator::Ptr copy_;
-    DeadCodeEliminator::Ptr elim_;
-    RegisterAllocator::Ptr alloc_;
-    Intel64CodeGenerator::Ptr intel64gen_;
-    CCodeGenerator::Ptr cgen_;
+    int errors_;
 };

@@ -53,6 +53,7 @@ public:
     const std::string& lib(int index) const { return lib_[index]; }
     const std::string& output() const { return output_; }
     const std::string& build_dir() const { return build_dir_; }
+    const std::string& program_path() const { return program_path_; }
     bool make() const { return make_; }
     bool optimize() const { return optimize_; }
     bool link() const { return link_; }
@@ -64,6 +65,7 @@ public:
     bool verbose() const { return verbose_; }
     bool gen_library() const;
     bool no_default_libs() const { return no_default_libs_; }
+    bool monolithic_build() const { return monolithic_build_; }
     bool is_input(const std::string& input) const;
     const std::string& generator() const { return generator_; }
     
@@ -87,7 +89,9 @@ public:
     void assemble(bool assemble) { assemble_ = assemble; }
     void execute(bool execute) { execute_ = execute; }
     void no_default_libs(bool no) { no_default_libs_ = no; }
+    void monolithic_build(bool monolithic) { monolithic_build_ = monolithic; }
     void generator(const std::string& gen) { generator_ = gen; }
+    void program_path(const std::string& path) { program_path_ = path; }
     void module(Module* module);
     void file(File* name);
     void constant(Constant* cons) { constant_.push_back(cons); }
@@ -146,6 +150,7 @@ private:
 
     std::string output_;
     std::string build_dir_;
+    std::string program_path_;
     bool dump_ast_;
     bool dump_ir_;
     bool dump_liveness_;
@@ -155,6 +160,7 @@ private:
     bool assemble_;
     bool execute_;
     bool verbose_;
+    bool monolithic_build_;
     bool no_default_libs_;
     std::string generator_;
 

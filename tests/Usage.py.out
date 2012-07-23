@@ -3,9 +3,9 @@ Usage: apollo [OPTIONS] FILE...
    -a, --assembly       Compile, but do not assemble or link.
    -c, --compile        Compile and assemble, but do not link.
    -e, --execute        Execute program as a script.
-   -l, --library LIB    Compile and link with library LIB.
+   -l, --library LIB    Compile and link with native library LIB.
    -o, --output FILE    Write compiler output to FILE.
-   -i, --include DIR    Add the directory DIR to the source search path.
+   -i, --include DIR    Add the directory DIR to the search path.
    -m, --make           Compile input files and out-of-date dependencies.
    -h, --help           Print this help message.
    -v, --verbose        Print extra information during compilation.
@@ -21,9 +21,9 @@ Usage: apollo [OPTIONS] FILE...
    -a, --assembly       Compile, but do not assemble or link.
    -c, --compile        Compile and assemble, but do not link.
    -e, --execute        Execute program as a script.
-   -l, --library LIB    Compile and link with library LIB.
+   -l, --library LIB    Compile and link with native library LIB.
    -o, --output FILE    Write compiler output to FILE.
-   -i, --include DIR    Add the directory DIR to the source search path.
+   -i, --include DIR    Add the directory DIR to the search path.
    -m, --make           Compile input files and out-of-date dependencies.
    -h, --help           Print this help message.
    -v, --verbose        Print extra information during compilation.

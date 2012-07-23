@@ -29,14 +29,10 @@ CopyPropagator::CopyPropagator(Environment* env, Machine* machine) :
 }
 
 void CopyPropagator::operator()(File* file) {
-    if (env_->errors()) {
-        return;
-    } 
-    file_ = file;
-    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
-        f(this);
+    if (env_->errors()) { return; }
+    for (int i = 0; i < file->features(); i++) {
+        file->feature(i)->operator()(this);
     }
-    file_ = 0;
 }
 
 void CopyPropagator::operator()(Module* feature) {
@@ -46,18 +42,12 @@ void CopyPropagator::operator()(Module* feature) {
 }
 
 void CopyPropagator::operator()(Class* feature) {
-    if (feature->location().file != file_) {
-        return;
-    }
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        f(this);
+       f(this);
     }
 }
 
 void CopyPropagator::operator()(Function* feature) {
-    if (feature->location().file != file_) {
-        return;
-    }
     for (int i = 0; i < feature->basic_blocks(); i++) {
         operator()(feature->basic_block(i));
     } 

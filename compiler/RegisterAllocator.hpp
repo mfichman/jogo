@@ -75,7 +75,6 @@ private:
     Machine::Ptr machine_;
     bool spill_;
     std::set<int> spilled_;
-    File::Ptr file_;
 };
 
 

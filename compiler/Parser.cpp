@@ -34,12 +34,15 @@ Parser::Parser(Environment* env) :
     lexer_(new Lexer(env)),
     error_(0) {
 
-    // FIXME: These files should have their symbols in the lib file
-    for (int i = 0; i < env->libs(); i++) {
-        library(env->lib(i));   
+    if (!env->no_default_libs()) {
+        input("Apollo");
+        env_->lib("Apollo");
     }
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));
+    }
+    if (!env->gen_library() && !env->no_default_libs()) {
+        input("Boot::Main");
     }
 }
 
@@ -157,6 +160,7 @@ void Parser::file(const std::string& prefix, const std::string& file) {
         return;
     } else {
         file_ = new File(fs, name(actual_file), module_, env_);
+        module_->file(file_);
         
         // The file is an input file if the corresponding scope was specified 
         // on input, or if the parent scope was specified on input.
@@ -399,7 +403,9 @@ Constant* Parser::constant() {
         init = expression();
     }
    
-    return new Constant(loc, env_, id, flags, init); 
+    Constant* con = new Constant(loc, env_, id, flags, init); 
+    file_->constant(con);
+    return con;
 }
 
 Attribute* Parser::attribute() {
@@ -791,6 +797,7 @@ Expression* Parser::closure() {
     Class::Ptr clazz = new Class(loc, env_, type, object, 0, func);
     clazz->flags(Feature::CLOSURE);
     module_->feature(clazz);
+    file_->feature(clazz);
     return new Closure(loc, func, clazz);
 }
 
@@ -1455,6 +1462,7 @@ void Parser::module_feature(Feature* feature, String* scope) {
         env_->module(module);
     } 
     module->feature(feature);
+    file_->feature(feature);
 }
 
 void Parser::implicit_import(Type* type) {

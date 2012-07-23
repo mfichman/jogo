@@ -50,5 +50,4 @@ private:
     LivenessAnalyzer::Ptr liveness_;
     Module::Ptr module_;
     Class::Ptr class_;
-    File::Ptr file_;
 };

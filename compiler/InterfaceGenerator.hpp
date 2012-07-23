@@ -32,9 +32,9 @@ public:
     InterfaceGenerator(Environment* env, Stream* out=Stream::stout());
     typedef Pointer<InterfaceGenerator> Ptr;
     void operator()(File* file);
+    void operator()(Module* feature);
 
 private:
-    void operator()(Module* feature);
     void operator()(Class* feature);
     void operator()(Constant* constant);
     void operator()(Function* function);
@@ -43,6 +43,5 @@ private:
     Environment::Ptr env_;
     Class::Ptr class_;
     Stream::Ptr out_;
-    File::Ptr file_;
     int indent_level_;
 };

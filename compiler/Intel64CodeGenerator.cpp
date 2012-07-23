@@ -36,7 +36,6 @@ void Intel64CodeGenerator::operator()(File* file) {
     // Output a translation unit, which can include constants, classes,
     // literals, forward declarations, and function definitions.
     if (env_->errors()) { return; }
-    file_ = file;
 
     out_ << "default rel\n";
     out_ << "section .data\n";
@@ -46,7 +45,6 @@ void Intel64CodeGenerator::operator()(File* file) {
     }
     for (String::Ptr s = env_->integers(); s; s = s->next()) {
         out_ << "lit" << (void*)s.pointer() << ":\n";
-        out_ << "    dq " << s << "\n";
         out_ << "    dq " << s << "\n";
         align();
     }
@@ -78,8 +76,8 @@ void Intel64CodeGenerator::operator()(File* file) {
         out_ << "extern "; label("Bool__vtable"); out_ << "\n";
         out_ << "extern "; label("Char__vtable"); out_ << "\n";
     }
-    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
-        f(this);
+    for (int i = 0; i < file->features(); i++) {
+        file->feature(i)->operator()(this);
     }
 
     for (int i = 0; i < file->dependencies(); i++) {
@@ -90,7 +88,6 @@ void Intel64CodeGenerator::operator()(File* file) {
     }
 
     out_->flush();
-    file_ = 0;
 }
 
 void Intel64CodeGenerator::operator()(Class* feature) {
@@ -98,9 +95,7 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     class_ = feature;
 
     if (!feature->is_interface() && !feature->is_mixin()) {
-        if (feature->location().file == file_) {
-            dispatch_table(feature);
-        }
+        dispatch_table(feature);
     }
 
     // Now output the function defs
@@ -121,9 +116,7 @@ void Intel64CodeGenerator::operator()(Function* feature) {
     // Emit a function, or an extern declaration if the function is native or
     // belongs to a different output file.
     String::Ptr id = feature->name();
-    if (feature->is_virtual() || feature->location().file != file_) {
-        return;
-    }
+    if (feature->is_virtual()) { return; }
     if (feature->is_native()) {
         out_ << "extern "; label(feature->label()); out_ << "\n";
     } else if (feature->basic_blocks()) {

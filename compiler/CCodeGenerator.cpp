@@ -417,8 +417,8 @@ void CCodeGenerator::operator()(File* file) {
         }
     }
     
-    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
-        f(this);
+    for (int i = 0; i < file->features(); i++) {
+        file->feature(i)->operator()(this);
     }
     file_ = 0;
     out_->flush();
@@ -427,17 +427,11 @@ void CCodeGenerator::operator()(File* file) {
 void CCodeGenerator::operator()(Class* feat) {
     // Output C code for the class given by 'feature'.  This function sets up
     // the vtable for the class.
-    if (feat->location().file != file_) {
-        return;
-    }
-
     class_ = feat;
     class_def(feat);
 
     if (!feat->is_interface() && !feat->is_mixin() && !feat->is_value()) {
-        if (feat->location().file == file_) {
-            dispatch_table(feat);
-        }
+        dispatch_table(feat);
     }
 
     for (Feature::Ptr f = feat->features(); f; f = f->next()) {
@@ -448,15 +442,9 @@ void CCodeGenerator::operator()(Class* feat) {
 
 void CCodeGenerator::operator()(Function* feature) {
     // Emit a function, or extern declaration if the function is native.
-    if (feature->location().file != file_) {
-        return;
-    }
-
     String::Ptr id = feature->name();
 	op_ = Operand();
-    if (feature->is_virtual() || feature->location().file != file_) {
-        return;
-    }
+    if (feature->is_virtual()) { return; }
 	function_ = feature;
     func_sig(feature);
     if (feature->is_native()) {

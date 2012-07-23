@@ -93,11 +93,7 @@ private:
 class Constant : public Feature {
 public:
     Constant(Location loc, Environment* env, String* name, Flags flags, 
-        Expression* init) :
-
-        Feature(loc, env, name, flags),
-        initializer_(init) {
-    }
+        Expression* init);
 
     Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
@@ -140,16 +136,8 @@ private:
 /* Class for functions belonging to a class or module */
 class Function : public Feature {
 public:
-    Function(Location loc, Environment* env, String* name, Formal* formal, 
-        Flags flags, Type* ret, Block* block) :
-
-        Feature(loc, env, name, flags),
-		formals_(formal),
-		type_(ret),
-        block_(block),
-        stack_vars_(0),
-		throw_spec_(UNKNOWN) {
-    }
+    Function(Location loc, Environment* env, String* name, Formal* formal,
+        Flags flags, Type* ret, Block* block);
 
 	enum ThrowSpec { UNKNOWN, THROW, NOTHROW };
 
@@ -248,11 +236,17 @@ public:
     Feature* feature(String* name) const { return query(feature_, name); }
     Import* imports() const { return imports_; }
     Import* import(String* name) const { return query(import_, name); }
+    File* file(int index) const { return file_[index]; }
+    int files() const { return file_.size(); }
     bool is_input() const { return is_input_; }
+    bool is_up_to_date() const;
+    std::string lib_file() const;
+    std::string exe_file() const;
     void is_input(bool input) { is_input_ = input; }
     void feature(Feature* feature);
     void import(Import* import);
     void location(Location location) { location_ = location; }
+    void file(File* file) { file_.push_back(file); }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Module> Ptr; 
 
@@ -261,6 +255,7 @@ private:
     Import::Ptr imports_;
     std::map<String::Ptr, Feature::Ptr> feature_;
     std::map<String::Ptr, Import::Ptr> import_;
+    std::vector<File*> file_;
     bool is_input_;
 };
 

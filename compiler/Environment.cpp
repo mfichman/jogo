@@ -25,7 +25,7 @@
 #include <stack>
 
 Environment::Environment() :
-    output_("-"),
+    output_("out"),
     build_dir_("build"),
     dump_ast_(false),
     dump_ir_(false),
@@ -36,6 +36,7 @@ Environment::Environment() :
     assemble_(true),
     execute_(false),
     verbose_(false),
+    monolithic_build_(true),
     no_default_libs_(false),
     generator_("Intel64"),
     errors_(0) {
@@ -63,9 +64,12 @@ Environment::Environment() :
 
     include(".");
 #ifdef WINDOWS
+    lib("kernel32");
     lib("ws2_32");
     lib("mswsock");
     lib("wsock32");
+#else
+    lib("m");
 #endif
 }
 
@@ -166,7 +170,6 @@ bool Environment::gen_library() const {
     Function::Ptr main = top->function(name("main")); 
     return !main; 
 }
-
 
 bool Environment::is_input(const std::string& import) const {
     // Returns true if the module name given by 'import' was an input given on

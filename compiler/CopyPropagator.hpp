@@ -40,6 +40,5 @@ public:
 
 private:
     Environment::Ptr env_;
-    File::Ptr file_;
     Machine::Ptr machine_;
 };

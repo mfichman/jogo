@@ -42,5 +42,4 @@ private:
 
     Environment::Ptr env_;
     LivenessAnalyzer::Ptr liveness_;
-    File::Ptr file_;
 };

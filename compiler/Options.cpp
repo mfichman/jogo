@@ -29,6 +29,7 @@ Options::Options(Environment* env, int argc, char** argv) {
     // Parse command line options, and update the environment to match the 
     // specified options.
 
+    env->program_path(argv[0]);
     program_name_ = argv[0];
     Stream::Ptr err = Stream::sterr();
     std::string flag;
@@ -154,9 +155,9 @@ void Options::print_usage() {
     out << "   -a, --assembly       Compile, but do not assemble or link.\n";
     out << "   -c, --compile        Compile and assemble, but do not link.\n";
     out << "   -e, --execute        Execute program as a script.\n";
-    out << "   -l, --library LIB    Compile and link with library LIB.\n";
+    out << "   -l, --library LIB    Compile and link with native library LIB.\n";
     out << "   -o, --output FILE    Write compiler output to FILE.\n";
-    out << "   -i, --include DIR    Add the directory DIR to the source search path.\n";
+    out << "   -i, --include DIR    Add the directory DIR to the search path.\n";
     out << "   -m, --make           Compile input files and out-of-date dependencies.\n";
     out << "   -h, --help           Print this help message.\n";
     out << "   -v, --verbose        Print extra information during compilation.\n";

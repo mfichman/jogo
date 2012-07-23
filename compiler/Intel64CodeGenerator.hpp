@@ -76,5 +76,4 @@ private:
     Class::Ptr class_;
     Stream::Ptr out_;
     Opcode opcode_;
-    File::Ptr file_;
 };

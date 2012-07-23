@@ -264,7 +264,6 @@ private:
     Operand pop_ret();
 
     Environment::Ptr env_;
-    File::Ptr file_;
     Machine::Ptr machine_;
     Class::Ptr class_;
     Module::Ptr module_;

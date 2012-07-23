@@ -35,22 +35,13 @@ RegisterAllocator::RegisterAllocator(Environment* env, Machine* machine) :
 }
 
 void RegisterAllocator::operator()(File* file) {
-    if (env_->errors()) {
-        return;
+    if (env_->errors()) { return; }
+    for (int i = 0; i < file->features(); i++) {
+        file->feature(i)->operator()(this);
     }
-    //std::cout << "begin" << file->path()->string() << std::endl;
-    file_ = file;
-    for (Feature::Ptr f = env_->modules(); f; f = f->next()) {
-        f(this);
-    }
-    file_ = 0;
-    //std::cout << "end" << std::endl;
 }
 
 void RegisterAllocator::operator()(Class* feature) {
-    if (feature->location().file != file_) {
-        return;
-    }
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
@@ -65,10 +56,6 @@ void RegisterAllocator::operator()(Module* feature) {
 void RegisterAllocator::operator()(Function* func) {
     // Allocate registers for temporaries in the function.  This allocator
     // uses an optimistic, greedy graph coloring algorithm.
-    if (func->location().file != file_) {
-        return;
-    }
-
     int spills = 0;
     spilled_.clear();
 
