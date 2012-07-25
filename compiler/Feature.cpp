@@ -323,11 +323,7 @@ void Function::called_func(Function* func) {
 }
 
 Module::Module(Location loc, Environment* env, String* name) :
-    Feature(loc, env, name),
-    is_input_(env->is_input(name->string())) {
-    if (name->string() == "Boot") {
-        is_input_ = false;
-    }
+    Feature(loc, env, name) { 
 }
 
 void Module::feature(Feature* feature) {
@@ -377,12 +373,19 @@ std::string Module::lib_file() const {
 
 std::string Module::exe_file() const {
     std::string dir = env()->output() + FILE_SEPARATOR + "bin";
+    std::string nm = name()->string();
+    std::transform(nm.begin(), nm.end(), nm.begin(), ::tolower);
 #ifdef WINDOWS
-    return dir + FILE_SEPARATOR + name()->string() + ".exe";
+    return dir + FILE_SEPARATOR + nm + ".exe";
 #else
-    return dir + FILE_SEPARATOR + name()->string();
+    return dir + FILE_SEPARATOR + nm;
 #endif
 } 
+
+std::string Module::api_file() const {
+    std::string dir = env()->output() + FILE_SEPARATOR + "lib";
+    return dir + FILE_SEPARATOR + name()->string() + ".api";
+}   
 
 Class* Feature::clazz(String* name) const {
     return dynamic_cast<Class*>(feature(name));

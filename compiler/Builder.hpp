@@ -24,19 +24,8 @@
 
 #include "Apollo.hpp"
 #include "Environment.hpp"
-#include "Parser.hpp"
-#include "SemanticAnalyzer.hpp"
-#include "BasicBlockGenerator.hpp"
-#include "RegisterAllocator.hpp"
-#include "Intel64CodeGenerator.hpp"
-#include "CCodeGenerator.hpp"
-#include "BasicBlockPrinter.hpp"
-#include "DeadCodeEliminator.hpp"
 #include "File.hpp"
-#include "CopyPropagator.hpp"
-#include "TreePrinter.hpp"
 #include "Machine.hpp"
-#include "InterfaceGenerator.hpp"
 
 /* Builds modules, executables, and dependencies in order. */
 

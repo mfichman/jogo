@@ -54,6 +54,18 @@ void CopyPropagator::operator()(Function* feature) {
 }
 
 void CopyPropagator::operator()(BasicBlock* block) {
+    // Removes unnecessary forward copy instructions.  Consider the following
+    // instruction sequence:
+    // mov r1, r2
+    // op r1, ...
+    // op r1, ...
+    // This is optimized to the following:
+    // mov r1, r2
+    // op r2, ...
+    // op r2, ...
+    // During dead-code elimination, the extra mov instruction is removed.  The
+    // optimization does not apply to sequences where the RHS of an op is a
+    // precolored regiester.
     std::map<int, Operand> eq;
     std::map<int, Operand> lit;
 
@@ -76,8 +88,7 @@ void CopyPropagator::operator()(BasicBlock* block) {
                 repl.indirect(instr.first().indirect());
                 instr.first(repl);
                 instr.opcode(LOAD);
-            }
-            if ((j = eq.find(first)) != eq.end()) {
+            } else if ((j = eq.find(first)) != eq.end()) {
                 // If the RHS has an alias to a non-precolored register, then
                 // substitute that alias.  Make sure only to replace the
                 // register name, NOT the whole operand!
@@ -118,5 +129,3 @@ void CopyPropagator::operator()(BasicBlock* block) {
         }
     }
 }
-
-

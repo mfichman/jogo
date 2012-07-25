@@ -27,6 +27,7 @@
 Environment::Environment() :
     output_("out"),
     build_dir_("build"),
+    entry_point_("main"),
     dump_ast_(false),
     dump_ir_(false),
     dump_liveness_(false),

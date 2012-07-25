@@ -623,6 +623,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     if (!feature->block() || feature->is_native()) { return; }
 
     // Reset the temporaries for the function.
+    feature->basic_block_del_all();
     temp_ = 0;
     function_ = feature;
     block_ = 0;

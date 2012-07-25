@@ -21,14 +21,8 @@
  */  
 
 #include "Environment.hpp"
-#include "Parser.hpp"
-#include "SemanticAnalyzer.hpp"
 #include "Builder.hpp"
-#include "File.hpp"
-#include "Machine.hpp"
 #include "Options.hpp"
-#include "InterfaceGenerator.hpp"
-#include "TreePrinter.hpp"
 
 #include <iostream>
 #include <cstdlib>
@@ -39,31 +33,6 @@ int main(int argc, char** argv) {
     // set the options for compilation.
     Environment::Ptr env(new Environment());
     Options(env, argc, argv);
-
-#ifndef WINDOWS
-    env->include("/usr/local/include/apollo");
-    env->include("/usr/local/lib");
-#else
-    std::string program_files = getenv("PROGRAMFILES");
-    std::string program_files_x86 = getenv("PROGRAMFILES(x86)");
-    env->include(program_files + "\\Apollo\\include\\apollo");
-    env->include(program_files_x86 + "\\Apollo\\include\\apollo");
-    env->include(program_files + "\\Apollo\\lib");
-    env->include(program_files_x86 + "\\Apollo\\lib");
-#endif
-
-    // Run the compiler.  Output to a temporary file if the compiler will
-    // continue on to another stage; otherwise,  the file directly.
-    Parser::Ptr parser(new Parser(env));
-    if (env->errors()) { return 1; }
-
-    SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
-    if (env->dump_ast()) {
-        TreePrinter::Ptr tprint(new TreePrinter(env, Stream::stout()));
-        return 0;
-    }
-    if (env->errors()) { return 1; }
-
     Builder::Ptr builder(new Builder(env));
     return builder->errors();
 }

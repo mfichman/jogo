@@ -21,13 +21,58 @@
  */  
 
 #include "Builder.hpp"
+#include "BasicBlockGenerator.hpp"
+#include "RegisterAllocator.hpp"
+#include "Intel64CodeGenerator.hpp"
+#include "CCodeGenerator.hpp"
+#include "BasicBlockPrinter.hpp"
+#include "DeadCodeEliminator.hpp"
+#include "CopyPropagator.hpp"
+#include "TreePrinter.hpp"
+#include "InterfaceGenerator.hpp"
+#include "SemanticAnalyzer.hpp"
+#include "Parser.hpp"
+
 #include <cstdlib>
 
 Builder::Builder(Environment* env) :
     env_(env),
     errors_(0) {
 
-    if (env_->errors()) { return; }
+    // Initialize default includes to be used if the user-defined includes
+    // do not point to the Apollo standard libraries.
+#ifndef WINDOWS
+    env->include("/usr/local/include/apollo");
+    env->include("/usr/local/lib");
+#else
+    std::string program_files = getenv("PROGRAMFILES");
+    std::string program_files_x86 = getenv("PROGRAMFILES(x86)");
+    env->include(program_files + "\\Apollo\\include\\apollo");
+    env->include(program_files_x86 + "\\Apollo\\include\\apollo");
+    env->include(program_files + "\\Apollo\\lib");
+    env->include(program_files_x86 + "\\Apollo\\lib");
+#endif
+
+    // Run the compiler.  Output to a temporary file if the compiler will
+    // continue on to another stage; otherwise,  the file directly.
+    Parser::Ptr parser(new Parser(env));
+    if (env_->errors()) {
+        errors_++;
+        return;
+    }
+
+    // Semantic analysis/type checking phase.
+    SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
+    if (env->dump_ast()) {
+        TreePrinter::Ptr tprint(new TreePrinter(env, Stream::stout()));
+        return;
+    }
+    if (env_->errors()) {
+        errors_++;
+        return;
+    }
+
+    // Final output generatation and linking phase.
     if (env_->monolithic_build()) {
         monolithic_build();
     } else {
@@ -38,7 +83,6 @@ Builder::Builder(Environment* env) :
 void Builder::monolithic_build() {
     // Builds all object files/inputs, etc. into one library or executable.
     // The builds result goes to the file specified by the 'output' option.
-
     std::stringstream ss;
 
     for (File* file = env_->files(); file; file = file->next()) {
@@ -89,7 +133,27 @@ void Builder::modular_build() {
     // executable module with a "main" function specified, using the "main"
     // function for the module as the entry point.
      
-     
+    // Create any out-of-date static libraries first, then create the static
+    // libraries.
+    for (int i = 0; i < env_->inputs(); i++) {
+        std::string name = Import::module_name(env_->input(i)); 
+        Module::Ptr m = env_->module(env_->name(name));
+        if (!m) {
+            Stream::sterr() << "Module '" << env_->input(i) << "' not found\n";
+            Stream::sterr()->flush();
+            errors_++;
+        } else if (!m->function(env_->name("main"))) {
+            m(this);
+        }
+    }
+
+    for (int i = 0; i < env_->inputs(); i++) {
+        std::string name = Import::module_name(env_->input(i)); 
+        Module::Ptr m = env_->module(env_->name(name));
+        if (m && m->function(env_->name("main"))) {
+            m(this);
+        }
+    }
 }
 
 void Builder::operator()(Module* module) {
@@ -97,8 +161,12 @@ void Builder::operator()(Module* module) {
     // file in the module, and outputs the code for those files, then either
     // archives the results into a single static library, or performs the link
     // step if the output is an executable.
-    if (env_->errors() || module->is_input()) { return; }
+    if (env_->errors()) { return; }
     if (env_->make() && module->is_up_to_date()) { return; }
+
+    // Set the entry point for the executable module
+    env_->entry_point(module->label()->string() + "_main");
+
     for (int i = 0; i < module->files(); i++) {
         operator()(module->file(i));
     }     
@@ -107,6 +175,10 @@ void Builder::operator()(Module* module) {
     if (module->function(env_->name("main"))) {
         link(module); 
     } else  {
+        File::mkdir(File::dir_name(module->api_file()));
+        Stream::Ptr fout(new Stream(module->api_file()));
+        InterfaceGenerator::Ptr iface(new InterfaceGenerator(env_, fout));
+        iface->operator()(module);
         archive(module);
     }
 
@@ -163,16 +235,6 @@ void Builder::link(Module* module) {
         }
     }
 
-#ifdef WINDOWS
-    for (Import::Ptr import = module->imports(); import; import->next()) {
-        ss << import->scope() << ".lib "; 
-    }
-#else
-    for (Import::Ptr import = module->imports(); import; import->next()) {
-        ss << "-l" << import->scope() << " ";
-    } 
-#endif
-
     link(ss.str(), module->exe_file());
 }
 
@@ -188,6 +250,14 @@ void Builder::link(const std::string& in, const std::string& out) {
 #elif defined(DARWIN)
     ss << "gcc -Wl,-no_pie ";
 #endif
+
+    // Link the main() routine, which is custom-generated for each linked
+    // executable.
+    std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.ap";
+    File::Ptr mf = env_->file(env_->name(main));
+    operator()(mf);
+    ss << mf->apo_file() << " ";
+    ss << mf->o_file() << " ";
 
 #ifdef WINDOWS
     for (int i = 0; i < env_->includes(); i++) {
@@ -215,7 +285,7 @@ void Builder::link(const std::string& in, const std::string& out) {
         Stream::stout() << ss.str() << "\n";
         Stream::stout()->flush();
     } 
-    File::mkdir(File::dir_name(out).c_str());;
+    File::mkdir(File::dir_name(out).c_str());
     if (system(ss.str().c_str())) { 
         errors_++;
     } 
@@ -230,6 +300,7 @@ void Builder::archive(Module* module) {
             ss << module->file(i)->o_file() << " ";
         }
     }
+    env_->lib(module->name()->string());
     archive(ss.str(), module->lib_file());
 }
 
@@ -258,6 +329,7 @@ void Builder::irgen(File* file) {
     // Generates code for all basic blocks using the Apollo intermediate
     // represenation.  Also performs optimizations, if enabled by the
     // environment options.
+    std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.ap";
     Machine::Ptr machine = Machine::intel64();
     BasicBlockGenerator::Ptr bgen(new BasicBlockGenerator(env_, machine));
     RegisterAllocator::Ptr alloc(new RegisterAllocator(env_, machine));
@@ -271,11 +343,13 @@ void Builder::irgen(File* file) {
         copy->operator()(file);
         elim->operator()(file);
     }
-    if (env_->dump_ir()) {
+
+    if (env_->dump_ir() && file->name()->string() != main) {
         bprint->operator()(file);
     }
     alloc->operator()(file);
-    if (env_->dump_ir()) {
+
+    if (env_->dump_ir() && file->name()->string() != main) {
         bprint->operator()(file);
     }
 }

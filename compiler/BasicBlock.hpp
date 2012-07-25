@@ -63,12 +63,26 @@ public:
         return out;
     }
 
+    bool operator==(const Operand& other) const {
+        return literal_ == other.literal_ &&
+            label_ == other.label_ &&
+            type_ == other.type_ &&
+            temp_ == other.temp_ && 
+            addr_ == other.addr_ &&
+            indirect_ == other.indirect_;
+    }
+
+    bool operator!=(const Operand& other) const { 
+        return !operator==(other); 
+   }
+
     const Operand& operator++() { temp_++; return *this; }
     Expression* literal() const { return literal_; }
     String* label() const { return label_; }
     int temp() const { return temp_; }
     int addr() const { return addr_; }
     bool indirect() const { return indirect_; }
+    bool colored() const { return temp_ < 0; }
     void indirect(bool indirect) { indirect_ = indirect; }
     void temp(int temp) { temp_ = temp; }
 

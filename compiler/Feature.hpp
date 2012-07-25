@@ -158,6 +158,7 @@ public:
     void stack_vars_inc() { stack_vars_++; }
     void stack_vars(int value) { stack_vars_ = value; }
     void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
+    void basic_block_del_all() { basic_block_.clear(); }
     void formals(Formal* formals) { formals_ = formals; }
 	void throw_spec(ThrowSpec spec) { throw_spec_ = spec; }
 	void called_func(Function* func);
@@ -238,11 +239,10 @@ public:
     Import* import(String* name) const { return query(import_, name); }
     File* file(int index) const { return file_[index]; }
     int files() const { return file_.size(); }
-    bool is_input() const { return is_input_; }
     bool is_up_to_date() const;
     std::string lib_file() const;
     std::string exe_file() const;
-    void is_input(bool input) { is_input_ = input; }
+    std::string api_file() const;
     void feature(Feature* feature);
     void import(Import* import);
     void location(Location location) { location_ = location; }
@@ -256,6 +256,5 @@ private:
     std::map<String::Ptr, Feature::Ptr> feature_;
     std::map<String::Ptr, Import::Ptr> import_;
     std::vector<File*> file_;
-    bool is_input_;
 };
 

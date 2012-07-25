@@ -434,7 +434,7 @@ void Intel64CodeGenerator::label(const std::string& label) {
     // Emits a label, either as an operand or as an actual label at the
     // beginning of a code block.
     std::string actual_label;
-    if (label == "main") {
+    if (label == env_->entry_point()) {
         actual_label = "main_";
     } else if (label == "Boot_main") {
         actual_label = "main";
@@ -472,14 +472,23 @@ void Intel64CodeGenerator::store_hack(Operand a1, Operand a2) {
 
 void Intel64CodeGenerator::load_hack(Operand res, Operand a1) {
     if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(a1.literal())) {
-        out_ << "    mov qword ";
-        operand(res);
-        out_ << ", lit" << (void*)le->value() << "\n";
-        out_ << "    mov qword ";
-        operand(res);
-        out_ << ", [";
-        operand(res);
-        out_ << "]\n";
+        std::stringstream ss(le->value()->string());
+        int number;
+        ss >> number;
+        if(number < INTEL64_MAX_IMM) {
+            out_ << "    mov qword ";
+            operand(res);
+            out_ << ", " << number << "\n";
+        } else {
+            out_ << "    mov qword ";
+            operand(res);
+            out_ << ", lit" << (void*)le->value() << "\n";
+            out_ << "    mov qword ";
+            operand(res);
+            out_ << ", [";
+            operand(res);
+            out_ << "]\n";
+        }
     } else if(a1.label() && a1.indirect()) {
         out_ << "    mov qword ";
         operand(res);

@@ -44,6 +44,7 @@ public:
     bool is_qualified() const { return is_qualified_; }
     static std::string file_name(const std::string& scope);
     static std::string scope_name(const std::string& file);
+    static std::string module_name(const std::string& file);
     static std::string parent_scope(const std::string& scope);
     Import* next() const { return next_; }
     Import* last() const { return last_; }

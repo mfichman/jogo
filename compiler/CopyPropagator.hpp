@@ -20,6 +20,8 @@
  * IN THE SOFTWARE.
  */  
 
+#pragma once
+
 #include "Apollo.hpp"
 #include "Environment.hpp"
 #include "BasicBlock.hpp"

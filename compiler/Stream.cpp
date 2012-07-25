@@ -84,6 +84,10 @@ Stream::Stream(int fd) : error_(false) {
 #endif
 
 Stream::~Stream() {
+    close();
+}
+
+void Stream::close() {
     // Flush the remaining buffer, and then close the stream if it isn't a
     // standard input/output/error stream.
     flush();

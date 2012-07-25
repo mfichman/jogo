@@ -36,14 +36,11 @@ Parser::Parser(Environment* env) :
 
     if (!env->no_default_libs()) {
         input("Apollo");
-        env_->lib("Apollo");
     }
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));
     }
-    if (!env->gen_library() && !env->no_default_libs()) {
-        input("Boot::Main");
-    }
+    input("Boot::Main");
 }
 
 void Parser::library(const std::string& import) {
@@ -176,9 +173,6 @@ void Parser::file(const std::string& prefix, const std::string& file) {
                 break;
             }  
         }
-        if (self == "Boot::Main") {
-            file_->is_input_file(true);
-        }
         env_->file(file_);
     }
     if (env_->verbose()) {
@@ -187,6 +181,12 @@ void Parser::file(const std::string& prefix, const std::string& file) {
             std::cout << "*";
         }
         std::cout << std::endl;
+    }
+
+    // If an interface file is loaded, then be sure to link in the
+    // corresponding library as well.
+    if (file_->is_interface_file()) {
+        env_->lib(Import::module_name(file_->name()->string()));
     }
 
     // Begin parsing

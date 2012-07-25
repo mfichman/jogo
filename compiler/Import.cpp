@@ -64,6 +64,23 @@ std::string Import::scope_name(const std::string& file) {
     return name;
 }
 
+std::string Import::module_name(const std::string& file) {
+    // Given the file name, returns the module's name.  This is equal to the
+    // no-ext name with '/' replaced by '::'.  For example, 'Foo/Bar.ap' would
+    // return Foo::Bar.
+
+    std::string noext = File::no_ext_name(file);
+    std::string name;
+    for (size_t i = 0; i < noext.size(); i++) {
+        if (noext[i] == FILE_SEPARATOR) {
+            name += "::";
+        } else {
+            name += noext[i];
+        }
+    }
+    return name;
+}
+
 std::string Import::parent_scope(const std::string& scope) {
     // Given the import (a::b) return the parent scope (a).
 

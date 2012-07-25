@@ -48,6 +48,7 @@ public:
     const std::string& message() const { return message_; }
     bool error() const { return error_; }
     void write(const char* data, int len);
+    void close();
     void flush();
 
 private:

@@ -21,7 +21,7 @@
  */  
 
 #include "Environment.hpp"
-#include "File.hpp"
+#include "Builder.hpp"
 #include <vector>
 
 Environment::Ptr env(new Environment());
@@ -76,25 +76,37 @@ void parse_options(int argc, char** argv) {
     } 
 }
 
+void search(std::string prefix, std::string name) {
+    // Searches for modules in directory "dir"
+    std::string dir = prefix + FILE_SEPARATOR + name; 
+    if (!File::is_dir(dir) || name[0] == '.') { return; }
+    env->input(Import::module_name(name));
+    for (File::Iterator i(dir); i; ++i) {
+        if ((*i)[0] != '.') {
+            search(prefix, name + FILE_SEPARATOR + *i);
+        }
+    }
+}
+
 int main(int argc, char** argv) {
     // This program recursively finds and builds all files in the source
     // directory, and then generates the output in the lib/bin directory.
     parse_options(argc, argv);
 
-    for (int i = 0; i < env->inputs(); i++) {
-        std::stringstream ss;
-        ss << "bin/apollo " << "-o lib/" << env->input(i) << " -i lib -i src -m ";
-        ss << "--build-dir build " << env->input(i) << " -i runtime";
-        // FIXME: Use the real apollo 
-        if (env->verbose()) {
-            ss << " -v";
-            Stream::stout() << ss.str() << "\n";
-            Stream::stout()->flush();
-        }
-        if (system(ss.str().c_str())) {
-            exit(1);
+    if (!env->inputs()) {
+        for (File::Iterator i("src"); i; ++i) {
+            search("src", *i);
         }
     }
 
-    return 0;
+    env->include("lib");
+    env->include("src");
+    env->include("runtime");
+    env->build_dir("build");
+    env->output(".");
+    env->make(true);
+    env->monolithic_build(false);
+
+    Builder::Ptr builder(new Builder(env));
+    return builder->errors();
 }

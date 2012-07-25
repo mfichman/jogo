@@ -54,6 +54,7 @@ public:
     const std::string& output() const { return output_; }
     const std::string& build_dir() const { return build_dir_; }
     const std::string& program_path() const { return program_path_; }
+    const std::string& entry_point() const { return entry_point_; }
     bool make() const { return make_; }
     bool optimize() const { return optimize_; }
     bool link() const { return link_; }
@@ -92,6 +93,7 @@ public:
     void monolithic_build(bool monolithic) { monolithic_build_ = monolithic; }
     void generator(const std::string& gen) { generator_ = gen; }
     void program_path(const std::string& path) { program_path_ = path; }
+    void entry_point(const std::string& entry) { entry_point_ = entry; }
     void module(Module* module);
     void file(File* name);
     void constant(Constant* cons) { constant_.push_back(cons); }
@@ -151,6 +153,7 @@ private:
     std::string output_;
     std::string build_dir_;
     std::string program_path_;
+    std::string entry_point_;
     bool dump_ast_;
     bool dump_ir_;
     bool dump_liveness_;

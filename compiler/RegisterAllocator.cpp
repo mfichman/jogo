@@ -260,8 +260,9 @@ void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
     // Loop through all instructions and replace temporaries with real
     // allocated registers.
 
+    BasicBlock repl;
     for (int i = 0; i < block->instrs(); i++) {
-        Instruction& instr = block->instr(i);
+        Instruction instr = block->instr(i);
         Operand first = instr.first();
         Operand second = instr.second();
         Operand result = instr.result();
@@ -279,7 +280,11 @@ void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
         if (result.temp() > 0) {
             instr.result(-graph_[result.temp()].reg());
         }
+        if (MOV != instr.opcode() || instr.result() != instr.first()) {
+            repl.instr(instr);  
+        }
     }
+    block->swap(&repl);
 }
 
 void RegisterAllocator::spill_register(Function* func) {
@@ -322,39 +327,39 @@ void RegisterAllocator::spill_register(Function* func) {
     // of the spilled register.
     for (int i = 0; i < func->basic_blocks(); i++) {
         BasicBlock::Ptr block = func->basic_block(i);
-        BasicBlock::Ptr repl = new BasicBlock();
+        BasicBlock repl;
         
         // If this is the first block, and we're spilling a caller register,
         // then add a store
         if (i == 0 && is_caller_reg) {
-            repl->instr(STORE, 0, Operand::addr(addr), spilled);
+            repl.instr(STORE, 0, Operand::addr(addr), spilled);
         }
 
         for (int j = 0; j < block->instrs(); j++) {
             const Instruction& instr = block->instr(j);
             // Insert load if necessary for spilled register
             if (instr.first().temp() == spilled) {
-                repl->instr(LOAD, instr.first().temp(), Operand::addr(addr), 0); 
+                repl.instr(LOAD, instr.first().temp(), Operand::addr(addr), 0); 
             }
             if (instr.second().temp() == spilled) {
-                repl->instr(LOAD, instr.second().temp(), Operand::addr(addr), 0);
+                repl.instr(LOAD, instr.second().temp(), Operand::addr(addr), 0);
             } 
             
             // Insert a load before returns for caller regs
             if (instr.opcode() == RET && is_caller_reg) {
-                repl->instr(LOAD, spilled, Operand::addr(addr), 0);
+                repl.instr(LOAD, spilled, Operand::addr(addr), 0);
             }
             
 
-            repl->instr(instr);
+            repl.instr(instr);
             // Insert store if necessary for spilled register
             if (instr.result().temp() == spilled) {
                 int result = instr.result().temp();
-                repl->instr(STORE, 0, Operand::addr(addr), result);
+                repl.instr(STORE, 0, Operand::addr(addr), result);
             } 
 
         }
-        block->swap(repl);  
+        block->swap(&repl);  
     } 
 }
 

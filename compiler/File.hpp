@@ -78,7 +78,6 @@ public:
     std::string c_file() const { return output(".c"); }
     std::string o_file() const { return output(".o"); }
     std::string apo_file() const { return output(".apo"); }
-    std::string api_file() const { return output(".api"); }
     std::string native_file() const { return input(".c"); }
     void dependency(Feature* name);
     void import(Import* import) { import_.push_back(import); }

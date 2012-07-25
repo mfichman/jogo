@@ -56,7 +56,7 @@ void DeadCodeEliminator::operator()(Function* feature) {
 }
 
 void DeadCodeEliminator::operator()(BasicBlock* block) {
-    BasicBlock::Ptr repl = new BasicBlock(); 
+    BasicBlock repl;
     
     // Loop through each instruction.  If the result of the instruction is
     // dead after the instruction, then the instruction is dead code.
@@ -68,9 +68,9 @@ void DeadCodeEliminator::operator()(BasicBlock* block) {
         const std::set<int>& out = instr.liveness()->out();
         
         if (!result || out.find(result) != out.end()) {
-            repl->instr(instr); 
+            repl.instr(instr); 
         } 
     }
-    block->swap(repl);
+    block->swap(&repl);
 }
 
