@@ -42,15 +42,15 @@ Builder::Builder(Environment* env) :
     // Initialize default includes to be used if the user-defined includes
     // do not point to the Apollo standard libraries.
 #ifndef WINDOWS
-    env->include("/usr/local/include/apollo");
     env->include("/usr/local/lib");
+    env->include("/usr/local/include/apollo");
 #else
     std::string program_files = getenv("PROGRAMFILES");
     std::string program_files_x86 = getenv("PROGRAMFILES(x86)");
-    env->include(program_files + "\\Apollo\\include\\apollo");
-    env->include(program_files_x86 + "\\Apollo\\include\\apollo");
     env->include(program_files + "\\Apollo\\lib");
     env->include(program_files_x86 + "\\Apollo\\lib");
+    env->include(program_files + "\\Apollo\\include\\apollo");
+    env->include(program_files_x86 + "\\Apollo\\include\\apollo");
 #endif
 
     // Run the compiler.  Output to a temporary file if the compiler will
@@ -258,7 +258,6 @@ void Builder::link(const std::string& in, const std::string& out) {
     File::Ptr mf = env_->file(env_->name(main));
     operator()(mf);
     ss << mf->apo_file() << " ";
-    ss << mf->o_file() << " ";
 
 #ifdef WINDOWS
     for (int i = 0; i < env_->includes(); i++) {

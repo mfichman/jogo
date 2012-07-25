@@ -75,8 +75,8 @@ void Parser::input(const std::string& import) {
     // the first will be parsed.
     std::string file = Import::file_name(import); 
     std::vector<std::string> tests;
-    if (env_->file(name(file))) {
-        return;
+    if (env_->file(name(file)) && import != "Boot::Main") { 
+        return; 
     }
 
     // File has not been loaded yet.  Search through all the given include

@@ -119,3 +119,10 @@ void Boot_abort() {
     abort();
 }
 
+// The declaration for the user-defined main function
+extern int main_();
+
+void Boot_Main__call(Object self) {
+    main_();
+}
+

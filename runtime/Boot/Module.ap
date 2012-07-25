@@ -21,6 +21,12 @@
 Empty < Interface {
 }
 
+Main < Object {
+    @call() native {
+       # Runs the main coroutine until exit.
+    }
+}
+
 print_str(string String) native
 print_int(integer Int) native
 print_char(character Char) native
