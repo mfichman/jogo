@@ -143,6 +143,7 @@ void Builder::modular_build() {
             Stream::sterr()->flush();
             errors_++;
         } else if (!m->function(env_->name("main"))) {
+            env_->lib(m->name()->string());
             m(this);
         }
     }
@@ -300,7 +301,6 @@ void Builder::archive(Module* module) {
             ss << module->file(i)->o_file() << " ";
         }
     }
-    env_->lib(module->name()->string());
     archive(ss.str(), module->lib_file());
 }
 

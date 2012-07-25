@@ -353,7 +353,7 @@ void Module::import(Import* import) {
 bool Module::is_up_to_date() const {
     // Return true if the module is up to date, that is, if all dependent
     // source files have a later modification time than the output file.
-    std::string out = function(env()->name("main")) ? lib_file() : exe_file();
+    std::string out = function(env()->name("main")) ? exe_file() : lib_file();
     for (int i = 0; i < files(); i++) {
         if (!File::is_up_to_date(file(i)->path()->string(), out)) {
             return false;
