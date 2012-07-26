@@ -350,7 +350,7 @@ void Intel64CodeGenerator::addr(Operand op) {
     // literal fields should also be nil.
     assert(!op.literal());
     assert(!op.label());
-    assert(op.addr() || op.temp());
+    assert(!!op.addr() || op.temp());
 
     out_ << "[";    
     if (op.temp()) {
@@ -358,13 +358,13 @@ void Intel64CodeGenerator::addr(Operand op) {
     } else {
         out_ << "rbp";
     }
-    if (op.addr() > 0) {
+    if (op.addr().value() > 0) {
         // Add +1 if loading from the base pointer, because the SP is stored 
         // at location 0
-        int addr = op.temp() ? op.addr() : op.addr()+1;
+        int addr = op.temp() ? op.addr().value() : op.addr().value()+1;
         out_ << "+" << addr * machine_->word_size(); 
-    } else if (op.addr() < 0) {
-        out_ << "-" << -op.addr() * machine_->word_size();
+    } else if (op.addr().value() < 0) {
+        out_ << "-" << -op.addr().value() * machine_->word_size();
     }
     out_ << "]";
 }

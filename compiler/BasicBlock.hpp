@@ -28,70 +28,85 @@
 #include <vector>
 #include <set>
 
+/* A register ID identifies a register by type and number. */
+class RegisterId {
+public:
+    // A colored register has the COLORED flag set.  This means the register is
+    // an actual hardware register.  A floating-point register has the FLOAT
+    // flag set.
+    static int const FLOAT = 0x8000;
+    static int const COLORED = 0x4000;
+    static int const FLAGS = FLOAT|COLORED;
+    static int const ID = ~FLAGS;
+
+    RegisterId(int id, int flags) : value_((id & ID) | (flags & FLAGS)) {}
+
+    bool is_colored() const { return value_ & COLORED; }
+    bool is_int() const { return value_ & FLOAT; }
+    bool is_float() const { return !is_int(); }
+    int id() const { return value_ & ID; }
+    
+private:
+    int value_;
+};
+
+/* Represents a 'logical' address, expressed in words (not bytes) */
+class Address {
+public:
+    Address() : value_(0) {}
+    Address(int value) : value_(value) {}
+
+    int value() const { return value_; }
+    bool operator!() const { return !value_; }
+    bool operator==(const Address& ad) const { return value_ == ad.value_; }
+    bool operator!=(const Address& ad) const { return value_ != ad.value_; }
+
+private:
+    int value_;
+
+};
+
 /* Operands for three-address code SSA instructions */
 class Operand {
 public:
     Operand(String* label) 
-        : label_(label), temp_(0), addr_(0), indirect_(false) {
+        : label_(label), temp_(0), indirect_(false) {
         // This constructor is only used for CALL instructions and instructions
         // that load a label directly.
     }
     Operand(Expression* literal) 
-        : literal_(literal), temp_(0), addr_(0), indirect_(false) {
+        : literal_(literal), temp_(0), indirect_(false) {
         // This constructor is used for operands created via literal expr.
     }
     Operand() 
-        : temp_(0), addr_(0), indirect_(false) {
+        : temp_(0), indirect_(false) {
     }
     Operand(int temp) 
-        : temp_(temp), addr_(0), indirect_(false) {
+        : temp_(temp), indirect_(false) {
         // Constructs an operand from an integer temporary variable.
     }
 
-    static Operand addr(int addr) { 
-        Operand out;
-        out.addr_ = addr;
-        out.indirect_ = true;
-        return out;
-    }
-
-    static Operand addr(int temp, int addr) {
-        Operand out;
-        out.addr_ = addr;
-        out.temp_ = temp;
-        out.indirect_ = true;
-        return out;
-    }
-
-    bool operator==(const Operand& other) const {
-        return literal_ == other.literal_ &&
-            label_ == other.label_ &&
-            type_ == other.type_ &&
-            temp_ == other.temp_ && 
-            addr_ == other.addr_ &&
-            indirect_ == other.indirect_;
-    }
-
-    bool operator!=(const Operand& other) const { 
-        return !operator==(other); 
-   }
+    static Operand addr(Address addr);
+    static Operand addr(int temp, Address addr);
 
     const Operand& operator++() { temp_++; return *this; }
     Expression* literal() const { return literal_; }
     String* label() const { return label_; }
     int temp() const { return temp_; }
-    int addr() const { return addr_; }
+    Address addr() const { return addr_; }
     bool indirect() const { return indirect_; }
     bool colored() const { return temp_ < 0; }
     void indirect(bool indirect) { indirect_ = indirect; }
     void temp(int temp) { temp_ = temp; }
+    bool operator==(const Operand& other) const;
+    bool operator!=(const Operand& other) const;
 
 private:
     Expression::Ptr literal_; // Literal expr, if this is a literal
     String::Ptr label_; // FixMe: Should not be necessary...needed for CALL
     Type::Ptr type_; // Type of the value held in the operand
     int temp_; // Temporary variable ID (negative = machine register)
-    int addr_; // Address offset (in words)
+    Address addr_; // Address offset (in words)
     bool indirect_; // Set to true if this is an indirect memory access
 };
 
@@ -102,7 +117,6 @@ enum Opcode {
     MOV, ADD, SUB, MUL, DIV, NEG, ANDB, ORB, PUSH, POP, LOAD, STORE, NOTB,
     CALL, JUMP, BNE, BE, BNZ, BZ, BG, BL, BGE, BLE, RET, NOP, POPN 
     // Note: BNE through BLE must be contiguous
-    // Note: FIELD is used to encode a structure field access.
 };
 
 /* Class for liveness information related to the instruction */
@@ -159,32 +173,14 @@ public:
     Instruction& instr(size_t index) { return instrs_[index]; }
     int round() const { return round_; }
     int instrs() const { return instrs_.size(); }
-    bool is_terminated() const {
-        if (instrs_.empty()) {
-            return false;
-        }
-        Opcode op = instrs_.back().opcode();
-        if (op == RET || op == JUMP || (op >= BNE && op <= BLE)) {
-            return true;
-        }
-        return false;
-    }
-    bool is_ret() const {
-        if (instrs_.empty()) {
-            return false;
-        }
-        return instrs_.back().opcode() == RET;
-    }
+    bool is_terminated() const;
+    bool is_ret() const;
     void swap(BasicBlock* other) { instrs_.swap(other->instrs_); }
     void branch(BasicBlock* branch) { branch_ = branch; }
     void next(BasicBlock* branch) { next_ = branch; }
     void label(String* label) { label_ = label; }
-    void instr(const Instruction& inst) { 
-        instrs_.push_back(inst); 
-    }
-    void instr(Opcode op, Operand result, Operand first, Operand second) {
-        instrs_.push_back(Instruction(op, result, first, second));
-    }
+    void instr(const Instruction& inst);
+    void instr(Opcode op, Operand res, Operand one, Operand two);
     void round_inc() { round_++; }
     typedef Pointer<BasicBlock> Ptr; 
 
