@@ -63,9 +63,9 @@ void DeadCodeEliminator::operator()(BasicBlock* block) {
     // For example, if the liveness is x := ..., out={} then the statement is 
     // trivially dead, because x is not live following the assignment.
     for (int i = 0; i < block->instrs(); i++) {
-        const Instruction& instr = block->instr(i);
-        int result = instr.result().temp();
-        const std::set<int>& out = instr.liveness()->out();
+        Instruction const& instr = block->instr(i);
+        RegisterId const result = instr.result().reg();
+        std::set<RegisterId> const& out = instr.liveness()->out();
         
         if (!result || out.find(result) != out.end()) {
             repl.instr(instr); 

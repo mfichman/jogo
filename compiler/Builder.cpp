@@ -336,11 +336,14 @@ void Builder::irgen(File* file) {
     bprint->out(Stream::stout()); // Stdout
 
     bgen->operator()(file);
+    if (env_->dump_ir() && file->name()->string() != main) {
+        bprint->operator()(file);
+    }
     if (env_->optimize()) {
         CopyPropagator::Ptr copy(new CopyPropagator(env_, machine));
-        DeadCodeEliminator::Ptr elim(new DeadCodeEliminator(env_, machine));
+        //DeadCodeEliminator::Ptr elim(new DeadCodeEliminator(env_, machine));
         copy->operator()(file);
-        elim->operator()(file);
+        //elim->operator()(file);
     }
 
     if (env_->dump_ir() && file->name()->string() != main) {

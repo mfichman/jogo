@@ -183,11 +183,7 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case BLE: instr("cmp", a1, a2); instr("jle", branch->label()); break;
         case CALL: instr("call", a1); break;
         case JUMP: instr("jmp", branch->label()); break;
-        case MOV: 
-            if (res.temp() != a1.temp()) {
-                instr("mov", res, a1);
-            }
-            break;
+        case MOV: instr("mov", res, a1); break;
         case ADD: arith(inst); break;
         case SUB: arith(inst); break;
         case MUL: arith(inst); break;
@@ -259,11 +255,11 @@ void Intel64CodeGenerator::dispatch_table(Class* feature) {
     align();
 }
 
-void Intel64CodeGenerator::arith(const Instruction& inst) {
+void Intel64CodeGenerator::arith(Instruction const& inst) {
     // Emits an arithmetic instruction.  Depending on the opcode and the
     // operands, the expression may have to be manipulated because all x86
     // instructions take only 2 arithmetic operands.
-    const char* name;
+    char const* name = 0;
     switch (inst.opcode()) {
     case ADD: name = "add"; break;
     case SUB: name = "sub"; break;
@@ -276,10 +272,10 @@ void Intel64CodeGenerator::arith(const Instruction& inst) {
     Operand r1 = inst.first();
     Operand r2 = inst.second();
     
-    if (res.temp() == r1.temp()) {
+    if (res.reg() == r1.reg()) {
         // t1 <- t1 - t2
         instr(name, r1, r2);
-    } else if (res.temp() != r2.temp()) {
+    } else if (res.reg() != r2.reg()) {
         // t1 <- t2 - t3
         instr("mov", res, r1); 
         instr(name, res, r2);
@@ -334,9 +330,9 @@ void Intel64CodeGenerator::operand(Operand op) {
         label(op);
     } else if (op.literal()) {
         literal(op);
-    } else if (op.indirect()) {
+    } else if (!!op.addr()) {
         addr(op);
-    } else if (op.temp()) {
+    } else if (!!op.reg()) {
         reg(op);
     } else {
         assert(!"Nil operand");
@@ -350,18 +346,18 @@ void Intel64CodeGenerator::addr(Operand op) {
     // literal fields should also be nil.
     assert(!op.literal());
     assert(!op.label());
-    assert(!!op.addr() || op.temp());
+    assert(!!op.addr() || !!op.reg());
 
     out_ << "[";    
-    if (op.temp()) {
-        out_ << machine_->reg(-op.temp());
+    if (!!op.reg()) {
+        out_ << machine_->reg(op.reg().id());
     } else {
         out_ << "rbp";
     }
     if (op.addr().value() > 0) {
         // Add +1 if loading from the base pointer, because the SP is stored 
         // at location 0
-        int addr = op.temp() ? op.addr().value() : op.addr().value()+1;
+        int addr = !!op.reg() ? op.addr().value() : op.addr().value()+1;
         out_ << "+" << addr * machine_->word_size(); 
     } else if (op.addr().value() < 0) {
         out_ << "-" << -op.addr().value() * machine_->word_size();
@@ -372,13 +368,12 @@ void Intel64CodeGenerator::addr(Operand op) {
 void Intel64CodeGenerator::reg(Operand op) {
     // Outputs a register, possibly with an address offset.  An operand passed
     // to this function should NOT have the literal or label fields set.
-    assert(op.temp() < 0 && -op.temp() < machine_->regs());
+    assert(op.reg().is_colored());
+    assert(op.reg().id() < machine_->regs());
     assert(!op.literal());
     assert(!op.label());
-    //assert(!op.indirect());
-    //assert(!op.addr());
 
-    out_ << machine_->reg(-op.temp());
+    out_ << machine_->reg(op.reg().id());
 }
 
 void Intel64CodeGenerator::literal(Operand literal) {
@@ -388,7 +383,8 @@ void Intel64CodeGenerator::literal(Operand literal) {
     // address for the literal.
 
     Expression* expr = literal.literal();
-    assert(!literal.temp());
+    assert(!literal.reg());
+    assert(!literal.addr());
     assert(expr);
 
     if (StringLiteral* le = dynamic_cast<StringLiteral*>(expr)) {
@@ -416,16 +412,16 @@ void Intel64CodeGenerator::label(Operand op) {
     // Emits a label, either as an operand or as an actual label at the
     // beginning of a code block.  No register/literal/addr fields should be
     // set on the operand.
-    assert(!op.temp());
+    assert(!op.reg());
     assert(!op.literal());
     assert(!op.addr()); 
     assert(op.label());
 
-    if (op.indirect()) {
+    if (op.is_indirect()) {
         out_ << "[";
     }
     label(op.label()->string());
-    if (op.indirect()) {
+    if (op.is_indirect()) {
         out_ << "]";
     }
 }
@@ -458,7 +454,7 @@ void Intel64CodeGenerator::align() {
 }
 
 void Intel64CodeGenerator::store_hack(Operand a1, Operand a2) {
-    if (a1.label() && a1.indirect()) {
+    if (a1.label() && a1.is_indirect()) {
         out_ << "    mov qword rax, ";
         label(a1.label()->string());
         out_ << "\n";
@@ -489,7 +485,7 @@ void Intel64CodeGenerator::load_hack(Operand res, Operand a1) {
             operand(res);
             out_ << "]\n";
         }
-    } else if(a1.label() && a1.indirect()) {
+    } else if(a1.label() && a1.is_indirect()) {
         out_ << "    mov qword ";
         operand(res);
         out_ << ", ";
@@ -513,13 +509,14 @@ void Intel64CodeGenerator::stack_check(Function* feature) {
     out_ << "    cmp rsp, rax\n"; 
     out_ << "    jge .l0\n";
     
-    // Push any argument register before we clal the routine to grow the stack.
+    // Push any argument register before we call the routine to grow the stack.
     // It would be nice to have the register allocator handle this, but the
     // stack pointer register is hidden to the register allocator.
     int index = 0;
     for (Formal* f = feature->formals(); f; f = f->next()) {
         if (index < machine_->arg_regs()) {
-            instr("push", -machine_->arg_reg(index)->id()); 
+            RegisterId reg(machine_->arg_reg(index)->id(), RegisterId::COLORED);
+            instr("push", reg); 
             index++;
         } else {
             break;
@@ -531,7 +528,8 @@ void Intel64CodeGenerator::stack_check(Function* feature) {
     
     // Pop any argument registers that are used in the function.
     for (int i = index-1; i >= 0; i--) {
-        instr("pop", -machine_->arg_reg(i)->id());
+        RegisterId reg(machine_->arg_reg(i)->id(), RegisterId::COLORED);
+        instr("pop", reg);
     }
 
     label(".l0:"); out_ << "\n";

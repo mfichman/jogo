@@ -36,78 +36,81 @@ public:
     // flag set.
     static int const FLOAT = 0x8000;
     static int const COLORED = 0x4000;
-    static int const FLAGS = FLOAT|COLORED;
-    static int const ID = ~FLAGS;
 
-    RegisterId(int id, int flags) : value_((id & ID) | (flags & FLAGS)) {}
+    RegisterId() : id_(0), flags_(0) {}
+    RegisterId(int id, int flags) : id_(id), flags_(flags) {
+        assert(id < std::numeric_limits<short>::max());
+    }
 
-    bool is_colored() const { return value_ & COLORED; }
-    bool is_int() const { return value_ & FLOAT; }
-    bool is_float() const { return !is_int(); }
-    int id() const { return value_ & ID; }
+    bool is_colored() const { return flags_ & COLORED; }
+    bool is_int() const { return !is_float(); }
+    bool is_float() const { return flags_ & FLOAT; }
+    bool is_valid() const { return !!id_; }
+    int id() const { return id_; }
+    bool operator!() const { return !is_valid(); }
+    bool operator==(const RegisterId& id) const; 
+    bool operator!=(const RegisterId& id) const;
+    bool operator<(const RegisterId& id) const;
     
 private:
-    int value_;
+    short id_;
+    short flags_;
 };
 
 /* Represents a 'logical' address, expressed in words (not bytes) */
 class Address {
 public:
-    Address() : value_(0) {}
-    Address(int value) : value_(value) {}
+    Address() : value_(0), valid_(false) {}
+    explicit Address(int value) : value_(value), valid_(true) {
+        assert(value < std::numeric_limits<short>::max());
+    }
 
     int value() const { return value_; }
-    bool operator!() const { return !value_; }
+    bool operator!() const { return !valid_; }
     bool operator==(const Address& ad) const { return value_ == ad.value_; }
     bool operator!=(const Address& ad) const { return value_ != ad.value_; }
 
 private:
-    int value_;
+    short value_;
+    bool valid_;
 
 };
 
 /* Operands for three-address code SSA instructions */
 class Operand {
 public:
-    Operand(String* label) 
-        : label_(label), temp_(0), indirect_(false) {
-        // This constructor is only used for CALL instructions and instructions
-        // that load a label directly.
-    }
-    Operand(Expression* literal) 
-        : literal_(literal), temp_(0), indirect_(false) {
-        // This constructor is used for operands created via literal expr.
-    }
-    Operand() 
-        : temp_(0), indirect_(false) {
-    }
-    Operand(int temp) 
-        : temp_(temp), indirect_(false) {
-        // Constructs an operand from an integer temporary variable.
-    }
+    Operand() {}
+    Operand(String* label) : obj_(label) {}
+    // Represents the label's address, e.g., LABEL.  Used for CALL instructions.
+    Operand(String* label, Address addr) : obj_(label), addr_(addr) {}
+    // Represents the contents of label (with offset), i.e., MEM[LABEL+ADDR].
+    Operand(Expression* literal) : obj_(literal) {}
+    // Represents the value of a literal, i.e., LITERAL.
+    Operand(RegisterId reg) : reg_(reg) {}
+    // Represents the contents of a register, e.g., REG.
+    Operand(RegisterId reg, Address addr) : reg_(reg), addr_(addr) {}
+    // Represents the contents of a memory location, e.g., MEM[ADDR+REG]
+    Operand(Address addr) : addr_(addr) {}
+    // Represents the contents of a memory address, e.g., MEM[ADDR]
 
-    static Operand addr(Address addr);
-    static Operand addr(int temp, Address addr);
+    //Operand static addr(Address addr);
+    //Operand static addr(int reg, Address addr);
 
-    const Operand& operator++() { temp_++; return *this; }
-    Expression* literal() const { return literal_; }
-    String* label() const { return label_; }
-    int temp() const { return temp_; }
+    Expression* literal() const { return dynamic_cast<Expression*>(obj_.pointer()); }
+    String* label() const { return dynamic_cast<String*>(obj_.pointer()); }
+    RegisterId reg() const { return reg_; }
     Address addr() const { return addr_; }
-    bool indirect() const { return indirect_; }
-    bool colored() const { return temp_ < 0; }
-    void indirect(bool indirect) { indirect_ = indirect; }
-    void temp(int temp) { temp_ = temp; }
+    bool is_indirect() const { return !!addr_; }
+    bool is_colored() const { return reg_.is_colored(); }
     bool operator==(const Operand& other) const;
     bool operator!=(const Operand& other) const;
+    bool operator!() const { return !obj_ && !reg_ && !addr_; }
+    void reg(RegisterId reg) { reg_ = reg; }
 
 private:
-    Expression::Ptr literal_; // Literal expr, if this is a literal
-    String::Ptr label_; // FixMe: Should not be necessary...needed for CALL
-    Type::Ptr type_; // Type of the value held in the operand
-    int temp_; // Temporary variable ID (negative = machine register)
+    Pointer<Object> obj_; // Literal expression or string label
+    RegisterId reg_; // Temporary variable ID (negative = machine register)
     Address addr_; // Address offset (in words)
-    bool indirect_; // Set to true if this is an indirect memory access
 };
 
 Stream::Ptr operator<<(Stream::Ptr out, const Operand& op);
@@ -122,21 +125,21 @@ enum Opcode {
 /* Class for liveness information related to the instruction */
 class Liveness : public Object {
 public:
-    const std::set<int>& in() const { return in_; }
-    const std::set<int>& out() const { return out_; }
-    std::set<int>& in() { return in_; }
-    std::set<int>& out() { return out_; }
+    std::set<RegisterId> const& in() const { return in_; }
+    std::set<RegisterId> const& out() const { return out_; }
+    std::set<RegisterId>& in() { return in_; }
+    std::set<RegisterId>& out() { return out_; }
     typedef Pointer<Liveness> Ptr;
 
 private:
-    std::set<int> in_; // Live variables on incoming edge
-    std::set<int> out_; // Live variables on outgoing edge
+    std::set<RegisterId> in_; // Live variables on incoming edge
+    std::set<RegisterId> out_; // Live variables on outgoing edge
 };
 
 /* Class for three-address code instructions */
 class Instruction {
 public:
-    Instruction(Opcode op, Operand result, Operand first, Operand second):
+    Instruction(Opcode op, Operand result, Operand first, Operand second) :
         opcode_(op),
         first_(first),
         second_(second),
@@ -145,8 +148,8 @@ public:
     }
 
     Opcode opcode() const { return opcode_; }
-    Operand first() const { return first_; }
-    Operand second() const { return second_; }
+    Operand const& first() const { return first_; }
+    Operand const& second() const { return second_; }
     Operand result() const { return result_; }
     Liveness* liveness() const { return liveness_; }
     void opcode(Opcode opcode) { opcode_ = opcode; }
@@ -169,7 +172,7 @@ public:
     BasicBlock* branch() const { return branch_; }
     BasicBlock* next() const { return next_; }
     String* label() const { return label_; }
-    const Instruction& instr(size_t index) const { return instrs_[index]; }
+    Instruction const& instr(size_t index) const { return instrs_[index]; }
     Instruction& instr(size_t index) { return instrs_[index]; }
     int round() const { return round_; }
     int instrs() const { return instrs_.size(); }

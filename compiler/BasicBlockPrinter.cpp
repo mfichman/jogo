@@ -137,23 +137,19 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         }
     
         if (env_->dump_liveness()) {
-           out_ << " {";
-           const set<int>& live = instr.liveness()->in();
-           for (set<int>::const_iterator i = live.begin(); i != live.end();) {
-               if (*i == 0) {
-                   ++i;
-               } else {
-                   if (*i > 0) {
-                       out_ << 't' << *i;
-                   } else {
-                       out_ << 'r' << -*i;
-                   }
-                   if (++i != live.end()) {
-                       out_ << ", ";
-                   }
-               }
-           }
-           out_ << "}";
+            out_ << " {";
+            set<RegisterId> const& live = instr.liveness()->in();
+            for (set<RegisterId>::const_iterator i = live.begin(); i != live.end();) {
+                if (!(*i)) {
+                    ++i;
+                } else { 
+                    out_ << *i; 
+                    if (++i != live.end()) {
+                        out_ << ", ";
+                    }
+                }
+            }
+            out_ << "}";
         }
         out_ << "\n";
     }

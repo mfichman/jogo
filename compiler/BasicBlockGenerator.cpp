@@ -117,9 +117,10 @@ void BasicBlockGenerator::operator()(Box* expr) {
     object_temp_.push_back(return_);
 
     // Initialize the vtable pointer
-    Operand vtable = Operand::addr(return_.temp(), 0);
+    Operand vtable = Operand(return_.reg(), Address(0));
     Operand label = load(env_->name(clazz->label()->string()+"__vtable"));
     store(vtable, label);
+
     // FixMe: Eventually, it should be possible to call virtual functions
     // on boxed primitives.  That, however, would require generating special
     // versions of all the basic operators, or adding thunks.  For now,
@@ -129,11 +130,11 @@ void BasicBlockGenerator::operator()(Box* expr) {
     
     // Make sure that the refcount starts out at 1, otherwise the object may
     // be freed before the end of the constructor.
-    Operand refcount = Operand::addr(return_.temp(), 1);
+    Operand refcount = Operand(return_.reg(), Address(1));
     store(refcount, new IntegerLiteral(Location(), one));
 
     // Slot 2 is the value slot for primitive types
-    Operand addr = Operand::addr(return_.temp(), 2);
+    Operand addr = Operand(return_.reg(), Address(2));
     store(addr, arg); 
     // FixMe: For value types, can't do a simple move
 }
@@ -147,9 +148,9 @@ void BasicBlockGenerator::operator()(Cast* expr) {
         return;
     }
     Class::Ptr clazz = expr->type()->clazz();
-    Operand vtable1 = Operand::addr(arg.temp(), 0);
+    Operand vtable1 = Operand(arg.reg(), Address(0));
     Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
-    return_ = temp_++;
+    return_ = RegisterId(temp_++, 0);
 
     BasicBlock::Ptr mismatch_block = basic_block();
     BasicBlock::Ptr ok_block = basic_block();
@@ -162,17 +163,17 @@ void BasicBlockGenerator::operator()(Cast* expr) {
     emit(mismatch_block);
     String::Ptr zero = env_->integer("0");
     Location loc;
-    block_->instr(MOV, return_, load(new IntegerLiteral(loc, zero)), 0);
+    block_->instr(MOV, return_, load(new IntegerLiteral(loc, zero)), Operand());
     jump(done_block);
 
     // Otherwise, keep the same value in the result.
     emit(ok_block);
     if (clazz->is_object()) {
-        block_->instr(MOV, return_, arg, 0);
+        block_->instr(MOV, return_, arg, Operand());
     } else if (clazz->is_primitive()) {
         // Slot 2 is the value slot for primitive types
-        Operand addr = Operand::addr(arg.temp(), 2);
-        block_->instr(MOV, return_, addr, 0);
+        Operand addr = Operand(arg.reg(), Address(2));
+        block_->instr(MOV, return_, addr, Operand());
     } else if (clazz->is_value()) {
         assert(!"Not implemented");
     }
@@ -185,9 +186,9 @@ void BasicBlockGenerator::operator()(Is* expr) {
     Operand arg = emit(expr->child());
 
     Class::Ptr clazz = expr->check_type()->clazz();
-    Operand vtable1 = Operand::addr(arg.temp(), 0);
+    Operand vtable1 = Operand(arg.reg(), Address(0));
     Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
-    return_ = temp_++;
+    return_ = RegisterId(temp_++, 0);
 
     BasicBlock::Ptr mismatch_block = basic_block();
     BasicBlock::Ptr ok_block = basic_block();
@@ -201,13 +202,13 @@ void BasicBlockGenerator::operator()(Is* expr) {
     // If the vtable pointers are not equal, set the register to zero
     emit(mismatch_block);
     String::Ptr zero = env_->integer("0");
-    block_->instr(MOV, return_, load(new BooleanLiteral(loc, zero)), 0);
+    mov(return_, load(new BooleanLiteral(loc, zero)));
     jump(done_block);
 
     // Otherwise, set the register to 1.
     emit(ok_block);
     String::Ptr one = env_->integer("1");
-    block_->instr(MOV, return_, load(new BooleanLiteral(loc, one)), 0);
+    mov(return_, load(new BooleanLiteral(loc, one)));
     emit(done_block);
 }
 
@@ -336,10 +337,7 @@ void BasicBlockGenerator::operator()(Constant* expr) {
 }
 
 void BasicBlockGenerator::operator()(ConstantIdentifier* expr) {
-    Constant::Ptr cn = expr->constant();
-    Operand loc(cn->label());
-    loc.indirect(true);
-    return_ = load(loc);
+    return_ = load(Operand(expr->constant()->label(), Address(0)));
 }
 
 void BasicBlockGenerator::operator()(Identifier* expr) {
@@ -351,14 +349,14 @@ void BasicBlockGenerator::operator()(Identifier* expr) {
         return_ = var->operand();
     } else if (attr) {
         Operand self = variable(env_->name("self"))->operand();
-        return_ = load(Operand::addr(self.temp(), attr->slot()));
+        return_ = load(Operand(self.reg(), Address(attr->slot())));
     } else {
         // Variable can't be found in a temporary; it must be an argument 
         // passed on the stack.
 
-        int offset = stack(id);
-        assert(offset);
-        return_ = load(Operand::addr(offset)); 
+        Address offset = stack(id);
+        assert(!!offset);
+        return_ = load(Operand(offset)); 
         // A load operand of zero means the variable must be loaded relative
         // to the base pointer.
 
@@ -506,7 +504,7 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         if (!type->is_value()) {
             refcount_dec(var->operand());
         }
-        block_->instr(MOV, var->operand(), return_, 0);
+        mov(var->operand(), return_);
         if (!type->is_value()) {
             refcount_inc(var->operand());
         }
@@ -514,7 +512,7 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         // Assignment to an attribute within a class
         Type::Ptr type = expr->type(); 
         Variable::Ptr self = variable(env_->name("self"));
-        Operand addr = Operand::addr(self->operand().temp(), attr->slot());  
+        Operand addr = Operand(self->operand().reg(), Address(attr->slot()));  
         Operand old = load(addr);
         if (!type->is_value() && !attr->is_weak()) {
             refcount_dec(old);
@@ -717,7 +715,7 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
             object_temp_.push_back(return_);
         }
     } else {
-        return_ = 0;
+        return_ = Operand();
     }
 
 	if (func->throw_spec() == Function::THROW) {
@@ -730,12 +728,10 @@ void BasicBlockGenerator::exception_catch() {
 	// return.  Currently, only an exception throw is allowed, to support cleaning
 	// up coroutines.
 	String::Ptr name = env_->name("Exception__current");
-	static Constant::Ptr current(new Constant(Location(), env_, name, 0, 0));
+	Constant::Ptr static current(new Constant(Location(), env_, name, 0, 0));
 
 	function_->file()->dependency(current);
-	Operand loc(name);
-	loc.indirect(true);
-	Operand val = load(loc);
+	Operand val = load(Operand(name, Address(0)));
 
 	// Branch to the continuation if there was no exception.
 	BasicBlock::Ptr except_block = basic_block();
@@ -763,7 +759,6 @@ void BasicBlockGenerator::native_operator(Call* expr) {
             args.push_back(emit(a));
         }
     }
-   
     if (id == "@add") {
         assert(args.size() == 2);
         return_ = add(args[0], args[1]); 
@@ -820,12 +815,12 @@ Variable* BasicBlockGenerator::variable(String* name) {
     return 0;
 }
 
-int BasicBlockGenerator::stack(String* name) {
-    map<String::Ptr, int>::iterator i = stack_.find(name);
+Address BasicBlockGenerator::stack(String* name) {
+    map<String::Ptr, Address>::iterator i = stack_.find(name);
     if (i != stack_.end()) {
         return i->second;
     } else {
-        return 0;
+        return Address();
     }
 }
 
@@ -834,7 +829,7 @@ void BasicBlockGenerator::variable(Variable* var) {
     scope_.back()->variable(var);
 }
 
-void BasicBlockGenerator::stack(String* name, int offset) {
+void BasicBlockGenerator::stack(String* name, Address offset) {
     stack_.insert(make_pair(name, offset));
 }
 
@@ -872,7 +867,7 @@ Operand BasicBlockGenerator::bool_expr(Expression* expression) {
     BasicBlock::Ptr then_block = basic_block();
     BasicBlock::Ptr else_block = basic_block();
     BasicBlock::Ptr done_block = basic_block();
-    return_ = ++temp_;
+    return_ = RegisterId(++temp_, 0);
 
     // Recursively emit the boolean guard expression.
     invert_guard_ = false;
@@ -892,16 +887,15 @@ Operand BasicBlockGenerator::bool_expr(Expression* expression) {
     // return value.
     emit(then_block);
     String::Ptr one = env_->integer("1");
-    block_->instr(MOV, return_, load(new IntegerLiteral(loc, one)), 0);
+    mov(return_, load(new IntegerLiteral(loc, one)));
     jump(done_block);
     
     // Now emit the code for the 'false' branch.
     emit(else_block);
     String::Ptr zero = env_->integer("0");
-    block_->instr(MOV, return_, load(new IntegerLiteral(loc, zero)), 0);
+    mov(return_, load(new IntegerLiteral(loc, zero)));
     
     emit(done_block);
-
     return return_;
 }
 
@@ -939,13 +933,13 @@ void BasicBlockGenerator::func_return() {
     if (function_->is_constructor()) {
         retval = variable(env_->name("self"))->operand();
     }
-    if (!scope_.empty() && retval.temp()) {
+    if (!scope_.empty() && !!retval) {
         if (machine_->return_regs()) {
             // Return the value by register, if the architecture supports return
             // by register
-            int index = 0;
-            int reg = -machine_->return_reg(index)->id();
-            block_->instr(MOV, reg, retval, 0); 
+            int i = 0;
+            RegisterId reg(machine_->return_reg(i)->id(), RegisterId::COLORED);
+            mov(reg, retval); 
         } else {
             // Otherwise, return on the stack.
             push(retval);
@@ -964,12 +958,12 @@ void BasicBlockGenerator::func_return() {
 
 void BasicBlockGenerator::refcount_inc(Operand var) {
     // Emit code to increment the reference count for the object specified by
-    // 'temp'.  Insert a call expression to call the refcount_dec function.  If
+    // 'var'.  Insert a call expression to call the refcount_dec function.  If
     // the variable is already in the temp list, then the current function has
     // already incremented the refcount for that object -- so just remove it
     // from the temp list instead of calling refcount_inc.
     for (int i = 0; i < object_temp_.size(); i++) {
-        if (object_temp_[i].temp() == var.temp()) { 
+        if (object_temp_[i].reg() == var.reg()) { 
             std::swap(object_temp_[i], object_temp_.back());
             object_temp_.pop_back();
             return;
@@ -990,14 +984,14 @@ void BasicBlockGenerator::refcount_dec(Operand var) {
 void BasicBlockGenerator::save_arg(int i, Formal* formal) {
     if (i >= machine_->arg_regs()) {
         // Variable is passed on the stack
-        stack(formal->name(), stack_.size()+1); 
+        stack(formal->name(), Address(stack_.size()+1)); 
     } else {
         // Variable is passed by register; precolor the temporary for this
         // formal parameter by using a negative number.  Passing NULL for
 		// the type of the variable prevents it from being garbage collected
 		// at the end of the scope (which is what we want for function 
 		// parameters).
-        int reg = -machine_->arg_reg(i)->id();
+        RegisterId reg(machine_->arg_reg(i)->id(), RegisterId::COLORED);
         variable(new Variable(formal->name(), mov(reg), 0));
 
         // On Windows, the value is also passed with a backing location on
@@ -1014,7 +1008,8 @@ void BasicBlockGenerator::push_arg(int i, Operand op) {
         push(op);
     } else {
         // Argument is passed by register
-        block_->instr(MOV, -machine_->arg_reg(i)->id(), op, 0);
+        RegisterId reg(machine_->arg_reg(i)->id(), RegisterId::COLORED);
+        mov(reg, op);
 
         // On Windows, the argument is also passed by the stack as a backing
         // store
@@ -1040,8 +1035,9 @@ Operand BasicBlockGenerator::pop_ret() {
     if (0 >= machine_->return_regs()) {
         return pop();
     } else {
-        int val = 0;
-        return mov(-machine_->return_reg(val)->id());
+        int i = 0;
+        RegisterId reg(machine_->return_reg(i)->id(), RegisterId::COLORED);
+        return mov(reg);
     }
 }
 
@@ -1217,13 +1213,13 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
         variable(new Variable(env_->name("self"), self, 0)); 
        
         // Initialize the vtable pointer
-        Operand vtable = Operand::addr(self.temp(), 0);
+        Operand vtable = Operand(self.reg(), Address(0));
         Operand label = load(env_->name(clazz->label()->string()+"__vtable"));
         store(vtable, label);
         
         // Make sure that the refcount starts out at 1, otherwise the object may
         // be freed before the end of the constructor.
-        Operand refcount = Operand::addr(self.temp(), 1);
+        Operand refcount = Operand(self.reg(), Address(1));
         store(refcount, new IntegerLiteral(Location(), one));
     
     } else {
@@ -1240,7 +1236,7 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
                 continue;
             }
             Operand value = emit(init);
-            Operand addr = Operand::addr(self.temp(), attr->slot());
+            Operand addr = Operand(self.reg(), Address(attr->slot()));
             store(addr, value);
             if (!init->type()->is_value()) {
                 refcount_inc(value);
@@ -1267,7 +1263,7 @@ void BasicBlockGenerator::dtor_epilog(Function* feature) {
     // The attributes need to be released in the reverse order
     for (int i = attrs.size()-1; i >= 0; i--) {
         Operand self = variable(env_->name("self"))->operand();
-        Operand val = load(Operand::addr(self.temp(), attrs[i]->slot()));
+        Operand val = load(Operand(self.reg(), Address(attrs[i]->slot())));
         refcount_dec(val);
     }
 
@@ -1288,12 +1284,10 @@ void BasicBlockGenerator::free_temps() {
 
 void BasicBlockGenerator::constants() {
     for (int i = 0; i < env_->constants(); i++) {
-        Constant::Ptr cons = env_->constant(i);
-        Operand loc(cons->label());
-        loc.indirect(true); 
-        store(loc, emit(cons->initializer()));
+        Constant::Ptr cn = env_->constant(i);
+        store(Operand(cn->label(), Address(0)), emit(cn->initializer()));
         free_temps();
-        function_->file()->dependency(cons);
+        function_->file()->dependency(cn);
     }
 }
 

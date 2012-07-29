@@ -66,8 +66,8 @@ void CopyPropagator::operator()(BasicBlock* block) {
     // During dead-code elimination, the extra mov instruction is removed.  The
     // optimization does not apply to sequences where the RHS of an op is a
     // precolored regiester.
-    std::map<int, Operand> eq;
-    std::map<int, Operand> lit;
+    std::map<RegisterId, Operand> eq;
+    std::map<RegisterId, Operand> lit;
 
     for (int i = 0; i < block->instrs(); i++) {
         // Loop through all instructions in the block, looking for and recording
@@ -75,56 +75,58 @@ void CopyPropagator::operator()(BasicBlock* block) {
         // originally copied value.  NOTE:  This assumes that the code is in
         // SSA form.
         Instruction& instr = block->instr(i);
-        int first = instr.first().temp();
-        int second = instr.second().temp();
-        std::map<int, Operand>::iterator j;
+        RegisterId const result = instr.result().reg();
+        RegisterId const first = instr.first().reg();
+        RegisterId const second = instr.second().reg();
+        std::map<RegisterId, Operand>::iterator j;
 
         // Check to see if any of the operands have aliases.
-        if (first) {
+        if (!!first) {
             if (MOV == instr.opcode() && (j = lit.find(first)) != lit.end()) {
                 // If the RHS of a MOV can be replaced by a literal, then
                 // morph it into a load for that literal
-                Operand repl = j->second;
-                repl.indirect(instr.first().indirect());
+                Operand repl = j->second;//FixMe Operand(j->second.literal());
                 instr.first(repl);
                 instr.opcode(LOAD);
+                assert(!!repl&&"Nil operand");
             } else if ((j = eq.find(first)) != eq.end()) {
                 // If the RHS has an alias to a non-precolored register, then
                 // substitute that alias.  Make sure only to replace the
                 // register name, NOT the whole operand!
                 Operand repl = instr.first();
-                repl.temp(j->second.temp());
+                repl.reg(j->second.reg());
                 instr.first(repl);
+                assert(!!repl&&"Nil operand");
             }
         }
-        if (second) {
+        if (!!second) {
             if ((j = eq.find(second)) != eq.end()) {
                 // If the RHS (second arg) has an alias to a non-precolored
                 // register, then substitute that alias.  Make sure to only
                 // replace the register name, NOT the whole operand!
                 Operand repl = instr.second();
-                repl.temp(j->second.temp());
+                repl.reg(j->second.reg());
                 instr.second(repl);
+                assert(!!repl&&"Nil operand");
             }
         }
 
         // If the instruction is a MOV, mark the LHS as an alias of the RHS
         if (MOV == instr.opcode()) {
-            int result = instr.result().temp();
             Operand rhs = instr.first();
-            if (rhs.temp() && (j = eq.find(rhs.temp())) != eq.end()) {
+            if (!!rhs.reg() && (j = eq.find(rhs.reg())) != eq.end()) {
                 // If the RHS has an alias, use that instead, but only if it's
                 // not a machine reg
-                if (j->second.temp() > 0) {
+                if (!j->second.is_colored()) {
                     rhs = j->second;
                 }
             }
-            if (rhs.temp() > 0 && !rhs.indirect()) {
+            if (!rhs.is_colored() && !rhs.is_indirect() && !!rhs.reg()) {
+                assert(!!rhs&&"Nil operand");
                 eq[result] = rhs;
             }
         } 
-        if (LOAD == instr.opcode() && !instr.first().indirect()) {
-            int result = instr.result().temp();
+        if (LOAD == instr.opcode() && !instr.first().is_indirect()) {
             lit[result] = instr.first();
         }
     }

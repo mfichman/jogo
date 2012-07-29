@@ -542,7 +542,7 @@ Operand CCodeGenerator::alloc_temp(Type* type) {
     line();
     brace();
     operator()(type);
-    ++op_;
+    op_ = Operand(RegisterId(op_.reg().id()+1, 0));
     out_ << " " << op_ << " = ";
     return op_;
 }

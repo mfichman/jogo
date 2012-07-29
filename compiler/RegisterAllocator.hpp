@@ -33,21 +33,19 @@
 /* Structure for a register interference graph */
 class RegisterVertex {
 public:
-    RegisterVertex() : temp_(0), reg_(0) {}
-    
-    void neighbor_new(int index);
-    void neighbor_del(int index);
-    void reg(int reg) { reg_ = reg; }
-    void temp(int temp) { temp_ = temp; }
-    int neighbor(int index) { return out_[index]; }
+    void neighbor_new(RegisterId index);
+    void neighbor_del(RegisterId index);
+    void reg(RegisterId reg) { assert(reg.is_colored()); reg_ = reg; }
+    void temp(RegisterId temp) { assert(!temp.is_colored()); temp_ = temp; }
     int neighbors() const { return out_.size(); }
-    int temp() const { return temp_; }
-    int reg() const { return reg_; }
+    RegisterId neighbor(int index) { return out_[index]; }
+    RegisterId temp() const { return temp_; }
+    RegisterId reg() const { return reg_; }
 
 private:
-    int temp_;
-    int reg_;
-    std::vector<int> out_;
+    RegisterId temp_;
+    RegisterId reg_;
+    std::vector<RegisterId> out_;
 };
 
 /* Register allocator; reduces instructions to sequences */
@@ -69,12 +67,12 @@ private:
     void spill_register(Function* func);
 
     std::vector<RegisterVertex> graph_;
-    std::vector<int> stack_;
+    std::vector<RegisterId> stack_;
     Environment::Ptr env_;
     LivenessAnalyzer::Ptr liveness_;
     Machine::Ptr machine_;
     bool spill_;
-    std::set<int> spilled_;
+    std::set<RegisterId> spilled_;
 };
 
 

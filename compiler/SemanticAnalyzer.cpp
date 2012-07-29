@@ -757,7 +757,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         // Check to make sure the declared type is valid; if it isn't, then
         // set the variable to no_type and return.
         if (!declared->clazz()) {
-            variable(new Variable(id, 0, env_->no_type()));
+            variable(new Variable(id, Operand(), env_->no_type()));
             return;
         }
     }
@@ -775,7 +775,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         err_ << init->location();
         err_ << "Void value assigned to variable '" << id << "'\n";
         env_->error();
-        variable(new Variable(id, 0, env_->no_type()));
+        variable(new Variable(id, Operand(), env_->no_type()));
         return;
     }
     
@@ -878,10 +878,11 @@ void SemanticAnalyzer::operator()(Function* feature) {
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
         Type::Ptr type = f->type();
         type(this);
-        variable(new Variable(f->name(), 0, f->type(), true));
+        variable(new Variable(f->name(), Operand(), f->type(), true));
     }
     if (feature->is_constructor()) {
-        variable(new Variable(env_->name("self"), 0, env_->self_type(), true));
+        String::Ptr nm = env_->name("self");
+        variable(new Variable(nm, Operand(), env_->self_type(), true));
     }
 
     Type::Ptr type = feature->type();
@@ -1237,7 +1238,7 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
     Expression::Ptr init = expr->initializer();
 
-    variable(new Variable(id, 0, declared));
+    variable(new Variable(id, Operand(), declared));
 
     // The variable was declared with an explicit type, but the variable
     // already exists.
@@ -1316,7 +1317,7 @@ void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
             expr->initializer(new Box(init->location(), it, init));
         }
     } else {
-        variable(new Variable(id, 0, init->type())); 
+        variable(new Variable(id, Operand(), init->type())); 
     }
 }
 

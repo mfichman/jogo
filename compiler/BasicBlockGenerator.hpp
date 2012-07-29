@@ -104,144 +104,121 @@ private:
         node->operator()(this);
         return return_;
     }
+
+    Operand emit(Opcode op, Operand t2, Operand t3) {
+        block_->instr(op, RegisterId(++temp_, 0), t2, t3);
+        return RegisterId(temp_, 0);
+    }
     
-    Operand mov(Operand t2) {
-        block_->instr(MOV, ++temp_, t2, 0);
-        return temp_;
+    Operand emit(Opcode op, Operand t2) {
+        block_->instr(op, RegisterId(++temp_, 0), t2, Operand());
+        return RegisterId(temp_, 0);
+    }
+    
+    Operand mov(Operand res, Operand t2) { 
+        // FixMe: This could be a problem for SSA analysis.
+        block_->instr(MOV, res, t2, Operand());
+        return res;
     }
 
-    Operand neg(Operand t2) {
-        block_->instr(NEG, ++temp_, t2, 0);
-        return temp_;
-    }
-
-    Operand add(Operand t2, Operand t3) {
-        block_->instr(ADD, ++temp_, t2, t3);
-        return temp_;
-    }
-
-    Operand sub(Operand t2, Operand t3) {
-        block_->instr(SUB, ++temp_, t2, t3);    
-        return temp_;
-    }
-
-    Operand mul(Operand t2, Operand t3) {
-        block_->instr(MUL, ++temp_, t2, t3);    
-        return temp_;
-    }
-
-    Operand div(Operand t2, Operand t3) {
-        block_->instr(DIV, ++temp_, t2, t3);    
-        return temp_;
-    }
-
-    Operand notb(Operand t2) {
-        block_->instr(NOTB, ++temp_, t2, 0);
-        return temp_;
-    }       
-
-    Operand andb(Operand t2, Operand t3) {
-        block_->instr(ANDB, ++temp_, t2, t3);    
-        return temp_;
-    }
-
-    Operand orb(Operand t2, Operand t3) {
-        block_->instr(ORB, ++temp_, t2, t3);    
-        return temp_;
-    }
-
-    Operand load(Operand t2) {
-        block_->instr(LOAD, ++temp_, t2, 0);    
-        return temp_;
-    }
+    Operand mov(Operand t2) { return emit(MOV, t2); }
+    Operand neg(Operand t2) { return emit(NEG, t2); }
+    Operand add(Operand t2, Operand t3) { return emit(ADD, t2, t3); }
+    Operand sub(Operand t2, Operand t3) { return emit(SUB, t2, t3); }
+    Operand mul(Operand t2, Operand t3) { return emit(MUL, t2, t3); }
+    Operand div(Operand t2, Operand t3) { return emit(DIV, t2, t3); }
+    Operand notb(Operand t2) { return emit(NOTB, t2); }
+    Operand andb(Operand t2, Operand t3) { return emit(ANDB, t2, t3); }
+    Operand orb(Operand t2, Operand t3) { return emit(ORB, t2, t3); }
+    Operand load(Operand addr) { return emit(LOAD, addr); }
 
     Operand pop() {
-        block_->instr(POP, ++temp_, 0, 0);    
-        return temp_;
+        block_->instr(POP, RegisterId(++temp_, 0), Operand(), Operand());    
+        return RegisterId(temp_, 0);
     }
 
     void popn(int num) {
         String::Ptr val = env_->integer(stringify(num)); 
         Operand op(new IntegerLiteral(Location(), val));
-        block_->instr(POPN, 0, op, 0);
+        block_->instr(POPN, Operand(), op, Operand());
     }
     
     void push(Operand t2) {
-        block_->instr(PUSH, 0, t2, 0);    
+        block_->instr(PUSH, Operand(), t2, Operand());    
     }
 
     void store(Operand addr, Operand value) {
-        block_->instr(STORE, 0, addr, value);    
+        block_->instr(STORE, Operand(), addr, value);    
     }
 
     void call(Operand func, int nargs) {
-        block_->instr(CALL, 0, func, 0);
+        block_->instr(CALL, Operand(), func, Operand());
         pop_args(nargs);
     }
     
     void ret() {
-        block_->instr(RET, 0, 0, 0);
+        block_->instr(RET, Operand(), Operand(), Operand());
     }
     
     void bne(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BNE, 0, t2, t3);
+        block_->instr(BNE, Operand(), t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
 
     void be(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BE, 0, t2, t3);
+        block_->instr(BE, Operand(), t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
 
     void bnz(Operand t2, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BNZ, 0, t2, 0);
+        block_->instr(BNZ, Operand(), t2, Operand());
         block_->branch(branch);
         block_->next(next);
     }
 
     void bz(Operand t2, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BZ, 0, t2, 0);
+        block_->instr(BZ, Operand(), t2, Operand());
         block_->branch(branch);
         block_->next(next);
     }
 
     void bg(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BG, 0, t2, t3);
+        block_->instr(BG, Operand(), t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
 
     void bl(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BL, 0, t2, t3);
+        block_->instr(BL, Operand(), t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
 
     void bge(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BGE, 0, t2, t3);
+        block_->instr(BGE, Operand(), t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
     
     void ble(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BLE, 0, t2, t3);
+        block_->instr(BLE, Operand(), t2, t3);
         block_->branch(branch);
         block_->next(next);
     }
 
     void jump(BasicBlock* target) {
-        block_->instr(JUMP, 0, 0, 0);
+        block_->instr(JUMP, Operand(), Operand(), Operand());
         block_->branch(target);
     }
 
     BasicBlock* basic_block();
-    int stack(String* name);
+    Address stack(String* name);
 
     Variable* variable(String* name);
     void variable(Variable* var);
-    void stack(String* name, int offset);
+    void stack(String* name, Address offset);
     void enter_scope();
     void exit_scope();
     void call(Function* func, Expression* args);
@@ -276,7 +253,7 @@ private:
     std::vector<Scope::Ptr> scope_;
     // Mapping from var to temporary
 
-    std::map<String::Ptr, int> stack_;
+    std::map<String::Ptr, Address> stack_;
     // Mapping from a variable to a stack location
 
     Opcode branch_op_;

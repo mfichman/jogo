@@ -79,9 +79,9 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // liveness analysis is a reverse type of analysis - that is, we 
         // propagate liveness information from the use of a temporary back to
         // its last write.
-        const Instruction& instr = block->instr(i);
-        set<int>& in = instr.liveness()->in();
-        set<int>& out = instr.liveness()->out();
+        Instruction const& instr = block->instr(i);
+        set<RegisterId>& in = instr.liveness()->in();
+        set<RegisterId>& out = instr.liveness()->out();
 
         // Recompute the 'out' set from the 'in' set of the next instruction(s).
         // Last instruction of the block
@@ -90,21 +90,21 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
                 // Last instruction of the block, so get the next instruction 
                 // the first instruction of the following block.
                 if (block->branch() && block->branch()->instrs()) {
-                    set<int>& s = block->branch()->instr(0).liveness()->in();
-                    for (set<int>::iterator j = s.begin(); j != s.end(); j++) {
+                    set<RegisterId>& s = block->branch()->instr(0).liveness()->in();
+                    for (set<RegisterId>::iterator j = s.begin(); j != s.end(); j++) {
                         finished_ &= !out.insert(*j).second;        
                     }
                 } 
                 if (block->next() && block->next()->instrs()) {
-                    set<int>& s = block->next()->instr(0).liveness()->in();
-                    for (set<int>::iterator j = s.begin(); j != s.end(); j++) {
+                    set<RegisterId>& s = block->next()->instr(0).liveness()->in();
+                    for (set<RegisterId>::iterator j = s.begin(); j != s.end(); j++) {
                         finished_ &= !out.insert(*j).second;        
                     }
                 } 
             } else { 
                 // Get the 'in' set from the next instruction in this block.
-                set<int>& s = block->instr(i+1).liveness()->in();
-                for (set<int>::iterator j = s.begin(); j != s.end(); j++) {
+                set<RegisterId>& s = block->instr(i+1).liveness()->in();
+                for (set<RegisterId>::iterator j = s.begin(); j != s.end(); j++) {
                     finished_ &= !out.insert(*j).second;
                 } 
             }
@@ -113,18 +113,19 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // in[n] := use[n] U (out[n] - def[n]).  Since the in/out sets can 
         // never decrease in size, don't worry about resetting either of the
         // two sets.
-        if (instr.first().temp()) {
-            finished_ &= !in.insert(instr.first().temp()).second;
+        if (!!instr.first().reg()) {
+            finished_ &= !in.insert(instr.first().reg()).second;
         }
-        if (instr.second().temp()) {
-            finished_ &= !in.insert(instr.second().temp()).second;
+        if (!!instr.second().reg()) {
+            finished_ &= !in.insert(instr.second().reg()).second;
         }
 
         // If this is the first instruction of the function, then we need to
         // add all the registers belonging to the caller to the def[n] set.
         if (block == function_->basic_block(0) && i == 0) {
             for (int k = 0; k < machine_->caller_regs(); k++) {
-                finished_ &= !in.insert(-machine_->caller_reg(k)->id()).second;
+                RegisterId reg(machine_->caller_reg(k)->id(), RegisterId::COLORED);
+                finished_ &= !in.insert(reg).second;
             }
         }
 
@@ -132,10 +133,12 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // belonging to the caller to the use[n] set.
         if (instr.opcode() == RET) {
             for (int k = 0; k < machine_->caller_regs(); k++) {
-                finished_ &= !in.insert(-machine_->caller_reg(k)->id()).second;
+                RegisterId reg(machine_->caller_reg(k)->id(), RegisterId::COLORED);
+                finished_ &= !in.insert(reg).second;
             }
             for (int k = 0; k < machine_->return_regs(); k++) {
-                finished_ &= !in.insert(-machine_->return_reg(k)->id()).second;
+                RegisterId reg(machine_->return_reg(k)->id(), RegisterId::COLORED);
+                finished_ &= !in.insert(reg).second;
             }
         }
 
@@ -143,13 +146,14 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // use[n] set.
         if (instr.opcode() == CALL) {
             for (int k = 0; k < machine_->arg_regs(); k++) {
-                finished_ &= !in.insert(-machine_->arg_reg(k)->id()).second;
+                RegisterId reg(machine_->arg_reg(k)->id(), RegisterId::COLORED);
+                finished_ &= !in.insert(reg).second;
             }
         }
 
         // out[n] - def[n] added to in[n]
-        for (set<int>::iterator j = out.begin(); j != out.end(); j++) {
-            if (*j != instr.result().temp()) {
+        for (set<RegisterId>::iterator j = out.begin(); j != out.end(); j++) {
+            if (*j != instr.result().reg()) {
                 // In/out sets can never decrease in size, don't worry about
                 // removing def[n] temporaries from the set
                 finished_ &= !in.insert(*j).second;
