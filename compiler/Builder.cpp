@@ -194,9 +194,7 @@ void Builder::operator()(File* file) {
     if (env_->errors()) { return; }
 
     // Generate native machine code, and then compile or assemble it.
-    std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.ap";
-    std::string fn = file->name()->string();
-    if (!env_->make() || !file->is_up_to_date(".apo") || fn == main) {
+    if (!env_->make() || !file->is_up_to_date(".apo")) {
         File::mkdir(File::dir_name(file->apo_file()));
         if (env_->verbose()) {
             Stream::stout() << "Compiling " << file->name() << "\n";
@@ -253,6 +251,7 @@ void Builder::link(const std::string& in, const std::string& out) {
 #elif defined(DARWIN)
     ss << "gcc -Wl,-no_pie ";
 #endif
+    env_->entry_module(out);
 
     // Link the main() routine, which is custom-generated for each linked
     // executable.

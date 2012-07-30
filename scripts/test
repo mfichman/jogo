@@ -69,7 +69,8 @@ def apollo_test(test):
     if flags == '':
         flags += ' -e'
         run = True
-    flags += ' -m --build-dir ../build/runtime --optimize -o ../build/test'
+    flags += ' -m --build-dir ../build/test --optimize -o'
+    flags += ' ../bin/test/' + test.lower()
     command = '../bin/apollo ' + test + ' -i ../runtime -i ../lib ' + flags
     if options.full:
         valgrind = 'valgrind -q --leak-check=full'
