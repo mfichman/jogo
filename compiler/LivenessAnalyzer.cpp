@@ -124,7 +124,7 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // add all the registers belonging to the caller to the def[n] set.
         if (block == function_->basic_block(0) && i == 0) {
             for (int k = 0; k < machine_->caller_regs(); k++) {
-                RegisterId reg(machine_->caller_reg(k)->id(), RegisterId::COLORED);
+                RegisterId reg = machine_->caller_reg(k)->id();
                 finished_ &= !in.insert(reg).second;
             }
         }
@@ -133,11 +133,11 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // belonging to the caller to the use[n] set.
         if (instr.opcode() == RET) {
             for (int k = 0; k < machine_->caller_regs(); k++) {
-                RegisterId reg(machine_->caller_reg(k)->id(), RegisterId::COLORED);
+                RegisterId reg = machine_->caller_reg(k)->id();
                 finished_ &= !in.insert(reg).second;
             }
-            for (int k = 0; k < machine_->return_regs(); k++) {
-                RegisterId reg(machine_->return_reg(k)->id(), RegisterId::COLORED);
+            for (int k = 0; k < machine_->int_return_regs(); k++) {
+                RegisterId reg = machine_->int_return_reg(k)->id();
                 finished_ &= !in.insert(reg).second;
             }
         }
@@ -145,8 +145,8 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // If the instruction is a call instruction, add all arg registers to the
         // use[n] set.
         if (instr.opcode() == CALL) {
-            for (int k = 0; k < machine_->arg_regs(); k++) {
-                RegisterId reg(machine_->arg_reg(k)->id(), RegisterId::COLORED);
+            for (int k = 0; k < machine_->int_arg_regs(); k++) {
+                RegisterId reg = machine_->int_arg_reg(k)->id();
                 finished_ &= !in.insert(reg).second;
             }
         }

@@ -210,8 +210,10 @@ Bool Float__less(Float self, Float other) {
 }
 
 String Float_str__g(Float self) {
-    abort();
-    return 0;
+    String ret = String_alloc(64);
+    snprintf(ret->data, 64, "%f", self); 
+    ret->length = strlen(ret->data);
+    return ret;
 }
 
 Char Char__init() {
@@ -221,14 +223,12 @@ Char Char__init() {
 String Char_str__g(Char self) {
     // Returns the string representation of the character.
     
-    String ret = malloc(sizeof(struct String) + 1 + 1); 
+    String ret = String_alloc(2);
     if (!ret) {
         fprintf(stderr, "Out of memory");
         fflush(stderr);
         abort();
     }
-    ret->_vtable = String__vtable;
-    ret->_refcount = 1;
     ret->length = 1;
     ret->data[0] = self;
     return ret;

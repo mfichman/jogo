@@ -218,7 +218,9 @@ void Builder::operator()(File* file) {
     // Compile any native files.  Native files have the same name as the source
     // file, but with a .c extension.
     if (File::is_reg(file->native_file())) {
-        if (!env_->make() || !file->is_up_to_date(".o")) {
+        bool ok1 = File::is_up_to_date(file->native_file(), file->o_file());
+        bool ok2 = File::is_up_to_date(env_->program_path(), file->o_file());
+        if (!env_->make() || !(ok1 && ok2)) {
             cc(file->native_file(), file->o_file());
         }
     }
@@ -341,9 +343,9 @@ void Builder::irgen(File* file) {
     }
     if (env_->optimize()) {
         CopyPropagator::Ptr copy(new CopyPropagator(env_, machine));
-        //DeadCodeEliminator::Ptr elim(new DeadCodeEliminator(env_, machine));
+        DeadCodeEliminator::Ptr elim(new DeadCodeEliminator(env_, machine));
         copy->operator()(file);
-        //elim->operator()(file);
+        elim->operator()(file);
     }
 
     if (env_->dump_ir() && file->name()->string() != main) {

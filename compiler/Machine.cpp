@@ -22,21 +22,47 @@
 
 #include "Machine.hpp"
 
-Machine::Machine() {
-    reg_.push_back(0); // Zeroth temporary name is always null
-    word_size_ = 0;
+Machine::Machine() : word_size_(0) {
 }
 
-Register* Machine::reg(const std::string& name) {
-    reg_.push_back(new Register(name, reg_.size()));
-    return reg_.back();
+Register* Machine::reg(std::string const& name, RegisterId id) {
+    Register* reg = new Register(name, id);
+    regs_ = append(regs_, reg);
+    reg_[id] = reg;
+    return reg;
+}
+
+Register* Machine::int_reg(std::string const& name) {
+    RegisterId id(reg_.size()+1, RegisterId::COLORED);
+    return reg(name, id);
+}
+
+Register* Machine::float_reg(std::string const& name) {
+    RegisterId id(reg_.size()+1, RegisterId::COLORED|RegisterId::FLOAT);
+    return reg(name, id);
+}
+
+void Machine::arg_reg(Register* reg) {
+    if (reg->is_float()) { 
+        float_arg_reg_.push_back(reg);
+    } else {
+        int_arg_reg_.push_back(reg);
+    }
+}
+
+void Machine::return_reg(Register* reg) {
+    if (reg->is_float()) { 
+        float_return_reg_.push_back(reg);
+    } else {
+        int_return_reg_.push_back(reg);
+    }
 }
 
 Machine* Machine::intel64() {
     // Creates an Intel64 machine description (a.k.a. AMD64, x86-64, but my
     // dad worked at Intel for 18 years, so in this compiler, we're callin it
     // Intel64!).
-    static Machine::Ptr machine;
+    Machine::Ptr static machine;
     
     if (machine) { return machine; }
 
@@ -44,25 +70,25 @@ Machine* Machine::intel64() {
 
     // Volatile = callee reg
     
-    Register::Ptr rax = machine->reg("rax"); machine->callee_reg(rax); //1 VOL
-    Register::Ptr rbx = machine->reg("rbx"); machine->caller_reg(rbx); //2
-    Register::Ptr rcx = machine->reg("rcx"); machine->callee_reg(rcx); //3 VOL
-    Register::Ptr rdx = machine->reg("rdx"); machine->callee_reg(rdx); //4 VOL
+    Register::Ptr rax = machine->int_reg("rax"); machine->callee_reg(rax); //1 VOL
+    Register::Ptr rbx = machine->int_reg("rbx"); machine->caller_reg(rbx); //2
+    Register::Ptr rcx = machine->int_reg("rcx"); machine->callee_reg(rcx); //3 VOL
+    Register::Ptr rdx = machine->int_reg("rdx"); machine->callee_reg(rdx); //4 VOL
 
 #ifdef WINDOWS
-    Register::Ptr rdi = machine->reg("rdi"); machine->caller_reg(rdi); //5
+    Register::Ptr rdi = machine->int_reg("rdi"); machine->caller_reg(rdi); //5
 #else
-    Register::Ptr rdi = machine->reg("rdi"); machine->callee_reg(rdi); //5
+    Register::Ptr rdi = machine->int_reg("rdi"); machine->callee_reg(rdi); //5
 #endif
-    Register::Ptr rsi = machine->reg("rsi"); machine->callee_reg(rsi); //6
-    Register::Ptr r8 = machine->reg("r8"); machine->callee_reg(r8); //7 VOL
-    Register::Ptr r9 = machine->reg("r9"); machine->callee_reg(r9); //8 VOL
-    Register::Ptr r10 = machine->reg("r10"); machine->callee_reg(r10);//9 VOL
-    Register::Ptr r11 = machine->reg("r11"); machine->callee_reg(r11); //10 VOL
-    Register::Ptr r12 = machine->reg("r12"); machine->caller_reg(r12); //11
-    Register::Ptr r13 = machine->reg("r13"); machine->caller_reg(r13); //12
-    Register::Ptr r14 = machine->reg("r14"); machine->caller_reg(r14); //13
-    Register::Ptr r15 = machine->reg("r15"); machine->caller_reg(r15); //14
+    Register::Ptr rsi = machine->int_reg("rsi"); machine->callee_reg(rsi); //6
+    Register::Ptr r8 = machine->int_reg("r8"); machine->callee_reg(r8); //7 VOL
+    Register::Ptr r9 = machine->int_reg("r9"); machine->callee_reg(r9); //8 VOL
+    Register::Ptr r10 = machine->int_reg("r10"); machine->callee_reg(r10);//9 VOL
+    Register::Ptr r11 = machine->int_reg("r11"); machine->callee_reg(r11); //10 VOL
+    Register::Ptr r12 = machine->int_reg("r12"); machine->caller_reg(r12); //11
+    Register::Ptr r13 = machine->int_reg("r13"); machine->caller_reg(r13); //12
+    Register::Ptr r14 = machine->int_reg("r14"); machine->caller_reg(r14); //13
+    Register::Ptr r15 = machine->int_reg("r15"); machine->caller_reg(r15); //14
 
     machine->return_reg(rax);
 

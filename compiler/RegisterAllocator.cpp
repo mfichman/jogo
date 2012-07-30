@@ -154,7 +154,7 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
             // (caller-saved)
             if (instr.opcode() == CALL && !m->is_colored()) {
                 for (int j = 0; j < machine_->callee_regs(); j++) {
-                    RegisterId reg(machine_->callee_reg(j)->id(), RegisterId::COLORED);
+                    RegisterId reg = machine_->callee_reg(j)->id();
                     graph_[m->id()].neighbor_new(reg); 
                 }            
             }
@@ -181,7 +181,8 @@ void RegisterAllocator::build_stack() {
         int index = 0;
 
         for (int i = 0; i < work.size(); i++) {
-            if (!!work[i]->temp() && work[i]->neighbors() < machine_->regs()) {  
+            int regs = machine_->reg_count();
+            if (!!work[i]->temp() && work[i]->neighbors() < regs) {  
                 choice = work[i];
                 index = i;
                 break;
@@ -218,8 +219,8 @@ void RegisterAllocator::color_graph() {
         RegisterVertex* v = &graph_[stack_.back().id()]; 
         RegisterId choice;
 
-        for (int i = 1; i < machine_->regs(); i++) {
-            RegisterId reg(i, RegisterId::COLORED);
+        for (Register::Ptr r = machine_->regs(); r; r = r->next()) {
+            RegisterId reg = r->id();
             bool ok = true;
             
             // Check to make sure that the candidate color 'color' does not
@@ -298,7 +299,7 @@ void RegisterAllocator::spill_register(Function* func) {
     // First attempt to spill caller-registers, because those registers have
     // the most conflicts, usually.
     for (int i = 0; i < machine_->caller_regs(); i++) {
-        RegisterId reg(machine_->caller_reg(i)->id(), RegisterId::COLORED);
+        RegisterId reg = machine_->caller_reg(i)->id();
         set<RegisterId>::iterator m = spilled_.find(reg);
         if (m == spilled_.end()) {
             spilled = reg;
@@ -319,7 +320,7 @@ void RegisterAllocator::spill_register(Function* func) {
     }
 
     spilled_.insert(spilled);
-    assert(spilled);
+    assert(!!spilled);
 
     func->stack_vars_inc();
     Address addr = Address(-func->stack_vars());

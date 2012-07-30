@@ -187,7 +187,14 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case ADD: arith(inst); break;
         case SUB: arith(inst); break;
         case MUL: arith(inst); break;
-        case DIV: arith(inst); break;
+        case DIV: 
+            out_ << "    push rdx\n";
+            out_ << "    mov rax, "; operand(a1); out_ << "\n"; 
+            out_ << "    cqo\n";
+            out_ << "    idiv "; operand(a2); out_ << "\n";
+            out_ << "    pop rdx\n";
+            out_ << "    mov "; operand(res); out_ << ", rax\n";
+            break;
         case NEG: instr("mov", res, a1); instr("neg", res); break;
         case PUSH: instr("push", a1); break;
         case POP: instr("pop", res); break;
@@ -263,7 +270,7 @@ void Intel64CodeGenerator::arith(Instruction const& inst) {
     switch (inst.opcode()) {
     case ADD: name = "add"; break;
     case SUB: name = "sub"; break;
-    case MUL: name = "mul"; break;
+    case MUL: name = "imul"; break;
     case DIV: name = "div"; break;
     default: assert(false);
     }
@@ -350,7 +357,7 @@ void Intel64CodeGenerator::addr(Operand op) {
 
     out_ << "[";    
     if (!!op.reg()) {
-        out_ << machine_->reg(op.reg().id());
+        out_ << machine_->reg(op.reg());
     } else {
         out_ << "rbp";
     }
@@ -369,11 +376,10 @@ void Intel64CodeGenerator::reg(Operand op) {
     // Outputs a register, possibly with an address offset.  An operand passed
     // to this function should NOT have the literal or label fields set.
     assert(op.reg().is_colored());
-    assert(op.reg().id() < machine_->regs());
     assert(!op.literal());
     assert(!op.label());
 
-    out_ << machine_->reg(op.reg().id());
+    out_ << machine_->reg(op.reg());
 }
 
 void Intel64CodeGenerator::literal(Operand literal) {
@@ -514,9 +520,8 @@ void Intel64CodeGenerator::stack_check(Function* feature) {
     // stack pointer register is hidden to the register allocator.
     int index = 0;
     for (Formal* f = feature->formals(); f; f = f->next()) {
-        if (index < machine_->arg_regs()) {
-            RegisterId reg(machine_->arg_reg(index)->id(), RegisterId::COLORED);
-            instr("push", reg); 
+        if (index < machine_->int_arg_regs()) {
+            instr("push", machine_->int_arg_reg(index)->id()); 
             index++;
         } else {
             break;
@@ -528,8 +533,7 @@ void Intel64CodeGenerator::stack_check(Function* feature) {
     
     // Pop any argument registers that are used in the function.
     for (int i = index-1; i >= 0; i--) {
-        RegisterId reg(machine_->arg_reg(i)->id(), RegisterId::COLORED);
-        instr("pop", reg);
+        instr("pop", machine_->int_arg_reg(i)->id());
     }
 
     label(".l0:"); out_ << "\n";

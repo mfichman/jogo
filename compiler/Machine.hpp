@@ -25,23 +25,32 @@
 #include "Apollo.hpp"
 #include "Object.hpp"
 #include "Stream.hpp"
+#include "BasicBlock.hpp"
 #include <vector>
 
 /* Represents a general-purpose register in a machine architecture */
 class Register : public Object {
 public:
-    Register(const std::string& name, int id) :
+    Register(std::string const& name, RegisterId id) :
         name_(name),
         id_(id) {
     }
 
-    const std::string& name() { return name_; }
-    int id() const { return id_; }
+    std::string const& name() { return name_; }
+    RegisterId id() const { return id_; }
+    Register* next() const { return next_; }
+    Register* last() const { return last_; }
+    bool is_float() const { return id_.is_float(); }
+    bool is_int() const { return id_.is_int(); }
+    void next(Register* next) { next_ = next; }
+    void last(Register* last) { last_ = last; }
     typedef Pointer<Register> Ptr;
 
 private:
+    Register::Ptr next_;
+    Register::Ptr last_;
     std::string name_;
-    int id_; 
+    RegisterId id_; 
 };
 
 inline Stream::Ptr operator<<(Stream::Ptr out, Register* reg) {
@@ -71,22 +80,29 @@ public:
     Machine();
     Register* caller_reg(int index) const { return caller_reg_[index]; }
     Register* callee_reg(int index) const { return callee_reg_[index]; }
-    Register* arg_reg(int index) const { return arg_reg_[index]; }
-    Register* return_reg(int index) const { return return_reg_[index]; }
-    Register* reg(int id) const { return reg_[id]; }
+    Register* int_arg_reg(int index) const { return int_arg_reg_[index]; }
+    Register* int_return_reg(int index) const { return int_return_reg_[index]; }
+    Register* float_arg_reg(int index) const { return float_arg_reg_[index]; }
+    Register* float_return_reg(int index) const { return float_arg_reg_[index]; }
     Register* sp_reg() const { return sp_reg_; }
+    Register* float_reg(std::string const& name);
+    Register* int_reg(std::string const& name);
+    Register* reg(RegisterId id) { return reg_[id]; }
+    Register* reg(std::string const& name, RegisterId id);
+    Register* regs() const { return regs_; }
+    int reg_count() const { return reg_.size(); }
     int caller_regs() const { return caller_reg_.size(); }
     int callee_regs() const { return callee_reg_.size(); }
-    int arg_regs() const { return arg_reg_.size(); }
-    int return_regs() const { return return_reg_.size(); }
-    int regs() const { return reg_.size(); }
+    int int_arg_regs() const { return int_arg_reg_.size(); }
+    int int_return_regs() const { return int_return_reg_.size(); }
+    int float_arg_regs() const { return float_arg_reg_.size(); }
+    int float_return_regs() const { return float_return_reg_.size(); }
     int word_size() const { return word_size_; }
     void caller_reg(Register* reg) { caller_reg_.push_back(reg); }
     void callee_reg(Register* reg) { callee_reg_.push_back(reg); }
-    void arg_reg(Register* reg) { arg_reg_.push_back(reg); }
-    void return_reg(Register* reg) { return_reg_.push_back(reg); }
+    void arg_reg(Register* reg);
+    void return_reg(Register* reg);
     void sp_reg(Register* reg) { sp_reg_ = reg; }
-    Register* reg(const std::string& name);
     void word_size(int size) { word_size_ = size; }
     typedef Pointer<Machine> Ptr;
 
@@ -95,9 +111,12 @@ public:
 private:
     std::vector<Register::Ptr> caller_reg_;
     std::vector<Register::Ptr> callee_reg_;
-    std::vector<Register::Ptr> arg_reg_;
-    std::vector<Register::Ptr> return_reg_;
-    std::vector<Register::Ptr> reg_;
+    std::vector<Register::Ptr> int_arg_reg_;
+    std::vector<Register::Ptr> int_return_reg_;
+    std::vector<Register::Ptr> float_arg_reg_;
+    std::vector<Register::Ptr> float_return_reg_;
+    std::map<RegisterId, Register::Ptr> reg_;
+    Register::Ptr regs_;
     Register::Ptr sp_reg_;
     int word_size_;
 };

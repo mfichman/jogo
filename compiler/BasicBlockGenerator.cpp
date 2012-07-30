@@ -934,12 +934,10 @@ void BasicBlockGenerator::func_return() {
         retval = variable(env_->name("self"))->operand();
     }
     if (!scope_.empty() && !!retval) {
-        if (machine_->return_regs()) {
+        if (machine_->int_return_regs()) {
             // Return the value by register, if the architecture supports return
             // by register
-            int i = 0;
-            RegisterId reg(machine_->return_reg(i)->id(), RegisterId::COLORED);
-            mov(reg, retval); 
+            mov(machine_->int_return_reg(0)->id(), retval); 
         } else {
             // Otherwise, return on the stack.
             push(retval);
@@ -982,7 +980,7 @@ void BasicBlockGenerator::refcount_dec(Operand var) {
 }
 
 void BasicBlockGenerator::save_arg(int i, Formal* formal) {
-    if (i >= machine_->arg_regs()) {
+    if (i >= machine_->int_arg_regs()) {
         // Variable is passed on the stack
         stack(formal->name(), Address(stack_.size()+1)); 
     } else {
@@ -991,7 +989,7 @@ void BasicBlockGenerator::save_arg(int i, Formal* formal) {
 		// the type of the variable prevents it from being garbage collected
 		// at the end of the scope (which is what we want for function 
 		// parameters).
-        RegisterId reg(machine_->arg_reg(i)->id(), RegisterId::COLORED);
+        RegisterId reg = machine_->int_arg_reg(i)->id();
         variable(new Variable(formal->name(), mov(reg), 0));
 
         // On Windows, the value is also passed with a backing location on
@@ -1003,13 +1001,12 @@ void BasicBlockGenerator::save_arg(int i, Formal* formal) {
 }
 
 void BasicBlockGenerator::push_arg(int i, Operand op) {
-    if (i >= machine_->arg_regs()) {
+    if (i >= machine_->int_arg_regs()) {
         // Argument is pushed on the stack
         push(op);
     } else {
         // Argument is passed by register
-        RegisterId reg(machine_->arg_reg(i)->id(), RegisterId::COLORED);
-        mov(reg, op);
+        mov(machine_->int_arg_reg(i)->id(), op);
 
         // On Windows, the argument is also passed by the stack as a backing
         // store
@@ -1024,20 +1021,18 @@ void BasicBlockGenerator::pop_args(int num) {
 #ifdef WINDOWS
     popn(num);
 #else
-    if (num > machine_->arg_regs()) {
-        popn(num - machine_->arg_regs());
+    if (num > machine_->int_arg_regs()) {
+        popn(num - machine_->int_arg_regs());
     }
 #endif
     
 }
 
 Operand BasicBlockGenerator::pop_ret() {
-    if (0 >= machine_->return_regs()) {
+    if (0 >= machine_->int_return_regs()) {
         return pop();
     } else {
-        int i = 0;
-        RegisterId reg(machine_->return_reg(i)->id(), RegisterId::COLORED);
-        return mov(reg);
+        return mov(machine_->int_return_reg(0)->id());
     }
 }
 

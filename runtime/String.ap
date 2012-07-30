@@ -35,6 +35,19 @@ String < Object {
         # Returns true if this string is equal to 'string'.
     }
 
+    @less(string String) Bool {
+        # Returns true if this string is lexically less than 'string'.
+        i = 0
+        while i < self.length or i < string.length {
+            if self[i] < string[i] {
+                ++i
+            } else {
+                ret false
+            }
+        }
+        ret true
+    }
+
     length?() native Int {
         # Returns the length of the string.
     }

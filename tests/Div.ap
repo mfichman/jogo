@@ -1,0 +1,12 @@
+
+
+
+main() Int {
+
+    Io::println((16/2).str)
+    Io::println((7/3).str)
+
+    Io::println((7*6).str)
+
+    ret 0
+}

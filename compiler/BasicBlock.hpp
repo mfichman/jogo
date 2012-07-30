@@ -172,8 +172,8 @@ public:
     BasicBlock* branch() const { return branch_; }
     BasicBlock* next() const { return next_; }
     String* label() const { return label_; }
-    Instruction const& instr(size_t index) const { return instrs_[index]; }
-    Instruction& instr(size_t index) { return instrs_[index]; }
+    Instruction const& instr(int index) const { return instrs_[index]; }
+    Instruction& instr(int index) { return instrs_[index]; }
     int round() const { return round_; }
     int instrs() const { return instrs_.size(); }
     bool is_terminated() const;
