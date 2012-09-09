@@ -69,5 +69,7 @@ Coroutine < Object {
 }
 
 CoroutineFunc < Interface {
-    @call()
+    @call() {
+        # Initializes, then resumes a new coroutine
+    } 
 }

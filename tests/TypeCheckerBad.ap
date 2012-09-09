@@ -16,9 +16,9 @@ Cycle2 < Interface {
 # Type2 is a valid subtype of type1.
 Type1 < Interface {
     blarg() Int {
+        ret 
     }
 }
-
 Type2 < Interface {
 
 }
@@ -30,10 +30,10 @@ Object1 < Object {
     }
 }
 
-# Fully-qualified names are not allowed (now handled by parser).
-#Scoped::Illegal < Interface {
-#    blarg() Int
-#}
+# Fully-qualified names are allowed.
+Scoped::Illegal < Interface {
+    blarg() Int
+}
 
 Value1 < Value {
 }
@@ -57,7 +57,7 @@ TypeCheckerBad < Object {
         b String # Variable redefinition
         b Int # Variable redefinition, different type
         
-        c Foo # Defuned class 
+        c Foo # Undefined class 
         c.whatever() 
         
         d = TypeCheckerBad().blarg("Hello, world") # Assign void

@@ -869,7 +869,7 @@ void SemanticAnalyzer::operator()(Function* feature) {
     // Check the different combinations of prototype/body/no-body, method, and
     // function.  Prototypes (as in interface definitions) should not have a
     // body.
-    if (block && is_interface) {
+    if (block && block->children() && is_interface) {
         err_ << block->location();
         err_ << "Interface function '" << feature->name();
         err_ << "' has a body\n";
@@ -879,7 +879,13 @@ void SemanticAnalyzer::operator()(Function* feature) {
         err_ << "Native function '" << feature->name();
         err_ << "' has a body\n";
         env_->error();
-    } else if (block && !is_native) {
+    } else if (!block && !is_interface && !is_native && !is_lib_def) {
+        err_ << feature->location();
+        err_ << "Function '" << feature->name() << "' has no body\n";
+        env_->error();
+    }
+    
+    if (block && (block->children() || (!is_native && !is_interface))) { 
         block(this); 
         if (type != env_->void_type() && !return_) {
             err_ << feature->location();
@@ -887,10 +893,6 @@ void SemanticAnalyzer::operator()(Function* feature) {
             err_ << "' must return a value\n";     
             env_->error();
         }
-    } else if (!block && !is_interface && !is_native && !is_lib_def) {
-        err_ << feature->location();
-        err_ << "Function '" << feature->name() << "' has no body\n";
-        env_->error();
     }
         
     exit_scope();
