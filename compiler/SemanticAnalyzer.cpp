@@ -42,9 +42,6 @@ SemanticAnalyzer::SemanticAnalyzer(Environment* environment) :
     operator()(env_->string_type());
     operator()(env_->bool_type());
 
-    if (env_->errors()) {
-        return;
-    }
     for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
         m(this);
     }    
@@ -96,7 +93,7 @@ void SemanticAnalyzer::operator()(Class* feature) {
         env_->error();
     }
 
-    if (!feature->is_interface() && !feature->is_mixin()) {
+    if (!feature->is_interface()) {
         destructor();
         if (!feature->is_primitive()) {
             constructor(); 
@@ -118,47 +115,25 @@ void SemanticAnalyzer::operator()(Class* feature) {
         if (m->clazz()) {
             if (feature->is_interface() && !m->is_interface()) {
                 err_ << m->location();
-                err_ << "Mix-in for interface '" << feature->name();
+                err_ << "Type embedded in '" << feature->name();
                 err_ << "' must be an interface\n";
                 env_->error();
-                break;
             } else if (feature->is_object() && m->is_interface()) {
                 err_ << m->location();
-                err_ << "Mix-in for object type '" << feature->name();
-                err_ << "' cannot be an interface\n"; 
+                err_ << "Type embedded in '" << feature->name();
+                err_ << "' must be an object or value\n"; 
                 env_->error();
-                break;
             } else if (feature->is_value() && !m->is_value()) {
                 err_ << m->location();
-                err_ << "Mix-in for value type '" << feature->name();
+                err_ << "Type embedded in '" << feature->name();
                 err_ << "' must be a value type\n"; 
                 env_->error();
-                break;
             }
         } else if(!m->is_proto()) {
             err_ << m->location();
             err_ << "Undefined type '" << m << "'\n";
             env_->error();
         }
-    }
-
-    // Check for illegal mixins for the current class.  Certain object types
-    // cannot be combined, as below:
-    if (feature->is_object() && feature->is_interface()) {
-        err_ << feature->location();
-        err_ << "Class has both object and interface mixins";
-        err_ << "\n";    
-        env_->error();
-    } else if (feature->is_interface() && feature->is_value()) {
-        err_ << feature->location();
-        err_ << "Class has both interfaces and value mixins";
-        err_ << "\n";
-        env_->error();
-    } else if (feature->is_value() && feature->is_object()) {
-        err_ << feature->location();
-        err_ << "Class has both value and object mixins";
-        err_ << "\n";
-        env_->error();
     }
 
     assign_enums(feature);
@@ -236,12 +211,12 @@ void SemanticAnalyzer::operator()(ArrayLiteral* literal) {
 */
 }
 
-void SemanticAnalyzer::operator()(Let* expression) {
-    // For a let expression, introduce the new variables in a new scope, and 
+void SemanticAnalyzer::operator()(Let* stmt) {
+    // For a let stmt, introduce the new variables in a new scope, and 
     // then check the block.
     enter_scope();
-    Statement::Ptr block = expression->block();
-    for (Expression::Ptr v = expression->variables(); v; v = v->next()) {
+    Statement::Ptr block = stmt->block();
+    for (Expression::Ptr v = stmt->variables(); v; v = v->next()) {
         v(this);
     }
     block(this);
@@ -260,7 +235,7 @@ void SemanticAnalyzer::operator()(Is* expr) {
         err_ << "Type in 'is' expression cannot be an interface\n";
         env_->error();
     }
-    if (expr->check_type()->is_alt_type()) {
+    if (expr->check_type()->is_alt()) {
         err_ << expr->check_type()->location();
         err_ << "Type in 'is' expression cannot be a union\n";
         env_->error();
@@ -282,6 +257,7 @@ void SemanticAnalyzer::operator()(Box* expression) {
         err_ << "Box type does not match expression type\n";
         env_->error();
     }
+    assert(expression->type()&&"Missing Box expression type");
 }
 
 void SemanticAnalyzer::operator()(Cast* expression) {
@@ -291,6 +267,7 @@ void SemanticAnalyzer::operator()(Cast* expression) {
     child(this);
 
     Type::Ptr type = expression->type();
+    assert(type&&"Missing Case expression type");
     type(this);
     
     if (type->is_value()) {
@@ -362,14 +339,14 @@ void SemanticAnalyzer::operator()(Member* expression) {
     expr(this);
 
     Type::Ptr type = expr->type();
-    if (type->is_no_type()) {
-        expression->type(env_->no_type());
+    if (type->is_top()) {
+        expression->type(env_->top_type());
         return;
     }
 
     Class::Ptr clazz = type->is_self() ? class_.pointer() : type->clazz();
     if (!clazz) {
-        expression->type(env_->no_type());
+        expression->type(env_->top_type());
         return;
     }
     
@@ -389,18 +366,18 @@ void SemanticAnalyzer::operator()(Member* expression) {
 
         // Second lookup: check to see if there is an accessor that returns
         // an object that is callable. FIXME 
-        expression->type(env_->no_type());
+        expression->type(env_->top_type());
         return;
     }
 
     // Try to look up the attribute.  Then take the type from the attribute
     // and use it, if the attribute is public.
     Attribute::Ptr attr = clazz->attribute(id);
-    if (attr && attr->type() == env_->bottom_type()) {
+    if (attr && attr->type() && attr->type()->is_bottom()) {
         err_ << expression->location(); 
         err_ << "Illegal circular reference\n";
         env_-> error();
-        expression->type(env_->no_type());
+        expression->type(env_->top_type());
         return;
     }
     if (attr) {
@@ -413,7 +390,7 @@ void SemanticAnalyzer::operator()(Member* expression) {
         err_ << "Attribute '" << id << "' not found in class '";
         err_ << clazz->name() << "'\n";
         env_->error();
-        expression->type(env_->no_type());
+        expression->type(env_->top_type());
         return;
     }
     
@@ -454,7 +431,7 @@ void SemanticAnalyzer::operator()(Call* expression) {
     // A function value should have been assigned by the child.
     Function::Ptr func = expression->function();
     if (!func) {
-        expression->type(env_->no_type());
+        expression->type(env_->top_type());
         return;
     }
         
@@ -504,7 +481,7 @@ void SemanticAnalyzer::operator()(Construct* expression) {
     // Look up constructor class
     Class::Ptr clazz = type->clazz(); 
     if (!clazz) {
-        expression->type(env_->no_type());
+        expression->type(env_->top_type());
         return;
     }
     if (clazz->is_interface()) {
@@ -512,7 +489,7 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         err_ << "Constructor called for interface type '";
         err_ << clazz->name() << "'\n";
         env_->error();
-        expression->type(env_->no_type());
+        expression->type(env_->top_type());
         return;
     }
 
@@ -560,14 +537,14 @@ void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
         }
         err_ << id << "'\n";
         env_->error();
-        expression->type(env_->no_type());
+        expression->type(env_->top_type());
         return;
     }
-    if (constant->type() == env_->bottom_type()) {
+    if (constant->type() && constant->type()->is_bottom()) {
         err_ << expression->location();
         err_ << "Illegal circular reference\n";
         env_->error();
-        expression->type(env_->no_type());
+        expression->type(env_->top_type());
         return;
     }
     constant(this);
@@ -592,11 +569,11 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
     } else if (class_ && scope->is_empty()) {
         Attribute::Ptr attr = class_->attribute(id);
         if (attr) {
-            if (attr->type() == env_->bottom_type()) {
+            if (attr->type() && attr->type()->is_bottom()) {
                 err_ << expression->location();
                 err_ << "Illegal circular reference\n";
                 env_->error();      
-                expression->type(env_->no_type());
+                expression->type(env_->top_type());
                 return;
             }
             attr(this);
@@ -611,7 +588,7 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
             err_ << expression->location();
             err_ << "Undefined variable '" << id << "'\n";
             env_->error();
-            expression->type(env_->no_type());
+            expression->type(env_->top_type());
         } else {
             expression->type(type);
         }
@@ -665,6 +642,11 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
 }
 
 void SemanticAnalyzer::operator()(Empty* expression) {
+    expression->type(env_->top_type());
+}
+
+void SemanticAnalyzer::operator()(ParseError* expression) {
+    expression->type(env_->top_type());
 }
 
 void SemanticAnalyzer::operator()(Block* statement) {
@@ -696,13 +678,10 @@ void SemanticAnalyzer::operator()(While* statement) {
     // Check the while statement guard type, and then check all the branches.
     Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
-
     guard(this);
-    Type* t = guard->type();
-    assert(t);
-    if (!env_->bool_type()->equals(guard->type())) {
+    if (!guard->type()->is_bool()) {
         err_ << statement->location();
-        err_ << "While statement guard expression must have type '";
+        err_ << "Guard expression must have type '";
         err_ << env_->bool_type() << "'";
         err_ << "\n";
         env_->error();
@@ -736,72 +715,66 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
     // different type.  This function handles both assignment and variable
     // initialization.
     String::Ptr id = expr->identifier();
-    Variable::Ptr var = variable(id);
     Type::Ptr declared = expr->declared_type();
-    Type::Ptr type = (var && declared != env_->no_type()) ? var->type() : 0;
-    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
     Expression::Ptr init = expr->initializer();
-
     init(this);
-    if (init->type()) {
-        expr->type(init->type());
-    } else {
-        expr->type(expr->declared_type());
-    }
-
-    if (declared && declared != env_->no_type()) {
-        // If declared_type == no_type, then the variable declaration has no
+    
+    expr->type(!init->type()->is_top() ? init->type() : declared.pointer());
+    if (!declared->is_top()) {
+        // If declared_type == top_type, then the variable declaration has no
         // true declared type, but it defines a new variable regardless of
         // whether or not the variable is already shadowed by another variable.
         declared(this);
         // Check to make sure the declared type is valid; if it isn't, then
-        // set the variable to no_type and return.
+        // set the variable to top_type and return.
         if (!declared->clazz()) {
-            variable(new Variable(id, Operand(), env_->no_type()));
+            variable(new Variable(id, Operand(), env_->top_type()));
             return;
         }
     }
 
-    // Attempt to assign to an immutable var, usually a param
-    if (var && var->is_immutable()) {
-        err_ << expr->location();
-        err_ << "Value assigned to formal parameter '" << id << "'\n"; 
-        env_->error();
-        return;
-    }
-        
     // Attempt to assign void to a variable during initialization.
-    if (init->type() && init->type()->equals(env_->void_type())) {
+    if (init->type()->is_void()) {
         err_ << init->location();
         err_ << "Void value assigned to variable '" << id << "'\n";
         env_->error();
-        variable(new Variable(id, Operand(), env_->no_type()));
+        variable(new Variable(id, Operand(), env_->top_type()));
         return;
     }
     
-    if (declared && declared != env_->no_type()) {
-        // If declared_type == no_type, then the variable declaration has no
+    if (!declared->is_top() || expr->is_let()) {
+        // If declared_type == top_type, then the variable declaration has no
         // true declared type, but it defines a new variable regardless of
         // whether or not the variable is already shadowed by another variable.
         initial_assignment(expr);
     } else {
         secondary_assignment(expr);
     }
+
+    Variable::Ptr var = variable(id);
+    if (var && init->type()->is_alt() && !var->type()->equals(init->type())) {
+        // Initializer is of the 'Any' or 'Union' type or an alternate
+        // type, but the storage type is not of the 'Any' or 'Union' type.
+        // Insert a cast expression, which will extract nil or the
+        // requested type.
+        expr->initializer(new Cast(init->location(), var->type(), init));
+    } else if (var && init->type()->is_value() && var->type()->is_alt()) {
+        // Initializer is of the 'Value' type, but the storage type is
+        // 'Any' or 'Union'.  Insert an expression to box the value.
+        expr->initializer(new Box(init->location(), init->type(), init));
+    }
 }
 
 void SemanticAnalyzer::operator()(Return* statement) {
     Expression::Ptr expr = statement->expression();
-    if (expr) {
-        expr(this);
-        return_ = expr->type();
-    }
-    if (!expr->type()) {
-        expr->type(env_->void_type());
+    if (dynamic_cast<Empty*>(expr.pointer())) {
         return;
     }
+    expr(this);
     if (expr->type()->is_self()) {
         expr->type(class_->type());
     }
+    return_ = expr->type();
     if (!expr->type()->subtype(function_->type())) {
         err_ << statement->location();
         err_ << "Return must conform to type '";
@@ -812,7 +785,7 @@ void SemanticAnalyzer::operator()(Return* statement) {
 
     Type::Ptr ft = function_->type();
     Type::Ptr type = expr->type();
-    if (type->is_value() && ft->is_alt_type()) {
+    if (type->is_value() && ft->is_alt()) {
         statement->expression(new Box(expr->location(), type, expr)); 
     }
 }
@@ -949,9 +922,9 @@ void SemanticAnalyzer::operator()(Constant* feature) {
 }
 
 void SemanticAnalyzer::operator()(Attribute* feature) {
-    Expression::Ptr initializer = feature->initializer();
+    Expression::Ptr init = feature->initializer();
     Feature::Ptr parent = feature->parent();
-    if (feature->type() && (!initializer || initializer->type())) { return; }
+    if (feature->type()) { return; }
 
     // Save the current class and variable scope.
     ContextAnchor context(this);
@@ -959,47 +932,49 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
 
     // Check for duplicate attributes
     if (parent->feature(feature->name()) != feature) {
-        err_ << feature->location();
-        err_ << "Duplicate definition of attribute '";
-        err_ << feature->name() << "'\n";
-        env_->error();
+        if(feature->is_embedded()) {
+            err_ << feature->location();
+            err_ << "Type '" << feature->name() << "' is embedded multiple ";
+            err_ << "times in '" << parent->name() << "'\n";
+            env_->error();
+        } else {
+            err_ << feature->location();
+            err_ << "Duplicate definition of attribute '";
+            err_ << feature->name() << "'\n";
+            env_->error();
+        }
     } 
 
-    // Make sure that the attribute type conforms to the declared type of
-    // the attribute, if there is one.  Set the type to 'bottom' while 
-    // checking the initializer, in case there are circular references.
-    Type::Ptr save = feature->type();
+    // Make sure that the attribute type conforms to the declared type of the
+    // attribute, if there is one.  Set the type to 'bottom' while checking the
+    // init, in case there are circular references.
     feature->type(env_->bottom_type());
-    initializer(this);
-    feature->type(save);
+    init(this);
 
-    // No explicitly declared type, but the initializer can be used to infer
-    // the type.
-    if (!feature->type()) {
-        feature->type(initializer->type());
-        mutator(feature);
-        accessor(feature);
-        if (feature->file()) {
-            feature->file()->dependency(feature->type()->clazz());
-        }
-        return;
+    Type::Ptr declared = feature->declared_type();
+    if (declared->is_top()) {
+        // No explicitly declared type, but the init can be used to infer the
+        // type.
+        feature->type(init->type());
+    } else {
+        // Check that the feature type exists.
+        declared(this);    
+        feature->type(declared);
     }
 
-    // Check that the feature type exists.
-    Type::Ptr type = feature->type();
-    type(this);
-
-    // Make sure that the initializer and the feature type conform.
-    if (initializer->type() && !initializer->type()->subtype(feature->type())) {
+    // Make sure that the init and the feature type conform.
+    if (!feature->type()->subtype(declared)) {
         err_ << feature->location();
         err_ << "Expression does not conform to type '";
-        err_ << initializer->type() << "'";
+        err_ << feature->type() << "'";
         err_ << "\n";
         env_->error();
     }
-
     mutator(feature);
     accessor(feature);
+    if (feature->file()) {
+        feature->file()->dependency(feature->type()->clazz());
+    }
 }
 
 void SemanticAnalyzer::operator()(Closure* expression) {
@@ -1032,7 +1007,7 @@ void SemanticAnalyzer::operator()(Closure* expression) {
         String::Ptr fid = env_->name("_"+id->string());
         Formal::Ptr formal = new Formal(loc, fid, var->type()); 
         Identifier::Ptr rhs = new Identifier(loc, env_->name(""), fid);
-        Assignment::Ptr as = new Assignment(loc, id, 0, rhs); 
+        Assignment::Ptr as = new Assignment(loc, id, env_->top_type(), rhs); 
         Statement::Ptr stmt = new Simple(loc, as);
         if (args) {
             formal->next(formals);
@@ -1047,6 +1022,7 @@ void SemanticAnalyzer::operator()(Closure* expression) {
         // variable.
         Type::Ptr type = var->type();
         Attribute::Ptr attr = new Attribute(loc, env_, id, flags, type, empty);
+        attr->type(type);
         expression->clazz()->feature(attr); 
     }
 
@@ -1070,7 +1046,7 @@ void SemanticAnalyzer::operator()(Import* feature) {
 void SemanticAnalyzer::operator()(Type* type) {
     // Check to make sure that the type has a defined class.  Also, check
     // all generics that are part of the type to make sure that they resolve.
-    if (type->is_self() || type->is_no_type() || type->is_void()) {
+    if (type->is_self() || type->is_top() || type->is_void()) {
         return;
     }
     if (type->file()) {
@@ -1087,7 +1063,7 @@ void SemanticAnalyzer::operator()(Type* type) {
         err_ << type->location();
         err_ << "Undeclared generic type '" << type->name() << "'\n";
         env_->error();
-        type->is_no_type(true);
+        type->is_top(true);
         return;
     }
 
@@ -1095,7 +1071,7 @@ void SemanticAnalyzer::operator()(Type* type) {
         err_ << type->location();
         err_ << "Undefined type '" << type << "'\n";
         env_->error();
-        type->is_no_type(true);
+        type->is_top(true);
         return;
     }
 
@@ -1119,13 +1095,13 @@ void SemanticAnalyzer::operator()(Type* type) {
         err_ << type->location();
         err_ << "Too many arguments for type '" << type->name() << "'\n";
         env_->error();
-        type->is_no_type(true);
+        type->is_top(true);
     }
     if (formal) {
         err_ << type->location();
         err_ << "Not enough arguments for type '" << type->name() << "'\n";
         env_->error();
-        type->is_no_type(true);
+        type->is_top(true);
     }
 }
 
@@ -1170,9 +1146,9 @@ Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec
         // the automatically insert a cast.  Cast also unboxes primitives and
         // value types if necessary.
         Expression::Ptr actual;
-        if (at->is_alt_type() && !ft->equals(at)) {
+        if (at->is_alt() && !ft->equals(at)) {
             actual = new Cast(arg->location(), ft, arg);
-        } else if (at->is_value() && ft->is_alt_type()) {
+        } else if (at->is_value() && ft->is_alt()) {
             actual = new Box(arg->location(), at, arg); 
         } else {
             actual = arg;
@@ -1215,7 +1191,7 @@ Variable* SemanticAnalyzer::variable(String* name) {
 }
 
 void SemanticAnalyzer::variable(Variable* var) {
-    assert(env_->errors()||var->type()!=env_->no_type());
+    assert(env_->errors() || !var->type()->is_top());
     assert(scope_.size());
     scope_.back()->variable(var);
     assert(var->scope()==scope());
@@ -1234,15 +1210,19 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
     String::Ptr id = expr->identifier();
     Variable::Ptr var = variable(id);
     Type::Ptr declared = expr->declared_type();
-    Type::Ptr type = (var && declared != env_->no_type()) ? var->type() : 0;
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
     Expression::Ptr init = expr->initializer();
+    attr(this);
 
-    variable(new Variable(id, Operand(), declared));
+    if (declared->is_top()) {
+        variable(new Variable(id, Operand(), expr->type()));
+    } else {
+        variable(new Variable(id, Operand(), declared));
+    }
 
     // The variable was declared with an explicit type, but the variable
     // already exists.
-    if (type && scope() == var->scope()) {
+    if (var && scope() == var->scope()) {
         err_ << expr->location();
         err_ << "Duplicate definition of variable '" << id << "'\n";
         env_->error();
@@ -1255,9 +1235,6 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
         env_->error();      
         return;
     }
-    if (!init->type()) {
-        return; 
-    }
 
     // The variable was declared with an explicit type, and the init
     // does not conform to that type.
@@ -1268,31 +1245,31 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
         env_->error();
         return;
     }
-
-    // Initializer is of the 'Any' type or an alternate type, but the
-    // declared type is not equal.  Insert a cast expression.
-    if (init->type()->is_alt_type() && !declared->equals(init->type())) {
-        expr->initializer(new Cast(init->location(), declared, init));
-    } else if (init->type()->is_value() && declared->is_alt_type()) {
-        expr->initializer(new Box(init->location(), init->type(), init));
-    }
 }
 
 void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
-    // Checks an assignment to a variable that has already been defined.
+    // Checks an assignment to a variable that has no explicit type def.
     String::Ptr id = expr->identifier();
     Variable::Ptr var = variable(id);
     Type::Ptr declared = expr->declared_type();
-    Type::Ptr type = (var && declared != env_->no_type()) ? var->type() : 0;
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
     Expression::Ptr init = expr->initializer();
+    attr(this);
+
+    // Attempt to assign to an immutable var, usually a param
+    if (var && var->is_immutable()) {
+        err_ << expr->location();
+        err_ << "Value assigned to formal parameter '" << id << "'\n"; 
+        env_->error();
+        return;
+    }
 
     // The variable was already declared, but the init type is not
     // compatible with the variable type.
-    if (type && !init->type()->subtype(type)) {
+    if (var && !init->type()->subtype(var->type())) {
         err_ << init->location();
         err_ << "Expression does not conform to type '";
-        err_ << type << "' in assignment of '" << id << "'\n";
+        err_ << var->type() << "' in assignment of '" << id << "'\n";
         env_->error();
         return;
     }
@@ -1309,22 +1286,16 @@ void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
 
     // Initializer is of the 'Any' type, but the variable type is not.
     // Insert a cast expression.
-    if (type) {
-        Type::Ptr it = init->type();
-        if (it->is_alt_type() && !type->equals(init->type())) {
-            expr->initializer(new Cast(init->location(), type, init));
-        } else if (it->is_value() && type->is_alt_type()) {
-            expr->initializer(new Box(init->location(), it, init));
-        }
-    } else {
-        variable(new Variable(id, Operand(), init->type())); 
+    if (!var) {
+        variable(new Variable(id, Operand(), expr->type())); 
     }
 }
 
 void SemanticAnalyzer::constructor() {
     // Check for a constructor, and generate one if it isn't present
-    if (!class_->function(env_->name("@init"))) {
-        String::Ptr nm = env_->name("@init");
+    String::Ptr nm = env_->name("@init");
+    Function::Ptr ctor = class_->function(nm);
+    if (!ctor || (ctor->parent() != class_)) {
         Type::Ptr vt = env_->void_type();
         Location loc = class_->location();
         Block::Ptr block(new Block(loc, 0, 0));
@@ -1334,8 +1305,9 @@ void SemanticAnalyzer::constructor() {
 
 void SemanticAnalyzer::destructor() {
     // Check for a destructor, and generate one if it isn't present
-   String::Ptr nm = env_->name("@destroy");
-    if (!class_->function(nm)) {
+    String::Ptr nm = env_->name("@destroy");
+    Function::Ptr dtor = class_->function(nm);
+    if (!dtor || (dtor->parent() != class_)) {
         Type::Ptr st = env_->self_type();
         Type::Ptr vt = env_->void_type();
         Location loc = class_->location();
@@ -1345,35 +1317,39 @@ void SemanticAnalyzer::destructor() {
     }
 }
 
-void SemanticAnalyzer::accessor(Attribute* feature) {
+void SemanticAnalyzer::accessor(Attribute* feat) {
     // Insert a setter for the attribute if it doesn't already exist
-    String::Ptr get = env_->name(feature->name()->string()+"?");
-    if (!class_->function(get) && !feature->is_private()) {
+    String::Ptr get = env_->name(feat->name()->string()+"?");
+    if (!class_->function(get) && !feat->is_private() 
+        && !feat->is_embedded()) {
+
         Location loc = class_->location();
-        String::Ptr id = feature->name();
+        String::Ptr id = feat->name();
         Identifier::Ptr attr(new Identifier(loc, env_->name(""), id));
         Return::Ptr ret(new Return(loc, attr)); 
         Block::Ptr block(new Block(loc, 0, ret));
         Type::Ptr st = env_->self_type();
-        Type::Ptr ft = feature->type();
+        Type::Ptr ft = feat->type();
         Formal::Ptr self(new Formal(loc, env_->name("self"), st));
         class_->feature(new Function(loc, env_, get, self, 0, ft, block));
     }
 }
 
-void SemanticAnalyzer::mutator(Attribute* feature) {
+void SemanticAnalyzer::mutator(Attribute* feat) {
     // Insert a getter for the attribute if it doesn't already exist
-    String::Ptr set = env_->name(feature->name()->string()+"=");
-    if (!class_->function(set) && !feature->is_immutable()
-            && !feature->is_private()) {
+    String::Ptr set = env_->name(feat->name()->string()+"=");
+    if (!class_->function(set) && !feat->is_immutable() && !feat->is_private()
+        && !feat->is_embedded()) {
+
         Location loc = class_->location();
         String::Ptr id = env_->name("_arg0");
+        String::Ptr fn = feat->name();
         Identifier::Ptr val(new Identifier(loc, env_->name(""), id)); 
-        Assignment::Ptr assign(new Assignment(loc, feature->name(), 0, val)); 
+        Assignment::Ptr assign(new Assignment(loc, fn, env_->top_type(), val)); 
         Block::Ptr block(new Block(loc, 0, new Simple(loc, assign)));
         Type::Ptr st = env_->self_type();
         Type::Ptr vt = env_->void_type();
-        Type::Ptr ft = feature->type();
+        Type::Ptr ft = feat->type();
         Formal::Ptr self(new Formal(loc, env_->name("self"), st));
         Formal::Ptr arg(new Formal(loc, env_->name("_arg0"), ft));
         self->next(arg);

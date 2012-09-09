@@ -42,7 +42,7 @@ public:
 	void next(Expression* next) { assert(next != this); next_ = next; }
     void last(Expression* last) { last_ = last; }
     void parent(Expression* parent) { parent_ = parent; }
-    void type(Type* type) { type_ = type; }
+    void type(Type* type) { type_ = type; assert(type_); }
     typedef Pointer<Expression> Ptr;
 
 private:
@@ -316,20 +316,24 @@ private:
 /* Variable declaration */
 class Assignment : public Expression {
 public:
+    typedef int Flags;
     Assignment(Location loc, String* ident, Type* type, Expression* expr) :
         Expression(loc),
         identifier_(ident),
 		declared_type_(type),
-        initializer_(expr) {
+        initializer_(expr),
+        is_let_(false) {
 
         expr->parent(this);
+        assert(declared_type_);
     }
 
     String* identifier() const { return identifier_; }
     Type* declared_type() { return declared_type_; }
     Expression* initializer() const { return initializer_; }
-    void declared_type(Type* type) { declared_type_ = type; }
+    bool is_let() const { return is_let_; }
     void initializer(Expression* expr) { initializer_ = expr; }
+    void is_let(bool let) { is_let_ = let; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Assignment> Ptr;
 
@@ -337,6 +341,7 @@ private:
     String::Ptr identifier_;
 	Type::Ptr declared_type_;
     Expression::Ptr initializer_;
+    bool is_let_;
 };
 
 /* Closure */
@@ -416,7 +421,6 @@ public:
         Expression(loc),
         child_(expr) {
         
-        // The 'type' parameter is the type to convert expr into.
         Expression::type(type);
     }
 
@@ -427,3 +431,14 @@ private:
     Expression::Ptr child_;
 };
  
+
+/* Parse error placeholder expression */
+class ParseError : public Expression {
+public:
+    ParseError(Location loc) :
+        Expression(loc) {
+    }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<ParseError> Ptr;
+};
+

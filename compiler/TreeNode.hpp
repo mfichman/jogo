@@ -84,6 +84,7 @@ public:
     virtual void operator()(HashLiteral* literal) {}
     virtual void operator()(Closure* expression) {}
     virtual void operator()(Member* expression) {}
+    virtual void operator()(ParseError* expression) {}
 };
 
 template <typename T>

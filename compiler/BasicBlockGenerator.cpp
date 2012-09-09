@@ -143,7 +143,7 @@ void BasicBlockGenerator::operator()(Cast* expr) {
     // Check to make sure that the vtable of 'arg' and 'type' match.  If they
     // don't then return the nil pointer.
     Operand arg = emit(expr->child());
-    if (expr->type()->is_any_type()) {
+    if (expr->type()->is_any()) {
         return_ = arg;
         return;
     }
@@ -496,8 +496,9 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
     String::Ptr id = expr->identifier();
     Variable::Ptr var = variable(id);
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
+    Type::Ptr declared = expr->declared_type();
 
-    if (var && !expr->declared_type()) {
+    if (var && !expr->is_let() && declared->is_top()) {
         // Assignment to a local var that has already been initialized once in
         // the current scope.
         Type::Ptr type = var->type();
@@ -524,12 +525,9 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
     } else {
         // Assignment to a local var that has not yet been initialized in the
         // current scope.
-        Type::Ptr declared = expr->declared_type();
-        if (!declared || declared == env_->no_type()) {
-            declared = expr->type();
-        }
-        variable(new Variable(id, mov(return_), declared));
-        if (!declared->is_value()) {
+        Type::Ptr type = declared->is_top() ? expr->type() : declared.pointer();
+        variable(new Variable(id, mov(return_), type));
+        if (!type->is_value()) {
             refcount_inc(return_);
         }
     }

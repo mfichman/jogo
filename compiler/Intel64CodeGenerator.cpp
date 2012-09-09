@@ -94,7 +94,7 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     // Emit the functions and vtable for the class specified by 'feature'
     class_ = feature;
 
-    if (!feature->is_interface() && !feature->is_mixin()) {
+    if (!feature->is_interface()) {
         dispatch_table(feature);
     }
 

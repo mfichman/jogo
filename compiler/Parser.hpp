@@ -35,10 +35,12 @@
 /* Primary parser structure; creates compilation units */
 class Parser : public Object {
 public:
+    typedef int Flags;
+
     Parser(Environment* env);
     Environment* environment() const { return env_; }
     Module* module() const { return module_; }
-	File* file() const { return file_; }
+    File* file() const { return file_; }
     Location location() const { return lexer_->loc(); }
     Location last_location() const { return last_location_; } 
     void input(const std::string& file);
@@ -59,8 +61,10 @@ private:
     bool expect(Token token);
 
     Class* clazz(String* scope);
+    Class* alternate(String* name);
     Module* module();
     Function* function();
+    Formal* formal_list();
     Constant* constant();
     Feature* feature_list();
     Feature* feature();
@@ -68,6 +72,7 @@ private:
     Type* mixin_list();
     Type* alternate_list(); 
     Feature* constant_list();
+    Attribute* composite();
     Attribute* attribute();
     Function* method();
     String* identifier();
@@ -88,6 +93,7 @@ private:
     Statement* for_loop();
     Statement* let();
 
+    Assignment* assignment();
     Expression* regex();
     Expression* string();
     Expression* expression();
@@ -110,7 +116,6 @@ private:
     Expression* bitwise_xor();
     Expression* literal();
     Expression* closure();
-    Assignment* assignment();
 
     Token token(int index=0) const { 
         return lexer_->token(index); 

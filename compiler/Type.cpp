@@ -28,24 +28,24 @@
 Type::Type(Location loc, String* qn, Generic* gen, Environment* env) :
     TreeNode(loc),
     generics_(gen),
-    environment_(env),
+    env_(env),
     class_(0),
     qualified_name_(qn),
-    is_no_type_(false) {
+    is_top_(false) {
 
     if (qn->string()[0] != ':') {
        // Compute the scope and name of the type by splitting on the '::' token.
        size_t scope_end = qn->string().find_last_of(':');
        if (scope_end == std::string::npos) {
            name_ = qn;
-           scope_ = environment_->name("");
+           scope_ = env_->name("");
        } else {
            name_ = env->name(qn->string().substr(scope_end + 1));
            scope_ = env->name(qn->string().substr(0, scope_end - 1));
        }
     } else {
         name_ = qn;
-        scope_ = environment_->name("");
+        scope_ = env_->name("");
     }
 }
 
@@ -91,22 +91,23 @@ bool Type::equals(Type* other) const {
 }
 
 bool Type::subtype(Type* other) const {
-    if (other->is_bottom_type() || is_bottom_type()) {
+    // Returns true if other is a subtype of 'this'
+    if (!other) { 
         return false;
     }
-    if (other->is_any_type() || is_any_type()) {
+    if (other->is_bottom() || is_bottom()) {
+        return false;
+    }
+    if (other->is_any() || is_any()) {
         return true;
     }
-    if (is_no_type()) {
+    if (other->is_top() || is_top()) {
         return true;
     }
-    if (other->is_no_type()) {
+    if (!other->is_value() && is_nil()) {
         return true;
     }
-    if (!other->is_value() && is_nil_type()) {
-        return true;
-    }
-    if (other->is_nil_type() && !is_value()) {
+    if (other->is_nil() && !is_value()) {
         return true;
     }
     if (this->equals(other)) {
@@ -123,123 +124,111 @@ bool Type::subtype(Type* other) const {
 }
 
 bool Type::is_proto() const {
-
-    std::string qn = qualified_name()->string();
-    if (qn == "Object") {
-        return true;
-    }
-    if (qn == "Value") {
-        return true;
-    }
-    if (qn == "Interface") {
-        return true;
-    }
-    if (qn == "Mixin") {
-        return true;
-    }
-    if (qn == "Enum") {
-        return true;
-    }
-    return false;
+    return is_object_proto()
+        || is_interface_proto()
+        || is_enum_proto()
+        || is_value_proto()
+        || is_alt_proto();
 }
 
-bool Type::is_no_type() const {
-    return is_no_type_ || this == environment_->no_type();
+bool Type::is_interface_proto() const {
+    return equals(env_->interface_type());
 }
 
-bool Type::is_bottom_type() const {
-    return this == environment_->bottom_type();
+bool Type::is_enum_proto() const {
+    return equals(env_->enum_type());
 }
 
-bool Type::is_nil_type() const {
-    return this == environment_->nil_type();
+bool Type::is_object_proto() const {
+    return equals(env_->object_type());
 }
 
-bool Type::is_any_type() const {
-    return this->equals(environment_->any_type());
+bool Type::is_value_proto() const {
+    return equals(env_->value_type());
 }
 
-bool Type::is_alt_type() const {
-    return is_any_type() || (clazz() && clazz()->alternates());
+bool Type::is_alt_proto() const {
+    return equals(env_->alt_type());
 }
 
 bool Type::is_generic() const {
     return !name_->string().empty() && name_->string()[0] == ':';
 }
 
-bool Type::is_primitive() const {
-    if (is_int() || is_float() || is_bool() || is_char() || is_byte()) {
-        return true;
-    }
-    return is_enum();
+bool Type::is_alt() const {
+    return is_alt_proto() || (clazz() && clazz()->is_alt());
 }
 
 bool Type::is_interface() const {
-    std::string qn = qualified_name()->string();
-    if (qn == "Interface") {
-        return true;
-    }
-    return clazz() && clazz()->is_interface();
+    return is_interface_proto() || (clazz() && clazz()->is_interface()); 
 }
 
 bool Type::is_object() const {
-    std::string qn = qualified_name()->string();
-    if (qn == "Object") {
-        return true;
-    }
-    return clazz() && clazz()->is_object();
+    return is_object_proto() || (clazz() && clazz()->is_object()); 
 }
 
 bool Type::is_value() const {
-    std::string qn = qualified_name()->string();
-    if (qn == "Value") {
-        return true;
-    }
-    return !is_generic() && clazz() && clazz()->is_value();
+    return is_value_proto() || (clazz() && clazz()->is_value()); 
 }
 
 bool Type::is_enum() const {
-    std::string qn = qualified_name()->string();
-    if (qn == "Enum") {
-        return true;
-    }
-    return clazz() && clazz()->is_enum();
+    return is_enum_proto() || (clazz() && clazz()->is_enum());
 }
 
-bool Type::is_byte() const {
-    return this->equals(environment_->byte_type());
-}
-
-bool Type::is_char() const {
-    return this->equals(environment_->char_type());
-}
-
-bool Type::is_bool() const {
-    return this->equals(environment_->bool_type());
-}
-
-bool Type::is_self() const {
-    return this->equals(environment_->self_type());
-}
-
-bool Type::is_int() const {
-    return this->equals(environment_->int_type());
-}
-
-bool Type::is_float() const {
-    return this->equals(environment_->float_type());
+bool Type::is_primitive() const {
+    return is_number() || is_bool() || is_char() || is_enum();
 }
 
 bool Type::is_boolifiable() const {
-    if (is_no_type()) {
-        return true;
-    } else {
-        return !is_value() || is_bool() || is_int();
-    }
+    return is_top() || !is_value() || is_bool() || is_int();
 }
 
-bool Type::is_void() const {
-    return this->equals(environment_->void_type());
+bool Type::is_any() const {
+    return equals(env_->any_type()); 
+}
+
+bool Type::is_bottom() const { 
+    return equals(env_->bottom_type());
+}
+
+bool Type::is_nil() const {
+    return equals(env_->nil_type()); 
+}
+
+bool Type::is_top() const { 
+    return is_top_ || equals(env_->top_type()); 
+}
+
+bool Type::is_void() const { 
+    return equals(env_->void_type());
+}
+
+bool Type::is_byte() const {
+    return equals(env_->byte_type());
+}
+
+bool Type::is_char() const {
+    return equals(env_->char_type());
+}
+
+bool Type::is_bool() const {
+    return equals(env_->bool_type());
+}
+
+bool Type::is_self() const {
+    return equals(env_->self_type());
+}
+
+bool Type::is_int() const {
+    return equals(env_->int_type());
+}
+
+bool Type::is_float() const {
+    return equals(env_->float_type());
+}
+
+bool Type::is_number() const { 
+    return is_float() || is_int() || is_byte(); 
 }
 
 Class* Type::clazz() const {

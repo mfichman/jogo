@@ -52,14 +52,19 @@ Environment::Environment() :
     int_type_ = new Type(loc, name("Int"), 0, this);
     string_type_ = new Type(loc, name("String"), 0, this);
     nil_type_ = new Type(loc, name("Nil"), 0, this);
-    no_type_ = new Type(loc, name("<<notype>>"), 0, this);
-    bottom_type_ = new Type(loc, name("<<bottomtype>>"), 0, this);
+    top_type_ = new Type(loc, name("<<top>>"), 0, this);
+    bottom_type_ = new Type(loc, name("<<bottom>>"), 0, this);
     float_type_ = new Type(loc, name("Float"), 0, this);
     char_type_ = new Type(loc, name("Char"), 0, this);
     byte_type_ = new Type(loc, name("Byte"), 0, this);
     pair_type_ = new Type(loc, name("Pair"), 0, this);
     self_type_ = new Type(loc, name("Self"), 0, this);
     any_type_ = new Type(loc, name("Any"), 0, this);
+    enum_type_ = new Type(loc, name("Enum"), 0, this);
+    object_type_ = new Type(loc, name("Object"), 0, this);
+    value_type_ = new Type(loc, name("Value"), 0, this);
+    interface_type_ = new Type(loc, name("Interface"), 0, this);
+    alt_type_ = new Type(loc, name("Union"), 0, this);
 
     module(root_);
 

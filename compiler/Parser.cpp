@@ -33,6 +33,8 @@ Parser::Parser(Environment* env) :
     err_(Stream::sterr()),
     lexer_(new Lexer(env)),
     error_(0) {
+    // Creates a new parser and begins parsing all the input files specified by
+    // the environment.
 
     if (!env->no_default_libs()) {
         input("Apollo");
@@ -259,7 +261,6 @@ Module* Parser::module() {
             next();
         }
     }
-
     return module_;
 }
 
@@ -296,34 +297,20 @@ Class* Parser::clazz(String* scope) {
     }
     next();
 
-
     if (token() == Token::ASSIGN) {
-        // Parse a union declaration, e.g. type = type | type | type
-        next();
-
-        // This is the LHS of the union decl, i.e., LHS in type = ... so we
-        // don't need an implicit import here 
-        Type::Ptr type = new Type(loc, name(qn), 0, env_);
-        switch (token()) {
-        case Token::TYPE:
-            file_alias(type->qualified_name()->string());
-            return new Class(loc, env_, type, alternate_list());
-        case Token::CONSTANT:
-            file_alias(type->qualified_name()->string());
-			return new Class(loc, env_, type, constant_list()); 
-        default:
-            err_ << location() << "Expected a type or constant, not ";
-            err_ << token() << "'\n";
-            error();
-        }
+        return alternate(name(qn));
     }
 
     Generic::Ptr generics = generic_list();
     Type::Ptr type = new Type(loc, name(qn), generics, env_);
     
-    // Parse the type list
+    // Parse the prototype for the class.
     expect(Token::LESS);
-    Type::Ptr mixins = mixin_list();
+    Type::Ptr proto = Parser::type();
+    if (!proto->is_proto()) {
+        err_ << location() << "Invalid prototype\n";
+        env_->error();
+    }
     expect(Token::LEFT_BRACE);
 
     // Parse the comment, if present
@@ -331,27 +318,42 @@ Class* Parser::clazz(String* scope) {
     Feature::Ptr members = feature_list();
     expect(Token::RIGHT_BRACE);
     file_alias(type->qualified_name()->string());
-    return new Class(loc, env_, type, mixins, comment, members);
+    return new Class(loc, env_, type, proto, comment, members);
+}
+
+Class* Parser::alternate(String* name) {
+    // Parses the RHS of an alternate type, i.e., a union or an enum that has
+    // been declared in the one-line form.
+    LocationAnchor loc(this);
+    next();
+
+    // This is the LHS of the union decl, i.e., LHS in type = ... so we
+    // don't need an implicit import here 
+    Type::Ptr type = new Type(loc, name, 0, env_);
+    switch (token()) {
+    case Token::TYPE:
+        file_alias(type->qualified_name()->string());
+        return new Class(loc, env_, type, alternate_list());
+    case Token::CONSTANT:
+        file_alias(type->qualified_name()->string());
+		return new Class(loc, env_, type, constant_list()); 
+    default:
+        err_ << location() << "Expected a type or constant, not ";
+        err_ << token() << "'\n";
+        error();
+        return 0;
+    }
 }
 
 Feature* Parser::feature_list() {
     // Parses the list of class members, functions, and attributes
     Feature* members = 0;
     while (token() == Token::IDENTIFIER || token() == Token::OPERATOR
-                || token() == Token::CONSTANT) {
-
+        || token() == Token::CONSTANT || token() == Token::TYPE) {
         members = append(members, feature());
         if (error_) {
-            while (true) {
-                if (token() == Token::SEPARATOR) {
-                    break;
-                }
-                if (token() == Token::RIGHT_BRACE) {
-                    break;
-                }
-                if (token() == Token::END) {
-                    break;
-                }
+            while (token() != Token::SEPARATOR && token() != Token::END
+                && token() != Token::RIGHT_BRACE) {
                 next();
             }
             next();
@@ -375,11 +377,22 @@ Feature* Parser::feature() {
             func->formals(self);
         }
         return func;
+    } else if (token() == Token::TYPE) {
+        return composite(); 
     } else if (token() == Token::CONSTANT) {
         return constant();
     } else {
         return attribute(); 
     }
+}
+
+Attribute* Parser::composite() {
+    // Returns an attribute representing an embedded type
+    LocationAnchor loc(this);
+    Feature::Flags flags = Feature::EMBEDDED;
+    Type::Ptr type = Parser::type();
+    Expression::Ptr empty(new Empty(loc));
+    return new Attribute(loc, env_, type->name(), flags, type, empty); 
 }
 
 Constant* Parser::constant() {
@@ -416,7 +429,7 @@ Attribute* Parser::attribute() {
     Feature::Flags flags = Parser::flags();
 
     // Read the explicit type, if present
-    Type::Ptr type = 0;
+    Type::Ptr type = env_->top_type();
     if (token() == Token::TYPE || token() == Token::TYPEVAR) {
         type = Parser::type(); 
     }
@@ -426,8 +439,13 @@ Attribute* Parser::attribute() {
     if (token() == Token::ASSIGN) {
         next();
         init = expression();
-    }  else {
+    } else {
         init = new Empty(loc);
+        if (type->is_top()) {
+            err_ << location() << "Expected '=' or a type name\n"; 
+            error();
+            init->type(env_->top_type());
+        }
     }
     expect(Token::SEPARATOR);
 
@@ -451,22 +469,7 @@ Function* Parser::function() {
     expect(Token::LEFT_PARENS);
 
     // Now parse the formal list of arguments, e.g., "a Int, b String"
-    Formal::Ptr formals;
-    while (token() == Token::IDENTIFIER) {
-        LocationAnchor loc(this);
-        String::Ptr nm = identifier();
-        Type::Ptr type = env_->any_type();
-        if (token() == Token::TYPE || token() == Token::TYPEVAR) { 
-            type = Parser::type();
-        }
-        formals = append(formals, new Formal(loc, nm, type));
-        if (token() == Token::COMMA) {
-            next(); 
-        } else {
-            break;
-        }
-    }
-
+    Formal::Ptr formals = formal_list();
     expect(Token::RIGHT_PARENS);
 
     // Parse flags
@@ -486,6 +489,27 @@ Function* Parser::function() {
     return new Function(loc, env_, id, formals, flags, ret, block);
 }
 
+Formal* Parser::formal_list() {
+    // Parses a list of formal arguments, i.e., (name [Type],)* name[Type]
+    LocationAnchor loc(this);
+    Formal* formals = 0;
+    while (token() == Token::IDENTIFIER) {
+        LocationAnchor loc(this);
+        String::Ptr nm = identifier();
+        Type::Ptr type = env_->any_type();
+        if (token() == Token::TYPE || token() == Token::TYPEVAR) { 
+            type = Parser::type();
+        }
+        formals = append(formals, new Formal(loc, nm, type));
+        if (token() == Token::COMMA) {
+            next(); 
+        } else {
+            break;
+        }
+    }
+    return formals;
+}
+
 Type* Parser::type() {
     // Parses a type name, including generics.  A type has the following 
     // syntax: id [type (, type)+]?
@@ -494,12 +518,12 @@ Type* Parser::type() {
     // definitions for classes with type variables.
     LocationAnchor loc(this);
     if (token() == Token::TYPEVAR) {
-        String* id = name(value());
+        String::Ptr id = name(value());
         Type* type = new Type(loc, id, 0, env_);
         next();
         return type;
     }
-    String* qn = scope();
+    String::Ptr qn = scope();
 
     // Now read in any generic type parameters for this type.
     Generic::Ptr generics;
@@ -524,7 +548,7 @@ Type* Parser::type() {
         expect(Token::RIGHT_BRACKET);
     }
     if (qn->is_empty()) {
-        return env_->no_type();
+        return env_->top_type();
     } else {
         Type* type = new Type(loc, qn, generics, env_); 
         implicit_import(type);
@@ -805,11 +829,11 @@ Assignment* Parser::assignment() {
     // Parses an assignment, either a = expr, or a type = expr
     LocationAnchor loc(this);
     String::Ptr id = identifier();
-    Type::Ptr type;
-    Expression::Ptr init;
+    Type::Ptr type = env_->top_type();
     if (token() == Token::TYPE) {
         type = Parser::type(); 
     }
+    Expression::Ptr init;
     if (token() == Token::ASSIGN) {
         next();
         init = expression();
@@ -1070,7 +1094,7 @@ Expression* Parser::increment() {
         Expression::Ptr t1 = new IntegerLiteral(loc, env_->integer("1"));    
         Expression::Ptr t2 = new Identifier(loc, name(""), id);
         Expression::Ptr t3 = op(loc, "@add", t2, t1);
-        return new Assignment(loc, id, 0, t3);
+        return new Assignment(loc, id, env_->top_type(), t3);
     }
     case Token::DECREMENT: {
         next();
@@ -1078,7 +1102,7 @@ Expression* Parser::increment() {
         Expression::Ptr t1 = new IntegerLiteral(loc, env_->integer("1"));    
         Expression::Ptr t2 = new Identifier(loc, name(""), id);
         Expression::Ptr t3 = op(loc, "@sub", t2, t1);
-        return new Assignment(loc, id, 0, t3);
+        return new Assignment(loc, id, env_->top_type(), t3);
     }
     default: return call();
     }
@@ -1256,23 +1280,6 @@ Type* Parser::alternate_list() {
     return alt;
 }
 
-Type* Parser::mixin_list() {
-    // Parses a list of mixins in a class definition, i.e., A, B, C
-    Type* mixins = 0;
-    while (token() == Token::TYPE) {
-        mixins = append(mixins, Parser::type());
-        if (token() == Token::COMMA) {
-            next();
-        } else {
-            return mixins;
-        }
-    }
-    //err_ << location() << "Expected a type name, not '";
-    //err_ << token() << "'\n";
-    //error();
-    return mixins;
-}
-
 Expression* Parser::literal() {
     // Parses a literal expression, variable, or parenthesized expression
     Expression* expr;
@@ -1326,7 +1333,7 @@ Expression* Parser::literal() {
             err_ << location() << "Unexpected " << token() << "\n";
             error();
         }
-        return new Empty(location());
+        return new ParseError(location());
     }
     next();
     return expr;
@@ -1393,22 +1400,8 @@ Statement* Parser::let() {
     LocationAnchor loc(this);
     expect(Token::LET);
     Assignment::Ptr assign = assignment(); 
-    if(!assign->declared_type()) {
-        // This forces a new variable to be declared (i.e., if there is a
-        // second variable that shadows this assignment in the enclosing scope,
-        // then this "let" statement will declare a new variable rather than 
-        // reusing the old one).
-        assign->declared_type(env_->no_type());
-    }
     while (token() == Token::COMMA) {
         assign = append(assign, assignment());
-        if(!assign->declared_type()) {
-            // This forces a new variable to be declared (i.e., if there is a
-            // second variable that shadows this assignment in the enclosing
-            // scope, then this "let" statement will declare a new variable
-            // rather than reusing the old one).
-            assign->declared_type(env_->no_type());
-        }
     } 
     return new Let(loc, assign, block()); 
 }
@@ -1430,12 +1423,11 @@ Statement* Parser::for_loop() {
     expect(Token::IN);
     Expression* guard = expression();
     Statement* block = Parser::block();
-
     String* i = name("_i");
 
     // _i = guard.iter()
     Expression* t1 = op(loc, "iter", guard, 0);
-    Assignment* t2 = new Assignment(loc, i, env_->no_type(), t1);
+    Assignment* t2 = new Assignment(loc, i, env_->top_type(), t1);
 
     // while (_i.more()) 
     Expression* t3 = new Identifier(loc, name(""), i);
@@ -1444,12 +1436,11 @@ Statement* Parser::for_loop() {
     // id = _i.next()    
     Expression* t5 = new Identifier(loc, name(""), i);
     Expression* t6 = op(loc, "next", t5, 0);
-    Simple* t7 = new Simple(loc, new Assignment(loc, id, env_->no_type(), t6));
-
-    t7->next(block);
+    Assignment* t7 = new Assignment(loc, id, env_->top_type(), t6);
+    Let* t8 = new Let(loc, t7, block);
     
     // Loop body
-    While* t10 = new While(loc, t4, new Block(loc, 0, t7)); 
+    While* t10 = new While(loc, t4, new Block(loc, 0, t8)); 
     return new Let(loc, t2, t10);
 }
 

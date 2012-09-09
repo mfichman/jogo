@@ -65,6 +65,7 @@ public:
     bool is_weak() const { return flags_ & WEAK; }
     bool is_immutable() const { return flags_ & IMMUTABLE; }
     bool is_closure() const { return flags_ & CLOSURE; }
+    bool is_embedded() const { return flags_ & EMBEDDED; }
     void next(Feature* next) { next_ = next; }
     void last(Feature* last) { last_ = last; }
     void flags(Flags flags) { flags_ = flags; }
@@ -77,6 +78,7 @@ public:
     static const int WEAK = 0x4;
     static const int IMMUTABLE = 0x8;
     static const int CLOSURE = 0x20;
+    static const int EMBEDDED = 0x40; 
 
 private:
     String::Ptr name_;
@@ -97,7 +99,7 @@ public:
 
     Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
-    void type(Type* type) { type_ = type; } 
+    void type(Type* type) { type_ = type; assert(type_); } 
     void initializer(Expression* init) { initializer_ = init; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Constant> Ptr;
@@ -112,22 +114,25 @@ class Attribute : public Feature {
 public:
     Attribute(Location loc, Environment* env, String* name, Flags flags, 
         Type* type, Expression* init) :
-
         Feature(loc, env, name, flags),
-		type_(type),
+		declared_type_(type),
         initializer_(init),
         slot_(0) {
+    
+        assert(declared_type_);
     }
 
+    Type* declared_type() const { return declared_type_; }
 	Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
     int slot() const { return slot_; }
-    void type(Type* type) { type_ = type; }
+    void type(Type* type) { type_ = type; assert(type_); }
     void slot(int slot) { slot_ = slot; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Attribute> Ptr;
 
 private:
+    Type::Ptr declared_type_;
     Type::Ptr type_;
     Expression::Ptr initializer_;
     int slot_;
@@ -178,7 +183,7 @@ private:
 /* Represents a class object */
 class Class : public Feature {
 public:
-    Class(Location loc, Environment* env, Type* type, Type* mixins, 
+    Class(Location loc, Environment* env, Type* type, Type* proto, 
        String* comment, Feature* feat);
     Class(Location loc, Environment* env, Type* type, Feature* feat);
     Class(Location loc, Environment* env, Type* type, Type* alt);
@@ -188,12 +193,13 @@ public:
     Type* type() const { return type_; }
     Type* alternates() const { return alternates_; }
     Type* mixins() const { return mixins_; }
+    Type* proto() const { return proto_; }
     String* default_enum_value() const;
-    bool is_object() const { return is_object_; }
-    bool is_enum() const { return is_enum_; }
-    bool is_mixin() const { return is_mixin_; }
-    bool is_value() const { return is_value_; }
-    bool is_interface() const { return is_interface_; }
+    bool is_object() const { return is_alt() || proto_->is_object_proto(); }
+    bool is_alt() const { return type_->is_any() || proto_->is_alt_proto(); }
+    bool is_enum() const { return proto_->is_enum_proto(); }
+    bool is_value() const { return is_enum() || proto_->is_value_proto(); }
+    bool is_interface() const { return proto_->is_interface_proto(); }
     bool is_primitive() const { return type_->is_primitive(); }
     bool subtype(Class* other) const;
     int jump1(int index) const { return jump1_[index]; }
@@ -202,6 +208,7 @@ public:
     int jump1s() const { return jump1_.size(); }
     int jump2s() const { return jump2_.size(); }
     void feature(Feature* feature);
+    void mixin(Type* mixin) { mixins_ = append(mixins_, mixin); }
     void jump1(int index, int d);
     void jump2(int index, Function* func);
     void size(int size) { size_ = size; }
@@ -216,15 +223,11 @@ private:
     Type::Ptr type_;
     Type::Ptr alternates_;
     Type::Ptr mixins_;
+    Type::Ptr proto_;
     String::Ptr comment_;
     Feature::Ptr features_;
     Import::Ptr imports_;
     std::map<String::Ptr, Feature::Ptr> feature_;
-    bool is_object_;
-    bool is_value_;
-    bool is_interface_;
-    bool is_mixin_;
-    bool is_enum_;
     int size_;
 };
 

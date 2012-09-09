@@ -175,7 +175,7 @@ Module
         expression: Assignment
           name: a
           type: Int
-          declared: <<null>>
+          declared: <<top>>
           initializer: IntegerLiteral(10)
   feature6: Class
     name: Container
@@ -221,8 +221,8 @@ Module
         child0: Statement
           expression: Assignment
             name: value
-            type: :b
-            declared: <<null>>
+            type: <<top>>
+            declared: <<top>>
             initializer: Identifier
               name: _arg0
     feature5: Function
@@ -266,8 +266,8 @@ Module
         child0: Statement
           expression: Assignment
             name: one
-            type: One[String,String]
-            declared: <<null>>
+            type: <<top>>
+            declared: <<top>>
             initializer: Identifier
               name: _arg0
     feature4: Function
@@ -315,8 +315,8 @@ Module
         child0: Statement
           expression: Assignment
             name: two
-            type: Two[String]
-            declared: <<null>>
+            type: <<top>>
+            declared: <<top>>
             initializer: Identifier
               name: _arg0
     feature5: Function
@@ -342,8 +342,8 @@ Module
         child0: Statement
           expression: Assignment
             name: three
-            type: Two
-            declared: <<null>>
+            type: <<top>>
+            declared: <<top>>
             initializer: Identifier
               name: _arg0
     feature7: Function

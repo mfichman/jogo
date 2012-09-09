@@ -21,7 +21,7 @@ Blarg < Object {
 
     func3() {
         `
-        if a {
+        if q {
         } 
     }
 

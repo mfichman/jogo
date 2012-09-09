@@ -185,6 +185,11 @@ public:
         Statement(loc),
         variables_(variables),
         block_(block) {
+
+        for (Expression* expr = variables; expr; expr = expr->next()) {
+            Assignment* var = static_cast<Assignment*>(expr);
+            var->is_let(true);
+        }
     }
 
     Assignment* variables() const { return variables_; }

@@ -26,51 +26,37 @@
 
 using namespace std;
 
-Class::Class(Location loc, Environment* env, Type* type, Type* mixins, 
+Class::Class(Location loc, Environment* env, Type* type, Type* proto, 
     String* comment, Feature* feat) :
-
     Feature(loc, env, type->name()),
     type_(type),
-    mixins_(mixins),
+    proto_(proto),
     comment_(comment),
     features_(feat),
-    is_object_(false),
-    is_value_(false),
-    is_interface_(false),
-    is_mixin_(false),
-    is_enum_(false),
     size_(0) {
+
+    assert(type_);
+    assert(proto_);
 
     for (Feature* feat = features_; feat; feat = feat->next()) {
         feat->parent(this);
         if (!feature_[feat->name()]) {
             feature_[feat->name()] = feat;
         }        
+        if (feat->is_embedded()) {
+            Attribute* attr = dynamic_cast<Attribute*>(feat);
+            mixin(attr->declared_type());
+        }
     }
 
-    for (Type* mixin = mixins; mixin; mixin = mixin->next()) {
-        if ("Object" == mixin->name()->string()) {
-            is_object_ = true;
-            break;
-        }
-        if ("Interface" == mixin->name()->string()) {
-            is_interface_ = true;
-            break;
-        }
-        if ("Value" == mixin->name()->string()) {
-            is_value_ = true;
-            break;
-        }
-        if ("Mixin" == mixin->name()->string()) {
-            is_mixin_ = true;
-            break;
-        }
-        if ("Enum" == mixin->name()->string()) {
-            is_enum_ = true;
-            is_value_ = true;
-            gen_equal_method();
-            break;
-        }
+    if (!proto_->is_proto()) {
+        proto_ = env->object_type();
+    }
+    if (proto->is_object() && !type->equals(env->object_type())) {
+        mixin(env->object_type());
+    }
+    if (is_enum()) {
+        gen_equal_method();
     }
 }
 
@@ -79,26 +65,23 @@ Class::Class(Location loc, Environment* env, Type* type, Type* alt) :
     Feature(loc, env, type->name()),
     type_(type),
     alternates_(alt),
-    is_object_(true),
-    is_value_(false),
-    is_interface_(false),
-    is_mixin_(false), 
-    is_enum_(false),
+    proto_(env->alt_type()),
     size_(0) {
 
+    assert(type_);
+    assert(proto_);
 }
 
 /* Constructor for enum types */
 Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
     Feature(loc, env, type->name()),
     type_(type),
+    proto_(env->enum_type()),
     features_(feat),
-    is_object_(false),
-    is_value_(true),
-    is_interface_(false),
-    is_mixin_(false), 
-    is_enum_(true),
     size_(0) {
+
+    assert(type_);
+    assert(proto_);
 
     for (Feature* feat = features_; feat; feat = feat->next()) {
         feat->parent(this);
@@ -152,7 +135,10 @@ void Class::feature(Feature* feature) {
     if (!feature) {
         return;
     }
-
+    if (feature->is_embedded()) {
+        Attribute* attr = dynamic_cast<Attribute*>(feature);
+        mixin(attr->declared_type());
+    }
     feature->parent(this);
     features_ = append(features_, feature);
     if (!feature_[feature->name()]) {
@@ -252,6 +238,8 @@ Function::Function(Location loc, Environment* env, String* name, Formal* formal,
     block_(block),
     stack_vars_(0),
 	throw_spec_(UNKNOWN) {
+
+    assert(type_);
 }
 
 bool Function::covariant(Function* other) const {

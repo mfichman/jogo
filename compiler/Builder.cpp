@@ -58,7 +58,6 @@ Builder::Builder(Environment* env) :
     Parser::Ptr parser(new Parser(env));
     if (env_->errors()) {
         errors_++;
-        return;
     }
 
     // Semantic analysis/type checking phase.

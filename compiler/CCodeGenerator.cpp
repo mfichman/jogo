@@ -430,7 +430,7 @@ void CCodeGenerator::operator()(Class* feat) {
     class_ = feat;
     class_def(feat);
 
-    if (!feat->is_interface() && !feat->is_mixin() && !feat->is_value()) {
+    if (!feat->is_interface() && !feat->is_value()) {
         dispatch_table(feat);
     }
 

@@ -108,7 +108,7 @@ public:
     Type* bool_type() const { return bool_type_; }
     Type* int_type() const { return int_type_; }
     Type* string_type() const { return string_type_; }
-    Type* no_type() const { return no_type_; }
+    Type* top_type() const { return top_type_; }
     Type* bottom_type() const { return bottom_type_; }
     Type* nil_type() const { return nil_type_; }
     Type* float_type() const { return float_type_; }
@@ -117,6 +117,11 @@ public:
     Type* pair_type() const { return pair_type_; }
     Type* self_type() const { return self_type_; }
     Type* any_type() const { return any_type_; }
+    Type* enum_type() const { return enum_type_; }
+    Type* object_type() const { return object_type_; }
+    Type* value_type() const { return value_type_; }
+    Type* interface_type() const { return interface_type_; }
+    Type* alt_type() const { return alt_type_; }
 
 private:
     mutable std::map<std::string, String::Ptr> name_;
@@ -142,7 +147,7 @@ private:
     Type::Ptr bool_type_;
     Type::Ptr int_type_;
     Type::Ptr string_type_;
-    Type::Ptr no_type_;
+    Type::Ptr top_type_;
     Type::Ptr bottom_type_;
     Type::Ptr nil_type_;
     Type::Ptr float_type_;
@@ -151,6 +156,11 @@ private:
     Type::Ptr pair_type_;
     Type::Ptr self_type_;
     Type::Ptr any_type_;
+    Type::Ptr enum_type_;
+    Type::Ptr object_type_;
+    Type::Ptr value_type_;
+    Type::Ptr interface_type_;
+    Type::Ptr alt_type_;
 
     std::string output_;
     std::string build_dir_;

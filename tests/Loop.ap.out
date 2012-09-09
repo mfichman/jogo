@@ -83,7 +83,7 @@ Module
           variable0: Assignment
             name: _i
             type: Iterator
-            declared: <<notype>>
+            declared: <<top>>
             initializer: Call
               expression: Member
                 identifier: iter
@@ -100,11 +100,11 @@ Module
               argument0: Identifier
                 name: _i
             block: Block
-              child0: Statement
-                expression: Assignment
+              child0: Let
+                variable0: Assignment
                   name: i
                   type: String
-                  declared: <<notype>>
+                  declared: <<top>>
                   initializer: Call
                     expression: Member
                       identifier: next
@@ -112,13 +112,13 @@ Module
                         name: _i
                     argument0: Identifier
                       name: _i
-              child1: Block
-                child0: Statement
-                  expression: Call
-                    expression: Identifier
-                      name: test
-                    argument0: Identifier
-                      name: i
+                block: Block
+                  child0: Statement
+                    expression: Call
+                      expression: Identifier
+                        name: test
+                      argument0: Identifier
+                        name: i
     feature1: Function
       name: loop2
       type: Void

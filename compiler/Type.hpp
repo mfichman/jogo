@@ -43,27 +43,33 @@ public:
     Class* clazz() const;
     bool equals(Type* other) const;
     bool subtype(Type* other) const;
-    bool is_primitive() const;
-    bool is_any_type() const;
-    bool is_alt_type() const;
+    bool is_alt() const;
+    bool is_any() const;
+    bool is_bottom() const;
+    bool is_nil() const;
+    bool is_top() const;
+    bool is_void() const;
+    bool is_byte() const;
+    bool is_char() const;
     bool is_bool() const;
+    bool is_self() const;
     bool is_int() const;
     bool is_float() const;
+    bool is_number() const;
     bool is_interface() const;
     bool is_object() const;
     bool is_enum() const;
     bool is_value() const;
     bool is_boolifiable() const;
-    bool is_void() const;
-    bool is_char() const;
-    bool is_byte() const;
-    bool is_self() const;
     bool is_generic() const;
     bool is_proto() const;
-    bool is_no_type() const;
-    bool is_bottom_type() const;
-    bool is_nil_type() const;
-    void is_no_type(bool flag) { is_no_type_ = flag; }
+    bool is_interface_proto() const;
+    bool is_value_proto() const;
+    bool is_enum_proto() const;
+    bool is_object_proto() const;
+    bool is_alt_proto() const;
+    bool is_primitive() const;
+    void is_top(bool flag) { is_top_ = flag; }
     void next(Type* next) { next_ = next; }
     void last(Type* last) { last_ = last; }
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -72,14 +78,14 @@ public:
 private:
     Pointer<Generic> generics_;
     File* file_;
-    Environment* environment_;
+    Environment* env_;
     String::Ptr scope_;
     String::Ptr name_;
     Type::Ptr next_;
     Type::Ptr last_;
     Class* class_;
     String::Ptr qualified_name_;
-    bool is_no_type_;
+    bool is_top_;
 };
 
 /* Holder for a generics type parameter */

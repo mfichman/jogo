@@ -528,3 +528,7 @@ void TreePrinter::operator()(Import* feature) {
 void TreePrinter::operator()(Type* type) {
     out_ << type << "\n";
 }
+
+void TreePrinter::operator()(ParseError* expression) {
+    out_ << "Error\n";
+}

@@ -74,6 +74,7 @@ private:
     void operator()(Import* feature);
     void operator()(Type* type);
     void operator()(Closure* expression);
+    void operator()(ParseError* expression);
 
     Scope* scope() const { return scope_.back(); }
     Variable* variable(String* name);

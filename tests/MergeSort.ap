@@ -1,0 +1,65 @@
+
+
+
+merge(left Array[String], right Array[String]) Array[String] {
+    li = left.iter()
+    ri = right.iter()
+    result = Array[String](10)
+    while li.more or ri.more {
+        if li.more and ri.more {
+            if li.item <= ri.item {
+                result.push(li.item)
+                li.next()
+            } else {
+                result.push(ri.item)
+                ri.next()
+            }
+        } else if li.more {
+            result.push(li.item)
+            li.next()
+        } else if ri.more {
+            result.push(ri.item)
+            ri.next()
+        }
+    }
+
+    ret result
+}
+
+sort(arr Array[String]) Array[String] {
+    len = arr.count
+    if len < 1 { 
+        ret 
+    }
+    middle = len / 2
+    
+    left = Array[String](len)
+    right = Array[String](len)
+    i = 0
+    while i < middle {
+        left.push(arr[i])     
+        ++i
+    } 
+    while i < len {
+        right.push(arr[i])
+        ++i
+    }
+    left = sort(left)
+    right = sort(right)
+    ret merge(left, right)
+}
+
+
+main() Int {
+    arr = Array[String](3)
+    arr.push("two")
+    arr.push("zebra")
+    arr.push("a")
+    arr = sort(arr)
+
+    for x in arr {
+        Io::println(x)
+    }
+
+    ret 0
+}

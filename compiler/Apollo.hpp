@@ -65,6 +65,7 @@ class Feature;
 class Function;
 class Attribute;
 class Import;
+class ParseError;
 class Environment;
 class Type;
 class Generic;

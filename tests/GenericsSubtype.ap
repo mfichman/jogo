@@ -1,0 +1,18 @@
+
+
+Generic[:a] < Object {
+    blarg(arg :a) :a {
+        ret nil
+    }
+}
+
+
+Iface < Interface {
+    blarg(arg String) String
+}
+
+main() Int {
+    i Iface = Generic[String]()
+    ret 0
+}
+

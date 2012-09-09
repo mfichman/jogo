@@ -1,0 +1,10 @@
+MixinBad.ap:13:20: Invalid prototype
+MixinBad.ap:16:19: Invalid prototype
+MixinBad.ap:16:19: Unexpected ','
+MixinBad.ap:16:27: Invalid prototype
+MixinBad.ap:20:5: Type embedded in 'TestMixin3' must be an object or value
+MixinBad.ap:26:5: Type embedded in 'TestMixin4' must be an interface
+MixinBad.ap:27:5: Type embedded in 'TestMixin4' must be an interface
+MixinBad.ap:32:5: Type embedded in 'TestMixin5' must be a value type
+MixinBad.ap:33:5: Type embedded in 'TestMixin5' must be a value type
+MixinBad.ap:39:5: Type 'TestObject' is embedded multiple times in 'TestMixin6'
