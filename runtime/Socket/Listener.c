@@ -147,6 +147,7 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     // is unable to bind to a port, then the status of the socket listener will
     // be updated to indicate the error code.
     struct sockaddr_in sin;
+    int socklen = 0;
 #ifdef WINDOWS
     HANDLE iocp = (HANDLE)Io_manager()->handle;
 #endif
@@ -181,6 +182,15 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
         abort();
     } 
 
+    socklen = sizeof(sin);
+    if (getsockname(self->handle, (struct sockaddr*)&sin, &socklen) < 0) {
+        fprintf(stderr, "getsockname() failed\n");
+        fflush(stderr);
+        abort();
+    }
+    addr->port = ntohs(sin.sin_port);
+    addr->ip = ntohl(sin.sin_addr.s_addr);
+    
     if (listen(self->handle, self->backlog) < 0) {
         fprintf(stderr, "listen() failed\n");
         fflush(stderr);

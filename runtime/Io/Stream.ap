@@ -146,4 +146,9 @@ Stream < Object {
         # Calls 'flush()' then closes the file descriptor, so that no more
         # characters may be read or written.
     }
+    
+    end() native {
+        # Writes the EOF, if this is a socket stream.  This closes the socket
+        # stream for writing, but does not close it for reading.
+    }
 }

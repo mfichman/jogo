@@ -29,6 +29,7 @@
 #ifndef WINDOWS
 #include <unistd.h>
 #include <errno.h>
+#include <sys/socket.h>
 #else
 #include <windows.h>
 #endif
@@ -410,11 +411,11 @@ void Io_Stream_flush(Io_Stream self) {
 
 void Io_Stream_close(Io_Stream self) {
     // Forces all buffered characters to be written to the stream, and closes
-    // the stream.
+    // the stream.  Also, clears the input buffer.
 
     Io_Stream_flush(self);
-    self->write_buf->begin = self->write_buf->end = 0;
-    self->read_buf->begin = self->read_buf->end = 0;
+    self->read_buf->begin = 0;
+    self->read_buf->end = 0;
 #ifdef WINDOWS
     if (Io_StreamType_SOCKET == self->type) {
         closesocket((SOCKET)self->handle);
@@ -427,3 +428,14 @@ void Io_Stream_close(Io_Stream self) {
 #endif
 }
 
+void Io_Stream_end(Io_Stream self) {
+    // Writes the EOF if this is a socket stream.
+    Io_Stream_flush(self);
+    if(Io_StreamType_SOCKET == self->type) {
+#ifdef WINDOWS
+        shutdown((SOCKET)self->handle, SD_SEND);
+#else
+        shutdown(self->handle, SHUT_WR);
+#endif
+    }
+}
