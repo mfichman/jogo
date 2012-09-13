@@ -1,0 +1,75 @@
+# aptest exec on
+
+Printer < Object {
+    @destroy() {
+        Io::println("destroy obj")
+    }
+}
+
+Vector < Value {
+    @init(x Int, y Int, z Int) {
+        # Value type constructors take an extra 'self' pointer to the value
+        # type on the stack/embedded in another type.  Likewise, the destructor
+        # does not call free().
+        #
+        # void Vector__init(Vector self) {
+        #
+        # }
+        #
+        # Value types also have an additional hidden copy constructor that
+        # increments refcounts for non-weak reference attributes.
+        self.x = x
+        self.y = y
+        self.z = z
+        self.print = Printer()
+    }
+
+    @destroy() {
+        # Destructors for values types do not call free(); otherwise, they are
+        # identical to reference type destructors.
+        Io::println("destroy #{x} #{y} #{z}")
+    }
+
+    x Int
+    y Int
+    z Int
+    print Printer
+
+}
+
+Complex < Value {
+    real Int
+    imag Int
+
+    @init(real Int, imag Int) {
+        self.real = real
+        self.imag = imag
+    }
+}
+
+main() Int {
+    # Check some simple stack allocations
+    vec1 = Vector(1, 1, 1)
+    Io::println("#{vec1.x} #{vec1.y} #{vec1.z}")
+    vec2 = Vector(2, 2, 2)
+    Io::println("#{vec2.x} #{vec2.y} #{vec2.z}") 
+
+    # Now check allocating in a loop, to be sure we don't run out of mem
+    i = 0 
+    while i < 1000000 {
+        compl = Complex(i, i) 
+        ++i
+    }
+    compl = Complex(42, 42)
+
+    # Anonymous stack alloc
+    Vector(3, 3, 3).z = 30
+
+    # Assignment (copy)
+    vec3 = vec1
+    vec3.z = 10 
+
+    ret 0
+}
+
+

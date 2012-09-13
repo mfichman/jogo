@@ -1,6 +1,7 @@
 # This test creates a coroutine which yields with destructors on the call
 # stack.  When the coroutine is freed, the objects on the call stack should
 # also be freed, so that there is no memory leak.
+# aptest exec on
  
 StackObj < Object {
     num Int

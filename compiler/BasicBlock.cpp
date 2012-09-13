@@ -35,7 +35,6 @@ Stream::Ptr operator<<(Stream::Ptr out, const RegisterId& reg) {
 }
 
 Stream::Ptr operator<<(Stream::Ptr out, const Operand& op) {
-    if (op.is_indirect()) { out << "*"; }
     if (op.label()) {
         return out << op.label();
     }
@@ -52,10 +51,20 @@ Stream::Ptr operator<<(Stream::Ptr out, const Operand& op) {
         return out << "'" << le->value() << "'";
     }
     if (!!op.addr() && !!op.reg()) {
-        return out << "mem[" << op.reg() << "+" << op.addr() << "]";
+        if (op.is_indirect()) { out << "mem["; }
+        out << "rsp+" << op.reg() << "+" << op.addr();
+        if (op.is_indirect()) { out << "]"; }
+        return out;
     }
     if (!!op.addr()) {
-        return out << "mem[" << op.addr() << "]";
+        if (op.is_indirect()) { out << "mem["; }
+        if (op.addr().value() < 0) {
+            out << "rsp-" << -op.addr().value();
+        } else {
+            out << "rsp+" << op.addr();
+        }
+        if (op.is_indirect()) { out << "]"; }
+        return out;
     }
     if (!!op.reg()) {
         return out << op.reg();

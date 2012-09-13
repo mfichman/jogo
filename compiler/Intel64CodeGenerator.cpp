@@ -60,7 +60,10 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "section .text\n";
     out_ << "extern "; label("Boot_abort"); out_ << "\n";
     out_ << "extern "; label("Boot_calloc"); out_ << "\n";
+    out_ << "extern "; label("Boot_mzero"); out_ << "\n";
     out_ << "extern "; label("Boot_free"); out_ << "\n";
+    out_ << "extern "; label("Boot_memset"); out_ << "\n";
+    out_ << "extern "; label("Boot_memcpy"); out_ << "\n";
     out_ << "extern "; label("Object__dispatch"); out_ << "\n";
     out_ << "extern "; label("Object__refcount_dec"); out_ << "\n";
     out_ << "extern "; label("Object__refcount_inc"); out_ << "\n";
@@ -183,7 +186,14 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case BLE: instr("cmp", a1, a2); instr("jle", branch->label()); break;
         case CALL: instr("call", a1); break;
         case JUMP: instr("jmp", branch->label()); break;
-        case MOV: instr("mov", res, a1); break;
+        case MOV: 
+            if (!!a1.addr() && !a1.is_indirect()) {
+                out_ << "    lea "; operand(res); out_ << ", ["; 
+                operand(a1); out_ << "]\n";
+            } else {
+                instr("mov", res, a1); break;
+            }
+            break;
         case ADD: arith(inst); break;
         case SUB: arith(inst); break;
         case MUL: arith(inst); break;
@@ -202,6 +212,10 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
             out_ << "    add rsp, ";
             out_ << machine_->word_size() << "*" << a1 << "\n";
             break;  
+        case PUSHN:
+            out_ << "    sub rsp, ";
+            out_ << machine_->word_size() << "*" << a1 << "\n";
+            break;
         case STORE: store_hack(a1, a2); break;
             // FIXME: Simplify the code path for labels, loads, stores,
             // literals, etc.
@@ -353,9 +367,11 @@ void Intel64CodeGenerator::addr(Operand op) {
     // literal fields should also be nil.
     assert(!op.literal());
     assert(!op.label());
-    assert(!!op.addr() || !!op.reg());
+    assert(!!op.addr());
 
-    out_ << "[";    
+    if (op.is_indirect()) {
+        out_ << "[";    
+    }
     if (!!op.reg()) {
         out_ << machine_->reg(op.reg());
     } else {
@@ -369,7 +385,9 @@ void Intel64CodeGenerator::addr(Operand op) {
     } else if (op.addr().value() < 0) {
         out_ << "-" << -op.addr().value() * machine_->word_size();
     }
-    out_ << "]";
+    if (op.is_indirect()) {
+        out_ << "]";
+    }
 }
 
 void Intel64CodeGenerator::reg(Operand op) {

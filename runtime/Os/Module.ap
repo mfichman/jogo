@@ -19,6 +19,5 @@
 # SOFTWARE.
 
 strerror(error Int) native String {
-    # Given an OS-level error code, returns a string message describing the
-    # error.
+    # Given an OS-level error code, returns a message describing the error.
 }

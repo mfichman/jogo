@@ -1,3 +1,5 @@
+# aptest exec on
+
 Callable < Interface {
     @call()
 }

@@ -1,4 +1,5 @@
 # Test union types
+# aptest exec on
 
 Test < Object {
 }

@@ -147,6 +147,12 @@ private:
         block_->instr(PUSH, Operand(), t2, Operand());    
     }
 
+    void pushn(int num) {
+        String::Ptr val = env_->integer(stringify(num));
+        Operand op(new IntegerLiteral(Location(), val));
+        block_->instr(PUSHN, Operand(), op, Operand());
+    }
+
     void store(Operand addr, Operand value) {
         block_->instr(STORE, Operand(), addr, value);    
     }
@@ -230,15 +236,25 @@ private:
     void dispatch_table(Class* clazz);
     void func_return();
     void push_arg(int i, Operand arg);
-    void save_arg(int i, Formal* formal);
+    void save_arg(int i, String* formal);
     void pop_args(int count);
     void ctor_preamble(Class* clazz);
     void dtor_epilog(Function* func);
+    void copier_preamble(Class* clazz);
     void free_temps();
     void calculate_size(Class* clazz);
     void constants();
+    void stack_values_inc(int count);
+    void stack_values_dec(int count);
+    void attr_assignment(Assignment* expr);
+    void initial_assignment(Assignment* expr);
+    void secondary_assignment(Assignment* expr);  
+    void value_copy(Operand src, Operand dst, Type* type);
+    void value_dtor(Operand op, Type* type);
     Operand bool_expr(Expression* expr);
     Operand pop_ret();
+    Operand id_operand(String* id);
+    Operand stack_value(Type* type);
 
     Environment::Ptr env_;
     Machine::Ptr machine_;
@@ -254,6 +270,7 @@ private:
     // Mapping from var to temporary
 
     std::map<String::Ptr, Address> stack_;
+    int stack_values_;
     // Mapping from a variable to a stack location
 
     Opcode branch_op_;
@@ -264,6 +281,7 @@ private:
     int label_;
 
     std::vector<Operand> object_temp_; 
+    std::map<RegisterId, Variable::Ptr> value_temp_;
     // Temporaries to free at end of statement
 };
 

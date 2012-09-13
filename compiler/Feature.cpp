@@ -104,6 +104,14 @@ void Class::gen_equal_method() {
     }
 }
 
+Function* Class::destructor() const {
+    return function(env()->name("@destroy")); 
+}
+
+Function* Class::constructor() const {
+    return function(env()->name("@init"));
+}
+
 String* Class::default_enum_value() const {
     // Returns the first (default) value in the enumeration.
     for (Feature* feat = features_; feat; feat = feat->next()) {

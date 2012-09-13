@@ -1,4 +1,4 @@
-
+# aptest exec on
 
 Generic[:a] < Object {
     blarg(arg :a) :a {

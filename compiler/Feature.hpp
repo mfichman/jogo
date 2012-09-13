@@ -158,6 +158,7 @@ public:
     bool covariant(Function* other) const;
     bool is_constructor() const { return name()->string() == "@init"; }
     bool is_destructor() const { return name()->string() == "@destroy"; }
+    bool is_copier() const { return name()->string() == "@copy"; }
     bool is_virtual() const;
 	bool is_primitive_op() const;
     void stack_vars_inc() { stack_vars_++; }
@@ -187,6 +188,8 @@ public:
        String* comment, Feature* feat);
     Class(Location loc, Environment* env, Type* type, Feature* feat);
     Class(Location loc, Environment* env, Type* type, Type* alt);
+    Function* constructor() const;
+    Function* destructor() const;
     Feature* features() const { return features_; }    
     Feature* feature(String* name) const;
     String* comment() const { return comment_; }

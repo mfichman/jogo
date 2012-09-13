@@ -1,3 +1,4 @@
+# aptest exec on
 
 Stringlike < Interface {
     slice(begin Int, end Int) String

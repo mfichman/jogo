@@ -1,4 +1,5 @@
 # This file tests the built-in Array type.
+# aptest exec on
 
 import Array, Io
 

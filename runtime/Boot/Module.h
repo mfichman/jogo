@@ -27,6 +27,8 @@
 
 Ptr Boot_malloc(Int size);
 Ptr Boot_calloc(Int size);
+void Boot_mzero(Ptr val, Int size);
+void Boot_memcpy(Ptr src, Ptr dst, Int size);
 void Boot_free(Ptr memory);
 void Boot_abort();
 

@@ -1,3 +1,5 @@
+# aptest exec on
+
 boolexpr1() {
     a = true
     b = false

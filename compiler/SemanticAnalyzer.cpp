@@ -95,6 +95,9 @@ void SemanticAnalyzer::operator()(Class* feature) {
 
     if (!feature->is_interface()) {
         destructor();
+        if (!feature->is_primitive() && feature->is_value()) {
+            copier();
+        }
         if (!feature->is_primitive()) {
             constructor(); 
         }
@@ -143,7 +146,10 @@ void SemanticAnalyzer::operator()(Class* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             attr->slot(class_->next_slot());
+            operator()(attr);
         }
+    }
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
 }
@@ -1290,6 +1296,24 @@ void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
     // Insert a cast expression.
     if (!var) {
         variable(new Variable(id, Operand(), expr->type())); 
+    }
+}
+
+void SemanticAnalyzer::copier() {
+    // Create a copier function for value types.  A copier takes the value to
+    // be copied as the first argument.
+    String::Ptr nm = env_->name("@copy");
+    Function::Ptr copy = class_->function(nm);
+    assert((!copy || copy->parent() != class_) && "Not supported");
+    // Custom copy constructor!
+    if (!copy || (copy->parent() != class_)) {
+        Type::Ptr vt = env_->void_type();
+        Location loc = class_->location();
+        Block::Ptr block(new Block(loc, 0, 0));
+        Formal::Ptr self(new Formal(loc, env_->name("self"), class_->type()));
+        Formal::Ptr other(new Formal(loc, env_->name("val"), class_->type())); 
+        self->next(other);
+        class_->feature(new Function(loc, env_, nm, self, 0, vt, block));
     }
 }
 

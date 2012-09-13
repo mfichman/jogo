@@ -88,6 +88,7 @@ private:
     void accessor(Attribute* feature);
     void constructor();
     void destructor();
+    void copier();
     Type* fix_generics(Type* parent, Type* type);
     void assign_enums(Class* clazz);
 

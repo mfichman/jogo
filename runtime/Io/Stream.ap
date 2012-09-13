@@ -64,7 +64,9 @@ Stream < Object {
     # True if the stream is a console handle.    
 
     error immutable Int
-    # The last error raised by this stream.
+    # The last error raised by this stream.  The error code is opaque and
+    # OS-specific.  To format the error message for this error code, use
+    # Os::strerror.
 
     @init(desc Int, type StreamType) native {
         # Initializes a new stream, with 'handle' being an opaque pointer to

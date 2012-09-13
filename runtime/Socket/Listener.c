@@ -72,9 +72,7 @@ Socket_Stream Socket_Listener_accept(Socket_Listener self) {
     SOCKET ls = self->handle;
     SOCKET sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sd < 0) {
-        fprintf(stderr, "socket() failed\n");
-        fflush(stderr);
-        abort();
+        Boot_abort();
     }
 
     // Get a pointer to the AcceptEx() function.
@@ -96,10 +94,7 @@ Socket_Stream Socket_Listener_accept(Socket_Listener self) {
             GetOverlappedResult((HANDLE)sd, evt, &bytes, 1);
         } 
         if (ERROR_SUCCESS != GetLastError()) {
-           fprintf(stderr, "%d\n", GetLastError());
-           fprintf(stderr, "AcceptEx() failed\n");
-           fflush(stderr);
-           abort();
+            Boot_abort();
         }
     }
 
@@ -113,9 +108,7 @@ Socket_Stream Socket_Listener_accept(Socket_Listener self) {
     EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Coroutine__current);
     int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
     if (ret < 0) {
-        fprintf(stderr, "kevent() failed %d\n", errno);
-        fflush(stderr);
-        abort();
+        Boot_abort();
     }
 #else
 #endif
@@ -130,9 +123,7 @@ Socket_Stream Socket_Listener_accept(Socket_Listener self) {
     socklen_t len = sizeof(sin);
     int sd = accept(self->handle, (struct sockaddr*)&sin, &len);
     if (sd < 0) {
-        fprintf(stderr, "accept() failed\n");
-        fflush(stderr);
-        abort();
+        Boot_abort();
     }  
 #endif
 
@@ -161,9 +152,7 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     
     self->handle = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (self->handle < 0) { 
-        fprintf(stderr, "socket() failed\n");
-        fflush(stderr);
-        abort();
+        Boot_abort();
     }
     
 #ifdef WINDOWS
@@ -177,24 +166,18 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     sin.sin_port = htons(addr->port);
 
     if (bind(self->handle, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
-        fprintf(stderr, "bind() failed\n");
-        fflush(stderr);
-        abort();
+        Boot_abort();
     } 
 
     socklen = sizeof(sin);
     if (getsockname(self->handle, (struct sockaddr*)&sin, &socklen) < 0) {
-        fprintf(stderr, "getsockname() failed\n");
-        fflush(stderr);
-        abort();
+        Boot_abort();
     }
     addr->port = ntohs(sin.sin_port);
     addr->ip = ntohl(sin.sin_addr.s_addr);
     
     if (listen(self->handle, self->backlog) < 0) {
-        fprintf(stderr, "listen() failed\n");
-        fflush(stderr);
-        abort();
+        Boot_abort();
     } 
 
     Object__refcount_dec((Object)self->addr);
@@ -216,8 +199,6 @@ void Socket_Listener_reuse_addr__s(Socket_Listener self, Bool flag) {
     int len = sizeof(flag);
     if (!sd) { return; } 
     if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (const char*)&flag, len) < 0) {
-        fprintf(stderr, "setsockopt() failed\n");
-        fflush(stderr);
-        abort();
+        Boot_abort();
     }
 }

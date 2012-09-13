@@ -1,4 +1,6 @@
 # Tests for proper scoping of variables in many cases.
+# aptest exec on
+
 import Array
 
 main() Int {

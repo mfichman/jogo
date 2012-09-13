@@ -98,6 +98,15 @@ Ptr Boot_calloc(Int size) {
     return ret;
 }
 
+void Boot_mzero(Ptr val, Int size) {
+    // Zeros 'size' bytes starting at 'val'
+    memset(val, 0, size);
+}
+
+void Boot_memcpy(Ptr src, Ptr dst, Int size) {
+    memcpy(src, dst, size); 
+}
+
 void Boot_free(Ptr memory) {
     // Frees the memory at address 'memory'
     free(memory);

@@ -60,19 +60,27 @@ private:
 /* Represents a 'logical' address, expressed in words (not bytes) */
 class Address {
 public:
-    Address() : value_(0), valid_(false) {}
-    explicit Address(int value) : value_(value), valid_(true) {
+    static int const INDIRECT = 0x1;
+    static int const VALID = 0x2;
+
+    Address() : value_(0), flags_(0) {}
+    explicit Address(int value) : value_(value), flags_(INDIRECT|VALID) {
+        assert(value < std::numeric_limits<short>::max());
+    }
+    Address(int value, int flags) : value_(value), flags_(flags|VALID) {
         assert(value < std::numeric_limits<short>::max());
     }
 
     int value() const { return value_; }
-    bool operator!() const { return !valid_; }
+    bool operator!() const { return !is_valid(); }
     bool operator==(const Address& ad) const { return value_ == ad.value_; }
     bool operator!=(const Address& ad) const { return value_ != ad.value_; }
+    bool is_valid() const { return flags_ & VALID; }
+    bool is_indirect() const { return flags_ & INDIRECT; }
 
 private:
     short value_;
-    bool valid_;
+    short flags_;
 
 };
 
@@ -93,14 +101,12 @@ public:
     Operand(Address addr) : addr_(addr) {}
     // Represents the contents of a memory address, e.g., MEM[ADDR]
 
-    //Operand static addr(Address addr);
-    //Operand static addr(int reg, Address addr);
-
     Expression* literal() const { return dynamic_cast<Expression*>(obj_.pointer()); }
     String* label() const { return dynamic_cast<String*>(obj_.pointer()); }
     RegisterId reg() const { return reg_; }
     Address addr() const { return addr_; }
-    bool is_indirect() const { return !!addr_; }
+    bool has_addr() const { return addr_.is_valid(); }
+    bool is_indirect() const { return addr_.is_indirect(); }
     bool is_colored() const { return reg_.is_colored(); }
     bool operator==(const Operand& other) const;
     bool operator!=(const Operand& other) const;
@@ -118,7 +124,7 @@ Stream::Ptr operator<<(Stream::Ptr out, const Operand& op);
 /* Enumeration of opcodes available to the TAC code */
 enum Opcode { 
     MOV, ADD, SUB, MUL, DIV, NEG, ANDB, ORB, PUSH, POP, LOAD, STORE, NOTB,
-    CALL, JUMP, BNE, BE, BNZ, BZ, BG, BL, BGE, BLE, RET, NOP, POPN 
+    CALL, JUMP, BNE, BE, BNZ, BZ, BG, BL, BGE, BLE, RET, NOP, POPN, PUSHN
     // Note: BNE through BLE must be contiguous
 };
 

@@ -1,4 +1,4 @@
-
+# aptest exec on
 
 main() Int {
     stdout = Io::stdout()

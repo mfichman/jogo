@@ -30,6 +30,7 @@ using namespace std;
 BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
     env_(env),
     machine_(mach),
+    stack_values_(0),
     invert_branch_(false),
     invert_guard_(false),
     temp_(0),
@@ -302,13 +303,16 @@ void BasicBlockGenerator::operator()(Closure* expr) {
 
 void BasicBlockGenerator::operator()(Construct* expr) {
     // Look up the function by name in the current context.
-    String::Ptr id = env_->name("@init");
     Class::Ptr clazz = expr->type()->clazz();
-    Function::Ptr func = clazz->function(id);
+    Function::Ptr func = clazz->constructor();
 
     // Push objects in anticipation of the call instruction.  Arguments must
     // be pushed in reverse order.
     vector<Operand> args;
+    if(clazz->is_value() && !clazz->is_primitive()) {
+        // Push the 'self' parameter for the Vector constructor
+        args.push_back(stack_value(expr->type()));
+    } 
     Formal::Ptr formal = func->formals();
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         Type::Ptr ft = formal->type();
@@ -326,7 +330,13 @@ void BasicBlockGenerator::operator()(Construct* expr) {
     // Insert a call expression, then pop the return value off the stack.
     call(func->label(), args.size());
     return_ = pop_ret();
-    if (!expr->type()->is_value()) {
+    if (expr->type()->is_primitive()) {
+        // Do nothing
+    } else if (expr->type()->is_value()) {
+        assert(return_.reg());
+        Variable::Ptr var = new Variable(0, return_, expr->type());
+        value_temp_.insert(std::make_pair(return_.reg(), var));
+    } else {
         object_temp_.push_back(return_);
     }
 }
@@ -342,26 +352,7 @@ void BasicBlockGenerator::operator()(ConstantIdentifier* expr) {
 
 void BasicBlockGenerator::operator()(Identifier* expr) {
     // Simply look up the value of the variable as stored previously.
-    String::Ptr id = expr->identifier();
-    Variable::Ptr var = variable(id);
-    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
-    if (var) {
-        return_ = var->operand();
-    } else if (attr) {
-        Operand self = variable(env_->name("self"))->operand();
-        return_ = load(Operand(self.reg(), Address(attr->slot())));
-    } else {
-        // Variable can't be found in a temporary; it must be an argument 
-        // passed on the stack.
-
-        Address offset = stack(id);
-        assert(!!offset);
-        return_ = load(Operand(offset)); 
-        // A load operand of zero means the variable must be loaded relative
-        // to the base pointer.
-
-        variable(new Variable(id, return_, 0));
-    }
+    return_ = id_operand(expr->identifier());
 }
 
 void BasicBlockGenerator::operator()(Empty* expr) {
@@ -486,7 +477,7 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         } else {
             value = env_->integer("0");
         }
-        return_ = new IntegerLiteral(Location(), value);
+        return_ = mov(new IntegerLiteral(Location(), value));
     } else if (init->type()->is_bool()) {
         return_ = bool_expr(init.pointer());
     } else {
@@ -499,37 +490,11 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
     Type::Ptr declared = expr->declared_type();
 
     if (var && !expr->is_let() && declared->is_top()) {
-        // Assignment to a local var that has already been initialized once in
-        // the current scope.
-        Type::Ptr type = var->type();
-        if (!type->is_value()) {
-            refcount_dec(var->operand());
-        }
-        mov(var->operand(), return_);
-        if (!type->is_value()) {
-            refcount_inc(var->operand());
-        }
+        secondary_assignment(expr);
     } else if (attr) {
-        // Assignment to an attribute within a class
-        Type::Ptr type = expr->type(); 
-        Variable::Ptr self = variable(env_->name("self"));
-        Operand addr = Operand(self->operand().reg(), Address(attr->slot()));  
-        Operand old = load(addr);
-        if (!type->is_value() && !attr->is_weak()) {
-            refcount_dec(old);
-        } 
-        store(addr, return_);
-        if (!type->is_value() && !attr->is_weak()) {
-            refcount_inc(return_);
-        }
+        attr_assignment(expr);
     } else {
-        // Assignment to a local var that has not yet been initialized in the
-        // current scope.
-        Type::Ptr type = declared->is_top() ? expr->type() : declared.pointer();
-        variable(new Variable(id, mov(return_), type));
-        if (!type->is_value()) {
-            refcount_inc(return_);
-        }
+        initial_assignment(expr);
     }
 }
 
@@ -630,8 +595,12 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // Pop the formal parameters off the stack in normal order, and save them
     // to a temporary.
     int index = 0;
+    if (feature->is_constructor() && class_->is_value()) {
+        save_arg(index, env_->name("self"));
+        index++;
+    } 
     for (Formal* f = feature->formals(); f; f = f->next()) {
-        save_arg(index, f);
+        save_arg(index, f->name());
         index++;
     } 
 
@@ -640,6 +609,9 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // fields are initialized to zero.
     if (feature->is_constructor()) {
         ctor_preamble(class_);
+    }
+    if (feature->is_copier()) {
+        copier_preamble(class_);
     }
 
     // If this is main(), then emit the code to load constants.
@@ -653,6 +625,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
         func_return();
     }
     exit_scope();
+    assert(stack_values_ == 0 && "Invalid stack alloc");
 }
 
 void BasicBlockGenerator::operator()(Attribute* feature) {
@@ -853,6 +826,39 @@ void BasicBlockGenerator::exit_scope() {
     scope_.pop_back();
 }
 
+Operand BasicBlockGenerator::stack_value(Type* type) {
+    // Allocate space for a local value-type variable or temporary on the
+    // stack, and return the address of the allocated space.
+    stack_values_inc(type->clazz()->size()/machine_->word_size());
+    return Address(-stack_values_,0); 
+}
+
+Operand BasicBlockGenerator::id_operand(String* id) {
+    // Returns an operand for the given id that may be used in the current
+    // scope.  Assert if the lookup fails.
+    Variable::Ptr var = variable(id);
+    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
+    if (var) {
+        return var->operand();
+    } else if (attr) {
+        Operand self = variable(env_->name("self"))->operand();
+        return load(Operand(self.reg(), Address(attr->slot())));
+    } else {
+        // Variable can't be found in a temporary; it must be an argument 
+        // passed on the stack.
+
+        Address offset = stack(id);
+        assert(!!offset && "Identifier not found");
+        Operand var = load(Operand(offset)); 
+        // A load operand of zero means the variable must be loaded relative
+        // to the base pointer.
+
+        variable(new Variable(id, var, 0));
+        return var;
+    }
+
+}
+
 Operand BasicBlockGenerator::bool_expr(Expression* expression) {
     // Emits a boolean expression with short-circuiting, and stores the result
     // in a fixed operand.  Note:  This breaks SSA form, because a value gets
@@ -903,9 +909,9 @@ void BasicBlockGenerator::scope_cleanup(Variable* var) {
     Type::Ptr type = var->type();
     if (type && !type->is_primitive()) {
         if (type->is_value()) {
-            cerr << type->name()->string() << endl;
-            assert(!"Need to figure out how to do value types");
-            // Call destructor!
+            // Call the value type's destructor, if it exists.
+            value_dtor(var->operand(), type);
+            stack_values_dec(type->clazz()->size()/machine_->word_size());
         } else {
             // Emit a branch to check the variable's reference count and
             // free it if necessary.
@@ -977,10 +983,10 @@ void BasicBlockGenerator::refcount_dec(Operand var) {
     call(env_->name("Object__refcount_dec"), 1);
 }
 
-void BasicBlockGenerator::save_arg(int i, Formal* formal) {
+void BasicBlockGenerator::save_arg(int i, String* name) {
     if (i >= machine_->int_arg_regs()) {
         // Variable is passed on the stack
-        stack(formal->name(), Address(stack_.size()+1)); 
+        stack(name, Address(stack_.size()+1)); 
     } else {
         // Variable is passed by register; precolor the temporary for this
         // formal parameter by using a negative number.  Passing NULL for
@@ -988,12 +994,12 @@ void BasicBlockGenerator::save_arg(int i, Formal* formal) {
 		// at the end of the scope (which is what we want for function 
 		// parameters).
         RegisterId reg = machine_->int_arg_reg(i)->id();
-        variable(new Variable(formal->name(), mov(reg), 0));
+        variable(new Variable(name, mov(reg), 0));
 
         // On Windows, the value is also passed with a backing location on
         // the stack.
 #ifdef WINDOWS
-        stack(formal->name(), stack_.size()+1);
+        stack(name, stack_.size()+1);
 #endif
     }
 }
@@ -1193,9 +1199,9 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
     // Allocate the memory for the new object by calling calloc with the size
     // of the object.
     Operand self;
+    String::Ptr size = env_->integer(stringify(clazz->size()));
+    String::Ptr one = env_->integer("1");
     if (clazz->is_object()) {
-        String::Ptr one = env_->integer("1");
-        String::Ptr size = env_->integer(stringify(clazz->size()));
         push_arg(1, load(new IntegerLiteral(Location(), one)));
         push_arg(0, load(new IntegerLiteral(Location(), size)));
         call(env_->name("Boot_calloc"), 2); 
@@ -1215,10 +1221,13 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
         Operand refcount = Operand(self.reg(), Address(1));
         store(refcount, new IntegerLiteral(Location(), one));
     
+    } else if (clazz->is_value()) {
+        self = id_operand(env_->name("self"));
+        push_arg(1, load(new IntegerLiteral(Location(), size)));
+        push_arg(0, self); 
+        call(env_->name("Boot_mzero"), 2);
     } else {
-        // FIXME: Implement ctor for value types; need to pass in the 'self'
-        // pointer for value type ctors.
-        assert(!"Not implemented");
+        assert(false && "Generating ctor for interface");
     }
 
     // Emit initializer code for initialized attributes
@@ -1242,6 +1251,29 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
     }
 }
 
+void BasicBlockGenerator::copier_preamble(Class* clazz) {
+    // Emits the copy constructor preamble, which adjusts refcounts for
+    // reference-type attributes of the value type.
+    Operand self = id_operand(env_->name("self"));
+    Operand other = id_operand(env_->name("val"));
+    
+    String::Ptr size = env_->integer(stringify(clazz->size()));
+    push_arg(2, load(new IntegerLiteral(Location(), size)));
+    push_arg(1, other);
+    push_arg(0, self);
+    call(env_->name("Boot_memcpy"), 3); 
+
+    for (Feature::Ptr f = clazz->features(); f; f = f->next()) {
+        if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
+            if (attr->type()->is_object()) {
+                Operand addr = Operand(self.reg(), Address(attr->slot())); 
+                Operand ptr = load(addr); 
+                refcount_inc(ptr); 
+            }
+        }
+    }
+}
+
 void BasicBlockGenerator::dtor_epilog(Function* feature) {
     // Free all of the attributes, and call destructors.
     std::vector<Attribute::Ptr> attrs;
@@ -1249,6 +1281,9 @@ void BasicBlockGenerator::dtor_epilog(Function* feature) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             if (!attr->type()->is_value() && !attr->is_weak()) {
                 attrs.push_back(attr);
+            }
+            if (attr->type()->is_value() && !attr->type()->is_primitive()) {
+                assert(!"Not supported");
             }
         }
     } 
@@ -1272,7 +1307,13 @@ void BasicBlockGenerator::free_temps() {
     for (int i = 0; i < object_temp_.size(); i++) {
         refcount_dec(object_temp_[i]);
     }
+    for (std::map<RegisterId, Variable::Ptr>::iterator i = value_temp_.begin();
+        i != value_temp_.end(); ++i) {
+        
+        scope_cleanup(i->second); 
+    } 
     object_temp_.clear();
+    value_temp_.clear();
 }
 
 void BasicBlockGenerator::constants() {
@@ -1284,3 +1325,101 @@ void BasicBlockGenerator::constants() {
     }
 }
 
+void BasicBlockGenerator::stack_values_inc(int count) {
+    stack_values_ += count;
+    function_->stack_vars(std::max(function_->stack_vars(), stack_values_));
+}
+
+void BasicBlockGenerator::stack_values_dec(int count) {
+    stack_values_ -= count;
+}
+
+void BasicBlockGenerator::attr_assignment(Assignment* expr) {
+    // Assignment to an attribute within a class
+    String::Ptr id = expr->identifier();
+    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
+    Type::Ptr type = expr->type(); 
+    Variable::Ptr self = variable(env_->name("self"));
+    Operand addr = Operand(self->operand().reg(), Address(attr->slot()));  
+
+    if (type->is_primitive()) {
+        store(addr, return_);
+    } else if (type->is_value()) {
+        assert(!"Not implemented");
+    } else {
+        if (!attr->is_weak()) {
+            Operand old = load(addr);
+            refcount_dec(old);
+        } 
+        store(addr, return_);
+        if (!attr->is_weak()) {
+            refcount_inc(return_);
+        }
+    }
+}
+
+void BasicBlockGenerator::secondary_assignment(Assignment* expr) {
+    // Assignment to a local var that has already been initialized once in the
+    // current scope.
+    String::Ptr id = expr->identifier();
+    Variable::Ptr var = variable(id);
+    Type::Ptr type = var->type();
+
+    if (type->is_primitive()) {
+        mov(var->operand(), return_);
+    } else if (type->is_value()) {
+        assert(!"Not implemented");
+    } else {
+        refcount_dec(var->operand());
+        mov(var->operand(), return_);
+        refcount_inc(var->operand());
+    }
+}
+
+void BasicBlockGenerator::initial_assignment(Assignment* expr) {
+    // Assignment to a local var that has not yet been initialized in the
+    // current scope.
+    String::Ptr id = expr->identifier();
+    Type::Ptr declared = expr->declared_type();
+    Type::Ptr type = declared->is_top() ? expr->type() : declared.pointer();
+
+    // Check that the value is in-register; if it isn't then there's an error
+    // somewhere in the code generator.  Literal expressions should load the
+    // value into a temporary SSA register.
+    assert(!!return_.reg());
+    if (type->is_primitive()) {
+    } else if (type->is_value()) {
+        assert(return_.reg());
+        if (value_temp_.find(return_.reg()) == value_temp_.end()) {
+            Operand val = stack_value(type); 
+            value_copy(return_, val, type.pointer()); 
+            return_ = val;
+            // Allocate space on the stack and call the copy constructor
+        } else {
+            value_temp_.erase(return_.reg());
+        }
+    } else {
+        refcount_inc(return_);
+    }
+    variable(new Variable(id, return_, type));
+}
+
+void BasicBlockGenerator::value_copy(Operand src, Operand dst, Type* type) {
+    // Copies a value from 'src' to 'dst', and then increments the refcount
+    // for any non-weak object attributes in 'type.'
+    assert(!!src.reg());
+    Function::Ptr copy = type->clazz()->function(env_->name("@copy"));
+    push_arg(1, src);
+    push_arg(0, dst); 
+    assert(copy && "Missing copy constructor");
+    call(copy->label(), 2);           
+}
+
+void BasicBlockGenerator::value_dtor(Operand op, Type* type) {
+    // Calls the destructor for the value type at location "op", where "op"
+    // is a register containing the pointer to the value type on the stack.
+    push_arg(0, op);
+    Function::Ptr dtor = type->clazz()->destructor();
+    assert(dtor && "Missing value type destructor");
+    call(dtor->label(), 1);
+}

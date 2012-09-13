@@ -48,11 +48,15 @@ def check(test, expected, output):
         #print(output)
         fail = True
 
-def shell(command):
+def shell(command, check=False):
     # Runs 'command' and returns the result.  Sets the 'fail' flag if the 
     # command failed.
     proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-    return proc.stdout.read()
+    ret = proc.stdout.read()
+    if proc.wait() != 0 and check:
+        return ret + '\nInvalid exit status' 
+    else:
+        return ret 
 
 def apollo_test(test):
     # Run a compilation test.  Compile and Apollo source file, and potentially
@@ -65,10 +69,10 @@ def apollo_test(test):
             flags += ' --dump-ast'
         elif re.search(r'^# aptest print_ir on', line):
             flags += ' --dump-ir'
+        elif re.search(r'^# aptest exec on', line):
+            flags += ' -e'
+            run = True
         
-    if flags == '':
-        flags += ' -e'
-        run = True
     flags += ' -m --build-dir ../build/test --optimize -o'
     flags += ' ../bin/test/' + test.lower()
     command = '../bin/apollo ' + test + ' -i ../runtime -i ../lib ' + flags
@@ -79,7 +83,7 @@ def apollo_test(test):
     expected = open(test + '.ap.out', 'rb').read() 
     if sys.platform == 'win32':
         command = command.replace('/', '\\')
-    output = shell(command + ' 2>&1')
+    output = shell(command + ' 2>&1', run)
     check(test+'.ap', expected, output)
 
 def python_test(test):

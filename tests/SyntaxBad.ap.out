@@ -10,11 +10,11 @@ SyntaxBad.ap:23:9: Invalid character: '`'
 SyntaxBad.ap:29:1: Expected '=' or a type name
 SyntaxBad.ap:30:7: Expected '=' or a type name
 SyntaxBad.ap:34:1: Unexpected end of file
+SyntaxBad.ap:28:5: Type 'Int' is embedded multiple times in 'Blarg'
 SyntaxBad.ap:11:15: Undefined variable 'im'
 SyntaxBad.ap:11:9: Guard expression must have type 'Bool'
 SyntaxBad.ap:11:18: Undefined variable 'h'
 SyntaxBad.ap:15:9: Undefined variable 'foo'
 SyntaxBad.ap:22:5: Duplicate definition of function 'func3'
 SyntaxBad.ap:24:12: Undefined variable 'q'
-SyntaxBad.ap:28:5: Type 'Int' is embedded multiple times in 'Blarg'
 SyntaxBad.ap:32:5: Function 'func2' must return a value
