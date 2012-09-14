@@ -1368,12 +1368,18 @@ void BasicBlockGenerator::secondary_assignment(Assignment* expr) {
     if (type->is_primitive()) {
         mov(var->operand(), return_);
     } else if (type->is_value()) {
-        assert(!"Not implemented");
+        value_dtor(var->operand(), type); // Delete old value 
+        if (value_temp_.find(return_.reg()) == value_temp_.end()) {
+            value_copy(return_, var->operand(), type.pointer()); 
+        } else {
+            value_temp_.erase(return_.reg());
+        }
     } else {
         refcount_dec(var->operand());
         mov(var->operand(), return_);
         refcount_inc(var->operand());
     }
+    return_ = var->operand();
 }
 
 void BasicBlockGenerator::initial_assignment(Assignment* expr) {
