@@ -1,0 +1,39 @@
+
+
+Vector < Value {
+    x Int
+    y Int
+    z Int
+}
+
+Params < Value {
+    x Int
+
+    @init(x Int) {
+        self.x = x
+    }
+}
+
+NilAttr < Object {
+    params Params
+}
+
+function(param Vector) {
+    # Illegal, b/c params are passed by pointer and so modification of a value
+    # type parameter is not allowed (side effects)
+    param.x = 99
+}
+
+main() Int {
+    # Test passing a value as a parameter to a func
+    vec = Vector()
+    function(vec)
+
+    # Primitives and value types cannot be used in generics
+    arr = Array[Vector](10)
+
+    # Illegal decl of var w/o constructor
+    params Params
+
+    ret 0
+}

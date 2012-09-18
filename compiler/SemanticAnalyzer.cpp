@@ -150,7 +150,6 @@ void SemanticAnalyzer::operator()(Class* feature) {
     // a numeric value for each enum constant within the class
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
-            attr->slot(class_->next_slot());
             operator()(attr);
         }
     }
@@ -941,6 +940,8 @@ void SemanticAnalyzer::operator()(Constant* feature) {
 }
 
 void SemanticAnalyzer::operator()(Attribute* feature) {
+    // Process an attribute of a class, check for type correctness, and eval
+    // the initializer expression.
     Expression::Ptr init = feature->initializer();
     Feature::Ptr parent = feature->parent();
     if (feature->type()) { return; }
@@ -979,6 +980,15 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
         // Check that the feature type exists.
         declared(this);    
         feature->type(declared);
+    }
+
+    // No constructor for a value type attribute 
+    if (declared->is_compound() && init->type()->is_top()) {
+        err_ << init->location();
+        err_ << "Uninitialized value type attribute '";
+        err_ << feature->name() << "'\n";
+        env_->error();
+        return;
     }
 
     // Make sure that the init and the feature type conform.
@@ -1261,6 +1271,14 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
         err_ << init->location();
         err_ << "Expression does not conform to type '";
         err_ << declared << "'\n";
+        env_->error();
+        return;
+    }
+
+    // No constructor for a value type variable
+    if (declared->is_compound() && init->type()->is_top()) {
+        err_ << init->location();
+        err_ << "Uninitialized value type variable '" << id << "'\n";
         env_->error();
         return;
     }

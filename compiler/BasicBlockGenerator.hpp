@@ -249,7 +249,10 @@ private:
     void attr_assignment(Assignment* expr);
     void initial_assignment(Assignment* expr);
     void secondary_assignment(Assignment* expr);  
+    void value_assign_reg(Operand src, Operand dst, Type* type);
+    void value_assign_mem(Operand src, Operand dst, Type* type);
     void value_copy(Operand src, Operand dst, Type* type);
+    void value_move(Operand src, Operand dst, Type* type);
     void value_dtor(Operand op, Type* type);
     Operand bool_expr(Expression* expr);
     Operand pop_ret();

@@ -33,7 +33,7 @@ Class::Class(Location loc, Environment* env, Type* type, Type* proto,
     proto_(proto),
     comment_(comment),
     features_(feat),
-    size_(0) {
+    slots_(0) {
 
     assert(type_);
     assert(proto_);
@@ -66,7 +66,7 @@ Class::Class(Location loc, Environment* env, Type* type, Type* alt) :
     type_(type),
     alternates_(alt),
     proto_(env->union_type()),
-    size_(0) {
+    slots_(0) {
 
     assert(type_);
     assert(proto_);
@@ -78,7 +78,7 @@ Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
     type_(type),
     proto_(env->enum_type()),
     features_(feat),
-    size_(0) {
+    slots_(0) {
 
     assert(type_);
     assert(proto_);

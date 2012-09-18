@@ -1,0 +1,4 @@
+ValueBad.ap:Modification of function param
+ValueBad.ap:18:5: Uninitialized value type attribute 'params'
+ValueBad.ap:33:11: Primitives and value types cannot be used in generics
+ValueBad.ap:36:5: Uninitialized value type variable 'params'

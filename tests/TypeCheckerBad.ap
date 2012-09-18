@@ -93,7 +93,7 @@ TypeCheckerBad < Object {
 
         object1[1, 2] # Bad arguments
 
-        f Value1
+        f = Value1()
         if f {} # Using struct as a bool
         if f and true {} # Using struct as a bool
         if not f {} # Using struct as a bool

@@ -43,8 +43,7 @@ public:
         name_(name),
         env_(env),
         flags_(flags),
-        parent_(0),
-        next_slot_(2) { // 2: 1 for dispatch table, 1 for refcount
+        parent_(0) {
     }
 
     virtual Feature* feature(String* name) const { return 0; }
@@ -70,7 +69,6 @@ public:
     void last(Feature* last) { last_ = last; }
     void flags(Flags flags) { flags_ = flags; }
     void parent(Feature* parent) { parent_ = parent; }
-    int next_slot() { return next_slot_++; }
     typedef Pointer<Feature> Ptr;
 
     static const int PRIVATE = 0x1;
@@ -88,7 +86,6 @@ private:
     Flags flags_;
     mutable String::Ptr label_;
     Feature* parent_;
-    int next_slot_;
 };
 
 /* Represents a Constant initializer */
@@ -211,14 +208,14 @@ public:
     bool subtype(Class* other) const;
     int jump1(int index) const { return jump1_[index]; }
     Function* jump2(int index) const { return jump2_[index]; } 
-    int size() const { return size_; }
+    int slots() const { return slots_; }
     int jump1s() const { return jump1_.size(); }
     int jump2s() const { return jump2_.size(); }
     void feature(Feature* feature);
     void mixin(Type* mixin) { mixins_ = append(mixins_, mixin); }
     void jump1(int index, int d);
     void jump2(int index, Function* func);
-    void size(int size) { size_ = size; }
+    void slots_inc(int words) { slots_ += words; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Class> Ptr;
 
@@ -235,7 +232,7 @@ private:
     Feature::Ptr features_;
     Import::Ptr imports_;
     std::map<String::Ptr, Feature::Ptr> feature_;
-    int size_;
+    int slots_;
 };
 
 /* Module, contains classes, functions, etc. */

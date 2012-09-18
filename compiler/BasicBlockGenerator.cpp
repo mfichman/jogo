@@ -109,8 +109,9 @@ void BasicBlockGenerator::operator()(Box* expr) {
 
     Class::Ptr clazz = expr->type()->clazz();
     calculate_size(clazz);
+    int bytes = clazz->slots() * machine_->word_size();
     String::Ptr one = env_->integer("1");
-    String::Ptr size = env_->integer(stringify(clazz->size()));
+    String::Ptr size = env_->integer(stringify(bytes));
     push_arg(1, load(new IntegerLiteral(Location(), one)));
     push_arg(0, load(new IntegerLiteral(Location(), size)));
     call(env_->name("Boot_calloc"), 1);
@@ -530,7 +531,9 @@ void BasicBlockGenerator::operator()(Return* statement) {
         } else if (expr->type()->is_compound()) {
             // Copy the value into the return pointer variable.
             Operand dst = id_operand(env_->name("ret"));
-            value_copy(ret, dst, expr->type());
+            value_assign_mem(ret, dst, expr->type());
+            // XCOPY: If RHS value is a temp, then move and free stack (don't copy)
+            // XCOPY: ret val
         } else {
             assert(!"Invalid type");
         }
@@ -862,7 +865,7 @@ void BasicBlockGenerator::exit_scope() {
 Operand BasicBlockGenerator::stack_value(Type* type) {
     // Allocate space for a local value-type variable or temporary on the
     // stack, and return the address of the allocated space.
-    stack_values_inc(type->clazz()->size()/machine_->word_size());
+    stack_values_inc(type->clazz()->slots());
     return Address(-stack_values_,0); 
 }
 
@@ -951,7 +954,7 @@ void BasicBlockGenerator::scope_cleanup(Variable* var) {
     } else if (type->is_compound()) {
         // Call the value type's destructor, if it exists.
         value_dtor(var->operand(), type);
-        stack_values_dec(type->clazz()->size()/machine_->word_size());
+        stack_values_dec(type->clazz()->slots());
     } else {
         assert(!"Invalid type");
     }
@@ -1209,25 +1212,34 @@ void BasicBlockGenerator::dispatch_table(Class* feature) {
 }
 
 void BasicBlockGenerator::calculate_size(Class* feature) {
-    // Calculate the memory footprint of the given class.
-    if (feature->size()) { return; }
+    // Calculate the memory footprint of the given class, and assign an address
+    // to each attribute in the class.
+    if (feature->slots()) { return; }
 
-    int size = 2 * machine_->word_size(); // Size of refcount + vtable pointer
+    if (feature->is_primitive()) {
+        // All primitives have size equal to one word when stored on the stack
+        // or as an attribute of a type.  FixMe: Eventually, implement alignment
+        // so that this doesn't have to be the case.
+        feature->slots_inc(machine_->word_size());
+    } else if (feature->is_ref()) {
+        // Size of refcount + vtable pointer
+        feature->slots_inc(2);
+    } else if (feature->is_compound()) { 
+        // Do nothing
+    }
+
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             Type::Ptr type = attr->type();
+            attr->slot(feature->slots());
             if (type->is_compound()) {
-                // FIXME: Handle complex value types larger than an Int
-                assert(!"Value types not supported");    
+                calculate_size(type->clazz());
+                feature->slots_inc(type->clazz()->slots());
+            } else {
+                feature->slots_inc(1);
             } 
-            size += machine_->word_size();
         }
     }
-    if (feature->is_primitive()) {
-        size += machine_->word_size();
-    }
-
-    feature->size(size);
 }
 
 void BasicBlockGenerator::ctor_preamble(Class* clazz) {
@@ -1236,7 +1248,8 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
     // Allocate the memory for the new object by calling calloc with the size
     // of the object.
     Operand self;
-    String::Ptr size = env_->integer(stringify(clazz->size()));
+    int bytes = clazz->slots() * machine_->word_size();
+    String::Ptr size = env_->integer(stringify(bytes));
     String::Ptr one = env_->integer("1");
     if (clazz->is_object()) {
         push_arg(1, load(new IntegerLiteral(Location(), one)));
@@ -1275,15 +1288,19 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
                 continue;
             }
             Operand value = emit(init);
-            Operand addr = Operand(self.reg(), Address(attr->slot()));
-            store(addr, value);
             if (init->type()->is_primitive()) {
                 // Don't need to do anything special for primitives
+                Operand addr = Operand(self.reg(), Address(attr->slot()));
+                store(addr, value);
             } else if (init->type()->is_ref()) {
+                Operand addr = Operand(self.reg(), Address(attr->slot()));
+                store(addr, value);
                 refcount_inc(value);
             } else if (init->type()->is_compound()) {
-                // FixMe: for value types, can't do a simple move
-                assert(!"Not implemented");
+                Operand addr = Operand(self.reg(), Address(attr->slot(), 0)); 
+                value_assign_mem(value, addr, init->type());
+                // XCOPY: If RHS is a temp, then move and free stack (don't copy)
+                // XCOPY: attr = val
             } else {
                 assert(!"Invalid type");
             }
@@ -1298,7 +1315,8 @@ void BasicBlockGenerator::copier_preamble(Class* clazz) {
     Operand self = id_operand(env_->name("self"));
     Operand other = id_operand(env_->name("val"));
     
-    String::Ptr size = env_->integer(stringify(clazz->size()));
+    int bytes = clazz->slots() * machine_->word_size();
+    String::Ptr size = env_->integer(stringify(bytes));
     push_arg(2, load(new IntegerLiteral(Location(), size)));
     push_arg(1, other);
     push_arg(0, self);
@@ -1327,7 +1345,7 @@ void BasicBlockGenerator::dtor_epilog(Function* feature) {
                     attrs.push_back(attr);
                 }
             } else if (attr->type()->is_compound()) {
-                assert(!"Not implemented");
+                attrs.push_back(attr);
             } else {
                 assert(!"Invalid type");
             }
@@ -1336,9 +1354,17 @@ void BasicBlockGenerator::dtor_epilog(Function* feature) {
 
     // The attributes need to be released in the reverse order
     for (int i = attrs.size()-1; i >= 0; i--) {
+        Attribute::Ptr attr = attrs[i];
         Operand self = variable(env_->name("self"))->operand();
-        Operand val = load(Operand(self.reg(), Address(attrs[i]->slot())));
-        refcount_dec(val);
+        if (attr->type()->is_ref()) {
+            Operand addr = Operand(self.reg(), Address(attr->slot()));
+            refcount_dec(load(addr));
+        } else if (attr->type()->is_compound()) {
+            Operand addr = Operand(self.reg(), Address(attr->slot(), 0));
+            value_dtor(addr, attr->type()); 
+        } else {
+            assert(!"Invalid type");
+        }
     }
 
     if (class_->is_primitive()) {
@@ -1392,11 +1418,12 @@ void BasicBlockGenerator::attr_assignment(Assignment* expr) {
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
     Type::Ptr type = expr->type(); 
     Variable::Ptr self = variable(env_->name("self"));
-    Operand addr = Operand(self->operand().reg(), Address(attr->slot()));  
 
     if (type->is_primitive()) {
+        Operand addr = Operand(self->operand().reg(), Address(attr->slot()));  
         store(addr, return_);
     } else if (type->is_ref()) {
+        Operand addr = Operand(self->operand().reg(), Address(attr->slot()));  
         if (!attr->is_weak()) {
             refcount_dec(load(addr));
         } 
@@ -1405,7 +1432,11 @@ void BasicBlockGenerator::attr_assignment(Assignment* expr) {
             refcount_inc(return_);
         }
     } else if (type->is_compound()) {
-        assert(!"Not implemented");
+        Operand addr = Operand(self->operand().reg(), Address(attr->slot(), 0));  
+        value_dtor(addr, type);
+        value_assign_mem(return_, addr, type);
+        // XCOPY: If RHS is a temp, then move and free stack (don't copy)
+        // XCOPY: attr = val
     } else {
         assert(!"Invalid type");
     }
@@ -1426,11 +1457,9 @@ void BasicBlockGenerator::secondary_assignment(Assignment* expr) {
         refcount_inc(var->operand());
     } else if (type->is_compound()) {
         value_dtor(var->operand(), type); // Delete old value 
-        if (value_temp_.find(return_.reg()) == value_temp_.end()) {
-            value_copy(return_, var->operand(), type.pointer()); 
-        } else {
-            value_temp_.erase(return_.reg());
-        }
+        value_assign_reg(return_, var->operand(), type);
+        // XCOPY: If RHS is a temp, then move TO REG (don't copy or free!)
+        // XCOPY: local = val
     } else {
         assert(!"Invalid type");
     }
@@ -1455,18 +1484,53 @@ void BasicBlockGenerator::initial_assignment(Assignment* expr) {
         refcount_inc(return_);
     } else if (type->is_compound()) {
         assert(return_.reg());
-        if (value_temp_.find(return_.reg()) == value_temp_.end()) {
-            Operand val = stack_value(type); 
-            value_copy(return_, val, type.pointer()); 
-            return_ = val;
-            // Allocate space on the stack and call the copy constructor
-        } else {
-            value_temp_.erase(return_.reg());
-        }
+        value_assign_reg(return_, Operand(), type);
+        // XCOPY: If value is a temp, then move to REG (don't copy or free!)
+        // XCOPY: local = val 
     } else {
         assert(!"Invalid type");
     }
     variable(new Variable(id, return_, type));
+}
+
+void BasicBlockGenerator::value_assign_mem(Operand src, Operand dst, Type* type) {
+    // Assign the value pointed to by 'src' to the mem location at 'dst'. 
+   assert(!!src.reg());
+    if (value_temp_.find(src.reg()) == value_temp_.end()) {
+        // Value is not a temporary; invoke copy constructor
+        value_copy(src, dst, type); 
+    } else {
+        // Value is a temporary; move data from 'src' to 'dst'
+        value_move(src, dst, type);
+        value_temp_.erase(src.reg());
+        stack_values_dec(type->clazz()->slots()); 
+    }  
+    return_ = mov(dst);
+}
+
+void BasicBlockGenerator::value_assign_reg(Operand src, Operand dst, Type* type) {
+    // Assign the value pointed to by 'src' to the temporary at 'dst.' Leave
+    // the original value on the stack, but remove it from the temporary list.
+    // That way, the storage allocated for the temporary is reassigned to the
+    // named variable at 'dst.'  If 'dist' is the nil operand, then either a)
+    // allocate new space on the stack or b) do nothing and use 'src' as
+    // return_ if 'src' is a temporary that's already on the stack.
+    assert(!!src.reg());
+    if (value_temp_.find(src.reg()) == value_temp_.end()) {
+        // Value is not a temporary; invoke copy constructor
+        if (!dst) {
+            dst = stack_value(type);
+        }
+        value_copy(src, dst, type); 
+    } else {
+        // Value is a temporary; reassign the storage to 'dst'
+        value_temp_.erase(src.reg());
+    }
+    if (!dst) {
+        return_ = src;
+    } else {
+        return_ = mov(dst);
+    }
 }
 
 void BasicBlockGenerator::value_copy(Operand src, Operand dst, Type* type) {
@@ -1478,6 +1542,17 @@ void BasicBlockGenerator::value_copy(Operand src, Operand dst, Type* type) {
     push_arg(0, dst); 
     assert(copy && "Missing copy constructor");
     call(copy->label(), 2);           
+}
+
+void BasicBlockGenerator::value_move(Operand src, Operand dst, Type* type) {
+    // Move the value without invoking the copy constructor
+    assert(!!src.reg());
+    int bytes = type->clazz()->slots() * machine_->word_size();
+    String::Ptr size = env_->integer(stringify(bytes));
+    push_arg(2, load(new IntegerLiteral(Location(), size)));
+    push_arg(1, src);
+    push_arg(0, dst);
+    call(env_->name("Boot_memcpy"), 3); 
 }
 
 void BasicBlockGenerator::value_dtor(Operand op, Type* type) {
