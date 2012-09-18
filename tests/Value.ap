@@ -46,6 +46,16 @@ Complex < Value {
     }
 }
 
+returned() Vector {
+    ret Vector(5, 5, 5)
+}
+
+parameter(param Vector) {
+    vec = param
+    vec.y = 6
+    vec.z = 6
+}
+
 main() Int {
     # Check some simple stack allocations
     vec1 = Vector(1, 1, 1)
@@ -62,17 +72,27 @@ main() Int {
     compl = Complex(42, 42)
 
     # Anonymous stack alloc
-    Vector(3, 3, 3).z = 30
+    Vector(3, 3, 3).z = 30 # destroy 3 3 30
 
     # Assignment (copy)
     vec3 = vec1
     vec3.z = 10 
 
     # Assignment (copy, with destructor for prev value)
-    vec3 = vec2
+    vec3 = vec2 # destroy 1 1 10
     vec3.x = 4
     vec3.y = 4
     vec3.z = 4
+
+    val = returned() # destroy 5 5 5 
+    
+    # Pass vector as a parameter
+    parameter(vec1) # destroy 1 6 6 
+    
+
+    # destroy 4 4 4 (vec3)
+    # destroy 2 2 2 (vec2)
+    # destroy 1 1 1 (vec1)
 
     ret 0
 }

@@ -71,11 +71,6 @@ main() Int {
     union2 = union
 
     any Any = 'hello\n'
-    union2 = any
-    
-    if union2 {
-        Io::print('fail\n')
-    }
     union2 = 'hello\n'
     any = union2
     Io::print(any)

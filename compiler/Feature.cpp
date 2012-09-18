@@ -55,7 +55,7 @@ Class::Class(Location loc, Environment* env, Type* type, Type* proto,
     if (proto->is_object() && !type->equals(env->object_type())) {
         mixin(env->object_type());
     }
-    if (is_enum()) {
+    if (proto->is_enum_proto()) {
         gen_equal_method();
     }
 }
@@ -65,7 +65,7 @@ Class::Class(Location loc, Environment* env, Type* type, Type* alt) :
     Feature(loc, env, type->name()),
     type_(type),
     alternates_(alt),
-    proto_(env->alt_type()),
+    proto_(env->union_type()),
     size_(0) {
 
     assert(type_);

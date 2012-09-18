@@ -27,5 +27,8 @@ main() Int {
     test1 is Any 
     test1 is Array[String]
 
+    any Any = "hello\n"
+    test3 TestUnion = any
+
     ret 0
 }

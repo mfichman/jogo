@@ -93,14 +93,19 @@ void SemanticAnalyzer::operator()(Class* feature) {
         env_->error();
     }
 
-    if (!feature->is_interface()) {
+    if (feature->is_primitive()) {
         destructor();
-        if (!feature->is_primitive() && feature->is_value()) {
-            copier();
-        }
-        if (!feature->is_primitive()) {
-            constructor(); 
-        }
+    } else if (feature->is_object()) {
+        destructor();
+        constructor();
+    } else if (feature->is_ref()) {
+        // Pass 
+    } else if (feature->is_compound()) {
+        constructor();
+        copier();
+        destructor();
+    } else {
+        assert(!"Invaild type");
     }
 
     // Check alternatives to make sure there are no interface types.
@@ -241,9 +246,14 @@ void SemanticAnalyzer::operator()(Is* expr) {
         err_ << "Type in 'is' expression cannot be an interface\n";
         env_->error();
     }
-    if (expr->check_type()->is_alt()) {
+    if (expr->check_type()->is_union()) {
         err_ << expr->check_type()->location();
         err_ << "Type in 'is' expression cannot be a union\n";
+        env_->error();
+    }
+    if (expr->check_type()->is_any()) {
+        err_ << expr->check_type()->location();
+        err_ << "Type in 'is' expression cannot be 'Any'\n";
         env_->error();
     }
     if (expr->check_type()->generics()) {
@@ -759,10 +769,9 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
 
     Variable::Ptr var = variable(id);
     if (var && init->type()->is_alt() && !var->type()->equals(init->type())) {
-        // Initializer is of the 'Any' or 'Union' type or an alternate
-        // type, but the storage type is not of the 'Any' or 'Union' type.
-        // Insert a cast expression, which will extract nil or the
-        // requested type.
+        // Initializer is of the 'Any' or 'Union' type but the storage type is
+        // not of the 'Any' or 'Union' type.  Insert a cast expression, which
+        // will extract nil or the requested type.
         expr->initializer(new Cast(init->location(), var->type(), init));
     } else if (var && init->type()->is_value() && var->type()->is_alt()) {
         // Initializer is of the 'Value' type, but the storage type is
@@ -792,6 +801,8 @@ void SemanticAnalyzer::operator()(Return* statement) {
     Type::Ptr ft = function_->type();
     Type::Ptr type = expr->type();
     if (type->is_value() && ft->is_alt()) {
+        // Return value is an 'Any' or a 'Union', but the type of the
+        // expression is a 'Value.'  Box up the value.
         statement->expression(new Box(expr->location(), type, expr)); 
     }
 }

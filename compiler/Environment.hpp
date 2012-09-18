@@ -121,7 +121,7 @@ public:
     Type* object_type() const { return object_type_; }
     Type* value_type() const { return value_type_; }
     Type* interface_type() const { return interface_type_; }
-    Type* alt_type() const { return alt_type_; }
+    Type* union_type() const { return union_type_; }
 
 private:
     mutable std::map<std::string, String::Ptr> name_;
@@ -160,7 +160,7 @@ private:
     Type::Ptr object_type_;
     Type::Ptr value_type_;
     Type::Ptr interface_type_;
-    Type::Ptr alt_type_;
+    Type::Ptr union_type_;
 
     std::string output_;
     std::string build_dir_;

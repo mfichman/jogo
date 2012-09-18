@@ -43,7 +43,7 @@ public:
     Class* clazz() const;
     bool equals(Type* other) const;
     bool subtype(Type* other) const;
-    bool is_alt() const;
+    bool is_union() const;
     bool is_any() const;
     bool is_bottom() const;
     bool is_nil() const;
@@ -60,15 +60,19 @@ public:
     bool is_object() const;
     bool is_enum() const;
     bool is_value() const;
+    bool is_ref() const;
+    bool is_compound() const;
     bool is_boolifiable() const;
     bool is_generic() const;
     bool is_proto() const;
+    bool is_primitive() const;
+    bool is_alt() const;
+    bool is_single() const;
     bool is_interface_proto() const;
     bool is_value_proto() const;
     bool is_enum_proto() const;
     bool is_object_proto() const;
-    bool is_alt_proto() const;
-    bool is_primitive() const;
+    bool is_union_proto() const;
     void is_top(bool flag) { is_top_ = flag; }
     void next(Type* next) { next_ = next; }
     void last(Type* last) { last_ = last; }

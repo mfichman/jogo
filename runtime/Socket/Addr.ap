@@ -48,7 +48,7 @@ Addr < Object {
     }
     
     @equals(other Addr) Bool {
-        ret self and other and (ip == other.ip) and (port == other.port)
+        ret other and (ip == other.ip) and (port == other.port)
     }
 
     host?() native String {

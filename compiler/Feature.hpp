@@ -198,12 +198,16 @@ public:
     Type* mixins() const { return mixins_; }
     Type* proto() const { return proto_; }
     String* default_enum_value() const;
-    bool is_object() const { return is_alt() || proto_->is_object_proto(); }
-    bool is_alt() const { return type_->is_any() || proto_->is_alt_proto(); }
-    bool is_enum() const { return proto_->is_enum_proto(); }
-    bool is_value() const { return is_enum() || proto_->is_value_proto(); }
-    bool is_interface() const { return proto_->is_interface_proto(); }
+    bool is_object() const { return type_->is_object(); }
+    bool is_any() const { return type_->is_any(); }
+    bool is_union() const { return type_->is_union(); }
+    bool is_interface() const { return type_->is_interface(); }
+    bool is_enum() const { return type_->is_enum(); }
+    bool is_value() const { return type_->is_value(); }
+    bool is_alt() const { return type_->is_alt(); }
     bool is_primitive() const { return type_->is_primitive(); }
+    bool is_ref() const { return type_->is_ref(); }
+    bool is_compound() const { return type_->is_compound(); }
     bool subtype(Class* other) const;
     int jump1(int index) const { return jump1_[index]; }
     Function* jump2(int index) const { return jump2_[index]; } 

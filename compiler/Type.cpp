@@ -92,12 +92,17 @@ bool Type::equals(Type* other) const {
 
 bool Type::subtype(Type* other) const {
     // Returns true if other is a subtype of 'this'
+    // Union is not a subtype of Any
+    // Any is not assignable to Union
     if (!other) { 
         return false;
     }
     if (other->is_bottom() || is_bottom()) {
         return false;
     }
+    if (other->is_union() && is_any()) {
+        return false;
+    }  
     if (other->is_any() || is_any()) {
         return true;
     }
@@ -123,12 +128,20 @@ bool Type::subtype(Type* other) const {
     return true;
 }
 
+bool Type::is_generic() const {
+    return !name_->string().empty() && name_->string()[0] == ':';
+}
+
 bool Type::is_proto() const {
     return is_object_proto()
         || is_interface_proto()
         || is_enum_proto()
         || is_value_proto()
-        || is_alt_proto();
+        || is_union_proto();
+}
+
+bool Type::is_object_proto() const {
+    return equals(env_->object_type());
 }
 
 bool Type::is_interface_proto() const {
@@ -139,48 +152,58 @@ bool Type::is_enum_proto() const {
     return equals(env_->enum_type());
 }
 
-bool Type::is_object_proto() const {
-    return equals(env_->object_type());
-}
-
 bool Type::is_value_proto() const {
     return equals(env_->value_type());
 }
 
-bool Type::is_alt_proto() const {
-    return equals(env_->alt_type());
-}
-
-bool Type::is_generic() const {
-    return !name_->string().empty() && name_->string()[0] == ':';
-}
-
-bool Type::is_alt() const {
-    return is_alt_proto() || (clazz() && clazz()->is_alt());
-}
-
-bool Type::is_interface() const {
-    return is_interface_proto() || (clazz() && clazz()->is_interface()); 
+bool Type::is_union_proto() const {
+    return equals(env_->union_type());
 }
 
 bool Type::is_object() const {
-    return is_object_proto() || (clazz() && clazz()->is_object()); 
+    Class* cls = clazz();
+    return is_object_proto() || (cls && cls->proto()->is_object_proto()); 
 }
 
-bool Type::is_value() const {
-    return is_value_proto() || (clazz() && clazz()->is_value()); 
+bool Type::is_interface() const {
+    Class* cls = clazz();
+    return is_interface_proto() || (cls && cls->proto()->is_interface_proto()); 
 }
 
 bool Type::is_enum() const {
-    return is_enum_proto() || (clazz() && clazz()->is_enum());
+    Class* cls = clazz();
+    return is_enum_proto() || (cls && cls->proto()->is_enum_proto());
+}
+
+bool Type::is_value() const {
+    Class* cls = clazz();
+    return is_primitive() || is_value_proto() 
+        || (cls && cls->proto()->is_value_proto()); 
+}
+
+bool Type::is_union() const {
+    Class* cls = clazz();
+    return is_union_proto() || (cls && cls->proto()->is_union_proto());
+}
+
+bool Type::is_alt() const {
+    return is_union() || is_any();
 }
 
 bool Type::is_primitive() const {
     return is_number() || is_bool() || is_char() || is_enum();
 }
 
+bool Type::is_ref() const {
+    return is_interface() || is_object() || is_alt() || is_generic() || is_nil();
+}   
+
+bool Type::is_compound() const {
+    return is_value() && !is_primitive();
+}
+
 bool Type::is_boolifiable() const {
-    return is_top() || !is_value() || is_bool() || is_int();
+    return is_top() || is_primitive() || is_ref();
 }
 
 bool Type::is_any() const {

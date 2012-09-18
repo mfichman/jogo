@@ -64,7 +64,7 @@ Environment::Environment() :
     object_type_ = new Type(loc, name("Object"), 0, this);
     value_type_ = new Type(loc, name("Value"), 0, this);
     interface_type_ = new Type(loc, name("Interface"), 0, this);
-    alt_type_ = new Type(loc, name("Union"), 0, this);
+    union_type_ = new Type(loc, name("Union"), 0, this);
 
     module(root_);
 

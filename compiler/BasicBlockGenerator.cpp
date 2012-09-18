@@ -104,7 +104,8 @@ void BasicBlockGenerator::operator()(Box* expr) {
     // for the value type.  This function allocates and initializes a refcount
     // and vtable pointer for the value type.
     Operand arg = emit(expr->child()); 
-    assert(expr->type()->is_primitive() && "Not implemented for values");
+    assert(!expr->type()->is_compound() && "Not implemented for values");
+    assert(!expr->type()->is_ref());
 
     Class::Ptr clazz = expr->type()->clazz();
     calculate_size(clazz);
@@ -169,14 +170,16 @@ void BasicBlockGenerator::operator()(Cast* expr) {
 
     // Otherwise, keep the same value in the result.
     emit(ok_block);
-    if (clazz->is_object()) {
-        block_->instr(MOV, return_, arg, Operand());
-    } else if (clazz->is_primitive()) {
+    if (clazz->is_primitive()) {
         // Slot 2 is the value slot for primitive types
         Operand addr = Operand(arg.reg(), Address(2));
         block_->instr(MOV, return_, addr, Operand());
-    } else if (clazz->is_value()) {
+    } else if (clazz->is_ref()) {
+        block_->instr(MOV, return_, arg, Operand());
+    } else if (clazz->is_compound()) {
         assert(!"Not implemented");
+    } else {
+        assert(!"Invalid type");
     }
     emit(done_block);
 }
@@ -309,7 +312,7 @@ void BasicBlockGenerator::operator()(Construct* expr) {
     // Push objects in anticipation of the call instruction.  Arguments must
     // be pushed in reverse order.
     vector<Operand> args;
-    if(clazz->is_value() && !clazz->is_primitive()) {
+    if(clazz->is_compound()) {
         // Push the 'self' parameter for the Vector constructor
         args.push_back(stack_value(expr->type()));
     } 
@@ -331,14 +334,16 @@ void BasicBlockGenerator::operator()(Construct* expr) {
     call(func->label(), args.size());
     return_ = pop_ret();
     if (expr->type()->is_primitive()) {
-        // Do nothing
-    } else if (expr->type()->is_value()) {
+        assert(!"Primitive constructor?");
+    } else if (expr->type()->is_ref()) {
+        object_temp_.push_back(return_);
+    } else if (expr->type()->is_compound()) {
         assert(return_.reg());
         Variable::Ptr var = new Variable(0, return_, expr->type());
         value_temp_.insert(std::make_pair(return_.reg(), var));
     } else {
-        object_temp_.push_back(return_);
-    }
+        assert(!"Invalid type");    
+    } 
 }
 
 void BasicBlockGenerator::operator()(Constant* expr) {
@@ -500,6 +505,7 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
 
 void BasicBlockGenerator::operator()(Return* statement) {
     Expression::Ptr expr = statement->expression();
+    Type::Ptr type = expr->type();
     if (!dynamic_cast<Empty*>(expr.pointer())) {
         // Don't actually return right away; store the result in a pseudo-var
         // and return it after cleanup.
@@ -517,8 +523,16 @@ void BasicBlockGenerator::operator()(Return* statement) {
         // correctly free the returned object.  Note: for a constructor, the
         // refcount is simply already initialized to 1.  This code isn't called
         // because a constructor doesn't actually have a 'return' for 'self'.
-        if (!expr->type()->is_value()) {
+        if (expr->type()->is_primitive()) {
+            // Pass
+        } else if (expr->type()->is_ref()) {
             refcount_inc(ret);
+        } else if (expr->type()->is_compound()) {
+            // Copy the value into the return pointer variable.
+            Operand dst = id_operand(env_->name("ret"));
+            value_copy(ret, dst, expr->type());
+        } else {
+            assert(!"Invalid type");
         }
     }
     scope_.back()->has_return(true);
@@ -595,7 +609,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
     // Pop the formal parameters off the stack in normal order, and save them
     // to a temporary.
     int index = 0;
-    if (feature->is_constructor() && class_->is_value()) {
+    if (feature->is_constructor() && class_->is_compound()) {
         save_arg(index, env_->name("self"));
         index++;
     } 
@@ -603,6 +617,10 @@ void BasicBlockGenerator::operator()(Function* feature) {
         save_arg(index, f->name());
         index++;
     } 
+    if (feature->type()->is_compound()) {
+        save_arg(index, env_->name("ret"));
+        index++;
+    }
 
     // Set up the 'self' variable with the constructor, if necessary; this 
     // allocates the memory for the object using calloc so that all of the
@@ -654,6 +672,16 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
         }
         formal = formal->next();
     }
+    if (func->type()->is_compound()) {
+        // Push a pointer for the return value at the end of the argument list.
+        // The returned value type data will be stored at that location on the
+        // stack.
+        Operand addr = stack_value(func->type());
+        val.push_back(addr);   
+        return_ = mov(addr);
+        Variable::Ptr var = new Variable(0, return_, func->type());   
+        value_temp_.insert(std::make_pair(return_.reg(), var));
+    }
 
     Operand fnptr;
     if (func->is_virtual()) {
@@ -680,13 +708,18 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
         call(func->label(), val.size());
     }
 
-    if (!func->type()->is_void()) {
-        return_ = pop_ret();
-        if (!func->type()->is_value()) {
-            object_temp_.push_back(return_);
-        }
-    } else {
+    if (func->type()->is_void()) {
         return_ = Operand();
+    } else if (func->type()->is_primitive()) {
+        return_ = pop_ret(); 
+    } else if (func->type()->is_compound()) {
+        // Return value is allocated on the stack already, and no value is
+        // returned by register.
+    } else if (func->type()->is_ref()) {
+        return_ = pop_ret();
+        object_temp_.push_back(return_);
+    } else {
+        assert(!"Invalid type");
     }
 
 	if (func->throw_spec() == Function::THROW) {
@@ -907,16 +940,20 @@ void BasicBlockGenerator::scope_cleanup(Variable* var) {
     // Emits the code to clean up the stack when exiting block.  This includes 
     // decrementing reference counts, and calling destructors for value types.
     Type::Ptr type = var->type();
-    if (type && !type->is_primitive()) {
-        if (type->is_value()) {
-            // Call the value type's destructor, if it exists.
-            value_dtor(var->operand(), type);
-            stack_values_dec(type->clazz()->size()/machine_->word_size());
-        } else {
-            // Emit a branch to check the variable's reference count and
-            // free it if necessary.
-            refcount_dec(var->operand());               
-        }
+    if (!type) {
+        // Nil variable type indicates that no cleanup need be done.
+    } else if (type->is_primitive()) {
+        // Do nothing, b/c the primitive has no destructor.
+    } else if (type->is_ref()) {
+        // Emit a branch to check the variable's reference count and
+        // free it if necessary.
+        refcount_dec(var->operand());               
+    } else if (type->is_compound()) {
+        // Call the value type's destructor, if it exists.
+        value_dtor(var->operand(), type);
+        stack_values_dec(type->clazz()->size()/machine_->word_size());
+    } else {
+        assert(!"Invalid type");
     }
 }
 
@@ -1179,7 +1216,7 @@ void BasicBlockGenerator::calculate_size(Class* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             Type::Ptr type = attr->type();
-            if (type->is_value() && !type->is_primitive()) {
+            if (type->is_compound()) {
                 // FIXME: Handle complex value types larger than an Int
                 assert(!"Value types not supported");    
             } 
@@ -1221,13 +1258,13 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
         Operand refcount = Operand(self.reg(), Address(1));
         store(refcount, new IntegerLiteral(Location(), one));
     
-    } else if (clazz->is_value()) {
+    } else if (clazz->is_compound()) {
         self = id_operand(env_->name("self"));
         push_arg(1, load(new IntegerLiteral(Location(), size)));
         push_arg(0, self); 
         call(env_->name("Boot_mzero"), 2);
     } else {
-        assert(false && "Generating ctor for interface");
+        assert(!"Invalid type");
     }
 
     // Emit initializer code for initialized attributes
@@ -1240,11 +1277,15 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
             Operand value = emit(init);
             Operand addr = Operand(self.reg(), Address(attr->slot()));
             store(addr, value);
-            if (!init->type()->is_value()) {
+            if (init->type()->is_primitive()) {
+                // Don't need to do anything special for primitives
+            } else if (init->type()->is_ref()) {
                 refcount_inc(value);
-            } else if (!init->type()->is_primitive()) {
+            } else if (init->type()->is_compound()) {
                 // FixMe: for value types, can't do a simple move
-                assert("Not implemented");
+                assert(!"Not implemented");
+            } else {
+                assert(!"Invalid type");
             }
             free_temps();
         }
@@ -1265,7 +1306,7 @@ void BasicBlockGenerator::copier_preamble(Class* clazz) {
 
     for (Feature::Ptr f = clazz->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
-            if (attr->type()->is_object()) {
+            if (attr->type()->is_ref()) {
                 Operand addr = Operand(self.reg(), Address(attr->slot())); 
                 Operand ptr = load(addr); 
                 refcount_inc(ptr); 
@@ -1279,11 +1320,16 @@ void BasicBlockGenerator::dtor_epilog(Function* feature) {
     std::vector<Attribute::Ptr> attrs;
     for (Feature::Ptr f = class_->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
-            if (!attr->type()->is_value() && !attr->is_weak()) {
-                attrs.push_back(attr);
-            }
-            if (attr->type()->is_value() && !attr->type()->is_primitive()) {
-                assert(!"Not supported");
+            if (attr->type()->is_primitive()) {
+                // Pass
+            } else if (attr->type()->is_ref()) {
+                if (!attr->is_weak()) {
+                    attrs.push_back(attr);
+                }
+            } else if (attr->type()->is_compound()) {
+                assert(!"Not implemented");
+            } else {
+                assert(!"Invalid type");
             }
         }
     } 
@@ -1295,9 +1341,15 @@ void BasicBlockGenerator::dtor_epilog(Function* feature) {
         refcount_dec(val);
     }
 
-    if (class_->is_object()) {
+    if (class_->is_primitive()) {
+        // Pass
+    } else if (class_->is_ref()) {
         push_arg(0, variable(env_->name("self"))->operand());
         call(env_->name("Boot_free"), 1);
+    } else if (class_->is_compound()) {
+        // Pass
+    } else {
+        assert(!"Invalid type");
     }
 }
 
@@ -1344,17 +1396,18 @@ void BasicBlockGenerator::attr_assignment(Assignment* expr) {
 
     if (type->is_primitive()) {
         store(addr, return_);
-    } else if (type->is_value()) {
-        assert(!"Not implemented");
-    } else {
+    } else if (type->is_ref()) {
         if (!attr->is_weak()) {
-            Operand old = load(addr);
-            refcount_dec(old);
+            refcount_dec(load(addr));
         } 
         store(addr, return_);
         if (!attr->is_weak()) {
             refcount_inc(return_);
         }
+    } else if (type->is_compound()) {
+        assert(!"Not implemented");
+    } else {
+        assert(!"Invalid type");
     }
 }
 
@@ -1367,7 +1420,11 @@ void BasicBlockGenerator::secondary_assignment(Assignment* expr) {
 
     if (type->is_primitive()) {
         mov(var->operand(), return_);
-    } else if (type->is_value()) {
+    } else if (type->is_ref()) {
+        refcount_dec(var->operand());
+        mov(var->operand(), return_);
+        refcount_inc(var->operand());
+    } else if (type->is_compound()) {
         value_dtor(var->operand(), type); // Delete old value 
         if (value_temp_.find(return_.reg()) == value_temp_.end()) {
             value_copy(return_, var->operand(), type.pointer()); 
@@ -1375,9 +1432,7 @@ void BasicBlockGenerator::secondary_assignment(Assignment* expr) {
             value_temp_.erase(return_.reg());
         }
     } else {
-        refcount_dec(var->operand());
-        mov(var->operand(), return_);
-        refcount_inc(var->operand());
+        assert(!"Invalid type");
     }
     return_ = var->operand();
 }
@@ -1394,7 +1449,11 @@ void BasicBlockGenerator::initial_assignment(Assignment* expr) {
     // value into a temporary SSA register.
     assert(!!return_.reg());
     if (type->is_primitive()) {
-    } else if (type->is_value()) {
+        // For a primitive, do nothing b/c the value is already assigned a 
+        // temporary, and no refcount needs to be incremented.
+    } else if (type->is_ref()) {
+        refcount_inc(return_);
+    } else if (type->is_compound()) {
         assert(return_.reg());
         if (value_temp_.find(return_.reg()) == value_temp_.end()) {
             Operand val = stack_value(type); 
@@ -1405,7 +1464,7 @@ void BasicBlockGenerator::initial_assignment(Assignment* expr) {
             value_temp_.erase(return_.reg());
         }
     } else {
-        refcount_inc(return_);
+        assert(!"Invalid type");
     }
     variable(new Variable(id, return_, type));
 }

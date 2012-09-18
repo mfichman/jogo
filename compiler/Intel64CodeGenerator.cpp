@@ -97,7 +97,7 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     // Emit the functions and vtable for the class specified by 'feature'
     class_ = feature;
 
-    if (!feature->is_interface()) {
+    if (feature->destructor()) {
         dispatch_table(feature);
     }
 
@@ -244,7 +244,7 @@ void Intel64CodeGenerator::dispatch_table(Class* feature) {
     //     vtable[2n+2..2n+3] are the actual method pointers
 
     String* name = feature->label();
-    Function* dtor = feature->function(env_->name("@destroy"));
+    Function* dtor = feature->destructor();
 
     // Output the vtable label and global directive
     out_ << "section .data\n";
