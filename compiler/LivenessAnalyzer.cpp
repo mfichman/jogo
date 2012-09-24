@@ -50,28 +50,27 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
 
     if (reset_) {
         for (int i = 0; i < block->instrs(); i++) {
-            const Instruction& instr = block->instr(i);
-            instr.liveness()->in().clear();
-            instr.liveness()->out().clear();
+            Instruction& instr = block->instr(i);
+            RegisterIdSet empty(function_->temp_regs()+1);
+            instr.liveness()->in(empty);
+            instr.liveness()->out(empty);
         }
     }
 
-/*
-    std::cout << block->label()->string() << " -> ";
-    if (block->next()) { 
-        std::cout << block->next()->label()->string() << ", ";
-    }
-    if (block->branch()) { 
-        std::cout << block->branch()->label()->string();
-    }
-    std::cout << std::endl;
-*/
+//    std::cout << block->label()->string() << " -> ";
+//    if (block->next()) { 
+//        std::cout << block->next()->label()->string() << ", ";
+//    }
+//    if (block->branch()) { 
+//        std::cout << block->branch()->label()->string();
+//    }
+ //   std::cout << std::endl;
     if (!block->is_ret()) {
         if (block->next()) { operator()(block->next()); }
         if (block->branch()) { operator()(block->branch()); }
     }
 
-    //std::cout << block->label()->string()  << std::endl;
+//    std::cout << block->label()->string()  << std::endl;
     
 
     for (int i = block->instrs()-1; i >= 0; i--) {
@@ -80,8 +79,10 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // propagate liveness information from the use of a temporary back to
         // its last write.
         Instruction const& instr = block->instr(i);
-        set<RegisterId>& in = instr.liveness()->in();
-        set<RegisterId>& out = instr.liveness()->out();
+        RegisterIdSet const& in = instr.liveness()->in();
+        RegisterIdSet const& out = instr.liveness()->out();
+        RegisterIdSet inw = in;
+        RegisterIdSet outw = out;
 
         // Recompute the 'out' set from the 'in' set of the next instruction(s).
         // Last instruction of the block
@@ -90,23 +91,14 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
                 // Last instruction of the block, so get the next instruction 
                 // the first instruction of the following block.
                 if (block->branch() && block->branch()->instrs()) {
-                    set<RegisterId>& s = block->branch()->instr(0).liveness()->in();
-                    for (set<RegisterId>::iterator j = s.begin(); j != s.end(); j++) {
-                        finished_ &= !out.insert(*j).second;        
-                    }
+                    outw |= block->branch()->instr(0).liveness()->in();
                 } 
                 if (block->next() && block->next()->instrs()) {
-                    set<RegisterId>& s = block->next()->instr(0).liveness()->in();
-                    for (set<RegisterId>::iterator j = s.begin(); j != s.end(); j++) {
-                        finished_ &= !out.insert(*j).second;        
-                    }
+                    outw |= block->next()->instr(0).liveness()->in();
                 } 
             } else { 
                 // Get the 'in' set from the next instruction in this block.
-                set<RegisterId>& s = block->instr(i+1).liveness()->in();
-                for (set<RegisterId>::iterator j = s.begin(); j != s.end(); j++) {
-                    finished_ &= !out.insert(*j).second;
-                } 
+                outw |= block->instr(i+1).liveness()->in();
             }
         }
 
@@ -114,60 +106,61 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         // never decrease in size, don't worry about resetting either of the
         // two sets.
         if (!!instr.first().reg()) {
-            finished_ &= !in.insert(instr.first().reg()).second;
+            inw.set(instr.first().reg());
         }
         if (!!instr.second().reg()) {
-            finished_ &= !in.insert(instr.second().reg()).second;
+            inw.set(instr.second().reg());
         }
 
         // If this is the first instruction of the function, then we need to
         // add all the registers belonging to the caller to the def[n] set.
         if (block == function_->basic_block(0) && i == 0) {
-            for (int k = 0; k < machine_->caller_regs(); k++) {
-                RegisterId reg = machine_->caller_reg(k)->id();
-                finished_ &= !in.insert(reg).second;
-            }
+            inw |= machine_->caller_set();
         }
 
         // If this is a return instruction, then we need to add all registers
         // belonging to the caller to the use[n] set.
         if (instr.opcode() == RET) {
-            for (int k = 0; k < machine_->caller_regs(); k++) {
-                RegisterId reg = machine_->caller_reg(k)->id();
-                finished_ &= !in.insert(reg).second;
-            }
-            for (int k = 0; k < machine_->int_return_regs(); k++) {
-                RegisterId reg = machine_->int_return_reg(k)->id();
-                finished_ &= !in.insert(reg).second;
-            }
+            inw |= machine_->caller_set();
+            inw |= machine_->return_set();
         }
 
         // If the instruction is a call instruction, add all arg registers to the
         // use[n] set.
         if (instr.opcode() == CALL) {
-            for (int k = 0; k < machine_->int_arg_regs(); k++) {
-                RegisterId reg = machine_->int_arg_reg(k)->id();
-                finished_ &= !in.insert(reg).second;
-            }
+            inw |= machine_->arg_set();
         }
 
+        // In/out sets can never decrease in size, don't worry about removing
+        // def[n] temporaries from the set
         // out[n] - def[n] added to in[n]
-        for (set<RegisterId>::iterator j = out.begin(); j != out.end(); j++) {
-            if (*j != instr.result().reg()) {
-                // In/out sets can never decrease in size, don't worry about
-                // removing def[n] temporaries from the set
-                finished_ &= !in.insert(*j).second;
-            }
+        bool const has_result = in.has(instr.result().reg());
+        inw |= outw; 
+        if (has_result) {
+            inw.set(instr.result().reg());
+        } else {
+            inw.del(instr.result().reg());
         }
 
-/*
-        for (set<int>::iterator i = in.begin(); i != in.end(); i++) {
-            std::cout << *i << ", ";
+        if (inw != in) {
+            finished_ = false; 
+            instr.liveness()->in(inw);
         }
-        std::cout << std::endl;
-*/
+        if (outw != out) {
+            finished_ = false; 
+            instr.liveness()->out(outw);
+        }
+        assert(instr.liveness()->in() == inw);
+        assert(instr.liveness()->out() == outw);
+
+//        for (int i = 0; i < inw.bits(); ++i) {
+//            if (inw.bit(i)) {
+//                std::cout << (i-machine_->regs()) << ", ";
+//            }
+//        }
+//        std::cout << std::endl;
     }
-  //  std::cout << std::endl;
+//    std::cout << std::endl;
 }
 
 

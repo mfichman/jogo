@@ -47,7 +47,9 @@ public:
 
     const std::string& message() const { return message_; }
     bool error() const { return error_; }
+    Machine* machine() const { return machine_; }
     void write(const char* data, int len);
+    void machine(Machine* machine) { machine_ = machine; }
     void close();
     void flush();
 
@@ -56,6 +58,7 @@ private:
 
     std::vector<char> buffer_;
     std::string message_;
+    Machine* machine_;
 #ifdef WINDOWS
     HANDLE fd_;
 #else

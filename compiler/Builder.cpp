@@ -328,15 +328,16 @@ void Builder::irgen(File* file) {
     // Generates code for all basic blocks using the Apollo intermediate
     // represenation.  Also performs optimizations, if enabled by the
     // environment options.
-    std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.ap";
     Machine::Ptr machine = Machine::intel64();
     BasicBlockGenerator::Ptr bgen(new BasicBlockGenerator(env_, machine));
     RegisterAllocator::Ptr alloc(new RegisterAllocator(env_, machine));
     BasicBlockPrinter::Ptr bprint(new BasicBlockPrinter(env_, machine));
-    bprint->out(Stream::stout()); // Stdout
+    Stream::Ptr out = Stream::stout();
+    out->machine(machine);
+    bprint->out(out);
 
     bgen->operator()(file);
-    if (env_->dump_ir() && file->name()->string() != main) {
+    if (env_->dump_ir()) {
         bprint->operator()(file);
     }
     if (env_->optimize()) {
@@ -346,12 +347,12 @@ void Builder::irgen(File* file) {
         elim->operator()(file);
     }
 
-    if (env_->dump_ir() && file->name()->string() != main) {
+    if (env_->dump_ir()) {
         bprint->operator()(file);
     }
     alloc->operator()(file);
 
-    if (env_->dump_ir() && file->name()->string() != main) {
+    if (env_->dump_ir()) {
         bprint->operator()(file);
     }
 }

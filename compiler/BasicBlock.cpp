@@ -21,17 +21,22 @@
  */  
 
 #include "BasicBlock.hpp"
+#include "Machine.hpp"
 
 Stream::Ptr operator<<(Stream::Ptr out, const Address& addr) {
     return out << addr.value();
 }
 
-Stream::Ptr operator<<(Stream::Ptr out, const RegisterId& reg) {
-    if (reg.is_colored()) {
-        return out << (reg.is_float() ? "rf" : "r") << reg.id();
-    } else {
-        return out << (reg.is_float() ? "tf" : "t") << reg.id();
-    }   
+Stream::Ptr operator<<(Stream::Ptr out, const RegisterId& id) {
+    if (out->machine()) {
+        Register* reg = out->machine()->reg(id);
+        if (reg) {
+            return out << reg->name();
+        }
+        int const regs = out->machine()->regs();
+        return out << (id.is_float() ? "f" : "i") << (id.id()-regs);
+    }
+    return out << (id.is_float() ? "f" : "i") << id.id();
 }
 
 Stream::Ptr operator<<(Stream::Ptr out, const Operand& op) {
@@ -72,19 +77,6 @@ Stream::Ptr operator<<(Stream::Ptr out, const Operand& op) {
     return out << "nil";
 }
 
-bool RegisterId::operator==(const RegisterId& id) const { 
-    return id_ == id.id_ && flags_ == id.flags_; 
-}
-
-bool RegisterId::operator!=(const RegisterId& id) const { 
-    return !operator==(id); 
-}
-
-bool RegisterId::operator<(const RegisterId& id) const { 
-    if (flags_ == id.flags_) { return id_ > id.id_; }
-    return flags_ > id.flags_;
-}
-
 bool Operand::operator==(const Operand& other) const {
     return obj_ == other.obj_ && reg_ == other.reg_ && addr_ == other.addr_;
 }
@@ -112,12 +104,199 @@ bool BasicBlock::is_ret() const {
 }
 
 
-void BasicBlock::instr(const Instruction& inst) { 
+Instruction const& BasicBlock::instr(const Instruction& inst) { 
     instrs_.push_back(inst); 
+    return instrs_.back();
 }
 
-void BasicBlock::instr(Opcode op, Operand res, Operand one, Operand two) {
+Instruction const& BasicBlock::instr(Opcode op, Operand res, Operand one, Operand two) {
     instrs_.push_back(Instruction(op, res, one, two));
+    return instrs_.back();
 }
 
+RegisterIdSet::RegisterIdSet(RegisterIdSet const& other) : 
+    high_(0),
+    size_(other.size_) {
+    
+    if (other.high_) {
+        high_ = new unsigned[size_](); 
+        memcpy(high_, other.high_, sizeof(*high_)*size_);
+    }
+    memcpy(low_, other.low_, sizeof(low_));
+}
+
+RegisterIdSet::RegisterIdSet(int size) : 
+    high_(0),
+    size_(std::max(0, 1+((size-1)/BUCKET_BITS)-BUCKET_LOW)) {
+    
+    assert(size >= 0);
+    if (size_ > 0) {
+        high_ = new unsigned[size_]();
+    }
+    memset(low_, 0, sizeof(low_));
+}
+
+void RegisterIdSet::set(RegisterId id) {
+    // Adds the register to the register bitset.
+    int bucket = id.id() / BUCKET_BITS;
+    int bit = 0x1 << ((id.id() % BUCKET_BITS) - 1);
+
+    if (bucket < BUCKET_LOW) {
+        low_[bucket] |= bit;
+    } else {   
+        assert(bucket < size_+BUCKET_LOW); 
+        high_[bucket-BUCKET_LOW] |= bit;
+    }
+}
+
+void RegisterIdSet::del(RegisterId id) {
+    // Deletes the register from the register bitset.
+    int bucket = id.id() / BUCKET_BITS;
+    int bit = 0x1 << ((id.id() % BUCKET_BITS) - 1);
+    
+    if (bucket < BUCKET_LOW) { 
+        low_[bucket] &= ~bit;
+    } else {
+        assert(bucket < size_+BUCKET_LOW);
+        high_[bucket-BUCKET_LOW] &= ~bit;
+    } 
+}
+
+bool RegisterIdSet::bit(int id) const {
+    // Returns true if 'id' is in the register bitset
+    int bucket = id / BUCKET_BITS;
+    int bit = 0x1 << ((id % BUCKET_BITS) - 1);
+    
+    if (bucket < BUCKET_LOW) { 
+        return low_[bucket] & bit;
+    } else {
+        assert(bucket < size_+BUCKET_LOW);
+        return high_[bucket-BUCKET_LOW] & bit;
+    } 
+}
+
+RegisterIdSet RegisterIdSet::operator&(RegisterIdSet const& other) const {
+    // Performs an intersection between this set and another set.
+    RegisterIdSet out(std::max(bits(), other.bits()));
+    RegisterIdSet const& big = (size_ > other.size_) ? *this : other;
+    RegisterIdSet const& small = (size_ <= other.size_) ? *this : other;
+    for (int i = 0; i < BUCKET_LOW; ++i) {
+        out.low_[i] = big.low_[i] & small.low_[i];
+    } 
+    for (int i = 0; i < small.size_; ++i) {
+        out.high_[i] = big.high_[i] & small.high_[i];
+    }
+    return out;
+}
+
+RegisterIdSet RegisterIdSet::operator|(RegisterIdSet const &other) const {
+    // Performs a union between this set and another set.
+    RegisterIdSet out(std::max(bits(), other.bits()));
+    RegisterIdSet const& big = (size_ > other.size_) ? *this : other;
+    RegisterIdSet const& small = (size_ <= other.size_) ? *this : other;
+    for (int i = 0; i < BUCKET_LOW; ++i) {
+        out.low_[i] = big.low_[i] | small.low_[i];
+    } 
+    for (int i = 0; i < small.size_; ++i) {
+        out.high_[i] = big.high_[i] | small.high_[i];
+    }
+    for (int i = small.size_; i < big.size_; ++i) {
+        out.high_[i] = big.high_[i];
+    }
+    return out;
+}
+
+bool RegisterIdSet::operator==(RegisterIdSet const& other) const {
+    if (size_ != other.size_) { return false; }
+    for (int i = 0; i < BUCKET_LOW; ++i) {
+        if (low_[i] != other.low_[i]) {
+            return false;
+        }
+    }    
+    for (int i = 0; i < size_; ++i) {
+        if (high_[i] != other.high_[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool RegisterIdSet::operator!=(RegisterIdSet const& other) const {
+    if (size_ != other.size_) { return true; }
+    for (int i = 0; i < BUCKET_LOW; ++i) {
+        if (low_[i] != other.low_[i]) {
+            return true; 
+        }
+    }
+    for (int i = 0; i < size_; ++i) {
+        if (high_[i] != other.high_[i]) {
+            return true;
+        }
+    }
+    return false; 
+}
+
+RegisterIdSet& RegisterIdSet::operator&=(RegisterIdSet const& other) {
+    assert(size_ >= other.size_); 
+    for (int i = 0; i < BUCKET_LOW; ++i) {
+        low_[i] &= other.low_[i];
+    } 
+    for (int i = 0; i < other.size_; ++i) {
+        high_[i] &= other.high_[i];
+    }
+    return *this;
+}
+
+RegisterIdSet& RegisterIdSet::operator|=(RegisterIdSet const& other) {
+    assert(size_ >= other.size_); 
+    for (int i = 0; i < BUCKET_LOW; ++i) {
+        low_[i] |= other.low_[i];
+    } 
+    for (int i = 0; i < other.size_; ++i) {
+        high_[i] |= other.high_[i];
+    }
+    return *this;
+}
+
+RegisterIdSet& RegisterIdSet::operator=(RegisterIdSet const& other) {
+    if (this == &other) { return *this; }
+    if (size_ != other.size_) {
+        delete high_;
+        high_ = 0;
+    }
+    if (other.size_ > 0) {
+        if (size_ != other.size_) {
+            high_ = new unsigned[other.size_]();
+        }
+        memcpy(high_, other.high_, sizeof(*high_)*other.size_);
+    }
+    size_ = other.size_;
+    memcpy(low_, other.low_, sizeof(low_));
+    return *this;
+}
+
+void RegisterIdSet::clear() {
+    memset(low_, 0, sizeof(low_));
+    if (high_) {
+        memset(high_, 0, sizeof(*high_)*size_);
+    }
+}
+
+Instruction::Instruction(Opcode op, Operand res, Operand first, Operand sec) :
+    opcode_(op),
+    first_(first),
+    second_(sec),
+    result_(res),
+    liveness_(0) {
+
+    if (first.is_float() || sec.is_float()) {
+        int id = result_.reg().id();
+        int flags = result_.reg().flags()|RegisterId::FLOAT; 
+        result_.reg(RegisterId(id, flags));
+    }
+}
+
+Liveness* Instruction::liveness() const {
+    return liveness_ ? liveness_ : liveness_ = new Liveness; 
+}
 

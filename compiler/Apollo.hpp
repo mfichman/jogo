@@ -72,6 +72,7 @@ class Generic;
 class Empty;
 class Let;
 class LivenessAnalyzer;
+class Machine;
 class Closure;
 
 #include <Pointer.hpp>

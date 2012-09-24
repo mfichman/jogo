@@ -76,8 +76,6 @@ void BasicBlockGenerator::operator()(StringLiteral* expr) {
     // Load a pointer to the string from the string table.  Strings must
     // always be loaded first, since they are specified by address.
     return_ = load(expr);
-    //refcount_inc(return_);
-    //object_temp_.push_back(return_);
 }
 
 void BasicBlockGenerator::operator()(NilLiteral* expr) {
@@ -602,7 +600,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
 
     // Reset the temporaries for the function.
     feature->basic_block_del_all();
-    temp_ = 0;
+    temp_ = machine_->regs();
     function_ = feature;
     block_ = 0;
     emit(basic_block());
@@ -646,6 +644,7 @@ void BasicBlockGenerator::operator()(Function* feature) {
         func_return();
     }
     exit_scope();
+    feature->temp_regs(temp_);
     assert(stack_values_ == 0 && "Invalid stack alloc");
 }
 
@@ -1045,19 +1044,33 @@ void BasicBlockGenerator::save_arg(int i, String* name) {
 }
 
 void BasicBlockGenerator::push_arg(int i, Operand op) {
-    if (i >= machine_->int_arg_regs()) {
-        // Argument is pushed on the stack
-        push(op);
-    } else {
-        // Argument is passed by register
-        mov(machine_->int_arg_reg(i)->id(), op);
-
-        // On Windows, the argument is also passed by the stack as a backing
-        // store
+    if (op.is_float()) {
+        if (i >= machine_->float_arg_regs()) {
+            // Argument is pushed on the stack    
+            push(op);
+        } else {
+            // Argument is passed by register
+            mov(machine_->float_arg_reg(i)->id(), op);
 #ifdef WINDOWS
-        push(op);
+            // On Windows, the argument is also passed by the stack as a backing
+            // store
+            push(op);
 #endif
-    }        
+        }
+    } else {
+        if (i >= machine_->int_arg_regs()) {
+            // Argument is pushed on the stack
+            push(op);
+        } else {
+            // Argument is passed by register
+            mov(machine_->int_arg_reg(i)->id(), op);
+#ifdef WINDOWS
+            // On Windows, the argument is also passed by the stack as a backing
+            // store
+            push(op);
+#endif
+        }        
+    }
 }
 
 void BasicBlockGenerator::pop_args(int num) {

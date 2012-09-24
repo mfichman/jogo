@@ -65,9 +65,9 @@ void DeadCodeEliminator::operator()(BasicBlock* block) {
     for (int i = 0; i < block->instrs(); i++) {
         Instruction const& instr = block->instr(i);
         RegisterId const result = instr.result().reg();
-        std::set<RegisterId> const& out = instr.liveness()->out();
+        RegisterIdSet const& out = instr.liveness()->out();
         
-        if (!result || out.find(result) != out.end()) {
+        if (!result || out.has(result)) {
             repl.instr(instr); 
         } 
     }

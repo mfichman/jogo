@@ -27,6 +27,7 @@ using namespace std;
 
 BasicBlockPrinter::BasicBlockPrinter(Environment* env, Machine* mach) :
     env_(env),
+    machine_(mach),
     liveness_(new LivenessAnalyzer(mach)) {
 }
 
@@ -138,15 +139,13 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         }
     
         if (env_->dump_liveness()) {
-            out_ << " {";
-            set<RegisterId> const& live = instr.liveness()->in();
-            for (set<RegisterId>::const_iterator i = live.begin(); i != live.end();) {
-                if (!(*i)) {
-                    ++i;
-                } else { 
-                    out_ << *i; 
-                    if (++i != live.end()) {
-                        out_ << ", ";
+            out_ << " { ";
+            RegisterIdSet const& live = instr.liveness()->in();
+            for (int i = 0; i < live.bits(); ++i) {
+                if (live.bit(i)) {
+                    out_ << RegisterId(i, 0);
+                    if (i != live.bits()-2) {
+                        out_ << " "; 
                     }
                 }
             }

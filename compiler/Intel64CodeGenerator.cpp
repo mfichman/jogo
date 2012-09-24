@@ -393,7 +393,7 @@ void Intel64CodeGenerator::addr(Operand op) {
 void Intel64CodeGenerator::reg(Operand op) {
     // Outputs a register, possibly with an address offset.  An operand passed
     // to this function should NOT have the literal or label fields set.
-    assert(op.reg().is_colored());
+    assert(machine_->reg(op.reg()));
     assert(!op.literal());
     assert(!op.label());
 

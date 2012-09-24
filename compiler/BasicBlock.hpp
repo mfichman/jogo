@@ -35,26 +35,55 @@ public:
     // an actual hardware register.  A floating-point register has the FLOAT
     // flag set.
     static int const FLOAT = 0x8000;
-    static int const COLORED = 0x4000;
 
     RegisterId() : id_(0), flags_(0) {}
     RegisterId(int id, int flags) : id_(id), flags_(flags) {
         assert(id < std::numeric_limits<short>::max());
     }
 
-    bool is_colored() const { return flags_ & COLORED; }
     bool is_int() const { return !is_float(); }
     bool is_float() const { return flags_ & FLOAT; }
-    bool is_valid() const { return !!id_; }
+    bool is_valid() const { return id_; }
+    int flags() const { return flags_; }
     int id() const { return id_; }
     bool operator!() const { return !is_valid(); }
-    bool operator==(const RegisterId& id) const; 
-    bool operator!=(const RegisterId& id) const;
-    bool operator<(const RegisterId& id) const;
+    bool operator==(RegisterId const& id) const { return id_ == id.id_; } 
+    bool operator!=(RegisterId const& id) const { return id_ != id.id_; }
+    bool operator<(RegisterId const& id) const { return id_ < id.id_; }
     
 private:
     short id_;
     short flags_;
+};
+
+/* 
+ * Bitset of register IDs.  This class is optimized for small sets of 128
+ * registers or less.
+ */
+class RegisterIdSet {
+public:
+    RegisterIdSet(RegisterIdSet const& other);
+    explicit RegisterIdSet(int size=0);
+    ~RegisterIdSet() { delete high_; }
+    void set(RegisterId id);
+    void del(RegisterId id);
+    bool has(RegisterId id) const { return bit(id.id()); }
+    void clear();
+    bool bit(int index) const;
+    int bits() const { return BUCKET_BITS*(size_+BUCKET_LOW); }
+    bool operator==(RegisterIdSet const& other) const;
+    bool operator!=(RegisterIdSet const& other) const;
+    RegisterIdSet operator&(RegisterIdSet const& other) const;
+    RegisterIdSet operator|(RegisterIdSet const& other) const;
+    RegisterIdSet& operator&=(RegisterIdSet const& other);
+    RegisterIdSet& operator|=(RegisterIdSet const& other);
+    RegisterIdSet& operator=(RegisterIdSet const& other);
+private:
+    static int const BUCKET_LOW = 2;
+    static int const BUCKET_BITS = 8 * sizeof(unsigned);
+    unsigned low_[BUCKET_LOW];
+    unsigned* high_;
+    int size_;
 };
 
 /* Represents a 'logical' address, expressed in words (not bytes) */
@@ -73,8 +102,12 @@ public:
 
     int value() const { return value_; }
     bool operator!() const { return !is_valid(); }
-    bool operator==(const Address& ad) const { return value_ == ad.value_; }
-    bool operator!=(const Address& ad) const { return value_ != ad.value_; }
+    bool operator==(Address const& ad) const { 
+        return value_ == ad.value_ && flags_ == ad.flags_; 
+    }
+    bool operator!=(Address const& ad) const { 
+        return value_ != ad.value_ || flags_ != ad.flags_; 
+    }
     bool is_valid() const { return flags_ & VALID; }
     bool is_indirect() const { return flags_ & INDIRECT; }
 
@@ -94,6 +127,9 @@ public:
     // Represents the contents of label (with offset), i.e., MEM[LABEL+ADDR].
     Operand(Expression* literal) : obj_(literal) {}
     // Represents the value of a literal, i.e., LITERAL.
+    Operand(FloatLiteral* literal) : obj_(literal), 
+        reg_(RegisterId(0, RegisterId::FLOAT)) {}
+    // Represents the value of a literal, i.e., LITERAL.
     Operand(RegisterId reg) : reg_(reg) {}
     // Represents the contents of a register, e.g., REG.
     Operand(RegisterId reg, Address addr) : reg_(reg), addr_(addr) {}
@@ -107,9 +143,9 @@ public:
     Address addr() const { return addr_; }
     bool has_addr() const { return addr_.is_valid(); }
     bool is_indirect() const { return addr_.is_indirect(); }
-    bool is_colored() const { return reg_.is_colored(); }
-    bool operator==(const Operand& other) const;
-    bool operator!=(const Operand& other) const;
+    bool is_float() const { return reg_.is_float(); }
+    bool operator==(Operand const& other) const;
+    bool operator!=(Operand const& other) const;
     bool operator!() const { return !obj_ && !reg_ && !addr_; }
     void reg(RegisterId reg) { reg_ = reg; }
 
@@ -119,7 +155,7 @@ private:
     Address addr_; // Address offset (in words)
 };
 
-Stream::Ptr operator<<(Stream::Ptr out, const Operand& op);
+Stream::Ptr operator<<(Stream::Ptr out, Operand const& op);
 
 /* Enumeration of opcodes available to the TAC code */
 enum Opcode { 
@@ -131,33 +167,26 @@ enum Opcode {
 /* Class for liveness information related to the instruction */
 class Liveness : public Object {
 public:
-    std::set<RegisterId> const& in() const { return in_; }
-    std::set<RegisterId> const& out() const { return out_; }
-    std::set<RegisterId>& in() { return in_; }
-    std::set<RegisterId>& out() { return out_; }
+    RegisterIdSet const& in() const { return in_; }
+    RegisterIdSet const& out() const { return out_; }
+    void in(RegisterIdSet const& in) { in_ = in; }
+    void out(RegisterIdSet const& out) { out_ = out; }
     typedef Pointer<Liveness> Ptr;
 
 private:
-    std::set<RegisterId> in_; // Live variables on incoming edge
-    std::set<RegisterId> out_; // Live variables on outgoing edge
+    RegisterIdSet in_; // Live variables on incoming edge
+    RegisterIdSet out_; // Live variables on outgoing edge
 };
 
 /* Class for three-address code instructions */
 class Instruction {
 public:
-    Instruction(Opcode op, Operand result, Operand first, Operand second) :
-        opcode_(op),
-        first_(first),
-        second_(second),
-        result_(result),
-        liveness_(new Liveness) {
-    }
-
+    Instruction(Opcode op, Operand res, Operand one, Operand two);
     Opcode opcode() const { return opcode_; }
     Operand const& first() const { return first_; }
     Operand const& second() const { return second_; }
     Operand result() const { return result_; }
-    Liveness* liveness() const { return liveness_; }
+    Liveness* liveness() const;
     void opcode(Opcode opcode) { opcode_ = opcode; }
     void first(Operand first) { first_ = first; }
     void second(Operand second) { second_ = second; }
@@ -168,7 +197,7 @@ private:
     Operand first_;
     Operand second_;
     Operand result_;
-    Liveness::Ptr liveness_;
+    mutable Liveness::Ptr liveness_;
 };
 
 /* Class for basic block nodes */
@@ -188,8 +217,8 @@ public:
     void branch(BasicBlock* branch) { branch_ = branch; }
     void next(BasicBlock* branch) { next_ = branch; }
     void label(String* label) { label_ = label; }
-    void instr(const Instruction& inst);
-    void instr(Opcode op, Operand res, Operand one, Operand two);
+    Instruction const& instr(Instruction const& inst);
+    Instruction const& instr(Opcode op, Operand res, Operand one, Operand two);
     void round_inc() { round_++; }
     typedef Pointer<BasicBlock> Ptr; 
 

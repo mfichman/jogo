@@ -18,7 +18,8 @@ fail = False
 if len(tests) == 0:
     # If no tests are passed as parameters, then glob on the test dir to run 
     # all the tests.
-    tests = glob.glob('*.ap') + glob.glob('*.c') + glob.glob('*.py')
+    tests = glob.glob('*.ap') + glob.glob('*.c') 
+    tests += glob.glob('*.py') + glob.glob('*.cpp')
 
 def check(test, expected, output):
     # Checks to make sure the output for the test matches the expected output.
@@ -106,10 +107,28 @@ def native_test(test):
         output = shell('..\\build\\' + exe + ' 2>&1')
     else:
         command = 'gcc -g ' + test + ' -o ../build/' + exe + ' -L../lib '
-        command += '-lapollo -lm -I .. 2>&1'
+        command += '-lApollo -lm -I .. 2>&1'
         os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
-    check(test+'.c', expected, output)
+    check(test, expected, output)
+
+def cpp_test(test):
+    # C++ tests; used for compiler unit tests.
+    expected = open(test + '.out', 'rb').read()
+    exe = re.sub(r'.cpp$', '', test) 
+    output = ""
+    if sys.platform == 'win32':
+        command = 'cl ' + test + ' /Fe..\\build\\' + exe + ' /I:../compiler '
+        command += 'apolloc.lib '
+        command += '/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib 2>&1'
+        os.popen(command).read()
+        output = shell('..\\build\\' + exe + ' 2>&1')
+    else:
+        command = 'g++ -g ' + test + ' -o ../build/' + exe + ' -L../lib '
+        command += '-lapolloc -lm -I ../compiler 2>&1'
+        output += os.popen(command).read()
+        output += shell('../build/' + exe + ' 2>&1')
+    check(test, expected, output)
 
 for test in tests:
     # Iterate through all the tests, and run the correct callback for each
@@ -123,6 +142,9 @@ for test in tests:
         total += 1
     elif re.search(r'.c$', test):
         native_test(test)
+        total += 1
+    elif re.search(r'.cpp$', test):
+        cpp_test(test)
         total += 1
 
 if fail:

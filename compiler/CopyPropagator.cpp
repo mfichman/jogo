@@ -117,11 +117,11 @@ void CopyPropagator::operator()(BasicBlock* block) {
             if (!!rhs.reg() && (j = eq.find(rhs.reg())) != eq.end()) {
                 // If the RHS has an alias, use that instead, but only if it's
                 // not a machine reg
-                if (!j->second.is_colored()) {
+                if (!machine_->reg(j->second.reg())) {
                     rhs = j->second;
                 }
             }
-            if (!rhs.is_colored() && !rhs.is_indirect() && !!rhs.reg()) {
+            if (!machine_->reg(rhs.reg()) && !rhs.is_indirect() && !!rhs.reg()) {
                 assert(!!rhs&&"Nil operand");
                 eq[result] = rhs;
             }

@@ -35,8 +35,8 @@ class RegisterVertex {
 public:
     void neighbor_new(RegisterId index);
     void neighbor_del(RegisterId index);
-    void reg(RegisterId reg) { assert(reg.is_colored()); reg_ = reg; }
-    void temp(RegisterId temp) { assert(!temp.is_colored()); temp_ = temp; }
+    void reg(RegisterId reg) { reg_ = reg; }
+    void temp(RegisterId temp) { temp_ = temp; }
     int neighbors() const { return out_.size(); }
     RegisterId neighbor(int index) { return out_[index]; }
     RegisterId temp() const { return temp_; }
@@ -72,7 +72,8 @@ private:
     LivenessAnalyzer::Ptr liveness_;
     Machine::Ptr machine_;
     bool spill_;
-    std::set<RegisterId> spilled_;
+    bool spill_float_;
+    RegisterIdSet spilled_;
 };
 
 

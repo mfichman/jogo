@@ -19,7 +19,7 @@ VariantDir('build/runtime', 'runtime', duplicate=0)
 
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(ENV = os.environ)
-env.Append(APFLAGS = '-m -i runtime --build-dir build/runtime --no-default-libs')
+env.Append(APFLAGS = '-m -i runtime --build-dir build/runtime --no-default-libs ')
 
 build_mode = ARGUMENTS.get('mode', 'debug')
 stack_size = '8192'
@@ -92,6 +92,7 @@ compiler_src = env.Glob('build/compiler/*.cpp')
 apollo = env.Program('bin/apollo', compiler_src + ['build/drivers/Main.cpp'])
 apdoc = env.Program('bin/apdoc', compiler_src + ['build/drivers/Doc.cpp'])
 apmake = env.Program('bin/apmake', compiler_src + ['build/drivers/Make.cpp'])
+compiler = env.StaticLibrary('lib/apolloc', compiler_src)
 
 # Library/runtime build ######################################################
 library_src = ' '.join([
@@ -122,10 +123,12 @@ env.Depends(lib, coroutine)
 if 'check' in COMMAND_LINE_TARGETS:
     check = env.Command('check', apollo, 'python scripts/test --verbose')
     env.Depends(check, lib)
+    env.Depends(check, compiler)
 
 if 'test' in COMMAND_LINE_TARGETS:
     test = env.Command('test', apollo, 'python scripts/test --full --verbose')
     env.Depends(test, lib)
+    env.Depends(test, compiler)
 
 # Distribution ###############################################################
 library_headers = env.Glob('runtime/*/*.ap')

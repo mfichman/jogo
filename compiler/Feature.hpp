@@ -152,6 +152,7 @@ public:
     int basic_blocks() const { return basic_block_.size(); }
     int stack_vars() const { return stack_vars_; }
 	int called_funcs() const { return called_func_.size(); }
+    int temp_regs() const { return temp_regs_; }
     bool covariant(Function* other) const;
     bool is_constructor() const { return name()->string() == "@init"; }
     bool is_destructor() const { return name()->string() == "@destroy"; }
@@ -160,6 +161,7 @@ public:
 	bool is_primitive_op() const;
     void stack_vars_inc() { stack_vars_++; }
     void stack_vars(int value) { stack_vars_ = value; }
+    void temp_regs(int value) { temp_regs_ = value; }
     void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
     void basic_block_del_all() { basic_block_.clear(); }
     void formals(Formal* formals) { formals_ = formals; }
@@ -175,6 +177,7 @@ private:
     std::vector<BasicBlock::Ptr> basic_block_;
 	std::vector<Function*> called_func_;
     int stack_vars_;
+    int temp_regs_;
 	mutable ThrowSpec throw_spec_;
 };
 

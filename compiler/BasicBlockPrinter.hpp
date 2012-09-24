@@ -38,14 +38,14 @@ public:
 
     void out(Stream* out) { out_ = out; }
     void operator()(File* file);
-
-private:
     void operator()(Module* feature);
     void operator()(Class* feature);
     void operator()(Function* feature);
     void operator()(BasicBlock* block);
 
+private:
     Environment::Ptr env_;
+    Machine::Ptr machine_;
     Stream::Ptr out_;
     LivenessAnalyzer::Ptr liveness_;
     Module::Ptr module_;

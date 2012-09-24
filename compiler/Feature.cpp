@@ -245,6 +245,7 @@ Function::Function(Location loc, Environment* env, String* name, Formal* formal,
 	type_(ret),
     block_(block),
     stack_vars_(0),
+    temp_regs_(0),
 	throw_spec_(UNKNOWN) {
 
     assert(type_);

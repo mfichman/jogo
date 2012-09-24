@@ -85,6 +85,8 @@ private:
         block_ = block;
         function_->basic_block(block);
     }
+
+    RegisterId temp_inc() { return RegisterId(++temp_, 0); }
     
     Operand emit(TreeNode* node, BasicBlock* yes, BasicBlock* no, bool inv) {
         BasicBlock* true_save = true_;
@@ -106,19 +108,19 @@ private:
     }
 
     Operand emit(Opcode op, Operand t2, Operand t3) {
-        block_->instr(op, RegisterId(++temp_, 0), t2, t3);
-        return RegisterId(temp_, 0);
+        Instruction in = block_->instr(op, temp_inc(), t2, t3);
+        return in.result();
     }
     
     Operand emit(Opcode op, Operand t2) {
-        block_->instr(op, RegisterId(++temp_, 0), t2, Operand());
-        return RegisterId(temp_, 0);
+        Instruction in = block_->instr(op, temp_inc(), t2, Operand());
+        return in.result();
     }
     
     Operand mov(Operand res, Operand t2) { 
         // FixMe: This could be a problem for SSA analysis.
-        block_->instr(MOV, res, t2, Operand());
-        return res;
+        Instruction in = block_->instr(MOV, res, t2, Operand());
+        return in.result();
     }
 
     Operand mov(Operand t2) { return emit(MOV, t2); }
@@ -133,7 +135,7 @@ private:
     Operand load(Operand addr) { return emit(LOAD, addr); }
 
     Operand pop() {
-        block_->instr(POP, RegisterId(++temp_, 0), Operand(), Operand());    
+        Instruction in = block_->instr(POP, temp_inc(), Operand(), Operand()); 
         return RegisterId(temp_, 0);
     }
 
