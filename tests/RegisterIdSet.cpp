@@ -49,6 +49,13 @@ void basic() {
     assert(s4.has(r31));
     assert(s4.has(r32));
     assert(s4.has(r127));
+
+    assert(s4.next(0) == 1);
+    assert(s4.next(1) == 2);
+    assert(s4.next(2) == 31);
+    assert(s4.next(31) == 32);
+    assert(s4.next(32) == 127);
+    assert(s4.next(127) == -1);
 }
 
 void copy() {
@@ -137,6 +144,15 @@ void large() {
     assert(s6.has(r127));
     assert(s6.has(r511));
     assert(s6.has(r1023));
+
+    s6.set(RegisterId(0, 0));
+    assert(s6.bit(0));
+    assert(s6.next(-1) == 0);
+    assert(s6.next(0) == 1);
+    assert(s6.next(1) == 2);
+    assert(s6.next(2) == 127);
+    assert(s6.next(127) == 511);
+    assert(s6.next(511) == 1023);
 } 
 
 void assign() {

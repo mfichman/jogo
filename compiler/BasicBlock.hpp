@@ -71,6 +71,8 @@ public:
     void clear();
     bool bit(int index) const;
     int bits() const { return BUCKET_BITS*(size_+BUCKET_LOW); }
+    int count() const;
+    int next(int id) const;
     bool operator==(RegisterIdSet const& other) const;
     bool operator!=(RegisterIdSet const& other) const;
     RegisterIdSet operator&(RegisterIdSet const& other) const;
@@ -79,8 +81,12 @@ public:
     RegisterIdSet& operator|=(RegisterIdSet const& other);
     RegisterIdSet& operator=(RegisterIdSet const& other);
 private:
-    static int const BUCKET_LOW = 2;
+    int next_bucket(int bucket) const;
+    int next_bit(int bucket, int bit) const;
+
+    static int const BUCKET_LOW = 4;
     static int const BUCKET_BITS = 8 * sizeof(unsigned);
+    static unsigned const BUCKET_MASK = 0xFFFFFFFF;
     unsigned low_[BUCKET_LOW];
     unsigned* high_;
     int size_;

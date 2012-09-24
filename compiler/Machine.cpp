@@ -153,4 +153,7 @@ void Machine::init() {
     for (int k = 0; k < caller_regs(); k++) {
         caller_set_.set(caller_reg(k)->id());
     }
+    for (int k = 0; k < callee_regs(); k++) {
+        callee_set_.set(callee_reg(k)->id());
+    }
 }

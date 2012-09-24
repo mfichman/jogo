@@ -27,7 +27,6 @@
 
 using namespace std;
 
-
 RegisterAllocator::RegisterAllocator(Environment* env, Machine* machine) :
     env_(env),
     liveness_(new LivenessAnalyzer(machine)),
@@ -64,8 +63,11 @@ void RegisterAllocator::operator()(Function* func) {
         spill_ = false;
         graph_.clear();
         graph_.resize(func->temp_regs()+1);
+        for (int i = 0; i < graph_.size(); ++i) {
+            graph_[i].neighbors() = RegisterIdSet(func->temp_regs()+1);
+        }
         liveness_->operator()(func);
-        for (int i = 0; i < func->basic_blocks(); i++) {
+        for (int i = 0; i < func->basic_blocks(); ++i) {
             build_graph(func->basic_block(i));
         }
         build_stack();
@@ -99,26 +101,13 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
         RegisterId result = instr.result().reg();
 
         // Find all interfering pairs of temporaries, and add them to the graph.
-        for (int i = 0; i < live.bits(); ++i) {
-            if (!live.bit(i)) { continue; }
+        // FixMe: Do not iterate over machine registers; only look at temporaries.
+        for (int i = live.next(-1); i > 0; i = live.next(i)) {
             RegisterId m(i, 0);
-
-            for (int j = i+1; j < live.bits(); ++j) {
-                if (!live.bit(j)) { continue; }
-                assert(j != i);
-                RegisterId n(j, 0);
-                if (!machine_->reg(m)) {
-                    graph_[m.id()].neighbor_new(n);
-                    graph_[m.id()].temp(m);
-                }
-                if (!machine_->reg(n)) {
-                    // Add neighbors between temporary 'n' and temporary 'm' so 
-                    // that they won't be allocated to the same register.
-                    graph_[n.id()].neighbor_new(m);
-                    graph_[n.id()].temp(n);
-                }
+            if (!machine_->reg(m)) {
+                graph_[m.id()].neighbors() |= live;
             }
-            
+
             // Add an edge between the register being written and all of the
             // registers in the live set.  FIXME: This may not be necessary.
             // This was added to fix the case where a value was assigned, eut
@@ -126,10 +115,10 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
             // dead code elimination should take care of this.
             if (!!result && !machine_->reg(result)) {
                 if (!machine_->reg(m)) {
-                    graph_[m.id()].neighbor_new(result);
+                    graph_[m.id()].neighbors().set(result);
                     graph_[m.id()].temp(m);
                 }
-                graph_[result.id()].neighbor_new(m); 
+                graph_[result.id()].neighbors().set(m); 
                 graph_[result.id()].temp(result);
             }
 
@@ -137,11 +126,8 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
             // add an edge between live vars and the callee registers
             // (caller-saved)
             if (instr.opcode() == CALL && !machine_->reg(m)) {
-                for (int j = 0; j < machine_->callee_regs(); j++) {
-                    RegisterId reg = machine_->callee_reg(j)->id();
-                    graph_[m.id()].neighbor_new(reg); 
-                    graph_[m.id()].temp(m);
-                }            
+                graph_[m.id()].neighbors() |= machine_->callee_set(); 
+                graph_[m.id()].temp(m);
             }
         }
     }
@@ -168,7 +154,7 @@ void RegisterAllocator::build_stack() {
         for (int i = 0; i < work.size(); i++) {
             int const regs = machine_->regs();
             RegisterId temp = work[i]->temp();
-            if (!machine_->reg(temp) && work[i]->neighbors() < regs) {  
+            if (!machine_->reg(temp) && work[i]->neighbors().count() < regs) {  
                 choice = work[i];
                 index = i;
                 break;
@@ -184,66 +170,77 @@ void RegisterAllocator::build_stack() {
     
         // Remove the vertex and add the temporary to the coloring stack.
         stack_.push_back(choice->temp()); 
-        for (int i = 0; i < choice->neighbors(); i++) {
-            // 'Other' is precolored.
-            RegisterId other = choice->neighbor(i);
-            if (!machine_->reg(other)) {
-                graph[other.id()].neighbor_del(choice->temp()); 
-            }
+
+        // Remove edges from the chosen register to other registers
+        RegisterIdSet const& nset = choice->neighbors();
+        for (int i = nset.next(machine_->regs()-1); i >= 0; i = nset.next(i)) {
+            graph[i].neighbors().del(choice->temp());
         } 
         work[index] = work.back();
         work.pop_back();
     }
 }
 
+bool RegisterAllocator::color_ok(RegisterVertex const& v, RegisterId reg) {
+    // Returns true if the register at vertex 'v' can be assigned to machine
+    // register 'reg'.
+    assert(machine_->reg(reg) && "Not a machine reg");
+        
+    // Conflict: Register is the wrong class to be useful for this
+    // temporary.
+    if (reg.is_float() != v.temp().is_float()) {
+        return false;
+    }
+
+    // Conflict: Candiate reg is the same as a machine register that
+    // matches.
+    if (v.neighbors().has(reg)) {
+        return false;
+    } 
+    
+    // Check to make sure that the candidate register 'reg' does not
+    // interfere with any of the outgoing edges, including precolored
+    // edges (indicated by a negative id)
+    RegisterIdSet const& ns = v.neighbors();
+    for (int i = ns.next(machine_->regs()-1); i >= 0; i = ns.next(i)) {
+        RegisterId other(i, 0);
+        assert(!machine_->reg(other));
+
+        // Conflict one: candidate color is the same as the color 
+        // already assigned to another temporary.
+        if (graph_[other.id()].reg() == reg) {
+            return false;
+        }
+    } 
+    return true;
+}
+
+RegisterId RegisterAllocator::color_reg(RegisterVertex const& v) {
+    // Attempts to select a machine register for 'v'.
+    for (int j = 1; j < machine_->regs(); ++j) {
+        RegisterId reg = machine_->reg(RegisterId(j, 0))->id();
+        if (color_ok(v, reg)) {
+            return reg;
+        }
+    }
+    return RegisterId();
+}
+
 void RegisterAllocator::color_graph() {
     // Pop vertices off the stack until empty.  For each vertex, loop through
-    // each possible color.  If the color doesn't conflict with an existing
-    // color assignment for an adjacent node, then choose that color. 
+    // each possible machine reg.  If the machine reg doesn't conflict with an
+    // existing assignment for an adjacent temporary, then choose that machine
+    // register. 
 
     while (!stack_.empty()) { // Now color the graph using the stack.
-        RegisterVertex* v = &graph_[stack_.back().id()]; 
-        RegisterId choice;
-
-        for (int j = 1; j < machine_->regs(); ++j) {
-            RegisterId reg = machine_->reg(RegisterId(j, 0))->id();
-            bool ok = true;
-        
-            if (reg.is_float() != v->temp().is_float()) {
-                continue;
-            }
-            
-            // Check to make sure that the candidate color 'color' does not
-            // interfere with any of the outgoing edges, including precolored
-            // edges (indicated by a negative id)
-            for (int i = 0; i < v->neighbors(); i++) {
-                RegisterId other = v->neighbor(i);
-
-                // Conflict one: candidate color is the same as the color 
-                // already assigned to another temporary.
-                if (!machine_->reg(other) && graph_[other.id()].reg() == reg) {
-                    ok = false;
-                    break;
-                }
-
-                // Conflict two: candiate color is the same as the color of
-                // a precolored register that matches.
-                if (machine_->reg(other) && other == reg) {
-                    ok = false;
-                    break;
-                }
-            } 
-            if (ok) {
-                choice = reg;
-                break;
-            }
-        }
+        RegisterVertex& v = graph_[stack_.back().id()]; 
+        RegisterId choice = color_reg(v);
         if (!!choice) {
             assert(machine_->reg(choice) && "Not a machine reg");
-            v->reg(choice);
+            v.reg(choice);
         } else {
             spill_ = true; // Fail, need to spill a register here
-            spill_float_ = v->temp().is_float();
+            spill_float_ = v.temp().is_float();
             return;
         }
         stack_.pop_back();
@@ -304,8 +301,9 @@ void RegisterAllocator::spill_register(Function* func) {
         for (size_t i = 1; i < graph_.size(); ++i) {
             RegisterVertex const& v = graph_[i];
             if (!v.temp()) { continue; }
-            if (v.neighbors() > max_neighbors && !spilled_.has(v.temp())) {
-                max_neighbors = v.neighbors();
+            int count = v.neighbors().count();
+            if (count > max_neighbors && !spilled_.has(v.temp())) {
+                max_neighbors = count;
                 spilled = v.temp();
             }
         }
@@ -357,16 +355,3 @@ void RegisterAllocator::spill_register(Function* func) {
     } 
 }
 
-void RegisterVertex::neighbor_new(RegisterId temp) {
-    if (find(out_.begin(), out_.end(), temp) == out_.end()) {
-        out_.push_back(temp);
-    }
-}
-
-void RegisterVertex::neighbor_del(RegisterId temp) {
-    vector<RegisterId>::iterator i = find(out_.begin(), out_.end(), temp);
-    if (i != out_.end()) {
-        *i = out_.back();
-        out_.pop_back();
-    }
-}

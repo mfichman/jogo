@@ -33,19 +33,17 @@
 /* Structure for a register interference graph */
 class RegisterVertex {
 public:
-    void neighbor_new(RegisterId index);
-    void neighbor_del(RegisterId index);
     void reg(RegisterId reg) { reg_ = reg; }
     void temp(RegisterId temp) { temp_ = temp; }
-    int neighbors() const { return out_.size(); }
-    RegisterId neighbor(int index) { return out_[index]; }
+    RegisterIdSet& neighbors() { return neighbors_; }
+    RegisterIdSet const& neighbors() const { return neighbors_; }
     RegisterId temp() const { return temp_; }
     RegisterId reg() const { return reg_; }
 
 private:
     RegisterId temp_;
     RegisterId reg_;
-    std::vector<RegisterId> out_;
+    RegisterIdSet neighbors_;
 };
 
 /* Register allocator; reduces instructions to sequences */
@@ -60,6 +58,8 @@ public:
     void operator()(Function* feature);
 
 private:
+    RegisterId color_reg(RegisterVertex const& v);
+    bool color_ok(RegisterVertex const& v, RegisterId reg); 
     void build_graph(BasicBlock* block);
     void build_stack();
     void color_graph();

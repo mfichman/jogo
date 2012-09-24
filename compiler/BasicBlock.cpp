@@ -139,7 +139,7 @@ RegisterIdSet::RegisterIdSet(int size) :
 void RegisterIdSet::set(RegisterId id) {
     // Adds the register to the register bitset.
     int bucket = id.id() / BUCKET_BITS;
-    int bit = 0x1 << ((id.id() % BUCKET_BITS) - 1);
+    int bit = 0x1 << (id.id() % BUCKET_BITS);
 
     if (bucket < BUCKET_LOW) {
         low_[bucket] |= bit;
@@ -152,7 +152,7 @@ void RegisterIdSet::set(RegisterId id) {
 void RegisterIdSet::del(RegisterId id) {
     // Deletes the register from the register bitset.
     int bucket = id.id() / BUCKET_BITS;
-    int bit = 0x1 << ((id.id() % BUCKET_BITS) - 1);
+    int bit = 0x1 << (id.id() % BUCKET_BITS);
     
     if (bucket < BUCKET_LOW) { 
         low_[bucket] &= ~bit;
@@ -165,7 +165,7 @@ void RegisterIdSet::del(RegisterId id) {
 bool RegisterIdSet::bit(int id) const {
     // Returns true if 'id' is in the register bitset
     int bucket = id / BUCKET_BITS;
-    int bit = 0x1 << ((id % BUCKET_BITS) - 1);
+    int bit = 0x1 << (id % BUCKET_BITS);
     
     if (bucket < BUCKET_LOW) { 
         return low_[bucket] & bit;
@@ -173,6 +173,56 @@ bool RegisterIdSet::bit(int id) const {
         assert(bucket < size_+BUCKET_LOW);
         return high_[bucket-BUCKET_LOW] & bit;
     } 
+}
+
+int RegisterIdSet::next(int id) const {
+    // Returns the next Register in the set, after 'id'; returns -1 if no more
+    // bits can be found.
+    int bucket = (id+1) / BUCKET_BITS;
+    int bit = (id+1) % BUCKET_BITS;
+    if (bucket >= size_+BUCKET_LOW) {
+        return -1;
+    }
+    int next = next_bit(bucket, bit); 
+    if (!next) {
+        bucket = next_bucket(bucket);
+        if (bucket > 0) {
+            return bucket*BUCKET_BITS+next_bit(bucket, 0)-1;
+        }
+    } else {
+        return bucket*BUCKET_BITS+next-1;
+    }
+    return -1;
+}
+
+int RegisterIdSet::next_bit(int bucket, int bit) const {
+    // Returns the 1+ next bit set in 'bucket' following 'bit'.  Returns 0 if
+    // the bit wasn't found in this bucket.
+    assert(bucket < BUCKET_LOW+size_);
+    unsigned val = (bucket < BUCKET_LOW) ? low_[bucket] : high_[bucket-BUCKET_LOW]; 
+    unsigned mask = BUCKET_MASK << bit;
+    return __builtin_ffs(val & mask);
+}
+
+int RegisterIdSet::next_bucket(int bucket) const {
+    // Returns the next non-zero bucket after 'bucket'
+    bucket += 1;
+    while (bucket < size_+BUCKET_LOW) {
+        if (bucket < BUCKET_LOW) {
+            if (low_[bucket]) {
+                return bucket;  
+            } else {
+                bucket++;
+            }    
+        } else {
+            if (high_[bucket-BUCKET_LOW]) {
+                return bucket;
+            } else {
+                bucket++;
+            }
+        }
+    }
+    return -1;
 }
 
 RegisterIdSet RegisterIdSet::operator&(RegisterIdSet const& other) const {
@@ -280,6 +330,17 @@ void RegisterIdSet::clear() {
     if (high_) {
         memset(high_, 0, sizeof(*high_)*size_);
     }
+}
+
+int RegisterIdSet::count() const {
+    int count = 0;
+    for (int i = 0; i < BUCKET_LOW; ++i) {
+        count += __builtin_popcount(low_[i]);        
+    }
+    for (int i = 0; i < size_; ++i) {
+        count += __builtin_popcount(high_[i]);
+    }
+    return count;
 }
 
 Instruction::Instruction(Opcode op, Operand res, Operand first, Operand sec) :

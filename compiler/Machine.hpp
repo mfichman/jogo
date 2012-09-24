@@ -94,6 +94,7 @@ public:
     RegisterIdSet const& arg_set() const { return arg_set_; }
     RegisterIdSet const& return_set() const { return return_set_; }
     RegisterIdSet const& caller_set() const { return caller_set_; } 
+    RegisterIdSet const& callee_set() const { return callee_set_; }
     void caller_reg(Register* reg) { caller_reg_.push_back(reg); }
     void callee_reg(Register* reg) { callee_reg_.push_back(reg); }
     void arg_reg(Register* reg);
@@ -118,5 +119,6 @@ private:
     RegisterIdSet arg_set_;
     RegisterIdSet return_set_;
     RegisterIdSet caller_set_;
+    RegisterIdSet callee_set_;
 };
 
