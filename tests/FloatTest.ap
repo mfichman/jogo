@@ -1,0 +1,9 @@
+
+
+main() Int {
+    x = 1.0
+#    y Float = 2.0
+#    z = x * y
+#    Io::println(z.str)
+    ret 0
+}
