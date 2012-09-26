@@ -89,22 +89,22 @@ Machine* Machine::intel64() {
     Register::Ptr r14 = m->int_reg("r14"); m->caller_reg(r14); //13
     Register::Ptr r15 = m->int_reg("r15"); m->caller_reg(r15); //14
 
-    Register::Ptr xmm0 = m->float_reg("xmm0"); m->caller_reg(xmm0);
-    Register::Ptr xmm1 = m->float_reg("xmm1"); m->caller_reg(xmm1);
-    Register::Ptr xmm2 = m->float_reg("xmm2"); m->caller_reg(xmm2);
-    Register::Ptr xmm3 = m->float_reg("xmm3"); m->caller_reg(xmm3);
-    Register::Ptr xmm4 = m->float_reg("xmm4"); m->caller_reg(xmm4);
-    Register::Ptr xmm5 = m->float_reg("xmm5"); m->caller_reg(xmm5);
-    Register::Ptr xmm6 = m->float_reg("xmm6"); m->caller_reg(xmm6);
-    Register::Ptr xmm7 = m->float_reg("xmm7"); m->caller_reg(xmm7);
-    Register::Ptr xmm8 = m->float_reg("xmm8"); m->caller_reg(xmm8);
-    Register::Ptr xmm9 = m->float_reg("xmm9"); m->caller_reg(xmm9);
-    Register::Ptr xmm10 = m->float_reg("xmm10"); m->caller_reg(xmm10);
-    Register::Ptr xmm11 = m->float_reg("xmm11"); m->caller_reg(xmm11);
-    Register::Ptr xmm12 = m->float_reg("xmm12"); m->caller_reg(xmm12);
-    Register::Ptr xmm13 = m->float_reg("xmm13"); m->caller_reg(xmm13);
-    Register::Ptr xmm14 = m->float_reg("xmm14"); m->caller_reg(xmm14);
-    Register::Ptr xmm15 = m->float_reg("xmm15"); m->caller_reg(xmm15);
+    Register::Ptr xmm0 = m->float_reg("xmm0"); m->callee_reg(xmm0);
+    Register::Ptr xmm1 = m->float_reg("xmm1"); m->callee_reg(xmm1);
+    Register::Ptr xmm2 = m->float_reg("xmm2"); m->callee_reg(xmm2);
+    Register::Ptr xmm3 = m->float_reg("xmm3"); m->callee_reg(xmm3);
+    Register::Ptr xmm4 = m->float_reg("xmm4"); m->callee_reg(xmm4);
+    Register::Ptr xmm5 = m->float_reg("xmm5"); m->callee_reg(xmm5);
+    Register::Ptr xmm6 = m->float_reg("xmm6"); m->callee_reg(xmm6);
+    Register::Ptr xmm7 = m->float_reg("xmm7"); m->callee_reg(xmm7);
+    Register::Ptr xmm8 = m->float_reg("xmm8"); m->callee_reg(xmm8);
+    Register::Ptr xmm9 = m->float_reg("xmm9"); m->callee_reg(xmm9);
+    Register::Ptr xmm10 = m->float_reg("xmm10"); m->callee_reg(xmm10);
+    Register::Ptr xmm11 = m->float_reg("xmm11"); m->callee_reg(xmm11);
+    Register::Ptr xmm12 = m->float_reg("xmm12"); m->callee_reg(xmm12);
+    Register::Ptr xmm13 = m->float_reg("xmm13"); m->callee_reg(xmm13);
+    Register::Ptr xmm14 = m->float_reg("xmm14"); m->callee_reg(xmm14);
+    Register::Ptr xmm15 = m->float_reg("xmm15"); m->callee_reg(xmm15);
     
     m->return_reg(rax);
 #ifdef WINDOWS
