@@ -38,7 +38,6 @@ void LivenessAnalyzer::operator()(Function* feature) {
         operator()(feature->basic_block(0));
         reset_ = false;
     }
-    //std::cout << feature->name()->string() << ", " << round_ << std::endl;
 }
 
 void LivenessAnalyzer::operator()(BasicBlock* block) {
@@ -57,21 +56,10 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         }
     }
 
-//    std::cout << block->label()->string() << " -> ";
-//    if (block->next()) { 
-//        std::cout << block->next()->label()->string() << ", ";
-//    }
-//    if (block->branch()) { 
-//        std::cout << block->branch()->label()->string();
-//    }
- //   std::cout << std::endl;
     if (!block->is_ret()) {
         if (block->next()) { operator()(block->next()); }
         if (block->branch()) { operator()(block->branch()); }
     }
-
-//    std::cout << block->label()->string()  << std::endl;
-    
 
     for (int i = block->instrs()-1; i >= 0; i--) {
         // Note: We iterate through the list of instructions backwards, since
@@ -152,15 +140,7 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
         }
         assert(instr.liveness()->in() == inw);
         assert(instr.liveness()->out() == outw);
-
-//        for (int i = 0; i < inw.bits(); ++i) {
-//            if (inw.bit(i)) {
-//                std::cout << (i-machine_->regs()) << ", ";
-//            }
-//        }
-//        std::cout << std::endl;
     }
-//    std::cout << std::endl;
 }
 
 

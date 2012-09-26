@@ -100,35 +100,42 @@ void RegisterAllocator::build_graph(BasicBlock* block) {
         RegisterId second = instr.second().reg();
         RegisterId result = instr.result().reg();
 
-        // Find all interfering pairs of temporaries, and add them to the graph.
-        // FixMe: Do not iterate over machine registers; only look at temporaries.
-        for (int i = live.next(-1); i > 0; i = live.next(i)) {
+        // Find all interfering pairs of temporaries, and add them to the
+        // graph.  This is done by iterating over each live register m and
+        // ORing the live set with m's neighbor set.
+        for (int i = live.next(machine_->regs()-1); i > 0; i = live.next(i)) {
             RegisterId m(i, 0);
-            if (!machine_->reg(m)) {
-                graph_[m.id()].neighbors() |= live;
-            }
+            assert(!machine_->reg(m));
+            graph_[m.id()].neighbors() |= live;
 
-            // Add an edge between the register being written and all of the
-            // registers in the live set.  FIXME: This may not be necessary.
-            // This was added to fix the case where a value was assigned, eut
-            // not read (i.e., use-def chain without the use).  Eventually, 
-            // dead code elimination should take care of this.
+            // Add an edge between the current reg and the result register of
+            // the current instruction.
             if (!!result && !machine_->reg(result)) {
-                if (!machine_->reg(m)) {
-                    graph_[m.id()].neighbors().set(result);
-                    graph_[m.id()].temp(m);
-                }
-                graph_[result.id()].neighbors().set(m); 
-                graph_[result.id()].temp(result);
+                graph_[m.id()].neighbors().set(result);
             }
 
             // If the instruction is a CALL or part of the call prologue, then
             // add an edge between live vars and the callee registers
             // (caller-saved)
-            if (instr.opcode() == CALL && !machine_->reg(m)) {
+            if (instr.opcode() == CALL) {
                 graph_[m.id()].neighbors() |= machine_->callee_set(); 
-                graph_[m.id()].temp(m);
             }
+        }
+
+        // Add an edge between the register being written and all of the
+        // registers in the live set.  FIXME: This may not be necessary.  This
+        // was added to fix the case where a value was assigned, but not read
+        // (i.e., use-def chain without the use).  Eventually, dead code
+        // elimination should take care of this.
+        if (!!result && !machine_->reg(result)) {
+            graph_[result.id()].neighbors() |= live;
+            graph_[result.id()].temp(result);
+        }
+        if (!!first && !machine_->reg(first)) {
+            graph_[first.id()].temp(first);
+        }
+        if (!!second && !machine_->reg(second)) {
+            graph_[second.id()].temp(second);
         }
     }
 }
@@ -220,6 +227,10 @@ RegisterId RegisterAllocator::color_reg(RegisterVertex const& v) {
     for (int j = 1; j < machine_->regs(); ++j) {
         RegisterId reg = machine_->reg(RegisterId(j, 0))->id();
         if (color_ok(v, reg)) {
+            if (env_->dump_regalloc()) {
+                Stream::stout() << v.temp() << " -> " << reg << "\n"; 
+                Stream::stout()->flush();
+            }
             return reg;
         }
     }

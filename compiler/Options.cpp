@@ -89,6 +89,8 @@ Options::Options(Environment* env, int argc, char** argv) {
                 env->dump_ast(true);
             } else if ("dump-liveness" == flag) {
                 env->dump_liveness(true);
+            } else if ("dump-regalloc" == flag) {
+                env->dump_regalloc(true);
             } else if ("execute" == flag) {
                 env->execute(true);
             } else if ("version" == flag) {

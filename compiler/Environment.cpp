@@ -31,6 +31,7 @@ Environment::Environment() :
     dump_ast_(false),
     dump_ir_(false),
     dump_liveness_(false),
+    dump_regalloc_(false),
     make_(false),
     optimize_(false),
     link_(true),
