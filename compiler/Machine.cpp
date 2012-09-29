@@ -67,7 +67,8 @@ Machine* Machine::intel64() {
 
     m = new Machine;
 
-    // Volatile = callee reg
+    // Volatile/temporary register = callee reg. Not saved by the callee, so
+    // not safe to be live across function calls
     
     Register::Ptr rax = m->int_reg("rax"); m->callee_reg(rax); //1 VOL
     Register::Ptr rbx = m->int_reg("rbx"); m->caller_reg(rbx); //2
@@ -142,17 +143,27 @@ Register* Machine::reg(RegisterId id) const {
 
 void Machine::init() {
     arg_set_ = RegisterIdSet(regs());
-    return_set_ = RegisterIdSet(regs());
-    caller_set_ = RegisterIdSet(regs());
     for (int k = 0; k < int_arg_regs(); k++) {
         arg_set_.set(int_arg_reg(k)->id());
     }
+    for (int k = 0; k < float_arg_regs(); k++) {
+        arg_set_.set(float_arg_reg(k)->id());
+    }
+
+    return_set_ = RegisterIdSet(regs());
     for (int k = 0; k < int_return_regs(); k++) {
         return_set_.set(int_return_reg(k)->id());
     }
+    for (int k = 0; k < float_return_regs(); k++) {
+        return_set_.set(float_return_reg(k)->id());
+    }
+
+    caller_set_ = RegisterIdSet(regs());
     for (int k = 0; k < caller_regs(); k++) {
         caller_set_.set(caller_reg(k)->id());
     }
+
+    callee_set_ = RegisterIdSet(regs());
     for (int k = 0; k < callee_regs(); k++) {
         callee_set_.set(callee_reg(k)->id());
     }
