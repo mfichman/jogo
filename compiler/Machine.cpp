@@ -157,3 +157,33 @@ void Machine::init() {
         callee_set_.set(callee_reg(k)->id());
     }
 }
+
+Register* Machine::caller_reg(int index) const { 
+    if (index >= caller_reg_.size()) { return 0; }
+    return caller_reg_[index]; 
+}
+
+Register* Machine::callee_reg(int index) const { 
+    if (index >= callee_reg_.size()) { return 0; }
+    return callee_reg_[index]; 
+}
+
+Register* Machine::int_arg_reg(int index) const { 
+    if (index >= int_arg_reg_.size()) { return 0; }
+    return int_arg_reg_[index]; 
+}
+
+Register* Machine::int_return_reg(int index) const { 
+    if (index >= int_return_reg_.size()) { return 0; }
+    return int_return_reg_[index]; 
+}
+
+Register* Machine::float_arg_reg(int index) const { 
+    if (index >= float_arg_reg_.size()) { return 0; }
+    return float_arg_reg_[index];
+}
+
+Register* Machine::float_return_reg(int index) const {  
+    if (index >= float_return_reg_.size()) { return 0; }
+    return float_return_reg_[index]; 
+}

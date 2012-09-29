@@ -169,7 +169,7 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         out_ << block->label() << ":\n";
     }
     for (int i = 0; i < block->instrs(); i++) {
-        const Instruction& inst = block->instr(i);
+        Instruction const& inst = block->instr(i);
         Operand res = inst.result();
         Operand a1 = inst.first();
         Operand a2 = inst.second();
@@ -190,21 +190,16 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
             if (!!a1.addr() && !a1.is_indirect()) {
                 out_ << "    lea "; operand(res); out_ << ", ["; 
                 operand(a1); out_ << "]\n";
+            } else if (res.is_float()) {
+                instr("movsd", res, a1);
             } else {
-                instr("mov", res, a1); break;
+                instr("mov", res, a1); 
             }
             break;
         case ADD: arith(inst); break;
         case SUB: arith(inst); break;
         case MUL: arith(inst); break;
-        case DIV: 
-            out_ << "    push rdx\n";
-            out_ << "    mov rax, "; operand(a1); out_ << "\n"; 
-            out_ << "    cqo\n";
-            out_ << "    idiv "; operand(a2); out_ << "\n";
-            out_ << "    pop rdx\n";
-            out_ << "    mov "; operand(res); out_ << ", rax\n";
-            break;
+        case DIV: arith(inst); break;
         case NEG: instr("mov", res, a1); instr("neg", res); break;
         case PUSH: instr("push", a1); break;
         case POP: instr("pop", res); break;
@@ -280,25 +275,35 @@ void Intel64CodeGenerator::arith(Instruction const& inst) {
     // Emits an arithmetic instruction.  Depending on the opcode and the
     // operands, the expression may have to be manipulated because all x86
     // instructions take only 2 arithmetic operands.
-    char const* name = 0;
-    switch (inst.opcode()) {
-    case ADD: name = "add"; break;
-    case SUB: name = "sub"; break;
-    case MUL: name = "imul"; break;
-    case DIV: name = "div"; break;
-    default: assert(false);
-    }
-
     Operand res = inst.result();
     Operand r1 = inst.first();
     Operand r2 = inst.second();
     
+    if (inst.opcode() == DIV && !res.is_float()) {
+        out_ << "    push rdx\n";
+        out_ << "    mov rax, "; operand(r1); out_ << "\n"; 
+        out_ << "    cqo\n";
+        out_ << "    idiv "; operand(r2); out_ << "\n";
+        out_ << "    pop rdx\n";
+        out_ << "    mov "; operand(res); out_ << ", rax\n";
+        return;
+    }
+
+    char const* name = 0;
+    switch (inst.opcode()) {
+    case ADD: name = (res.is_float() ? "addsd" : "add"); break;
+    case SUB: name = (res.is_float() ? "subsd" : "sub"); break;
+    case MUL: name = (res.is_float() ? "mulsd" : "imul"); break;
+    case DIV: name = (res.is_float() ? "divsd" : "div"); break;
+    default: assert(false);
+    }
+
     if (res.reg() == r1.reg()) {
         // t1 <- t1 - t2
         instr(name, r1, r2);
     } else if (res.reg() != r2.reg()) {
         // t1 <- t2 - t3
-        instr("mov", res, r1); 
+        instr((res.is_float() ? "movsd" : "mov"), res, r1); 
         instr(name, res, r2);
     } else if (inst.opcode() == ADD || inst.opcode() == MUL) {
         // t1 <- t2 + t1
@@ -311,7 +316,7 @@ void Intel64CodeGenerator::arith(Instruction const& inst) {
         // t1 <- t2 / t1 
         instr("push", r2);
         instr(name, r2, r1);
-        instr("mov", r1, r2);
+        instr((res.is_float() ? "movsd" : "mov"), r1, r2);
         instr("pop", r2);        
     }
 }
@@ -450,7 +455,7 @@ void Intel64CodeGenerator::label(Operand op) {
     }
 }
 
-void Intel64CodeGenerator::label(const std::string& label) {
+void Intel64CodeGenerator::label(std::string const& label) {
     // Emits a label, either as an operand or as an actual label at the
     // beginning of a code block.
     std::string actual_label;
@@ -478,50 +483,52 @@ void Intel64CodeGenerator::align() {
 }
 
 void Intel64CodeGenerator::store_hack(Operand a1, Operand a2) {
+    char const* mov = (a2.is_float() ? "movsd" : "mov qword");
     if (a1.label() && a1.is_indirect()) {
-        out_ << "    mov qword rax, ";
+        out_ << "    " << mov << " rax, ";
         label(a1.label()->string());
         out_ << "\n";
-        out_ << "    mov qword [rax], ";
+        out_ << "    " << mov << " [rax], ";
         operand(a2);
         out_ << "\n";
     } else {
-        instr("mov qword", a1, a2);
+        instr(mov, a1, a2);
     }
 }
 
 void Intel64CodeGenerator::load_hack(Operand res, Operand a1) {
+    char const* mov = (res.is_float() ? "movsd" : "mov qword");
     if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(a1.literal())) {
         std::stringstream ss(le->value()->string());
         int number;
         ss >> number;
         if(number < INTEL64_MAX_IMM) {
-            out_ << "    mov qword ";
+            out_ << "    " << mov << " ";
             operand(res);
             out_ << ", " << number << "\n";
         } else {
-            out_ << "    mov qword ";
+            out_ << "    " << mov << " ";
             operand(res);
             out_ << ", lit" << (void*)le->value() << "\n";
-            out_ << "    mov qword ";
+            out_ << "    " << mov << " ";
             operand(res);
             out_ << ", [";
             operand(res);
             out_ << "]\n";
         }
     } else if(a1.label() && a1.is_indirect()) {
-        out_ << "    mov qword ";
+        out_ << "    " << mov << " ";
         operand(res);
         out_ << ", ";
         label(a1.label()->string());
         out_ << "\n";
-        out_ << "    mov qword ";
+        out_ << "    " << mov << " ";
         operand(res);
         out_ << ", [";
         operand(res);
         out_ << "]\n";
     } else {
-        instr("mov qword", res, a1); 
+        instr(mov, res, a1); 
     }
 }
 

@@ -110,10 +110,10 @@ void BasicBlockGenerator::operator()(Box* expr) {
     int bytes = clazz->slots() * machine_->word_size();
     String::Ptr one = env_->integer("1");
     String::Ptr size = env_->integer(stringify(bytes));
-    push_arg(1, load(new IntegerLiteral(Location(), one)));
-    push_arg(0, load(new IntegerLiteral(Location(), size)));
-    call(env_->name("Boot_calloc"), 1);
-
+    FuncMarshal fm(this);
+    fm.arg(load(new IntegerLiteral(Location(), size)));
+    fm.arg(load(new IntegerLiteral(Location(), one)));
+    fm.call(env_->name("Boot_calloc"));
     return_ = pop_ret();
     object_temp_.push_back(return_);
 
@@ -293,7 +293,6 @@ void BasicBlockGenerator::operator()(Call* expr) {
             return; 
         }
     }
-
     call(expr->function(), expr->arguments());
 }
 
@@ -310,27 +309,24 @@ void BasicBlockGenerator::operator()(Construct* expr) {
 
     // Push objects in anticipation of the call instruction.  Arguments must
     // be pushed in reverse order.
-    vector<Operand> args;
+    FuncMarshal fm(this);
     if(clazz->is_compound()) {
         // Push the 'self' parameter for the Vector constructor
-        args.push_back(stack_value(expr->type()));
+        fm.arg(stack_value(expr->type()));
     } 
     Formal::Ptr formal = func->formals();
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         Type::Ptr ft = formal->type();
         if (a->type()->is_bool()) {
-            args.push_back(bool_expr(a));
+            fm.arg(bool_expr(a));
         } else {
-            args.push_back(emit(a));
+            fm.arg(emit(a));
         }
         formal = formal->next();
     }
-    for (int i = args.size()-1; i >= 0; i--) {
-        push_arg(i, args[i]);
-    }
 
     // Insert a call expression, then pop the return value off the stack.
-    call(func->label(), args.size());
+    fm.call(func->label());
     return_ = pop_ret();
     if (expr->type()->is_primitive()) {
         assert(!"Primitive constructor?");
@@ -590,7 +586,8 @@ void BasicBlockGenerator::operator()(Fork* statement) {
 }
 
 void BasicBlockGenerator::operator()(Yield* statament) {
-    call(env_->name("Coroutine__yield"), 0); 
+    FuncMarshal fm(this);
+    fm.call(env_->name("Coroutine__yield"));
 	exception_catch();
 }
 
@@ -609,18 +606,15 @@ void BasicBlockGenerator::operator()(Function* feature) {
 
     // Pop the formal parameters off the stack in normal order, and save them
     // to a temporary.
-    int index = 0;
+    FuncUnmarshal um(this);
     if (feature->is_constructor() && class_->is_compound()) {
-        save_arg(index, env_->name("self"));
-        index++;
+        um.arg(env_->name("self"), class_->type());
     } 
     for (Formal* f = feature->formals(); f; f = f->next()) {
-        save_arg(index, f->name());
-        index++;
+        um.arg(f->name(), f->type());
     } 
     if (feature->type()->is_compound()) {
-        save_arg(index, env_->name("ret"));
-        index++;
+        um.arg(env_->name("ret"), feature->type());
     }
 
     // Set up the 'self' variable with the constructor, if necessary; this 
@@ -663,14 +657,15 @@ void BasicBlockGenerator::operator()(Type* feature) {
 void BasicBlockGenerator::call(Function* func, Expression* args) {
     // Push objects in anticipation of the call instruction.  Arguments must be
     // pushed in reverse order.
-    std::vector<Operand> val;
     Formal::Ptr formal = func->formals();
+    FuncMarshal fm(this);
+    Operand receiver;
     for (Expression::Ptr a = args; a; a = a->next()) {
         Type::Ptr ft = formal->type();
-        if (a->type()->is_bool()) {
-            val.push_back(bool_expr(a));
-        } else {
-            val.push_back(emit(a));
+        Operand val = a->type()->is_bool() ? bool_expr(a) : emit(a);
+        fm.arg(val);
+        if(a == args) {
+            receiver = val;
         }
         formal = formal->next();
     }
@@ -679,7 +674,7 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
         // The returned value type data will be stored at that location on the
         // stack.
         Operand addr = stack_value(func->type());
-        val.push_back(addr);   
+        fm.arg(addr);   
         return_ = mov(addr);
         Variable::Ptr var = new Variable(0, return_, func->type());   
         value_temp_.insert(std::make_pair(return_.reg(), var));
@@ -689,25 +684,21 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
     if (func->is_virtual()) {
         // Dynamic dispatch: call the object dispatch function with the
         // receiver and function name as arguments.
-        
         String::Ptr name = env_->string(func->name()->string());
-        push_arg(1, load(new StringLiteral(Location(), name)));
-        push_arg(0, val[0]); // Receiver
-        call(env_->name("Object__dispatch"), 2);
+        FuncMarshal fm(this);
+        fm.arg(receiver); // Receiver
+        fm.arg(load(new StringLiteral(Location(), name)));
+        fm.call(env_->name("Object__dispatch"));
         fnptr = pop_ret();
     } 
 
-    for (int i = val.size()-1; i >= 0; i--) {
-        push_arg(i, val[i]);
-    }
-
     if (func->is_virtual()) {
         // Dynamic dispatch: call the function pointer.
-        call(fnptr, val.size());
+        fm.call(fnptr);
     } else {
         // Static dispatch: insert a call expression, then pop the return value
         // off the stack.
-        call(func->label(), val.size());
+        fm.call(func->label());
     }
 
     if (func->type()->is_void()) {
@@ -723,7 +714,6 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
     } else {
         assert(!"Invalid type");
     }
-
 	if (func->throw_spec() == Function::THROW) {
 		exception_catch();
 	}
@@ -1010,79 +1000,17 @@ void BasicBlockGenerator::refcount_inc(Operand var) {
             return;
         }
     }
-
-    push_arg(0, var);
-    call(env_->name("Object__refcount_inc"), 1);
+    FuncMarshal fm(this);
+    fm.arg(var);
+    fm.call(env_->name("Object__refcount_inc"));
 }
 
 void BasicBlockGenerator::refcount_dec(Operand var) {
     // Emit code to decrement the reference count for the object specified by
     // 'temp'.  Insert a call expression to call the refcount_dec function 
-    push_arg(0, var);
-    call(env_->name("Object__refcount_dec"), 1);
-}
-
-void BasicBlockGenerator::save_arg(int i, String* name) {
-    if (i >= machine_->int_arg_regs()) {
-        // Variable is passed on the stack
-        stack(name, Address(stack_.size()+1)); 
-    } else {
-        // Variable is passed by register; precolor the temporary for this
-        // formal parameter by using a negative number.  Passing NULL for
-		// the type of the variable prevents it from being garbage collected
-		// at the end of the scope (which is what we want for function 
-		// parameters).
-        RegisterId reg = machine_->int_arg_reg(i)->id();
-        variable(new Variable(name, mov(reg), 0));
-
-        // On Windows, the value is also passed with a backing location on
-        // the stack.
-#ifdef WINDOWS
-        stack(name, stack_.size()+1);
-#endif
-    }
-}
-
-void BasicBlockGenerator::push_arg(int i, Operand op) {
-    if (op.is_float()) {
-        if (i >= machine_->float_arg_regs()) {
-            // Argument is pushed on the stack    
-            push(op);
-        } else {
-            // Argument is passed by register
-            mov(machine_->float_arg_reg(i)->id(), op);
-#ifdef WINDOWS
-            // On Windows, the argument is also passed by the stack as a backing
-            // store
-            push(op);
-#endif
-        }
-    } else {
-        if (i >= machine_->int_arg_regs()) {
-            // Argument is pushed on the stack
-            push(op);
-        } else {
-            // Argument is passed by register
-            mov(machine_->int_arg_reg(i)->id(), op);
-#ifdef WINDOWS
-            // On Windows, the argument is also passed by the stack as a backing
-            // store
-            push(op);
-#endif
-        }        
-    }
-}
-
-void BasicBlockGenerator::pop_args(int num) {
-    if (num <= 0) { return; }
-#ifdef WINDOWS
-    popn(num);
-#else
-    if (num > machine_->int_arg_regs()) {
-        popn(num - machine_->int_arg_regs());
-    }
-#endif
-    
+    FuncMarshal fm(this);
+    fm.arg(var);
+    fm.call(env_->name("Object__refcount_dec"));
 }
 
 Operand BasicBlockGenerator::pop_ret() {
@@ -1265,9 +1193,10 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
     String::Ptr size = env_->integer(stringify(bytes));
     String::Ptr one = env_->integer("1");
     if (clazz->is_object()) {
-        push_arg(1, load(new IntegerLiteral(Location(), one)));
-        push_arg(0, load(new IntegerLiteral(Location(), size)));
-        call(env_->name("Boot_calloc"), 2); 
+        FuncMarshal fm(this);
+        fm.arg(load(new IntegerLiteral(Location(), size)));
+        fm.arg(load(new IntegerLiteral(Location(), one)));
+        fm.call(env_->name("Boot_calloc"));
  
         // Obtain a pointer to the 'self' object, and store it in the 'self'
         // variable.
@@ -1286,9 +1215,10 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
     
     } else if (clazz->is_compound()) {
         self = id_operand(env_->name("self"));
-        push_arg(1, load(new IntegerLiteral(Location(), size)));
-        push_arg(0, self); 
-        call(env_->name("Boot_mzero"), 2);
+        FuncMarshal fm(this);
+        fm.arg(self);
+        fm.arg(load(new IntegerLiteral(Location(), size)));
+        fm.call(env_->name("Boot_mzero"));
     } else {
         assert(!"Invalid type");
     }
@@ -1330,18 +1260,18 @@ void BasicBlockGenerator::copier_preamble(Class* clazz) {
     
     int bytes = clazz->slots() * machine_->word_size();
     String::Ptr size = env_->integer(stringify(bytes));
-    push_arg(2, load(new IntegerLiteral(Location(), size)));
-    push_arg(1, other);
-    push_arg(0, self);
-    call(env_->name("Boot_memcpy"), 3); 
+    FuncMarshal fm(this);
+    fm.arg(self);
+    fm.arg(other);
+    fm.arg(load(new IntegerLiteral(Location(), size)));
+    fm.call(env_->name("Boot_memcpy"));
 
     for (Feature::Ptr f = clazz->features(); f; f = f->next()) {
-        if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
-            if (attr->type()->is_ref()) {
-                Operand addr = Operand(self.reg(), Address(attr->slot())); 
-                Operand ptr = load(addr); 
-                refcount_inc(ptr); 
-            }
+        Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer());
+        if (attr && attr->type()->is_ref()) {
+            Operand addr = Operand(self.reg(), Address(attr->slot())); 
+            Operand ptr = load(addr); 
+            refcount_inc(ptr); 
         }
     }
 }
@@ -1383,8 +1313,9 @@ void BasicBlockGenerator::dtor_epilog(Function* feature) {
     if (class_->is_primitive()) {
         // Pass
     } else if (class_->is_ref()) {
-        push_arg(0, variable(env_->name("self"))->operand());
-        call(env_->name("Boot_free"), 1);
+        FuncMarshal fm(this);
+        fm.arg(variable(env_->name("self"))->operand());
+        fm.call(env_->name("Boot_free"));
     } else if (class_->is_compound()) {
         // Pass
     } else {
@@ -1551,10 +1482,11 @@ void BasicBlockGenerator::value_copy(Operand src, Operand dst, Type* type) {
     // for any non-weak object attributes in 'type.'
     assert(!!src.reg());
     Function::Ptr copy = type->clazz()->function(env_->name("@copy"));
-    push_arg(1, src);
-    push_arg(0, dst); 
     assert(copy && "Missing copy constructor");
-    call(copy->label(), 2);           
+    FuncMarshal fm(this);
+    fm.arg(dst);
+    fm.arg(src);
+    fm.call(copy->label());           
 }
 
 void BasicBlockGenerator::value_move(Operand src, Operand dst, Type* type) {
@@ -1562,17 +1494,223 @@ void BasicBlockGenerator::value_move(Operand src, Operand dst, Type* type) {
     assert(!!src.reg());
     int bytes = type->clazz()->slots() * machine_->word_size();
     String::Ptr size = env_->integer(stringify(bytes));
-    push_arg(2, load(new IntegerLiteral(Location(), size)));
-    push_arg(1, src);
-    push_arg(0, dst);
-    call(env_->name("Boot_memcpy"), 3); 
+    FuncMarshal fm(this);
+    fm.arg(dst);
+    fm.arg(src);
+    fm.arg(load(new IntegerLiteral(Location(), size)));
+    fm.call(env_->name("Boot_memcpy")); 
 }
 
 void BasicBlockGenerator::value_dtor(Operand op, Type* type) {
     // Calls the destructor for the value type at location "op", where "op"
     // is a register containing the pointer to the value type on the stack.
-    push_arg(0, op);
     Function::Ptr dtor = type->clazz()->destructor();
     assert(dtor && "Missing value type destructor");
-    call(dtor->label(), 1);
+    FuncMarshal fm(this);
+    fm.arg(op);
+    fm.call(dtor->label());
 }
+
+Operand BasicBlockGenerator::emit(TreeNode* node, BasicBlock* yes, 
+    BasicBlock* no, bool inv) {
+
+    BasicBlock* true_save = true_;
+    BasicBlock* false_save = false_;
+    bool invert_branch_save_ = invert_branch_;
+    true_ = yes;
+    false_ = no;
+    invert_branch_ = inv;
+    node->operator()(this);
+    true_ = true_save;
+    false_ = false_save;
+    invert_branch_ = invert_branch_save_;
+    return return_;
+}
+
+Operand BasicBlockGenerator::emit(TreeNode* node) {
+    node->operator()(this);
+    return return_;
+}
+
+Operand BasicBlockGenerator::emit(Opcode op, Operand t2, Operand t3) {
+    Instruction in = block_->instr(op, temp_inc(), t2, t3);
+    return in.result();
+}
+
+Operand BasicBlockGenerator::emit(Opcode op, Operand t2) {
+    Instruction in = block_->instr(op, temp_inc(), t2, Operand());
+    return in.result();
+}
+
+Operand BasicBlockGenerator::mov(Operand res, Operand t2) { 
+    // FixMe: This could be a problem for SSA analysis.
+    Instruction in = block_->instr(MOV, res, t2, Operand());
+    return in.result();
+}
+
+void BasicBlockGenerator::emit(BasicBlock* block) {
+    if (block_) {
+        block_->next(block);
+    }
+    block_ = block;
+    function_->basic_block(block);
+}
+
+Operand BasicBlockGenerator::pop() {
+    Instruction in = block_->instr(POP, temp_inc(), Operand(), Operand()); 
+    return RegisterId(temp_, 0);
+}
+
+void BasicBlockGenerator::popn(int num) {
+    if (num) {
+       String::Ptr val = env_->integer(stringify(num)); 
+       Operand op(new IntegerLiteral(Location(), val));
+       block_->instr(POPN, Operand(), op, Operand());
+    }
+}
+
+void BasicBlockGenerator::push(Operand t2) {
+    block_->instr(PUSH, Operand(), t2, Operand());    
+}
+
+void BasicBlockGenerator::pushn(int num) {
+    String::Ptr val = env_->integer(stringify(num));
+    Operand op(new IntegerLiteral(Location(), val));
+    block_->instr(PUSHN, Operand(), op, Operand());
+}
+
+void BasicBlockGenerator::store(Operand addr, Operand value) {
+    block_->instr(STORE, Operand(), addr, value);    
+}
+
+void BasicBlockGenerator::call(Operand func) {
+    block_->instr(CALL, Operand(), func, Operand());
+}
+
+void BasicBlockGenerator::ret() {
+    block_->instr(RET, Operand(), Operand(), Operand());
+}
+
+void BasicBlockGenerator::branch(Opcode op, Operand t2, Operand t3, 
+    BasicBlock* branch, BasicBlock* next) {
+
+    block_->instr(op, Operand(), t2, t3);
+    block_->branch(branch);
+    block_->next(next);
+}
+
+void BasicBlockGenerator::bne(Operand t2, Operand t3, BasicBlock* target, 
+    BasicBlock* next) {
+    branch(BNE, t2, t3, target, next);
+}
+
+void BasicBlockGenerator::be(Operand t2, Operand t3, BasicBlock* target, 
+    BasicBlock* next) {
+    branch(BE, t2, t3, target, next);
+}
+
+void BasicBlockGenerator::bnz(Operand t2, BasicBlock* target, 
+    BasicBlock* next) {
+    branch(BNZ, t2, Operand(), target, next);
+}
+
+void BasicBlockGenerator::bz(Operand t2, BasicBlock* target, 
+    BasicBlock* next) {
+    branch(BZ, t2, Operand(), target, next);
+}
+
+void BasicBlockGenerator::bg(Operand t2, Operand t3, BasicBlock* target, 
+    BasicBlock* next) {
+    branch(BG, t2, t3, target, next);
+}
+
+void BasicBlockGenerator::bl(Operand t2, Operand t3, BasicBlock* target,
+    BasicBlock* next) {
+    branch(BL, t2, t3, target, next);
+}
+
+void BasicBlockGenerator::bge(Operand t2, Operand t3, BasicBlock* target,
+    BasicBlock* next) {
+    branch(BGE, t2, t3, target, next);
+}
+
+void BasicBlockGenerator::ble(Operand t2, Operand t3, BasicBlock* target, 
+    BasicBlock* next) {
+    branch(BLE, t2, t3, target, next);
+}
+
+void BasicBlockGenerator::jump(BasicBlock* target) {
+    block_->instr(JUMP, Operand(), Operand(), Operand());
+    block_->branch(target);
+}
+
+void FuncMarshal::arg(Operand op) {
+    // Add an argument to the list, and keep track of the number of float/int
+    // args so that they are assigned to argument registers/stack properly.
+    if (op.is_float()) {
+        float_args_++;
+    } else {
+        int_args_++; 
+    }
+    arg_.push_back(op);
+}
+
+void FuncMarshal::call(Operand func) {
+    // Emits instructions for pushing the function arguments and invoking the
+    // function specified by 'func', which may be a label or a function
+    // pointer.
+    int int_arg = 0;
+    int float_arg = 0;
+    int stack = 0;
+    for (int i = arg_.size()-1; i >= 0; i--) {
+        Register* reg = 0;
+        if (arg_[i].is_float()) {
+            reg = gen_->machine_->float_arg_reg(float_args_-float_arg-1);
+            float_arg++;
+        } else {
+            reg = gen_->machine_->int_arg_reg(int_args_-int_arg-1);
+            int_arg++;
+        }
+        if (reg) {
+            gen_->mov(reg->id(), arg_[i]); // Pass argument by register
+#ifdef WINDOWS
+            gen_->push(arg_[i]); // Windows: Argument also passed on stack
+            stack++;
+#endif
+        } else {
+            gen_->push(arg_[i]); // Argument is passed on stack
+            stack++;
+        }
+    } 
+    gen_->call(func);
+    gen_->popn(stack);
+}
+
+void FuncUnmarshal::arg(String* name, Type* type) {
+    // Unmarshal an argument by emitting code to save named parameter's
+    // location on the stack, or else to move the argument from a precolored
+    // arg reg into a temporary.
+    Register* reg = 0;
+    if (type->is_float()) {
+        reg = gen_->machine_->float_arg_reg(float_args_++);
+    } else {
+        reg = gen_->machine_->int_arg_reg(int_args_++);
+    } 
+    if (reg) {
+        // Variable is passed by register; precolor the temporary for this
+        // formal parameter by using a negative number.  Passing NULL for
+		// the type of the variable prevents it from being garbage collected
+		// at the end of the scope (which is what we want for function 
+		// parameters).
+        gen_->variable(new Variable(name, gen_->mov(reg->id()), 0));
+
+        // On Windows, the value is also passed with a backing location on
+        // the stack.
+#ifdef WINDOWS
+        gen_->stack(name, Address(gen_->stack_.size()+1));
+#endif
+    } else {
+        gen_->stack(name, Address(gen_->stack_.size()+1));
+    }
+}
+

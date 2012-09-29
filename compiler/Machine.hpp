@@ -72,12 +72,12 @@ public:
     // Calee reg = belongs to callee, must be saved before call, volatile
     
     Machine();
-    Register* caller_reg(int index) const { return caller_reg_[index]; }
-    Register* callee_reg(int index) const { return callee_reg_[index]; }
-    Register* int_arg_reg(int index) const { return int_arg_reg_[index]; }
-    Register* int_return_reg(int index) const { return int_return_reg_[index]; }
-    Register* float_arg_reg(int index) const { return float_arg_reg_[index]; }
-    Register* float_return_reg(int index) const { return float_arg_reg_[index]; }
+    Register* caller_reg(int index) const;
+    Register* callee_reg(int index) const;
+    Register* int_arg_reg(int index) const;
+    Register* int_return_reg(int index) const;
+    Register* float_arg_reg(int index) const;
+    Register* float_return_reg(int index) const;
     Register* sp_reg() const { return sp_reg_; }
     Register* float_reg(std::string const& name);
     Register* int_reg(std::string const& name);

@@ -1,9 +1,28 @@
 
 
+function(a Float, b Float, c Float, d Float, e Float, f Float, g Float) {
+    Io::println(a.str)
+    Io::println(b.str)
+    Io::println(c.str)
+    Io::println(d.str)
+    Io::println(e.str)
+    Io::println(f.str)
+    Io::println(g.str)
+    Io::println((a+b+c+d+e+f+g).str)
+}
+
+
 main() Int {
-    x = 1.0
-    y Float = 2.0
-    z = x * y
+#    x = 1.5
+#    y Float = 2.0
+#    z = x * y
+#
 #    Io::println(z.str)
+#    Io::println((x/y).str)
+#    Io::println((x+y).str)
+#    Io::println((x-y).str)
+#    Io::println((y-x).str)
+
+    function(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7)
     ret 0
 }

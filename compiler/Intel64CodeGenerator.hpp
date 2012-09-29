@@ -54,7 +54,7 @@ private:
     void instr(const char* instr, Operand r1, const char* label);
 
     void dispatch_table(Class* feature);
-    void arith(const Instruction& instr);
+    void arith(Instruction const& instr);
     void load(Operand r1, Operand r2);
     void store(Operand r1, Operand r2);
 
@@ -63,7 +63,7 @@ private:
     void addr(Operand addr);
     void literal(Operand lit);
     void label(Operand string);
-    void label(const std::string& string);
+    void label(std::string const& string);
     void align();
     void stack_check(Function* feature);
 

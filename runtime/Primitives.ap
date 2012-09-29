@@ -76,23 +76,23 @@ Float < Value {
         # Returns the string representation of 'self'
     }
 
-    max(other Float) Float {
-        # Returns the maximum of 'self' and 'other'
-        if other > self {
-            ret other
-        } else {
-            ret self
-        }
-    }
-
-    min(other Float) Float {
-        # Returns the minimum of 'self' and 'other'
-        if other < self {
-            ret other
-        } else {
-            ret self
-        }
-    } 
+#    max(other Float) Float {
+#        # Returns the maximum of 'self' and 'other'
+#        if other > self {
+#            ret other
+#        } else {
+#            ret self
+#        }
+#    }
+#
+#    min(other Float) Float {
+#        # Returns the minimum of 'self' and 'other'
+#        if other < self {
+#            ret other
+#        } else {
+#            ret self
+#        }
+#    } 
 
     exp?() native Float {
         # Returns the exponential of 'self'

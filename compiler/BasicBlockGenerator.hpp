@@ -37,7 +37,6 @@ class BasicBlockGenerator : public TreeNode::Functor {
 public:
     BasicBlockGenerator(Environment* env, Machine* mach);
     typedef Pointer<BasicBlockGenerator> Ptr; 
-
     void operator()(File* file);
 
 private:
@@ -78,51 +77,11 @@ private:
     void operator()(Closure* expression);
     void operator()(Type* type);
 
-    void emit(BasicBlock* block) {
-        if (block_) {
-            block_->next(block);
-        }
-        block_ = block;
-        function_->basic_block(block);
-    }
-
-    RegisterId temp_inc() { return RegisterId(++temp_, 0); }
-    
-    Operand emit(TreeNode* node, BasicBlock* yes, BasicBlock* no, bool inv) {
-        BasicBlock* true_save = true_;
-        BasicBlock* false_save = false_;
-        bool invert_branch_save_ = invert_branch_;
-        true_ = yes;
-        false_ = no;
-        invert_branch_ = inv;
-        node->operator()(this);
-        true_ = true_save;
-        false_ = false_save;
-        invert_branch_ = invert_branch_save_;
-        return return_;
-    }
-
-    Operand emit(TreeNode* node) {
-        node->operator()(this);
-        return return_;
-    }
-
-    Operand emit(Opcode op, Operand t2, Operand t3) {
-        Instruction in = block_->instr(op, temp_inc(), t2, t3);
-        return in.result();
-    }
-    
-    Operand emit(Opcode op, Operand t2) {
-        Instruction in = block_->instr(op, temp_inc(), t2, Operand());
-        return in.result();
-    }
-    
-    Operand mov(Operand res, Operand t2) { 
-        // FixMe: This could be a problem for SSA analysis.
-        Instruction in = block_->instr(MOV, res, t2, Operand());
-        return in.result();
-    }
-
+    Operand emit(TreeNode* node, BasicBlock* yes, BasicBlock* no, bool inv); 
+    Operand emit(TreeNode* node);
+    Operand emit(Opcode op, Operand t2, Operand t3);
+    Operand emit(Opcode op, Operand t2); 
+    Operand mov(Operand res, Operand t2); 
     Operand mov(Operand t2) { return emit(MOV, t2); }
     Operand neg(Operand t2) { return emit(NEG, t2); }
     Operand add(Operand t2, Operand t3) { return emit(ADD, t2, t3); }
@@ -133,98 +92,29 @@ private:
     Operand andb(Operand t2, Operand t3) { return emit(ANDB, t2, t3); }
     Operand orb(Operand t2, Operand t3) { return emit(ORB, t2, t3); }
     Operand load(Operand addr) { return emit(LOAD, addr); }
-
-    Operand pop() {
-        Instruction in = block_->instr(POP, temp_inc(), Operand(), Operand()); 
-        return RegisterId(temp_, 0);
-    }
-
-    void popn(int num) {
-        String::Ptr val = env_->integer(stringify(num)); 
-        Operand op(new IntegerLiteral(Location(), val));
-        block_->instr(POPN, Operand(), op, Operand());
-    }
-    
-    void push(Operand t2) {
-        block_->instr(PUSH, Operand(), t2, Operand());    
-    }
-
-    void pushn(int num) {
-        String::Ptr val = env_->integer(stringify(num));
-        Operand op(new IntegerLiteral(Location(), val));
-        block_->instr(PUSHN, Operand(), op, Operand());
-    }
-
-    void store(Operand addr, Operand value) {
-        block_->instr(STORE, Operand(), addr, value);    
-    }
-
-    void call(Operand func, int nargs) {
-        block_->instr(CALL, Operand(), func, Operand());
-        pop_args(nargs);
-    }
-    
-    void ret() {
-        block_->instr(RET, Operand(), Operand(), Operand());
-    }
-    
-    void bne(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BNE, Operand(), t2, t3);
-        block_->branch(branch);
-        block_->next(next);
-    }
-
-    void be(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BE, Operand(), t2, t3);
-        block_->branch(branch);
-        block_->next(next);
-    }
-
-    void bnz(Operand t2, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BNZ, Operand(), t2, Operand());
-        block_->branch(branch);
-        block_->next(next);
-    }
-
-    void bz(Operand t2, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BZ, Operand(), t2, Operand());
-        block_->branch(branch);
-        block_->next(next);
-    }
-
-    void bg(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BG, Operand(), t2, t3);
-        block_->branch(branch);
-        block_->next(next);
-    }
-
-    void bl(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BL, Operand(), t2, t3);
-        block_->branch(branch);
-        block_->next(next);
-    }
-
-    void bge(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BGE, Operand(), t2, t3);
-        block_->branch(branch);
-        block_->next(next);
-    }
-    
-    void ble(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next) {
-        block_->instr(BLE, Operand(), t2, t3);
-        block_->branch(branch);
-        block_->next(next);
-    }
-
-    void jump(BasicBlock* target) {
-        block_->instr(JUMP, Operand(), Operand(), Operand());
-        block_->branch(target);
-    }
-
-    BasicBlock* basic_block();
-    Address stack(String* name);
+    Operand pop();
+    void popn(int num); 
+    void push(Operand t2);
+    void pushn(int num);
+    void store(Operand addr, Operand value);
+    void call(Operand func);
+    void ret();
+    void bne(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
+    void be(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
+    void bnz(Operand t2, BasicBlock* branch, BasicBlock* next);
+    void bz(Operand t2, BasicBlock* branch, BasicBlock* next);
+    void bg(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
+    void bl(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
+    void bge(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
+    void ble(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
+    void jump(BasicBlock* target);
+    void emit(BasicBlock* block); 
+    void branch(Opcode o, Operand t2, Operand t3, BasicBlock* b, BasicBlock* n);
 
     Variable* variable(String* name);
+    RegisterId temp_inc() { return RegisterId(++temp_, 0); }
+    BasicBlock* basic_block();
+    Address stack(String* name);
     void variable(Variable* var);
     void stack(String* name, Address offset);
     void enter_scope();
@@ -237,9 +127,6 @@ private:
     void refcount_dec(Operand var);
     void dispatch_table(Class* clazz);
     void func_return();
-    void push_arg(int i, Operand arg);
-    void save_arg(int i, String* formal);
-    void pop_args(int count);
     void ctor_preamble(Class* clazz);
     void dtor_epilog(Function* func);
     void copier_preamble(Class* clazz);
@@ -288,5 +175,41 @@ private:
     std::vector<Operand> object_temp_; 
     std::map<RegisterId, Variable::Ptr> value_temp_;
     // Temporaries to free at end of statement
+
+    friend class FuncMarshal;
+    friend class FuncUnmarshal;
 };
+
+
+/* Helper class for mashalling function parameters */
+class FuncMarshal {
+public:
+    FuncMarshal(BasicBlockGenerator* gen) : 
+        gen_(gen), int_args_(0), float_args_(0) {
+    }
+    void arg(Operand op); 
+    void call(Operand func);
+
+private:
+    BasicBlockGenerator* gen_;
+    std::vector<Operand> arg_;
+    int int_args_;
+    int float_args_;
+};
+
+/* Helper class for unmarshalling function parameters */
+class FuncUnmarshal {
+public:
+    FuncUnmarshal(BasicBlockGenerator* gen) :
+        gen_(gen), int_args_(0), float_args_(0) {
+    }
+    void arg(String* name, Type* type);
+
+private:
+    BasicBlockGenerator* gen_;
+    int int_args_;
+    int float_args_;
+};
+
+
 
