@@ -143,7 +143,12 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
             RegisterIdSet const& live = instr.liveness()->in();
             for (int i = 0; i < live.bits(); ++i) {
                 if (live.bit(i)) {
-                    out_ << RegisterId(i, 0);
+                    RegisterId id(i, 0);
+                    if (machine_->reg(id)) {
+                        out_ << RegisterId(i, 0);
+                    } else {
+                        out_ << "r" << (i-machine_->regs());
+                    }
                     if (i != live.bits()-2) {
                         out_ << " "; 
                     }

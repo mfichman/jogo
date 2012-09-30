@@ -144,7 +144,7 @@ private:
     void value_move(Operand src, Operand dst, Type* type);
     void value_dtor(Operand op, Type* type);
     Operand bool_expr(Expression* expr);
-    Operand pop_ret();
+    Operand pop_ret(Type* type);
     Operand id_operand(String* id);
     Operand stack_value(Type* type);
 

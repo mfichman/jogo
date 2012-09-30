@@ -114,7 +114,7 @@ void BasicBlockGenerator::operator()(Box* expr) {
     fm.arg(load(new IntegerLiteral(Location(), size)));
     fm.arg(load(new IntegerLiteral(Location(), one)));
     fm.call(env_->name("Boot_calloc"));
-    return_ = pop_ret();
+    return_ = pop_ret(expr->type());
     object_temp_.push_back(return_);
 
     // Initialize the vtable pointer
@@ -327,7 +327,7 @@ void BasicBlockGenerator::operator()(Construct* expr) {
 
     // Insert a call expression, then pop the return value off the stack.
     fm.call(func->label());
-    return_ = pop_ret();
+    return_ = pop_ret(func->type());
     if (expr->type()->is_primitive()) {
         assert(!"Primitive constructor?");
     } else if (expr->type()->is_ref()) {
@@ -689,7 +689,7 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
         fm.arg(receiver); // Receiver
         fm.arg(load(new StringLiteral(Location(), name)));
         fm.call(env_->name("Object__dispatch"));
-        fnptr = pop_ret();
+        fnptr = pop_ret(func->type());
     } 
 
     if (func->is_virtual()) {
@@ -704,12 +704,12 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
     if (func->type()->is_void()) {
         return_ = Operand();
     } else if (func->type()->is_primitive()) {
-        return_ = pop_ret(); 
+        return_ = pop_ret(func->type()); 
     } else if (func->type()->is_compound()) {
         // Return value is allocated on the stack already, and no value is
         // returned by register.
     } else if (func->type()->is_ref()) {
-        return_ = pop_ret();
+        return_ = pop_ret(func->type());
         object_temp_.push_back(return_);
     } else {
         assert(!"Invalid type");
@@ -967,9 +967,11 @@ void BasicBlockGenerator::func_return() {
         retval = variable(env_->name("self"))->operand();
     }
     if (!scope_.empty() && !!retval) {
-        if (machine_->int_return_regs()) {
-            // Return the value by register, if the architecture supports return
-            // by register
+        // Return the value by register, if the architecture supports return by
+        // register
+        if (retval.is_float() && machine_->float_return_regs()) {
+            mov(machine_->float_return_reg(0)->id(), retval); 
+        } else if (!retval.is_float() && machine_->int_return_regs()) {
             mov(machine_->int_return_reg(0)->id(), retval); 
         } else {
             // Otherwise, return on the stack.
@@ -1013,11 +1015,18 @@ void BasicBlockGenerator::refcount_dec(Operand var) {
     fm.call(env_->name("Object__refcount_dec"));
 }
 
-Operand BasicBlockGenerator::pop_ret() {
-    if (0 >= machine_->int_return_regs()) {
-        return pop();
+Operand BasicBlockGenerator::pop_ret(Type* type) {
+    Register* reg = 0;
+    if (type->is_float()) {
+        reg = machine_->float_return_reg(0); 
     } else {
-        return mov(machine_->int_return_reg(0)->id());
+        reg = machine_->int_return_reg(0);
+    }
+    assert(reg && "No return regs for this architecture");
+    if (type->is_float()) {
+        return mov(RegisterId(reg->id().id(), RegisterId::FLOAT));
+    } else {
+        return mov(reg->id());
     }
 }
 
@@ -1200,7 +1209,7 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
  
         // Obtain a pointer to the 'self' object, and store it in the 'self'
         // variable.
-        self = pop_ret(); 
+        self = pop_ret(class_->type()); 
         variable(new Variable(env_->name("self"), self, 0)); 
        
         // Initialize the vtable pointer

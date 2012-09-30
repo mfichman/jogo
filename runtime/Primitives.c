@@ -211,7 +211,7 @@ Bool Float__less(Float self, Float other) {
 
 String Float_str__g(Float self) {
     String ret = String_alloc(64);
-    snprintf(ret->data, 64, "%f", self); 
+    snprintf(ret->data, 64, "%g", self); 
     ret->length = strlen(ret->data);
     return ret;
 }

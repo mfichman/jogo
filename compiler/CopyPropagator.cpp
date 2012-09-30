@@ -99,16 +99,14 @@ void CopyPropagator::operator()(BasicBlock* block) {
                 assert(!!repl&&"Nil operand");
             }
         }
-        if (!!second) {
-            if ((j = eq.find(second)) != eq.end()) {
-                // If the RHS (second arg) has an alias to a non-precolored
-                // register, then substitute that alias.  Make sure to only
-                // replace the register name, NOT the whole operand!
-                Operand repl = instr.second();
-                repl.reg(j->second.reg());
-                instr.second(repl);
-                assert(!!repl&&"Nil operand");
-            }
+        if (!!second && ((j = eq.find(second)) != eq.end())) {
+            // If the RHS (second arg) has an alias to a register, then
+            // substitute that alias.  Make sure to only replace the register
+            // name, NOT the whole operand!
+            Operand repl = instr.second();
+            repl.reg(j->second.reg());
+            instr.second(repl);
+            assert(!!repl&&"Nil operand");
         }
 
         // If the instruction is a MOV, mark the LHS as an alias of the RHS
@@ -128,6 +126,21 @@ void CopyPropagator::operator()(BasicBlock* block) {
         } 
         if (LOAD == instr.opcode() && !instr.first().is_indirect()) {
             lit[result] = instr.first();
+        }
+        
+        // Remove return registers from the alias set, b/c their value will be
+        // different after the return from the function call.
+        if (CALL == instr.opcode()) {
+            for (int i = 0; i < machine_->int_return_regs(); ++i) {
+                RegisterId id = machine_->int_return_reg(i)->id();
+                eq.erase(id);
+                lit.erase(id);
+            }
+            for (int i = 0; i < machine_->float_return_regs(); ++i) {
+                RegisterId id = machine_->float_return_reg(i)->id();
+                eq.erase(id);
+                lit.erase(id);
+            }
         }
     }
 }
