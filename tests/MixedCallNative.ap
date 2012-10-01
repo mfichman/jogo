@@ -1,0 +1,14 @@
+# aptest exec on
+
+mixed4(a Int, b Float, c Int, d Float) native
+mixed20(a Int, b Float, c Int, d Float, e Int, f Float, g Int, h Float, i Int, j Float,
+        k Int, l Float, m Int, n Float, o Int, p Float, q Int, r Float, s Int, t Float) native
+
+main() Int {
+    mixed4(1, 0.2, 3, 0.4)
+    Io::println("")
+    mixed20(1, 0.2, 3, 0.4, 5, 0.6, 7, 0.8, 9, 1.0, 
+            11, 1.2, 13, 1.4, 15, 1.6, 17, 1.8, 19, 2.0)
+
+    ret 0
+}

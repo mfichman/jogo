@@ -37,7 +37,7 @@ void Intel64CodeGenerator::operator()(File* file) {
     // literals, forward declarations, and function definitions.
     if (env_->errors()) { return; }
 
-    out_ << "default rel\n";
+    //out_ << "default rel\n";
     out_ << "section .data\n";
     align();
     for (String::Ptr s = env_->strings(); s; s = s->next()) {
@@ -480,6 +480,20 @@ void Intel64CodeGenerator::store_hack(Operand a1, Operand a2) {
 }
 
 void Intel64CodeGenerator::load_hack(Operand res, Operand a1) {
+    // FixMe: All these shenanigans are needed b/c NASM doesn't properly load
+    // from a memory location to a 64-bit register.  For example, the following
+    // works sometimes with "default rel" mode, but not always:
+    //
+    // mov xmm9, [addr]
+    // mov rax, [addr]
+    //
+    // For now, this function works around this by inefficiently loading the
+    // address directly into a register, and then using that register to
+    // further load the literal:
+    //
+    // mov rax, addr
+    // mov rax, [rax]
+
     char const* mov = (res.is_float() ? "movsd" : "mov qword");
     if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(a1.literal())) {
         std::stringstream ss(le->value()->string());
@@ -499,6 +513,13 @@ void Intel64CodeGenerator::load_hack(Operand res, Operand a1) {
             operand(res);
             out_ << "]\n";
         }
+    } else if(FloatLiteral* le = dynamic_cast<FloatLiteral*>(a1.literal())) {
+        out_ << "    push rax\n";
+        out_ << "    mov rax, lit" << (void*)le->value() << "\n"; 
+        out_ << "    movsd ";   
+        operand(res);
+        out_ << ", [rax]\n"; 
+        out_ << "    pop rax\n";
     } else if(a1.label() && a1.is_indirect()) {
         out_ << "    " << mov << " ";
         operand(res);

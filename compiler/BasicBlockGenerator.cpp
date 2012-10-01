@@ -1660,6 +1660,7 @@ void FuncMarshal::call(Operand func) {
             gen_->arg_slots_inc(1);
             gen_->store(Operand(sp, Address(stack_arg)), arg_[i]);
             stack_arg++;
+            // Windows: also pass the value on the stack
 #endif
         } else {
             gen_->arg_slots_inc(1);

@@ -107,6 +107,7 @@ Machine* Machine::intel64() {
     Register::Ptr xmm13 = m->float_reg("xmm13"); m->callee_reg(xmm13);
     Register::Ptr xmm14 = m->float_reg("xmm14"); m->callee_reg(xmm14);
     Register::Ptr xmm15 = m->float_reg("xmm15"); m->callee_reg(xmm15);
+    // Disabled b/c NASM doesn't support xmm8-xmm15
     
     m->return_reg(rax);
 #ifdef WINDOWS
