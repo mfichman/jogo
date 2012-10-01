@@ -159,7 +159,8 @@ void RegisterAllocator::build_stack() {
         int index = 0;
 
         for (int i = 0; i < work.size(); i++) {
-            int const regs = machine_->regs();
+            int const regs = machine_->regs()-1;
+            // Include all registers, except for the stack pointer register
             RegisterId temp = work[i]->temp();
             if (!machine_->reg(temp) && work[i]->neighbors().count() < regs) {  
                 choice = work[i];
@@ -224,7 +225,9 @@ bool RegisterAllocator::color_ok(RegisterVertex const& v, RegisterId reg) {
 
 RegisterId RegisterAllocator::color_reg(RegisterVertex const& v) {
     // Attempts to select a machine register for 'v'.
-    for (int j = 1; j < machine_->regs(); ++j) {
+    for (int j = 2; j < machine_->regs(); ++j) {
+        // FixMe: Start at 2 to avoid using the special 'sp' register.  Really, 
+        // this should instead iterate over all 'allocatable' registers.
         RegisterId reg = machine_->reg(RegisterId(j, 0))->id();
         if (color_ok(v, reg)) {
             if (env_->dump_regalloc()) {
@@ -322,8 +325,8 @@ void RegisterAllocator::spill_register(Function* func) {
 
     spilled_.set(spilled);
     assert(!!spilled);
-    func->stack_vars_inc();
-    Address addr = Address(-func->stack_vars());
+    func->local_slots_inc();
+    Address addr = Address(-func->local_slots());
 
     // Iterate through all blocks, and insert loads/stores before reads/writes
     // of the spilled register.

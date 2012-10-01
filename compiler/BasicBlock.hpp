@@ -165,8 +165,8 @@ Stream::Ptr operator<<(Stream::Ptr out, Operand const& op);
 
 /* Enumeration of opcodes available to the TAC code */
 enum Opcode { 
-    MOV, ADD, SUB, MUL, DIV, NEG, ANDB, ORB, PUSH, POP, LOAD, STORE, NOTB,
-    CALL, JUMP, BNE, BE, BNZ, BZ, BG, BL, BGE, BLE, RET, NOP, POPN, PUSHN
+    MOV, ADD, SUB, MUL, DIV, NEG, ANDB, ORB, LOAD, STORE, NOTB, CALL, JUMP,
+    BNE, BE, BNZ, BZ, BG, BL, BGE, BLE, RET, NOP
     // Note: BNE through BLE must be contiguous
 };
 

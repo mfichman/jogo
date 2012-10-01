@@ -150,7 +150,9 @@ public:
 	Function* called_func(int index) { return called_func_[index]; }
 	ThrowSpec throw_spec() const;
     int basic_blocks() const { return basic_block_.size(); }
-    int stack_vars() const { return stack_vars_; }
+    int local_slots() const { return local_slots_; }
+    int arg_slots() const { return arg_slots_; }
+    int stack_slots() const { return arg_slots_ + local_slots_; }
 	int called_funcs() const { return called_func_.size(); }
     int temp_regs() const { return temp_regs_; }
     bool covariant(Function* other) const;
@@ -159,8 +161,10 @@ public:
     bool is_copier() const { return name()->string() == "@copy"; }
     bool is_virtual() const;
 	bool is_primitive_op() const;
-    void stack_vars_inc() { stack_vars_++; }
-    void stack_vars(int value) { stack_vars_ = value; }
+    void local_slots_inc() { local_slots_++; }
+    void local_slots(int value) { local_slots_ = value; }
+    void arg_slots_inc() { arg_slots_++; }
+    void arg_slots(int value) { arg_slots_ = value; }
     void temp_regs(int value) { temp_regs_ = value; }
     void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
     void basic_block_del_all() { basic_block_.clear(); }
@@ -176,7 +180,8 @@ private:
     Block::Ptr block_;
     std::vector<BasicBlock::Ptr> basic_block_;
 	std::vector<Function*> called_func_;
-    int stack_vars_;
+    int local_slots_;
+    int arg_slots_;
     int temp_regs_;
 	mutable ThrowSpec throw_spec_;
 };

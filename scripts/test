@@ -133,17 +133,20 @@ def cpp_test(test):
 for test in tests:
     # Iterate through all the tests, and run the correct callback for each
     # test type.
-    print(test)
     if re.search(r'.ap$', test):
+        print(test)
         apollo_test(test)
         total += 1
     elif re.search(r'.py$', test):
+        print(test)
         python_test(test)
         total += 1
-    elif re.search(r'.c$', test):
+    elif re.search(r'.c$', test) and not os.path.exists(test[:-2]+".ap"):
+        print(test)
         native_test(test)
         total += 1
     elif re.search(r'.cpp$', test):
+        print(test)
         cpp_test(test)
         total += 1
 

@@ -87,14 +87,11 @@ void BasicBlockPrinter::operator()(BasicBlock* block) {
         case ANDB: out_ << res << " <- " << first << " & " << second; break;
         case ORB: out_ << res << " <- " << first << " | " << second; break; 
         case NOTB: out_ << res << " <- not " << first; break;
-        case PUSH: out_ << "push " << first; break; 
-        case PUSHN: out_ << "pushn " << first; break;
-        case POP: out_ << res << " <- " << "pop"; break;
-        case POPN: out_ << "popn " << first; break;
         case STORE: out_ << "store " << first << ", " << second; break;
         case LOAD: out_ << res << " <- " << "load " << first; break;
         case MOV: out_ << res << " <- " << first; break;
-        case CALL: out_ << "call ";
+        case CALL: 
+            out_ << "call ";
             if (first.label()) {
                 out_ << first.label();
             } else {

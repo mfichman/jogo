@@ -30,7 +30,8 @@ using namespace std;
 BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
     env_(env),
     machine_(mach),
-    stack_values_(0),
+    local_slots_(0),
+    arg_slots_(0),
     invert_branch_(false),
     invert_guard_(false),
     temp_(0),
@@ -601,7 +602,6 @@ void BasicBlockGenerator::operator()(Function* feature) {
     function_ = feature;
     block_ = 0;
     emit(basic_block());
-    stack_.clear();
     enter_scope();
 
     // Pop the formal parameters off the stack in normal order, and save them
@@ -639,7 +639,8 @@ void BasicBlockGenerator::operator()(Function* feature) {
     }
     exit_scope();
     feature->temp_regs(temp_);
-    assert(stack_values_ == 0 && "Invalid stack alloc");
+    assert(local_slots_ == 0 && "Invalid stack alloc");
+    assert(arg_slots_ == 0 && "Invalid stack alloc");
 }
 
 void BasicBlockGenerator::operator()(Attribute* feature) {
@@ -811,22 +812,9 @@ Variable* BasicBlockGenerator::variable(String* name) {
     return 0;
 }
 
-Address BasicBlockGenerator::stack(String* name) {
-    map<String::Ptr, Address>::iterator i = stack_.find(name);
-    if (i != stack_.end()) {
-        return i->second;
-    } else {
-        return Address();
-    }
-}
-
 void BasicBlockGenerator::variable(Variable* var) {
     assert(scope_.size());
     scope_.back()->variable(var);
-}
-
-void BasicBlockGenerator::stack(String* name, Address offset) {
-    stack_.insert(make_pair(name, offset));
 }
 
 void BasicBlockGenerator::enter_scope() {
@@ -854,8 +842,8 @@ void BasicBlockGenerator::exit_scope() {
 Operand BasicBlockGenerator::stack_value(Type* type) {
     // Allocate space for a local value-type variable or temporary on the
     // stack, and return the address of the allocated space.
-    stack_values_inc(type->clazz()->slots());
-    return Address(-stack_values_,0); 
+    local_slots_inc(type->clazz()->slots());
+    return Address(-local_slots_,0); 
 }
 
 Operand BasicBlockGenerator::id_operand(String* id) {
@@ -863,25 +851,24 @@ Operand BasicBlockGenerator::id_operand(String* id) {
     // scope.  Assert if the lookup fails.
     Variable::Ptr var = variable(id);
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
-    if (var) {
+    if (var && !var->operand().reg()) {
+        // Variable can't be found in a temporary; it must be an argument
+        // passed on the stack.
+        assert(!!var->operand().addr() && "No address or reg for operand");
+        Operand val = load(Operand(var->operand().addr())); 
+        if (var->operand().is_float()) {
+            val = Operand(RegisterId(val.reg().id(), RegisterId::FLOAT));
+        }
+        variable(new Variable(id, val, 0));
+        return val;
+    } else if (var && !!var->operand().reg()) {
         return var->operand();
     } else if (attr) {
         Operand self = variable(env_->name("self"))->operand();
         return load(Operand(self.reg(), Address(attr->slot())));
     } else {
-        // Variable can't be found in a temporary; it must be an argument 
-        // passed on the stack.
-
-        Address offset = stack(id);
-        assert(!!offset && "Identifier not found");
-        Operand var = load(Operand(offset)); 
-        // A load operand of zero means the variable must be loaded relative
-        // to the base pointer.
-
-        variable(new Variable(id, var, 0));
-        return var;
+        assert(!"Identifier not found");
     }
-
 }
 
 Operand BasicBlockGenerator::bool_expr(Expression* expression) {
@@ -943,7 +930,7 @@ void BasicBlockGenerator::scope_cleanup(Variable* var) {
     } else if (type->is_compound()) {
         // Call the value type's destructor, if it exists.
         value_dtor(var->operand(), type);
-        stack_values_dec(type->clazz()->slots());
+        local_slots_dec(type->clazz()->slots());
     } else {
         assert(!"Invalid type");
     }
@@ -974,8 +961,7 @@ void BasicBlockGenerator::func_return() {
         } else if (!retval.is_float() && machine_->int_return_regs()) {
             mov(machine_->int_return_reg(0)->id(), retval); 
         } else {
-            // Otherwise, return on the stack.
-            push(retval);
+            assert(!"No return register");
         }
     }
     
@@ -1356,13 +1342,22 @@ void BasicBlockGenerator::constants() {
     }
 }
 
-void BasicBlockGenerator::stack_values_inc(int count) {
-    stack_values_ += count;
-    function_->stack_vars(std::max(function_->stack_vars(), stack_values_));
+void BasicBlockGenerator::local_slots_inc(int count) {
+    local_slots_ += count;
+    function_->local_slots(std::max(function_->local_slots(), local_slots_));
 }
 
-void BasicBlockGenerator::stack_values_dec(int count) {
-    stack_values_ -= count;
+void BasicBlockGenerator::local_slots_dec(int count) {
+    local_slots_ -= count;
+}
+
+void BasicBlockGenerator::arg_slots_inc(int count) {
+    arg_slots_ += count;
+    function_->arg_slots(std::max(function_->arg_slots(), arg_slots_));
+}
+
+void BasicBlockGenerator::arg_slots_dec(int count) {
+    arg_slots_ -= count;
 }
 
 void BasicBlockGenerator::attr_assignment(Assignment* expr) {
@@ -1456,7 +1451,7 @@ void BasicBlockGenerator::value_assign_mem(Operand src, Operand dst, Type* type)
         // Value is a temporary; move data from 'src' to 'dst'
         value_move(src, dst, type);
         value_temp_.erase(src.reg());
-        stack_values_dec(type->clazz()->slots()); 
+        local_slots_dec(type->clazz()->slots()); 
     }  
     return_ = mov(dst);
 }
@@ -1565,29 +1560,6 @@ void BasicBlockGenerator::emit(BasicBlock* block) {
     function_->basic_block(block);
 }
 
-Operand BasicBlockGenerator::pop() {
-    Instruction in = block_->instr(POP, temp_inc(), Operand(), Operand()); 
-    return RegisterId(temp_, 0);
-}
-
-void BasicBlockGenerator::popn(int num) {
-    if (num) {
-       String::Ptr val = env_->integer(stringify(num)); 
-       Operand op(new IntegerLiteral(Location(), val));
-       block_->instr(POPN, Operand(), op, Operand());
-    }
-}
-
-void BasicBlockGenerator::push(Operand t2) {
-    block_->instr(PUSH, Operand(), t2, Operand());    
-}
-
-void BasicBlockGenerator::pushn(int num) {
-    String::Ptr val = env_->integer(stringify(num));
-    Operand op(new IntegerLiteral(Location(), val));
-    block_->instr(PUSHN, Operand(), op, Operand());
-}
-
 void BasicBlockGenerator::store(Operand addr, Operand value) {
     block_->instr(STORE, Operand(), addr, value);    
 }
@@ -1668,31 +1640,35 @@ void FuncMarshal::call(Operand func) {
     // Emits instructions for pushing the function arguments and invoking the
     // function specified by 'func', which may be a label or a function
     // pointer.
+    assert(gen_->machine_->sp_reg());
+    RegisterId sp = gen_->machine_->sp_reg()->id();
     int int_arg = 0;
     int float_arg = 0;
-    int stack = 0;
-    for (int i = arg_.size()-1; i >= 0; i--) {
+    int stack_arg = 0;
+    for (int i = 0; i < arg_.size(); ++i) {
         Register* reg = 0;
         if (arg_[i].is_float()) {
-            reg = gen_->machine_->float_arg_reg(float_args_-float_arg-1);
+            reg = gen_->machine_->float_arg_reg(float_arg);
             float_arg++;
         } else {
-            reg = gen_->machine_->int_arg_reg(int_args_-int_arg-1);
+            reg = gen_->machine_->int_arg_reg(int_arg);
             int_arg++;
         }
         if (reg) {
             gen_->mov(reg->id(), arg_[i]); // Pass argument by register
 #ifdef WINDOWS
-            gen_->push(arg_[i]); // Windows: Argument also passed on stack
-            stack++;
+            gen_->arg_slots_inc(1);
+            gen_->store(Operand(sp, Address(stack_arg)), arg_[i]);
+            stack_arg++;
 #endif
         } else {
-            gen_->push(arg_[i]); // Argument is passed on stack
-            stack++;
+            gen_->arg_slots_inc(1);
+            gen_->store(Operand(sp, Address(stack_arg)), arg_[i]);
+            stack_arg++;
         }
-    } 
+    }
     gen_->call(func);
-    gen_->popn(stack);
+    gen_->arg_slots_dec(stack_arg);
 }
 
 void FuncUnmarshal::arg(String* name, Type* type) {
@@ -1716,10 +1692,14 @@ void FuncUnmarshal::arg(String* name, Type* type) {
         // On Windows, the value is also passed with a backing location on
         // the stack.
 #ifdef WINDOWS
-        gen_->stack(name, Address(gen_->stack_.size()+1));
+        RegisterId id(0, type->is_float() ? RegisterId::FLOAT : 0);
+        Operand op(id, Address(++stack_args_));
+        gen_->variable(new Variable(name, op, 0));
 #endif
     } else {
-        gen_->stack(name, Address(gen_->stack_.size()+1));
+        RegisterId id(0, type->is_float() ? RegisterId::FLOAT : 0);
+        Operand op(id, Address(++stack_args_));
+        gen_->variable(new Variable(name, op, 0));
     }
 }
 

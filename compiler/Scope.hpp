@@ -44,7 +44,7 @@ public:
 
     String* name() const { return name_; }
     Operand operand() const { return operand_; }
-    Type* type() const { return type_; }
+    Type* type() const { return type_; } // null == no cleanup on stack unwind
     Scope* scope() const { return scope_; }
     bool is_immutable() const { return is_immutable_; }
     void scope(Scope* scope) { scope_ = scope; }

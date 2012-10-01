@@ -131,10 +131,10 @@ void Intel64CodeGenerator::operator()(Function* feature) {
 
         stack_check(feature);
 
-        if (feature->stack_vars()) {
+        if (feature->stack_slots()) {
             // Allocate space on the stack; ensure that the stack is aligned to
             // a 16-byte boundary.
-            int stack = feature->stack_vars() * machine_->word_size();
+            int stack = feature->stack_slots() * machine_->word_size();
             if (stack % 16 != 0) {
                 stack += 16 - (stack % 16);
             }
@@ -154,14 +154,7 @@ void Intel64CodeGenerator::operator()(Function* feature) {
 
 void Intel64CodeGenerator::operator()(BasicBlock* block) {
     // Translate a basic block in three-address code into x86.  For most
-    // operations, this requires a "mov, op" sequence.  PUSH and POP
-    // instructions are handled specially, since the first 6 parameters to a
-    // function in Intel64 are passed using registers.  The rest are passed on
-    // the stack.  
-    // FixMe: Different registers are used on Windows vs. Unix
-    // FixMe: Remove hardcoded Operand(x) and replace with symbolic reg names.
-    // FixMe: Don't hardcode the # of register params.
-
+    // operations, this requires a "mov, op" sequence.  
     
     BasicBlock::Ptr branch = block->branch();
     BasicBlock::Ptr next = block->next();
@@ -201,16 +194,6 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
         case MUL: arith(inst); break;
         case DIV: arith(inst); break;
         case NEG: instr("mov", res, a1); instr("neg", res); break;
-        case PUSH: instr("push", a1); break;
-        case POP: instr("pop", res); break;
-        case POPN:
-            out_ << "    add rsp, ";
-            out_ << machine_->word_size() << "*" << a1 << "\n";
-            break;  
-        case PUSHN:
-            out_ << "    sub rsp, ";
-            out_ << machine_->word_size() << "*" << a1 << "\n";
-            break;
         case STORE: store_hack(a1, a2); break;
             // FIXME: Simplify the code path for labels, loads, stores,
             // literals, etc.

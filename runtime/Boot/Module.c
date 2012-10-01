@@ -60,6 +60,14 @@ void Boot_print_int(Int integer) {
     fflush(stdout);
 }
 
+void Boot_print_float(Float fl) {
+    // Print a float to stdout.  This function is here only to run initial
+    // tests on the compiler, and isn't part of the public API.
+
+    fprintf(stdout, "%g", fl);
+    fflush(stdout);
+}
+
 void Boot_print_char(Char character) {
     // Print a character to stdout.  This function is not part of the public 
     // API for the Apollo library.

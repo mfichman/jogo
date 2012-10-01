@@ -57,16 +57,16 @@ Stream::Ptr operator<<(Stream::Ptr out, const Operand& op) {
     }
     if (!!op.addr() && !!op.reg()) {
         if (op.is_indirect()) { out << "mem["; }
-        out << "rsp+" << op.reg() << "+" << op.addr();
+        out << op.reg() << "+" << op.addr();
         if (op.is_indirect()) { out << "]"; }
         return out;
     }
     if (!!op.addr()) {
         if (op.is_indirect()) { out << "mem["; }
         if (op.addr().value() < 0) {
-            out << "rsp-" << -op.addr().value();
+            out << "rbp-" << -op.addr().value();
         } else {
-            out << "rsp+" << op.addr();
+            out << "rbp+" << op.addr();
         }
         if (op.is_indirect()) { out << "]"; }
         return out;

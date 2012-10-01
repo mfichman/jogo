@@ -95,6 +95,10 @@ func20(a Int, b Int, c Int, d Int, e Int, f Int, g Int, h Int, i Int, j Int,
     Boot::print_str("\n")
 }
 
+funcret() Int {
+    ret 42
+}
+
 main() Int {
     func1(1, 2, 3)
     func2(1, 2, 3, 4)
@@ -105,5 +109,7 @@ main() Int {
     func7(1, 2, 3, 4, 5, 6, 7, 8)
     func20(1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
            11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+    Boot::print_int(funcret())
+    Boot::print_str("\n")
     ret 0
 }

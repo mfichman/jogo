@@ -92,10 +92,6 @@ private:
     Operand andb(Operand t2, Operand t3) { return emit(ANDB, t2, t3); }
     Operand orb(Operand t2, Operand t3) { return emit(ORB, t2, t3); }
     Operand load(Operand addr) { return emit(LOAD, addr); }
-    Operand pop();
-    void popn(int num); 
-    void push(Operand t2);
-    void pushn(int num);
     void store(Operand addr, Operand value);
     void call(Operand func);
     void ret();
@@ -111,12 +107,7 @@ private:
     void emit(BasicBlock* block); 
     void branch(Opcode o, Operand t2, Operand t3, BasicBlock* b, BasicBlock* n);
 
-    Variable* variable(String* name);
-    RegisterId temp_inc() { return RegisterId(++temp_, 0); }
-    BasicBlock* basic_block();
-    Address stack(String* name);
     void variable(Variable* var);
-    void stack(String* name, Address offset);
     void enter_scope();
     void exit_scope();
     void call(Function* func, Expression* args);
@@ -133,8 +124,10 @@ private:
     void free_temps();
     void calculate_size(Class* clazz);
     void constants();
-    void stack_values_inc(int count);
-    void stack_values_dec(int count);
+    void local_slots_inc(int count);
+    void local_slots_dec(int count);
+    void arg_slots_inc(int count);
+    void arg_slots_dec(int count);
     void attr_assignment(Assignment* expr);
     void initial_assignment(Assignment* expr);
     void secondary_assignment(Assignment* expr);  
@@ -147,6 +140,9 @@ private:
     Operand pop_ret(Type* type);
     Operand id_operand(String* id);
     Operand stack_value(Type* type);
+    RegisterId temp_inc() { return RegisterId(++temp_, 0); }
+    Variable* variable(String* name);
+    BasicBlock* basic_block();
 
     Environment::Ptr env_;
     Machine::Ptr machine_;
@@ -161,8 +157,8 @@ private:
     std::vector<Scope::Ptr> scope_;
     // Mapping from var to temporary
 
-    std::map<String::Ptr, Address> stack_;
-    int stack_values_;
+    int local_slots_;
+    int arg_slots_;
     // Mapping from a variable to a stack location
 
     Opcode branch_op_;
@@ -201,7 +197,7 @@ private:
 class FuncUnmarshal {
 public:
     FuncUnmarshal(BasicBlockGenerator* gen) :
-        gen_(gen), int_args_(0), float_args_(0) {
+        gen_(gen), int_args_(0), float_args_(0), stack_args_(0) {
     }
     void arg(String* name, Type* type);
 
@@ -209,6 +205,7 @@ private:
     BasicBlockGenerator* gen_;
     int int_args_;
     int float_args_;
+    int stack_args_;
 };
 
 

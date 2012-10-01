@@ -103,3 +103,7 @@ void func20(Int a, Int b, Int c, Int d, Int e, Int f, Int g, Int h, Int i, Int j
     printf("\n");
     fflush(stdout);
 }
+
+Int funcret() {
+    return 42;
+}

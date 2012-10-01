@@ -29,6 +29,7 @@ Main < Object {
 
 print_str(string String) native
 print_int(integer Int) native
+print_float(float Float) native
 print_char(character Char) native
 print_ptr(integer Empty) native
 dummy(a Int, b Int, c Int) native

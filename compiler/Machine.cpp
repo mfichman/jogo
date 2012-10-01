@@ -70,25 +70,26 @@ Machine* Machine::intel64() {
     // Volatile/temporary register = callee reg. Not saved by the callee, so
     // not safe to be live across function calls
     
-    Register::Ptr rax = m->int_reg("rax"); m->callee_reg(rax); //1 VOL
-    Register::Ptr rbx = m->int_reg("rbx"); m->caller_reg(rbx); //2
-    Register::Ptr rcx = m->int_reg("rcx"); m->callee_reg(rcx); //3 VOL
-    Register::Ptr rdx = m->int_reg("rdx"); m->callee_reg(rdx); //4 VOL
+    Register::Ptr rsp = m->int_reg("rsp"); m->sp_reg(rsp); // 1
+    Register::Ptr rax = m->int_reg("rax"); m->callee_reg(rax); //2 VOL
+    Register::Ptr rbx = m->int_reg("rbx"); m->caller_reg(rbx); //3
+    Register::Ptr rcx = m->int_reg("rcx"); m->callee_reg(rcx); //4 VOL
+    Register::Ptr rdx = m->int_reg("rdx"); m->callee_reg(rdx); //5 VOL
 
 #ifdef WINDOWS
-    Register::Ptr rdi = m->int_reg("rdi"); m->caller_reg(rdi); //5
+    Register::Ptr rdi = m->int_reg("rdi"); m->caller_reg(rdi); //6
 #else
-    Register::Ptr rdi = m->int_reg("rdi"); m->callee_reg(rdi); //5
+    Register::Ptr rdi = m->int_reg("rdi"); m->callee_reg(rdi); //6
 #endif
-    Register::Ptr rsi = m->int_reg("rsi"); m->callee_reg(rsi); //6
-    Register::Ptr r8 = m->int_reg("r8"); m->callee_reg(r8); //7 VOL
-    Register::Ptr r9 = m->int_reg("r9"); m->callee_reg(r9); //8 VOL
-    Register::Ptr r10 = m->int_reg("r10"); m->callee_reg(r10);//9 VOL
-    Register::Ptr r11 = m->int_reg("r11"); m->callee_reg(r11); //10 VOL
-    Register::Ptr r12 = m->int_reg("r12"); m->caller_reg(r12); //11
-    Register::Ptr r13 = m->int_reg("r13"); m->caller_reg(r13); //12
-    Register::Ptr r14 = m->int_reg("r14"); m->caller_reg(r14); //13
-    Register::Ptr r15 = m->int_reg("r15"); m->caller_reg(r15); //14
+    Register::Ptr rsi = m->int_reg("rsi"); m->callee_reg(rsi); //7
+    Register::Ptr r8 = m->int_reg("r8"); m->callee_reg(r8); //8 VOL
+    Register::Ptr r9 = m->int_reg("r9"); m->callee_reg(r9); //9 VOL
+    Register::Ptr r10 = m->int_reg("r10"); m->callee_reg(r10);//10 VOL
+    Register::Ptr r11 = m->int_reg("r11"); m->callee_reg(r11); //11 VOL
+    Register::Ptr r12 = m->int_reg("r12"); m->caller_reg(r12); //12
+    Register::Ptr r13 = m->int_reg("r13"); m->caller_reg(r13); //13
+    Register::Ptr r14 = m->int_reg("r14"); m->caller_reg(r14); //14
+    Register::Ptr r15 = m->int_reg("r15"); m->caller_reg(r15); //15
 
     Register::Ptr xmm0 = m->float_reg("xmm0"); m->callee_reg(xmm0);
     Register::Ptr xmm1 = m->float_reg("xmm1"); m->callee_reg(xmm1);
