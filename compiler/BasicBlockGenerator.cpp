@@ -865,7 +865,11 @@ Operand BasicBlockGenerator::id_operand(String* id) {
         return var->operand();
     } else if (attr) {
         Operand self = variable(env_->name("self"))->operand();
-        return load(Operand(self.reg(), Address(attr->slot())));
+        Operand val = load(Operand(self.reg(), Address(attr->slot())));
+        if (attr->type()->is_float()) {
+            val = Operand(RegisterId(val.reg().id(), RegisterId::FLOAT));
+        }
+        return val;
     } else {
         assert(!"Identifier not found");
     }
