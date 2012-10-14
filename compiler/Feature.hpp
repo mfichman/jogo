@@ -195,6 +195,7 @@ public:
     Class(Location loc, Environment* env, Type* type, Type* alt);
     Function* constructor() const;
     Function* destructor() const;
+    Function* copier() const;
     Feature* features() const { return features_; }    
     Feature* feature(String* name) const;
     String* comment() const { return comment_; }

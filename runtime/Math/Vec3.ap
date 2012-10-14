@@ -1,0 +1,100 @@
+# Copyright (c) 2012 Matt Fichman
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+Vec3 < Value {
+    # 3-dimensional floating point vector or point.  Provides common vector 
+    # operations, e.g., dot product, cross product, length.
+
+    x Float 
+    y Float
+    z Float
+
+    @init(xs Float, ys Float, zs Float) {
+        # Initializes a new vector with the given components.
+        x = xs
+        y = ys
+        z = zs
+    }
+
+#    @default() {
+#    }  Always a default constructor?  Manually set default?
+
+    dist(vec Vec3) Float {
+        # Returns the distance from this vector to another vector.
+        ret dist2(vec).sqrt
+    }
+
+    dist2(vec Vec3) Float {
+        # Returns the square of the distance from this vector to another
+        # vector.
+        dx = x - vec.x
+        dy = y - vec.y
+        dz = z - vec.z
+        ret dx*dx + dy*dy + dz*dz
+    }
+
+    cross(vec Vec3) Vec3 {
+        # Returns the cross product of this vector with another vector.  The
+        # value returned is self x other.  
+        xs = y*vec.z - z*vec.y
+        ys = z*vec.x - x*vec.z
+        zs = x*vec.y - y*vec.x
+        ret Vec3(xs, ys, zs)
+    }
+ 
+    dot(vec Vec3) Float {
+        # Returns the dot product of this vector with another vector.
+        ret x*vec.x + y*vec.y + z*vec.z
+    }   
+    
+    scale(scale Float) Vec3 {
+        # Returns a scaled version of this vector; mulitplies each component of
+        # this vector with the given scale factor.
+        ret Vec3(x*scale, y*scale, z*scale)
+    }
+
+    len?() Float {
+        # Returns the length of this vector, or the distance from the zero
+        # vector (0, 0, 0).
+        ret self.len2.sqrt
+    }
+    
+    len2?() Float {
+        # Returns the square of the length of this vector.
+        ret x*x + y*y + z*z
+    }
+
+    str?() String {
+        # Returns a string represenation of this vector.
+        ret "(#{x}, #{y}, #{z})"
+    }
+
+    @add(vec Vec3) Vec3 {
+        # Returns a new vector that is the sum of this vector and another
+        # vector.
+        ret Vec3(x+vec.x, y+vec.y, z+vec.z)
+    }
+
+    @sub(vec Vec3) Vec3 {
+        # Subtracts a vector from this vector and returns the result as a new
+        # vector. 
+        ret Vec3(x-vec.x, y-vec.y, z-vec.z)
+    }
+}

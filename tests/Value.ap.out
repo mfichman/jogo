@@ -9,6 +9,9 @@ destroy 1 6 6
 destroy 7 7 7
 destroy obj
 destroy 8 8 8
+destroy 10 10 10
+destroy 11 11 11
+destroy 9 9 9
 destroy 8 8 8
 destroy obj
 destroy 5 5 5

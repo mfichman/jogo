@@ -140,6 +140,7 @@ private:
     Operand pop_ret(Type* type);
     Operand id_operand(String* id);
     Operand stack_value(Type* type);
+    Operand stack_value_temp(Type* type);
     RegisterId temp_inc() { return RegisterId(++temp_, 0); }
     Variable* variable(String* name);
     BasicBlock* basic_block();
@@ -157,6 +158,7 @@ private:
     std::vector<Scope::Ptr> scope_;
     // Mapping from var to temporary
 
+    Operand assign_addr_;
     int local_slots_;
     int arg_slots_;
     // Mapping from a variable to a stack location

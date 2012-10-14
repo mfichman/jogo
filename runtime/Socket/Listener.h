@@ -37,7 +37,7 @@ struct Socket_Listener {
     Ptr _vtable;
     U64 _refcount;
     Int handle;
-    Socket_Addr addr;
+    struct Socket_Addr addr;
     Int backlog;
     Coroutine coroutine;
 };

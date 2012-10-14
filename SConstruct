@@ -104,6 +104,7 @@ library_src = ' '.join([
     "Http",
     "Io",
     #"Json",
+    "Math",
     "Object",
     "Os",
     "Pair",

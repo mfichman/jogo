@@ -1,0 +1,128 @@
+# aptest exec on
+
+dist() {
+    Io::println("dist")
+    x = Math::Vec3(1., 1., 1.)
+    y = Math::Vec3(2., 3., 3.)
+    Io::println("#{x.dist(y)}")
+    Io::println("#{y.dist(x)}")
+}
+
+dist2() {
+    Io::println("dist2")
+    x = Math::Vec3(1., 1., 1.)
+    y = Math::Vec3(2., 3., 3.)
+    Io::println("#{x.dist2(y)}")
+    Io::println("#{y.dist2(x)}")
+}
+
+cross() {
+    Io::println("cross")
+    x = Math::Vec3(1., 0., 0.)
+    y = Math::Vec3(0., 1., 0.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+
+    x = Math::Vec3(0., 0., 1.)
+    y = Math::Vec3(1., 0., 0.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+    
+    x = Math::Vec3(0., 1., 0.)
+    y = Math::Vec3(0., 0., 1.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+
+    x = Math::Vec3(1., 0., 0.)
+    y = Math::Vec3(1., 0., 0.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+
+    x = Math::Vec3(0., 1., 0.)
+    y = Math::Vec3(0., 1., 0.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+
+    x = Math::Vec3(0., 0., 1.)
+    y = Math::Vec3(0., 0., 1.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+}
+
+dot() {
+    Io::println("dot")
+    x = Math::Vec3(2., 0., 0.)
+    y = Math::Vec3(0., 2., 0.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+
+    x = Math::Vec3(0., 0., 2.)
+    y = Math::Vec3(2., 0., 0.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+    
+    x = Math::Vec3(0., 2., 0.)
+    y = Math::Vec3(0., 0., 2.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+
+    x = Math::Vec3(2., 0., 0.)
+    y = Math::Vec3(2., 0., 0.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+
+    x = Math::Vec3(0., 2., 0.)
+    y = Math::Vec3(0., 2., 0.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+
+    x = Math::Vec3(0., 0., 2.)
+    y = Math::Vec3(0., 0., 2.)
+    Io::println(x.cross(y).str)
+    Io::println(y.cross(x).str)
+}
+
+scale() {
+    Io::println("scale")
+    Io::println(Math::Vec3(2., 4., 6.).scale(0.2).str)
+}
+
+len() {
+    Io::println("len")
+    Io::println(Math::Vec3(1., 2., 2.).len.str)
+    Io::println(Math::Vec3(0., 0., 0.).len.str)
+}
+
+len2() {
+    Io::println("len2")
+    Io::println(Math::Vec3(1., 2., 2.).len2.str)
+    Io::println(Math::Vec3(0., 0., 0.).len2.str)
+}
+
+add() {
+    x = Math::Vec3(1., 2., 3.)
+    y = Math::Vec3(2., 4., 6.)
+    Io::println((x+y).str)
+}
+
+sub() {
+    x = Math::Vec3(1., 2., 3.)
+    y = Math::Vec3(2., 4., 6.)
+    Io::println((x-y).str)
+}
+
+
+main() Int {
+    
+    dist()
+    dist2()
+    cross()
+    dot()
+    scale()
+    len()
+    len2()
+    add()
+    sub()
+
+    ret 0
+}

@@ -139,16 +139,16 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     // be updated to indicate the error code.
     struct sockaddr_in sin;
     int socklen = 0;
+    assert(addr && "Invalid null parameter");
 #ifdef WINDOWS
     HANDLE iocp = (HANDLE)Io_manager()->handle;
 #endif
 
-    if (self->handle && Socket_Addr__equals(self->addr, addr)) { return; }
+    if (self->handle && Socket_Addr__equals(&self->addr, addr)) { return; }
     if (self->handle) {
         close(self->handle);
         self->handle = 0;
     }
-    if (!addr) { return; }
     
     self->handle = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (self->handle < 0) { 
@@ -179,10 +179,7 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     if (listen(self->handle, self->backlog) < 0) {
         Boot_abort();
     } 
-
-    Object__refcount_dec((Object)self->addr);
-    self->addr = addr;
-    Object__refcount_inc((Object)self->addr);
+    Socket_Addr__copy(&self->addr, addr);
 }
 
 void Socket_Listener_close(Socket_Listener self) {

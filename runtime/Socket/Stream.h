@@ -33,8 +33,8 @@ struct Socket_Stream {
     Ptr _vtable;
     U64 _refcount;
     Io_Stream stream;
-    Socket_Addr addr;
-    Socket_Addr peer;
+    struct Socket_Addr addr;
+    struct Socket_Addr peer;
 };
 
 Socket_Stream Socket_Stream__init();

@@ -1401,6 +1401,7 @@ Statement* Parser::let() {
     expect(Token::LET);
     Assignment::Ptr assign = assignment(); 
     while (token() == Token::COMMA) {
+        next();
         assign = append(assign, assignment());
     } 
     return new Let(loc, assign, block()); 

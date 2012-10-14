@@ -412,10 +412,10 @@ void SemanticAnalyzer::operator()(Member* expression) {
     assert(func->type() && "Attribute has no type");
     expression->type(fix_generics(expr->type(), func->type()));
     expression->function(func);
-	expression->file()->dependency(func);
-	if (function_) {
-		function_->called_func(func);
-	}
+    expression->file()->dependency(func);
+    if (function_) {
+        function_->called_func(func);
+    }
 
     if (func->is_private()) {
         err_ << expression->location();
@@ -453,7 +453,7 @@ void SemanticAnalyzer::operator()(Call* expression) {
     expression->type(func->type());
 
     // Check to make sure the resolved function is not private
-	if (func->is_private() && !expression->receiver()->type()->is_self()) {
+    if (func->is_private() && !expression->receiver()->type()->is_self()) {
         err_ << expression->location();
         err_ << "Function '" << func->name() << "' is private in class '";
         err_ << expression->receiver()->type() << "'\n";
@@ -479,9 +479,14 @@ void SemanticAnalyzer::operator()(Call* expression) {
     // FIXME: Look up generics for function
     expression->file()->dependency(func);
     expression->arguments(args(expression->arguments(), func, receiver));
-	if (function_) {
-		function_->called_func(func);
-	}
+    if (function_) {
+        function_->called_func(func);
+    }
+    if (expression->type()->is_compound()) {
+        Class* clazz = expression->type()->clazz();
+        expression->file()->dependency(clazz->copier());
+        expression->file()->dependency(clazz->destructor());
+    }
 }
 
 void SemanticAnalyzer::operator()(Construct* expression) {
@@ -528,9 +533,13 @@ void SemanticAnalyzer::operator()(Construct* expression) {
     } else {
         expression->arguments(args(expression->arguments(), constr, type));  
     }
-	if (function_) {
-		function_->called_func(constr);
-	}
+    if (function_) {
+        function_->called_func(constr);
+    }
+    if (clazz->is_compound()) {
+        expression->file()->dependency(clazz->copier());
+        expression->file()->dependency(clazz->destructor());
+    }
 }
 
 void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
@@ -814,9 +823,9 @@ void SemanticAnalyzer::operator()(Yield* statement) {
     // Nothing to check
     assert("Not supported" && !statement->expression());
 
-	// A yield statement can throw an exception; therefore, the enclosing 
-	// function can also throw an exception.
-	function_->throw_spec(Function::THROW);
+    // A yield statement can throw an exception; therefore, the enclosing 
+    // function can also throw an exception.
+    function_->throw_spec(Function::THROW);
 }
 
 void SemanticAnalyzer::operator()(Case* statement) {
@@ -828,8 +837,8 @@ void SemanticAnalyzer::operator()(Case* statement) {
 }
 
 void SemanticAnalyzer::operator()(Match* statement) {
-	// Check a match statement.  First by check the guard, and then by ensure 
-	// that each case expression has the same type as the guard.
+    // Check a match statement.  First by check the guard, and then by ensure 
+    // that each case expression has the same type as the guard.
     Expression::Ptr guard = statement->guard();
     guard(this);
 
@@ -944,7 +953,12 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     // the initializer expression.
     Expression::Ptr init = feature->initializer();
     Feature::Ptr parent = feature->parent();
+    Type::Ptr declared = feature->declared_type();
     if (feature->type()) { return; }
+    if (feature->file()->is_interface_file()) {
+        feature->type(declared);
+        return;
+    }
 
     // Save the current class and variable scope.
     ContextAnchor context(this);
@@ -971,7 +985,6 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     feature->type(env_->bottom_type());
     init(this);
 
-    Type::Ptr declared = feature->declared_type();
     if (declared->is_top()) {
         // No explicitly declared type, but the init can be used to infer the
         // type.
@@ -1282,6 +1295,11 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
         env_->error();
         return;
     }
+    if (expr->type()->is_compound()) {
+        Class* clazz = expr->type()->clazz();
+        expr->file()->dependency(clazz->copier());
+        expr->file()->dependency(clazz->destructor());
+    }
 }
 
 void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
@@ -1333,9 +1351,8 @@ void SemanticAnalyzer::copier() {
     // be copied as the first argument.
     String::Ptr nm = env_->name("@copy");
     Function::Ptr copy = class_->function(nm);
-    assert((!copy || copy->parent() != class_) && "Not supported");
     // Custom copy constructor!
-    if (!copy || (copy->parent() != class_)) {
+    if (!copy) {
         Type::Ptr vt = env_->void_type();
         Location loc = class_->location();
         Block::Ptr block(new Block(loc, 0, 0));
@@ -1343,6 +1360,8 @@ void SemanticAnalyzer::copier() {
         Formal::Ptr other(new Formal(loc, env_->name("val"), class_->type())); 
         self->next(other);
         class_->feature(new Function(loc, env_, nm, self, 0, vt, block));
+    } else {
+        assert(copy->parent() == class_ && "Not supported");
     }
 }
 

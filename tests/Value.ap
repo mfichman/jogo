@@ -101,7 +101,22 @@ main() Int {
     # destroy 7 7 7 + obj
     # destroy 8 8 8
     
+    x = ref.complex
+    x.x = 9
+    x.y = 9
+    x.z = 9
     
+    z = x
+    z.x = 10
+    z.y = 10
+    z.z = 10
+    z = ref.complex # destroy 10 10 10
+    z.x = 11
+    z.y = 11
+    z.z = 11
+    
+    # destroy 8 8 8 (z)
+    # destroy 9 9 9 (x) 
     # destroy 8 8 8 (ref) + obj
     # destroy 5 5 5 (val) + obj
     # destroy 4 4 4 (vec3)

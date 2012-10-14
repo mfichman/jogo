@@ -59,6 +59,9 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     // to or written from.  This function is tricky because Windows expects
     // a call to ConnectEx before the wait() on the I/O completion port,
     // whereas the wait() happens before the call to connect() on Unix systems.
+
+    assert(addr && "Invalid null argument");
+    Socket_Addr__copy(&self->peer, addr);
     int sd = 0;
     int ret = 0;
     struct sockaddr_in sin;
@@ -77,13 +80,12 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     // Check to make sure that the socket isn't already connected to the given
     // address.  If it's connected to a different address, then close the 
     // existing file descriptor and reopen a new connection.
-    if (self->stream && Socket_Addr__equals(self->addr, addr)) { return; }
+    if (self->stream && Socket_Addr__equals(&self->addr, addr)) { return; }
     if (self->stream) {
         Io_Stream_close(self->stream);
         Object__refcount_dec((Object)self->stream);
         self->stream = 0;
     }
-    if (!addr) { return; }
 
     // Allocate a socket
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);

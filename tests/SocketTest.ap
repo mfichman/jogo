@@ -1,5 +1,11 @@
 # aptest exec on
 
+
+Test < Object {
+    addr immutable = Socket::Addr('', 0)
+    
+}
+
 main() Int {
     stdout = Io::stdout()
     ls = Socket::listen('localhost', 0)

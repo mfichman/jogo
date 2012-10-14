@@ -86,6 +86,11 @@ void InterfaceGenerator::operator()(Function* function) {
     out_ << "\n";
 }
 
+void InterfaceGenerator::operator()(Attribute* attr) {
+    print_tabs();
+    out_ << attr->name() << " " << attr->type() << "\n"; 
+}
+
 void InterfaceGenerator::print_tabs() {
     for (int i = 0; i < indent_level_; i++) {
         out_ << "    ";

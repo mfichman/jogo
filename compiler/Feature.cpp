@@ -112,6 +112,10 @@ Function* Class::constructor() const {
     return function(env()->name("@init"));
 }
 
+Function* Class::copier() const {
+    return function(env()->name("@copy"));
+}
+
 String* Class::default_enum_value() const {
     // Returns the first (default) value in the enumeration.
     for (Feature* feat = features_; feat; feat = feat->next()) {

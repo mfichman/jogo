@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-Addr < Object {
+Addr < Value {
     # Stores the IP address and port number of a host.  An Addr object can be
     # constructed from a string, which is in the format 'ip.ip.ip.ip:port' for
     # an IPv4 address and '[ipv6]:port' for an IPv6 address.  A hostname can
@@ -48,7 +48,7 @@ Addr < Object {
     }
     
     @equals(other Addr) Bool {
-        ret other and (ip == other.ip) and (port == other.port)
+        ret (ip == other.ip) and (port == other.port)
     }
 
     host?() native String {
