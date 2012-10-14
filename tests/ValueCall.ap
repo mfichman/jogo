@@ -1,0 +1,125 @@
+# aptest exec on
+
+Val < Value {
+    @init(valp Int) {
+        val = valp
+    }
+
+    val Int
+}
+
+func1(a Val, b Val, c Val) {
+    Boot::print_int(a.val)
+    Boot::print_int(b.val)
+    Boot::print_int(c.val)
+    Boot::print_str("\n")
+}
+
+func2(a Val, b Val, c Val, d Val) {
+    Boot::print_int(a.val)
+    Boot::print_int(b.val)
+    Boot::print_int(c.val)
+    Boot::print_int(d.val)
+    Boot::print_str("\n")
+}
+
+func3(a Val, b Val, c Val, d Val, e Val) {
+    Boot::print_int(a.val)
+    Boot::print_int(b.val)
+    Boot::print_int(c.val)
+    Boot::print_int(d.val)
+    Boot::print_int(e.val)
+    Boot::print_str("\n")
+}
+
+func4(a Val, b Val, c Val, d Val, e Val, f Val) {
+    Boot::print_int(a.val)
+    Boot::print_int(b.val)
+    Boot::print_int(c.val)
+    Boot::print_int(d.val)
+    Boot::print_int(e.val)
+    Boot::print_int(f.val)
+    Boot::print_str("\n")
+}
+
+func5(a Val, b Val, c Val, d Val, e Val, f Val, g Val) {
+    Boot::print_int(a.val)
+    Boot::print_int(b.val)
+    Boot::print_int(c.val)
+    Boot::print_int(d.val)
+    Boot::print_int(e.val)
+    Boot::print_int(f.val)
+    Boot::print_int(g.val)
+    Boot::print_str("\n")
+}
+
+func6(a Val, b Val, c Val, d Val, e Val, f Val, g Val, h Val) {
+    Boot::print_int(a.val)
+    Boot::print_int(b.val)
+    Boot::print_int(c.val)
+    Boot::print_int(d.val)
+    Boot::print_int(e.val)
+    Boot::print_int(f.val)
+    Boot::print_int(g.val)
+    Boot::print_int(h.val)
+    Boot::print_str("\n")
+}
+
+func7(a Val, b Val, c Val, d Val, e Val, f Val, g Val, h Val) {
+    Boot::print_int(h.val)
+    Boot::print_int(g.val)
+    Boot::print_int(f.val)
+    Boot::print_int(e.val)
+    Boot::print_int(d.val)
+    Boot::print_int(c.val)
+    Boot::print_int(b.val)
+    Boot::print_int(a.val)
+    Boot::print_str("\n")
+}
+
+func20(a Val, b Val, c Val, d Val, e Val, f Val, g Val, h Val, i Val, j Val,
+       k Val, l Val, m Val, n Val, o Val, p Val, q Val, r Val, s Val, t Val) {
+
+    Boot::print_int(a.val)
+    Boot::print_int(b.val)
+    Boot::print_int(c.val)
+    Boot::print_int(d.val)
+    Boot::print_int(e.val)
+    Boot::print_int(f.val)
+    Boot::print_int(g.val)
+    Boot::print_int(h.val)
+    Boot::print_int(i.val)
+    Boot::print_int(j.val)
+    Boot::print_int(k.val)
+    Boot::print_int(l.val)
+    Boot::print_int(m.val)
+    Boot::print_int(n.val)
+    Boot::print_int(o.val)
+    Boot::print_int(p.val)
+    Boot::print_int(q.val)
+    Boot::print_int(r.val)
+    Boot::print_int(s.val)
+    Boot::print_int(t.val)
+    Boot::print_str("\n")
+}
+
+funcret() Val {
+    ret Val(42)
+}
+
+main() Int {
+    func1(Val(1), Val(2), Val(3))
+    func2(Val(1), Val(2), Val(3), Val(4))
+    func3(Val(1), Val(2), Val(3), Val(4), Val(5))
+    func4(Val(1), Val(2), Val(3), Val(4), Val(5), Val(6))
+    func5(Val(1), Val(2), Val(3), Val(4), Val(5), Val(6), Val(7))
+    func6(Val(1), Val(2), Val(3), Val(4), Val(5), Val(6), Val(7), Val(8))
+    func7(Val(1), Val(2), Val(3), Val(4), Val(5), Val(6), Val(7), Val(8))
+    func20(Val(1), Val(2), Val(3), Val(4), Val(5), 
+           Val(6), Val(7), Val(8), Val(9), Val(10),
+           Val(11), Val(12), Val(13), Val(14), Val(15), 
+           Val(16), Val(17), Val(18), Val(19), Val(20))
+    Boot::print_int(funcret().val)
+    Boot::print_str("\n")
+    ret 0
+}
