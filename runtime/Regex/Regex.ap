@@ -18,17 +18,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+Match < Object {
+    # Contains regex match and submatch locations.
+}
+
 Regex < Object {
     # A compiled representation of a regular expression.  Regular expressions
     # are used to match arbitrary strings.
 
-    @init(regex String) {
+    @init(regex String) native {
         # Constructs a new regular expression from the given string.
     } 
 
-    @match(str String) Match {
+    @match(str String) native Match {
         # Returns true if this regular expression matches 'str'
-        ret Matcher(self) =~ str
     }          
+
+    dump() native {
+    }
 }
 

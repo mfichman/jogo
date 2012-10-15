@@ -2,13 +2,15 @@
 
 main() Int {
 
-#    re = /hello/
+    re = /a|c+b/
+    re.dump()
 
-    if /abc+/ =~ "abcccc" {
-    }
-    #    Io::println("pass")
-    #} else {
-    #    Io::println("fail")
-    #}
+    if re =~ "cccccb" {
+        Io::println("match")
+    } else {
+        Io::println("mismatch")
+    } 
+
+
     ret 0
 }

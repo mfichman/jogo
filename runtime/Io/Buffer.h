@@ -20,11 +20,10 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_BUFFER_H
-#define APOLLO_BUFFER_H
+#ifndef APOLLO_IO_BUFFER_H
+#define APOLLO_IO_BUFFER_H
 
 #include "Primitives.h"
-
 
 typedef struct Io_Buffer* Io_Buffer;
 struct Io_Buffer {
