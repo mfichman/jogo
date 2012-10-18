@@ -125,7 +125,7 @@ void Lexer::next() {
             value("");
             token(Token::SEPARATOR);
             ignore_newline_ = true;
-        } else if (char_ == '/' && token(-1).is_operator()) {
+        } else if (char_ == '/' && token(-1) != Token::IDENTIFIER) {
             regex();
             expect_comment_ = false; 
         } else if (isdigit(char_)) {

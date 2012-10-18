@@ -38,12 +38,15 @@ Regex_Regex Regex_Regex_alloc(Int capacity) {
 Regex_Regex Regex_Regex__init(String str) {
     // Parses the regular expression, and compiles it into bytecode.
     Regex_Regex ret = Regex_Regex_alloc(512);
+    struct Regex_Instr instr = {0};
+
     ret->next = str->data;
     ret = Regex_Regex_parse_alt(ret);
-    struct Regex_Instr instr;
+
     instr.type = MATCH;
     instr.target = 0;
     ret = Regex_Regex_append(ret, &instr);
+    assert(ret->instr->gen==0);
     return ret;
 }
 
@@ -63,8 +66,12 @@ void Regex_ThreadList_thread(Regex_ThreadList self, Regex_Instr pc) {
     if (pc->gen == self->regex->gen) {
         return;
     }
+    assert(self->length < self->regex->length);
+    pc->gen = self->regex->gen;
     self->thread[self->length++].pc = pc;
 }
+
+void debug() {}
 
 Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
     // Runs a mini-vm to determine if the string matches the compiled regular
@@ -73,12 +80,12 @@ Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
     Regex_ThreadList next = Regex_ThreadList__init(self, self->length);
     Int i = 0;
     Char* c = 0;
-    self->gen++;
-    
-    Regex_ThreadList_thread(cur, self->instr);
-    for (c = str->data; ; c++) {
+    self->gen++; 
+
+    for (c = str->data; 1; c++) {
+        self->gen++; 
+        Regex_ThreadList_thread(cur, self->instr);
         Regex_ThreadList temp = 0;
-        self->gen++;  
         for (i = 0; i < cur->length; ++i) {
             Regex_Thread th = cur->thread+i;
             Regex_Instr pc = th->pc;
@@ -122,7 +129,7 @@ Regex_Regex Regex_Regex_parse_alt(Regex_Regex self) {
         // Modify the instruction sequence to fit instructions for the alt. The
         // instruction seq for e1 needs to be prepended with a SPLIT, and then
         // a JUMP moves from e2 to the end of the block.
-        struct Regex_Instr instr;
+        struct Regex_Instr instr = {0};
         Regex_Regex ret = 0;
         Int l2 = 0;
         Int l1 = self->length;
@@ -185,7 +192,7 @@ Regex_Regex Regex_Regex_parse_closure(Regex_Regex self) {
         // Modify the instruction seq to fit instructions for the closure.  A
         // SPLIT is prepended to the instruction seq and a JUMP is appended to
         // the end.
-        struct Regex_Instr instr; 
+        struct Regex_Instr instr = {0}; 
         Regex_Regex ret = 0;
         Int l2 = self->length;
         Int i = 0;
@@ -232,7 +239,7 @@ Regex_Regex Regex_Regex_parse_plus(Regex_Regex self) {
     while (*self->next == '+') {
         // Modify the instruction seq to fit instructions for the closure.
         // A SPLIT is appended to the instruction seq.
-        struct Regex_Instr instr; 
+        struct Regex_Instr instr = {0}; 
         // Append a SPLIT instruction to execute the plus
         instr.type = SPLIT;
         instr.target = l1;
@@ -250,13 +257,14 @@ Regex_Regex Regex_Regex_parse_opt(Regex_Regex self) {
 Regex_Regex Regex_Regex_parse_char(Regex_Regex self) {
     Char c = *self->next;
     // Modify the instruction seq to fit instructions for the char.
-    struct Regex_Instr instr; 
-    // Append a CHAR instruction
-    instr.type = CHAR;
-    instr.target = c;
-    self = Regex_Regex_append(self, &instr);
-    self->next++;
-    c = *self->next;
+    if (c) {
+       struct Regex_Instr instr = {0}; 
+       // Append a CHAR instruction
+       instr.type = CHAR;
+       instr.target = c;
+       self = Regex_Regex_append(self, &instr);
+       self->next++;
+    }
     return self;
 }
 
@@ -267,8 +275,10 @@ Regex_Regex Regex_Regex_parse_class(Regex_Regex self) {
 Regex_Regex Regex_Regex_append(Regex_Regex self, Regex_Instr instr) {
     // Appends 'instr' and resizes 'self' if necessary.
     if (self->capacity <= self->length+1) {
-        Regex_Regex ret = Regex_Regex_alloc(self->capacity*2); 
-        Boot_memcpy(ret, self, sizeof(struct Regex_Regex)+ret->capacity);
+        self->capacity *= 2;
+        Int size = sizeof(struct Regex_Instr)*self->capacity;
+        Regex_Regex ret = Regex_Regex_alloc(sizeof(struct Regex_Regex)+size); 
+        Boot_memcpy(ret, self, sizeof(struct Regex_Regex)+size);
         Boot_free(self);
         self = ret;
     }
@@ -280,6 +290,7 @@ Regex_Regex Regex_Regex_append(Regex_Regex self, Regex_Instr instr) {
 
 
 void Regex_Regex_dump(Regex_Regex self) {
+    // Dump the regex bytecode
     Int i = 0;
     for (i = 0; i < self->length; i++) {
         struct Regex_Instr instr = self->instr[i];

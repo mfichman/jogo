@@ -1,16 +1,99 @@
+# aptest exec on
 
+
+yes(re Regex::Regex, str String) {
+    if not (re =~ str) {
+        Io::println("fail #{str}")
+        re.dump()           
+    } else {
+#        Io::println("pass #{str}")  
+    }
+}
+
+no(re Regex::Regex, str String) {
+    if re =~ str {
+        Io::println("fail #{str}")
+        re.dump()           
+    } else {
+#        Io::println("pass #{str}")
+    }
+}
+
+concat() {
+    yes(/abc/, "xxabcxxx")
+    yes(/abc/, "abcxxx")
+    yes(/abc/, "abc")
+    yes(/abc/, "xxabc")
+    no(/abc/, "xxab")
+    no(/abc/, "bcxxx")
+    no(/abc/, "a")
+    no(/abc/, "ab")
+    yes(//, "bob")
+    yes(//, "")
+    no(/ab/, "")
+    yes(//, "")
+    
+    i = 0
+    str = ""
+    while i < 1000 {
+        str = str + "x"
+        ++i
+    }
+    re = Regex::Regex(str)
+    yes(re, str)
+    
+    i = 0
+    str = ""
+    while i < 2000 {
+        str = str + "x"
+        ++i
+    }
+    yes(re, str)
+}
+
+alt() {
+    yes(/a|b|c/, "xax")
+    yes(/a|b|c/, "xbx")
+    yes(/a|b|c/, "xcx")
+    yes(/a|b|c/, "xabcx")
+    yes(/a|b|c/, "a")
+    yes(/a|b|c/, "b")
+    yes(/a|b|c/, "c")
+    no(/a|b|c/, "")
+    no(/a|b|c/, "xxxyyy")
+    yes(/a|a|a/, "xaxaxax")
+
+    i = 0
+    str = ""
+    while i < 1000 {
+        str = str + "x|"
+        ++i
+    }
+    str = str + "x"
+        
+    yes(Regex::Regex(str), "x") 
+    no(Regex::Regex(str), "") 
+    no(Regex::Regex(str), "abc") 
+}
+
+plus() {
+    yes(/a+/, "a")
+    yes(/a+/, "aa")
+    yes(/a+/, "aaa")
+    yes(/a+/, "xa")
+    yes(/a+/, "xaa")
+    yes(/a+/, "ax")
+    yes(/a+/, "aax")
+    yes(/a+/, "xax")
+    no(/a+/, "xxxx")
+    no(/a+/, "")
+    yes(/a+b+/, "ab???")
+}
 
 main() Int {
-
-    re = /a|c+b/
-    re.dump()
-
-    if re =~ "cccccb" {
-        Io::println("match")
-    } else {
-        Io::println("mismatch")
-    } 
-
+    concat()
+    alt()
+    plus()
 
     ret 0
 }
