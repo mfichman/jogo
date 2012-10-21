@@ -11,3 +11,71 @@
    fun:__cxa_get_globals
 }
 
+{
+   osx/stdlib/__cxa_get_globals 
+   Memcheck:Leak
+   fun:malloc
+   fun:atexit_register
+}
+
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:_ZL29getPerThreadBufferFor_dlerrorj
+   fun:dlopen
+   fun:dlopen
+   fun:map_images_nolock
+   fun:map_images
+   fun:_ZN4dyldL18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoE
+   fun:_ZN4dyld36registerImageStateBatchChangeHandlerE17dyld_image_statesPFPKcS0_jPK15dyld_image_infoE
+   fun:dyld_register_image_state_change_handler
+   fun:_objc_init
+   fun:libSystem_initializer
+   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc_zone_malloc
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc_zone_calloc
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:malloc
+   fun:_Znwm
+   fun:_ZN4dyld37registerImageStateSingleChangeHandlerE17dyld_image_statesPFPKcS0_jPK15dyld_image_infoE
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:malloc
+   fun:_Znwm
+   fun:_ZNSt3__16vectorIPFPKc17dyld_image_statesjPK15dyld_image_infoENS_9allocatorIS8_EEE6insertENS_11__wrap_iterIPKS8_EERSD_
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:NXCreateHashTableFromZone
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:NXCreateMapTableFromZone
+}

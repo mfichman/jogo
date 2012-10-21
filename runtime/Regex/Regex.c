@@ -26,30 +26,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-Regex_Regex Regex_Regex_alloc(Int capacity) {
-    Int size = sizeof(struct Regex_Instr)*capacity;
-    Regex_Regex ret = Boot_calloc(sizeof(struct Regex_Regex)+size);
-    ret->_vtable = Regex_Regex__vtable;
-    ret->_refcount = 1;
-    ret->capacity = capacity;
-    return ret;
-}
-
-Regex_Regex Regex_Regex__init(String str) {
-    // Parses the regular expression, and compiles it into bytecode.
-    Regex_Regex ret = Regex_Regex_alloc(512);
-    struct Regex_Instr instr = {0};
-
-    ret->next = str->data;
-    ret = Regex_Regex_parse_alt(ret);
-
-    instr.type = MATCH;
-    instr.target = 0;
-    ret = Regex_Regex_append(ret, &instr);
-    assert(ret->instr->gen==0);
-    return ret;
-}
-
 Regex_ThreadList Regex_ThreadList__init(Regex_Regex re, Int capacity) {
     // Initializes a thread list.  Used by the matcher to track the state of
     // the regex virtual machine.
@@ -71,7 +47,35 @@ void Regex_ThreadList_thread(Regex_ThreadList self, Regex_Instr pc) {
     self->thread[self->length++].pc = pc;
 }
 
-void debug() {}
+
+Regex_Regex Regex_Regex_alloc(Int capacity) {
+    Int size = sizeof(struct Regex_Instr)*capacity;
+    Regex_Regex ret = Boot_calloc(sizeof(struct Regex_Regex)+size);
+    ret->_vtable = Regex_Regex__vtable;
+    ret->_refcount = 1;
+    ret->capacity = capacity;
+    return ret;
+}
+
+Regex_Regex Regex_Regex__init(String str) {
+    // Parses the regular expression, and compiles it into bytecode.
+    Regex_Regex ret = Regex_Regex_alloc(512);
+    struct Regex_Instr instr = {0};
+
+    ret->next = str->data;
+    ret = Regex_Regex_parse_alt(ret);
+    instr.type = MATCH;
+    instr.target = 0;
+    ret = Regex_Regex_append(ret, &instr);
+    ret->next = 0;
+    assert(ret->instr->gen==0);
+    return ret;
+}
+
+void Regex_Regex__destroy(Regex_Regex self) {
+    Object__refcount_dec(self->error);
+    Boot_free(self);
+}
 
 Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
     // Runs a mini-vm to determine if the string matches the compiled regular
@@ -82,7 +86,7 @@ Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
     Char* c = 0;
     self->gen++; 
 
-    for (c = str->data; 1; c++) {
+    for (c = str->data;; c++) {
         self->gen++; 
         Regex_ThreadList_thread(cur, self->instr);
         Regex_ThreadList temp = 0;
@@ -90,11 +94,6 @@ Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
             Regex_Thread th = cur->thread+i;
             Regex_Instr pc = th->pc;
             switch (pc->type) {
-            case CHAR:
-                if (*c == pc->target) {
-                    Regex_ThreadList_thread(next, pc+1);
-                }
-                break;
             case MATCH:
                 Boot_free(cur);
                 Boot_free(next);
@@ -106,10 +105,40 @@ Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
                 Regex_ThreadList_thread(cur, self->instr+pc->target);
                 Regex_ThreadList_thread(cur, pc+1);
                 break;
+            case START:
+                if (c == str->data) {
+                    Regex_ThreadList_thread(cur, pc+1);
+                }
+                break;
+            case END:
+                if (c >= str->data+str->length) {
+                    Regex_ThreadList_thread(cur, pc+1);
+                }
+                break;
+            case CHAR:
+            case ANY:
+                break;
             default:
                 assert(!"Invalid opcode");
             }
         } 
+        self->gen++; 
+        for (i = 0; i < cur->length; ++i) {
+            Regex_Thread th = cur->thread+i;
+            Regex_Instr pc = th->pc;
+            switch (pc->type) {
+            case CHAR:
+                if (*c == pc->target) {
+                    Regex_ThreadList_thread(next, pc+1);
+                }
+                break;
+            case ANY:
+                Regex_ThreadList_thread(next, pc+1);
+                break;
+            default:
+                break;
+            }
+        }
         if (!*c) { break; }
         temp = cur;
         cur = next;
@@ -124,6 +153,7 @@ Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
 Regex_Regex Regex_Regex_parse_alt(Regex_Regex self) {
     // Parses an alternate expression, e.g., e1|e2, and emits regex interpreter
     // instructions for the expression.  May free 'self.'
+    Int l1 = self->length;
     self = Regex_Regex_parse_concat(self);
     while (*self->next == '|') {
         // Modify the instruction sequence to fit instructions for the alt. The
@@ -131,23 +161,28 @@ Regex_Regex Regex_Regex_parse_alt(Regex_Regex self) {
         // a JUMP moves from e2 to the end of the block.
         struct Regex_Instr instr = {0};
         Regex_Regex ret = 0;
-        Int l2 = 0;
-        Int l1 = self->length;
+        Int l2 = self->length;
+        Int l3 = 0;
         Int i = 0;
-        self->next++;
 
+        self->next++;
         self = Regex_Regex_parse_concat(self);
-        l2 = self->length-l1;
-        ret = Regex_Regex_alloc(Int_max(self->capacity, 2*(l1+l2)));
+        l3 = self->length;
+        ret = Regex_Regex_alloc(Int_max(self->capacity, (l3+2)*2));
         ret->next = self->next;
+
+        // Append the first part of the regex
+        for (i = 0; i < l1; ++i) {
+            ret->instr[ret->length++] = self->instr[i];
+        }
 
         // Insert a SPLIT instruction to execute the ALT
         instr.type = SPLIT;
-        instr.target = l1+2;
+        instr.target = l2+2;
         ret->instr[ret->length++] = instr;
 
         // Append e1, the first expression's instruction block
-        for (i = 0; i < l1; i++) {
+        for (i = l1; i < l2; ++i) {
             instr = self->instr[i];
             if (SPLIT == instr.type || JUMP == instr.type) {
                 instr.target++;
@@ -157,11 +192,11 @@ Regex_Regex Regex_Regex_parse_alt(Regex_Regex self) {
 
         // Insert a JUMP instruction
         instr.type = JUMP;
-        instr.target = l1+l2+2;
+        instr.target = l3+2;
         ret->instr[ret->length++] = instr;
 
         // Append e2, the second expression's instruction block
-        for (i = l1; i < l1+l2; i++) {
+        for (i = l2; i < l3; ++i) {
             instr = self->instr[i];
             if (SPLIT == instr.type || JUMP == instr.type) {
                 instr.target += 2;
@@ -177,9 +212,12 @@ Regex_Regex Regex_Regex_parse_alt(Regex_Regex self) {
 
 Regex_Regex Regex_Regex_parse_concat(Regex_Regex self) {
     // Parses a concat expression, e.g., e1e2
+    Char c = 0;
     self = Regex_Regex_parse_closure(self);
-    while (*self->next && *self->next != '|') {
+    c = *self->next;
+    while (c && c != '|' && c != ')') {
         self = Regex_Regex_parse_closure(self);  
+        c = *self->next;
     }
     return self;
 }
@@ -187,8 +225,8 @@ Regex_Regex Regex_Regex_parse_concat(Regex_Regex self) {
 Regex_Regex Regex_Regex_parse_closure(Regex_Regex self) {
     // Parses a closure expression, e.g., e*
     Int l1 = self->length;
-    self = Regex_Regex_parse_plus(self);
-    while (*self->next == '*') {
+    self = Regex_Regex_parse_opt(self);
+    if (*self->next == '*') {
         // Modify the instruction seq to fit instructions for the closure.  A
         // SPLIT is prepended to the instruction seq and a JUMP is appended to
         // the end.
@@ -228,15 +266,7 @@ Regex_Regex Regex_Regex_parse_closure(Regex_Regex self) {
     
         Boot_free(self);
         self = ret; 
-    }
-    return self;
-}
-
-Regex_Regex Regex_Regex_parse_plus(Regex_Regex self) {
-    // Parses a closure expression, e.g., e+
-    Int l1 = self->length;
-    self = Regex_Regex_parse_opt(self);
-    while (*self->next == '+') {
+    } else if (*self->next == '+') {
         // Modify the instruction seq to fit instructions for the closure.
         // A SPLIT is appended to the instruction seq.
         struct Regex_Instr instr = {0}; 
@@ -246,24 +276,96 @@ Regex_Regex Regex_Regex_parse_plus(Regex_Regex self) {
         self = Regex_Regex_append(self, &instr);
         self->next++;
     }
+    if (*self->next == '*' || *self->next == '+') {
+        static struct String err = String__static("Multiple repeat");
+        err._refcount++;
+        self->error = &err;
+    }
     return self;
 }
 
 Regex_Regex Regex_Regex_parse_opt(Regex_Regex self) {
     // Parses a optional expression, e.g., e?
-    return Regex_Regex_parse_char(self);
+    Int l1 = self->length;
+    self = Regex_Regex_parse_char(self);
+    if (*self->next == '?') {
+        // Modify the instruction seq to fit instructions for the opt.
+        struct Regex_Instr instr = {0};
+        Regex_Regex ret = 0;
+        Int l2 = self->length;  
+        Int i = 0;
+        self->next++;
+
+        ret = Regex_Regex_alloc(Int_max(self->capacity, 2*(l2+1)));
+        ret->next = self->next;
+    
+        // Append the first part of the program
+        for (i = 0; i < l1; i++) {
+            instr = self->instr[i];
+            ret->instr[ret->length++] = instr;
+        }
+
+        // Append a SPLIT instruction to execute the closure
+        instr.type = SPLIT;
+        instr.target = l2+1;
+        ret->instr[ret->length++] = instr;
+
+        // Append e1, the first expression's instruction block
+        for (i = l1; i < l2; i++) {
+            instr = self->instr[i];
+            if (SPLIT == instr.type || JUMP == instr.type) {
+                instr.target++;
+            }
+            ret->instr[ret->length++] = instr;
+        }  
+
+        Boot_free(self);
+        self = ret;
+    }
+    if (*self->next == '?') {
+        static struct String err = String__static("Multiple option");
+        err._refcount++;
+        self->error = &err;
+    }
+    return self;
 }
 
 Regex_Regex Regex_Regex_parse_char(Regex_Regex self) {
     Char c = *self->next;
     // Modify the instruction seq to fit instructions for the char.
-    if (c) {
-       struct Regex_Instr instr = {0}; 
-       // Append a CHAR instruction
-       instr.type = CHAR;
-       instr.target = c;
-       self = Regex_Regex_append(self, &instr);
-       self->next++;
+    if (c == '(') {
+        static struct String err = String__static("Unbalanced parenthesis");
+        self->next++;
+        self = Regex_Regex_parse_alt(self);         
+        if (*self->next == ')') {
+            self->next++;
+        } else {
+            err._refcount++;
+            self->error = &err;
+        }
+    } else if (c == ')') {    
+        // Do nothing
+    } else if (c == '.') {
+        struct Regex_Instr instr = {0};
+        instr.type = ANY;
+        self = Regex_Regex_append(self, &instr);
+        self->next++;
+    } else if (c == '^') {
+        struct Regex_Instr instr = {0};
+        instr.type = START;
+        self = Regex_Regex_append(self, &instr);
+        self->next++;
+    } else if (c == '$') {
+        struct Regex_Instr instr = {0};
+        instr.type = END;
+        self = Regex_Regex_append(self, &instr);
+        self->next++;
+    } else if (c) {
+        struct Regex_Instr instr = {0}; 
+        instr.type = CHAR;
+        instr.target = c;
+        self = Regex_Regex_append(self, &instr);
+        self->next++;
     }
     return self;
 }
@@ -275,10 +377,11 @@ Regex_Regex Regex_Regex_parse_class(Regex_Regex self) {
 Regex_Regex Regex_Regex_append(Regex_Regex self, Regex_Instr instr) {
     // Appends 'instr' and resizes 'self' if necessary.
     if (self->capacity <= self->length+1) {
+        Int oldsize = sizeof(struct Regex_Instr)*self->capacity;
         self->capacity *= 2;
         Int size = sizeof(struct Regex_Instr)*self->capacity;
         Regex_Regex ret = Regex_Regex_alloc(sizeof(struct Regex_Regex)+size); 
-        Boot_memcpy(ret, self, sizeof(struct Regex_Regex)+size);
+        Boot_memcpy(ret, self, sizeof(struct Regex_Regex)+oldsize);
         Boot_free(self);
         self = ret;
     }
@@ -288,6 +391,10 @@ Regex_Regex Regex_Regex_append(Regex_Regex self, Regex_Instr instr) {
     return self;
 }
 
+String Regex_Regex_error__g(Regex_Regex self) {
+    self->error->_refcount++;
+    return self->error;
+}
 
 void Regex_Regex_dump(Regex_Regex self) {
     // Dump the regex bytecode
@@ -295,19 +402,30 @@ void Regex_Regex_dump(Regex_Regex self) {
     for (i = 0; i < self->length; i++) {
         struct Regex_Instr instr = self->instr[i];
         printf("%03llx ", i);
-        if (SPLIT == instr.type) {
-            printf("split %03llx\n", instr.target);
-        } else if (JUMP == instr.type) {
-            printf("jump %03llx\n", instr.target);
-        } else if (CHAR == instr.type) {
-            printf("char %c\n", (Char)instr.target);
-        } else if (MATCH == instr.type) {
-            printf("match\n");
-        } else if (ANY == instr.type) {
-            printf("any\n");
+        switch (instr.type) {
+        case SPLIT: printf("split %03llx\n", instr.target); break;
+        case JUMP: printf("jump %03llx\n", instr.target); break;
+        case CHAR: printf("char %c\n", (Char)instr.target); break;
+        case MATCH: printf("match\n"); break;
+        case ANY: printf("any\n"); break;
+        case START: printf("start\n"); break;
+        case END: printf("end\n"); break;
+        default: assert(!"Invalid opcode"); break;
         }
     } 
     fflush(stdout);
 }
 
+Regex_Match Regex_Match__init() {
+    // Initializes a match object on the heap.
+    Regex_Match ret = Boot_calloc(sizeof(struct Regex_Match));
+    return ret;
+}
 
+void Regex_Match_group(Regex_Match self, Int index, Regex_Span ret) {
+    if (index < 0 || index > MAXGROUPS) {
+        Regex_Span__init(ret);
+    } else { 
+        *ret = self->group[index];
+    }
+}

@@ -78,7 +78,7 @@ def apollo_test(test):
     flags += ' ../bin/test/' + test.lower()
     command = '../bin/apollo ' + test + ' -i ../runtime -i ../lib ' + flags
     if options.full:
-        valgrind = 'valgrind -q --leak-check=full'
+        valgrind = 'valgrind -q --leak-check=full --track-origins=yes'
         valgrind += ' --suppressions=../scripts/valgrind.supp'
         command = valgrind + ' ' + command
     expected = open(test + '.ap.out', 'rb').read() 

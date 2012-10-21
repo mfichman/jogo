@@ -294,8 +294,8 @@ Bool Bool__init() {
 String Bool_str__g(Bool self) {
     // Returns the string representation of a Bool value, namely "true" or
     // "false".
-    static struct String true_str = { String__vtable, 1, 4, "true" };
-    static struct String false_str = { String__vtable, 1, 5, "false" };
+    static struct String true_str = String__static("true");
+    static struct String false_str = String__static("false");
     if (self) {
         true_str._refcount++;
         return &true_str;

@@ -6,7 +6,7 @@ yes(re Regex::Regex, str String) {
         Io::println("fail #{str}")
         re.dump()           
     } else {
-#        Io::println("pass #{str}")  
+#        Io::println('pass #{str}')  
     }
 }
 
@@ -15,85 +15,313 @@ no(re Regex::Regex, str String) {
         Io::println("fail #{str}")
         re.dump()           
     } else {
-#        Io::println("pass #{str}")
+#        Io::println('pass #{str}')
     }
 }
 
 concat() {
-    yes(/abc/, "xxabcxxx")
-    yes(/abc/, "abcxxx")
-    yes(/abc/, "abc")
-    yes(/abc/, "xxabc")
-    no(/abc/, "xxab")
-    no(/abc/, "bcxxx")
-    no(/abc/, "a")
-    no(/abc/, "ab")
-    yes(//, "bob")
-    yes(//, "")
-    no(/ab/, "")
-    yes(//, "")
+    yes(/abc/, 'xxabcxxx')
+    yes(/abc/, 'abcxxx')
+    yes(/abc/, 'abc')
+    yes(/abc/, 'xxabc')
+    no(/abc/, 'xxab')
+    no(/abc/, 'bcxxx')
+    no(/abc/, 'a')
+    no(/abc/, 'ab')
+    yes(//, 'bob')
+    yes(//, '')
+    no(/ab/, '')
+    yes(//, '')
     
     i = 0
-    str = ""
+    str = ''
     while i < 1000 {
-        str = str + "x"
+        str = str + 'x'
         ++i
     }
     re = Regex::Regex(str)
     yes(re, str)
     
     i = 0
-    str = ""
+    str = ''
     while i < 2000 {
-        str = str + "x"
+        str = str + 'x'
         ++i
     }
     yes(re, str)
+
+    yes(/(abc)+/, 'abcabcabc')
+    no(/(abc)+/, '')
+    yes(/(abc)*/, 'abcabcabc')
+    yes(/(abc)*/, '')
+    yes(/x(abc)?/, 'xabcabcabc')
+    yes(/x(abc)?/, 'x')
+    no(/x(abc)?/, '')
+    yes(/(abc)|(def)/, 'abc')
+    yes(/(abc)|(def)/, 'def')
+    no(/(abc)|(def)/, 'df')
+    yes(/(abc(def))/, 'abcdef')
 }
 
 alt() {
-    yes(/a|b|c/, "xax")
-    yes(/a|b|c/, "xbx")
-    yes(/a|b|c/, "xcx")
-    yes(/a|b|c/, "xabcx")
-    yes(/a|b|c/, "a")
-    yes(/a|b|c/, "b")
-    yes(/a|b|c/, "c")
-    no(/a|b|c/, "")
-    no(/a|b|c/, "xxxyyy")
-    yes(/a|a|a/, "xaxaxax")
+    yes(/a|b|c/, 'xax')
+    yes(/a|b|c/, 'xbx')
+    yes(/a|b|c/, 'xcx')
+    yes(/a|b|c/, 'xabcx')
+    yes(/a|b|c/, 'a')
+    yes(/a|b|c/, 'b')
+    yes(/a|b|c/, 'c')
+    no(/a|b|c/, '')
+    no(/a|b|c/, 'xxxyyy')
+    yes(/a|a|a/, 'xaxaxax')
 
     i = 0
-    str = ""
+    str = ''
     while i < 1000 {
-        str = str + "x|"
+        str = str + 'x|'
         ++i
     }
-    str = str + "x"
+    str = str + 'x'
         
-    yes(Regex::Regex(str), "x") 
-    no(Regex::Regex(str), "") 
-    no(Regex::Regex(str), "abc") 
+    re = Regex::Regex(str)
+    yes(re, 'x') 
+    no(re, '') 
+    no(re, 'abc') 
+    
+    yes(/(a|b)+/, 'aabbaba')
+    no(/(a|b)+/, '')
+    yes(/x(a|b)*/, 'xaabbaba')
+    yes(/x(a|b)*/, 'x')
+    no(/x(a|b)*/, '')
+    yes(/x(a|b)?/, 'xa')
+    yes(/x(a|b)?/, 'xb')
+    yes(/x(a|b)?/, 'x')
+    no(/x(a|b)?/, '')
+    yes(/x(a|b)c/, 'xac')
+    yes(/x(a|b)c/, 'xbc')
+    yes(/x|(a|b)|c/, 'x')
+    yes(/x|(a|b)|c/, 'a')
+    yes(/x|(a|b)|c/, 'b')
+    yes(/x|(a|b)|c/, 'c')
+    no(/x|(a|b)|c/, '')
 }
 
 plus() {
-    yes(/a+/, "a")
-    yes(/a+/, "aa")
-    yes(/a+/, "aaa")
-    yes(/a+/, "xa")
-    yes(/a+/, "xaa")
-    yes(/a+/, "ax")
-    yes(/a+/, "aax")
-    yes(/a+/, "xax")
-    no(/a+/, "xxxx")
-    no(/a+/, "")
-    yes(/a+b+/, "ab???")
+    yes(/a+/, 'a')
+    yes(/a+/, 'aa')
+    yes(/a+/, 'aaa')
+    yes(/a+/, 'xa')
+    yes(/a+/, 'xaa')
+    yes(/a+/, 'ax')
+    yes(/a+/, 'aax')
+    yes(/a+/, 'xax')
+    no(/a+/, 'xxxx')
+    no(/a+/, '')
+    yes(/a+b+/, 'ab???')
+    
+    i = 0
+    str = ''
+    str2 = ''
+    while i < 1000 {
+        str = str + 'a+'
+        str2 = str2 + 'a'
+        ++i
+    }
+    
+    re = Regex::Regex(str)
+    yes(re, str2)
+    no(re, 'a')
+    no(re, '')
+
+    yes(/(a+)+/, 'aaa')
+    yes(/(a+)+/, 'a')
+    no(/(a+)+/, '')
+    yes(/x(a+)?/, 'x')
+    yes(/x(a+)?/, 'xa')
+    yes(/x(a+)?/, 'xaaa')
+    yes(/x(a+)x/, 'xaax')
+    yes(/x(a+)x/, 'xax')
+    no(/x(a+)x/, 'xx')
+    yes(/a+|b+/, 'aaaa')
+    yes(/a+|b+/, 'bbbb')
+    no(/x(a+|b+)/, 'xyaabb')
+    yes(/(a+)*/, 'a')
+    yes(/(a+)*/, '')
+    no(/x(a+)*/, 'bb')
+    yes(/(a+)*/, 'bbaa')
+}
+
+star() {
+    yes(/a*/, '')
+    yes(/a*/, 'aa')
+    yes(/a*/, 'xax')
+    yes(/a*/, 'ax')
+    yes(/a*/, 'xa')
+    yes(/a*/, 'xaax')
+    yes(/a*/, 'aaax')
+    yes(/a*/, 'xaaa')
+    yes(/a*/, 'xx')
+    yes(/ba*/, 'baaa')
+    yes(/ba*/, 'bbaaa')
+    no(/ba*/, 'x')
+    no(/ba*/, '')
+
+    i = 0
+    str = 'b'
+    while i < 1000 {
+        str = str + 'a*'
+        ++i
+    }
+
+    re = Regex::Regex(str)
+    no(re, '')
+    yes(re, 'b')
+    yes(re, 'baaaaaaaa')
+
+    yes(/(a*)+/, 'aaa')
+    yes(/(a*)+/, 'a')
+    yes(/(a*)+/, '')
+    yes(/x(a*)?/, 'x')
+    yes(/x(a*)?/, 'xa')
+    yes(/x(a*)?/, 'xaaa')
+    no(/x(a*)?/, '')
+    yes(/x(a*)x/, 'xaax')
+    yes(/x(a*)x/, 'xax')
+    yes(/x(a*)x/, 'xx')
+    yes(/a*|b*/, 'aaaa')
+    yes(/a*|b*/, 'bbbb')
+    no(/x(za*|zb*)/, 'xyaabb')
+    yes(/(a*)*/, 'aaa')
+}
+
+opt() {
+    yes(/ba?/, 'b')
+    yes(/ba?/, 'ba')
+    yes(/ba?/, 'xxxbxxx')
+    yes(/ba?/, 'xxxbaxxx')
+    yes(/ba?/, 'xxxbaaxxx')
+    no(/ba?/, 'x')
+    no(/ba?/, '') 
+    yes(/a?/, 'a')
+
+    i = 0
+    str = 'a'
+    while i < 1000 {
+        str = str + 'b?'
+        ++i
+    }
+    
+    re = Regex::Regex(str)
+    no(re, '')
+    yes(re, 'a')
+    yes(re, 'ab')
+    yes(re, 'abbbb')
+    yes(re, 'xxabbbbxx')
+    yes(re, 'xxaxx')
+}
+
+parens() {
+    yes(/(a|b)/, "a")
+    yes(/(a|b)/, "b")
+    yes(/(a|b)/, "xxxaxxx")
+    yes(/(a|b)/, "xxxbxxx")
+    no(/(a|b)/, "x")
+
+    yes(/(a|b)+/, "a")
+    yes(/(a|b)+/, "b")
+    no(/(a|b)+/, "")
+    yes(/(a|b)+/, "abababa")
+    yes(/(a|b)+/, "bababab")
+    yes(/(a|b)+/, "xxxabababa")
+    yes(/(a|b)+/, "babababxxx")
+
+    yes(/(a|b)*/, "a")
+    yes(/(a|b)*/, "b")
+    yes(/(a|b)*/, "")
+    yes(/(a|b)*/, "abababa")
+    yes(/(a|b)*/, "bababab")
+    yes(/(a|b)*/, "xxxabababa")
+    yes(/(a|b)*/, "babababxxx")
+
+    yes(/(cd)+/, "cdcdcd")
+    no(/(cd)+/, "ccc")
+    
+    yes(/(a|b(c|d))/, "abc")
+    yes(/(a|b(c|d))/, "abd")
+    no(/(a|(c|d))/, "")
+
+    yes(/x(b|c)+/, "xbb")
+    yes(/x(b|c)+/, "xcc")
+    no(/x(b|c)+/, "x")
+    yes(/x(b|c)+/, "xbcbcb")
+    yes(/x(b|c)+/, "xbbcb")
+    no(/x(b|c)+/, "bcbc")
+
+    yes(/(a|(b|(c|(d))))/, "a")
+    yes(/(a|(b|(c|(d))))/, "b")
+    yes(/(a|(b|(c|(d))))/, "c")
+    yes(/(a|(b|(c|(d))))/, "d")
+    no(/(a|(b|(c|(d))))/, "")
+}
+
+any() {
+    yes(/./, 'a')
+    yes(/./, 'b')
+
+}
+
+groups() {
+}
+
+greedy() {
+    str = "<html></html>"
+}
+
+anchors() {
+    yes(/^abc/, 'abc')
+    yes(/^abc/, 'abcxxxx')
+    no(/^abc/, 'xabc')
+    yes(/xxx|^yyy/, 'xxx')
+    yes(/xxx|^yyy/, 'yyy')
+    yes(/xxx|^yyy/, 'axxx')
+    no(/xxx|^yyy/, 'ayyy')
+
+    yes(/abc$/, 'xxxabc')
+    yes(/abc$/, 'abc')
+    no(/abc$/, 'abcxxx')
+    yes(/xxx|yyy$/, 'xxx')
+    yes(/xxx|yyy$/, 'yyy')
+    yes(/xxx|yyy$/, 'xxxa')
+    no(/xxx|yyy$/, 'yyya')
+
+    yes(/^a+$/, 'aaaa')
+    no(/^(a|b)$/, 'aaaa')
+    yes(/^(a|b)$/, 'a')
+    no(/^(a|b)$/, 'xa')
+    no(/^(a|b)$/, 'ax')
+    yes(/^(a|b)+$/, 'bbb')
+    yes(/^(a|b)+$/, 'aaa')
+    no(/^(a|b)+$/, 'xaaa')
+    no(/^(a|b)+$/, 'aaax')
+    no(/^(a|b)+$/, 'xbbb')
+    no(/^(a|b)+$/, 'bbbx')
+    yes(/^(a|b)+$/, 'aba')
+    yes(/^(a|b)+$/, 'ab')
+    no(/^(a|b)+$/, 'abx')
 }
 
 main() Int {
     concat()
     alt()
     plus()
-
+    star()
+    opt()
+    parens()
+    any()
+    groups()
+    anchors()
+    yes(/^(a|b)+$/, 'ab')
+    
     ret 0
 }
+

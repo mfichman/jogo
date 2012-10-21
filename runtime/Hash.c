@@ -138,7 +138,7 @@ void Hash_rehash(Hash self) {
 }
 
 Int Hash_hash(Hash self, Object key) {
-    static struct String hash_str = { String__vtable, 1, 5, "hash?" };  
+    static struct String hash_str = String__static("hash?");
     typedef Int (*HashFunc)(Object);  
 
     HashFunc func = Object__dispatch(key, &hash_str);
@@ -146,7 +146,7 @@ Int Hash_hash(Hash self, Object key) {
 }
 
 Bool Hash_equal(Hash self, Object first, Object second) {
-    static struct String equal_str = { String__vtable, 1, 6, "@equal" };
+    static struct String equal_str = String__static("@equal");
     typedef Bool (*EqualFunc)(Object, Object);
 
     EqualFunc func = Object__dispatch(first, &equal_str);

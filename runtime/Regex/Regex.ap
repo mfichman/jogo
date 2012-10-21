@@ -18,8 +18,43 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+Span < Value {
+    # A range of characters matched by a regex or a subgroup, starting from the
+    # index of the first character matched and ending at 1+ the index of the
+    # last character matched.
+    start Int
+    end Int
+}
+
 Match < Object {
-    # Contains regex match and submatch locations.
+    # Contains regular expression match and submatch locations.  A match object
+    # is returend by Regex.search and Regex.match whenever a string matches the
+    # regular expression.
+    MAXGROUPS = 10
+
+    @init() native {
+        # Initializes a new match object.
+    }
+
+    start?() Int {
+        # First character of the matched string. 
+        ret group(0).start
+    }
+
+    end?() Int {
+        # Last character of the matched string.
+        ret group(0).end
+    }
+
+    group(index Int) native Span {
+        # Returns the span of characters matched by subgroup 'index.' The first
+        # group (index 0) contains the characters spanned by the entire match. 
+    }
+
+    @index(index Int) Span {
+        # An alias for Match.group.
+        ret group(index)
+    }
 }
 
 Regex < Object {
@@ -30,9 +65,18 @@ Regex < Object {
         # Constructs a new regular expression from the given string.
     } 
 
+    @destroy() native {
+        # Frees the regular expression.
+    }
+
     @match(str String) native Match {
         # Returns true if this regular expression matches 'str'
-    }          
+    }
+
+    error?() native String {
+        # Returns nil if there is no error code; otherwise, returns the error
+        # string.
+    }
 
     dump() native {
     }

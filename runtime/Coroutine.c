@@ -54,7 +54,7 @@ Coroutine Coroutine__init(Object func) {
 
     Object__refcount_inc(func);
     if (func) {
-        static struct String call_str = { String__vtable, 1, 5, "@call" };
+        static struct String call_str = String__static("@call");
         Int exit = (Int)Coroutine__exit;
         Int call = (Int)Object__dispatch(func, &call_str);
         ret->stack->data[COROUTINE_STACK_SIZE-1] = exit;

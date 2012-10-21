@@ -25,12 +25,25 @@
 
 #include "Primitives.h"
 
-typedef enum InstrType InstrType;
-enum InstrType { CHAR, MATCH, JUMP, SPLIT, ANY };
+typedef struct Regex_Span* Regex_Span;
+struct Regex_Span {
+    Int start;  
+    Int end;
+};
+
+#define MAXGROUPS 10
+
+typedef struct Regex_Match* Regex_Match;
+struct Regex_Match {
+    struct Regex_Span group[MAXGROUPS];
+};
+
+typedef enum Regex_InstrType Regex_InstrType;
+enum Regex_InstrType { CHAR, MATCH, JUMP, SPLIT, ANY, START, END };
 
 typedef struct Regex_Instr* Regex_Instr;
 struct Regex_Instr {
-    enum InstrType type;
+    enum Regex_InstrType type;
     Int target;
     Int gen;
 };
@@ -43,6 +56,7 @@ struct Regex_Regex {
     Int gen;
     Int length;
     Int capacity;
+    String error;
     struct Regex_Instr instr[];    
 };
 
@@ -58,11 +72,9 @@ struct Regex_ThreadList {
     struct Regex_Thread thread[]; 
 };
 
-typedef Object Regex_Match;
-
-Regex_Match Regex_Match__init();
 Regex_Regex Regex_Regex_alloc(Int capacity);
 Regex_Regex Regex_Regex__init(String str);
+void Regex_Regex__destroy(Regex_Regex self);
 Regex_Match Regex_Regex__match(Regex_Regex self, String str);
 Regex_Regex Regex_Regex_append(Regex_Regex self, Regex_Instr instr);
 Regex_Regex Regex_Regex_parse_char(Regex_Regex self);
@@ -74,6 +86,10 @@ Regex_Regex Regex_Regex_parse_alt(Regex_Regex self);
 Regex_Regex Regex_Regex_parse_plus(Regex_Regex self);
 Regex_Regex Regex_Regex_parse_char(Regex_Regex self);
 extern Int Regex_Regex__vtable[];
+
+Regex_Match Regex_Match__init();
+void Regex_Match_group(Regex_Match self, Int index, Regex_Span ret);
+extern Int Regex_Match__vtable[];
 
 
 #endif

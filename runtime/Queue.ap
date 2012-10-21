@@ -20,7 +20,7 @@
 
 Queue[:a] < Object {
     # Implementation of an array-based FIFO queue (uses a circular buffer that
-    # resizes then the queue is full).
+    # resizes when the queue is full).
     
     capacity immutable Int
     # Returns the capacity of this queue.
