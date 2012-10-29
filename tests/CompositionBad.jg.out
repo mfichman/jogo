@@ -1,0 +1,10 @@
+CompositionBad.jg:13:20: Invalid prototype
+CompositionBad.jg:16:19: Invalid prototype
+CompositionBad.jg:16:19: Unexpected ','
+CompositionBad.jg:16:27: Invalid prototype
+CompositionBad.jg:20:5: Type embedded in 'TestMixin3' must be an object or value
+CompositionBad.jg:26:5: Type embedded in 'TestMixin4' must be an interface
+CompositionBad.jg:27:5: Type embedded in 'TestMixin4' must be an interface
+CompositionBad.jg:32:5: Type embedded in 'TestMixin5' must be a value type
+CompositionBad.jg:33:5: Type embedded in 'TestMixin5' must be a value type
+CompositionBad.jg:39:5: Type 'TestObject' is embedded multiple times in 'TestMixin6'

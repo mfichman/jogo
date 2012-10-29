@@ -1,0 +1,11 @@
+UnionTestBad.jg:7:23: Interface cannot be used as an alternate
+UnionTestBad.jg:17:23: Expression does not conform to type 'TestUnion'
+UnionTestBad.jg:18:23: Expression does not conform to type 'TestUnion'
+UnionTestBad.jg:20:17: Expression does not conform to type 'Bool'
+UnionTestBad.jg:21:26: Expression does not conform to type 'TestInterface'
+UnionTestBad.jg:23:14: Argument does not conform to type 'Bool'
+UnionTestBad.jg:25:14: Type in 'is' expression cannot be an interface
+UnionTestBad.jg:26:14: Type in 'is' expression cannot be a union
+UnionTestBad.jg:27:14: Type in 'is' expression cannot be 'Any'
+UnionTestBad.jg:28:14: Type in 'is' expression cannot be parameterized
+UnionTestBad.jg:31:23: Expression does not conform to type 'TestUnion'

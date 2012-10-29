@@ -173,7 +173,7 @@ std::string File::input(const std::string& ext) const {
 }
 
 std::string File::output(const std::string& ext) const {
-    std::string static main = std::string("Boot") + FILE_SEPARATOR + "Main.ap";
+    std::string static main = std::string("Boot") + FILE_SEPARATOR + "Main.jg";
     std::string name;
     if (main == name_->string()) {
         name = env_->entry_module();
@@ -250,7 +250,7 @@ bool File::is_output_file() const {
 }
 
 std::string File::base_name(const std::string& file) {
-    // Returns the last component of a file path, without the .ap extension.
+    // Returns the last component of a file path, without the .jg extension.
 
     size_t slash = file.find_last_of(FILE_SEPARATOR);
     size_t dot = file.find_last_of('.');

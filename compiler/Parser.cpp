@@ -37,7 +37,7 @@ Parser::Parser(Environment* env) :
     // the environment.
 
     if (!env->no_default_libs()) {
-        input("Apollo");
+        input("Jogo");
     }
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));
@@ -46,10 +46,10 @@ Parser::Parser(Environment* env) :
 }
 
 void Parser::library(const std::string& import) {
-    // Reads in a library file given by "import" (not including the .api
+    // Reads in a library file given by "import" (not including the .jgi
     // extension, which is automatically added)
 
-    std::string file = import + ".api";
+    std::string file = import + ".jgi";
     std::vector<std::string> tests;
 
     for (int i = 0; i < env_->includes(); i++) {
@@ -85,18 +85,18 @@ void Parser::input(const std::string& import) {
     // directories to find it.  
     for (int i = 0; i < env_->includes(); i++) {
         const std::string& prefix = env_->include(i);
-        if (File::ext(file) != ".ap") {
+        if (File::ext(file) != ".jg") {
             const std::string base = prefix + FILE_SEPARATOR + file;
             if (File::is_dir(base)) {
                 Parser::dir(prefix, file);
                 return;
             } 
-            if (File::is_reg(base + ".ap")) {
-                Parser::file(prefix, file + ".ap");
+            if (File::is_reg(base + ".jg")) {
+                Parser::file(prefix, file + ".jg");
                 return;
             }
-            if (!env_->is_input(import) && File::is_reg(base + ".api")) {
-                Parser::file(prefix, file + ".api");
+            if (!env_->is_input(import) && File::is_reg(base + ".jgi")) {
+                Parser::file(prefix, file + ".jgi");
                 return;
             }
         } else {
@@ -106,8 +106,8 @@ void Parser::input(const std::string& import) {
             } 
         }
         tests.push_back(prefix + FILE_SEPARATOR + file);
-        tests.push_back(prefix + FILE_SEPARATOR + file + ".api");
-        tests.push_back(prefix + FILE_SEPARATOR + file + ".ap");
+        tests.push_back(prefix + FILE_SEPARATOR + file + ".jgi");
+        tests.push_back(prefix + FILE_SEPARATOR + file + ".jg");
     }
     env_->error("Could not find " + import);
     err_ << "Module '" << import << "' not found:\n";
@@ -210,7 +210,7 @@ void Parser::dir(const std::string& prefix, const std::string& dir) {
 
     for (File::Iterator i(prefix + FILE_SEPARATOR + dir); i; ++i) {
         std::string name = *i;
-        const std::string ext = ".ap";
+        const std::string ext = ".jg";
         if (name.length() <= ext.length()) {
             continue;
         }

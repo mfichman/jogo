@@ -48,14 +48,14 @@ def setup_vim():
     # Copy the vim syntax file
     mkdir_p(os.path.join(vimhome, 'syntax'))
     shutil.copy(
-        os.path.join('scripts', 'apollo.vim'),
-        os.path.join(vimhome, 'syntax', 'apollo.vim'))
+        os.path.join('scripts', 'jogo.vim'),
+        os.path.join(vimhome, 'syntax', 'jogo.vim'))
 
     # Copy the ftdetect file
     mkdir_p(os.path.join(vimhome, 'ftdetect'))
     shutil.copy(
         os.path.join('scripts', 'ftdetect.vim'),
-        os.path.join(vimhome, 'ftdetect', 'apollo.vim'))
+        os.path.join(vimhome, 'ftdetect', 'jogo.vim'))
 
     # Copy the colors file
     mkdir_p(os.path.join(vimhome, 'colors'))

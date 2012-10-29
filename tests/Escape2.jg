@@ -1,0 +1,12 @@
+# jgtest print_ast on
+
+main() Int {
+
+    Boot::print_str("\a\b\t\n\v\f\r hello, world!\n")
+    Boot::print_str("\x48\x45\x4c\x4c\x4f\x0a hello!\n")
+    Boot::print_str("\110\105\114\114\117\012 hello!\n")
+    Boot::print_str("\"")
+    Boot::print_str("\#")
+    Boot::print_str('\'')
+    ret 0
+}

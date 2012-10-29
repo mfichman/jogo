@@ -1,7 +1,0 @@
-# aptest exec on
-
-main() Int {
-    Boot::print_str("hello, world!\n")
-    Boot::print_str("boot it!\n")
-    ret 0
-}

@@ -1,0 +1,40 @@
+# jgtest exec on 
+
+TestObject < Object {
+
+    initialized = 137
+    bar Int
+    baz Bool
+
+    @init() {
+        bar = 99
+        baz = true
+    }
+
+    bar?() Int { 
+        ret bar
+    }
+
+    baz?() Bool {
+        ret baz
+    }
+}
+
+main() Int {
+    test = TestObject()
+    
+    Boot::print_int(test.bar?())
+    Boot::print_str("\n")
+    if test.baz?() {
+        Boot::print_str("true\n")
+    } else {
+        Boot::print_str("false\n")
+    }
+    Boot::print_int(test.initialized) 
+    Boot::print_str("\n")
+    test.initialized = 2910
+    Boot::print_int(test.initialized) 
+    Boot::print_str("\n")
+    
+    ret 0
+}

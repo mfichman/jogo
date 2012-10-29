@@ -2,9 +2,9 @@
 !include dist\win\EnvVarUpdate.nsh
 
 !define REGKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Asteroids"
-name "Apollo"
-OutFile "apollo-${VERSION}.exe"
-InstallDir "$PROGRAMFILES\Apollo"
+name "Jogo"
+OutFile "jogo-${VERSION}.exe"
+InstallDir "$PROGRAMFILES\Jogo"
 LicenseData License.txt
 ShowInstDetails show
 
@@ -28,10 +28,10 @@ Section "Main"
 
     WriteUninstaller "$INSTDIR\Uninstall.exe"
     
-    WriteRegStr HKLM ${REGKEY} "DisplayName" "Apollo"
+    WriteRegStr HKLM ${REGKEY} "DisplayName" "Jogo"
     WriteRegStr HKLM ${REGKEY} "Publisher" "Matt Fichman <matt.fichman@gmail.com>"
-    WriteRegStr HKLM ${REGKEY} "URLInfoAbout" "https://github.com/mfichman/apollo"
-    WriteRegStr HKLM ${REGKEY} "URLUpdateInfo" "https://github.com/mfichman/apollo"
+    WriteRegStr HKLM ${REGKEY} "URLInfoAbout" "https://github.com/mfichman/jogo"
+    WriteRegStr HKLM ${REGKEY} "URLUpdateInfo" "https://github.com/mfichman/jogo"
     WriteRegStr HKLM ${REGKEY} "UninstallString" "$INSTDIR/Uninstall.exe"
 
     ; Set APOLLO_HOME environment variable

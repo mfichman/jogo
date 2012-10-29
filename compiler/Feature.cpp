@@ -384,9 +384,9 @@ std::string Module::exe_file() const {
 #endif
 } 
 
-std::string Module::api_file() const {
+std::string Module::jgi_file() const {
     std::string dir = env()->output() + FILE_SEPARATOR + "lib";
-    return dir + FILE_SEPARATOR + name()->string() + ".api";
+    return dir + FILE_SEPARATOR + name()->string() + ".jgi";
 }   
 
 Class* Feature::clazz(String* name) const {

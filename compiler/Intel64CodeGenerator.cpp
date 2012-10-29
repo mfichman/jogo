@@ -70,10 +70,10 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "extern "; label("Coroutine__yield"); out_ << "\n";
     out_ << "extern "; label("Coroutine__grow_stack"); out_ << "\n";
     out_ << "extern "; label("Coroutine__stack"); out_ << "\n";
-    if (file->name()->string() != "String.ap") {
+    if (file->name()->string() != "String.jg") {
         out_ << "extern "; label("String__vtable"); out_ << "\n";
     }
-    if (file->name()->string() != "Primitives.ap") {
+    if (file->name()->string() != "Primitives.jg") {
         out_ << "extern "; label("Int__vtable"); out_ << "\n";
         out_ << "extern "; label("Float__vtable"); out_ << "\n";
         out_ << "extern "; label("Bool__vtable"); out_ << "\n";

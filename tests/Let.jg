@@ -1,0 +1,10 @@
+# jgtest print_ast on
+Let < Object {
+
+    let1() {
+        let a Int = 0 {
+
+        } 
+    }
+
+}

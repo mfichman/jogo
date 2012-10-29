@@ -1,0 +1,127 @@
+# jgtest exec on
+
+test_enq_deq1() {
+    queue = Queue[String](0)
+    i = 0
+    while i < 10 {
+        queue.enq(i.str)
+        ++i
+    }
+
+    i = 0
+    while i < 10 {
+        val = queue.deq()
+        Io::println(val)
+        if val != i.str {
+            Io::println('fail')
+        }
+        ++i
+    }
+    Io::println('test_enq_deq1 OK')
+}
+
+test_enq_deq2() {
+    queue = Queue[String](0)
+    i = 0
+    while i < 5000 {
+        queue.enq(i.str)
+        ++i
+    }
+    i = 0
+    while i < 5000 {
+        val = queue.deq()
+        if val != i.str {
+            Io::println('fail')
+        }
+        ++i
+    }
+    Io::println('test_enq_deq2 OK')
+}
+
+test_enq_deq3() {
+    queue = Queue[String](0)
+    i = 0
+    while i < 400 {
+        queue.enq(i.str)
+        val = queue.deq()
+        if val != i.str {
+            Io::println('fail')
+        }
+        ++i
+    }
+    Io::println('test_enq_deq3 OK')
+}
+
+test_enq_deq4() {
+    queue = Queue[String](0)
+    i = 0
+    while i < 200 {
+        j = 0
+        while j < 18 {
+            queue.enq(j.str)
+            ++j
+        }
+        j = 0
+        while j < 18 {
+            if j.str != queue.deq() {
+                Io::println('fail')
+            }
+            ++j
+        }
+        ++i
+    }
+    Io::println('test_enq_deq4 OK')
+}
+
+test_count() {
+    queue = Queue[String](0)
+    i = 0
+    while i < 120 {
+        queue.enq(i.str)
+        ++i
+    }
+    Io::println(queue.count.str)
+    queue.deq()
+    Io::println(queue.count.str)
+    Io::println('test_count OK')
+}
+
+test_first_last() {
+    queue = Queue[String](0)
+    queue.enq('one')
+    queue.enq('two')
+    queue.enq('three')
+    Io::println(queue.last)
+    Io::println(queue.first)
+    queue.deq()
+    Io::println(queue.last)
+    Io::println(queue.first)
+    Io::println('test_first_last OK')
+}
+
+test_iter() {
+    queue = Queue[String](0)
+    queue.enq('one')
+    queue.enq('two')
+    queue.enq('three')
+
+    for item in queue {
+        Io::println(item)
+    }
+    queue.deq()
+    for item in queue {
+        Io::println(item)
+    }
+}
+
+
+main() Int {
+    test_enq_deq1()
+    test_enq_deq2()
+    test_enq_deq3()
+    test_enq_deq4()
+    test_count()
+    test_first_last()
+    test_iter()
+    ret 0
+}

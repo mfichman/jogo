@@ -1,0 +1,39 @@
+# jgtest exec on
+
+Fruit < Enum {
+    BANANA
+    APPLE
+    ORANGE
+    GRAPE
+}
+
+Fruit2 = BANANA | APPLE | ORANGE | GRAPE
+# Bob = String | Int
+
+Nested < Object {
+    bob = Fruit::BANANA
+}
+
+CONSTANT1 = 1
+CONSTANT2 = 2900999
+
+main() Int {
+
+    var = CONSTANT1
+    Io::print("#{var}\n")
+    Io::print("#{CONSTANT2}\n")
+    var2 = Fruit::APPLE
+
+    if var2 == Fruit::APPLE {
+        Io::print("apple\n")
+    }
+    if var2 == Fruit::GRAPE {
+        Io::print("fail\n")
+    }
+
+    var3 = Fruit2::APPLE
+
+    Io::stdout().flush()
+
+    ret 0
+}

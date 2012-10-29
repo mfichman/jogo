@@ -1,5 +1,0 @@
-# aptest exec on
-main() Int {
-    Io::println("hello world")
-    ret 0
-}

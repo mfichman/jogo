@@ -1,7 +1,0 @@
-# aptest print_ast on
-import Import1
-
-ImportB < Object {
-
-}
-

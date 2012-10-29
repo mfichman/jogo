@@ -1,0 +1,12 @@
+# jgtest exec on
+
+main() Int {
+    i = 10
+
+    while i != 0 {
+        Boot::print_int(i)
+        Boot::print_str("\n")
+        i = i - 1
+    }
+    ret 0
+}

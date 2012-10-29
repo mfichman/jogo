@@ -42,7 +42,7 @@ std::string Import::file_name(const std::string& scope) {
 std::string Import::scope_name(const std::string& file) {
     // Given the file name, returns the module's scope name.  This is equal
     // to the directory name with the '/' replaced by '::'.  For example,
-    // 'Foo/Bar.ap' would have scope name 'Foo'.
+    // 'Foo/Bar.jg' would have scope name 'Foo'.
 
     size_t pos = file.find_last_of(FILE_SEPARATOR);
     if (pos == std::string::npos) {
@@ -66,7 +66,7 @@ std::string Import::scope_name(const std::string& file) {
 
 std::string Import::module_name(const std::string& file) {
     // Given the file name, returns the module's name.  This is equal to the
-    // no-ext name with '/' replaced by '::'.  For example, 'Foo/Bar.ap' would
+    // no-ext name with '/' replaced by '::'.  For example, 'Foo/Bar.jg' would
     // return Foo::Bar.
 
     std::string noext = File::no_ext_name(file);

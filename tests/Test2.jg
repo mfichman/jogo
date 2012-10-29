@@ -1,0 +1,8 @@
+# jgtest print_ast on
+
+Test2 < Object {
+
+    foo() {
+    }
+
+}

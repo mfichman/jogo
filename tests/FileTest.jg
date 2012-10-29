@@ -1,0 +1,69 @@
+# jgtest exec on
+
+import Array
+
+main() Int {
+    # Write a message to standard output
+    stdout = Io::stdout()
+    stdout.print('hello world\n')
+
+    # Read in a message from a file using scan()
+    file = File::open('FileTest.txt', 'r')
+    if not file.error {
+        hello = file.scan('\n')
+        stdout.print("#{hello}\n")    
+        while eof != file.peek() {
+            if file.peek() != '\r'c {
+                stdout.put('*'c)
+                stdout.put(file.get())
+            } else {
+                file.get()
+            }
+        }
+    } else {
+        Io::println(Os::strerror(file.error))
+    }
+
+    array = Array[String](10)
+    array[1] = "bob"
+    array[90] = "bill"
+    array.push("bilbo")
+
+    stdout.print(array[1])
+    stdout.print(array[90])
+    stdout.print(array.last)
+    stdout.print(array.pop())
+
+    stdout.put('c'c)
+    stdout.put('h'c)
+    stdout.put('a'c)
+    stdout.put('r'c)
+    stdout.print('\n')
+
+#    stdout.flush()
+#    stdin = Stream(0)
+#    msg = stdin.scan('\n')
+#    stdout.print(msg)
+    
+    stdout.put('\x48'c)
+    stdout.put('\x45'c)
+    stdout.put('\x4c'c)
+    stdout.put('\x4C'c)
+    stdout.put('\x4f'c)
+    stdout.put('\x0A'c)
+
+    stdout.put('\150'c)
+    stdout.put('\145'c)
+    stdout.put('\154'c)
+    stdout.put('\154'c)
+    stdout.put('\157'c)
+    stdout.put('\012'c)
+
+    stdout.put('\r'c)
+    stdout.put('\t'c)
+    stdout.put('\n'c)
+    stdout.put('\\'c)
+    stdout.flush()
+    
+    ret 0
+}

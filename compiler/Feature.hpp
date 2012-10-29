@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "TreeNode.hpp"
 #include "Statement.hpp"
 #include "Expression.hpp"
@@ -258,7 +258,7 @@ public:
     bool is_up_to_date() const;
     std::string lib_file() const;
     std::string exe_file() const;
-    std::string api_file() const;
+    std::string jgi_file() const;
     void feature(Feature* feature);
     void import(Import* import);
     void location(Location location) { location_ = location; }

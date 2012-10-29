@@ -1,0 +1,89 @@
+# jgtest exec on
+
+main() Int {
+
+    hash = Hash[String,String]()
+    hash['test'] = 'foo'
+    Io::println(hash['test'])    
+    hash['test'] = 'bar'
+    Io::println(hash['test'])    
+
+    Io::println(hash.count.str)
+
+    i = 0
+    while i < 1000 {
+        str = i.str
+        hash[str] = str
+        ++i
+    }
+
+    i = 0
+    while i < 1000 {
+        str = i.str
+        if hash[str] != str {
+            Io::println('fail')
+        }
+        ++i
+    }
+    Io::println(hash.count.str)
+
+    i = 0
+    while i < 1000 {
+        str = i.str
+        hash[str] = nil
+        ++i
+    }
+    Io::println(hash.count.str)
+    
+    i = 0
+    while i < 1000 {
+        str = i.str
+        hash[str] = str
+        ++i
+    }
+    
+    i = 0
+    while i < 1000 {
+        str = i.str
+        if hash[str] != str {
+            Io::println('fail')
+        }
+        ++i
+    }
+    Io::println(hash.count.str)
+
+    hash = Hash[String,String]()
+    hash['a'] = '1'
+    hash['b'] = '2'
+    hash['c'] = '3'
+
+    for value in hash.values {
+        Io::println(value)
+    }
+    
+    for key in hash.keys {
+        Io::println(key)
+    }
+
+    for pair in hash {
+        Io::println("#{pair.first}, #{pair.second}")
+    }
+
+    hash = Hash[String,String]()
+    
+    for value in hash.values {
+        Io::println(value)
+    }
+    
+    for key in hash.keys {
+        Io::println(key)
+    }
+
+    for pair in hash {
+        Io::println("#{pair.first}, #{pair.second}")
+    }
+    
+    Io::println(hash.count.str)
+
+    ret 0
+}

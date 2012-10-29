@@ -1,0 +1,88 @@
+# jgtest print_ast on
+
+foo() Int {
+    if true {
+        ret 1
+    } else {
+    }
+}
+
+foo() Int {
+    if true {
+        ret 2
+    } else {
+        ret 3
+    }
+}
+
+Bob < Object {
+    bar() Int {
+        if true and not false {
+            if true {
+                ret 9
+            } else {
+                
+            }
+            ret 1
+        } else if true {
+            ret 1
+        } else {
+            if true {
+                ret 1
+            }
+        }
+    }
+    bar() Int {
+        if true and not false {
+            if true {
+                ret 9
+            } else {
+                
+            }
+            ret 1
+        } else if true {
+            ret 1
+        } else {
+            if true {
+                ret 1
+            } else {
+                ret 99
+            }
+        }
+    }
+    blarg private Int
+    blarg private Bool
+}
+
+Bob < Object {
+}
+
+bar() Int {
+    ret 1
+    a Int = 10
+    ret a
+}
+
+assign(a Int) {
+    a = 10
+}
+
+Container[:a] < Object {
+    value :b
+
+    bar(val :b) :b {
+        ret 0
+    }
+}
+
+
+One[:a] < Object {
+
+    one One[String,String]
+}
+
+Two[:a,:b] < Object {
+    two Two[String]
+    three Two
+}
+

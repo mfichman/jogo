@@ -1,0 +1,27 @@
+# jgtest exec on
+import Array
+
+Obj < Object {
+
+    @destroy() {
+        Io::println("destroyed")
+    }
+}
+
+test(obj Obj, array Array[Obj]) {
+
+    Io::println("pre")
+    array.clear()
+    Io::println("post")
+}
+
+
+main() Int {
+
+    array = Array[Obj](10)
+    array.push(Obj())
+    test(array[0], array)
+
+    Io::println("hello world")
+    ret 0
+}

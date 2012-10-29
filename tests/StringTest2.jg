@@ -1,0 +1,23 @@
+# jgtest exec on
+
+main() Int {
+    stdout = Io::stdout()
+    
+    for char in 'the quick brown fox jumps over the lazy dog\n' {
+        stdout.put(char)
+    } 
+
+    the = 'the'
+    jumps = 'jumps'
+
+    stdout.print("#{the} quick brown fox #{jumps} over #{the} lazy dog\n")
+    stdout.print("#{1} one #{2} two #{3} three\n")
+
+    stdout.print("#{"hello".starts_with('hel')}\n")
+    stdout.print("#{"hello".starts_with('hello2')}\n")
+    stdout.print("#{"hello".ends_with('llo')}\n")
+    stdout.print("#{"hello".ends_with('2hello')}\n")
+    stdout.flush()
+
+    ret 0
+}

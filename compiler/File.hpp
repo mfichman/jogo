@@ -70,14 +70,14 @@ public:
     int constants() { return constant_.size(); }
     bool is_input_file() const { return is_input_file_; }
     bool is_output_file() const;
-    bool is_interface_file() const { return ext(name_->string())==".api"; }
+    bool is_interface_file() const { return ext(name_->string())==".jgi"; }
     bool is_up_to_date(const std::string& ext) const;
     std::string input(const std::string& ext) const;
-    std::string output(const std::string& ext = ".apo") const;
+    std::string output(const std::string& ext = ".jgo") const;
     std::string asm_file() const { return output(".asm"); }
     std::string c_file() const { return output(".c"); }
     std::string o_file() const { return output(".o"); }
-    std::string apo_file() const { return output(".apo"); }
+    std::string jgo_file() const { return output(".jgo"); }
     std::string native_file() const { return input(".c"); }
     void dependency(Feature* name);
     void import(Import* import) { import_.push_back(import); }

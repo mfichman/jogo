@@ -18,7 +18,7 @@ fail = False
 if len(tests) == 0:
     # If no tests are passed as parameters, then glob on the test dir to run 
     # all the tests.
-    tests = glob.glob('*.ap') + glob.glob('*.c') 
+    tests = glob.glob('*.jg') + glob.glob('*.c') 
     tests += glob.glob('*.py') + glob.glob('*.cpp')
 
 def check(test, expected, output):
@@ -59,33 +59,33 @@ def shell(command, check=False):
     else:
         return ret 
 
-def apollo_test(test):
-    # Run a compilation test.  Compile and Apollo source file, and potentially
+def jogo_test(test):
+    # Run a compilation test.  Compile and Jogo source file, and potentially
     # run the resulting program.
-    test = re.sub(r'.ap$', '', test)
+    test = re.sub(r'.jg$', '', test)
     flags = ""
     run = False
-    for line in open(test + '.ap'):
-        if re.search(r'^# aptest print_ast on', line):
+    for line in open(test + '.jg'):
+        if re.search(r'^#.jgtest print_ast on', line):
             flags += ' --dump-ast'
-        elif re.search(r'^# aptest print_ir on', line):
+        elif re.search(r'^#.jgtest print_ir on', line):
             flags += ' --dump-ir'
-        elif re.search(r'^# aptest exec on', line):
+        elif re.search(r'^#.jgtest exec on', line):
             flags += ' -e'
             run = True
         
     flags += ' -m --build-dir ../build/test --optimize -o'
     flags += ' ../bin/test/' + test.lower()
-    command = '../bin/apollo ' + test + ' -i ../runtime -i ../lib ' + flags
+    command = '../bin/jogo ' + test + ' -i ../runtime -i ../lib ' + flags
     if options.full:
         valgrind = 'valgrind -q --leak-check=full --track-origins=yes'
         valgrind += ' --suppressions=../scripts/valgrind.supp'
         command = valgrind + ' ' + command
-    expected = open(test + '.ap.out', 'rb').read() 
+    expected = open(test + '.jg.out', 'rb').read() 
     if sys.platform == 'win32':
         command = command.replace('/', '\\')
     output = shell(command + ' 2>&1', run)
-    check(test+'.ap', expected, output)
+    check(test+'.jg', expected, output)
 
 def python_test(test):
     # Run a Python test.  Useful for various msicellaneous tests that are not
@@ -101,13 +101,13 @@ def native_test(test):
     exe = re.sub(r'.c$', '', test)
     output = ""
     if sys.platform == 'win32':
-        command = 'cl ' + test + ' /Fe..\\build\\' + exe + ' /I:.. apollo.lib '
+        command = 'cl ' + test + ' /Fe..\\build\\' + exe + ' /I:.. jogo.lib '
         command += '/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib 2>&1'
         os.popen(command).read()
         output = shell('..\\build\\' + exe + ' 2>&1')
     else:
         command = 'gcc -g ' + test + ' -o ../build/' + exe + ' -L../lib '
-        command += '-lApollo -lm -I .. 2>&1'
+        command += '-lJogo -lm -I .. 2>&1'
         os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
     check(test, expected, output)
@@ -119,13 +119,13 @@ def cpp_test(test):
     output = ""
     if sys.platform == 'win32':
         command = 'cl ' + test + ' /Fe..\\build\\' + exe + ' /I:../compiler '
-        command += 'apolloc.lib '
+        command += 'jogoc.lib '
         command += '/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib 2>&1'
         os.popen(command).read()
         output = shell('..\\build\\' + exe + ' 2>&1')
     else:
         command = 'g++ -g ' + test + ' -o ../build/' + exe + ' -L../lib '
-        command += '-lapolloc -lm -I ../compiler 2>&1'
+        command += '-ljogoc -lm -I ../compiler 2>&1'
         output += os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
     check(test, expected, output)
@@ -133,15 +133,15 @@ def cpp_test(test):
 for test in tests:
     # Iterate through all the tests, and run the correct callback for each
     # test type.
-    if re.search(r'.ap$', test):
+    if re.search(r'.jg$', test):
         print(test)
-        apollo_test(test)
+        jogo_test(test)
         total += 1
     elif re.search(r'.py$', test):
         print(test)
         python_test(test)
         total += 1
-    elif re.search(r'.c$', test) and not os.path.exists(test[:-2]+".ap"):
+    elif re.search(r'.c$', test) and not os.path.exists(test[:-2]+".jg"):
         print(test)
         native_test(test)
         total += 1

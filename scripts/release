@@ -1,25 +1,25 @@
 #!/usr/bin/python
 # This script uploads a new release to the downloads section of the GitHub
-# repository for the Apollo project.  Argument = version #
+# repository for the Jogo project.  Argument = version #
 
 import httplib, json, getpass, sys, os, base64, mimetypes
 
 version = sys.argv[1]
 username = raw_input('Username: ')
 password = getpass.getpass()
-repo = '/repos/mfichman/apollo'
+repo = '/repos/mfichman/jogo'
 github = 'api.github.com'
 amazon = 'github.s3.amazonaws.com'
 downloads = repo + '/downloads'
 
 if 'win32' in sys.platform:
-    pkg = 'apollo-'+version+'.exe'
+    pkg = 'jogo-'+version+'.exe'
     system = 'Windows'
 elif 'darwin' in sys.platform:
-    pkg = 'apollo-'+version+'.pkg'
+    pkg = 'jogo-'+version+'.pkg'
     system = 'OS X'
 elif 'linux' in sys.platform:
-    pkg = 'apollo-'+version+'.deb'
+    pkg = 'jogo-'+version+'.deb'
     system = 'Linux'
 
 
@@ -57,7 +57,7 @@ http.putheader('Content-Type', 'application/x-www-form-urlencoded')
 http.putheader('Accept', '*/*')
 body = json.dumps({ 
     'name': pkg,
-    'description': 'Apollo ' + version + ' for ' + system,
+    'description': 'Jogo ' + version + ' for ' + system,
     'size': os.path.getsize(pkg),
     'content_type': mimetypes.guess_type(pkg)[0] })
 http.putheader('Content-Length', str(len(body)))
