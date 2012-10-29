@@ -141,7 +141,7 @@ binary_files = env.Glob('bin/*')
 library_files = env.Glob('lib/*')
 
 
-pkgmaker = '/Developer/Applications/Utilities/PackageMaker.app/Contents/MacOs/PackageMaker\
+pkgmaker = '/Applications/PackageMaker.app/Contents/MacOs/PackageMaker\
     --doc dist/pkg/Jogo.pmdoc\
     --title Jogo\
     --version ' + version + '\
