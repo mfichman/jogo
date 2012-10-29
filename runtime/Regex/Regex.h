@@ -80,6 +80,7 @@ Regex_Regex Regex_Regex_append(Regex_Regex self, Regex_Instr instr);
 Regex_Regex Regex_Regex_parse_char(Regex_Regex self);
 Regex_Regex Regex_Regex_parse_concat(Regex_Regex self);
 Regex_Regex Regex_Regex_parse_closure(Regex_Regex self);
+Regex_Regex Regex_Regex_parse_plus(Regex_Regex self);
 Regex_Regex Regex_Regex_parse_opt(Regex_Regex self);
 Regex_Regex Regex_Regex_parse_class(Regex_Regex self);
 Regex_Regex Regex_Regex_parse_alt(Regex_Regex self);

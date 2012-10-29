@@ -225,8 +225,8 @@ Regex_Regex Regex_Regex_parse_concat(Regex_Regex self) {
 Regex_Regex Regex_Regex_parse_closure(Regex_Regex self) {
     // Parses a closure expression, e.g., e*
     Int l1 = self->length;
-    self = Regex_Regex_parse_opt(self);
-    if (*self->next == '*') {
+    self = Regex_Regex_parse_plus(self);
+    while (*self->next == '*') {
         // Modify the instruction seq to fit instructions for the closure.  A
         // SPLIT is prepended to the instruction seq and a JUMP is appended to
         // the end.
@@ -266,7 +266,14 @@ Regex_Regex Regex_Regex_parse_closure(Regex_Regex self) {
     
         Boot_free(self);
         self = ret; 
-    } else if (*self->next == '+') {
+    }
+    return self;
+}
+
+Regex_Regex Regex_Regex_parse_plus(Regex_Regex self) {
+    Int l1 = self->length;
+    self = Regex_Regex_parse_opt(self);
+    while (*self->next == '+') {
         // Modify the instruction seq to fit instructions for the closure.
         // A SPLIT is appended to the instruction seq.
         struct Regex_Instr instr = {0}; 
@@ -275,11 +282,6 @@ Regex_Regex Regex_Regex_parse_closure(Regex_Regex self) {
         instr.target = l1;
         self = Regex_Regex_append(self, &instr);
         self->next++;
-    }
-    if (*self->next == '*' || *self->next == '+') {
-        static struct String err = String__static("Multiple repeat");
-        err._refcount++;
-        self->error = &err;
     }
     return self;
 }
@@ -333,7 +335,15 @@ Regex_Regex Regex_Regex_parse_opt(Regex_Regex self) {
 Regex_Regex Regex_Regex_parse_char(Regex_Regex self) {
     Char c = *self->next;
     // Modify the instruction seq to fit instructions for the char.
-    if (c == '(') {
+    if (c == '\\') {
+        struct Regex_Instr instr = {0}; 
+        self->next++;
+        c = *self->next;
+        instr.type = CHAR;
+        instr.target = c;
+        self = Regex_Regex_append(self, &instr);
+        self->next++;
+    } else if (c == '(') {
         static struct String err = String__static("Unbalanced parenthesis");
         self->next++;
         self = Regex_Regex_parse_alt(self);         
@@ -343,7 +353,7 @@ Regex_Regex Regex_Regex_parse_char(Regex_Regex self) {
             err._refcount++;
             self->error = &err;
         }
-    } else if (c == ')') {    
+    } else if (c == ')' || c == '*' || c == '?' || c == '+') {
         // Do nothing
     } else if (c == '.') {
         struct Regex_Instr instr = {0};

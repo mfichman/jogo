@@ -149,6 +149,11 @@ plus() {
     yes(/(a+)*/, '')
     no(/x(a+)*/, 'bb')
     yes(/(a+)*/, 'bbaa')
+    yes(/a++/, 'aaa')
+    no(/a++/, '')
+    yes(/a+*/, 'a')
+    yes(/a+*/, 'aaa')
+    yes(/a+*/, '')
 }
 
 star() {
@@ -192,6 +197,10 @@ star() {
     yes(/a*|b*/, 'bbbb')
     no(/x(za*|zb*)/, 'xyaabb')
     yes(/(a*)*/, 'aaa')
+    yes(/a**/, 'aaa')
+    yes(/a**/, '')
+    yes(/a*+/, 'aaa')
+    yes(/a*+/, '')
 }
 
 opt() {
@@ -310,6 +319,14 @@ anchors() {
     no(/^(a|b)+$/, 'abx')
 }
 
+escape() {
+    yes(/^\|\(\)\^\$\.\*\+\?$/, "|()^$.*+?")
+    no(/^\|\(\)\^\$\.\*\+\?$/, "aa")
+    yes(/\\/, "\\")
+    yes(/\a/, "a")
+    no(/^\a$/, "ba")
+}
+
 main() Int {
     concat()
     alt()
@@ -320,7 +337,7 @@ main() Int {
     any()
     groups()
     anchors()
-    yes(/^(a|b)+$/, 'ab')
+    escape()
     
     ret 0
 }

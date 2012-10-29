@@ -204,11 +204,13 @@ void Lexer::regex() {
     while (char_ != '/') {
         if (char_ == '\\') {
             read();
+            token_[front_].value() += '\\';
+        } else {
+            read();
         }
-        read();
     }
     read(); 
-    token(Token::REGEX);    
+    token(Token::REGEX);
     value(value().substr(1, value().length()-2));
     ignore_newline_ = false;
 }
