@@ -1,0 +1,18 @@
+
+
+
+main() Int {
+    req = Http::Request()
+    req.path = "/"
+    req.method = Http::Method::GET
+    
+    #client = Http::Client("localhost", 8000)
+    client = Http::Client("www.google.com", 80)
+    res = client.request(req)
+    #Io::stdout().println("#{res.status}")
+    Io::stdout().pipe(client.socket.stream)
+    #while eof != client.socket.stream.peek() {
+    #    Io::stdout().put(client.socket.stream.get())
+    #} 
+    ret 0
+}

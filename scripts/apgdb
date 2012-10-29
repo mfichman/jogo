@@ -1,0 +1,6 @@
+
+
+define pstring
+    print $arg0.string_._M_dataplus._M_p
+end
+
