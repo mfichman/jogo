@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_SOCKET_STREAM_H
-#define APOLLO_SOCKET_STREAM_H
+#ifndef JOGO_SOCKET_STREAM_H
+#define JOGO_SOCKET_STREAM_H
 
 #include "Primitives.h"
 #include "Io/Stream.h"

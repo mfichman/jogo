@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_BOOT_H
-#define APOLLO_BOOT_H
+#ifndef JOGO_BOOT_H
+#define JOGO_BOOT_H
 
 #include "Primitives.h"
 

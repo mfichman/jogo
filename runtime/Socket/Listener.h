@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_SOCKET_LISTENER_H
-#define APOLLO_SOCKET_LISTENER_H
+#ifndef JOGO_SOCKET_LISTENER_H
+#define JOGO_SOCKET_LISTENER_H
 
 #include "Primitives.h"
 #include "Coroutine.h"

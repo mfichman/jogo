@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_REGEX_REGEX_H
-#define APOLLO_REGEX_REGEX_H
+#ifndef JOGO_REGEX_REGEX_H
+#define JOGO_REGEX_REGEX_H
 
 #include "Primitives.h"
 

@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_IO_BUFFER_H
-#define APOLLO_IO_BUFFER_H
+#ifndef JOGO_IO_BUFFER_H
+#define JOGO_IO_BUFFER_H
 
 #include "Primitives.h"
 

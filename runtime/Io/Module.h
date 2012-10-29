@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_IO_MODULE_H
-#define APOLLO_IO_MODULE_H
+#ifndef JOGO_IO_MODULE_H
+#define JOGO_IO_MODULE_H
 
 #include "Io/Manager.h"
 #include "Io/Stream.h"

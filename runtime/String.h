@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_STRING_H
-#define APOLLO_STRING_H
+#ifndef JOGO_STRING_H
+#define JOGO_STRING_H
 
 #include "Primitives.h"
 #include <stdlib.h>

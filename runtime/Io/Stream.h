@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_IO_STREAM_H
-#define APOLLO_IO_STREAM_H
+#ifndef JOGO_IO_STREAM_H
+#define JOGO_IO_STREAM_H
 
 #include "Primitives.h"
 #include "Coroutine.h"
