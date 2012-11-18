@@ -44,7 +44,7 @@ Builder::Builder(Environment* env) :
     // do not point to the Jogo standard libraries.
 #ifndef WINDOWS
     env->include("/usr/local/lib");
-    //env->include("/usr/local/include/jogo");
+    env->include("/usr/local/include/jogo");
 #else
     std::string program_files = getenv("PROGRAMFILES");
     std::string program_files_x86 = getenv("PROGRAMFILES(x86)");
@@ -274,7 +274,9 @@ void Builder::link(const std::string& in, const std::string& out) {
     }
 #else
     for (int i = 0; i < env_->includes(); i++) {
-        ss << "-L\"" << env_->include(i) << "\" ";
+        if (File::is_dir(env_->include(i))) {
+            ss << "-L\"" << env_->include(i) << "\" ";
+        }
     }
     for (int i = 0; i < env_->libs(); i++) {
         ss << "-l" << env_->lib(i) << " ";
@@ -446,13 +448,12 @@ void Builder::cc(const std::string& in, const std::string& out) {
 void Builder::nasm(const std::string& in, const std::string& out) {
     // Assembles a single NASM assembly file, and outputs the result to 'out.'
     std::stringstream ss;
-    ss << "nasm ";
 #if defined(WINDOWS)
-    ss << "-fwin64 ";
+    ss << "nasm -fwin64 ";
 #elif defined(LINUX)
-    ss << "-felf64 ";
+    ss << "nasm -felf64 ";
 #elif defined(DARWIN)
-    ss << "-fmacho64 ";
+    ss << "/usr/local/bin/nasm -fmacho64 ";
 #endif 
     ss << in << " -o " << out;
     if (env_->verbose()) {
