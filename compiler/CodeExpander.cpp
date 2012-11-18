@@ -57,7 +57,7 @@ CodeExpander::stub(Function* func) {
     if (name == "@init" || name == "@destroy" || name == "@copy") {
         return;
     }
-    if (class_->feature(func->name()) || func->is_private()) {
+    if ((class_->feature(func->name()) != func) || func->is_private()) {
         return;
     }
 
@@ -67,21 +67,29 @@ CodeExpander::stub(Function* func) {
     Type::Ptr type = func->type();
     Location loc = class_->location();
     Expression::Ptr args;
-    for (Formal::Ptr f = func->formals(); f; f = f->next()) {
-        if (f->name()->string() != "self") {
-            Expression::Ptr arg(new Identifier(loc, env_->name(""), f->name()));
-            args = append(args.pointer(), arg.pointer());
-        }
-    }
 
     Expression::Ptr self(new Identifier(loc, env_->name(""), mixin_->name())); 
+    for (Formal::Ptr f = func->formals(); f; f = f->next()) {
+        Expression::Ptr arg;
+        if (f->name()->string() == "self") {
+            arg = self; 
+        } else {
+            arg = new Identifier(loc, env_->name(""), f->name());
+        }
+        arg->type(f->type());
+        args = append(args.pointer(), arg.pointer());
+    }
+
     Expression::Ptr mem(new Member(loc, self, func->name()));
     Call::Ptr call(new Call(loc, mem, args));
+    call->function(func); 
+    
     Statement::Ptr stmt;
     if (func->type()->is_void()) {
         stmt = new Simple(loc, call); 
     } else {    
         stmt = new Return(loc, call);
+        call->type(func->type());
     }
     Block::Ptr block(new Block(loc, 0, stmt));
     Function::Ptr stub(new Function(loc, env_, nm, f, flags, type, block));
