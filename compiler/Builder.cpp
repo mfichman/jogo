@@ -21,6 +21,7 @@
  */  
 
 #include "Builder.hpp"
+#include "CodeExpander.hpp"
 #include "BasicBlockGenerator.hpp"
 #include "RegisterAllocator.hpp"
 #include "Intel64CodeGenerator.hpp"
@@ -60,6 +61,9 @@ Builder::Builder(Environment* env) :
         errors_++;
     }
 
+    // Code expansion
+    CodeExpander::Ptr expander(new CodeExpander(env));
+
     // Semantic analysis/type checking phase.
     SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
     if (env->dump_ast()) {
@@ -70,6 +74,8 @@ Builder::Builder(Environment* env) :
         errors_++;
         return;
     }
+
+    CodeExpander::Ptr expander2(new CodeExpander(env));
 
     // Final output generatation and linking phase.
     if (env_->monolithic_build()) {

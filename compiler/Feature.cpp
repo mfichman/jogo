@@ -177,7 +177,7 @@ Feature* Class::feature(String* name) const {
             Feature* func = clazz->feature(name);
             if (func) {
                 return func;
-            } 
+            }
         }
     }
     return 0;

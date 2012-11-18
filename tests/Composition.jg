@@ -4,6 +4,10 @@ TestComp1 < Object {
     var1 Int = 42
     share Int 
 
+    @init() {
+        Io::println("TestComp1()")
+    }
+
     test1() String {
         ret "hello\n"
     }
@@ -29,15 +33,16 @@ TestInterface < Interface {
 }
 
 main() Int {
-    Io::print(TestClass().test1())
-    Io::print(TestClass().test2())
-    Io::println(TestClass().var1.str)
-    Io::println(TestClass().var2.str)
-
-    obj TestInterface = TestClass()
+    obj = TestClass()
     Io::print(obj.test1())
     Io::print(obj.test2())
+    Io::println(obj.var1.str)
+    Io::println(obj.var2.str)
+    obj.hash.str
+
+    intf TestInterface = TestClass()
+    Io::print(intf.test1())
+    Io::print(intf.test2())
     Io::stdout().flush()
-    TestClass().hash.str
     ret 0 
 }

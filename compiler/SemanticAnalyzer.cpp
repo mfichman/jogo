@@ -954,6 +954,7 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     Expression::Ptr init = feature->initializer();
     Feature::Ptr parent = feature->parent();
     Type::Ptr declared = feature->declared_type();
+
     if (feature->type()) { return; }
     if (feature->file()->is_interface_file()) {
         feature->type(declared);
@@ -995,8 +996,21 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
         feature->type(declared);
     }
 
-    // No constructor for a value type attribute 
-    if (declared->is_compound() && init->type()->is_top()) {
+    Class::Ptr clazz = feature->type()->clazz();
+    Function::Ptr ctor = clazz ? clazz->constructor() : 0;
+    if (feature->is_embedded()) {
+        if (ctor && ctor->formals()) {
+            // Mixin w/ constructor args
+            err_ << init->location();
+            err_ << "Embedded type '" << feature->type() << "' has ";
+            err_ << "constructor arguments\n"; 
+            env_->error();
+        } else {
+            feature->initializer(new Construct(Location(), feature->type(), 0));
+            assert(feature->type() && " no type for embedded attr"); 
+        }
+    } else if (declared->is_compound() && init->type()->is_top()) {
+        // No constructor for a value type attribute 
         err_ << init->location();
         err_ << "Uninitialized value type attribute '";
         err_ << feature->name() << "'\n";
@@ -1015,7 +1029,7 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     mutator(feature);
     accessor(feature);
     if (feature->file()) {
-        feature->file()->dependency(feature->type()->clazz());
+        feature->file()->dependency(clazz);
     }
 }
 
@@ -1361,7 +1375,7 @@ void SemanticAnalyzer::copier() {
         self->next(other);
         class_->feature(new Function(loc, env_, nm, self, 0, vt, block));
     } else {
-        assert(copy->parent() == class_ && "Not supported");
+        //assert(copy->parent() == class_ && "Not supported");
     }
 }
 

@@ -5,9 +5,12 @@ TestInterface < Interface {
 }
 
 TestObject < Object {
+    @init(a Int) {
+    }
 }
 
 TestValue < Value {
+    
 }
 
 TestMixin1 < Blarg {

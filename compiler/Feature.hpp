@@ -124,6 +124,7 @@ public:
     Expression* initializer() const { return initializer_; }
     int slot() const { return slot_; }
     void type(Type* type) { type_ = type; assert(type_); }
+    void initializer(Expression* expr) { initializer_ = expr; }
     void slot(int slot) { slot_ = slot; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Attribute> Ptr;
