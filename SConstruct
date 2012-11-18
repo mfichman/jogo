@@ -35,7 +35,7 @@ if 'release' == build_mode:
 if env['PLATFORM'] == 'darwin':
     env.Append(CXXFLAGS = '-DDARWIN')
     env.Append(CFLAGS = '-DDARWIN')
-    nasm = 'nasm -dDARWIN -fmacho64 -o $TARGET $SOURCE'
+    nasm = '/usr/local/bin/nasm -dDARWIN -fmacho64 -o $TARGET $SOURCE'
 
 # Linux-specific build settings ##############################################
 if env['PLATFORM'] == 'posix':

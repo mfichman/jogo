@@ -32,8 +32,9 @@ main() Int {
     }
 
     var3 = Fruit2::APPLE
-
     Io::stdout().flush()
+
+    var4 = Sub3::ROOT
 
     ret 0
 }
