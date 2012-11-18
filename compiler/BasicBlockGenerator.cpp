@@ -281,7 +281,7 @@ void BasicBlockGenerator::operator()(Member* expr) {
     // A stand-alone member operator, which means that we indirectly call the
     // getter.
     Function::Ptr func = expr->function();
-    call(func, expr->expression());
+    call(func, expr->expression(), expr->expression());
     if (func->type()->is_compound()) {
         expr->file()->dependency(func->type()->clazz()->destructor());
     }
@@ -298,7 +298,7 @@ void BasicBlockGenerator::operator()(Call* expr) {
             return; 
         }
     }
-    call(expr->function(), expr->arguments());
+    call(expr->function(), expr->arguments(), expr->receiver());
 }
 
 void BasicBlockGenerator::operator()(Closure* expr) {
@@ -675,9 +675,18 @@ void BasicBlockGenerator::operator()(Type* feature) {
     // Pass
 }
 
-void BasicBlockGenerator::call(Function* func, Expression* args) {
+void BasicBlockGenerator::call(Function* func, Expression* args, Expression* recv) {
     // Push objects in anticipation of the call instruction.  Arguments must be
     // pushed in reverse order.
+    if (recv) {
+        // Look up the function again, incase it needs to re-resolve
+        Class::Ptr clazz = recv->type()->clazz();
+        if (recv->type()->is_self()) {
+            clazz = class_;
+        }
+        func = clazz->function(func->name());
+    }
+
     Formal::Ptr formal = func->formals();
     FuncMarshal fm(this);
     Operand receiver;

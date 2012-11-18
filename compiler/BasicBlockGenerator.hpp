@@ -110,7 +110,7 @@ private:
     void variable(Variable* var);
     void enter_scope();
     void exit_scope();
-    void call(Function* func, Expression* args);
+    void call(Function* func, Expression* args, Expression* recv);
     void native_operator(Call* expression);
     void scope_cleanup(Variable* var);
 	void exception_catch();

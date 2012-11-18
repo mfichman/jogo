@@ -21,6 +21,7 @@
  */  
 
 #include "Builder.hpp"
+#include "CodeExpander.hpp"
 #include "BasicBlockGenerator.hpp"
 #include "RegisterAllocator.hpp"
 #include "Intel64CodeGenerator.hpp"
@@ -70,6 +71,9 @@ Builder::Builder(Environment* env) :
         errors_++;
         return;
     }
+
+    // Code expansion
+    CodeExpander::Ptr expander(new CodeExpander(env));
 
     // Final output generatation and linking phase.
     if (env_->monolithic_build()) {
