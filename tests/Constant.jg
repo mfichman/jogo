@@ -35,6 +35,7 @@ main() Int {
     Io::stdout().flush()
 
     var4 = Sub3::ROOT
+    Io::println(Sub3::ROOT.str)
 
     ret 0
 }

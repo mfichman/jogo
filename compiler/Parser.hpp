@@ -43,7 +43,7 @@ public:
     File* file() const { return file_; }
     Location location() const { return lexer_->loc(); }
     Location last_location() const { return last_location_; } 
-    void input(const std::string& file);
+    void input(const std::string& file, bool optional=false);
     void library(const std::string& file);
     typedef Pointer<Parser> Ptr;
 
@@ -51,8 +51,8 @@ private:
     void file_alias(const std::string& import); 
     void file(const std::string& prefix, const std::string& file);
     void dir(const std::string& prefix, const std::string& dir);
-    void implicit_import(Type* type);
-    void implicit_import(String* scope);
+    void implicit_import(Type* type, Flags flags=Import::QUALIFIED);
+    void implicit_import(String* scope, Flags flags=Import::QUALIFIED);
     void module_feature(Feature* feature, String* scope);
 
     String* name(const std::string& name) { return env_->name(name); }

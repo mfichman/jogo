@@ -70,7 +70,7 @@ void Parser::library(const std::string& import) {
 }
 
 
-void Parser::input(const std::string& import) {
+void Parser::input(const std::string& import, bool optional) {
     // Reads in a file or directory after searching through the list of include
     // paths.  The includes paths are searched in the order they are specified,
     // so if duplicate files are present in two include directories, then only
@@ -108,6 +108,13 @@ void Parser::input(const std::string& import) {
         tests.push_back(prefix + FILE_SEPARATOR + file);
         tests.push_back(prefix + FILE_SEPARATOR + file + ".jgi");
         tests.push_back(prefix + FILE_SEPARATOR + file + ".jg");
+    }
+    // Optional import means a lookup failure doesn't necessarily halt
+    // compilation.  This is used to implement constants of the form
+    // Module::CONST, where Module may be part of another library, or a
+    // separate file that must be loaded. 
+    if (optional) {
+        return;
     }
     env_->error("Could not find " + import);
     err_ << "Module '" << import << "' not found:\n";
@@ -199,7 +206,8 @@ void Parser::file(const std::string& prefix, const std::string& file) {
     // Now parse other modules that depend on the unit that was added
     if (!file_->is_interface_file()) {
         for (int i = 0; i < file_->imports(); i++) {
-            input(file_->import(i)->scope()->string());
+            Import::Ptr im = file_->import(i);
+            input(im->scope()->string(), im->is_optional());
         }
     }
 }
@@ -732,7 +740,7 @@ void Parser::import() {
         // module will be added to the file's namespace.  If a qualified import
         // already exists, then make that import non-qualified.
         String::Ptr scope = Parser::scope();
-        Import::Ptr import = new Import(loc, scope, false);
+        Import::Ptr import = new Import(loc, scope, 0);
         module_->import(import);
         file_->import(import);
         if (token() == Token::COMMA) {
@@ -1196,9 +1204,10 @@ Expression* Parser::construct() {
             if (token() == Token::CONSTANT) {
                 String::Ptr id = env_->name(value());
                 next();
+                implicit_import(scope, Import::QUALIFIED|Import::OPTIONAL);
                 return new ConstantIdentifier(loc, scope, id); 
             } else {
-                implicit_import(type->qualified_name());
+                implicit_import(scope);
                 return new Identifier(loc, scope, identifier()); 
             }
         }
@@ -1457,18 +1466,18 @@ void Parser::module_feature(Feature* feature, String* scope) {
     file_->feature(feature);
 }
 
-void Parser::implicit_import(Type* type) {
+void Parser::implicit_import(Type* type, Flags flags) {
     // Adds an implicit import for 'type' to the parse tree, if necessary.
     if (!type->is_generic()) {
-        implicit_import(type->scope());
+        implicit_import(type->scope(), flags);
     }
 }
 
-void Parser::implicit_import(String* scope) {
+void Parser::implicit_import(String* scope, Flags flags) {
     // Adds a new import to the module/file if it hasn't been added already. 
     Import::Ptr import = module_->import(scope); 
     if (!scope->string().empty() && !import) {
-        import = new Import(location(), scope, true);
+        import = new Import(location(), scope, flags);
         module_->import(import);
         file_->import(import);
         file_alias(scope->string());

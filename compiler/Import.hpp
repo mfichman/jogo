@@ -32,20 +32,23 @@
  */
 class Import : public TreeNode {
 public:
-    Import(Location loc, String* scope, bool qualified) :
+    typedef int Flags;
+
+    Import(Location loc, String* scope, Flags flags) :
         TreeNode(loc),
         file_name_(file_name(scope->string())),
         scope_(scope),
-        is_qualified_(qualified) {
+        flags_(flags) {
     }
         
-    const std::string& file_name() const { return file_name_; }
+    std::string const& file_name() const { return file_name_; }
     String* scope() const { return scope_; }
-    bool is_qualified() const { return is_qualified_; }
-    static std::string file_name(const std::string& scope);
-    static std::string scope_name(const std::string& file);
-    static std::string module_name(const std::string& file);
-    static std::string parent_scope(const std::string& scope);
+    bool is_qualified() const { return flags_ & QUALIFIED; }
+    bool is_optional() const { return flags_ & OPTIONAL; }
+    static std::string file_name(std::string const& scope);
+    static std::string scope_name(std::string const& file);
+    static std::string module_name(std::string const& file);
+    static std::string parent_scope(std::string const& scope);
     Import* next() const { return next_; }
     Import* last() const { return last_; }
     void next(Import* next) { next_ = next; }
@@ -53,11 +56,14 @@ public:
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Import> Ptr;
 
+    static int const QUALIFIED = 0x1;
+    static int const OPTIONAL = 0x2;
+
 private:
     Import::Ptr next_;
     Import::Ptr last_;
     std::string file_name_;
     String::Ptr scope_;
-    bool is_qualified_;
+    Flags flags_;
 };
 

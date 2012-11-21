@@ -246,7 +246,8 @@ bool File::is_native_lib(const std::string& name) {
 }
 
 bool File::is_output_file() const {
-    return is_output_file_ && !is_interface_file() && is_input_file_;
+    std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.jg";
+    return is_output_file_ && !is_interface_file() && name_->string() != main;
 }
 
 std::string File::base_name(const std::string& file) {
