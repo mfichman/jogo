@@ -131,10 +131,10 @@ void SemanticAnalyzer::operator()(Class* feature) {
                 err_ << "Type embedded in '" << feature->name();
                 err_ << "' must be an object or value\n"; 
                 env_->error();
-            } else if (feature->is_value() && !m->is_value()) {
+            } else if (feature->is_value() && m->is_interface()) {
                 err_ << m->location();
                 err_ << "Type embedded in '" << feature->name();
-                err_ << "' must be a value type\n"; 
+                err_ << "' must be an object or value\n"; 
                 env_->error();
             }
         } else if(!m->is_proto()) {
