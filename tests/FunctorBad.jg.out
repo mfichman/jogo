@@ -1,8 +1,10 @@
 FunctorBad.jg:22:5: Duplicate definition of function '@case(Mesh)'
 FunctorBad.jg:26:5: Missing argument in functor case definition
-FunctorBad.jg:30:5: Extra arguments in functor case definition
-FunctorBad.jg:34:5: Interface type in functor case
-FunctorBad.jg:38:5: Value type in functor case
-FunctorBad.jg:44:5: Functor case in non-functor type
-FunctorBad.jg:49:5: Functor case in non-functor type
-FunctorBad.jg:55:5: Functor case in non-functor type
+FunctorBad.jg:30:25: Extra arguments in functor case definition
+FunctorBad.jg:34:15: Interface type in functor case
+FunctorBad.jg:38:15: Value type in functor case
+FunctorBad.jg:42:15: Generic type in functor case
+FunctorBad.jg:46:15: Generic type in functor case
+FunctorBad.jg:52:5: Functor case in non-functor type
+FunctorBad.jg:57:5: Functor case in non-functor type
+FunctorBad.jg:63:5: Functor case in non-functor type

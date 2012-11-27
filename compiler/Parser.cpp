@@ -487,6 +487,9 @@ Function* Parser::function() {
     if (id->string() == "@case") {
         Class::Ptr cls = formals?formals->type()->clazz():0;
         std::string nm = cls?cls->label()->string():"";
+        if (formals && formals->type()->is_generic()) {
+            nm = formals->type()->name()->string();
+        }
         id = name(std::string("@case_")+nm);
     }
 

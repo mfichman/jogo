@@ -14,7 +14,7 @@ Intf2 < Interface {
 Val < Value {
 }
 
-Render < Functor {
+Render[:a] < Functor {
 
     @case(obj Mesh) {
     }
@@ -37,6 +37,14 @@ Render < Functor {
 
     @case(obj Val) {
         # Value in @case
+    }
+
+    @case(obj Array[:a]) {
+        # Generic in @case
+    }
+
+    @case(obj :a) {
+        # Generic in @case
     }
 }
 

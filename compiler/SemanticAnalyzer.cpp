@@ -886,16 +886,20 @@ void SemanticAnalyzer::operator()(Function* feature) {
             err_ << "Missing argument in functor case definition\n";
             env_->error();
         } else if (arg->next()) {
-            err_ << feature->location();
+            err_ << arg->next()->location();
             err_ << "Extra arguments in functor case definition\n";
             env_->error();
         } else if (arg->type()->is_value()) {
-            err_ << feature->location();
+            err_ << arg->type()->location();
             err_ << "Value type in functor case\n";
             env_->error();
         } else if (arg->type()->is_interface()) {
-            err_ << feature->location();
+            err_ << arg->type()->location();
             err_ << "Interface type in functor case\n";
+            env_->error();
+        } else if (arg->type()->generics() || arg->type()->is_generic()) {
+            err_ << arg->type()->location();
+            err_ << "Generic type in functor case\n";
             env_->error();
         }
         if (!class_->is_functor()) {
