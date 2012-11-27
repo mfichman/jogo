@@ -482,6 +482,15 @@ Function* Parser::function() {
     Formal::Ptr formals = formal_list();
     expect(Token::RIGHT_PARENS);
 
+    // For each @case, use a different mangled name based on the function arg
+    // type name
+    if (id->string() == "@case") {
+        Class::Ptr cls = formals?formals->type()->clazz():0;
+        std::string nm = cls?cls->label()->string():"";
+        id = name(std::string("@case_")+nm);
+    }
+
+
     // Parse flags
     Feature::Flags flags = Parser::flags();      
 

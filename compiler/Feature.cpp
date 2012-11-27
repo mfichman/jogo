@@ -58,6 +58,9 @@ Class::Class(Location loc, Environment* env, Type* type, Type* proto,
     if (proto->is_enum_proto()) {
         gen_equal_method();
     }
+    if (proto->is_functor_proto()) {
+        gen_functor_method();
+    }
 }
 
 /* Constructor for union types */
@@ -90,6 +93,19 @@ Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
         }        
     }
     gen_equal_method();
+}
+
+void Class::gen_functor_method() {
+    // Gen the functor @call method
+    String::Ptr name = env()->name("@call");
+    if(!feature(name)) {
+        Type::Ptr ret = env()->void_type();
+        Type::Ptr at = env()->any_type();
+        Formal::Ptr self(new Formal(location(), env()->name("self"), type()));
+        self->next(new Formal(location(), env()->name("obj"), at));
+        Block::Ptr block(new Block(location(), env()->string(""), 0));
+        feature(new Function(location(), env(), name, self, 0, ret, block));
+    }
 }
 
 void Class::gen_equal_method() {

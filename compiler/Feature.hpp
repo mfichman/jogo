@@ -171,6 +171,7 @@ public:
     void basic_block_del_all() { basic_block_.clear(); }
     void formals(Formal* formals) { formals_ = formals; }
 	void throw_spec(ThrowSpec spec) { throw_spec_ = spec; }
+    void block(Block* block) { block_ = block; }
 	void called_func(Function* func);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
@@ -206,6 +207,7 @@ public:
     Type* proto() const { return proto_; }
     String* default_enum_value() const;
     bool is_object() const { return type_->is_object(); }
+    bool is_functor() const { return type_->is_functor(); }
     bool is_any() const { return type_->is_any(); }
     bool is_union() const { return type_->is_union(); }
     bool is_interface() const { return type_->is_interface(); }
@@ -231,6 +233,7 @@ public:
 
 private:
     void gen_equal_method();
+    void gen_functor_method();
     std::vector<int> jump1_;
     std::vector<Function::Ptr> jump2_;
     mutable std::map<Class*, bool> subtype_;

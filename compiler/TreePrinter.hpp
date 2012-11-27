@@ -70,6 +70,7 @@ private:
     void operator()(ArrayLiteral* literal);
     void operator()(Member* expression);
     void operator()(ParseError* expression);
+    void operator()(Is* expression);
 
     void print_tabs();
     void print_comment(String* comment);

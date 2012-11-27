@@ -44,6 +44,9 @@ CodeExpander::operator()(Class* feature) {
         mixin_ = m->clazz();
         mixin(mixin_);
     }
+    if (class_->is_functor()) {
+        functor(class_);
+    }
 }
 
 void
@@ -110,3 +113,36 @@ CodeExpander::mixin(Class* feature) {
         } 
     }
 }
+
+void
+CodeExpander::functor(Class* clazz) {
+    // Generate the @call method for the functor, which contains a switch on
+    // the type of the arugment passed to @call method.
+    Function::Ptr func = clazz->function(env_->name("@call"));
+    Location loc;
+    String::Ptr fn = func->formals()->next()->name();
+    Identifier::Ptr guard = new Identifier(loc, env_->name(""), fn);
+    Expression::Ptr arg = new Identifier(loc, env_->name(""), fn);
+    arg->type(func->formals()->next()->type());
+    Statement::Ptr stmt;
+
+    for (Feature::Ptr feat = clazz->features(); feat; feat = feat->next()) {
+        if (Function* func = dynamic_cast<Function*>(feat.pointer())) {
+            String* nm = func->name();
+            if (nm->string().find("@case") == 0) {
+                // This is a functor case, so generate a branch for it.  Each 
+                // branch looks like this: self.@case_Type(obj)
+                Type::Ptr type = func->formals()->next()->type();
+                Identifier::Ptr id = new Identifier(loc, env_->name(""), nm);
+                Member::Ptr mem = new Member(loc, id, env_->name("self"));
+                Call::Ptr expr = new Call(loc, mem, arg);
+                expr->function(func);
+                Statement::Ptr yes = new Simple(loc, expr);
+                Is::Ptr is = new Is(loc, guard, type);
+                stmt = new Conditional(loc, is, yes, stmt);
+            }
+        }
+    }
+    func->block(new Block(loc, env_->string(""), stmt));  
+}
+

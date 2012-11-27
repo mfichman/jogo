@@ -63,6 +63,10 @@ Builder::Builder(Environment* env) :
 
     // Semantic analysis/type checking phase.
     SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
+
+    // Code expansion
+    CodeExpander::Ptr expander(new CodeExpander(env));
+
     if (env->dump_ast()) {
         TreePrinter::Ptr tprint(new TreePrinter(env, Stream::stout()));
         return;
@@ -71,9 +75,6 @@ Builder::Builder(Environment* env) :
         errors_++;
         return;
     }
-
-    // Code expansion
-    CodeExpander::Ptr expander(new CodeExpander(env));
 
     // Final output generatation and linking phase.
     if (env_->monolithic_build()) {

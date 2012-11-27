@@ -137,7 +137,12 @@ bool Type::is_proto() const {
         || is_interface_proto()
         || is_enum_proto()
         || is_value_proto()
-        || is_union_proto();
+        || is_union_proto()
+        || is_functor_proto();
+}
+
+bool Type::is_functor_proto() const {
+    return equals(env_->functor_type());
 }
 
 bool Type::is_object_proto() const {
@@ -162,7 +167,13 @@ bool Type::is_union_proto() const {
 
 bool Type::is_object() const {
     Class* cls = clazz();
-    return is_object_proto() || (cls && cls->proto()->is_object_proto()); 
+    return is_object_proto() || is_functor()
+        || (cls && cls->proto()->is_object_proto()); 
+}
+
+bool Type::is_functor() const {
+    Class* cls = clazz();
+    return is_functor_proto() || (cls && cls->proto()->is_functor_proto());
 }
 
 bool Type::is_interface() const {

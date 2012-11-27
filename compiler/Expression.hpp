@@ -401,13 +401,12 @@ public:
         Expression(loc),
         child_(expr),
         check_type_(type) {
-    
     }
 
     Expression* child() const { return child_; }
     Type* check_type() const { return check_type_; }
     void operator()(Functor* functor) { functor->operator()(this); }
-    typedef Pointer<Cast> Ptr;
+    typedef Pointer<Is> Ptr;
 
 private:
     Expression::Ptr child_;

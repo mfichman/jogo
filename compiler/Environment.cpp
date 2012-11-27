@@ -62,6 +62,7 @@ Environment::Environment() :
     any_type_ = new Type(loc, name("Any"), 0, this);
     enum_type_ = new Type(loc, name("Enum"), 0, this);
     object_type_ = new Type(loc, name("Object"), 0, this);
+    functor_type_ = new Type(loc, name("Functor"), 0, this);
     value_type_ = new Type(loc, name("Value"), 0, this);
     interface_type_ = new Type(loc, name("Interface"), 0, this);
     union_type_ = new Type(loc, name("Union"), 0, this);

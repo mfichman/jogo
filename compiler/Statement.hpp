@@ -88,7 +88,6 @@ public:
         Statement(loc),
         guard_(guard),
         children_(children) {
-
     }
 
     Expression* guard() const { return guard_; }

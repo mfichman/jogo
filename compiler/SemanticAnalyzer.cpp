@@ -105,7 +105,7 @@ void SemanticAnalyzer::operator()(Class* feature) {
         copier();
         destructor();
     } else {
-        assert(!"Invaild type");
+        assert(!"Invalid type");
     }
 
     // Check alternatives to make sure there are no interface types.

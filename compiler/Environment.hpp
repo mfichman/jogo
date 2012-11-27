@@ -120,6 +120,7 @@ public:
     Type* any_type() const { return any_type_; }
     Type* enum_type() const { return enum_type_; }
     Type* object_type() const { return object_type_; }
+    Type* functor_type() const { return functor_type_; }
     Type* value_type() const { return value_type_; }
     Type* interface_type() const { return interface_type_; }
     Type* union_type() const { return union_type_; }
@@ -158,6 +159,7 @@ private:
     Type::Ptr any_type_;
     Type::Ptr enum_type_;
     Type::Ptr object_type_;
+    Type::Ptr functor_type_;
     Type::Ptr value_type_;
     Type::Ptr interface_type_;
     Type::Ptr union_type_;

@@ -1,0 +1,41 @@
+# jgtest exec on
+
+Mesh < Object {
+    val = 1
+}
+
+Material < Object {
+    val = 2
+}
+
+Particles < Object {
+    val = 3
+}
+
+Render < Functor {
+    @case(obj Mesh) {
+        Io::println("Mesh #{obj.val}")
+    }
+
+    @case(obj Material) {
+        Io::println("Material #{obj.val}")
+    } 
+
+    @case(obj Particles) {
+        Io::println("Particles #{obj.val}")
+    }
+}
+
+main() Int {
+    render = Render()
+    obj1 = Mesh()
+    obj2 = Material()
+    obj3 = Particles()
+
+    render(obj1)
+    render(obj2)
+    render(obj3)
+    
+    ret 0
+}
+

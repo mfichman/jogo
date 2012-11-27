@@ -37,6 +37,7 @@ private:
     void operator()(Class* feature);
     void operator()(Module* feature);
     void operator()(Function* feature);
+    void functor(Class* funct);
     void mixin(Class* mixin);
     void stub(Function* func);
     void mutator(Attribute* feature);

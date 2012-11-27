@@ -64,6 +64,7 @@ public:
     bool is_boolifiable() const;
     bool is_generic() const;
     bool is_proto() const;
+    bool is_functor() const;
     bool is_primitive() const;
     bool is_alt() const;
     bool is_single() const;
@@ -71,6 +72,7 @@ public:
     bool is_value_proto() const;
     bool is_enum_proto() const;
     bool is_object_proto() const;
+    bool is_functor_proto() const;
     bool is_union_proto() const;
     void is_top(bool flag) { is_top_ = flag; }
     void next(Type* next) { next_ = next; }
