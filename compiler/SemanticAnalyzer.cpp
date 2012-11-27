@@ -857,11 +857,19 @@ void SemanticAnalyzer::operator()(Function* feature) {
     function_ = feature;
     enter_scope();
 
+    bool is_functor_func = feature->name()->string().find("@case") == 0;
+
     // Check for duplicate functions with the same name
     if (parent->feature(feature->name()) != feature) {
         err_ << feature->location();
-        err_ << "Duplicate definition of function '";
-        err_ << feature->name() << "'\n";
+        if (is_functor_func) {
+            err_ << "Duplicate definition of function '@case(";
+            err_ << feature->formals()->next()->type() << ")'\n";
+        } else {
+            err_ << feature->location();
+            err_ << "Duplicate definition of function '";
+            err_ << feature->name() << "'\n";
+        }
         env_->error();
     }
 
@@ -870,6 +878,31 @@ void SemanticAnalyzer::operator()(Function* feature) {
         Type::Ptr type = f->type();
         type(this);
         variable(new Variable(f->name(), Operand(), f->type(), true));
+    }
+    if (is_functor_func) {
+        Formal::Ptr arg = feature->formals()->next();
+        if (!arg) {
+            err_ << feature->location();
+            err_ << "Missing argument in functor case definition\n";
+            env_->error();
+        } else if (arg->next()) {
+            err_ << feature->location();
+            err_ << "Extra arguments in functor case definition\n";
+            env_->error();
+        } else if (arg->type()->is_value()) {
+            err_ << feature->location();
+            err_ << "Value type in functor case\n";
+            env_->error();
+        } else if (arg->type()->is_interface()) {
+            err_ << feature->location();
+            err_ << "Interface type in functor case\n";
+            env_->error();
+        }
+        if (!class_->is_functor()) {
+            err_ << feature->location();
+            err_ << "Functor case in non-functor type\n";
+            env_->error(); 
+        }
     }
     if (feature->is_constructor()) {
         String::Ptr nm = env_->name("self");

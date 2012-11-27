@@ -65,7 +65,9 @@ Builder::Builder(Environment* env) :
     SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
 
     // Code expansion
-    CodeExpander::Ptr expander(new CodeExpander(env));
+    if (!env_->errors()) {
+        CodeExpander::Ptr expander(new CodeExpander(env));
+    }
 
     if (env->dump_ast()) {
         TreePrinter::Ptr tprint(new TreePrinter(env, Stream::stout()));
