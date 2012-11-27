@@ -311,6 +311,7 @@ Class* Parser::clazz(String* scope) {
 
     Generic::Ptr generics = generic_list();
     Type::Ptr type = new Type(loc, name(qn), generics, env_);
+    type_ = type;
     
     // Parse the prototype for the class.
     expect(Token::LESS);
@@ -326,6 +327,7 @@ Class* Parser::clazz(String* scope) {
     Feature::Ptr members = feature_list();
     expect(Token::RIGHT_BRACE);
     file_alias(type->qualified_name()->string());
+    type_ = 0;
     return new Class(loc, env_, type, proto, comment, members);
 }
 
@@ -380,7 +382,7 @@ Feature* Parser::feature() {
         Function* func = function();
         if (func->name()->string() != "@init") {
             String* id = name("self");
-            Formal* self = new Formal(loc, id, env_->self_type());
+            Formal* self = new Formal(loc, id, type_);
             self->next(func->formals());
             func->formals(self);
         }
@@ -820,11 +822,11 @@ Expression* Parser::closure() {
     } else {
         qn += "::_Closure" + stringify(func);
     }
-    Formal::Ptr self = new Formal(loc, name("self"), env_->self_type());
+    Type::Ptr type = new Type(loc, name(qn), 0, env_);
+    Formal::Ptr self = new Formal(loc, name("self"), type);
     self->next(func->formals());
     func->formals(self);
 
-    Type::Ptr type = new Type(loc, name(qn), 0, env_);
     Type::Ptr object = new Type(loc, name("Object"), 0, env_);
     Class::Ptr clazz = new Class(loc, env_, type, object, 0, func);
     clazz->flags(Feature::CLOSURE);

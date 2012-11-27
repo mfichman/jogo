@@ -82,7 +82,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Test1
       block: Block
     feature5: Function
       name: @init

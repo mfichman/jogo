@@ -238,10 +238,6 @@ bool Type::is_bool() const {
     return equals(env_->bool_type());
 }
 
-bool Type::is_self() const {
-    return equals(env_->self_type());
-}
-
 bool Type::is_int() const {
     return equals(env_->int_type());
 }

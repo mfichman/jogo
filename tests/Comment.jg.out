@@ -18,7 +18,7 @@ Module
         symbol are included. 
       formal0: Formal
         name: self
-        type: Self
+        type: Comment
       block: Block
         child0: Conditional
           guard: BooleanLiteral(1)
@@ -30,7 +30,7 @@ Module
         The quick brown fox jumped over the lazy dog. 
       formal0: Formal
         name: self
-        type: Self
+        type: Comment
       block: Block
     feature2: Attribute
       name: x
@@ -42,7 +42,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Comment
       block: Block
     feature4: Function
       name: @init
@@ -53,7 +53,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Comment
       formal1: Formal
         name: _arg0
         type: String
@@ -70,7 +70,7 @@ Module
       type: String
       formal0: Formal
         name: self
-        type: Self
+        type: Comment
       block: Block
         child0: Return
           expression: Identifier

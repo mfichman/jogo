@@ -359,7 +359,7 @@ void SemanticAnalyzer::operator()(Member* expression) {
         return;
     }
 
-    Class::Ptr clazz = type->is_self() ? class_.pointer() : type->clazz();
+    Class::Ptr clazz = type->clazz();
     if (!clazz) {
         expression->type(env_->top_type());
         return;
@@ -417,7 +417,7 @@ void SemanticAnalyzer::operator()(Member* expression) {
         function_->called_func(func);
     }
 
-    if (func->is_private()) {
+    if (func->is_private() && func->parent() != class_) {
         err_ << expression->location();
         err_ << "Function '" << id << "' is private in class '";
         err_ << clazz->name() << "'\n";
@@ -453,7 +453,7 @@ void SemanticAnalyzer::operator()(Call* expression) {
     expression->type(func->type());
 
     // Check to make sure the resolved function is not private
-    if (func->is_private() && !expression->receiver()->type()->is_self()) {
+    if (func->is_private() && func->parent() != class_) {
         err_ << expression->location();
         err_ << "Function '" << func->name() << "' is private in class '";
         err_ << expression->receiver()->type() << "'\n";
@@ -466,11 +466,7 @@ void SemanticAnalyzer::operator()(Call* expression) {
     if (expression->receiver()) {
         expression->receiver()->next(expression->arguments());
         expression->arguments(expression->receiver());
-        if (expression->receiver()->type()->is_self()) {
-            receiver = class_->type();
-        } else { 
-            receiver = expression->receiver()->type();
-        }
+        receiver = expression->receiver()->type();
         expression->type(fix_generics(receiver, func->type()));
     } else {
         expression->type(func->type());
@@ -646,7 +642,7 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
             String::Ptr scope = env_->name("");
             String::Ptr name = env_->name("self");
             Identifier::Ptr self = new Identifier(loc, scope, name);
-            self->type(env_->self_type());
+            self->type(class_->type());
             call->receiver(self);
             return;
         }
@@ -794,9 +790,6 @@ void SemanticAnalyzer::operator()(Return* statement) {
         return;
     }
     expr(this);
-    if (expr->type()->is_self()) {
-        expr->type(class_->type());
-    }
     return_ = expr->type();
     if (!expr->type()->subtype(function_->type())) {
         err_ << statement->location();
@@ -880,7 +873,7 @@ void SemanticAnalyzer::operator()(Function* feature) {
     }
     if (feature->is_constructor()) {
         String::Ptr nm = env_->name("self");
-        variable(new Variable(nm, Operand(), env_->self_type(), true));
+        variable(new Variable(nm, Operand(), class_->type(), true));
     }
 
     Type::Ptr type = feature->type();
@@ -1102,7 +1095,7 @@ void SemanticAnalyzer::operator()(Import* feature) {
 void SemanticAnalyzer::operator()(Type* type) {
     // Check to make sure that the type has a defined class.  Also, check
     // all generics that are part of the type to make sure that they resolve.
-    if (type->is_self() || type->is_top() || type->is_void()) {
+    if (type->is_top() || type->is_void()) {
         return;
     }
     if (type->file()) {
@@ -1176,9 +1169,6 @@ Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec
         // parameter is the type of the receiver.  If the type is a generic,
         // then look up the actual type from the class' definition.
         Type::Ptr ft = formal->type();
-        if (ft->is_self()) {
-            ft = rec->is_self() ? class_->type() : rec;
-        }
         if (ft->is_generic()) {
             ft = rec->generic(ft->name());
         }
@@ -1186,13 +1176,10 @@ Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec
         // Get the actual type.  If the actual type is equal to 'self', then
         // get the type from the current class context.
         Type::Ptr at = arg->type();
-        if (at->is_self()) {
-            at = class_->type(); 
-        }
     
         // Build the modified argument list (which may include cast 
         // expressions that were auto-inserted by the compiler).
-        if (!at->subtype(ft)) {
+        if (!at->subtype(ft) && !formal->is_self()) {
             err_ << arg->location();
             err_ << "Argument does not conform to type '" << ft << "'\n";
             env_->error();
@@ -1396,7 +1383,7 @@ void SemanticAnalyzer::destructor() {
     String::Ptr nm = env_->name("@destroy");
     Function::Ptr dtor = class_->function(nm);
     if (!dtor || (dtor->parent() != class_)) {
-        Type::Ptr st = env_->self_type();
+        Type::Ptr st = class_->type();
         Type::Ptr vt = env_->void_type();
         Location loc = class_->location();
         Block::Ptr block(new Block(loc, 0, 0));
@@ -1416,7 +1403,7 @@ void SemanticAnalyzer::accessor(Attribute* feat) {
         Identifier::Ptr attr(new Identifier(loc, env_->name(""), id));
         Return::Ptr ret(new Return(loc, attr)); 
         Block::Ptr block(new Block(loc, 0, ret));
-        Type::Ptr st = env_->self_type();
+        Type::Ptr st = class_->type();
         Type::Ptr ft = feat->type();
         Formal::Ptr self(new Formal(loc, env_->name("self"), st));
         class_->feature(new Function(loc, env_, get, self, 0, ft, block));
@@ -1435,7 +1422,7 @@ void SemanticAnalyzer::mutator(Attribute* feat) {
         Identifier::Ptr val(new Identifier(loc, env_->name(""), id)); 
         Assignment::Ptr assign(new Assignment(loc, fn, env_->top_type(), val)); 
         Block::Ptr block(new Block(loc, 0, new Simple(loc, assign)));
-        Type::Ptr st = env_->self_type();
+        Type::Ptr st = class_->type();
         Type::Ptr vt = env_->void_type();
         Type::Ptr ft = feat->type();
         Formal::Ptr self(new Formal(loc, env_->name("self"), st));

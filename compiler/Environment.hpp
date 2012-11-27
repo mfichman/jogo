@@ -117,7 +117,6 @@ public:
     Type* char_type() const { return char_type_; }
     Type* byte_type() const { return byte_type_; }
     Type* pair_type() const { return pair_type_; }
-    Type* self_type() const { return self_type_; }
     Type* any_type() const { return any_type_; }
     Type* enum_type() const { return enum_type_; }
     Type* object_type() const { return object_type_; }
@@ -156,7 +155,6 @@ private:
     Type::Ptr char_type_;
     Type::Ptr byte_type_;
     Type::Ptr pair_type_;
-    Type::Ptr self_type_;
     Type::Ptr any_type_;
     Type::Ptr enum_type_;
     Type::Ptr object_type_;

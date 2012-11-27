@@ -130,7 +130,7 @@ void CCodeGenerator::operator()(Construct* expr) {
     Formal::Ptr formal = func->formals();
     Expression::Ptr arg = expr->arguments();
     for (int i = 0; i < args.size(); i++) {
-        if(!formal->type()->is_self() && !formal->type()->equals(arg->type())) {
+        if(!formal->is_self() && !formal->type()->equals(arg->type())) {
             // Cast to the appropriate C-type, since C doesn't know anything 
             // about subtypes, etc..
             out_ << "(";
@@ -341,8 +341,6 @@ void CCodeGenerator::operator()(Type* type) {
         out_ << "void";
     } else if (type->is_enum()) {
         out_ << "Int";
-    } else if (type->is_self()) {
-        out_ << class_->label();
     } else if (type->is_generic()) {
         out_ << "Object";
 	} else if (type->is_primitive()) {
@@ -501,7 +499,7 @@ void CCodeGenerator::call(Function* function, Expression* args) {
     Expression::Ptr arg = args;
     Formal::Ptr formal = function->formals();
 	for (int i = 0; i < val.size(); i++) {
-        if(!formal->type()->is_self() && !formal->type()->equals(arg->type())) {
+        if(!formal->is_self() && !formal->type()->equals(arg->type())) {
             // Cast to the appropriate C-type, since C doesn't know anything 
             // about subtypes, etc..
             out_ << "(";
@@ -657,7 +655,7 @@ void CCodeGenerator::func_sig(Function* feature) {
     }
     for (Formal* f = feature->formals(); f; f = f->next()) {
         // Arguments
-        if (f->type()->is_self()) {
+        if (f->is_self()) {
             Class* parent = static_cast<Class*>(feature->parent());
             if (feature->file() == file_ || parent->is_value()) {
                 out_ << feature->parent()->label();

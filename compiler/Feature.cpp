@@ -263,8 +263,7 @@ bool Function::covariant(Function* other) const {
     Formal* f2 = other->formals_;
 
     while (f1 && f2) {
-        if (f1->type()->name()->string() == "Self" 
-            && f2->type()->name()->string() == "Self") {
+        if (f1->is_self() && f2->is_self()) {
             /* pass */
         } else if (!f1->type()->equals(f2->type())) {
             return false;

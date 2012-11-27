@@ -72,7 +72,7 @@ void InterfaceGenerator::operator()(Function* function) {
         out_ << function->name() << "(";
     }
     for (Formal::Ptr f = function->formals(); f; f = f->next()) {
-        if (!f->type()->is_self()) {
+        if (!f->is_self()) {
            out_ << f->name() << " " << f->type(); 
            if (f->next()) {
                out_ << ", ";

@@ -9,7 +9,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: Let
       block: Block
         child0: Let
           variable0: Assignment
@@ -23,7 +23,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Let
       block: Block
     feature2: Function
       name: @init

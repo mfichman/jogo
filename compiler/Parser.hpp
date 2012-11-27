@@ -130,6 +130,7 @@ private:
                    Expression* expr);
 
 
+    Type::Ptr type_;
     Environment::Ptr env_;
     Module::Ptr module_;
     File::Ptr file_;

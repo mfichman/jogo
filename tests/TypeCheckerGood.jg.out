@@ -8,7 +8,7 @@ Module
       type: CycleType2
       formal0: Formal
         name: self
-        type: Self
+        type: CycleType1
       block: 
   feature1: Class
     name: CycleType2
@@ -18,7 +18,7 @@ Module
       type: CycleType1
       formal0: Formal
         name: self
-        type: Self
+        type: CycleType2
       block: 
   feature2: Class
     name: TypeChecker
@@ -29,7 +29,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: TypeChecker
       formal1: Formal
         name: x
         type: CycleType2
@@ -43,7 +43,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: TypeChecker
       block: Block
         child0: Return
           expression: IntegerLiteral(2)
@@ -53,7 +53,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: TypeChecker
       formal1: Formal
         name: bob
         type: Int
@@ -64,7 +64,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: TypeChecker
       block: Block
         child0: Statement
           expression: Assignment
@@ -189,7 +189,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: TypeChecker
       block: Block
     feature5: Function
       name: @init

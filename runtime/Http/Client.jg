@@ -136,6 +136,19 @@ Client < Object {
         socket = Socket::connect(host, port)
     }
 
+    methodstr(method Method) private String {
+        # Returns the Method enumeration as a string.
+        match method {
+        with Method::GET: ret "GET"
+        with Method::HEAD: ret "HEAD"
+        with Method::POST: ret "POST"
+        with Method::PUT: ret "PUT"
+        with Method::DELETE: ret "DELETE"
+        with Method::TRACE: ret "TRACE"
+        with Method::CONNECT: ret "CONNECT"
+        } 
+    }
+
     request(request Request) Response {
         # Issues a new request using the given IO stream.
         method = methodstr(request.method)
@@ -149,16 +162,4 @@ Client < Object {
         ret Response(stream)
     }
 
-    methodstr(method Method) private String {
-        # Returns the Method enumeration as a string.
-        match method {
-        with Method::GET: ret "GET"
-        with Method::HEAD: ret "HEAD"
-        with Method::POST: ret "POST"
-        with Method::PUT: ret "PUT"
-        with Method::DELETE: ret "DELETE"
-        with Method::TRACE: ret "TRACE"
-        with Method::CONNECT: ret "CONNECT"
-        } 
-    }
 }

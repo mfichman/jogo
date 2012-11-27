@@ -61,7 +61,7 @@ void MarkdownGenerator::operator()(Function* feature) {
 
     out_ << "## " << feature->name() << "(";
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
-        if (f->type()->is_self()) {
+        if (f->is_self()) {
             continue;
         }
         out_ << f->name() << " ";

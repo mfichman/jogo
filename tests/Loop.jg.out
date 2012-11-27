@@ -9,7 +9,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: Iterator
       block: Block
         child0: Return
           expression: StringLiteral
@@ -20,7 +20,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: Iterator
       block: Block
         child0: Return
           expression: BooleanLiteral(1)
@@ -29,7 +29,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Iterator
       block: Block
     feature3: Function
       name: @init
@@ -44,7 +44,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: Iterable
       block: Block
         child0: Return
           expression: Construct
@@ -54,7 +54,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Iterable
       block: Block
     feature2: Function
       name: @init
@@ -77,7 +77,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: Loop
       block: Block
         child0: Let
           variable0: Assignment
@@ -125,7 +125,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: Loop
       block: Block
         child0: While
           guard: BooleanLiteral(1)
@@ -135,7 +135,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Loop
       block: Block
     feature3: Function
       name: @init

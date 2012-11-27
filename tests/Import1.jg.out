@@ -8,7 +8,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: ImportA
       block: Block
     feature1: Function
       name: @init
@@ -22,7 +22,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: ImportB
       block: Block
     feature1: Function
       name: @init

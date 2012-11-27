@@ -47,7 +47,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: Bob
       block: Block
         child0: Conditional
           guard: Binary
@@ -82,7 +82,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: Bob
       block: Block
         child0: Conditional
           guard: Binary
@@ -127,7 +127,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Bob
       block: Block
     feature5: Function
       name: @init
@@ -141,7 +141,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Bob
       block: Block
     feature1: Function
       name: @init
@@ -190,7 +190,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Self
+        type: Container[:a]
       formal1: Formal
         name: val
         type: :b
@@ -202,7 +202,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Container[:a]
       block: Block
     feature3: Function
       name: @init
@@ -213,7 +213,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Container[:a]
       formal1: Formal
         name: _arg0
         type: :b
@@ -230,7 +230,7 @@ Module
       type: :b
       formal0: Formal
         name: self
-        type: Self
+        type: Container[:a]
       block: Block
         child0: Return
           expression: Identifier
@@ -247,7 +247,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: One[:a]
       block: Block
     feature2: Function
       name: @init
@@ -258,7 +258,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: One[:a]
       formal1: Formal
         name: _arg0
         type: One[String,String]
@@ -275,7 +275,7 @@ Module
       type: One[String,String]
       formal0: Formal
         name: self
-        type: Self
+        type: One[:a]
       block: Block
         child0: Return
           expression: Identifier
@@ -296,7 +296,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Two[:a,:b]
       block: Block
     feature3: Function
       name: @init
@@ -307,7 +307,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Two[:a,:b]
       formal1: Formal
         name: _arg0
         type: Two[String]
@@ -324,7 +324,7 @@ Module
       type: Two[String]
       formal0: Formal
         name: self
-        type: Self
+        type: Two[:a,:b]
       block: Block
         child0: Return
           expression: Identifier
@@ -334,7 +334,7 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Self
+        type: Two[:a,:b]
       formal1: Formal
         name: _arg0
         type: Two
@@ -351,7 +351,7 @@ Module
       type: Two
       formal0: Formal
         name: self
-        type: Self
+        type: Two[:a,:b]
       block: Block
         child0: Return
           expression: Identifier

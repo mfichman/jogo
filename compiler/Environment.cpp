@@ -59,7 +59,6 @@ Environment::Environment() :
     char_type_ = new Type(loc, name("Char"), 0, this);
     byte_type_ = new Type(loc, name("Byte"), 0, this);
     pair_type_ = new Type(loc, name("Pair"), 0, this);
-    self_type_ = new Type(loc, name("Self"), 0, this);
     any_type_ = new Type(loc, name("Any"), 0, this);
     enum_type_ = new Type(loc, name("Enum"), 0, this);
     object_type_ = new Type(loc, name("Object"), 0, this);

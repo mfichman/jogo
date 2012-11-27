@@ -52,7 +52,6 @@ public:
     bool is_byte() const;
     bool is_char() const;
     bool is_bool() const;
-    bool is_self() const;
     bool is_int() const;
     bool is_float() const;
     bool is_number() const;

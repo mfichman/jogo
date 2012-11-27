@@ -679,11 +679,8 @@ void BasicBlockGenerator::call(Function* func, Expression* args, Expression* rec
     // Push objects in anticipation of the call instruction.  Arguments must be
     // pushed in reverse order.
     if (recv) {
-        // Look up the function again, incase it needs to re-resolve
+        // Look up the function again, in case it needs to re-resolve
         Class::Ptr clazz = recv->type()->clazz();
-        if (recv->type()->is_self()) {
-            clazz = class_;
-        }
         func = clazz->function(func->name());
     }
 

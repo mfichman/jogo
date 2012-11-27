@@ -166,9 +166,10 @@ if 'pkg' in COMMAND_LINE_TARGETS:
         env.Depends('pkg', copy)
     
     for f in binary_files:
-        path = os.path.join(dist_path, f.path)
-        copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
-        env.Depends('pkg', copy)
+        if "bin/test" not in f.path:
+           path = os.path.join(dist_path, f.path)
+           copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
+           env.Depends('pkg', copy)
     
     for f in library_files:
         path = os.path.join(dist_path, f.path)

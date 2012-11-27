@@ -38,6 +38,7 @@ public:
 	Type* type() const { return type_; }
     Formal* next() const { return next_; }
     Formal* last() const { return last_; }
+    bool is_self() const { return name_->string()=="self"; }
 	void next(Formal* next) { next_ = next; }
     void last(Formal* last) { last_ = last; }
     virtual void operator()(Functor* functor) { functor->operator()(this); }
