@@ -120,11 +120,17 @@ CodeExpander::functor(Class* clazz) {
     // the type of the arugment passed to @call method.
     Function::Ptr func = clazz->function(env_->name("@call"));
     Location loc;
-    String::Ptr fn = func->formals()->next()->name();
-    Identifier::Ptr guard = new Identifier(loc, env_->name(""), fn);
-    Expression::Ptr arg = new Identifier(loc, env_->name(""), fn);
-    arg->type(func->formals()->next()->type());
     Statement::Ptr stmt;
+    String::Ptr fn = func->formals()->next()->name();
+    Identifier::Ptr guard(new Identifier(loc, env_->name(""), fn));
+    Expression::Ptr arg0(new Identifier(loc, env_->name(""), env_->name("self")));
+    Expression::Ptr arg1(new Identifier(loc, env_->name(""), fn));
+    arg0->type(func->formals()->type());
+    arg1->type(func->formals()->next()->type());
+
+    Expression::Ptr arg = 0;
+    arg = append(arg.pointer(), arg0.pointer());
+    arg = append(arg.pointer(), arg1.pointer());
 
     for (Feature::Ptr feat = clazz->features(); feat; feat = feat->next()) {
         if (Function* func = dynamic_cast<Function*>(feat.pointer())) {
@@ -133,12 +139,11 @@ CodeExpander::functor(Class* clazz) {
                 // This is a functor case, so generate a branch for it.  Each 
                 // branch looks like this: self.@case_Type(obj)
                 Type::Ptr type = func->formals()->next()->type();
-                Identifier::Ptr id = new Identifier(loc, env_->name(""), nm);
-                Member::Ptr mem = new Member(loc, id, env_->name("self"));
-                Call::Ptr expr = new Call(loc, mem, arg);
+                Identifier::Ptr id(new Identifier(loc, env_->name(""), nm));
+                Call::Ptr expr(new Call(loc, id, arg));
                 expr->function(func);
-                Statement::Ptr yes = new Simple(loc, expr);
-                Is::Ptr is = new Is(loc, guard, type);
+                Statement::Ptr yes(new Simple(loc, expr));
+                Is::Ptr is(new Is(loc, guard, type));
                 stmt = new Conditional(loc, is, yes, stmt);
             }
         }

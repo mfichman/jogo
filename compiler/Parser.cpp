@@ -328,7 +328,20 @@ Class* Parser::clazz(String* scope) {
     expect(Token::RIGHT_BRACE);
     file_alias(type->qualified_name()->string());
     type_ = 0;
-    return new Class(loc, env_, type, proto, comment, members);
+
+    if (proto->is_functor_proto() && type->clazz()) {
+        Class::Ptr clazz = type->clazz();
+        std::vector<Feature::Ptr> mem;
+        for (Feature::Ptr feat = members; feat; feat = feat->next()) {
+            mem.push_back(feat);
+        }
+        for (int i = 0; i < mem.size(); ++i) {
+            clazz->feature(mem[i]);
+        }
+        return 0;    
+    } else {
+        return new Class(loc, env_, type, proto, comment, members);
+    }
 }
 
 Class* Parser::alternate(String* name) {
@@ -1471,6 +1484,9 @@ Statement* Parser::for_loop() {
 void Parser::module_feature(Feature* feature, String* scope) {
     // If the scope of the feature is fully-qualified, then use that to select
     // the module.  Otherwise, insert the feature into the current module. 
+    if (!feature) {
+        return;
+    }
     Module::Ptr module = env_->module(scope);
     if (!module) {
         module = new Module(location(), env_, scope);
