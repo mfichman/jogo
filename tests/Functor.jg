@@ -35,6 +35,7 @@ main() Int {
     render(obj1)
     render(obj2)
     render(obj3)
+    render("bob")
     
     ret 0
 }
