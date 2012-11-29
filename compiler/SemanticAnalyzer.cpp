@@ -71,10 +71,7 @@ void SemanticAnalyzer::operator()(Class* feature) {
     // Analyze a class, including its child attributes and functions.
     ContextAnchor anchor(this);
     class_ = feature;
-
-    if (feature->file()) {
-        feature->file()->dependency(feature);
-    }
+    dependency(feature, feature);
 
     // Make sure that there isn't a duplicate of this class.
     Feature::Ptr parent = feature->parent();
@@ -412,7 +409,7 @@ void SemanticAnalyzer::operator()(Member* expression) {
     assert(func->type() && "Attribute has no type");
     expression->type(fix_generics(expr->type(), func->type()));
     expression->function(func);
-    expression->file()->dependency(func);
+    dependency(expression, func);
     if (function_) {
         function_->called_func(func);
     }
@@ -473,15 +470,15 @@ void SemanticAnalyzer::operator()(Call* expression) {
     }
 
     // FIXME: Look up generics for function
-    expression->file()->dependency(func);
+    dependency(expression, func);
     expression->arguments(args(expression->arguments(), func, receiver));
     if (function_) {
         function_->called_func(func);
     }
     if (expression->type()->is_compound()) {
         Class* clazz = expression->type()->clazz();
-        expression->file()->dependency(clazz->copier());
-        expression->file()->dependency(clazz->destructor());
+        dependency(expression, clazz->copier());
+        dependency(expression, clazz->destructor());
     }
 }
 
@@ -516,7 +513,7 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         err_ << "Constructor is private in class '" << type << "'\n";
         env_->error();  
     }
-    expression->file()->dependency(constr);
+    dependency(expression, constr);
     
     if (clazz->is_enum()) {
         err_ << expression->location();
@@ -533,8 +530,8 @@ void SemanticAnalyzer::operator()(Construct* expression) {
         function_->called_func(constr);
     }
     if (clazz->is_compound()) {
-        expression->file()->dependency(clazz->copier());
-        expression->file()->dependency(clazz->destructor());
+        dependency(expression, clazz->copier());
+        dependency(expression, clazz->destructor());
     }
 }
 
@@ -568,8 +565,7 @@ void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
         return;
     }
     constant(this);
-    file->dependency(constant);
-    
+    dependency(expression, constant);
     expression->constant(constant);
     expression->type(constant->type()); 
     assert(expression->type());
@@ -866,7 +862,6 @@ void SemanticAnalyzer::operator()(Function* feature) {
             err_ << "Duplicate definition of function '@case(";
             err_ << feature->formals()->next()->type() << ")'\n";
         } else {
-            err_ << feature->location();
             err_ << "Duplicate definition of function '";
             err_ << feature->name() << "'\n";
         }
@@ -1058,9 +1053,7 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     }
     mutator(feature);
     accessor(feature);
-    if (feature->file()) {
-        feature->file()->dependency(clazz);
-    }
+    dependency(feature, clazz);
 }
 
 void SemanticAnalyzer::operator()(Closure* expression) {
@@ -1135,10 +1128,7 @@ void SemanticAnalyzer::operator()(Type* type) {
     if (type->is_top() || type->is_void()) {
         return;
     }
-    if (type->file()) {
-        type->file()->dependency(type->clazz());
-    }
-
+    dependency(type, type->clazz());
     if (type->is_generic() && class_) {
         Type::Ptr ct = class_->type();
         for (Generic::Ptr gen = ct->generics(); gen; gen = gen->next()) {
@@ -1335,8 +1325,8 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
     }
     if (expr->type()->is_compound()) {
         Class* clazz = expr->type()->clazz();
-        expr->file()->dependency(clazz->copier());
-        expr->file()->dependency(clazz->destructor());
+        dependency(expr, clazz->copier());
+        dependency(expr, clazz->destructor());
     }
 }
 
@@ -1466,6 +1456,13 @@ void SemanticAnalyzer::mutator(Attribute* feat) {
         Formal::Ptr arg(new Formal(loc, env_->name("_arg0"), ft));
         self->next(arg);
         class_->feature(new Function(loc, env_, set, self, 0, vt, block));
+    }
+}
+
+void SemanticAnalyzer::dependency(TreeNode* node, Feature* dep) {
+    // Adds a dependency to the appropriate file for the node
+    if (node->file()) {
+        node->file()->dependency(dep);
     }
 }
 

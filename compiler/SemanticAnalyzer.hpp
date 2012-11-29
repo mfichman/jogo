@@ -89,6 +89,7 @@ private:
     void constructor();
     void destructor();
     void copier();
+    void dependency(TreeNode* node, Feature* dep); 
     Type* fix_generics(Type* parent, Type* type);
     void assign_enums(Class* clazz);
 

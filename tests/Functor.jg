@@ -1,5 +1,7 @@
 # jgtest exec on
 
+import Sub3
+
 Mesh < Object {
     val = 1
 }
@@ -32,12 +34,23 @@ Render < Functor {
     }
 }
 
-Render < Functor {
-    # Functors are open classes that can be extended with new cases easily
-    @case(obj Quads) {
-        Io::println("Quads #{obj.val} #{var}")
-    }
-}
+#Render < Functor {
+#    # Functors are open classes that can be extended with new cases easily
+#    @case(obj Quads) {
+#        Io::println("Quads #{obj.val} #{var}")
+#    }
+#}
+#
+#Sub3::Funct < Functor {
+#    # Extend a functor from another module
+#    @case(obj Quads) {
+#        Io::println("Quads #{obj.val}")
+#    }
+#}
+# This feature is disabled b/c there is no good way to collect functor defs
+# from different modules.  Biggest problem is the fact that the functor mem
+# layout could be arbitrary depending on modules loaded.  One option is to
+# disallow new members after the initial decl.
 
 main() Int {
     render = Render()
@@ -51,6 +64,10 @@ main() Int {
     render(obj3)
     render(obj4)
     render("bob")
+
+    funct = Sub3::Funct()
+#    funct(obj4)
+    funct("hello")
     
     ret 0
 }

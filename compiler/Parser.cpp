@@ -328,20 +328,7 @@ Class* Parser::clazz(String* scope) {
     expect(Token::RIGHT_BRACE);
     file_alias(type->qualified_name()->string());
     type_ = 0;
-
-    if (proto->is_functor_proto() && type->clazz()) {
-        Class::Ptr clazz = type->clazz();
-        std::vector<Feature::Ptr> mem;
-        for (Feature::Ptr feat = members; feat; feat = feat->next()) {
-            mem.push_back(feat);
-        }
-        for (int i = 0; i < mem.size(); ++i) {
-            clazz->feature(mem[i]);
-        }
-        return 0;    
-    } else {
-        return new Class(loc, env_, type, proto, comment, members);
-    }
+    return new Class(loc, env_, type, proto, comment, members);
 }
 
 Class* Parser::alternate(String* name) {
