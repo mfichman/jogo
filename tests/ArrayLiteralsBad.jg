@@ -1,0 +1,18 @@
+
+
+NoPushFunc < Object {
+
+}
+
+Intf < Interface {
+    push(x String) {
+    }
+}
+
+
+main() Int {
+    x NoPushFunc = ["a", "b"]
+    y Intf = ["a", "b"]
+    z Int = ["a"]
+    ret 0
+}

@@ -228,9 +228,22 @@ void SemanticAnalyzer::operator()(ArrayLiteral* lit) {
 
     Class::Ptr clazz = lit->type()->clazz();
     Function::Ptr push = clazz->function(env_->name("push"));
-    Function::Ptr ctor = clazz->constructor();
-    dependency(lit, push);
-    dependency(lit, ctor);
+    if (!push) {
+        err_ << lit->location();
+        err_ << "Type '" << lit->type() << "' has no 'push' function\n";
+        env_->error(); 
+    } else {
+        dependency(lit, push);
+    }
+
+    if (lit->type()->is_interface()) {
+        err_ << lit->location();
+        err_ << "Cannot construct interface type '" << lit->type() << "'\n"; 
+        env_->error();
+    } else {
+        Function::Ptr ctor = clazz->constructor();
+        dependency(lit, ctor);
+    }
 }
 
 void SemanticAnalyzer::operator()(Let* stmt) {

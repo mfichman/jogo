@@ -1,0 +1,3 @@
+ArrayLiteralsBad.jg:14:20: Type 'NoPushFunc' has no 'push' function
+ArrayLiteralsBad.jg:15:14: Cannot construct interface type 'Intf'
+ArrayLiteralsBad.jg:16:13: Type 'Int' has no 'push' function
