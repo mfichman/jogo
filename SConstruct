@@ -98,6 +98,7 @@ compiler = env.StaticLibrary('lib/jogoc', compiler_src)
 library_src = ' '.join([
     "Array",
     "Boot::Module",
+    "Collection",
     "Coroutine",
     "File",
     "Hash",

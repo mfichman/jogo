@@ -4,6 +4,14 @@ Intf < Interface {
     test()
 }
 
+One < Object {
+    test() {}
+}
+
+Two < Object {
+    test() {}
+}
+
 print(arr Array[String]) {
     for x in arr {
         Io::println(x)
@@ -35,6 +43,8 @@ main() Int {
     for x in ar {
         Io::println(x)
     }
+
+    #ar2 Array[Intf] = [ One(), Two() ]
 
     ret 0
 }

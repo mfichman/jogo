@@ -112,6 +112,11 @@ Array[:a] < Object {
         # Adds 'element' to the end of the array.
         self[count] = element
     }
+    
+    append(element :a) {
+        # Adds 'element' to the end of the array (synonym for 'push')
+        push(element)
+    }
 
     pop() :a {
         # Removes the element at the end of the array, and reduces the count.
