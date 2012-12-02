@@ -1,0 +1,27 @@
+
+Generic[:a] < Object {
+}
+
+Alpha < Object {
+}
+
+Beta < Object {
+}
+
+Generic2[:a,:b] < Object {
+    attr1 Generic[:a] = Generic[:b]() # Not allowed
+    attr2 Generic[:a] = Generic[String]() # Not allowed
+    attr3 Generic[String] = Generic[:a]() # Not allowed
+    fun() {
+        a Generic[:a] = Generic[:b]() # Not allowed
+        b Generic[:a] = Generic[String]() # Not allowed
+        c Generic[String] = Generic[:a]() # Not allowed
+    }
+}
+
+
+main() Int {
+    #g = Generic[Alpha]()
+    #g = Generic[Beta]()
+    ret 0
+}

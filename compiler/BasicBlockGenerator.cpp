@@ -98,10 +98,34 @@ void BasicBlockGenerator::operator()(BooleanLiteral* expr) {
     return_ = load(expr);
 }
 
+void BasicBlockGenerator::operator()(ArrayLiteral* expr) {
+    // Generate code for an array literal
+    Location loc = expr->location();
+    int elems = 0;
+    for (Expression* arg = expr->arguments(); arg; arg = arg->next()) {
+        elems++; 
+    }
+    Function::Ptr ctor = expr->type()->clazz()->constructor();
+    Function::Ptr push = expr->type()->clazz()->function(env_->name("push"));
+    String::Ptr size = env_->integer(stringify(elems));
+    FuncMarshal fm(this);
+    fm.arg(load(new IntegerLiteral(loc, size)));
+    fm.call(ctor->label());
+    Operand array = pop_ret(expr->type());
+    for (Expression* arg = expr->arguments(); arg; arg = arg->next()) {
+        FuncMarshal fm(this);
+        fm.arg(array);
+        fm.arg(emit(arg));
+        fm.call(push->label());
+    }
+    return_ = array;
+}
+
 void BasicBlockGenerator::operator()(Box* expr) {
     // Boxes a value type into an object, by allocating memory on the stack
     // for the value type.  This function allocates and initializes a refcount
     // and vtable pointer for the value type.
+    Location loc = expr->location();
     Operand arg = emit(expr->child()); 
     assert(!expr->type()->is_compound() && "Not implemented for values");
     assert(!expr->type()->is_ref());
@@ -112,8 +136,8 @@ void BasicBlockGenerator::operator()(Box* expr) {
     String::Ptr one = env_->integer("1");
     String::Ptr size = env_->integer(stringify(bytes));
     FuncMarshal fm(this);
-    fm.arg(load(new IntegerLiteral(Location(), size)));
-    fm.arg(load(new IntegerLiteral(Location(), one)));
+    fm.arg(load(new IntegerLiteral(loc, size)));
+    fm.arg(load(new IntegerLiteral(loc, one)));
     fm.call(env_->name("Boot_calloc"));
     return_ = pop_ret(expr->type());
     object_temp_.push_back(return_);
@@ -133,7 +157,7 @@ void BasicBlockGenerator::operator()(Box* expr) {
     // Make sure that the refcount starts out at 1, otherwise the object may
     // be freed before the end of the constructor.
     Operand refcount = Operand(return_.reg(), Address(1));
-    store(refcount, new IntegerLiteral(Location(), one));
+    store(refcount, new IntegerLiteral(loc, one));
 
     // Slot 2 is the value slot for primitive types
     Operand addr = Operand(return_.reg(), Address(2));

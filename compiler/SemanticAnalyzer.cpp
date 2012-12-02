@@ -191,31 +191,46 @@ void SemanticAnalyzer::operator()(BooleanLiteral* expression) {
 void SemanticAnalyzer::operator()(HashLiteral* literal) {
 }
 
-void SemanticAnalyzer::operator()(ArrayLiteral* literal) {
-/*
-    Type::Ptr parent_type = literal->parent_type();
-    Type::Ptr type;
-    for (Expression::Ptr a = literal->arguments(); a; a = a->next()) {
-        a(this);
-        if (parent_type) {
-            if (!a->type()->subtype(parent_type)) {
-                err_ << a->location();
-                err_ << "List element does not conform to type '";
-                err_ << parent_type << "'\n";
-                env_->error();
-            }
-        } else if (type) {
-            if (!a->type()->subtype(type)) {
-                err_ << a->location();
-                err_ << "List element does not conform to type '";
-                err_ << type << "'\n";
-                env_->error();
-            }
-        } else {
-            type = a->type();
+void SemanticAnalyzer::operator()(ArrayLiteral* lit) {
+    // For an ArrayLiteral, the type of the expression is Array[First], where
+    // First is the type of the first expression argument.  If subsequent types
+    // do not match, then the type is Array[Any]
+    if (Assignment::Ptr assign = dynamic_cast<Assignment*>(lit->parent())) {
+        // Attempt to determine the type of the array literal by looking at the
+        // parent expr, which may be an assignment.
+        String::Ptr id = assign->identifier();
+        if (!assign->declared_type()->is_top()) {
+            lit->type(assign->declared_type());
+        } else if (Variable::Ptr var = variable(id)) {
+            lit->type(var->type());
         }
     }
-*/
+
+    if (!lit->type()) {
+        // Otherwise, create a generic Array type based on the arguments to
+        // the list constructor. 
+        Type::Ptr eltype;
+        for (Expression::Ptr a = lit->arguments(); a; a = a->next()) {
+            a(this);
+            if (eltype && !a->type()->subtype(eltype)) {
+                eltype = env_->any_type();
+            } else {
+                eltype = a->type();
+            }
+        }
+        if(!eltype) {
+            eltype = env_->any_type();
+        }
+        String::Ptr nm(env_->name("Array"));
+        Generic::Ptr gen(new Generic(eltype));
+        lit->type(new Type(lit->location(), nm, gen, env_));
+    } 
+
+    Class::Ptr clazz = lit->type()->clazz();
+    Function::Ptr push = clazz->function(env_->name("push"));
+    Function::Ptr ctor = clazz->constructor();
+    dependency(lit, push);
+    dependency(lit, ctor);
 }
 
 void SemanticAnalyzer::operator()(Let* stmt) {
@@ -1044,10 +1059,10 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     }
 
     // Make sure that the init and the feature type conform.
-    if (!feature->type()->subtype(declared)) {
+    if (!init->type()->subtype(declared)) {
         err_ << feature->location();
         err_ << "Expression does not conform to type '";
-        err_ << feature->type() << "'";
+        err_ << declared << "'";
         err_ << "\n";
         env_->error();
     }
@@ -1195,13 +1210,9 @@ Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec
         // Get the formal type.  If the type is 'self', then the formal
         // parameter is the type of the receiver.  If the type is a generic,
         // then look up the actual type from the class' definition.
-        Type::Ptr ft = formal->type();
-        if (ft->is_generic()) {
-            ft = rec->generic(ft->name());
-        }
+        Type::Ptr ft = fix_generics(rec, formal->type());
 
-        // Get the actual type.  If the actual type is equal to 'self', then
-        // get the type from the current class context.
+        // Get the actual argument type.
         Type::Ptr at = arg->type();
     
         // Build the modified argument list (which may include cast 

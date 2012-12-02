@@ -1307,6 +1307,9 @@ Expression* Parser::literal() {
     // Parses a literal expression, variable, or parenthesized expression
     Expression* expr;
     switch(token().type()) {
+    case Token::LEFT_BRACKET:
+        return array_literal();
+        break;
     case Token::FLOAT:
         expr = new FloatLiteral(location(), env_->integer(value()));
         break;
@@ -1362,6 +1365,22 @@ Expression* Parser::literal() {
     return expr;
 }
 
+Expression* Parser::array_literal() {
+    // Returns an expression constructing an Array from an array literal.
+    LocationAnchor loc(this);
+    Expression::Ptr args;
+    expect(Token::LEFT_BRACKET);
+    while (token() != Token::RIGHT_BRACKET) {
+        args = append(args, expression());
+        if (token() != Token::COMMA) {
+            break;
+        }
+        next();
+    }
+    expect(Token::RIGHT_BRACKET);
+    return new ArrayLiteral(loc, args);
+}
+
 Expression* Parser::regex() {
     // Returns an expression constructing a Regex object from a Regex literal.
     LocationAnchor loc(this);
@@ -1389,7 +1408,6 @@ Expression* Parser::string() {
         } else {
             break;
         }
-        
     }
     Expression::Ptr tmp = new StringLiteral(location(), env_->string(value()));
     expect(Token::STRING_END);

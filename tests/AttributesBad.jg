@@ -1,0 +1,14 @@
+Alpha < Object {
+}
+
+Beta < Object {
+}
+
+Test < Object {
+    alpha Alpha = Beta()
+    alpha2 Alpha = Alpha()
+}
+
+main() Int {
+    ret 0
+}

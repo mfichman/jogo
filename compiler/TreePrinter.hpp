@@ -79,3 +79,5 @@ private:
     Stream::Ptr out_;
     int indent_level_;
 };
+
+void print(TreeNode* node);

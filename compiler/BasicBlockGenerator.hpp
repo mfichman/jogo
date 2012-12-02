@@ -49,6 +49,7 @@ private:
     void operator()(IntegerLiteral* expression);
     void operator()(FloatLiteral* expression);
     void operator()(BooleanLiteral* expression);
+    void operator()(ArrayLiteral* expression);
     void operator()(Binary* expression);
     void operator()(Unary* expression);
     void operator()(Call* expression);

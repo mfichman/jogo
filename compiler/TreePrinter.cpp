@@ -30,9 +30,11 @@ TreePrinter::TreePrinter(Environment* env, Stream* out) :
     out_(out),
     indent_level_(0) {
 
-    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
-        m(this);
-    }    
+    if (env_) {
+       for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
+           m(this);
+       }    
+    }
     out_->flush();
 }
 
@@ -544,3 +546,8 @@ void TreePrinter::operator()(Is* expression) {
     indent_level_--;
 }
       
+void print(TreeNode* node) {
+    TreePrinter::Ptr printer(new TreePrinter(0));
+    node->operator()(printer);
+    Stream::stout()->flush();
+}

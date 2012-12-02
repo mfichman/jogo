@@ -80,10 +80,9 @@ bool Type::equals(Type* other) const {
     Generic* g1 = generics();
     Generic* g2 = other->generics();
     while (g1 && g2) {
-        if (g1->type()->equals(g2->type())) {
+        if (!g1->type()->equals(g2->type())) {
             return false;
         }
-        
         g1 = g1->next();
         g2 = g2->next();
     }
@@ -115,8 +114,8 @@ bool Type::subtype(Type* other) const {
     if (other->is_nil() && !is_value()) {
         return true;
     }
-    if (this->equals(other)) {
-        return true;
+    if (clazz() == other->clazz()) {
+        return equals(other); 
     }
     if (!clazz() || !other->clazz()) {
         return false;

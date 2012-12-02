@@ -115,6 +115,7 @@ private:
     Expression* bitwise_or();
     Expression* bitwise_xor();
     Expression* literal();
+    Expression* array_literal();
     Expression* closure();
 
     Token token(int index=0) const { 
