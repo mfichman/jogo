@@ -98,6 +98,27 @@ void BasicBlockGenerator::operator()(BooleanLiteral* expr) {
     return_ = load(expr);
 }
 
+void BasicBlockGenerator::operator()(HashLiteral* expr) {
+    // Generate code for a hash literal
+    Location loc = expr->location();
+    Class::Ptr clazz = expr->type()->clazz();
+    Function::Ptr ctor = clazz->constructor();
+    Function::Ptr insert = clazz->function(env_->name("@insert"));
+    FuncMarshal fm(this);
+    fm.call(ctor->label());
+    Operand array = pop_ret(expr->type());
+    for (Expression* arg = expr->arguments(); arg; arg = arg->next()) {
+        Construct::Ptr pair = dynamic_cast<Construct*>(arg);
+        assert(pair && "Non-pair constructor in hash literal");
+        FuncMarshal fm(this);
+        fm.arg(array);
+        fm.arg(emit(pair->arguments()));
+        fm.arg(emit(pair->arguments()->next()));
+        fm.call(insert->label()); 
+    }
+    return_ = array; 
+}
+
 void BasicBlockGenerator::operator()(ArrayLiteral* expr) {
     // Generate code for an array literal
     Location loc = expr->location();

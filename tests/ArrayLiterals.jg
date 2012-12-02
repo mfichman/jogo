@@ -1,10 +1,7 @@
 # jgtest exec on
 
-ArrayLike < Object {
-
-    push(elem String) {
-        Io::println(elem.str)
-    }
+Intf < Interface {
+    test()
 }
 
 print(arr Array[String]) {
@@ -19,7 +16,7 @@ main() Int {
         Io::println(x)
     } 
 
-    list = []
+    list = Array[String](0) #[]
     for x in list {
         Io::println(x)
     } 
@@ -30,6 +27,14 @@ main() Int {
     }
     print(["hello"]+["world"])
 
-    ar ArrayLike = ["alpha", "beta", "gamma"]  
+    ar Array[String] = [
+        "alpha", 
+        "beta", 
+        "gamma",
+    ]  
+    for x in ar {
+        Io::println(x)
+    }
+
     ret 0
 }

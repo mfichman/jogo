@@ -9,8 +9,18 @@ Intf < Interface {
     }
 }
 
+Intf2 < Interface {
+    test()
+}
+
+BadPushFunc < Object {
+    push() {
+    }
+}
 
 main() Int {
+    v BadPushFunc = ["a"]
+    w Array[Intf2] = [ "hello" ] # "hello" doesn't match Intf2
     x NoPushFunc = ["a", "b"]
     y Intf = ["a", "b"]
     z Int = ["a"]

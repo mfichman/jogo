@@ -116,6 +116,8 @@ private:
     Expression* bitwise_xor();
     Expression* literal();
     Expression* array_literal();
+    Expression* hash_literal();
+    Expression* pair();
     Expression* closure();
 
     Token token(int index=0) const { 

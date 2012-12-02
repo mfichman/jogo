@@ -1310,6 +1310,9 @@ Expression* Parser::literal() {
     case Token::LEFT_BRACKET:
         return array_literal();
         break;
+    case Token::LEFT_BRACE:
+        return hash_literal();
+        break;
     case Token::FLOAT:
         expr = new FloatLiteral(location(), env_->integer(value()));
         break;
@@ -1379,6 +1382,33 @@ Expression* Parser::array_literal() {
     }
     expect(Token::RIGHT_BRACKET);
     return new ArrayLiteral(loc, args);
+}
+
+Expression* Parser::hash_literal() {
+    // Returns an expression constructing a Hash from a hash literal.
+    LocationAnchor loc(this);
+    Expression::Ptr args;
+    expect(Token::LEFT_BRACE);
+    while (token() != Token::RIGHT_BRACE) {
+        args = append(args, pair());
+        if (token() != Token::COMMA) {
+            break;
+        }
+        next();
+    }
+    expect(Token::RIGHT_BRACE);
+    return new HashLiteral(loc, args);
+}
+
+Expression* Parser::pair() {
+    // Returns a Pair expression, e.g., expr1 : expr2
+    LocationAnchor loc(this);
+    Type::Ptr type(new Type(loc, name("Pair"), 0, env_));
+    Expression::Ptr args = expression();  
+    expect(Token::COLON);
+    args = append(args, expression());
+    return new Construct(loc, type, args);
+     
 }
 
 Expression* Parser::regex() {

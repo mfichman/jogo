@@ -188,62 +188,62 @@ void SemanticAnalyzer::operator()(BooleanLiteral* expression) {
     expression->type(env_->bool_type());
 }
 
-void SemanticAnalyzer::operator()(HashLiteral* literal) {
+void SemanticAnalyzer::operator()(HashLiteral* lit) {
+    // For a HashLiteral, the type of the expression is Hash[Pair[A,B]], where
+    // Pair[A,B] is the type of the first expression argument.  If subsequent
+    // types do not match, then the type is Pair[A,B]
+    Type::Ptr ktype;
+    Type::Ptr vtype;
+    for (Expression::Ptr a = lit->arguments(); a; a = a->next()) {
+        Construct::Ptr pair = dynamic_cast<Construct*>(a.pointer());
+        assert(pair && "Non-pair constructor in hash literal");
+        Expression::Ptr first = pair->arguments();
+        Expression::Ptr second = pair->arguments()->next();
+        first(this);
+        second(this); 
+        Type* kt = pair->arguments()->type();
+        Type* vt = pair->arguments()->next()->type();
+        ktype = (ktype && !kt->subtype(ktype)) ? env_->any_type() : kt; 
+        vtype = (vtype && !vt->subtype(vtype)) ? env_->any_type() : vt;
+    }
+    if (!ktype) {
+        ktype = env_->any_type();
+    }
+    if (!vtype) {
+        vtype = env_->any_type();
+    }
+    String::Ptr nm(env_->name("Hash"));
+    Generic::Ptr gens(new Generic(ktype));
+    gens = append(gens, new Generic(vtype));
+    lit->type(new Type(lit->location(), nm, gens, env_));
+    Class::Ptr clazz = lit->type()->clazz();
+    Function::Ptr ctor = clazz->constructor();
+    Function::Ptr insert = clazz->function(env_->name("@insert"));
+    dependency(lit, ctor);
+    dependency(lit, insert);
 }
 
 void SemanticAnalyzer::operator()(ArrayLiteral* lit) {
     // For an ArrayLiteral, the type of the expression is Array[First], where
     // First is the type of the first expression argument.  If subsequent types
     // do not match, then the type is Array[Any]
-    if (Assignment::Ptr assign = dynamic_cast<Assignment*>(lit->parent())) {
-        // Attempt to determine the type of the array literal by looking at the
-        // parent expr, which may be an assignment.
-        String::Ptr id = assign->identifier();
-        if (!assign->declared_type()->is_top()) {
-            lit->type(assign->declared_type());
-        } else if (Variable::Ptr var = variable(id)) {
-            lit->type(var->type());
-        }
+    Type::Ptr etype;
+    for (Expression::Ptr a = lit->arguments(); a; a = a->next()) {
+        a(this);
+        Type* et = a->type();
+        etype = (etype && !et->subtype(etype)) ? env_->any_type() : et;
     }
-
-    if (!lit->type()) {
-        // Otherwise, create a generic Array type based on the arguments to
-        // the list constructor. 
-        Type::Ptr eltype;
-        for (Expression::Ptr a = lit->arguments(); a; a = a->next()) {
-            a(this);
-            if (eltype && !a->type()->subtype(eltype)) {
-                eltype = env_->any_type();
-            } else {
-                eltype = a->type();
-            }
-        }
-        if(!eltype) {
-            eltype = env_->any_type();
-        }
-        String::Ptr nm(env_->name("Array"));
-        Generic::Ptr gen(new Generic(eltype));
-        lit->type(new Type(lit->location(), nm, gen, env_));
-    } 
-
+    if (!etype) {
+        etype = env_->any_type();
+    }
+    String::Ptr nm(env_->name("Array"));
+    Generic::Ptr gen(new Generic(etype));
+    lit->type(new Type(lit->location(), nm, gen, env_));
     Class::Ptr clazz = lit->type()->clazz();
+    Function::Ptr ctor = clazz->constructor();
     Function::Ptr push = clazz->function(env_->name("push"));
-    if (!push) {
-        err_ << lit->location();
-        err_ << "Type '" << lit->type() << "' has no 'push' function\n";
-        env_->error(); 
-    } else {
-        dependency(lit, push);
-    }
-
-    if (lit->type()->is_interface()) {
-        err_ << lit->location();
-        err_ << "Cannot construct interface type '" << lit->type() << "'\n"; 
-        env_->error();
-    } else {
-        Function::Ptr ctor = clazz->constructor();
-        dependency(lit, ctor);
-    }
+    dependency(lit, ctor);
+    dependency(lit, push);
 }
 
 void SemanticAnalyzer::operator()(Let* stmt) {
@@ -510,56 +510,56 @@ void SemanticAnalyzer::operator()(Call* expression) {
     }
 }
 
-void SemanticAnalyzer::operator()(Construct* expression) {
+void SemanticAnalyzer::operator()(Construct* expr) {
     // Evaluate type of argument expression
-    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
+    for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         a(this); 
     }
 
-    Type::Ptr type = expression->type();
+    Type::Ptr type = expr->type();
     type(this);
 
     // Look up constructor class
     Class::Ptr clazz = type->clazz(); 
     if (!clazz) {
-        expression->type(env_->top_type());
+        expr->type(env_->top_type());
         return;
     }
     if (clazz->is_interface()) {
-        err_ << expression->location();
+        err_ << expr->location();
         err_ << "Constructor called for interface type '";
         err_ << clazz->name() << "'\n";
         env_->error();
-        expression->type(env_->top_type());
+        expr->type(env_->top_type());
         return;
     }
 
     // Look up the constructor using the class object.
     Function::Ptr constr = clazz->function(env_->name("@init"));
     if (constr && constr->is_private()) {
-        err_ << expression->location();
+        err_ << expr->location();
         err_ << "Constructor is private in class '" << type << "'\n";
         env_->error();  
     }
-    dependency(expression, constr);
+    dependency(expr, constr);
     
     if (clazz->is_enum()) {
-        err_ << expression->location();
+        err_ << expr->location();
         err_ << "Enums do not have constructors\n";
         env_->error();
     } else if (!constr) {
-        err_ << expression->location();
+        err_ << expr->location();
         err_ << "Class '" << type << "' has no constructor\n";
         env_->error();
     } else {
-        expression->arguments(args(expression->arguments(), constr, type));  
+        expr->arguments(args(expr->arguments(), constr, type));  
     }
     if (function_) {
         function_->called_func(constr);
     }
     if (clazz->is_compound()) {
-        dependency(expression, clazz->copier());
-        dependency(expression, clazz->destructor());
+        dependency(expr, clazz->copier());
+        dependency(expr, clazz->destructor());
     }
 }
 
