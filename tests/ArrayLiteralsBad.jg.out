@@ -1,5 +1,4 @@
 ArrayLiteralsBad.jg:22:21: Expression does not conform to type 'BadPushFunc'
 ArrayLiteralsBad.jg:23:22: Expression does not conform to type 'Array[Intf2]'
 ArrayLiteralsBad.jg:24:20: Expression does not conform to type 'NoPushFunc'
-ArrayLiteralsBad.jg:25:14: Expression does not conform to type 'Intf'
 ArrayLiteralsBad.jg:26:13: Expression does not conform to type 'Int'
