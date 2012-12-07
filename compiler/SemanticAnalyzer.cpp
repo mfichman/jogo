@@ -784,7 +784,18 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
     String::Ptr id = expr->identifier();
     Type::Ptr declared = expr->declared_type();
     Expression::Ptr init = expr->initializer();
-    type_ = declared;
+
+    // Push the suggested type of the expression down from the assignment or
+    // attribute declaration.
+    Variable::Ptr var = variable(id);
+    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
+    if (declared && !declared->is_top()) {
+        type_ = declared;
+    } else if (var) {
+        type_ = var->type();
+    } else if (attr) {
+        type_ = attr->declared_type();
+    }
     init(this);
     type_ = 0;
     
@@ -820,7 +831,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         secondary_assignment(expr);
     }
 
-    Variable::Ptr var = variable(id);
+    var = variable(id);
     if (var && init->type()->is_alt() && !var->type()->equals(init->type())) {
         // Initializer is of the 'Any' or 'Union' type but the storage type is
         // not of the 'Any' or 'Union' type.  Insert a cast expression, which
@@ -1062,7 +1073,9 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     // attribute, if there is one.  Set the type to 'bottom' while checking the
     // init, in case there are circular references.
     feature->type(env_->bottom_type());
+    type_ = declared;
     init(this);
+    type_ = 0;
 
     if (declared->is_top()) {
         // No explicitly declared type, but the init can be used to infer the

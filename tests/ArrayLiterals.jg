@@ -31,8 +31,10 @@ arraylike(ar ArrayLike) {
 }
 
 Constr < Object {
-    @init(ar ArrayLike) {
+    @init(param ArrayLike) {
+        ar = ["quack"]
     }
+    ar ArrayLike = ["quatro"]
 }
 
 main() Int {
@@ -59,7 +61,8 @@ main() Int {
     ]  
 
     arraylike(["charlie", "foxtrot"])
-    Constr(["uno", "dos"])
+    c = Constr(["uno", "dos"])
+    c.ar = ["uno", "dos"]
 
     ar2 Array[Intf] = [ One(), Two() ]
 
