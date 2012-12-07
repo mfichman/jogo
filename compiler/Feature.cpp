@@ -199,57 +199,6 @@ Feature* Class::feature(String* name) const {
     return 0;
 }
 
-bool Class::subtype(Class* other) const {
-    // Returns true if this class is a subtype of 'other.'  A class is a subtype
-    // of another class if it implements all methods found in the class.
-
-    // Check if this comparison has been done before.  If so, then we don't need
-    // to do it again.
-    std::map<Class*, bool>::iterator i = subtype_.find(other);
-    if (i != subtype_.end()) {
-        return i->second;
-    }
-
-    // If 'this' is a union type, then it will be a subtype of 'other' if
-    // 'other' is listed as an alternate.  Likewise, 'this' will be a subtype
-    // of 'other' if 'other' is an alternate and 'this' is listed as an
-    // alternate of 'other'.
-    if (alternates()) {
-        for (Type::Ptr alt = alternates(); alt; alt = alt->next()) {
-            if (alt->clazz() == other) {
-                return true;
-            }  
-        }
-        return false;
-    } else if (other->alternates()) {
-        for (Type::Ptr alt = other->alternates(); alt; alt = alt->next()) {
-            if (alt->clazz() == this) {
-                return true;
-            }
-        }
-        return false;
-    } else if (!other->is_interface()) {
-        return this == other; 
-    }
-
-    // Assume that this type is a subtype of 'other.'  This will break cycles
-    // caused when checking function return values for covariance.
-    subtype_[other] = true;
-
-    for (Feature* f = other->features(); f; f = f->next()) {
-        if (Function* func = dynamic_cast<Function*>(f)) {
-            Function* mine = function(func->name());   
-            if (!mine || !mine->covariant(func)) {
-                // Now we know that the types are not compatible, so mark
-                // 'other' as a disjoint type.
-                subtype_[other] = false;
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 Constant::Constant(Location loc, Environment* env, String* name, Flags flags, 
     Expression* init) :
 

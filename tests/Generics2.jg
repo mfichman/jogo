@@ -1,0 +1,23 @@
+# jgtest exec on
+
+Generic[:a] < Object {
+    test() :a {
+        ret nil
+    }
+}
+
+Intf[:a] < Interface {
+    test() :a {
+    }
+}
+
+Alpha < Object {
+}
+
+Beta < Object {
+}
+
+main() Int {
+    a Intf[Alpha] = Generic[Alpha]() # OK
+    ret 0
+}

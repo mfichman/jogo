@@ -40,9 +40,13 @@ public:
     Type* next() const { return next_; }
     Type* last() const { return last_; }
     Type* generic(String* name) const;
+    Type* generic(Type const* type) const;
+    Type* canonical(Type const* type) const;
     Class* clazz() const;
-    bool equals(Type* other) const;
-    bool subtype(Type* other) const;
+    Environment* env() const { return env_; }
+    bool operator<(Type const& other) const;
+    bool equals(Type const* other) const;
+    bool subtype(Type const* other) const;
     bool is_union() const;
     bool is_any() const;
     bool is_bottom() const;
@@ -114,5 +118,3 @@ private:
 };
 
 Stream::Ptr operator<<(Stream::Ptr out, const Type* type);
-
-

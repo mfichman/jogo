@@ -1,6 +1,13 @@
-GenericsBad.jg:12:5: Expression does not conform to type 'Generic[:a]'
-GenericsBad.jg:13:5: Expression does not conform to type 'Generic[:a]'
-GenericsBad.jg:14:5: Expression does not conform to type 'Generic[String]'
-GenericsBad.jg:16:25: Expression does not conform to type 'Generic[:a]'
-GenericsBad.jg:17:25: Expression does not conform to type 'Generic[:a]'
-GenericsBad.jg:18:29: Expression does not conform to type 'Generic[String]'
+GenericsBad.jg:39:5: Duplicate definition of attribute 'a'
+GenericsBad.jg:40:5: Duplicate definition of attribute 'b'
+GenericsBad.jg:43:5: Expression does not conform to type 'Generic[:a]'
+GenericsBad.jg:46:5: Expression does not conform to type 'Generic[:a]'
+GenericsBad.jg:50:5: Expression does not conform to type 'Generic[String]'
+GenericsBad.jg:55:9: Local variable declaration shadows attribute
+GenericsBad.jg:57:9: Local variable declaration shadows attribute
+GenericsBad.jg:59:29: Expression does not conform to type 'Generic[String]'
+GenericsBad.jg:61:25: Expression does not conform to type 'Intf[Alpha]'
+GenericsBad.jg:65:24: Expression does not conform to type 'Intf[Beta]'
+GenericsBad.jg:71:9: Local variable declaration shadows attribute
+GenericsBad.jg:73:9: Local variable declaration shadows attribute
+GenericsBad.jg:79:26: Expression does not conform to type 'IntfCov[Sub]'

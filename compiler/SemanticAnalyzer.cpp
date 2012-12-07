@@ -227,7 +227,14 @@ void SemanticAnalyzer::operator()(ArrayLiteral* lit) {
     // For an ArrayLiteral, the type of the expression is Array[First], where
     // First is the type of the first expression argument.  If subsequent types
     // do not match, then the type is Array[Any]
+    Location loc;
     Type::Ptr etype;
+    //if (type_ && !type_->subtype(env_->appendable_type())) {
+    //    err_ << type_->location();
+    //    err_ << "Type does not conform to type '" << env_->appendable_type();
+    //    err_ << "'\n";
+    //    env_->error();
+    //}
     for (Expression::Ptr a = lit->arguments(); a; a = a->next()) {
         a(this);
         Type* et = a->type();
@@ -435,7 +442,7 @@ void SemanticAnalyzer::operator()(Member* expression) {
     }
     
     assert(func->type() && "Attribute has no type");
-    expression->type(fix_generics(expr->type(), func->type()));
+    expression->type(func->type()->canonical(expr->type()));
     expression->function(func);
     dependency(expression, func);
     if (function_) {
@@ -492,7 +499,7 @@ void SemanticAnalyzer::operator()(Call* expression) {
         expression->receiver()->next(expression->arguments());
         expression->arguments(expression->receiver());
         receiver = expression->receiver()->type();
-        expression->type(fix_generics(receiver, func->type()));
+        expression->type(func->type()->canonical(receiver));
     } else {
         expression->type(func->type());
     }
@@ -761,7 +768,9 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
     String::Ptr id = expr->identifier();
     Type::Ptr declared = expr->declared_type();
     Expression::Ptr init = expr->initializer();
+    type_ = declared;
     init(this);
+    type_ = 0;
     
     expr->type(!init->type()->is_top() ? init->type() : declared.pointer());
     if (!declared->is_top()) {
@@ -1223,7 +1232,7 @@ Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec
         // Get the formal type.  If the type is 'self', then the formal
         // parameter is the type of the receiver.  If the type is a generic,
         // then look up the actual type from the class' definition.
-        Type::Ptr ft = fix_generics(rec, formal->type());
+        Type::Ptr ft = formal->type()->canonical(rec);
 
         // Get the actual argument type.
         Type::Ptr at = arg->type();
@@ -1488,39 +1497,6 @@ void SemanticAnalyzer::dependency(TreeNode* node, Feature* dep) {
     if (node->file()) {
         node->file()->dependency(dep);
     }
-}
-
-Type* SemanticAnalyzer::fix_generics(Type* parent, Type* type) {
-    // Resolves a generic type (e.g., :a) by looking up the actual type in the
-    // container type 'parent'.  For example, if 'parent' is Array[String], and
-    // :a is the first type parameter of array, this function would return
-    // 'String'.  This function recursively substitutes generics, so List[:a]
-    // would return List[String] if the 'parent' type is List.
-    if (type->is_generic()) {
-        return parent->generic(type->name());
-    }
-    if (!type->generics()) {
-        return type;
-    }
-
-    // Iterate through all the generics in this type, and replace them with     
-    // the resolved generic type.
-    Generic::Ptr first;
-    Generic::Ptr last;
-
-    for (Generic::Ptr g = type->generics(); g; g = g->next()) {
-        Type::Ptr t = fix_generics(parent, g->type());
-        Generic::Ptr gen(new Generic(t));
-        if (!first) {
-            first = gen;
-            last = gen;
-        } else {
-            last->next(gen);
-            last = gen;
-        }
-    } 
-    String* qn = type->qualified_name();
-    return new Type(type->location(), qn, first, env_);
 }
 
 void SemanticAnalyzer::assign_enums(Class* feature) {

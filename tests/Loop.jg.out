@@ -1,7 +1,7 @@
 Module
   name: 
   feature0: Class
-    name: Iterator
+    name: IteratorTest
     comment:
     feature0: Function
       name: next
@@ -9,7 +9,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Iterator
+        type: IteratorTest
       block: Block
         child0: Return
           expression: StringLiteral
@@ -20,7 +20,7 @@ Module
       comment:
       formal0: Formal
         name: self
-        type: Iterator
+        type: IteratorTest
       block: Block
         child0: Return
           expression: BooleanLiteral(1)
@@ -29,32 +29,32 @@ Module
       type: Void
       formal0: Formal
         name: self
-        type: Iterator
+        type: IteratorTest
       block: Block
     feature3: Function
       name: @init
       type: Void
       block: Block
   feature1: Class
-    name: Iterable
+    name: IterableTest
     comment:
     feature0: Function
       name: iter
-      type: Iterator
+      type: IteratorTest
       comment:
       formal0: Formal
         name: self
-        type: Iterable
+        type: IterableTest
       block: Block
         child0: Return
           expression: Construct
-            type: Iterator
+            type: IteratorTest
     feature1: Function
       name: @destroy
       type: Void
       formal0: Formal
         name: self
-        type: Iterable
+        type: IterableTest
       block: Block
     feature2: Function
       name: @init
@@ -82,15 +82,15 @@ Module
         child0: Let
           variable0: Assignment
             name: _i
-            type: Iterator
+            type: IteratorTest
             declared: <<top>>
             initializer: Call
               expression: Member
                 identifier: iter
                 expression: Construct
-                  type: Iterable
+                  type: IterableTest
               argument0: Construct
-                type: Iterable
+                type: IterableTest
           block: While
             guard: Call
               expression: Member

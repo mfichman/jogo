@@ -29,6 +29,21 @@
 #include "File.hpp"
 #include <map>
 
+enum SubtypeResult { UNCHECKED, YES, NO };
+class SubtypeKey {
+public:
+    SubtypeKey(Type const* t1, Type const* t2) :
+        t1_(t1),
+        t2_(t2) {
+    }
+    bool operator==(SubtypeKey const& other) const;
+    bool operator<(SubtypeKey const& other) const;
+    Type const* t1() const { return t1_; }
+    Type const* t2() const { return t2_; }
+private:
+    Pointer<Type const> t1_;
+    Pointer<Type const> t2_;
+};
 
 /* Compilation environment; contains symbol table and compilation units */
 class Environment : public Object {
@@ -124,6 +139,9 @@ public:
     Type* value_type() const { return value_type_; }
     Type* interface_type() const { return interface_type_; }
     Type* union_type() const { return union_type_; }
+    Type* appendable_type() const { return appendable_type_; }
+    SubtypeResult subtype(Type const* t1, Type const* t2) const;
+    void subtype(Type const* t1, Type const* t2, SubtypeResult res);
 
 private:
     mutable std::map<std::string, String::Ptr> name_;
@@ -163,6 +181,7 @@ private:
     Type::Ptr value_type_;
     Type::Ptr interface_type_;
     Type::Ptr union_type_;
+    Type::Ptr appendable_type_;
 
     std::string output_;
     std::string build_dir_;
@@ -182,6 +201,7 @@ private:
     bool monolithic_build_;
     bool no_default_libs_;
     std::string generator_;
+    std::map<SubtypeKey, SubtypeResult> subtype_;
 
     int errors_;
 };

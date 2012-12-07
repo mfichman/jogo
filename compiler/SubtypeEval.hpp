@@ -22,14 +22,17 @@
 
 #pragma once
 
-class Object {
+#include "Jogo.hpp"
+#include "Environment.hpp"
+
+class SubtypeEval {
 public:
-    Object() : refcount_(0) {}
-    virtual ~Object() {}
-    int refcount() const { return refcount_; }
-    void refcount(int refcount) const { refcount_ = refcount; }    
-
+    SubtypeEval(Type const* self, Type const* sub);
+    operator bool();
+    bool subtype();
+    bool covariant(Function const* self, Function const* func);
 private:
-    mutable int refcount_;
+    Environment::Ptr env_;
+    Type const* self_;
+    Type const* sub_;
 };
-

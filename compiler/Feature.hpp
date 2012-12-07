@@ -217,7 +217,6 @@ public:
     bool is_primitive() const { return type_->is_primitive(); }
     bool is_ref() const { return type_->is_ref(); }
     bool is_compound() const { return type_->is_compound(); }
-    bool subtype(Class* other) const;
     int jump1(int index) const { return jump1_[index]; }
     Function* jump2(int index) const { return jump2_[index]; } 
     int slots() const { return slots_; }
@@ -236,7 +235,6 @@ private:
     void gen_functor_method();
     std::vector<int> jump1_;
     std::vector<Function::Ptr> jump2_;
-    mutable std::map<Class*, bool> subtype_;
     Type::Ptr type_;
     Type::Ptr alternates_;
     Type::Ptr mixins_;

@@ -21,6 +21,7 @@
  */  
 
 #include "Type.hpp"
+#include "SubtypeEval.hpp"
 #include "Feature.hpp"
 #include "Environment.hpp"
 #include <cassert>
@@ -49,6 +50,12 @@ Type::Type(Location loc, String* qn, Generic* gen, Environment* env) :
     }
 }
 
+Type* Type::generic(Type const* type) const {
+    // Returns the resolved type of the generic type 'type.'  If 'type' isn't
+    // generic, this function is the identity.
+    return type->is_generic() ? generic(type->name()) : const_cast<Type*>(type);
+}
+
 Type* Type::generic(String* name) const {
     // Returns the generic with type 'name'.  This method works by looking
     // through the generic class definition and returning the type that is
@@ -67,8 +74,40 @@ Type* Type::generic(String* name) const {
     return 0;
 }
 
-bool Type::equals(Type* other) const {
-    /* Make sure the classes are equal */
+Type* Type::canonical(Type const* other) const {
+    // Resolves a generic type (e.g., :a) by looking up the actual type in the
+    // container 'other.'  For example, if 'other' is Array[String], and :a is
+    // the first type parameter of array, this function would return 'String'.
+    // This function recursively substitutes generics, so List[:a] would return
+    // List[String] if the 'other' type is List.
+    if (is_generic()) {
+        return other->generic(name());
+    }
+    if (!generics() || !other) {
+        return const_cast<Type*>(this);
+    }
+
+    // Iterate through all the generics in this type, and replace them with     
+    // the resolved generic type.
+    Generic::Ptr first;
+    Generic::Ptr last;
+    for (Generic::Ptr g = generics(); g; g = g->next()) {
+        Type::Ptr t = g->type()->canonical(other);
+        Generic::Ptr gen(new Generic(t));
+        if (!first) {
+            first = gen;
+            last = gen;
+        } else {
+            last->next(gen);
+            last = gen;
+        }
+    } 
+    String* qn = qualified_name();
+    return new Type(location(), qn, first, env_);
+}
+
+bool Type::equals(Type const* other) const {
+    // Make sure the classes are equal 
     if (clazz() != other->clazz()) {
         return false;
     }
@@ -76,7 +115,7 @@ bool Type::equals(Type* other) const {
         return false;
     }
 
-    /* Make sure the generic parameters are the same */
+    // Make sure the generic parameters are the same 
     Generic* g1 = generics();
     Generic* g2 = other->generics();
     while (g1 && g2) {
@@ -89,42 +128,9 @@ bool Type::equals(Type* other) const {
     return true;
 }
 
-bool Type::subtype(Type* other) const {
-    // Returns true if other is a subtype of 'this'
-    // Union is not a subtype of Any
-    // Any is not assignable to Union
-    if (!other) { 
-        return false;
-    }
-    if (other->is_bottom() || is_bottom()) {
-        return false;
-    }
-    if (other->is_union() && is_any()) {
-        return false;
-    }  
-    if (other->is_any() || is_any()) {
-        return true;
-    }
-    if (other->is_top() || is_top()) {
-        return true;
-    }
-    if (!other->is_value() && is_nil()) {
-        return true;
-    }
-    if (other->is_nil() && !is_value()) {
-        return true;
-    }
-    if (clazz() == other->clazz()) {
-        return equals(other); 
-    }
-    if (!clazz() || !other->clazz()) {
-        return false;
-    }
-    if (!clazz()->subtype(other->clazz())) {
-        return false;
-    }
-    /* TODO: Need to fill out template parameters */
-    return true;
+bool Type::subtype(Type const* other) const {
+    // Returns true if 'this' is a subtype of other.
+    return SubtypeEval(this, other);
 }
 
 bool Type::is_generic() const {
@@ -269,6 +275,23 @@ Class* Type::clazz() const {
     return self->class_;
 }
 
+bool Type::operator<(Type const& other) const {
+    // Compares two types and returns true if this type is less than the other,
+    // by doing a name comparison and a recursive comparison of the generics.
+    if (qualified_name()->string() < other.qualified_name()->string()) {
+        return true;
+    }
+    Generic* g1 = generics();
+    Generic* g2 = other.generics();
+    while (g1 || g2) {
+        if (g1 && !g2) { return true; }
+        if (!g1 && g2) { return false; }
+        if (*g1->type() < *g2->type()) { return true; }
+        g1 = g1->next();
+        g2 = g2->next();
+    }
+    return false;
+}
 
 Stream::Ptr operator<<(Stream::Ptr out, const Type* type) {
     // Outputs the fully-qualified type for 'type', including all generics, and

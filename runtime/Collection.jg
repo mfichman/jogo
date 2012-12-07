@@ -26,7 +26,7 @@ Iterable[:a] < Interface {
     }
 }
 
-Indexed[:k,:v] < Interface {
+Indexable[:k,:v] < Interface {
     # An Indexable returns a value when given a key.
     @index(key :k) :v {
         # Returns the value mapped to 'key.' 

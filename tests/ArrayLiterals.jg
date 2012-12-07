@@ -4,6 +4,12 @@ Intf < Interface {
     test()
 }
 
+ArrayLike < Object {
+    append(str String) {
+        Io::println(str)
+    }
+}
+
 One < Object {
     test() {}
 }
@@ -35,14 +41,11 @@ main() Int {
     }
     print(["hello"]+["world"])
 
-    ar Array[String] = [
-        "alpha", 
-        "beta", 
-        "gamma",
-    ]  
-    for x in ar {
-        Io::println(x)
-    }
+#    ar ArrayLike = [
+#        "alpha", 
+#        "beta", 
+#        "gamma",
+#    ]  
 
     #ar2 Array[Intf] = [ One(), Two() ]
 

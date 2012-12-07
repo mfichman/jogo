@@ -1,7 +1,7 @@
 # jgtest print_ast on
 
 
-Iterator < Object {
+IteratorTest < Object {
     next() String {
         ret "Hello, world"
     }
@@ -11,9 +11,9 @@ Iterator < Object {
     }    
 }
 
-Iterable < Object {
-    iter() Iterator {
-        ret Iterator()
+IterableTest < Object {
+    iter() IteratorTest {
+        ret IteratorTest()
     }
 }
 
@@ -23,7 +23,7 @@ test(var String) {
 Loop < Object {
 
     loop1() {
-        for i in Iterable() {
+        for i in IterableTest() {
             test(i)
         }
     }
