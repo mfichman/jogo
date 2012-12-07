@@ -474,12 +474,6 @@ void SemanticAnalyzer::operator()(Call* call) {
     // the current compilation unit.
     if (call->type()) { return; }
 
-    // Evaluate types of argument expressions, then perform type checking
-    // on the body of the function.
-    for (Expression::Ptr a = call->arguments(); a; a = a->next()) {
-        a(this);
-    }
-
     // Check the expression that is being called.  Function resolution happens
     // here, because it depends on the type of the child node.
     Expression::Ptr expr = call->expression();
@@ -514,9 +508,17 @@ void SemanticAnalyzer::operator()(Call* call) {
         call->type(func->type());
     }
 
-    // FIXME: Look up generics for function
-    dependency(call, func);
+    // Evaluate types of argument expressions
+    Formal::Ptr f = func->formals();
+    for (Expression::Ptr a = call->arguments(); a; a = a->next()) {
+        // Push the type of the formal parameter down to the called argument.
+        type_ = f ? f->type()->canonical(receiver) : 0;
+        a(this);
+        f = f ? f->next() : 0;
+    }
+
     call->arguments(args(call->arguments(), func, receiver));
+    dependency(call, func);
     if (function_) {
         function_->called_func(func);
     }
@@ -529,10 +531,6 @@ void SemanticAnalyzer::operator()(Call* call) {
 
 void SemanticAnalyzer::operator()(Construct* expr) {
     // Evaluate type of argument expression
-    for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
-        a(this); 
-    }
-
     Type::Ptr type = expr->type();
     type(this);
 
@@ -559,6 +557,13 @@ void SemanticAnalyzer::operator()(Construct* expr) {
         env_->error();  
     }
     dependency(expr, constr);
+
+    Formal::Ptr f = constr->formals();
+    for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
+        type_ = f ? f->type()->canonical(type) : 0;
+        a(this); 
+        f = f ? f->next() : 0;
+    }
     
     if (clazz->is_enum()) {
         err_ << expr->location();

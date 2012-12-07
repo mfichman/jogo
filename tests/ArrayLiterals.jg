@@ -27,6 +27,14 @@ print(arr Array[String]) {
     }
 }
 
+arraylike(ar ArrayLike) {
+}
+
+Constr < Object {
+    @init(ar ArrayLike) {
+    }
+}
+
 main() Int {
     list = ["1", "2", "3", "4"]
     for x in list {
@@ -49,6 +57,9 @@ main() Int {
         "beta", 
         "gamma",
     ]  
+
+    arraylike(["charlie", "foxtrot"])
+    Constr(["uno", "dos"])
 
     ar2 Array[Intf] = [ One(), Two() ]
 
