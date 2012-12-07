@@ -231,7 +231,8 @@ void SemanticAnalyzer::operator()(ArrayLiteral* lit) {
     IntegerLiteral::Ptr size(new IntegerLiteral(lit->location(), sizestr));
     Construct::Ptr cons(new Construct(lit->location(), env_->bottom_type(), size));
     Member::Ptr member(new Member(lit->location(), cons, env_->name("push"))); 
-    if (!type_ || !type_->is_object()) {
+    if (!type_ || type_->is_top() || type_->is_interface()) {
+        type_ = 0;
         Type::Ptr etype;
         for (Expression::Ptr a = lit->arguments(); a; a = a->next()) {
             a(this);
@@ -558,7 +559,7 @@ void SemanticAnalyzer::operator()(Construct* expr) {
     }
     dependency(expr, constr);
 
-    Formal::Ptr f = constr->formals();
+    Formal::Ptr f = constr ? constr->formals() : 0;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         type_ = f ? f->type()->canonical(type) : 0;
         a(this); 
