@@ -227,30 +227,40 @@ void SemanticAnalyzer::operator()(ArrayLiteral* lit) {
     // For an ArrayLiteral, the type of the expression is Array[First], where
     // First is the type of the first expression argument.  If subsequent types
     // do not match, then the type is Array[Any]
-    Location loc;
-    Type::Ptr etype;
-    //if (type_ && !type_->subtype(env_->appendable_type())) {
-    //    err_ << type_->location();
-    //    err_ << "Type does not conform to type '" << env_->appendable_type();
-    //    err_ << "'\n";
-    //    env_->error();
-    //}
+    String::Ptr sizestr(env_->integer("0"));
+    IntegerLiteral::Ptr size(new IntegerLiteral(lit->location(), sizestr));
+    Construct::Ptr cons(new Construct(lit->location(), env_->bottom_type(), size));
+    Member::Ptr member(new Member(lit->location(), cons, env_->name("push"))); 
+    if (!type_ || !type_->is_object()) {
+        Type::Ptr etype;
+        for (Expression::Ptr a = lit->arguments(); a; a = a->next()) {
+            a(this);
+            Type* et = a->type();
+            etype = (etype && !et->subtype(etype)) ? env_->any_type() : et;
+        }
+        if (!etype) {
+            etype = env_->any_type();
+        }
+        String::Ptr nm(env_->name("Array"));
+        Generic::Ptr gen(new Generic(etype));
+        Type::Ptr type(new Type(lit->location(), nm, gen, env_));
+        cons->type(type);
+        lit->type(type);
+    } else {
+        cons->type(type_); 
+        lit->type(type_);
+        type_ = 0;
+    }
+    cons(this);
     for (Expression::Ptr a = lit->arguments(); a; a = a->next()) {
-        a(this);
-        Type* et = a->type();
-        etype = (etype && !et->subtype(etype)) ? env_->any_type() : et;
+        Expression::Ptr next(a->next());
+        a->next(0);
+        Call::Ptr call(new Call(a->location(), member, a));
+        call(this);
+        a->next(next);
+        // FIXME: Hack to temporarily change the next() pointer
     }
-    if (!etype) {
-        etype = env_->any_type();
-    }
-    String::Ptr nm(env_->name("Array"));
-    Generic::Ptr gen(new Generic(etype));
-    lit->type(new Type(lit->location(), nm, gen, env_));
-    Class::Ptr clazz = lit->type()->clazz();
-    Function::Ptr ctor = clazz->constructor();
-    Function::Ptr push = clazz->function(env_->name("push"));
-    dependency(lit, ctor);
-    dependency(lit, push);
+       
 }
 
 void SemanticAnalyzer::operator()(Let* stmt) {
@@ -458,62 +468,62 @@ void SemanticAnalyzer::operator()(Member* expression) {
     assert(expression->type());
 }
 
-void SemanticAnalyzer::operator()(Call* expression) {
+void SemanticAnalyzer::operator()(Call* call) {
     // Look up the function by name in the current context.  The function may
     // be a member of the current module, or of a module that was imported in
     // the current compilation unit.
-    if (expression->type()) { return; }
+    if (call->type()) { return; }
 
     // Evaluate types of argument expressions, then perform type checking
     // on the body of the function.
-    for (Expression::Ptr a = expression->arguments(); a; a = a->next()) {
+    for (Expression::Ptr a = call->arguments(); a; a = a->next()) {
         a(this);
     }
 
     // Check the expression that is being called.  Function resolution happens
     // here, because it depends on the type of the child node.
-    Expression::Ptr expr = expression->expression();
+    Expression::Ptr expr = call->expression();
     expr(this);
 
     // A function value should have been assigned by the child.
-    Function::Ptr func = expression->function();
+    Function::Ptr func = call->function();
     if (!func) {
-        expression->type(env_->top_type());
+        call->type(env_->top_type());
         return;
     }
         
-    expression->type(func->type());
+    call->type(func->type());
 
     // Check to make sure the resolved function is not private
     if (func->is_private() && func->parent() != class_) {
-        err_ << expression->location();
+        err_ << call->location();
         err_ << "Function '" << func->name() << "' is private in class '";
-        err_ << expression->receiver()->type() << "'\n";
+        err_ << call->receiver()->type() << "'\n";
         env_->error();  
     }
     
     // Figure out what the receiver type is.  If the type is 'self' then set
     // the type to the actual containing class.
     Type::Ptr receiver;
-    if (expression->receiver()) {
-        expression->receiver()->next(expression->arguments());
-        expression->arguments(expression->receiver());
-        receiver = expression->receiver()->type();
-        expression->type(func->type()->canonical(receiver));
+    if (call->receiver()) {
+        call->receiver()->next(call->arguments());
+        call->arguments(call->receiver());
+        receiver = call->receiver()->type();
+        call->type(func->type()->canonical(receiver));
     } else {
-        expression->type(func->type());
+        call->type(func->type());
     }
 
     // FIXME: Look up generics for function
-    dependency(expression, func);
-    expression->arguments(args(expression->arguments(), func, receiver));
+    dependency(call, func);
+    call->arguments(args(call->arguments(), func, receiver));
     if (function_) {
         function_->called_func(func);
     }
-    if (expression->type()->is_compound()) {
-        Class* clazz = expression->type()->clazz();
-        dependency(expression, clazz->copier());
-        dependency(expression, clazz->destructor());
+    if (call->type()->is_compound()) {
+        Class* clazz = call->type()->clazz();
+        dependency(call, clazz->copier());
+        dependency(call, clazz->destructor());
     }
 }
 

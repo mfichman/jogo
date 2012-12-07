@@ -214,10 +214,10 @@ public:
     void arguments(Expression* args) { arguments_ = args; }
     void function(Function* function) { function_ = function; }
     void receiver(Expression* receiver) { receiver_ = receiver; }
+    void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Call> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Expression::Ptr expression_;
     Expression::Ptr arguments_;
     Expression::Ptr receiver_;
