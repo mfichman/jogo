@@ -13,7 +13,7 @@ os.chdir('tests')
 
 fail_file = open('../build/test.fail', 'w')
 total = 0
-fail = False
+failed = 0
 
 if len(tests) == 0:
     # If no tests are passed as parameters, then glob on the test dir to run 
@@ -23,14 +23,14 @@ if len(tests) == 0:
 
 def check(test, expected, output):
     # Checks to make sure the output for the test matches the expected output.
-    global fail
+    global failed
     expected = expected.replace('\r', '')
     output = output.replace('\r', '')
 
     if output != expected:
         fail_file.write(test+'\n')
         print(''.join(['-' for i in range(79)]))
-        print('FAILED TEST: ' + test)
+        print('FAILED: ' + test)
         print(''.join(['-' for i in range(79)]))
         expected_lines = expected.split('\n')
         output_lines = output.split('\n')
@@ -47,7 +47,7 @@ def check(test, expected, output):
         #print(expected)
         #print(''.join(['-' for i in range(72)])+' Output')
         #print(output)
-        fail = True
+        failed += 1
 
 def shell(command, check=False):
     # Runs 'command' and returns the result.  Sets the 'fail' flag if the 
@@ -150,7 +150,7 @@ for test in tests:
         cpp_test(test)
         total += 1
 
-if fail:
+if failed > 0:
     # Finally, check for errors.  If there was an error, exit with code 1 to
     # stop the whole build.
     sys.exit(1)

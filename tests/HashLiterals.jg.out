@@ -1,2 +1,7 @@
 a => one
 b => two
+a => Hello
+b => Goodbye
+1 => Spock
+2 => Kirk
+3 => Picard

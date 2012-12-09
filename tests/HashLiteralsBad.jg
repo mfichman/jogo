@@ -1,0 +1,33 @@
+
+
+NoInsertFunc < Object {
+}
+
+Intf < Interface {
+    @insert(x String, y String) {
+    }
+}
+
+Intf2 < Interface {
+    test()
+}
+
+BadInsertFunc1 < Object {
+    @insert() {
+    }
+}
+
+BadInsertFunc2 < Object {
+    @insert(one String, two Int, three Int) {
+    }
+}
+
+main() Int {
+    a BadInsertFunc1 = { 'a': 'a' }
+    b BadInsertFunc2 = { 'b': 'b' }
+    c Hash[Intf2,Intf2] = { 'hello': 'hello' } # "hello" doesn't match Intf2
+    d Intf = { 'a': 'b', 'c': 'd', } # This is OK
+    e Int = { 'e': 'e' }
+    f NoInsertFunc = { 'f': 'f' }
+    ret 0
+}

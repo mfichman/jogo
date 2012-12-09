@@ -192,35 +192,47 @@ void SemanticAnalyzer::operator()(HashLiteral* lit) {
     // For a HashLiteral, the type of the expression is Hash[Pair[A,B]], where
     // Pair[A,B] is the type of the first expression argument.  If subsequent
     // types do not match, then the type is Pair[A,B]
-    Type::Ptr ktype;
-    Type::Ptr vtype;
+    Construct::Ptr cons(new Construct(lit->location(), env_->bottom_type(), 0));
+    Member::Ptr member(new Member(lit->location(), cons, env_->name("@insert")));
+    if (!type_ || type_->is_top() || type_->is_interface()) {
+        type_ = 0;
+        Type::Ptr ktype;
+        Type::Ptr vtype;
+        for (Expression::Ptr a = lit->arguments(); a; a = a->next()) {
+            Construct::Ptr pair = dynamic_cast<Construct*>(a.pointer());
+            assert(pair && "Non-pair constructor in hash literal");
+            Expression::Ptr first = pair->arguments();
+            Expression::Ptr second = pair->arguments()->next();
+            first(this);
+            second(this); 
+            Type* kt = pair->arguments()->type();
+            Type* vt = pair->arguments()->next()->type();
+            ktype = (ktype && !kt->subtype(ktype)) ? env_->any_type() : kt; 
+            vtype = (vtype && !vt->subtype(vtype)) ? env_->any_type() : vt;
+        }
+        if (!ktype) {
+            ktype = env_->any_type();
+        }
+        if (!vtype) {
+            vtype = env_->any_type();
+        }
+        String::Ptr nm(env_->name("Hash"));
+        Generic::Ptr gens(new Generic(ktype));
+        gens = append(gens, new Generic(vtype));
+        Type::Ptr type = new Type(lit->location(), nm, gens, env_);
+        cons->type(type);
+        lit->type(type);
+    } else {
+        cons->type(type_);  
+        lit->type(type_);
+        type_ = 0;
+    }
+    cons(this);
     for (Expression::Ptr a = lit->arguments(); a; a = a->next()) {
-        Construct::Ptr pair = dynamic_cast<Construct*>(a.pointer());
-        assert(pair && "Non-pair constructor in hash literal");
-        Expression::Ptr first = pair->arguments();
-        Expression::Ptr second = pair->arguments()->next();
-        first(this);
-        second(this); 
-        Type* kt = pair->arguments()->type();
-        Type* vt = pair->arguments()->next()->type();
-        ktype = (ktype && !kt->subtype(ktype)) ? env_->any_type() : kt; 
-        vtype = (vtype && !vt->subtype(vtype)) ? env_->any_type() : vt;
+        Construct::Ptr pair = static_cast<Construct*>(a.pointer());
+        Call::Ptr call(new Call(a->location(), member, pair->arguments()));
+        call(this);
     }
-    if (!ktype) {
-        ktype = env_->any_type();
-    }
-    if (!vtype) {
-        vtype = env_->any_type();
-    }
-    String::Ptr nm(env_->name("Hash"));
-    Generic::Ptr gens(new Generic(ktype));
-    gens = append(gens, new Generic(vtype));
-    lit->type(new Type(lit->location(), nm, gens, env_));
-    Class::Ptr clazz = lit->type()->clazz();
-    Function::Ptr ctor = clazz->constructor();
-    Function::Ptr insert = clazz->function(env_->name("@insert"));
-    dependency(lit, ctor);
-    dependency(lit, insert);
 }
 
 void SemanticAnalyzer::operator()(ArrayLiteral* lit) {
@@ -517,6 +529,7 @@ void SemanticAnalyzer::operator()(Call* call) {
         a(this);
         f = f ? f->next() : 0;
     }
+    type_ = 0;
 
     call->arguments(args(call->arguments(), func, receiver));
     dependency(call, func);
@@ -565,6 +578,7 @@ void SemanticAnalyzer::operator()(Construct* expr) {
         a(this); 
         f = f ? f->next() : 0;
     }
+    type_ = 0;
     
     if (clazz->is_enum()) {
         err_ << expr->location();
