@@ -65,6 +65,7 @@ public:
     bool is_immutable() const { return flags_ & IMMUTABLE; }
     bool is_closure() const { return flags_ & CLOSURE; }
     bool is_embedded() const { return flags_ & EMBEDDED; }
+    bool is_component() const { return flags_ & COMPONENT; }
     void next(Feature* next) { next_ = next; }
     void last(Feature* last) { last_ = last; }
     void flags(Flags flags) { flags_ = flags; }
@@ -77,6 +78,7 @@ public:
     static const int IMMUTABLE = 0x8;
     static const int CLOSURE = 0x20;
     static const int EMBEDDED = 0x40; 
+    static const int COMPONENT = 0x80;
 
 private:
     String::Ptr name_;
@@ -203,7 +205,6 @@ public:
     String* comment() const { return comment_; }
     Type* type() const { return type_; }
     Type* alternates() const { return alternates_; }
-    Type* mixins() const { return mixins_; }
     Type* proto() const { return proto_; }
     String* default_enum_value() const;
     bool is_object() const { return type_->is_object(); }
@@ -223,7 +224,6 @@ public:
     int jump1s() const { return jump1_.size(); }
     int jump2s() const { return jump2_.size(); }
     void feature(Feature* feature);
-    void mixin(Type* mixin) { mixins_ = append(mixins_, mixin); }
     void jump1(int index, int d);
     void jump2(int index, Function* func);
     void slots_inc(int words) { slots_ += words; }
@@ -237,7 +237,6 @@ private:
     std::vector<Function::Ptr> jump2_;
     Type::Ptr type_;
     Type::Ptr alternates_;
-    Type::Ptr mixins_;
     Type::Ptr proto_;
     String::Ptr comment_;
     Feature::Ptr features_;

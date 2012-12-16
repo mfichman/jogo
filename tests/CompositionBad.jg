@@ -41,6 +41,10 @@ TestMixin6 < Object {
     TestObject
 }
 
+TestMixin7 < Object {
+    TestMixin7
+}
+
 
 main() Int {
     ret 0

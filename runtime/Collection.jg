@@ -33,19 +33,22 @@ Indexable[:k,:v] < Interface {
     }
 }
 
-Mapper[:k,:v] < Interface {
-    # A Mapper is used to define mapping a key to a value.  Any Mapper can be
-    # initialized using the map literal consructor, {}.
-    @insert(key :k, value :v) {
-        # Updates the value mapped to key 'key.' 
-    }
-}
-
 Appendable[:a] < Interface {
     # An Appendable can have values appended via the append function. 
     append(value :a) {
         # Appends 'value' to the object..
     } 
+}
+
+Stack[:a] < Interface {
+    # A stack supports the push/pop operations.
+    push(value :a) {
+        # Add a value at the top of the stack.
+    }
+
+    pop() :a {
+        # Remove a value from the top of the stack.
+    }
 }
 
 Iter[:a] < Interface {

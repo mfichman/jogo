@@ -84,9 +84,15 @@ void Intel64CodeGenerator::operator()(File* file) {
     }
 
     for (int i = 0; i < file->dependencies(); i++) {
-        Feature::Ptr feat = file->dependency(i);
-        if (feat->file() != file) {
-            out_ << "extern "; label(feat->label()); out_ << "\n";
+        TreeNode* dep = file->dependency(i);
+        if (dep->file() != file) {
+            if (Class* clazz = dynamic_cast<Class*>(dep)) {
+                for (Feature::Ptr f = clazz->features(); f; f = f->next()) {
+                    out_ << "extern "; label(f->label()); out_ << "\n";
+                } 
+            } else if (Feature* feat = dynamic_cast<Feature*>(dep)) {
+                out_ << "extern "; label(feat->label()); out_ << "\n";
+            }
         }
     }
 

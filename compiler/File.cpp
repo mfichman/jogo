@@ -149,7 +149,7 @@ Constant* File::constant(String* scope, String* name) const {
     return dynamic_cast<Constant*>(feature(scope, name));
 }
 
-void File::dependency(Feature* feature) {
+void File::dependency(TreeNode* feature) {
     // Add a feature as a dependency of the file, unless it is already listed.
     // FIXME: Uses a linear search, which may result in poor performance for
     // long lists of dependencies.

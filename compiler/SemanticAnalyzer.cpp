@@ -71,7 +71,6 @@ void SemanticAnalyzer::operator()(Class* feature) {
     // Analyze a class, including its child attributes and functions.
     ContextAnchor anchor(this);
     class_ = feature;
-    dependency(feature, feature);
 
     // Make sure that there isn't a duplicate of this class.
     Feature::Ptr parent = feature->parent();
@@ -116,28 +115,32 @@ void SemanticAnalyzer::operator()(Class* feature) {
 
     // Check interface/struct/object baseclass and make sure that 
     // disallowed things aren't included.
-    for (Type::Ptr m = feature->mixins(); m; m = m->next()) {
-        if (m->clazz()) {
-            if (feature->is_interface() && !m->is_interface()) {
-                err_ << m->location();
-                err_ << "Type embedded in '" << feature->name();
-                err_ << "' must be an interface\n";
-                env_->error();
-            } else if (feature->is_object() && m->is_interface()) {
-                err_ << m->location();
-                err_ << "Type embedded in '" << feature->name();
-                err_ << "' must be an object or value\n"; 
-                env_->error();
-            } else if (feature->is_value() && m->is_interface()) {
-                err_ << m->location();
-                err_ << "Type embedded in '" << feature->name();
-                err_ << "' must be an object or value\n"; 
-                env_->error();
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (f->is_component()) {
+            Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer());
+            Type::Ptr m = attr->declared_type();
+            if (m->clazz()) {
+               if (feature->is_interface() && !m->is_interface()) {
+                   err_ << m->location();
+                   err_ << "Type embedded in '" << feature->name();
+                   err_ << "' must be an interface\n";
+                   env_->error();
+               } else if (feature->is_object() && m->is_interface()) {
+                   err_ << m->location();
+                   err_ << "Type embedded in '" << feature->name();
+                   err_ << "' must be an object or value\n"; 
+                   env_->error();
+               } else if (feature->is_value() && m->is_interface()) {
+                   err_ << m->location();
+                   err_ << "Type embedded in '" << feature->name();
+                   err_ << "' must be an object or value\n"; 
+                   env_->error();
+               }
+            } else {
+               err_ << m->location();
+               err_ << "Undefined type '" << m << "'\n";
+               env_->error();
             }
-        } else if(!m->is_proto()) {
-            err_ << m->location();
-            err_ << "Undefined type '" << m << "'\n";
-            env_->error();
         }
     }
 
@@ -419,6 +422,7 @@ void SemanticAnalyzer::operator()(Member* expression) {
         expression->type(env_->top_type());
         return;
     }
+    dependency(expression, clazz);
     
     if (call) {
         // First lookup: check to see if the member with name 'id' is present
@@ -467,7 +471,6 @@ void SemanticAnalyzer::operator()(Member* expression) {
     assert(func->type() && "Attribute has no type");
     expression->type(func->type()->canonical(expr->type()));
     expression->function(func);
-    dependency(expression, func);
     if (function_) {
         function_->called_func(func);
     }
@@ -517,8 +520,10 @@ void SemanticAnalyzer::operator()(Call* call) {
         call->arguments(call->receiver());
         receiver = call->receiver()->type();
         call->type(func->type()->canonical(receiver));
+        dependency(call, receiver->clazz());
     } else {
         call->type(func->type());
+        dependency(call, func);
     }
 
     // Evaluate types of argument expressions
@@ -532,14 +537,11 @@ void SemanticAnalyzer::operator()(Call* call) {
     type_ = 0;
 
     call->arguments(args(call->arguments(), func, receiver));
-    dependency(call, func);
     if (function_) {
         function_->called_func(func);
     }
     if (call->type()->is_compound()) {
-        Class* clazz = call->type()->clazz();
-        dependency(call, clazz->copier());
-        dependency(call, clazz->destructor());
+        dependency(call, call->type()->clazz());
     }
 }
 
@@ -562,6 +564,7 @@ void SemanticAnalyzer::operator()(Construct* expr) {
         expr->type(env_->top_type());
         return;
     }
+    dependency(expr, clazz);
 
     // Look up the constructor using the class object.
     Function::Ptr constr = clazz->function(env_->name("@init"));
@@ -570,7 +573,6 @@ void SemanticAnalyzer::operator()(Construct* expr) {
         err_ << "Constructor is private in class '" << type << "'\n";
         env_->error();  
     }
-    dependency(expr, constr);
 
     Formal::Ptr f = constr ? constr->formals() : 0;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
@@ -595,8 +597,7 @@ void SemanticAnalyzer::operator()(Construct* expr) {
         function_->called_func(constr);
     }
     if (clazz->is_compound()) {
-        dependency(expr, clazz->copier());
-        dependency(expr, clazz->destructor());
+        dependency(expr, clazz);
     }
 }
 
@@ -1068,9 +1069,16 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     ContextAnchor context(this);
     class_ = dynamic_cast<Class*>(feature->parent());
 
+    // Check for self-embedded types
+    if(feature->is_component() && feature->declared_type()->clazz() == class_) {
+        err_ << feature->location();
+        err_ << "Type '" << feature->name() << "' is self-embedded\n";
+        env_->error();
+    }
+
     // Check for duplicate attributes
     if (parent->feature(feature->name()) != feature) {
-        if(feature->is_embedded()) {
+        if(feature->is_component()) {
             err_ << feature->location();
             err_ << "Type '" << feature->name() << "' is embedded multiple ";
             err_ << "times in '" << parent->name() << "'\n";
@@ -1103,7 +1111,7 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
 
     Class::Ptr clazz = feature->type()->clazz();
     Function::Ptr ctor = clazz ? clazz->constructor() : 0;
-    if (feature->is_embedded()) {
+    if (feature->is_component()) {
         if (ctor && ctor->formals()) {
             // Mixin w/ constructor args
             err_ << init->location();
@@ -1400,9 +1408,7 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
         return;
     }
     if (expr->type()->is_compound()) {
-        Class* clazz = expr->type()->clazz();
-        dependency(expr, clazz->copier());
-        dependency(expr, clazz->destructor());
+        dependency(expr, expr->type()->clazz());
     }
 }
 
@@ -1499,7 +1505,7 @@ void SemanticAnalyzer::accessor(Attribute* feat) {
     // Insert a setter for the attribute if it doesn't already exist
     String::Ptr get = env_->name(feat->name()->string()+"?");
     if (!class_->function(get) && !feat->is_private() 
-        && !feat->is_embedded()) {
+        && !feat->is_component()) {
 
         Location loc = class_->location();
         String::Ptr id = feat->name();
@@ -1517,7 +1523,7 @@ void SemanticAnalyzer::mutator(Attribute* feat) {
     // Insert a getter for the attribute if it doesn't already exist
     String::Ptr set = env_->name(feat->name()->string()+"=");
     if (!class_->function(set) && !feat->is_immutable() && !feat->is_private()
-        && !feat->is_embedded()) {
+        && !feat->is_component()) {
 
         Location loc = class_->location();
         String::Ptr id = env_->name("_arg0");

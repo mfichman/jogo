@@ -43,17 +43,9 @@ Class::Class(Location loc, Environment* env, Type* type, Type* proto,
         if (!feature_[feat->name()]) {
             feature_[feat->name()] = feat;
         }        
-        if (feat->is_embedded()) {
-            Attribute* attr = dynamic_cast<Attribute*>(feat);
-            mixin(attr->declared_type());
-        }
     }
-
     if (!proto_->is_proto()) {
         proto_ = env->object_type();
-    }
-    if (proto->is_object() && !type->equals(env->object_type())) {
-        mixin(env->object_type());
     }
     if (proto->is_enum_proto()) {
         gen_equal_method();
@@ -163,10 +155,6 @@ void Class::feature(Feature* feature) {
     if (!feature) {
         return;
     }
-    if (feature->is_embedded()) {
-        Attribute* attr = dynamic_cast<Attribute*>(feature);
-        mixin(attr->declared_type());
-    }
     feature->parent(this);
     features_ = append(features_, feature);
     if (!feature_[feature->name()]) {
@@ -175,8 +163,8 @@ void Class::feature(Feature* feature) {
 }
 
 Feature* Class::feature(String* name) const {
-    // Searches for a feature with name 'name' in this lass or in a mixin
-    // that was added to this class.
+    // Searches for a feature with name 'name' in this lass or in an embedded
+    // attribute that was added to this class.
 
     std::map<String::Ptr, Feature::Ptr>::const_iterator i = feature_.find(name);
     if (i != feature_.end()) {
@@ -187,13 +175,17 @@ Feature* Class::feature(String* name) const {
         return 0;
     }
 
-    for (Type* mixin = mixins_; mixin; mixin = mixin->next()) {
-        Class* clazz = mixin->clazz();
-        if (clazz) {
-            Feature* func = clazz->feature(name);
-            if (func) {
-                return func;
-            }
+    // Special case for base function
+    for (Feature::Ptr f = features_; f; f = f->next()) {
+        if (f->is_embedded()) {
+            Attribute* attr = dynamic_cast<Attribute*>(f.pointer());
+            Class* clazz = attr->declared_type()->clazz();
+            if (clazz && clazz != this) {
+                Feature* func = clazz->feature(name);
+                if (func) {
+                    return func;
+                }    
+            } 
         }
     }
     return 0;

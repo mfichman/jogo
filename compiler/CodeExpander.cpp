@@ -40,9 +40,11 @@ CodeExpander::operator()(Module* feature) {
 void
 CodeExpander::operator()(Class* feature) {
     class_ = feature;
-    for (Type::Ptr m = feature->mixins(); m; m = m->next()) {
-        mixin_ = m->clazz();
-        mixin(mixin_);
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        if (f->is_embedded()) {
+            Attribute* attr = dynamic_cast<Attribute*>(f.pointer());
+            component(attr);
+        }
     }
     if (class_->is_functor()) {
         functor(class_);
@@ -54,7 +56,7 @@ CodeExpander::operator()(Function* func) {
 }
 
 void
-CodeExpander::stub(Function* func) { 
+CodeExpander::stub(Function* func, Attribute* attr) { 
     // Create a stub which calls through to the nested class function.
     std::string name = func->name()->string();
     if (name == "@init" || name == "@destroy" || name == "@copy") {
@@ -63,15 +65,14 @@ CodeExpander::stub(Function* func) {
     if ((class_->feature(func->name()) != func) || func->is_private()) {
         return;
     }
-
     String::Ptr nm = func->name();
-    Feature::Flags flags = func->flags();
+    Feature::Flags flags = func->flags() & ~(Feature::NATIVE);
     Formal::Ptr f = func->formals();
     Type::Ptr type = func->type();
     Location loc = class_->location();
     Expression::Ptr args;
 
-    Expression::Ptr self(new Identifier(loc, env_->name(""), mixin_->name())); 
+    Expression::Ptr self(new Identifier(loc, env_->name(""), attr->name()));
     for (Formal::Ptr f = func->formals(); f; f = f->next()) {
         Expression::Ptr arg;
         if (f->name()->string() == "self") {
@@ -100,16 +101,21 @@ CodeExpander::stub(Function* func) {
 }
 
 void
-CodeExpander::mixin(Class* feature) {
-    if (feature->name()->string() == "Object") {
+CodeExpander::component(Attribute* attr) {
+    // Generates thunk functions for each attr in the emedded type.
+    Class::Ptr clazz = attr->declared_type()->clazz();
+    if (clazz->name()->string() == "Object") {
         return;
     }
-    for (Type::Ptr m = feature->mixins(); m; m = m->next()) {
-        mixin(m->clazz());
+    for (Feature::Ptr f = clazz->features(); f; f = f->next()) {
+        if (f->is_embedded()) {
+            Attribute* attr = dynamic_cast<Attribute*>(f.pointer());
+            component(attr);
+        }
     }
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+    for (Feature::Ptr f = clazz->features(); f; f = f->next()) {
         if (Function* func = dynamic_cast<Function*>(f.pointer())) {
-            stub(func);
+            stub(func, attr);
         } 
     }
 }

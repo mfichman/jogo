@@ -152,14 +152,13 @@ Client < Object {
     request(request Request) Response {
         # Issues a new request using the given IO stream.
         method = methodstr(request.method)
-        stream = socket.stream
-        stream.print("#{method} #{request.path} HTTP/1.1\n")
+        socket.print("#{method} #{request.path} HTTP/1.1\n")
         for header in request.headers {
-            stream.print("#{header.first}: #{header.second}\n")
+            socket.print("#{header.first}: #{header.second}\n")
         }
-        stream.print("\n")
-        stream.flush()
-        ret Response(stream)
+        socket.print("\n")
+        socket.flush()
+        ret Response(socket.stream)
     }
 
 }

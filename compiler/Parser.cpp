@@ -399,7 +399,7 @@ Feature* Parser::feature() {
 Attribute* Parser::composite() {
     // Returns an attribute representing an embedded type
     LocationAnchor loc(this);
-    Feature::Flags flags = Feature::EMBEDDED;
+    Feature::Flags flags = Feature::EMBEDDED|Feature::COMPONENT;
     Type::Ptr type = Parser::type();
     Expression::Ptr empty(new Empty(loc));
     return new Attribute(loc, env_, type->name(), flags, type, empty); 
@@ -786,6 +786,7 @@ Feature::Flags Parser::flags() {
         switch (token().type()) {
         case Token::NATIVE: next(); flags |= Feature::NATIVE; break;
         case Token::IMMUTABLE: next(); flags |= Feature::IMMUTABLE; break;
+        case Token::EMBEDDED: next(); flags |= Feature::EMBEDDED; break;
         case Token::PRIVATE: next(); flags |= Feature::PRIVATE; break;
         case Token::WEAK: next(); flags |= Feature::WEAK; break;
         default: return flags;

@@ -21,8 +21,8 @@ Stream < Object {
     # Usually, a stream socket is created using the Socket::stream function,
     # but sockets can also be created directly using the constructor below.
 
-    stream immutable Io::Stream
-    # Handle to an Io::Stream, which can used to perform I/O on the socket.
+    stream embedded Io::Stream
+    # Embedded Io::Stream, which performs raw I/O on the socket.
 
     addr immutable = Addr("", 0)
     # The address that the socket is bound to.

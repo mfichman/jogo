@@ -46,6 +46,7 @@ Lexer::Lexer(Environment* env) :
     keyword_["if"] = Token::IF;
     keyword_["in"] = Token::IN;
     keyword_["immutable"] = Token::IMMUTABLE;
+    keyword_["embedded"] = Token::EMBEDDED;
     keyword_["import"] = Token::IMPORT;
     keyword_["let"] = Token::LET;
     keyword_["match"] = Token::MATCH;
@@ -552,6 +553,7 @@ Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {
     case Token::NATIVE: return out << "'native'";
     case Token::WEAK: return out << "'weak'";
     case Token::IMMUTABLE: return out << "'immutable'";
+    case Token::EMBEDDED: return out << "'embedded'";
     case Token::IMPORT: return out << "'import'";
     case Token::FUNC: return out << "'func'";
     case Token::VOID: return out << "Void";

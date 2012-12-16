@@ -24,28 +24,29 @@
 
 #include "Jogo.hpp"
 #include "Environment.hpp"
-#include "Object.hpp"
-#include "TreeNode.hpp"
+#include <vector>
 
-/* Expands code prior to generation */
-class CodeExpander : public TreeNode::Functor {
+typedef std::vector<Function::Ptr> JumpBucket;
+
+/* Generates the dispatch table for dynamic dispatch */
+class DispatchTableGenerator : public TreeNode::Functor {
 public:
-    CodeExpander(Environment* environment);
-    typedef Pointer<CodeExpander> Ptr;
+    DispatchTableGenerator(Class* clazz);
+    void operator()(Class* clazz);  
+    void operator()(Function* func);
 
 private:
-    void operator()(Class* feature);
-    void operator()(Module* feature);
-    void operator()(Function* feature);
-    void functor(Class* funct);
-    void component(Attribute* attr);
-    void stub(Function* func, Attribute* attr);
-    void mutator(Attribute* feature);
-    void accessor(Attribute* feature);
-    void constructor();
-    void destructor();
-    void copier();
-
-    Environment::Ptr env_;
-    Class::Ptr class_;
+    std::vector<JumpBucket> bucket_;
 };
+
+/* Counts the number of functions in a class */
+class FunctionCounter : public TreeNode::Functor {
+public:
+    FunctionCounter() : count_(0) {}
+    void operator()(Class* clazz);  
+    void operator()(Function* func);
+    int count() const { return count_; }
+private:
+    int count_;
+};
+

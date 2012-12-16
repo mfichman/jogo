@@ -21,11 +21,10 @@
  */  
 
 #include "BasicBlockGenerator.hpp"
+#include "DispatchTableGenerator.hpp"
 #include <cassert>
 #include <algorithm>
 #include <stdint.h>
-
-using namespace std;
 
 BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
     env_(env),
@@ -327,9 +326,6 @@ void BasicBlockGenerator::operator()(Member* expr) {
     // getter.
     Function::Ptr func = expr->function();
     call(func, expr->expression(), expr->expression());
-    if (func->type()->is_compound()) {
-        expr->file()->dependency(func->type()->clazz()->destructor());
-    }
 }
 
 void BasicBlockGenerator::operator()(Call* expr) {
@@ -818,9 +814,8 @@ void BasicBlockGenerator::exception_catch() {
 void BasicBlockGenerator::native_operator(Call* expr) {
     // FixMe: Replace this with a mini-parser that can read three-address-code
     // and output it as an inline function.
-    string id = expr->function()->name()->string();
-
-    vector<Operand> args;
+    std::string id = expr->function()->name()->string();
+    std::vector<Operand> args;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         if (a->type()->is_bool()) {
             args.push_back(bool_expr(a));
@@ -874,7 +869,7 @@ BasicBlock* BasicBlockGenerator::basic_block() {
 Variable* BasicBlockGenerator::variable(String* name) {
     // Look up the variable, starting in the current scope and continuing up
     // the scope stack.
-    vector<Scope::Ptr>::reverse_iterator i;
+    std::vector<Scope::Ptr>::reverse_iterator i;
     for (i = scope_.rbegin(); i != scope_.rend(); i++) {
         Variable* var = (*i)->variable(name);
         if (var) {
@@ -1112,135 +1107,12 @@ Operand BasicBlockGenerator::pop_ret(Type* type) {
     }
 }
 
-uint64_t fnv_hash(uint64_t hash, String* str) {
-    const string& name = str->string();
-    for (int i = 0; i < name.length(); ++i) {
-        hash = ((hash * 0x01000193) ^ name[i]);
-    }
-    return hash;
-}
-
-typedef vector<Function::Ptr> JumpBucket;
-struct SortJumpBuckets {
-    bool operator()(const JumpBucket& a, const JumpBucket& b) {
-        return a.size() > b.size();
-    }
-};
-
 void BasicBlockGenerator::dispatch_table(Class* feature) {
     // Generate the Pearson perfect hash that will be used for vtable lookups.
     if (!feature->is_object()) {
         return;
     }
-    
-    // Initially set the size of the hash table to the number of functions.
-    // The size of the table will grow to prevent collisions.
-    int n = 0;
-    for (Feature* f = feature->features(); f; f = f->next()) {
-        if (Function* func = dynamic_cast<Function*>(f)) {
-            if (!func->is_constructor() && !func->is_destructor()) {
-                n++;
-            }
-        }
-    }
-    for (Type* m = feature->mixins(); m; m = m->next()) {
-        Class* clazz = m->clazz();   
-        for (Feature* f = clazz->features(); f; f = f->next()) {
-            if (Function* func = dynamic_cast<Function*>(f)) {
-                // Ignore functions that have been overidden
-                if (feature->function(func->name()) == func) {
-                    n++;
-                }
-            }
-        }
-    }
-    if (!n) { return; }
-    n = max(10, n * 2);
-
-    File* file = feature->file();
-
-    // Step 1: Place all keys into buckets using a simple hash.  There will
-    // be collisions, but they will be resolved in steps 2-3.
-    vector<JumpBucket> bucket(n);
-    for (Feature* f = feature->features(); f; f = f->next()) {
-        if (Function* func = dynamic_cast<Function*>(f)) {
-            if (!func->is_constructor() && !func->is_destructor()) {
-                uint64_t hash = fnv_hash(0, func->name()) % n;
-                bucket[hash].push_back(func);
-            }
-        }
-    }
-    for (Type* m = feature->mixins(); m; m = m->next()) {
-        Class* clazz = m->clazz();   
-        for (Feature* f = clazz->features(); f; f = f->next()) {
-            if (Function* func = dynamic_cast<Function*>(f)) {
-                // Ignore functions that have been overidden
-                if (feature->function(func->name()) == func) {
-                    uint64_t hash = fnv_hash(0, func->name()) % n;
-                    bucket[hash].push_back(func);
-                    if (func->file() != file) {
-                        file->dependency(func);
-                    }
-                }
-            }
-        }
-    }
-
-    // Step 2: Sort buckets and process the ones with the most items first.
-    sort(bucket.begin(), bucket.end(), SortJumpBuckets()); 
-    
-    // Step 3: Attempt to place items in the buckets into empty slots in the
-    // second jump table, starting with the largest buckets first.
-    vector<Function*> value(n);
-    vector<Function*> slots;
-    feature->jump1(n-1, 0);
-    for (int i = 0; i < bucket.size(); i++) {
-        if (bucket[i].size() <= 0) { break; }
-        int d = 1; 
-    retry:
-        // Try to place all the values into empty value slots in the second
-        // jump table.  If that doesn't work, then increment the hash mixing
-        // value "d"
-        slots = value;
-        for (int j = 0; j < bucket[i].size(); j++) {
-            uint64_t hash = fnv_hash(d, bucket[i][j]->name()) % n;
-            if (slots[hash]) {
-                d++;
-                goto retry;
-            } else {
-                slots[hash] = bucket[i][j];
-            }
-        }
-
-        // Success! Record the d-value (i.e., hash mixing value) for the 
-        // current bucket, and continue.
-        uint64_t hash = fnv_hash(0, bucket[i][0]->name()) % n;
-        feature->jump1(hash, d);
-        value = slots;
-    }
-    for (int i = 0; i < value.size(); i++) {
-        feature->jump2(i, value[i]);
-    }
-/*  Dump hash values
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
-            if (func->is_destructor() || func->is_constructor()) { 
-                continue; 
-            }
-            std::cout << func->name()->string() << std::endl;
-            uint64_t hash1 = fnv_hash(0, func->name());
-            uint64_t d = feature->jump1(hash1 % n);
-            uint64_t hash2 = fnv_hash(d, func->name());
-            std::cout << "   n: " << n << std::endl;
-            std::cout << "   hash1 %n: " << hash1 % n << std::endl;
-            std::cout << "   hash1: " << hash1 << std::endl;
-            std::cout << "   d: " << d << std::endl;
-            std::cout << "   hash2: " << hash2 << std::endl;
-        }
-    }
-    std::cout << feature->jump1s() << std::endl;
-    std::cout << feature->jump2s() << std::endl;
-*/
+    DispatchTableGenerator gen(feature);    
 }
 
 void BasicBlockGenerator::calculate_size(Class* feature) {
@@ -1318,6 +1190,9 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             Expression::Ptr init = attr->initializer();
             if (!init || dynamic_cast<Empty*>(init.pointer())) {
+                continue;
+            }
+            if (attr->is_component() && attr->type()->is_object_proto()) {
                 continue;
             }
             Operand value = emit(init);

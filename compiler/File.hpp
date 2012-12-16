@@ -47,7 +47,7 @@ public:
         is_output_file_(true) {  
     }
     
-    Feature* dependency(int id) { return dependency_[id]; }
+    TreeNode* dependency(int id) { return dependency_[id]; }
     Feature* feature(String* scope, String* name) const;
     Function* function(String* scope, String* name) const;
     Constant* constant(String* scope, String* name) const;
@@ -79,7 +79,7 @@ public:
     std::string o_file() const { return output(".o"); }
     std::string jgo_file() const { return output(".jgo"); }
     std::string native_file() const { return input(".c"); }
-    void dependency(Feature* name);
+    void dependency(TreeNode* node);
     void import(Import* import) { import_.push_back(import); }
     void feature(Feature* feature) { feature_.push_back(feature); }
     void next(File* next) { next_ = next; }
@@ -110,7 +110,7 @@ private:
     bool is_output_file_;
     std::vector<Import::Ptr> import_; 
     std::vector<Feature::Ptr> feature_;
-    std::vector<Feature::Ptr> dependency_;
+    std::vector<TreeNode::Ptr> dependency_;
     std::vector<Constant::Ptr> constant_;
     std::map<std::string, String::Ptr> integer_;
     std::map<std::string, String::Ptr> floating_;

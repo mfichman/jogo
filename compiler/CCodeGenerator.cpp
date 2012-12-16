@@ -387,8 +387,8 @@ void CCodeGenerator::operator()(File* file) {
     // can refer to eachother circularly.
 
     for (int i = 0; i < file->dependencies(); i++) {
-        Feature* feat = file->dependency(i);
-        if (Class* cls = dynamic_cast<Class*>(feat)) {
+        TreeNode* dep = file->dependency(i);
+        if (Class* cls = dynamic_cast<Class*>(dep)) {
             class_decl(cls);
 
         }
@@ -404,11 +404,11 @@ void CCodeGenerator::operator()(File* file) {
 
     // Output declarations for any functions used by this file.
     for (int i = 0; i < file->dependencies(); i++) {
-        Feature* feat = file->dependency(i);
-        if (Function* func = dynamic_cast<Function*>(feat)) {
+        TreeNode* dep = file->dependency(i);
+        if (Function* func = dynamic_cast<Function*>(dep)) {
             func_sig(func);
             out_ << ";\n";
-        } else if (Constant* con = dynamic_cast<Constant*>(feat)) {
+        } else if (Constant* con = dynamic_cast<Constant*>(dep)) {
             out_ << "extern ";
             operator()(con->type()); // Constant type
             out_ << " " << con->label() << ";\n";
