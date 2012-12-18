@@ -37,16 +37,18 @@ public:
 
 private:
     std::vector<JumpBucket> bucket_;
+    Class::Ptr class_;
 };
 
 /* Counts the number of functions in a class */
 class FunctionCounter : public TreeNode::Functor {
 public:
-    FunctionCounter() : count_(0) {}
+    FunctionCounter(Class* clazz) : class_(clazz), count_(0) {}
     void operator()(Class* clazz);  
     void operator()(Function* func);
     int count() const { return count_; }
 private:
+    Class::Ptr class_;
     int count_;
 };
 

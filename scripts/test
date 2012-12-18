@@ -168,7 +168,8 @@ if len(tests) == 0:
     tests += glob.glob('*.py')
     tests += glob.glob('*.cpp')
 
-
+# Iterate through all the tests, and run the correct callback for each test
+# type.
 if options.serial:
    for test in tests:
        print_result(any_test(test))
@@ -178,13 +179,6 @@ else:
        pool.apply_async(any_test, [test], callback=print_result)
    pool.close()
    pool.join()
-     
-
-#    print_result(any_test(test))
-
-#for test in tests:
-#    # Iterate through all the tests, and run the correct callback for each
-#    # test type.
 
 if failed > 0:
     # Finally, check for errors.  If there was an error, exit with code 1 to

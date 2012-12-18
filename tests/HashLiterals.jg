@@ -23,6 +23,15 @@ HashLike < Object {
     }
 }
 
+Key < Object {
+
+    val Int
+
+    @init(val Int) {
+        self.val = val
+    }
+}
+
 main() Int {
     hash = { 'a': 'one', 'b': 'two' }
     for pair in hash {
@@ -40,5 +49,10 @@ main() Int {
     }
 
     hash3 HashLike = { '1': 'Spock', '2': 'Kirk', '3': 'Picard' }
+    
+    hash9 = { Key(1): 'Bilbo', Key(2): 'Frodo' } 
+    for x in hash9 {
+        Io::println("#{x.first.val} => #{x.second}") 
+    }
     ret 0
 }

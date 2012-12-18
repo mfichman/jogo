@@ -64,16 +64,19 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "extern "; label("Boot_free"); out_ << "\n";
     out_ << "extern "; label("Boot_memset"); out_ << "\n";
     out_ << "extern "; label("Boot_memcpy"); out_ << "\n";
-    out_ << "extern "; label("Object__dispatch"); out_ << "\n";
-    out_ << "extern "; label("Object__refcount_dec"); out_ << "\n";
-    out_ << "extern "; label("Object__refcount_inc"); out_ << "\n";
-    out_ << "extern "; label("Object__equals"); out_ << "\n";
-    out_ << "extern "; label("Object_hash__g"); out_ << "\n";
     out_ << "extern "; label("Coroutine__yield"); out_ << "\n";
     out_ << "extern "; label("Coroutine__grow_stack"); out_ << "\n";
     out_ << "extern "; label("Coroutine__stack"); out_ << "\n";
     if (file->name()->string() != "String.jg") {
         out_ << "extern "; label("String__vtable"); out_ << "\n";
+    }
+    if (file->name()->string() != "Object.jg") {
+        out_ << "extern "; label("Object__dispatch"); out_ << "\n";
+        out_ << "extern "; label("Object__refcount_dec"); out_ << "\n";
+        out_ << "extern "; label("Object__refcount_inc"); out_ << "\n";
+        out_ << "extern "; label("Object__equal"); out_ << "\n";
+        out_ << "extern "; label("Object_hash__g"); out_ << "\n";
+        out_ << "extern "; label("Object_same"); out_ << "\n";
     }
     if (file->name()->string() != "Primitives.jg") {
         out_ << "extern "; label("Int__vtable"); out_ << "\n";

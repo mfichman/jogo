@@ -37,20 +37,25 @@ uint64_t fnv_hash(uint64_t hash, String* str) {
 }
 
 
-DispatchTableGenerator::DispatchTableGenerator(Class* clazz) {
+DispatchTableGenerator::DispatchTableGenerator(Class* clazz) : class_(clazz) {
     // Initially set the size of the hash table to the number of functions.
     // The size of the table will grow to prevent collisions.
     if (clazz->is_interface()) { return; }
-    FunctionCounter fc;
+    Class::Ptr obj = clazz->env()->object_type()->clazz();
+    FunctionCounter fc(clazz);
     fc.operator()(clazz);
-    // FIXME: Add Object functions (like hash) also
-    //fc->operator()(clazz->env()->object_type()->clazz());
-    
+    if (obj != clazz) {
+        fc.operator()(obj);
+    }
+
     // Step 1: Place all keys into buckets using a simple hash.  There will
     // be collisions, but they will be resolved in steps 2-3.
     int n = std::max(10, fc.count() * 2);
     bucket_.resize(n);
     operator()(clazz);
+    if (obj != clazz) {
+        operator()(obj);
+    } 
 
     // Step 2: Sort buckets and process the ones with the most items first.
     sort(bucket_.begin(), bucket_.end(), SortJumpBuckets()); 
@@ -98,10 +103,14 @@ void DispatchTableGenerator::operator()(Class* clazz) {
 void DispatchTableGenerator::operator()(Function* func) {
     // Add the function to the bucket for its hash value
     int const n = bucket_.size();
-    if(!func->is_constructor() && !func->is_destructor()) {
-        uint64_t hash = fnv_hash(0, func->name()) % n;
-        bucket_[hash].push_back(func);
+    if (func->is_constructor() || func->is_destructor()) {
+        return;
     }
+    if (func != class_->function(func->name())) {
+        return;
+    }
+    uint64_t hash = fnv_hash(0, func->name()) % n;
+    bucket_[hash].push_back(func);
 }
 
 void FunctionCounter::operator()(Class* clazz) {
@@ -111,6 +120,12 @@ void FunctionCounter::operator()(Class* clazz) {
 }
 
 void FunctionCounter::operator()(Function* func) {
+    if (func->is_constructor() || func->is_destructor()) {
+        return;
+    }
+    if (func != class_->function(func->name())) {
+        return;
+    }
     count_++;
 }
 
