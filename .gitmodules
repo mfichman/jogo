@@ -1,6 +1,0 @@
-[submodule "wiki"]
-	path = wiki
-	url = git@github.com:mfichman/apollo.wiki.git
-[submodule "nasm"]
-	path = nasm
-	url = git://repo.or.cz/nasm.git

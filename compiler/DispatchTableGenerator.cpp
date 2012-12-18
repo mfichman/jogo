@@ -68,7 +68,7 @@ DispatchTableGenerator::DispatchTableGenerator(Class* clazz) : class_(clazz) {
     for (int i = 0; i < bucket_.size(); i++) {
         if (bucket_[i].size() <= 0) { break; }
         int d = 1; 
-    retry:
+retry:
         // Try to place all the values into empty value slots in the second
         // jump table.  If that doesn't work, then increment the hash mixing
         // value "d"

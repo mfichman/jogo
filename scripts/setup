@@ -71,11 +71,14 @@ def setup_deps():
     print('Installing dependencies')
     if os.system('which apt-get') == 0:
         os.system('sudo apt-get install scons valgrind vim nasm g++')
+        os.system('sudo easy_install boto')
     elif os.system('which yum') == 0:
         os.system('sudo yum install scons valgrind vim nasm g++')
+        os.system('sudo easy_install boto')
     elif os.system('which brew') == 0:
         os.system('brew install scons')
         os.system('brew install nasm')
+        os.system('sudo easy_install boto')
     else:
         print('Package manager not supported.')
 
