@@ -38,6 +38,18 @@
 #include <errno.h>
 #endif
 
+std::string const File::API = ".api";
+std::string const File::ASM = ".asm";
+std::string const File::C = ".c";
+#ifdef WINDOWS
+std::string const File::APO = ".ap.obj";
+std::string const File::O = ".obj"; 
+ // Windows object files _must_ end in .obj, otherwise they don't get linked
+#else
+std::string const File::APO = ".apo";
+std::string const File::O = ".o"; 
+#endif
+
 String* File::integer(const std::string& str) {
     // Returns a name if it exists, otherwise, a new one is created.
 

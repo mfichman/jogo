@@ -65,6 +65,7 @@ public:
     bool is_immutable() const { return flags_ & IMMUTABLE; }
     bool is_closure() const { return flags_ & CLOSURE; }
     bool is_embedded() const { return flags_ & EMBEDDED; }
+    bool is_nodep() const { return flags_ & NODEP; }
     void next(Feature* next) { next_ = next; }
     void last(Feature* last) { last_ = last; }
     void flags(Flags flags) { flags_ = flags; }
@@ -77,6 +78,7 @@ public:
     static const int IMMUTABLE = 0x8;
     static const int CLOSURE = 0x20;
     static const int EMBEDDED = 0x40; 
+    static const int NODEP = 0x80;
 
 private:
     String::Ptr name_;

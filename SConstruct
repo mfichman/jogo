@@ -17,9 +17,10 @@ VariantDir('build/compiler', 'compiler', duplicate=0)
 VariantDir('build/drivers', 'drivers', duplicate=0)
 VariantDir('build/runtime', 'runtime', duplicate=0)
 
+build_dir = os.path.join('build', 'runtime')
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(ENV = os.environ)
-env.Append(APFLAGS = '-m -i runtime --build-dir build/runtime --no-default-libs ')
+env.Append(APFLAGS = '-v -m -i runtime --build-dir ' + build_dir + ' --no-default-libs ')
 
 build_mode = ARGUMENTS.get('mode', 'debug')
 stack_size = '8192'
@@ -101,7 +102,7 @@ library_src = ' '.join([
     "Coroutine",
     "File",
     "Hash",
-    "Http",
+    #"Http",
     "Io",
     #"Json",
     "Object",
@@ -115,7 +116,9 @@ library_src = ' '.join([
 ])
 
 coroutine = env.NASM('build/runtime/Coroutine.Intel64.asm')
-lib = env.Command('aplib', apollo, 'bin/apollo $APFLAGS -o lib/Apollo ' + library_src)
+apollo_cmd = os.path.join('bin', 'apollo')
+apollo_lib = os.path.join('lib', 'Apollo')
+lib = env.Command('aplib', apollo, apollo_cmd + ' $APFLAGS -o ' + apollo_lib + ' ' + library_src)
 env.Depends(lib, apollo)
 env.Depends(lib, coroutine)
 

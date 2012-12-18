@@ -323,6 +323,8 @@ void RegisterAllocator::spill_register(Function* func) {
         }
     }
 
+    //Stream::stout() << "Spilling " << spilled << "\n";
+    //Stream::stout()->flush();
     spilled_.set(spilled);
     assert(!!spilled);
     func->local_slots_inc();

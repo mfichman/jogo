@@ -23,6 +23,7 @@
 #include "Feature.hpp"
 #include "Environment.hpp"
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -95,11 +96,12 @@ Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
 void Class::gen_equal_method() {
     // Generates an automatic @equal method when necessary.
     String::Ptr name = env()->name("@equal");
-    if(!feature(name)) {
+    Function::Ptr func = function(name);
+    if(!func) {
         Type::Ptr ret = env()->bool_type();
         Formal::Ptr self(new Formal(location(), env()->name("self"), type())); 
         self->next(new Formal(location(), env()->name("other"), type())); 
-        Feature::Flags flags = Feature::NATIVE;
+        Feature::Flags flags = Feature::NATIVE|Feature::NODEP;
         feature(new Function(location(), env(), name, self, flags, ret, 0));
     }
 }

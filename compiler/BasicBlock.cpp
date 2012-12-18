@@ -22,6 +22,10 @@
 
 #include "BasicBlock.hpp"
 #include "Machine.hpp"
+#ifdef WINDOWS
+#undef big
+#undef small
+#endif
 
 Stream::Ptr operator<<(Stream::Ptr out, const Address& addr) {
     return out << addr.value();
@@ -201,7 +205,16 @@ int RegisterIdSet::next_bit(int bucket, int bit) const {
     assert(bucket < BUCKET_LOW+size_);
     unsigned val = (bucket < BUCKET_LOW) ? low_[bucket] : high_[bucket-BUCKET_LOW]; 
     unsigned mask = BUCKET_MASK << bit;
+#ifdef WINDOWS
+    unsigned long index = 0;
+    if (_BitScanForward64(&index, val & mask)) {
+        return index+1;
+    } else {
+        return 0;
+    }
+#else
     return __builtin_ffs(val & mask);
+#endif
 }
 
 int RegisterIdSet::next_bucket(int bucket) const {
@@ -228,8 +241,8 @@ int RegisterIdSet::next_bucket(int bucket) const {
 RegisterIdSet RegisterIdSet::operator&(RegisterIdSet const& other) const {
     // Performs an intersection between this set and another set.
     RegisterIdSet out(std::max(bits(), other.bits()));
-    RegisterIdSet const& big = (size_ > other.size_) ? *this : other;
-    RegisterIdSet const& small = (size_ <= other.size_) ? *this : other;
+    RegisterIdSet const& big = ((size_ > other.size_) ? *this : other);
+    RegisterIdSet const& small = ((size_ <= other.size_) ? *this : other);
     for (int i = 0; i < BUCKET_LOW; ++i) {
         out.low_[i] = big.low_[i] & small.low_[i];
     } 
@@ -332,13 +345,28 @@ void RegisterIdSet::clear() {
     }
 }
 
+static inline int popcnt(int value) {
+    // Returns the number of set bits in 'value'
+#ifdef WINDOWS
+    unsigned int v = value;
+    unsigned int c = 0; 
+    for (c = 0; v; c++) {
+        v &= v-1; // Clear the least-significant bit
+    }
+    return c;
+#else
+    return __builtin_popcount(value);
+#endif
+
+}
+
 int RegisterIdSet::count() const {
     int count = 0;
     for (int i = 0; i < BUCKET_LOW; ++i) {
-        count += __builtin_popcount(low_[i]);        
+        count += popcnt(low_[i]);
     }
     for (int i = 0; i < size_; ++i) {
-        count += __builtin_popcount(high_[i]);
+        count += popcnt(high_[i]);
     }
     return count;
 }

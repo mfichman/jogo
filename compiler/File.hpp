@@ -46,6 +46,11 @@ public:
         is_input_file_(false),
         is_output_file_(true) {  
     }
+    static std::string const API;
+    static std::string const ASM;
+    static std::string const C;
+    static std::string const APO;
+    static std::string const O; 
     
     Feature* dependency(int id) { return dependency_[id]; }
     Feature* feature(String* scope, String* name) const;
@@ -70,15 +75,15 @@ public:
     int constants() { return constant_.size(); }
     bool is_input_file() const { return is_input_file_; }
     bool is_output_file() const;
-    bool is_interface_file() const { return ext(name_->string())==".api"; }
+    bool is_interface_file() const { return ext(name_->string())==API; }
     bool is_up_to_date(const std::string& ext) const;
     std::string input(const std::string& ext) const;
-    std::string output(const std::string& ext = ".apo") const;
-    std::string asm_file() const { return output(".asm"); }
-    std::string c_file() const { return output(".c"); }
-    std::string o_file() const { return output(".o"); }
-    std::string apo_file() const { return output(".apo"); }
-    std::string native_file() const { return input(".c"); }
+    std::string output(const std::string& ext = APO) const;
+    std::string asm_file() const { return output(ASM); }
+    std::string c_file() const { return output(C); }
+    std::string o_file() const { return output(O); }
+    std::string apo_file() const { return output(APO); }
+    std::string native_file() const { return input(C); }
     void dependency(Feature* name);
     void import(Import* import) { import_.push_back(import); }
     void feature(Feature* feature) { feature_.push_back(feature); }

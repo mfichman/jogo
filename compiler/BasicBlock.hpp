@@ -26,7 +26,9 @@
 #include "String.hpp"
 #include "Expression.hpp"
 #include <vector>
+#include <limits>
 #include <set>
+#undef max
 
 /* A register ID identifies a register by type and number. */
 class RegisterId {

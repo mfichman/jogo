@@ -207,8 +207,11 @@ void Parser::file(const std::string& prefix, const std::string& file) {
 void Parser::dir(const std::string& prefix, const std::string& dir) {
     // Parses all files in the directory specified by 'dir'.  If 'dir' is not
     // a directory, then no files are parsed.
-
-    for (File::Iterator i(prefix + FILE_SEPARATOR + dir); i; ++i) {
+	std::string full_path = prefix + FILE_SEPARATOR + dir + FILE_SEPARATOR;
+    if (env_->verbose()) {
+	    std::cout << "Parsing " << full_path << std::endl;
+    }
+    for (File::Iterator i(full_path); i; ++i) {
         std::string name = *i;
         const std::string ext = ".ap";
         if (name.length() <= ext.length()) {

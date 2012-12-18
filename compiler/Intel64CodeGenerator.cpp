@@ -62,7 +62,6 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "extern "; label("Boot_calloc"); out_ << "\n";
     out_ << "extern "; label("Boot_mzero"); out_ << "\n";
     out_ << "extern "; label("Boot_free"); out_ << "\n";
-    out_ << "extern "; label("Boot_memset"); out_ << "\n";
     out_ << "extern "; label("Boot_memcpy"); out_ << "\n";
     out_ << "extern "; label("Object__dispatch"); out_ << "\n";
     out_ << "extern "; label("Object__refcount_dec"); out_ << "\n";
@@ -85,7 +84,9 @@ void Intel64CodeGenerator::operator()(File* file) {
 
     for (int i = 0; i < file->dependencies(); i++) {
         Feature::Ptr feat = file->dependency(i);
-        if (feat->file() != file) {
+        if (dynamic_cast<Class*>(feat.pointer())) {
+            // FixMe: This is bogus!
+        } else if (feat->file() != file && !feat->is_nodep()) {
             out_ << "extern "; label(feat->label()); out_ << "\n";
         }
     }
@@ -121,7 +122,9 @@ void Intel64CodeGenerator::operator()(Function* feature) {
     String::Ptr id = feature->name();
     if (feature->is_virtual()) { return; }
     if (feature->is_native()) {
-        out_ << "extern "; label(feature->label()); out_ << "\n";
+        if (!feature->is_nodep()) {
+            out_ << "extern "; label(feature->label()); out_ << "\n";
+        }
     } else if (feature->basic_blocks()) {
         out_ << "section .text\n";
         out_ << "global "; label(feature->label()); out_ << "\n";
