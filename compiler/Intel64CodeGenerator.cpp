@@ -67,6 +67,8 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "extern "; label("Object__dispatch"); out_ << "\n";
     out_ << "extern "; label("Object__refcount_dec"); out_ << "\n";
     out_ << "extern "; label("Object__refcount_inc"); out_ << "\n";
+    out_ << "extern "; label("Object__equals"); out_ << "\n";
+    out_ << "extern "; label("Object_hash__g"); out_ << "\n";
     out_ << "extern "; label("Coroutine__yield"); out_ << "\n";
     out_ << "extern "; label("Coroutine__grow_stack"); out_ << "\n";
     out_ << "extern "; label("Coroutine__stack"); out_ << "\n";
@@ -103,7 +105,7 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     // Emit the functions and vtable for the class specified by 'feature'
     class_ = feature;
 
-    if (feature->destructor()) {
+    if (feature->destructor()->parent() == feature) {
         dispatch_table(feature);
     }
 

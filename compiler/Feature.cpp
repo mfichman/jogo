@@ -103,7 +103,8 @@ void Class::gen_functor_method() {
 void Class::gen_equal_method() {
     // Generates an automatic @equal method when necessary.
     String::Ptr name = env()->name("@equal");
-    if(!feature(name)) {
+    Feature::Ptr feat = feature(name);
+    if(!feat||feat->parent()!=this) {
         Type::Ptr ret = env()->bool_type();
         Formal::Ptr self(new Formal(location(), env()->name("self"), type())); 
         self->next(new Formal(location(), env()->name("other"), type())); 
@@ -175,18 +176,18 @@ Feature* Class::feature(String* name) const {
         return 0;
     }
 
-    // Special case for base function
     for (Feature::Ptr f = features_; f; f = f->next()) {
-        if (f->is_embedded()) {
-            Attribute* attr = dynamic_cast<Attribute*>(f.pointer());
-            Class* clazz = attr->declared_type()->clazz();
-            if (clazz && clazz != this) {
-                Feature* func = clazz->feature(name);
-                if (func) {
-                    return func;
-                }    
-            } 
-        }
+        if (!f->is_embedded()) { continue; }
+        Attribute* attr = dynamic_cast<Attribute*>(f.pointer());
+        Class* clazz = attr->declared_type()->clazz();
+        if (clazz && clazz != this) {
+            Feature* func = clazz->feature(name);
+            if (func) { return func; }    
+        } 
+    }
+    Class* clazz = env()->object_type()->clazz();
+    if(clazz && clazz != this) {
+        return clazz->feature(name);
     }
     return 0;
 }

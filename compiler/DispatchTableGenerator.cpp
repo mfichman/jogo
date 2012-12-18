@@ -40,6 +40,7 @@ uint64_t fnv_hash(uint64_t hash, String* str) {
 DispatchTableGenerator::DispatchTableGenerator(Class* clazz) {
     // Initially set the size of the hash table to the number of functions.
     // The size of the table will grow to prevent collisions.
+    if (clazz->is_interface()) { return; }
     FunctionCounter fc;
     fc.operator()(clazz);
     // FIXME: Add Object functions (like hash) also

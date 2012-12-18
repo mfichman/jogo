@@ -1,53 +1,53 @@
 #!/usr/bin/python
 
-import optparse, os, subprocess, re, sys, glob, difflib
+# Parallel test execution script for the Jogo compiler.  This script finds all
+# test files in the 'tests' folder, and then executes them in parallel.
+
+import optparse
+import os
+import subprocess
+import re
+import sys
+import glob
+import difflib
+import multiprocessing
 
 parser = optparse.OptionParser()
 parser.add_option('-f', '--full', action='store_true', 
     help='Run all tests, including memcheck')
 parser.add_option('-v', '--verbose', action='store_true',  
     help='Print test status')
+parser.add_option('-s', '--serial', action='store_true',
+    help='Run tests serially')
 (options, tests) = parser.parse_args()
 
 os.chdir('tests')
 
-fail_file = open('../build/test.fail', 'w')
-total = 0
-failed = 0
-
-if len(tests) == 0:
-    # If no tests are passed as parameters, then glob on the test dir to run 
-    # all the tests.
-    tests = glob.glob('*.jg') + glob.glob('*.c') 
-    tests += glob.glob('*.py') + glob.glob('*.cpp')
+PASS, FAIL = range(2)
 
 def check(test, expected, output):
     # Checks to make sure the output for the test matches the expected output.
-    global failed
     expected = expected.replace('\r', '')
     output = output.replace('\r', '')
-
+    result = [test] 
     if output != expected:
-        fail_file.write(test+'\n')
-        print(''.join(['-' for i in range(79)]))
-        print('FAILED: ' + test)
-        print(''.join(['-' for i in range(79)]))
+        result.append(''.join(['-' for i in range(79)]))
+        result.append('FAILED: ' + test)
+        result.append(''.join(['-' for i in range(79)]))
         expected_lines = expected.split('\n')
         output_lines = output.split('\n')
-        print('\n'.join(difflib.unified_diff(
+        result.append('\n'.join(difflib.unified_diff(
             expected_lines, 
             output_lines, 
             lineterm='',
             fromfile='Expected output',
             tofile='Actual output')))
-        print(''.join(['-' for i in range(79)]))
-        
-        #print(''.join(['-' for i in range(70)])+' Expected')
-        #print(''.join(['-' for i in range(70)])+' Expected')
-        #print(expected)
-        #print(''.join(['-' for i in range(72)])+' Output')
-        #print(output)
-        failed += 1
+        result.append(''.join(['-' for i in range(79)]))
+        result = '\n'.join(result)
+        return (FAIL, result)
+    else:
+       result = '\n'.join(result)
+       return (PASS, result)
 
 def shell(command, check=False):
     # Runs 'command' and returns the result.  Sets the 'fail' flag if the 
@@ -85,14 +85,14 @@ def jogo_test(test):
     if sys.platform == 'win32':
         command = command.replace('/', '\\')
     output = shell(command + ' 2>&1', run)
-    check(test+'.jg', expected, output)
+    return check(test+'.jg', expected, output)
 
 def python_test(test):
     # Run a Python test.  Useful for various msicellaneous tests that are not
     # easily expressed in C++.
     expected = open(test + '.out', 'r').read()
     output = shell('python ' + test + ' 2>&1')
-    check(test, expected, output)
+    return check(test, expected, output)
 
 def native_test(test):
     # C/C++ tests.  Used primarily for unit tests and to test the runtime
@@ -110,7 +110,7 @@ def native_test(test):
         command += '-lJogo -lm -I .. 2>&1'
         os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
-    check(test, expected, output)
+    return check(test, expected, output)
 
 def cpp_test(test):
     # C++ tests; used for compiler unit tests.
@@ -128,27 +128,63 @@ def cpp_test(test):
         command += '-ljogoc -lm -I ../compiler 2>&1'
         output += os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
-    check(test, expected, output)
+    return check(test, expected, output)
 
-for test in tests:
-    # Iterate through all the tests, and run the correct callback for each
-    # test type.
+def any_test(test):
+    # Runs a C++ test and returns the result of the test.
     if re.search(r'.jg$', test):
-        print(test)
-        jogo_test(test)
-        total += 1
+        return jogo_test(test)
     elif re.search(r'.py$', test):
-        print(test)
-        python_test(test)
-        total += 1
+        return python_test(test)
     elif re.search(r'.c$', test) and not os.path.exists(test[:-2]+".jg"):
-        print(test)
-        native_test(test)
-        total += 1
+        return native_test(test)
     elif re.search(r'.cpp$', test):
-        print(test)
-        cpp_test(test)
+        return cpp_test(test)
+    else:
+        return (None, '')
+
+total = 0
+failed = 0
+
+def print_result(result):
+    # Prints the result of a test.  This is function is a callback used by the
+    # multiprocessing pool to print results as they become available.
+    global total 
+    global failed 
+    status, message = result
+    if status == FAIL:
+        print(message)
+        failed += 1
         total += 1
+    elif status == PASS:
+        print(message)
+        total += 1
+     
+if len(tests) == 0:
+    # If no tests are passed as parameters, then glob on the test dir to run 
+    # all the tests.
+    tests += glob.glob('*.jg')
+    tests += glob.glob('*.c') 
+    tests += glob.glob('*.py')
+    tests += glob.glob('*.cpp')
+
+
+if options.serial:
+   for test in tests:
+       print_result(any_test(test))
+else:
+   pool = multiprocessing.Pool(multiprocessing.cpu_count() * 2)
+   for test in tests:
+       pool.apply_async(any_test, [test], callback=print_result)
+   pool.close()
+   pool.join()
+     
+
+#    print_result(any_test(test))
+
+#for test in tests:
+#    # Iterate through all the tests, and run the correct callback for each
+#    # test type.
 
 if failed > 0:
     # Finally, check for errors.  If there was an error, exit with code 1 to
