@@ -9,9 +9,9 @@ Jogo is a compiler for an experimental programming language.
 Downloads
 ---------
 
-* Debian: [jogo-0.2.0.deb](https://github.com/downloads/mfichman/jogo/jogo-0.2.0.deb)
-* OS X: [jogo-0.2.0.pkg](https://github.com/downloads/mfichman/jogo/jogo-0.2.0.pkg)
-* Windows: [jogo-0.2.0.exe](https://github.com/downloads/mfichman/jogo/jogo-0.2.0.exe)
+* Debian: [jogo-0.3.0.deb](https://jogo-downloads.s3.amazonaws.com/jogo-0.3.0.deb)
+* OS X: [jogo-0.3.0.pkg](https://jogo-downloads.s3.amazonaws.com/jogo-0.3.0.pkg)
+* Windows: [jogo-0.3.0.exe](https://jogo-downloads.s3.amazonaws.com/jogo-0.3.0.exe)
 
 
 Building
