@@ -26,6 +26,7 @@
 Lexer::Lexer(Environment* env) :
     env_(env),
     err_(Stream::sterr()),
+    input_(0),
     front_(0),
     char_(0),
     line_(0),
@@ -66,21 +67,38 @@ Lexer::Lexer(Environment* env) :
     keyword_["is"] = Token::IS;
 }
 
+Lexer::~Lexer() {
+    if (input_ && input_ != &std::cin) {
+        delete input_;
+    }
+}
+
+
 void Lexer::input(File* file) {
     location_.file = file;
-    location_.first_line = 0;
-    location_.first_column = 0;
-    location_.last_line = 0;
-    location_.last_column = 0;
-    input_.close();
-	input_.clear();
-    input_.open(file->path()->string().c_str(), std::ios::in);
-	if (!input_) {
+    if (input_ && input_ != &std::cin) {
+        delete input_;
+    }
+    input_ = new std::ifstream(file->path()->string().c_str());
+	if (!*input_) {
 		err_ << "Could not open " << file->path()->string() << "\n";
 		env_->error();
 		return;
 	}
+    init();
+}
 
+void Lexer::input() {
+    input_ = &std::cin;
+    init();
+}
+
+void Lexer::init() {
+    // Initializes the lexer and reads the first few tokens.
+    location_.first_line = 0;
+    location_.first_column = 0;
+    location_.last_line = 0;
+    location_.last_column = 0;
     line_ = 1;
     column_ = -1;
     char_ = 0;
@@ -131,7 +149,9 @@ void Lexer::next() {
         token_[front_].location(location_);
         value("");
 
-        if (char_ == '\n' && !ignore_newline_) {
+        if (char_ == '\n' && input_ == &std::cin) {
+            token(Token::END);
+        } else if (char_ == '\n' && !ignore_newline_) {
             read();
             value("");
             token(Token::SEPARATOR);
@@ -506,7 +526,7 @@ void Lexer::read() {
     if (char_) {
         token_[front_].value() += char_;
     }
-    char_ = input_.get(); 
+    char_ = input_->get(); 
 }
 
 Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {

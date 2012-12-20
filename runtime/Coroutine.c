@@ -72,21 +72,21 @@ Coroutine Coroutine__init(Object func) {
 void Coroutine__destroy(Coroutine self) {
     Coroutine_Stack stack = 0;
 
-	// Set the exception flag, then resume the coroutine and unwind the stack,
-	// calling destructors for objects referenced by the coroutine.
-	Int save_except = Exception__current;
-	Exception__current = 1;
+    // Set the exception flag, then resume the coroutine and unwind the stack,
+    // calling destructors for objects referenced by the coroutine.
+    Int save_except = Exception__current;
+    Exception__current = 1;
 
     if (self->status == CoroutineStatus_SUSPENDED) {
-		// Temporarily re-increment the refcount so that there's no double 
-		// free; otherwise, the reference counting in resume() would cause
-		// the coroutine to be destroyed twice.
-		self->_refcount++;
-	    Coroutine__call(self);
-		self->_refcount--;
+        // Temporarily re-increment the refcount so that there's no double 
+        // free; otherwise, the reference counting in resume() would cause
+        // the coroutine to be destroyed twice.
+        self->_refcount++;
+        Coroutine__call(self);
+        self->_refcount--;
     }
-	
-	// Free the stack, and the pointer to the closure object so that no memory
+    
+    // Free the stack, and the pointer to the closure object so that no memory
     // is leaked.
     for (stack = self->stack; stack;) {
         Coroutine_Stack temp = stack;
@@ -97,7 +97,7 @@ void Coroutine__destroy(Coroutine self) {
     Object__refcount_dec(self->function);
     Boot_free(self);
 
-	Exception__current = save_except;
+    Exception__current = save_except;
 }
 
 void Coroutine_resume(Coroutine self) {
@@ -137,9 +137,9 @@ void Coroutine__yield() {
         Coroutine__current->status = CoroutineStatus_SUSPENDED;
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
     } else if (Coroutine__current) {
-		Coroutine__current->status = CoroutineStatus_SUSPENDED;
-		Coroutine__swap(Coroutine__current, &Coroutine__main);
-	}
+        Coroutine__current->status = CoroutineStatus_SUSPENDED;
+        Coroutine__swap(Coroutine__current, &Coroutine__main);
+    }
 }
 
 Ptr Coroutine__grow_stack() {

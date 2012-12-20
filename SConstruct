@@ -7,6 +7,7 @@ if 'help' in COMMAND_LINE_TARGETS:
     print("Jogo build targets")
     print
     print("release   Create a new release and upload to github.com")
+    print("doc       Generate wiki documentation")
     print("pkg       Create a new installer package")
     print("check     Run tests with memory checker disabled")
     print("test      Run full test suite")
@@ -92,6 +93,7 @@ compiler_src = env.Glob('build/compiler/*.cpp')
 jogo = env.Program('bin/jogo', compiler_src + ['build/drivers/Main.cpp'])
 jgdoc = env.Program('bin/jgdoc', compiler_src + ['build/drivers/Doc.cpp'])
 jgmake = env.Program('bin/jgmake', compiler_src + ['build/drivers/Make.cpp'])
+jgi = env.Program('bin/jgi', compiler_src + ['build/drivers/Debugger.cpp'])
 compiler = env.StaticLibrary('lib/jogoc', compiler_src)
 
 # Library/runtime build ######################################################
@@ -153,6 +155,12 @@ dpkg = 'dpkg -b dist/root jogo-' + version + '.deb'
 #rpmbuild = 'rpmbuild\
 #    --define="version ' + version + '"\
 #    --define="_topdir /dist/root
+
+if 'doc' in COMMAND_LINE_TARGETS:
+    doc = env.Command('doc', jgdoc, 'bin/jgdoc $APFLAGS -o wiki ' + library_src)
+    env.Depends(doc, jogo)
+    env.Depends(doc, coroutine)
+    env.Depends(doc, lib)  
 
 
 if 'pkg' in COMMAND_LINE_TARGETS:

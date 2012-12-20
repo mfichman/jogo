@@ -1,0 +1,10 @@
+ruby: 1m12.840s
+c++ (O2): .358s
+jogo: 9.554s
+lua: 32.583s
+luajit: .172s (!!)
+
+jogo: non-virt: .483s
+
+100000000
+
