@@ -106,6 +106,10 @@ void Coroutine_resume(Coroutine self) {
     if (!self) { return; }
     if (self->status == CoroutineStatus_DEAD) { return; }
     if (self->status == CoroutineStatus_RUNNING) { return; }
+    // If the user tries to resume a coroutine that is in the 'IO' state, then
+    // it will just immediately block again.  So, to avoid that tricky case,
+    // just return immediately from resume().
+    if (self->status == CoroutineStatus_IO) { return; }
 
     // Note: The coroutine's refcount gets incremented by one while the 
     // coroutine is running, so that the coroutine won't get freed while its
@@ -139,6 +143,9 @@ void Coroutine__yield() {
     } else if (Coroutine__current) {
         Coroutine__current->status = CoroutineStatus_SUSPENDED;
         Coroutine__swap(Coroutine__current, &Coroutine__main);
+    } else {
+        fprintf(stderr, "yield() on main coroutine");
+        abort();
     }
 }
 
@@ -161,11 +168,22 @@ void Coroutine__iowait() {
     // Causes this coroutine to wait until I/O is available.  Note: calling
     // this function if no I/O is pending will cause the Coroutine to block
     // indefinitely. 
-    Coroutine__current->status = CoroutineStatus_SUSPENDED;
     Object__refcount_inc((Object)Coroutine__current);
     Io_manager()->waiting++;
-    //Coroutine__swap(Coroutine__current, &Coroutine__main);
-    Coroutine__yield();
+
+    if (Coroutine__current && Coroutine__current->caller) {
+        Coroutine__current->status = CoroutineStatus_IO;
+        Coroutine__swap(Coroutine__current, Coroutine__current->caller);
+    } else if (Coroutine__current) {
+        Coroutine__current->status = CoroutineStatus_IO;
+        Coroutine__swap(Coroutine__current, &Coroutine__main);
+    } else {
+        fprintf(stderr, "iowait() on main coroutine");
+        abort();
+    }
+    // Same as the impl of yield, except it sets the status to 'IO' rather than
+    // 'SUSPENDED'
+
     Io_manager()->waiting--;
     Object__refcount_dec((Object)Coroutine__current); 
 }
@@ -175,6 +193,10 @@ void Coroutine__ioresume(Coroutine self) {
     if (!self) { return; }
     if (self->status == CoroutineStatus_DEAD) { return; }
     if (self->status == CoroutineStatus_RUNNING) { return; }
+    if (self->status != CoroutineStatus_IO) {
+        fprintf(stderr, "Illegal coroutine state: %lld", self->status);
+        abort();
+    }
 
     // Note: The coroutine's refcount gets incremented by one while the 
     // coroutine is running, so that the coroutine won't get freed while its

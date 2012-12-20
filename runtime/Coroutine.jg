@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-CoroutineStatus = NEW | RUNNING | SUSPENDED | DEAD
+CoroutineStatus = NEW | RUNNING | SUSPENDED | DEAD | IO
 
 Coroutine < Object {
     # Implements a coroutine, or lightweight cooperative thread.  The coroutine
