@@ -83,7 +83,7 @@ Manager < Object {
             }
             # All coroutines are sleeping.
             if waiting > 0 {
-                poll()
+                self.poll()
             }
         }
     }

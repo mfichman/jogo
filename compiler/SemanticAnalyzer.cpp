@@ -409,6 +409,7 @@ void SemanticAnalyzer::operator()(Member* expression) {
     Call::Ptr call = dynamic_cast<Call*>(expression->parent());
 
     // Recursively check the LHS of the '.' operator
+    type_ = 0;
     expr(this);
 
     Type::Ptr type = expr->type();
@@ -697,6 +698,7 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
     // This case handles a function that is called without the 'self'
     // receiver, but is a function of the enclosing class.  In this case,
     // the 'self' receiver is inserted automatically.
+/*
     if (class_ && scope->is_empty()) {
         call->function(class_->function(id));
         if (call->function()) {
@@ -709,6 +711,7 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
             return;
         }
     } 
+*/
 
     // Parent is a function call; we need to try to evaluate this identifier as
     // a function.  In the first case, the identifier actually resolves

@@ -38,36 +38,36 @@ Vec3 < Value {
 
     dist(vec Vec3) Float {
         # Returns the distance from this vector to another vector.
-        ret dist2(vec).sqrt
+        ret self.dist2(vec).sqrt
     }
 
     dist2(vec Vec3) Float {
         # Returns the square of the distance from this vector to another
         # vector.
-        dx = x - vec.x
-        dy = y - vec.y
-        dz = z - vec.z
+        dx = self.x - vec.x
+        dy = self.y - vec.y
+        dz = self.z - vec.z
         ret dx*dx + dy*dy + dz*dz
     }
 
     cross(vec Vec3) Vec3 {
         # Returns the cross product of this vector with another vector.  The
         # value returned is self x other.  
-        xs = y*vec.z - z*vec.y
-        ys = z*vec.x - x*vec.z
-        zs = x*vec.y - y*vec.x
+        xs = self.y*vec.z - self.z*vec.y
+        ys = self.z*vec.x - self.x*vec.z
+        zs = self.x*vec.y - self.y*vec.x
         ret Vec3(xs, ys, zs)
     }
  
     dot(vec Vec3) Float {
         # Returns the dot product of this vector with another vector.
-        ret x*vec.x + y*vec.y + z*vec.z
+        ret self.x*vec.x + self.y*vec.y + self.z*vec.z
     }   
     
     scale(scale Float) Vec3 {
         # Returns a scaled version of this vector; mulitplies each component of
         # this vector with the given scale factor.
-        ret Vec3(x*scale, y*scale, z*scale)
+        ret Vec3(self.x*scale, self.y*scale, self.z*scale)
     }
 
     len?() Float {
@@ -78,23 +78,23 @@ Vec3 < Value {
     
     len2?() Float {
         # Returns the square of the length of this vector.
-        ret x*x + y*y + z*z
+        ret self.x*x + self.y*self.y + self.z*self.z
     }
 
     str?() String {
         # Returns a string represenation of this vector.
-        ret "(#{x}, #{y}, #{z})"
+        ret "(#{self.x}, #{self.y}, #{self.z})"
     }
 
     @add(vec Vec3) Vec3 {
         # Returns a new vector that is the sum of this vector and another
         # vector.
-        ret Vec3(x+vec.x, y+vec.y, z+vec.z)
+        ret Vec3(self.x+vec.x, self.y+vec.y, self.z+vec.z)
     }
 
     @sub(vec Vec3) Vec3 {
         # Subtracts a vector from this vector and returns the result as a new
         # vector. 
-        ret Vec3(x-vec.x, y-vec.y, z-vec.z)
+        ret Vec3(self.x-vec.x, self.y-vec.y, self.z-vec.z)
     }
 }

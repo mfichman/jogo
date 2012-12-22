@@ -38,12 +38,12 @@ Match < Object {
 
     start?() Int {
         # First character of the matched string. 
-        ret group(0).start
+        ret self.group(0).start
     }
 
     end?() Int {
         # Last character of the matched string.
-        ret group(0).end
+        ret self.group(0).end
     }
 
     group(index Int) native Span {
@@ -53,7 +53,7 @@ Match < Object {
 
     @index(index Int) Span {
         # An alias for Match.group.
-        ret group(index)
+        ret self.group(index)
     }
 }
 

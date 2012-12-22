@@ -57,7 +57,7 @@ Coroutine < Object {
         # new, then the execution begins starting at 'function'.  If the
         # coroutine is dead, then this function has no effect.  Otherwise, the
         # execution resumes from the last yield.
-        resume()
+        self.resume()
     }
 
     resume() native {

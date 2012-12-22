@@ -34,6 +34,6 @@ Object < Object {
     @equal(other Object) Bool {
         # Returns true if 'other' is logically equal to 'self'.  This function
         # calls 'same()' by default.
-        ret same(other)
+        ret self.same(other)
     }   
 }
