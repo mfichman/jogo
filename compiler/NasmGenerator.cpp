@@ -20,19 +20,19 @@
  * IN THE SOFTWARE.
  */  
 
-#include "Intel64CodeGenerator.hpp"
+#include "NasmGenerator.hpp"
 #include <sstream>
 
 static const int INTEL64_MAX_IMM = 4096;
 static const int INTEL64_MIN_STACK = 4096;
 
-Intel64CodeGenerator::Intel64CodeGenerator(Environment* env) :
+NasmGenerator::NasmGenerator(Environment* env) :
     env_(env),
     machine_(Machine::intel64()) {
 
 }
 
-void Intel64CodeGenerator::operator()(File* file) {
+void NasmGenerator::operator()(File* file) {
     // Output a translation unit, which can include constants, classes,
     // literals, forward declarations, and function definitions.
     if (env_->errors()) { return; }
@@ -104,7 +104,7 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_->flush();
 }
 
-void Intel64CodeGenerator::operator()(Class* feature) {
+void NasmGenerator::operator()(Class* feature) {
     // Emit the functions and vtable for the class specified by 'feature'
     class_ = feature;
 
@@ -120,13 +120,13 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     class_ = 0;
 }
 
-void Intel64CodeGenerator::operator()(Module* feature) {
+void NasmGenerator::operator()(Module* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
 }
 
-void Intel64CodeGenerator::operator()(Function* feature) {
+void NasmGenerator::operator()(Function* feature) {
     // Emit a function, or an extern declaration if the function is native or
     // belongs to a different output file.
     String::Ptr id = feature->name();
@@ -163,7 +163,7 @@ void Intel64CodeGenerator::operator()(Function* feature) {
 
 }
 
-void Intel64CodeGenerator::operator()(BasicBlock* block) {
+void NasmGenerator::operator()(BasicBlock* block) {
     // Translate a basic block in three-address code into x86.  For most
     // operations, this requires a "mov, op" sequence.  
     
@@ -221,7 +221,7 @@ void Intel64CodeGenerator::operator()(BasicBlock* block) {
     }
 }
 
-void Intel64CodeGenerator::dispatch_table(Class* feature) {
+void NasmGenerator::dispatch_table(Class* feature) {
     // Output the class dispatch table for calling methods with dynamic
     // dispatch.  The format is as follows: 
     //
@@ -265,7 +265,7 @@ void Intel64CodeGenerator::dispatch_table(Class* feature) {
     align();
 }
 
-void Intel64CodeGenerator::arith(Instruction const& inst) {
+void NasmGenerator::arith(Instruction const& inst) {
     // Emits an arithmetic instruction.  Depending on the opcode and the
     // operands, the expression may have to be manipulated because all x86
     // instructions take only 2 arithmetic operands.
@@ -315,7 +315,7 @@ void Intel64CodeGenerator::arith(Instruction const& inst) {
     }
 }
 
-void Intel64CodeGenerator::instr(const char* instr, Operand r1, Operand r2) {
+void NasmGenerator::instr(const char* instr, Operand r1, Operand r2) {
     // Emits an instruction with two operands.
     out_ << "    " << instr << " ";
     operand(r1);
@@ -324,26 +324,26 @@ void Intel64CodeGenerator::instr(const char* instr, Operand r1, Operand r2) {
     out_ << "\n";
 }
 
-void Intel64CodeGenerator::instr(const char* instr, Operand r1) {
+void NasmGenerator::instr(const char* instr, Operand r1) {
     // Emits a single-operand instruction (either literal or register)
     out_ << "    " << instr << " ";
     operand(r1);
     out_ << "\n";
 }
 
-void Intel64CodeGenerator::instr(const char* instr, Operand r1, const char* imm) {
+void NasmGenerator::instr(const char* instr, Operand r1, const char* imm) {
     // Instruction that operates on a register r1 and an immediate value. 
     out_ << "    " << instr << " ";
     reg(r1);
     out_ << ", " << imm << "\n";
 }
 
-void Intel64CodeGenerator::instr(const char* instr) {
+void NasmGenerator::instr(const char* instr) {
     // Emits a no-operand instruction.
     out_ << "    " << instr << "\n";
 }
 
-void Intel64CodeGenerator::operand(Operand op) {
+void NasmGenerator::operand(Operand op) {
     // Emits any operand.  This function will automatically determine which
     // type of     operand to output.
     if (op.label()) {
@@ -359,7 +359,7 @@ void Intel64CodeGenerator::operand(Operand op) {
     } 
 }
 
-void Intel64CodeGenerator::addr(Operand op) {
+void NasmGenerator::addr(Operand op) {
     // Emits the the address operand for a stack location as a an offset from
     // the base pointer (rbp).  No register need be specified in the operand,
     // as the register is understood to be rbp.  Likewise, the label and
@@ -389,7 +389,7 @@ void Intel64CodeGenerator::addr(Operand op) {
     }
 }
 
-void Intel64CodeGenerator::reg(Operand op) {
+void NasmGenerator::reg(Operand op) {
     // Outputs a register, possibly with an address offset.  An operand passed
     // to this function should NOT have the literal or label fields set.
     assert(machine_->reg(op.reg()));
@@ -399,7 +399,7 @@ void Intel64CodeGenerator::reg(Operand op) {
     out_ << machine_->reg(op.reg());
 }
 
-void Intel64CodeGenerator::literal(Operand literal) {
+void NasmGenerator::literal(Operand literal) {
     // Outputs the correct representation of a literal.  If the literal is a
     // number, and the length is less than 32 bits, then output the literal
     // directly in the instruction.  Otherwise, load it from the correct memory
@@ -431,7 +431,7 @@ void Intel64CodeGenerator::literal(Operand literal) {
 }
 
 
-void Intel64CodeGenerator::label(Operand op) {
+void NasmGenerator::label(Operand op) {
     // Emits a label, either as an operand or as an actual label at the
     // beginning of a code block.  No register/literal/addr fields should be
     // set on the operand.
@@ -449,7 +449,7 @@ void Intel64CodeGenerator::label(Operand op) {
     }
 }
 
-void Intel64CodeGenerator::label(std::string const& label) {
+void NasmGenerator::label(std::string const& label) {
     // Emits a label, either as an operand or as an actual label at the
     // beginning of a code block.
     std::string actual_label;
@@ -472,11 +472,11 @@ void Intel64CodeGenerator::label(std::string const& label) {
     }
 }
 
-void Intel64CodeGenerator::align() {
+void NasmGenerator::align() {
     out_ << "    align 8\n";
 }
 
-void Intel64CodeGenerator::store_hack(Operand a1, Operand a2) {
+void NasmGenerator::store_hack(Operand a1, Operand a2) {
     char const* mov = (a2.is_float() ? "movsd" : "mov qword");
     if (a1.label() && a1.is_indirect()) {
         out_ << "    " << mov << " rax, ";
@@ -490,7 +490,7 @@ void Intel64CodeGenerator::store_hack(Operand a1, Operand a2) {
     }
 }
 
-void Intel64CodeGenerator::load_hack(Operand res, Operand a1) {
+void NasmGenerator::load_hack(Operand res, Operand a1) {
     // FixMe: All these shenanigans are needed b/c NASM doesn't properly load
     // from a memory location to a 64-bit register.  For example, the following
     // works sometimes with "default rel" mode, but not always:
@@ -547,7 +547,7 @@ void Intel64CodeGenerator::load_hack(Operand res, Operand a1) {
     }
 }
 
-void Intel64CodeGenerator::stack_check(Function* feature) {
+void NasmGenerator::stack_check(Function* feature) {
     // Emits a stack check, and code to dynamically grow the stack if it is
     // too small.
     out_ << "    mov rax, [rel "; label("Coroutine__stack"); out_ << "]\n";
@@ -579,7 +579,7 @@ void Intel64CodeGenerator::stack_check(Function* feature) {
     label(".l0:"); out_ << "\n";
 }
 
-void Intel64CodeGenerator::string(String* string) {
+void NasmGenerator::string(String* string) {
     // Output a string literal, and correctly process escape sequences.
 
     std::string in = string->string();

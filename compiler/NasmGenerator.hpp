@@ -33,10 +33,10 @@
 #include <set>
 
 /* Generates code for Intel 64 machines */
-class Intel64CodeGenerator : public TreeNode::Functor {
+class NasmGenerator : public TreeNode::Functor {
 public:
-    Intel64CodeGenerator(Environment* env);
-    typedef Pointer<Intel64CodeGenerator> Ptr;
+    NasmGenerator(Environment* env);
+    typedef Pointer<NasmGenerator> Ptr;
 
     Stream* out() const { return out_; }
     void out(Stream* out) { out_ = out; }

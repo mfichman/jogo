@@ -47,7 +47,7 @@ private:
     void archive(const std::string& in, const std::string& out);
     void irgen(File* file); 
     void cgen(File* file);
-    void intel64gen(File* file);
+    void nasmgen(File* file);
     void cc(const std::string& in, const std::string& out);
     void nasm(const std::string& in, const std::string& out);
     void execute(const std::string& exe);

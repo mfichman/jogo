@@ -24,7 +24,7 @@
 #include "CodeExpander.hpp"
 #include "BasicBlockGenerator.hpp"
 #include "RegisterAllocator.hpp"
-#include "Intel64CodeGenerator.hpp"
+#include "NasmGenerator.hpp"
 #include "CCodeGenerator.hpp"
 #include "BasicBlockPrinter.hpp"
 #include "DeadCodeEliminator.hpp"
@@ -209,7 +209,7 @@ void Builder::operator()(File* file) {
         if (env_->generator() == "Intel64") {
             irgen(file);
             if (env_->dump_ir()) { return; }
-            intel64gen(file);
+            nasmgen(file);
             if (!env_->assemble()) { return; }
             nasm(file->asm_file(), file->jgo_file());
         } else if (env_->generator() == "C") {
@@ -383,21 +383,21 @@ void Builder::cgen(File* file) {
     c->operator()(file);
 }
 
-void Builder::intel64gen(File* file) {
+void Builder::nasmgen(File* file) {
     // Generates NASM Intel 64 code for all functions/classes in 'file.'
     // Outputs to a temporary file if this is an intermediate step; otherwise,
     // outputs to a named file in the build directory.
-    Intel64CodeGenerator::Ptr intel64(new Intel64CodeGenerator(env_));
-    intel64->out(new Stream(file->asm_file()));  
-    if (intel64->out()->error()) {
-        std::string msg = intel64->out()->message();
+    NasmGenerator::Ptr nasmgen(new NasmGenerator(env_));
+    nasmgen->out(new Stream(file->asm_file()));  
+    if (nasmgen->out()->error()) {
+        std::string msg = nasmgen->out()->message();
         Stream::sterr() << file->asm_file() << msg << "\n";
         Stream::sterr()->flush();
         Stream::stout()->flush();
         errors_++;
         return;
     }
-    intel64->operator()(file);
+    nasmgen->operator()(file);
 }
 
 void Builder::cc(const std::string& in, const std::string& out) {
