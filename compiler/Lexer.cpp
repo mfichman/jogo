@@ -245,6 +245,16 @@ void Lexer::number_or_dot() {
     if (char_ == '.') {
         // Read in the decimal point and everything after it.
         read();
+        if (islower(char_) && !value().empty()) {
+            // Put the '.' back, b/c we have a situation like 7.sin that must
+            // be resolved. 
+            input_->putback(char_); 
+            char_ = '.';
+            token_[front_].value(value().substr(0, value().length()-1));
+            ignore_newline_ = false;
+            token(Token::INTEGER);
+            return;
+        }
         while (isdigit(char_)) {
             read();
         }

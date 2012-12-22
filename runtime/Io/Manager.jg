@@ -69,20 +69,22 @@ Manager < Object {
         # Run the event loop.  Select a coroutine from the 'scheduled' queue,
         # and begin executing it.  If there are no more tasks, and no
         # outstanding I/O requests, then return.
-        while waiting > 0 {
-            # Dequeue scheduled tasks until the entire queue is empty.  At that
-            # point, all coroutines have either exited, or are waiting on some
-            # external event (file I/O, timer, etc.)
+
+        while scheduled.count > 0 or waiting > 0 {
             while scheduled.count > 0 {
+                # Dequeue scheduled tasks until the entire queue is empty.  At
+                # that point, all coroutines have either exited, or are waiting
+                # on some external event (file I/O, timer, etc.)
                 next = scheduled.deq()
                 next.resume()
                 if next.status == CoroutineStatus::SUSPENDED {
                     scheduled.enq(next)
                 }
             }
-        
-            # All coroutines are sleeping; poll.
-            poll()
+            # All coroutines are sleeping.
+            if waiting > 0 {
+                poll()
+            }
         }
     }
 

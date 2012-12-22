@@ -137,14 +137,17 @@ void Coroutine__exit() {
 void Coroutine__yield() {
     // Yields the the current coroutine to the coroutine's caller.  This is a
     // no-op if the coroutine is the main coroutine.
-    if (Coroutine__current && Coroutine__current->caller) {
+    if (Coroutine__current == &Coroutine__main) {
+        fprintf(stderr, "yield() called on main coroutine");
+        abort();
+    } else if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_SUSPENDED;
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
     } else if (Coroutine__current) {
         Coroutine__current->status = CoroutineStatus_SUSPENDED;
         Coroutine__swap(Coroutine__current, &Coroutine__main);
     } else {
-        fprintf(stderr, "yield() on main coroutine");
+        fprintf(stderr, "no coroutine");
         abort();
     }
 }
@@ -205,5 +208,5 @@ void Coroutine__ioresume(Coroutine self) {
     Object__refcount_inc((Object)self);
     Coroutine__swap(Coroutine__current, self);
     Object__refcount_dec((Object)self);
-}   
+}
 

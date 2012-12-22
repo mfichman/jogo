@@ -46,6 +46,17 @@ void MarkdownGenerator::operator()(Module* feature) {
 void MarkdownGenerator::operator()(Class* feature) {
     out_ << "## [[" << feature->qualified_name()->string() << "]]\n";
 
+    // Print comment up to the first '.'
+    if (feature->comment()) {
+        std::string const& comment = feature->comment()->string();
+        for (int i = 0; i < comment.length(); ++i) {
+            if (comment[i] == '.') { break; }
+            out_ << comment[i];
+        }
+        out_ << '\n';
+    }
+
+    // Start a new file for the class itself
     std::string qn = feature->qualified_name()->string();
     out_ = new Stream(env_->output()+FILE_SEPARATOR+qn+".md"); 
     if (feature->comment()) {
@@ -62,7 +73,13 @@ void MarkdownGenerator::operator()(Class* feature) {
 void MarkdownGenerator::operator()(Function* feature) {
     if (!out_) { return; }
 
-    out_ << "## " << feature->name() << "(";
+    out_ << "## [" << feature->name() << "](";
+    out_ << "https://github.com/mfichman/jogo/tree/master/";
+    out_ << feature->file()->path()->string() << "#";
+    out_ << "LC" << feature->location().first_line << ")";
+    out_ << "(";
+    // GitHub auto link.  GitHub puts in IDs for each line of code at LC#
+
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
         if (f->is_self()) {
             continue;
@@ -79,7 +96,7 @@ void MarkdownGenerator::operator()(Function* feature) {
     } 
     out_ << "\n";
     if(feature->block() && feature->block()->comment()) {
-        out_ << feature->block()->comment() << '\n';
+        out_ << feature->block()->comment() << "\n";
     } else {
         out_ << "_No comment_\n";
     }

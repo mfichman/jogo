@@ -142,7 +142,7 @@ Int Hash_hash(Hash self, Object key) {
     typedef Int (*HashFunc)(Object);  
 
     HashFunc func = Object__dispatch(key, &hash_str);
-    return func(key); 
+    return abs(func(key)); 
 }
 
 Bool Hash_equal(Hash self, Object first, Object second) {

@@ -708,12 +708,26 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
             call->receiver(self);
             return;
         }
-    }
+    } 
 
     // Parent is a function call; we need to try to evaluate this identifier as
     // a function.  In the first case, the identifier actually resolves
     // directly to a function, so use it.
     call->function(expression->file()->function(scope, id));
+
+    // Special case: resolve using the type of the first argument.  This is a
+    // rule unique to Jogo (as far as I know), and allows both of the following
+    // forms: 7.cos() and cos(7).  If there is a function named 'cos' in the
+    // same scope, that function is used instead of the member function.
+    if (!call->function() && call->arguments()) {
+        Expression::Ptr arg = call->arguments();
+        arg(this);
+
+        Class::Ptr clazz = arg->type()->clazz();
+        if (clazz) {
+            call->function(clazz->function(id));
+        } 
+    }
 
     // If all attempts to resolve the function fail, then it is missing.
     if (!call->function()) {
