@@ -24,7 +24,7 @@
 
 #include "Jogo.hpp"
 #include "Environment.hpp"
-#include "BasicBlock.hpp"
+#include "IrBlock.hpp"
 #include "Object.hpp"
 #include "Machine.hpp"
 #include "Stream.hpp"
@@ -46,7 +46,7 @@ private:
     void operator()(Class* feature);
     void operator()(Module* feature);
     void operator()(Function* function);
-    void operator()(BasicBlock* block);
+    void operator()(IrBlock* block);
     void string(String* string);
     void instr(const char* instr, Operand r1);
     void instr(const char* instr, Operand r1, Operand r2);

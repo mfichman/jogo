@@ -20,7 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#include "BasicBlock.hpp"
+#include "IrBlock.hpp"
 #include "Machine.hpp"
 
 Stream::Ptr operator<<(Stream::Ptr out, const Address& addr) {
@@ -85,7 +85,7 @@ bool Operand::operator!=(const Operand& other) const {
     return !operator==(other);
 }
 
-bool BasicBlock::is_terminated() const {
+bool IrBlock::is_terminated() const {
     if (instrs_.empty()) {
         return false;
     }
@@ -96,7 +96,7 @@ bool BasicBlock::is_terminated() const {
     return false;
 }
 
-bool BasicBlock::is_ret() const {
+bool IrBlock::is_ret() const {
     if (instrs_.empty()) {
         return false;
     }
@@ -104,12 +104,12 @@ bool BasicBlock::is_ret() const {
 }
 
 
-Instruction const& BasicBlock::instr(const Instruction& inst) { 
+Instruction const& IrBlock::instr(const Instruction& inst) { 
     instrs_.push_back(inst); 
     return instrs_.back();
 }
 
-Instruction const& BasicBlock::instr(Opcode op, Operand res, Operand one, Operand two) {
+Instruction const& IrBlock::instr(Opcode op, Operand res, Operand one, Operand two) {
     instrs_.push_back(Instruction(op, res, one, two));
     return instrs_.back();
 }

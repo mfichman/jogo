@@ -20,13 +20,13 @@
  * IN THE SOFTWARE.
  */  
 
-#include "BasicBlockGenerator.hpp"
+#include "IrGenerator.hpp"
 #include "DispatchTableGenerator.hpp"
 #include <cassert>
 #include <algorithm>
 #include <stdint.h>
 
-BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
+IrGenerator::IrGenerator(Environment* env, Machine* mach) :
     env_(env),
     machine_(mach),
     local_slots_(0),
@@ -37,7 +37,7 @@ BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
     label_(0) {
 }
 
-void BasicBlockGenerator::operator()(File* file) {
+void IrGenerator::operator()(File* file) {
     if (env_->errors()) {
         return;
     }
@@ -47,7 +47,7 @@ void BasicBlockGenerator::operator()(File* file) {
     }
 }
 
-void BasicBlockGenerator::operator()(Class* feature) {
+void IrGenerator::operator()(Class* feature) {
     // Output intermediate-level code for the class given by 'feature'.  
     // This function also sets up the vtable for the class.
     class_ = feature;
@@ -61,43 +61,43 @@ void BasicBlockGenerator::operator()(Class* feature) {
     class_ = 0;
 }
 
-void BasicBlockGenerator::operator()(Module* feature) {
+void IrGenerator::operator()(Module* feature) {
     module_ = feature;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
 }
 
-void BasicBlockGenerator::operator()(Formal* formal) {
+void IrGenerator::operator()(Formal* formal) {
     
 }
 
-void BasicBlockGenerator::operator()(StringLiteral* expr) {
+void IrGenerator::operator()(StringLiteral* expr) {
     // Load a pointer to the string from the string table.  Strings must
     // always be loaded first, since they are specified by address.
     return_ = load(expr);
 }
 
-void BasicBlockGenerator::operator()(NilLiteral* expr) {
+void IrGenerator::operator()(NilLiteral* expr) {
     return_ = load(expr);
 }
 
-void BasicBlockGenerator::operator()(IntegerLiteral* expr) {
+void IrGenerator::operator()(IntegerLiteral* expr) {
     // Load the literal value with load-immediate
     return_ = load(expr);
 }
 
-void BasicBlockGenerator::operator()(FloatLiteral* expr) {
+void IrGenerator::operator()(FloatLiteral* expr) {
     // Load the literal value with load-immediate
     return_ = load(expr);
 }
 
-void BasicBlockGenerator::operator()(BooleanLiteral* expr) {
+void IrGenerator::operator()(BooleanLiteral* expr) {
     // Load the literal value with load-immediate
     return_ = load(expr);
 }
 
-void BasicBlockGenerator::operator()(HashLiteral* expr) {
+void IrGenerator::operator()(HashLiteral* expr) {
     // Generate code for a hash literal
     Location loc = expr->location();
     Class::Ptr clazz = expr->type()->clazz();
@@ -118,7 +118,7 @@ void BasicBlockGenerator::operator()(HashLiteral* expr) {
     return_ = array; 
 }
 
-void BasicBlockGenerator::operator()(ArrayLiteral* expr) {
+void IrGenerator::operator()(ArrayLiteral* expr) {
     // Generate code for an array literal
     Location loc = expr->location();
     int elems = 0;
@@ -141,7 +141,7 @@ void BasicBlockGenerator::operator()(ArrayLiteral* expr) {
     return_ = array;
 }
 
-void BasicBlockGenerator::operator()(Box* expr) {
+void IrGenerator::operator()(Box* expr) {
     // Boxes a value type into an object, by allocating memory on the stack
     // for the value type.  This function allocates and initializes a refcount
     // and vtable pointer for the value type.
@@ -185,7 +185,7 @@ void BasicBlockGenerator::operator()(Box* expr) {
     // FixMe: For value types, can't do a simple move
 }
 
-void BasicBlockGenerator::operator()(Cast* expr) {
+void IrGenerator::operator()(Cast* expr) {
     // Check to make sure that the vtable of 'arg' and 'type' match.  If they
     // don't then return the nil pointer.
     Operand arg = emit(expr->child());
@@ -198,9 +198,9 @@ void BasicBlockGenerator::operator()(Cast* expr) {
     Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
     return_ = RegisterId(temp_++, 0);
 
-    BasicBlock::Ptr mismatch_block = basic_block();
-    BasicBlock::Ptr ok_block = basic_block();
-    BasicBlock::Ptr done_block = basic_block();
+    IrBlock::Ptr mismatch_block = basic_block();
+    IrBlock::Ptr ok_block = basic_block();
+    IrBlock::Ptr done_block = basic_block();
 
     // Emit vtable pointer comparison
     be(vtable1, vtable2, ok_block, mismatch_block);
@@ -228,7 +228,7 @@ void BasicBlockGenerator::operator()(Cast* expr) {
     emit(done_block);
 }
 
-void BasicBlockGenerator::operator()(Is* expr) {
+void IrGenerator::operator()(Is* expr) {
     // Emit code to check whether the expression type is equal to the cast
     // type, and then return true/false depending
     Operand arg = emit(expr->child());
@@ -238,9 +238,9 @@ void BasicBlockGenerator::operator()(Is* expr) {
     Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
     return_ = RegisterId(temp_++, 0);
 
-    BasicBlock::Ptr mismatch_block = basic_block();
-    BasicBlock::Ptr ok_block = basic_block();
-    BasicBlock::Ptr done_block = basic_block();
+    IrBlock::Ptr mismatch_block = basic_block();
+    IrBlock::Ptr ok_block = basic_block();
+    IrBlock::Ptr done_block = basic_block();
 
     // Emit vtable pointer comparison
     be(vtable1, vtable2, ok_block, mismatch_block);
@@ -260,12 +260,12 @@ void BasicBlockGenerator::operator()(Is* expr) {
     emit(done_block);
 }
 
-void BasicBlockGenerator::operator()(Binary* expr) {
+void IrGenerator::operator()(Binary* expr) {
     // Emit the left and right exprs, then perform the operation on
     // the two operands, and return the result.
 
     if (env_->name("and") == expr->operation()) {
-        BasicBlock::Ptr left_true = basic_block();
+        IrBlock::Ptr left_true = basic_block();
         
         // Don't use the 'real' true branch; on true we want to emit the    
         // test for the second side of the and
@@ -284,7 +284,7 @@ void BasicBlockGenerator::operator()(Binary* expr) {
         return_ = emit(expr->right(), true_, false_, invert_branch_);
         
     } else if (env_->name("or") == expr->operation()) {
-        BasicBlock::Ptr left_false = basic_block();
+        IrBlock::Ptr left_false = basic_block();
         
         // Don't use the 'real' false branch; on false we want to emit
         // the test for the second side of the or
@@ -307,7 +307,7 @@ void BasicBlockGenerator::operator()(Binary* expr) {
     }
 }
 
-void BasicBlockGenerator::operator()(Unary* expr) {
+void IrGenerator::operator()(Unary* expr) {
     // Emit the code for the expression, then perform the operation on the
     // operand and return the result.
 
@@ -321,14 +321,14 @@ void BasicBlockGenerator::operator()(Unary* expr) {
     }
 }
 
-void BasicBlockGenerator::operator()(Member* expr) {
+void IrGenerator::operator()(Member* expr) {
     // A stand-alone member operator, which means that we indirectly call the
     // getter.
     Function::Ptr func = expr->function();
     call(func, expr->expression(), expr->expression());
 }
 
-void BasicBlockGenerator::operator()(Call* expr) {
+void IrGenerator::operator()(Call* expr) {
     // The call expression may actually be an operator, if the type of the
     // expression is primitive.
     if (expr->arguments()) {
@@ -342,13 +342,13 @@ void BasicBlockGenerator::operator()(Call* expr) {
     call(expr->function(), expr->arguments(), expr->receiver());
 }
 
-void BasicBlockGenerator::operator()(Closure* expr) {
+void IrGenerator::operator()(Closure* expr) {
     // Just emit the construct expression for the closure.
     Construct::Ptr construct = expr->construct();
     emit(construct);
 }
 
-void BasicBlockGenerator::operator()(Construct* expr) {
+void IrGenerator::operator()(Construct* expr) {
     // Look up the function by name in the current context.
     Class::Ptr clazz = expr->type()->clazz();
     Function::Ptr func = clazz->constructor();
@@ -387,26 +387,26 @@ void BasicBlockGenerator::operator()(Construct* expr) {
     } 
 }
 
-void BasicBlockGenerator::operator()(Constant* expr) {
+void IrGenerator::operator()(Constant* expr) {
     // Nothing here, because constants get output in the scope of the main
     // block.
 }
 
-void BasicBlockGenerator::operator()(ConstantIdentifier* expr) {
+void IrGenerator::operator()(ConstantIdentifier* expr) {
     return_ = load(Operand(expr->constant()->label(), Address(0)));
 }
 
-void BasicBlockGenerator::operator()(Identifier* expr) {
+void IrGenerator::operator()(Identifier* expr) {
     // Simply look up the value of the variable as stored previously.
     return_ = id_operand(expr->identifier());
 }
 
-void BasicBlockGenerator::operator()(Empty* expr) {
+void IrGenerator::operator()(Empty* expr) {
     // Do nothing
     return_ = load(env_->integer("0"));
 }
 
-void BasicBlockGenerator::operator()(Block* statement) {
+void IrGenerator::operator()(Block* statement) {
     enter_scope();
     for (Statement::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
@@ -414,13 +414,13 @@ void BasicBlockGenerator::operator()(Block* statement) {
     exit_scope();
 }
 
-void BasicBlockGenerator::operator()(Simple* statement) {
+void IrGenerator::operator()(Simple* statement) {
     Expression::Ptr expr = statement->expression();
     expr(this);
     free_temps();
 }
 
-void BasicBlockGenerator::operator()(Let* statement) {
+void IrGenerator::operator()(Let* statement) {
     // Enter a new scope, then emit code for initializing all the let
     // variables, and initialize code for the body.
     enter_scope();
@@ -432,12 +432,12 @@ void BasicBlockGenerator::operator()(Let* statement) {
     exit_scope();
 }
 
-void BasicBlockGenerator::operator()(While* statement) {
+void IrGenerator::operator()(While* statement) {
     // Emit the guard expression in a new basic block
-    BasicBlock::Ptr body_block = basic_block();
-    BasicBlock::Ptr done_block = basic_block();
+    IrBlock::Ptr body_block = basic_block();
+    IrBlock::Ptr done_block = basic_block();
 
-    BasicBlock::Ptr guard_block;
+    IrBlock::Ptr guard_block;
     if (block_->instrs()) {
         guard_block = basic_block();
         emit(guard_block);
@@ -466,11 +466,11 @@ void BasicBlockGenerator::operator()(While* statement) {
     emit(done_block);    
 }
 
-void BasicBlockGenerator::operator()(Conditional* statement) {
+void IrGenerator::operator()(Conditional* statement) {
     // Emit a conditional if/then expression with boolean guard expr.
-    BasicBlock::Ptr then_block = basic_block();
-    BasicBlock::Ptr else_block;
-    BasicBlock::Ptr done_block = basic_block();
+    IrBlock::Ptr then_block = basic_block();
+    IrBlock::Ptr else_block;
+    IrBlock::Ptr done_block = basic_block();
     if (statement->false_branch()) {
         else_block = basic_block();
     } else {
@@ -508,7 +508,7 @@ void BasicBlockGenerator::operator()(Conditional* statement) {
     emit(done_block);
 }
 
-void BasicBlockGenerator::operator()(Assignment* expr) {
+void IrGenerator::operator()(Assignment* expr) {
     // FixMe: This breaks SSA form, because variables are not renamed.  With
     // this code the way it is, the generator only generates SSA for temporary
     // expressions.  This limitation is here as a punt on introducing
@@ -560,7 +560,7 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
     assign_addr_ = Operand();
 }
 
-void BasicBlockGenerator::operator()(Return* statement) {
+void IrGenerator::operator()(Return* statement) {
     Expression::Ptr expr = statement->expression();
     Type::Ptr type = expr->type();
     if (!dynamic_cast<Empty*>(expr.pointer())) {
@@ -598,11 +598,11 @@ void BasicBlockGenerator::operator()(Return* statement) {
     free_temps();
 }
 
-void BasicBlockGenerator::operator()(Match* statement) {
+void IrGenerator::operator()(Match* statement) {
     // Emit one conditional for each branch in the match statement.
     Operand guard = emit(statement->guard());
-    BasicBlock::Ptr done_block = basic_block();  
-    BasicBlock::Ptr next_block = basic_block();
+    IrBlock::Ptr done_block = basic_block();  
+    IrBlock::Ptr next_block = basic_block();
     free_temps();
 
     for (Statement::Ptr t = statement->cases(); t; t = t->next()) {
@@ -610,7 +610,7 @@ void BasicBlockGenerator::operator()(Match* statement) {
         enter_scope();
 
         Case::Ptr branch = static_cast<Case*>(t.pointer());
-        BasicBlock::Ptr true_block = basic_block();
+        IrBlock::Ptr true_block = basic_block();
         if (t->next()) {
             next_block = basic_block();
         } else {
@@ -638,22 +638,22 @@ void BasicBlockGenerator::operator()(Match* statement) {
     free_temps();
 }
 
-void BasicBlockGenerator::operator()(Case* statement) {
+void IrGenerator::operator()(Case* statement) {
     // Pass, handled by match
 }
 
-void BasicBlockGenerator::operator()(Fork* statement) {
+void IrGenerator::operator()(Fork* statement) {
     assert(!"Not implemented");
     free_temps();
 }
 
-void BasicBlockGenerator::operator()(Yield* statament) {
+void IrGenerator::operator()(Yield* statament) {
     FuncMarshal fm(this);
     fm.call(env_->name("Coroutine__yield"));
 	exception_catch();
 }
 
-void BasicBlockGenerator::operator()(Function* feature) {
+void IrGenerator::operator()(Function* feature) {
     // If the function is just a prototype, don't emit any code.
     if (!feature->block() || feature->is_native()) { return; }
 
@@ -704,19 +704,19 @@ void BasicBlockGenerator::operator()(Function* feature) {
     assert(arg_slots_ == 0 && "Invalid stack alloc");
 }
 
-void BasicBlockGenerator::operator()(Attribute* feature) {
+void IrGenerator::operator()(Attribute* feature) {
     // Pass, handled by constructor
 }
 
-void BasicBlockGenerator::operator()(Import* feature) {
+void IrGenerator::operator()(Import* feature) {
     // Pass
 }
 
-void BasicBlockGenerator::operator()(Type* feature) {
+void IrGenerator::operator()(Type* feature) {
     // Pass
 }
 
-void BasicBlockGenerator::call(Function* func, Expression* args, Expression* recv) {
+void IrGenerator::call(Function* func, Expression* args, Expression* recv) {
     // Push objects in anticipation of the call instruction.  Arguments must be
     // pushed in reverse order.
     if (recv) {
@@ -788,7 +788,7 @@ void BasicBlockGenerator::call(Function* func, Expression* args, Expression* rec
 	}
 }
 
-void BasicBlockGenerator::exception_catch() {
+void IrGenerator::exception_catch() {
 	// If the function can throw an exception, then generate the landing pad and
 	// return.  Currently, only an exception throw is allowed, to support cleaning
 	// up coroutines.
@@ -799,8 +799,8 @@ void BasicBlockGenerator::exception_catch() {
 	Operand val = load(Operand(name, Address(0)));
 
 	// Branch to the continuation if there was no exception.
-	BasicBlock::Ptr except_block = basic_block();
-	BasicBlock::Ptr done_block = basic_block(); 
+	IrBlock::Ptr except_block = basic_block();
+	IrBlock::Ptr done_block = basic_block(); 
 	bz(val, done_block, except_block);
 
 	// Handle the exception by returning from the function.
@@ -811,7 +811,7 @@ void BasicBlockGenerator::exception_catch() {
 	emit(done_block);
 }
 
-void BasicBlockGenerator::native_operator(Call* expr) {
+void IrGenerator::native_operator(Call* expr) {
     // FixMe: Replace this with a mini-parser that can read three-address-code
     // and output it as an inline function.
     std::string id = expr->function()->name()->string();
@@ -859,14 +859,14 @@ void BasicBlockGenerator::native_operator(Call* expr) {
     }
 }
 
-BasicBlock* BasicBlockGenerator::basic_block() {
-    BasicBlock* block = new BasicBlock();
+IrBlock* IrGenerator::basic_block() {
+    IrBlock* block = new IrBlock();
     block->label(env_->name(".l" + stringify(++label_)));
     return block;
 }
 
 
-Variable* BasicBlockGenerator::variable(String* name) {
+Variable* IrGenerator::variable(String* name) {
     // Look up the variable, starting in the current scope and continuing up
     // the scope stack.
     std::vector<Scope::Ptr>::reverse_iterator i;
@@ -879,16 +879,16 @@ Variable* BasicBlockGenerator::variable(String* name) {
     return 0;
 }
 
-void BasicBlockGenerator::variable(Variable* var) {
+void IrGenerator::variable(Variable* var) {
     assert(scope_.size());
     scope_.back()->variable(var);
 }
 
-void BasicBlockGenerator::enter_scope() {
+void IrGenerator::enter_scope() {
     scope_.push_back(new Scope);
 }
 
-void BasicBlockGenerator::exit_scope() {
+void IrGenerator::exit_scope() {
     // Pops the symbol table for this scope off the stack, and inserts code
     // to perform cleanup at the end of the scope.
     Scope::Ptr scope = scope_.back();
@@ -906,7 +906,7 @@ void BasicBlockGenerator::exit_scope() {
     scope_.pop_back();
 }
 
-Operand BasicBlockGenerator::stack_value(Type* type) {
+Operand IrGenerator::stack_value(Type* type) {
     // Allocate space for a local value-type variable or temporary on the
     // stack, and return the address of the allocated space.
     calculate_size(type->clazz());
@@ -914,7 +914,7 @@ Operand BasicBlockGenerator::stack_value(Type* type) {
     return Address(-local_slots_,0); 
 }
 
-Operand BasicBlockGenerator::stack_value_temp(Type* type) {
+Operand IrGenerator::stack_value_temp(Type* type) {
     // Allocates storage for a temporary stack variable.
     Operand val;
     if (!!assign_addr_) {
@@ -928,7 +928,7 @@ Operand BasicBlockGenerator::stack_value_temp(Type* type) {
     return val;
 }
 
-Operand BasicBlockGenerator::id_operand(String* id) {
+Operand IrGenerator::id_operand(String* id) {
     // Returns an operand for the given id that may be used in the current
     // scope.  Assert if the lookup fails.
     Variable::Ptr var = variable(id);
@@ -960,7 +960,7 @@ Operand BasicBlockGenerator::id_operand(String* id) {
     }
 }
 
-Operand BasicBlockGenerator::bool_expr(Expression* expression) {
+Operand IrGenerator::bool_expr(Expression* expression) {
     // Emits a boolean expression with short-circuiting, and stores the result
     // in a fixed operand.  Note:  This breaks SSA form, because a value gets
     // assigned different values on different branches.
@@ -969,9 +969,9 @@ Operand BasicBlockGenerator::bool_expr(Expression* expression) {
         return return_;
     }
 
-    BasicBlock::Ptr then_block = basic_block();
-    BasicBlock::Ptr else_block = basic_block();
-    BasicBlock::Ptr done_block = basic_block();
+    IrBlock::Ptr then_block = basic_block();
+    IrBlock::Ptr else_block = basic_block();
+    IrBlock::Ptr done_block = basic_block();
     return_ = RegisterId(++temp_, 0);
 
     // Recursively emit the boolean guard expression.
@@ -1004,7 +1004,7 @@ Operand BasicBlockGenerator::bool_expr(Expression* expression) {
     return return_;
 }
 
-void BasicBlockGenerator::scope_cleanup(Variable* var) {
+void IrGenerator::scope_cleanup(Variable* var) {
     // Emits the code to clean up the stack when exiting block.  This includes 
     // decrementing reference counts, and calling destructors for value types.
     Type::Ptr type = var->type();
@@ -1027,7 +1027,7 @@ void BasicBlockGenerator::scope_cleanup(Variable* var) {
     }
 }
 
-void BasicBlockGenerator::func_return() {
+void IrGenerator::func_return() {
     // Search backwards through the vector and clean up variables in the 
     // containing scope.  Do NOT clean up variables in the top scope; those
 	// variables are parameters and they are anchored (hence j > 1).
@@ -1066,7 +1066,7 @@ void BasicBlockGenerator::func_return() {
     ret();
 }
 
-void BasicBlockGenerator::refcount_inc(Operand var) {
+void IrGenerator::refcount_inc(Operand var) {
     // Emit code to increment the reference count for the object specified by
     // 'var'.  Insert a call expression to call the refcount_dec function.  If
     // the variable is already in the temp list, then the current function has
@@ -1084,7 +1084,7 @@ void BasicBlockGenerator::refcount_inc(Operand var) {
     fm.call(env_->name("Object__refcount_inc"));
 }
 
-void BasicBlockGenerator::refcount_dec(Operand var) {
+void IrGenerator::refcount_dec(Operand var) {
     // Emit code to decrement the reference count for the object specified by
     // 'temp'.  Insert a call expression to call the refcount_dec function 
     FuncMarshal fm(this);
@@ -1092,7 +1092,7 @@ void BasicBlockGenerator::refcount_dec(Operand var) {
     fm.call(env_->name("Object__refcount_dec"));
 }
 
-Operand BasicBlockGenerator::pop_ret(Type* type) {
+Operand IrGenerator::pop_ret(Type* type) {
     Register* reg = 0;
     if (type->is_float()) {
         reg = machine_->float_return_reg(0); 
@@ -1107,7 +1107,7 @@ Operand BasicBlockGenerator::pop_ret(Type* type) {
     }
 }
 
-void BasicBlockGenerator::dispatch_table(Class* feature) {
+void IrGenerator::dispatch_table(Class* feature) {
     // Generate the Pearson perfect hash that will be used for vtable lookups.
     if (!feature->is_object()) {
         return;
@@ -1115,7 +1115,7 @@ void BasicBlockGenerator::dispatch_table(Class* feature) {
     DispatchTableGenerator gen(feature);    
 }
 
-void BasicBlockGenerator::calculate_size(Class* feature) {
+void IrGenerator::calculate_size(Class* feature) {
     // Calculate the memory footprint of the given class, and assign an address
     // to each attribute in the class.
     if (feature->slots()) { return; }
@@ -1144,7 +1144,7 @@ void BasicBlockGenerator::calculate_size(Class* feature) {
     }
 }
 
-void BasicBlockGenerator::ctor_preamble(Class* clazz) {
+void IrGenerator::ctor_preamble(Class* clazz) {
     // Emits the memory alloc/vtable setup for the class.
 
     // Allocate the memory for the new object by calling calloc with the size
@@ -1217,7 +1217,7 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
     }
 }
 
-void BasicBlockGenerator::copier_preamble(Class* clazz) {
+void IrGenerator::copier_preamble(Class* clazz) {
     // Emits the copy constructor preamble, which adjusts refcounts for
     // reference-type attributes of the value type.
     Operand self = id_operand(env_->name("self"));
@@ -1242,7 +1242,7 @@ void BasicBlockGenerator::copier_preamble(Class* clazz) {
     }
 }
 
-void BasicBlockGenerator::dtor_epilog(Function* feature) {
+void IrGenerator::dtor_epilog(Function* feature) {
     // Free all of the attributes, and call destructors.
     std::vector<Attribute::Ptr> attrs;
     for (Feature::Ptr f = class_->features(); f; f = f->next()) {
@@ -1289,7 +1289,7 @@ void BasicBlockGenerator::dtor_epilog(Function* feature) {
     }
 }
 
-void BasicBlockGenerator::free_temps() {
+void IrGenerator::free_temps() {
     // Free all object temporaries that were used to evaluate the expression by
     // decrementing their refcount.
     for (int i = 0; i < object_temp_.size(); i++) {
@@ -1304,7 +1304,7 @@ void BasicBlockGenerator::free_temps() {
     value_temp_.clear();
 }
 
-void BasicBlockGenerator::constants() {
+void IrGenerator::constants() {
     for (int i = 0; i < env_->constants(); i++) {
         Constant::Ptr cn = env_->constant(i);
         store(Operand(cn->label(), Address(0)), emit(cn->initializer()));
@@ -1313,26 +1313,26 @@ void BasicBlockGenerator::constants() {
     }
 }
 
-void BasicBlockGenerator::local_slots_inc(int count) {
+void IrGenerator::local_slots_inc(int count) {
     local_slots_ += count;
     function_->local_slots(std::max(function_->local_slots(), local_slots_));
 }
 
-void BasicBlockGenerator::local_slots_dec(int count) {
+void IrGenerator::local_slots_dec(int count) {
     local_slots_ -= count;
     assert(local_slots_ >= 0);
 }
 
-void BasicBlockGenerator::arg_slots_inc(int count) {
+void IrGenerator::arg_slots_inc(int count) {
     arg_slots_ += count;
     function_->arg_slots(std::max(function_->arg_slots(), arg_slots_));
 }
 
-void BasicBlockGenerator::arg_slots_dec(int count) {
+void IrGenerator::arg_slots_dec(int count) {
     arg_slots_ -= count;
 }
 
-void BasicBlockGenerator::attr_assignment(Assignment* expr) {
+void IrGenerator::attr_assignment(Assignment* expr) {
     // Assignment to an attribute within a class
     String::Ptr id = expr->identifier();
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
@@ -1362,7 +1362,7 @@ void BasicBlockGenerator::attr_assignment(Assignment* expr) {
     }
 }
 
-void BasicBlockGenerator::secondary_assignment(Assignment* expr) {
+void IrGenerator::secondary_assignment(Assignment* expr) {
     // Assignment to a local var that has already been initialized once in the
     // current scope.
     String::Ptr id = expr->identifier();
@@ -1385,7 +1385,7 @@ void BasicBlockGenerator::secondary_assignment(Assignment* expr) {
     return_ = var->operand();
 }
 
-void BasicBlockGenerator::initial_assignment(Assignment* expr) {
+void IrGenerator::initial_assignment(Assignment* expr) {
     // Assignment to a local var that has not yet been initialized in the
     // current scope.
     String::Ptr id = expr->identifier();
@@ -1412,7 +1412,7 @@ void BasicBlockGenerator::initial_assignment(Assignment* expr) {
     variable(new Variable(id, return_, type));
 }
 
-void BasicBlockGenerator::value_assign_mem(Operand src, Operand dst, Type* type) {
+void IrGenerator::value_assign_mem(Operand src, Operand dst, Type* type) {
     // Assign the value pointed to by 'src' to the mem location at 'dst'. 
     assert(!!src.reg());
     if (value_temp_.find(src.reg()) == value_temp_.end()) {
@@ -1428,7 +1428,7 @@ void BasicBlockGenerator::value_assign_mem(Operand src, Operand dst, Type* type)
     return_ = mov(dst);
 }
 
-void BasicBlockGenerator::value_assign_reg(Operand src, Operand dst, Type* type) {
+void IrGenerator::value_assign_reg(Operand src, Operand dst, Type* type) {
     // Assign the value pointed to by 'src' to the temporary at 'dst.' Leave
     // the original value on the stack, but remove it from the temporary list.
     // That way, the storage allocated for the temporary is reassigned to the
@@ -1444,7 +1444,7 @@ void BasicBlockGenerator::value_assign_reg(Operand src, Operand dst, Type* type)
     return_ = mov(dst);
 }
 
-void BasicBlockGenerator::value_copy(Operand src, Operand dst, Type* type) {
+void IrGenerator::value_copy(Operand src, Operand dst, Type* type) {
     // Copies a value from 'src' to 'dst', and then increments the refcount
     // for any non-weak object attributes in 'type.'
     assert(!!src);
@@ -1457,7 +1457,7 @@ void BasicBlockGenerator::value_copy(Operand src, Operand dst, Type* type) {
     fm.call(copy->label());           
 }
 
-void BasicBlockGenerator::value_move(Operand src, Operand dst, Type* type) {
+void IrGenerator::value_move(Operand src, Operand dst, Type* type) {
     // Move the value without invoking the copy constructor
     assert(!!src.reg());
     calculate_size(type->clazz());
@@ -1470,7 +1470,7 @@ void BasicBlockGenerator::value_move(Operand src, Operand dst, Type* type) {
     fm.call(env_->name("Boot_memcpy")); 
 }
 
-void BasicBlockGenerator::value_dtor(Operand op, Type* type) {
+void IrGenerator::value_dtor(Operand op, Type* type) {
     // Calls the destructor for the value type at location "op", where "op"
     // is a register containing the pointer to the value type on the stack.
     Function::Ptr dtor = type->clazz()->destructor();
@@ -1480,11 +1480,11 @@ void BasicBlockGenerator::value_dtor(Operand op, Type* type) {
     fm.call(dtor->label());
 }
 
-Operand BasicBlockGenerator::emit(TreeNode* node, BasicBlock* yes, 
-    BasicBlock* no, bool inv) {
+Operand IrGenerator::emit(TreeNode* node, IrBlock* yes, 
+    IrBlock* no, bool inv) {
 
-    BasicBlock* true_save = true_;
-    BasicBlock* false_save = false_;
+    IrBlock* true_save = true_;
+    IrBlock* false_save = false_;
     bool invert_branch_save_ = invert_branch_;
     true_ = yes;
     false_ = no;
@@ -1496,28 +1496,28 @@ Operand BasicBlockGenerator::emit(TreeNode* node, BasicBlock* yes,
     return return_;
 }
 
-Operand BasicBlockGenerator::emit(TreeNode* node) {
+Operand IrGenerator::emit(TreeNode* node) {
     node->operator()(this);
     return return_;
 }
 
-Operand BasicBlockGenerator::emit(Opcode op, Operand t2, Operand t3) {
+Operand IrGenerator::emit(Opcode op, Operand t2, Operand t3) {
     Instruction in = block_->instr(op, temp_inc(), t2, t3);
     return in.result();
 }
 
-Operand BasicBlockGenerator::emit(Opcode op, Operand t2) {
+Operand IrGenerator::emit(Opcode op, Operand t2) {
     Instruction in = block_->instr(op, temp_inc(), t2, Operand());
     return in.result();
 }
 
-Operand BasicBlockGenerator::mov(Operand res, Operand t2) { 
+Operand IrGenerator::mov(Operand res, Operand t2) { 
     // FixMe: This could be a problem for SSA analysis.
     Instruction in = block_->instr(MOV, res, t2, Operand());
     return in.result();
 }
 
-void BasicBlockGenerator::emit(BasicBlock* block) {
+void IrGenerator::emit(IrBlock* block) {
     if (block_) {
         block_->next(block);
     }
@@ -1525,67 +1525,67 @@ void BasicBlockGenerator::emit(BasicBlock* block) {
     function_->basic_block(block);
 }
 
-void BasicBlockGenerator::store(Operand addr, Operand value) {
+void IrGenerator::store(Operand addr, Operand value) {
     block_->instr(STORE, Operand(), addr, value);    
 }
 
-void BasicBlockGenerator::call(Operand func) {
+void IrGenerator::call(Operand func) {
     block_->instr(CALL, Operand(), func, Operand());
 }
 
-void BasicBlockGenerator::ret() {
+void IrGenerator::ret() {
     block_->instr(RET, Operand(), Operand(), Operand());
 }
 
-void BasicBlockGenerator::branch(Opcode op, Operand t2, Operand t3, 
-    BasicBlock* branch, BasicBlock* next) {
+void IrGenerator::branch(Opcode op, Operand t2, Operand t3, 
+    IrBlock* branch, IrBlock* next) {
 
     block_->instr(op, Operand(), t2, t3);
     block_->branch(branch);
     block_->next(next);
 }
 
-void BasicBlockGenerator::bne(Operand t2, Operand t3, BasicBlock* target, 
-    BasicBlock* next) {
+void IrGenerator::bne(Operand t2, Operand t3, IrBlock* target, 
+    IrBlock* next) {
     branch(BNE, t2, t3, target, next);
 }
 
-void BasicBlockGenerator::be(Operand t2, Operand t3, BasicBlock* target, 
-    BasicBlock* next) {
+void IrGenerator::be(Operand t2, Operand t3, IrBlock* target, 
+    IrBlock* next) {
     branch(BE, t2, t3, target, next);
 }
 
-void BasicBlockGenerator::bnz(Operand t2, BasicBlock* target, 
-    BasicBlock* next) {
+void IrGenerator::bnz(Operand t2, IrBlock* target, 
+    IrBlock* next) {
     branch(BNZ, t2, Operand(), target, next);
 }
 
-void BasicBlockGenerator::bz(Operand t2, BasicBlock* target, 
-    BasicBlock* next) {
+void IrGenerator::bz(Operand t2, IrBlock* target, 
+    IrBlock* next) {
     branch(BZ, t2, Operand(), target, next);
 }
 
-void BasicBlockGenerator::bg(Operand t2, Operand t3, BasicBlock* target, 
-    BasicBlock* next) {
+void IrGenerator::bg(Operand t2, Operand t3, IrBlock* target, 
+    IrBlock* next) {
     branch(BG, t2, t3, target, next);
 }
 
-void BasicBlockGenerator::bl(Operand t2, Operand t3, BasicBlock* target,
-    BasicBlock* next) {
+void IrGenerator::bl(Operand t2, Operand t3, IrBlock* target,
+    IrBlock* next) {
     branch(BL, t2, t3, target, next);
 }
 
-void BasicBlockGenerator::bge(Operand t2, Operand t3, BasicBlock* target,
-    BasicBlock* next) {
+void IrGenerator::bge(Operand t2, Operand t3, IrBlock* target,
+    IrBlock* next) {
     branch(BGE, t2, t3, target, next);
 }
 
-void BasicBlockGenerator::ble(Operand t2, Operand t3, BasicBlock* target, 
-    BasicBlock* next) {
+void IrGenerator::ble(Operand t2, Operand t3, IrBlock* target, 
+    IrBlock* next) {
     branch(BLE, t2, t3, target, next);
 }
 
-void BasicBlockGenerator::jump(BasicBlock* target) {
+void IrGenerator::jump(IrBlock* target) {
     block_->instr(JUMP, Operand(), Operand(), Operand());
     block_->branch(target);
 }

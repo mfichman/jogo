@@ -66,9 +66,9 @@ void BasicBlockPrinter::operator()(Function* feature) {
     }
 }
 
-void BasicBlockPrinter::operator()(BasicBlock* block) {
-    BasicBlock::Ptr branch = block->branch();
-    BasicBlock::Ptr next = block->next();
+void BasicBlockPrinter::operator()(IrBlock* block) {
+    IrBlock::Ptr branch = block->branch();
+    IrBlock::Ptr next = block->next();
     if (block->label()) {
         out_ << block->label() << ":\n";
     }

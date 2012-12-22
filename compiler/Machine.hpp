@@ -25,7 +25,7 @@
 #include "Jogo.hpp"
 #include "Object.hpp"
 #include "Stream.hpp"
-#include "BasicBlock.hpp"
+#include "IrBlock.hpp"
 #include <vector>
 
 /* Represents a general-purpose register in a machine architecture */

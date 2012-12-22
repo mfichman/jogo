@@ -25,7 +25,7 @@
 #include "Jogo.hpp"
 #include "Object.hpp"
 #include "String.hpp"
-#include "BasicBlock.hpp"
+#include "IrBlock.hpp"
 #include <vector>
 #include <map>
 

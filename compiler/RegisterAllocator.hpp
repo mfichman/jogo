@@ -25,7 +25,7 @@
 #include "Jogo.hpp"
 #include "Environment.hpp"
 #include "LivenessAnalyzer.hpp"
-#include "BasicBlock.hpp"
+#include "IrBlock.hpp"
 #include "Machine.hpp"
 #include <set>
 
@@ -60,10 +60,10 @@ public:
 private:
     RegisterId color_reg(RegisterVertex const& v);
     bool color_ok(RegisterVertex const& v, RegisterId reg); 
-    void build_graph(BasicBlock* block);
+    void build_graph(IrBlock* block);
     void build_stack();
     void color_graph();
-    void rewrite_temporaries(BasicBlock* block);
+    void rewrite_temporaries(IrBlock* block);
     void spill_register(Function* func);
 
     std::vector<RegisterVertex> graph_;

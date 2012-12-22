@@ -55,8 +55,8 @@ void DeadCodeEliminator::operator()(Function* feature) {
     } 
 }
 
-void DeadCodeEliminator::operator()(BasicBlock* block) {
-    BasicBlock repl;
+void DeadCodeEliminator::operator()(IrBlock* block) {
+    IrBlock repl;
     
     // Loop through each instruction.  If the result of the instruction is
     // dead after the instruction, then the instruction is dead code.

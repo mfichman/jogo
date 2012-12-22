@@ -24,7 +24,7 @@
 
 #include "Jogo.hpp"
 #include "Environment.hpp"
-#include "BasicBlock.hpp"
+#include "IrBlock.hpp"
 #include "Machine.hpp"
 #include "Object.hpp"
 #include <set>
@@ -39,7 +39,7 @@ public:
     typedef Pointer<LivenessAnalyzer> Ptr;
 
 private:
-    void operator()(BasicBlock* block); 
+    void operator()(IrBlock* block); 
 
     Machine::Ptr machine_;
     Function::Ptr function_;

@@ -27,7 +27,7 @@
 #include "TreeNode.hpp"
 #include "RegisterAllocator.hpp"
 #include "LivenessAnalyzer.hpp"
-#include "BasicBlock.hpp"
+#include "IrBlock.hpp"
 #include "Stream.hpp"
 #include <set>
 
@@ -41,7 +41,7 @@ public:
     void operator()(Module* feature);
     void operator()(Class* feature);
     void operator()(Function* feature);
-    void operator()(BasicBlock* block);
+    void operator()(IrBlock* block);
 
 private:
     Environment::Ptr env_;

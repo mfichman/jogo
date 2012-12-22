@@ -86,7 +86,7 @@ void RegisterAllocator::operator()(Function* func) {
     }
 }
 
-void RegisterAllocator::build_graph(BasicBlock* block) {
+void RegisterAllocator::build_graph(IrBlock* block) {
     // Build the register interference graph.  Each vertex in the graph is a
     // temporary name.  Each edge represents a conflict between two
     // temporaries; that is, the temporaries are live at at least one code
@@ -261,11 +261,11 @@ void RegisterAllocator::color_graph() {
     }
 }
 
-void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
+void RegisterAllocator::rewrite_temporaries(IrBlock* block) {
     // Loop through all instructions and replace temporaries with real
     // allocated registers.
 
-    BasicBlock repl;
+    IrBlock repl;
     for (int i = 0; i < block->instrs(); i++) {
         Instruction instr = block->instr(i);
         Operand first = instr.first();
@@ -331,8 +331,8 @@ void RegisterAllocator::spill_register(Function* func) {
     // Iterate through all blocks, and insert loads/stores before reads/writes
     // of the spilled register.
     for (int i = 0; i < func->basic_blocks(); i++) {
-        BasicBlock::Ptr block = func->basic_block(i);
-        BasicBlock repl;
+        IrBlock::Ptr block = func->basic_block(i);
+        IrBlock repl;
         
         // If this is the first block, and we're spilling a caller register,
         // then add a store

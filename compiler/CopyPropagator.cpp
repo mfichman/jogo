@@ -53,7 +53,7 @@ void CopyPropagator::operator()(Function* feature) {
     } 
 }
 
-void CopyPropagator::operator()(BasicBlock* block) {
+void CopyPropagator::operator()(IrBlock* block) {
     // Removes unnecessary forward copy instructions.  Consider the following
     // instruction sequence:
     // mov r1, r2

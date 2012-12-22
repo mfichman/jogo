@@ -22,7 +22,7 @@
 
 #include "Builder.hpp"
 #include "CodeExpander.hpp"
-#include "BasicBlockGenerator.hpp"
+#include "IrGenerator.hpp"
 #include "RegisterAllocator.hpp"
 #include "NasmGenerator.hpp"
 #include "CCodeGenerator.hpp"
@@ -338,7 +338,7 @@ void Builder::irgen(File* file) {
     // represenation.  Also performs optimizations, if enabled by the
     // environment options.
     Machine::Ptr machine = Machine::intel64();
-    BasicBlockGenerator::Ptr bgen(new BasicBlockGenerator(env_, machine));
+    IrGenerator::Ptr bgen(new IrGenerator(env_, machine));
     RegisterAllocator::Ptr alloc(new RegisterAllocator(env_, machine));
     BasicBlockPrinter::Ptr bprint(new BasicBlockPrinter(env_, machine));
     Stream::Ptr out = Stream::stout();

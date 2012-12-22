@@ -40,7 +40,7 @@ void LivenessAnalyzer::operator()(Function* feature) {
     }
 }
 
-void LivenessAnalyzer::operator()(BasicBlock* block) {
+void LivenessAnalyzer::operator()(IrBlock* block) {
     // Compute liveness information for the basic block.  This algorithm is 
     // partly based on the notes found here, with slight optimizations: 
     // http://www.classes.cs.uchicago.edu/archive/2004/spring/22620-1/docs/liveness.pdf 

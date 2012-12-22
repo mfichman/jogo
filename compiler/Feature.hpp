@@ -28,7 +28,7 @@
 #include "Expression.hpp"
 #include "Formal.hpp"
 #include "Type.hpp"
-#include "BasicBlock.hpp"
+#include "IrBlock.hpp"
 #include "Import.hpp"
 #include <vector>
 
@@ -149,7 +149,7 @@ public:
 	Formal* formals() const { return formals_; }
 	Type* type() const { return type_; }
     Block* block() const { return block_; }
-    BasicBlock* basic_block(int index) { return basic_block_[index]; }
+    IrBlock* basic_block(int index) { return basic_block_[index]; }
 	Function* called_func(int index) { return called_func_[index]; }
 	ThrowSpec throw_spec() const;
     int basic_blocks() const { return basic_block_.size(); }
@@ -169,7 +169,7 @@ public:
     void arg_slots_inc() { arg_slots_++; }
     void arg_slots(int value) { arg_slots_ = value; }
     void temp_regs(int value) { temp_regs_ = value; }
-    void basic_block(BasicBlock* block) { basic_block_.push_back(block); }
+    void basic_block(IrBlock* block) { basic_block_.push_back(block); }
     void basic_block_del_all() { basic_block_.clear(); }
     void formals(Formal* formals) { formals_ = formals; }
 	void throw_spec(ThrowSpec spec) { throw_spec_ = spec; }
@@ -182,7 +182,7 @@ private:
 	Formal::Ptr formals_;
 	Type::Ptr type_;
     Block::Ptr block_;
-    std::vector<BasicBlock::Ptr> basic_block_;
+    std::vector<IrBlock::Ptr> basic_block_;
 	std::vector<Function*> called_func_;
     int local_slots_;
     int arg_slots_;

@@ -163,12 +163,12 @@ void NasmGenerator::operator()(Function* feature) {
 
 }
 
-void NasmGenerator::operator()(BasicBlock* block) {
+void NasmGenerator::operator()(IrBlock* block) {
     // Translate a basic block in three-address code into x86.  For most
     // operations, this requires a "mov, op" sequence.  
     
-    BasicBlock::Ptr branch = block->branch();
-    BasicBlock::Ptr next = block->next();
+    IrBlock::Ptr branch = block->branch();
+    IrBlock::Ptr next = block->next();
     if (block->label()) {
         out_ << block->label() << ":\n";
     }
