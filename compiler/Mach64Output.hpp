@@ -23,36 +23,32 @@
 #pragma once
 
 #include "Jogo.hpp"
-#include "Environment.hpp"
-#include "File.hpp"
-#include "Machine.hpp"
+#include "OutputFormat.hpp"
+#include "Section.hpp"
+#include "Stream.hpp"
+#include <mach-o/loader.h>
+#include <mach-o/nlist.h>
+#include <mach-o/reloc.h>
+#include <fstream>
+#include <vector>
 
-/* Builds modules, executables, and dependencies in order. */
-
-class Builder : public TreeNode::Functor {
+/* Helps output basic blocks in the Mach-O format */
+class Mach64Output : public OutputFormat {
 public:
-    Builder(Environment* env);
-    typedef Pointer<Builder> Ptr;
-    
-    void operator()(Module* module);
-    void operator()(File* file);
-    int errors() const { return errors_; }
+    Section::Ptr text() const { return text_; }
+    void ref(String::Ptr name); // Add to reloc table
+    void label(String::Ptr label); // Add a label
+    void out(Stream::Ptr out);
 
-private:
-    void modular_build();
-    void monolithic_build();
-    void link(Module* module);
-    void link(const std::string& in, const std::string& out);
-    void archive(Module* module);
-    void archive(const std::string& in, const std::string& out);
-    void irgen(File* file); 
-    void cgen(File* file);
-    void nasm64gen(File* file);
-    void intel64gen(File* file);
-    void cc(const std::string& in, const std::string& out);
-    void nasm(const std::string& in, const std::string& out);
-    void execute(const std::string& exe);
+public:
+    static int const TEXT_SECT = 1;
+    //static int const CSTRING_SECT = 2;
+    //Section cstring_;
+    Section::Ptr text_;
+    Section::Ptr string_;
 
-    Environment::Ptr env_;
-    int errors_;
+    std::ofstream out_;
+    std::vector<nlist_64> symtab_; // Symbol table
+    std::vector<relocation_info> reloc_; // Relocation table 
+    std::map<String::Ptr,nlist_64*> symbol_;
 };

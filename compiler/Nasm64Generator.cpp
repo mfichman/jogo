@@ -20,19 +20,19 @@
  * IN THE SOFTWARE.
  */  
 
-#include "NasmGenerator.hpp"
+#include "Nasm64Generator.hpp"
 #include <sstream>
 
 static const int INTEL64_MAX_IMM = 4096;
 static const int INTEL64_MIN_STACK = 4096;
 
-NasmGenerator::NasmGenerator(Environment* env) :
+Nasm64Generator::Nasm64Generator(Environment* env) :
     env_(env),
     machine_(Machine::intel64()) {
 
 }
 
-void NasmGenerator::operator()(File* file) {
+void Nasm64Generator::operator()(File* file) {
     // Output a translation unit, which can include constants, classes,
     // literals, forward declarations, and function definitions.
     if (env_->errors()) { return; }
@@ -55,6 +55,7 @@ void NasmGenerator::operator()(File* file) {
         }
         out_ << "global "; label(cons->label()); out_ << "\n";
         label(cons->label()); out_ << " dq 0\n";
+        definition_.insert(cons->label()->string());
     }
 
     out_ << "section .text\n";
@@ -88,23 +89,26 @@ void NasmGenerator::operator()(File* file) {
         file->feature(i)->operator()(this);
     }
 
-    for (int i = 0; i < file->dependencies(); i++) {
-        TreeNode* dep = file->dependency(i);
-        if (dep->file() != file) {
-            if (Class* clazz = dynamic_cast<Class*>(dep)) {
-                for (Feature::Ptr f = clazz->features(); f; f = f->next()) {
-                    out_ << "extern "; label(f->label()); out_ << "\n";
-                } 
-            } else if (Feature* feat = dynamic_cast<Feature*>(dep)) {
-                out_ << "extern "; label(feat->label()); out_ << "\n";
-            }
-        }
+    for (std::set<std::string>::iterator i = symbol_.begin(); 
+        i != symbol_.end(); i++) {
+
+        std::set<std::string>::iterator q = definition_.find(*i);
+        if (q == definition_.end() && (*i)[0] != '.') {
+#if defined(DARWIN)
+            out_ << "extern _" << *i << "\n";
+#else
+            out_ << "extern " << *i << "\n";
+#endif
+        } 
     }
+    // FIXME: This is stupid.  The NasmGenerator itself should record the
+    // dependencies as they are generated, and output extern declarations as
+    // necessary.
 
     out_->flush();
 }
 
-void NasmGenerator::operator()(Class* feature) {
+void Nasm64Generator::operator()(Class* feature) {
     // Emit the functions and vtable for the class specified by 'feature'
     class_ = feature;
 
@@ -120,23 +124,24 @@ void NasmGenerator::operator()(Class* feature) {
     class_ = 0;
 }
 
-void NasmGenerator::operator()(Module* feature) {
+void Nasm64Generator::operator()(Module* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
 }
 
-void NasmGenerator::operator()(Function* feature) {
+void Nasm64Generator::operator()(Function* feature) {
     // Emit a function, or an extern declaration if the function is native or
     // belongs to a different output file.
     String::Ptr id = feature->name();
     if (feature->is_virtual()) { return; }
     if (feature->is_native()) {
         out_ << "extern "; label(feature->label()); out_ << "\n";
-    } else if (feature->basic_blocks()) {
+    } else if (feature->ir_blocks()) {
         out_ << "section .text\n";
         out_ << "global "; label(feature->label()); out_ << "\n";
         label(feature->label()); out_ << ":\n";
+        definition_.insert(feature->label()->string());
         out_ << "    push rbp\n"; 
         out_ << "    mov rbp, rsp\n";
 
@@ -152,8 +157,8 @@ void NasmGenerator::operator()(Function* feature) {
             out_ << "    sub rsp, " << stack << "\n";
         }
         
-        for (int i = 0; i < feature->basic_blocks(); i++) {
-            operator()(feature->basic_block(i));
+        for (int i = 0; i < feature->ir_blocks(); i++) {
+            operator()(feature->ir_block(i));
         }
         // Make sure that the text section is gets re-aligned at the end of the
         // function, because the instruction stream can cause it be become
@@ -163,7 +168,7 @@ void NasmGenerator::operator()(Function* feature) {
 
 }
 
-void NasmGenerator::operator()(IrBlock* block) {
+void Nasm64Generator::operator()(IrBlock* block) {
     // Translate a basic block in three-address code into x86.  For most
     // operations, this requires a "mov, op" sequence.  
     
@@ -221,7 +226,7 @@ void NasmGenerator::operator()(IrBlock* block) {
     }
 }
 
-void NasmGenerator::dispatch_table(Class* feature) {
+void Nasm64Generator::dispatch_table(Class* feature) {
     // Output the class dispatch table for calling methods with dynamic
     // dispatch.  The format is as follows: 
     //
@@ -234,14 +239,14 @@ void NasmGenerator::dispatch_table(Class* feature) {
 
     String* name = feature->label();
     Function* dtor = feature->destructor();
+    std::string vtable = name->string()+"__vtable";
 
     // Output the vtable label and global directive
     out_ << "section .data\n";
     align();
-    out_ << "global "; 
-    label(name->string()+"__vtable"); 
-    out_ << "\n";
-    label(name->string()+"__vtable"); out_ << ":\n";
+    out_ << "global "; label(vtable); out_ << "\n";
+    label(vtable); out_ << ":\n";
+    definition_.insert(vtable);
 
     // Emit the destructor, hash func, equals func, and vtable length
     out_ << "    dq "; label(dtor->label()); out_ << "\n"; 
@@ -265,7 +270,7 @@ void NasmGenerator::dispatch_table(Class* feature) {
     align();
 }
 
-void NasmGenerator::arith(Instruction const& inst) {
+void Nasm64Generator::arith(Instruction const& inst) {
     // Emits an arithmetic instruction.  Depending on the opcode and the
     // operands, the expression may have to be manipulated because all x86
     // instructions take only 2 arithmetic operands.
@@ -315,7 +320,7 @@ void NasmGenerator::arith(Instruction const& inst) {
     }
 }
 
-void NasmGenerator::instr(const char* instr, Operand r1, Operand r2) {
+void Nasm64Generator::instr(const char* instr, Operand r1, Operand r2) {
     // Emits an instruction with two operands.
     out_ << "    " << instr << " ";
     operand(r1);
@@ -324,26 +329,26 @@ void NasmGenerator::instr(const char* instr, Operand r1, Operand r2) {
     out_ << "\n";
 }
 
-void NasmGenerator::instr(const char* instr, Operand r1) {
+void Nasm64Generator::instr(const char* instr, Operand r1) {
     // Emits a single-operand instruction (either literal or register)
     out_ << "    " << instr << " ";
     operand(r1);
     out_ << "\n";
 }
 
-void NasmGenerator::instr(const char* instr, Operand r1, const char* imm) {
+void Nasm64Generator::instr(const char* instr, Operand r1, const char* imm) {
     // Instruction that operates on a register r1 and an immediate value. 
     out_ << "    " << instr << " ";
     reg(r1);
     out_ << ", " << imm << "\n";
 }
 
-void NasmGenerator::instr(const char* instr) {
+void Nasm64Generator::instr(const char* instr) {
     // Emits a no-operand instruction.
     out_ << "    " << instr << "\n";
 }
 
-void NasmGenerator::operand(Operand op) {
+void Nasm64Generator::operand(Operand op) {
     // Emits any operand.  This function will automatically determine which
     // type of     operand to output.
     if (op.label()) {
@@ -359,7 +364,7 @@ void NasmGenerator::operand(Operand op) {
     } 
 }
 
-void NasmGenerator::addr(Operand op) {
+void Nasm64Generator::addr(Operand op) {
     // Emits the the address operand for a stack location as a an offset from
     // the base pointer (rbp).  No register need be specified in the operand,
     // as the register is understood to be rbp.  Likewise, the label and
@@ -389,7 +394,7 @@ void NasmGenerator::addr(Operand op) {
     }
 }
 
-void NasmGenerator::reg(Operand op) {
+void Nasm64Generator::reg(Operand op) {
     // Outputs a register, possibly with an address offset.  An operand passed
     // to this function should NOT have the literal or label fields set.
     assert(machine_->reg(op.reg()));
@@ -399,7 +404,7 @@ void NasmGenerator::reg(Operand op) {
     out_ << machine_->reg(op.reg());
 }
 
-void NasmGenerator::literal(Operand literal) {
+void Nasm64Generator::literal(Operand literal) {
     // Outputs the correct representation of a literal.  If the literal is a
     // number, and the length is less than 32 bits, then output the literal
     // directly in the instruction.  Otherwise, load it from the correct memory
@@ -431,7 +436,7 @@ void NasmGenerator::literal(Operand literal) {
 }
 
 
-void NasmGenerator::label(Operand op) {
+void Nasm64Generator::label(Operand op) {
     // Emits a label, either as an operand or as an actual label at the
     // beginning of a code block.  No register/literal/addr fields should be
     // set on the operand.
@@ -449,7 +454,7 @@ void NasmGenerator::label(Operand op) {
     }
 }
 
-void NasmGenerator::label(std::string const& label) {
+void Nasm64Generator::label(std::string const& label) {
     // Emits a label, either as an operand or as an actual label at the
     // beginning of a code block.
     std::string actual_label;
@@ -470,13 +475,14 @@ void NasmGenerator::label(std::string const& label) {
         out_ << actual_label;
 #endif   
     }
+    symbol_.insert(label);
 }
 
-void NasmGenerator::align() {
+void Nasm64Generator::align() {
     out_ << "    align 8\n";
 }
 
-void NasmGenerator::store_hack(Operand a1, Operand a2) {
+void Nasm64Generator::store_hack(Operand a1, Operand a2) {
     char const* mov = (a2.is_float() ? "movsd" : "mov qword");
     if (a1.label() && a1.is_indirect()) {
         out_ << "    " << mov << " rax, ";
@@ -490,7 +496,7 @@ void NasmGenerator::store_hack(Operand a1, Operand a2) {
     }
 }
 
-void NasmGenerator::load_hack(Operand res, Operand a1) {
+void Nasm64Generator::load_hack(Operand res, Operand a1) {
     // FixMe: All these shenanigans are needed b/c NASM doesn't properly load
     // from a memory location to a 64-bit register.  For example, the following
     // works sometimes with "default rel" mode, but not always:
@@ -547,7 +553,7 @@ void NasmGenerator::load_hack(Operand res, Operand a1) {
     }
 }
 
-void NasmGenerator::stack_check(Function* feature) {
+void Nasm64Generator::stack_check(Function* feature) {
     // Emits a stack check, and code to dynamically grow the stack if it is
     // too small.
     out_ << "    mov rax, [rel "; label("Coroutine__stack"); out_ << "]\n";
@@ -579,7 +585,7 @@ void NasmGenerator::stack_check(Function* feature) {
     label(".l0:"); out_ << "\n";
 }
 
-void NasmGenerator::string(String* string) {
+void Nasm64Generator::string(String* string) {
     // Output a string literal, and correctly process escape sequences.
 
     std::string in = string->string();

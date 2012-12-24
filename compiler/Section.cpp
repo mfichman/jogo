@@ -20,39 +20,43 @@
  * IN THE SOFTWARE.
  */  
 
-#pragma once
+#include "Section.hpp"
+#include <cassert>
 
-#include "Jogo.hpp"
-#include "Environment.hpp"
-#include "File.hpp"
-#include "Machine.hpp"
+void Section::uint64(uint64_t val) { 
+    size_t off = buffer_.size();
+    buffer_.resize(off + sizeof(val));
+    memcpy(&buffer_[0] + off, &val, sizeof(val));
+}
 
-/* Builds modules, executables, and dependencies in order. */
+void Section::uint32(uint32_t val) { 
+    size_t off = buffer_.size();
+    buffer_.resize(off + sizeof(val));
+    memcpy(&buffer_[0] + off, &val, sizeof(val));
+}
 
-class Builder : public TreeNode::Functor {
-public:
-    Builder(Environment* env);
-    typedef Pointer<Builder> Ptr;
-    
-    void operator()(Module* module);
-    void operator()(File* file);
-    int errors() const { return errors_; }
+void Section::uint16(uint16_t val) { 
+    size_t off = buffer_.size();
+    buffer_.resize(off + sizeof(val));
+    memcpy(&buffer_[0] + off, &val, sizeof(val));
+}
 
-private:
-    void modular_build();
-    void monolithic_build();
-    void link(Module* module);
-    void link(const std::string& in, const std::string& out);
-    void archive(Module* module);
-    void archive(const std::string& in, const std::string& out);
-    void irgen(File* file); 
-    void cgen(File* file);
-    void nasm64gen(File* file);
-    void intel64gen(File* file);
-    void cc(const std::string& in, const std::string& out);
-    void nasm(const std::string& in, const std::string& out);
-    void execute(const std::string& exe);
+void Section::uint8(uint8_t val) { 
+    size_t off = buffer_.size();
+    buffer_.resize(off + sizeof(val));
+    memcpy(&buffer_[0] + off, &val, sizeof(val));
+}
 
-    Environment::Ptr env_;
-    int errors_;
-};
+void Section::buffer(void const* buffer, int len) {
+    size_t off = buffer_.size();
+    buffer_.resize(off + len);
+    memcpy(&buffer_[0] + off, buffer, len);
+}
+
+void Section::pad(int num) {
+    // Pad the number of bytes to a multiple of the the given value
+    int rem = buffer_.size() % num;
+    if (rem) {
+        buffer_.resize(buffer_.size() + num - (rem));
+    }
+}

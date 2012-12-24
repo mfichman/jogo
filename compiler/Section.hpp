@@ -23,36 +23,22 @@
 #pragma once
 
 #include "Jogo.hpp"
-#include "Environment.hpp"
-#include "File.hpp"
-#include "Machine.hpp"
+#include "String.hpp"
+#include <vector>
+#include <stdint.h>
 
-/* Builds modules, executables, and dependencies in order. */
-
-class Builder : public TreeNode::Functor {
+/* A sequence of machine code instructions/data corresponding to a section */
+class Section : public Object {
 public:
-    Builder(Environment* env);
-    typedef Pointer<Builder> Ptr;
-    
-    void operator()(Module* module);
-    void operator()(File* file);
-    int errors() const { return errors_; }
-
+    typedef Pointer<Section> Ptr;
+    int bytes() const { return buffer_.size(); }
+    uint8_t const* text() const { return &buffer_[0]; }
+    void uint64(uint64_t val);
+    void uint32(uint32_t val);
+    void uint16(uint16_t val);
+    void uint8(uint8_t val);
+    void buffer(void const* buf, int len);
+    void pad(int num);
 private:
-    void modular_build();
-    void monolithic_build();
-    void link(Module* module);
-    void link(const std::string& in, const std::string& out);
-    void archive(Module* module);
-    void archive(const std::string& in, const std::string& out);
-    void irgen(File* file); 
-    void cgen(File* file);
-    void nasm64gen(File* file);
-    void intel64gen(File* file);
-    void cc(const std::string& in, const std::string& out);
-    void nasm(const std::string& in, const std::string& out);
-    void execute(const std::string& exe);
-
-    Environment::Ptr env_;
-    int errors_;
+    std::vector<uint8_t> buffer_;
 };

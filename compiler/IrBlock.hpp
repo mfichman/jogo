@@ -206,7 +206,7 @@ private:
     mutable Liveness::Ptr liveness_;
 };
 
-/* Class for basic block nodes */
+/* Sequence of intermediate-representation (IR) instructions */
 class IrBlock : public Object {
 public:
     IrBlock() : branch_(0), next_(0), round_(0) {}

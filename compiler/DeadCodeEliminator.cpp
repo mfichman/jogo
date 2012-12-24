@@ -50,8 +50,8 @@ void DeadCodeEliminator::operator()(Class* feature) {
 
 void DeadCodeEliminator::operator()(Function* feature) {
     liveness_->operator()(feature);
-    for (int i = 0; i < feature->basic_blocks(); i++) {
-        operator()(feature->basic_block(i));
+    for (int i = 0; i < feature->ir_blocks(); i++) {
+        operator()(feature->ir_block(i));
     } 
 }
 

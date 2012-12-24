@@ -145,7 +145,7 @@ private:
     Operand stack_value_temp(Type* type);
     RegisterId temp_inc() { return RegisterId(++temp_, 0); }
     Variable* variable(String* name);
-    IrBlock* basic_block();
+    IrBlock* ir_block();
 
     Environment::Ptr env_;
     Machine::Ptr machine_;

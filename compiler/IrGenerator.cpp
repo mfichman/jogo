@@ -198,9 +198,9 @@ void IrGenerator::operator()(Cast* expr) {
     Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
     return_ = RegisterId(temp_++, 0);
 
-    IrBlock::Ptr mismatch_block = basic_block();
-    IrBlock::Ptr ok_block = basic_block();
-    IrBlock::Ptr done_block = basic_block();
+    IrBlock::Ptr mismatch_block = ir_block();
+    IrBlock::Ptr ok_block = ir_block();
+    IrBlock::Ptr done_block = ir_block();
 
     // Emit vtable pointer comparison
     be(vtable1, vtable2, ok_block, mismatch_block);
@@ -238,9 +238,9 @@ void IrGenerator::operator()(Is* expr) {
     Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
     return_ = RegisterId(temp_++, 0);
 
-    IrBlock::Ptr mismatch_block = basic_block();
-    IrBlock::Ptr ok_block = basic_block();
-    IrBlock::Ptr done_block = basic_block();
+    IrBlock::Ptr mismatch_block = ir_block();
+    IrBlock::Ptr ok_block = ir_block();
+    IrBlock::Ptr done_block = ir_block();
 
     // Emit vtable pointer comparison
     be(vtable1, vtable2, ok_block, mismatch_block);
@@ -265,7 +265,7 @@ void IrGenerator::operator()(Binary* expr) {
     // the two operands, and return the result.
 
     if (env_->name("and") == expr->operation()) {
-        IrBlock::Ptr left_true = basic_block();
+        IrBlock::Ptr left_true = ir_block();
         
         // Don't use the 'real' true branch; on true we want to emit the    
         // test for the second side of the and
@@ -284,7 +284,7 @@ void IrGenerator::operator()(Binary* expr) {
         return_ = emit(expr->right(), true_, false_, invert_branch_);
         
     } else if (env_->name("or") == expr->operation()) {
-        IrBlock::Ptr left_false = basic_block();
+        IrBlock::Ptr left_false = ir_block();
         
         // Don't use the 'real' false branch; on false we want to emit
         // the test for the second side of the or
@@ -434,12 +434,12 @@ void IrGenerator::operator()(Let* statement) {
 
 void IrGenerator::operator()(While* statement) {
     // Emit the guard expression in a new basic block
-    IrBlock::Ptr body_block = basic_block();
-    IrBlock::Ptr done_block = basic_block();
+    IrBlock::Ptr body_block = ir_block();
+    IrBlock::Ptr done_block = ir_block();
 
     IrBlock::Ptr guard_block;
     if (block_->instrs()) {
-        guard_block = basic_block();
+        guard_block = ir_block();
         emit(guard_block);
     } else {
         guard_block = block_;
@@ -468,11 +468,11 @@ void IrGenerator::operator()(While* statement) {
 
 void IrGenerator::operator()(Conditional* statement) {
     // Emit a conditional if/then expression with boolean guard expr.
-    IrBlock::Ptr then_block = basic_block();
+    IrBlock::Ptr then_block = ir_block();
     IrBlock::Ptr else_block;
-    IrBlock::Ptr done_block = basic_block();
+    IrBlock::Ptr done_block = ir_block();
     if (statement->false_branch()) {
-        else_block = basic_block();
+        else_block = ir_block();
     } else {
         else_block = done_block;
     }
@@ -601,8 +601,8 @@ void IrGenerator::operator()(Return* statement) {
 void IrGenerator::operator()(Match* statement) {
     // Emit one conditional for each branch in the match statement.
     Operand guard = emit(statement->guard());
-    IrBlock::Ptr done_block = basic_block();  
-    IrBlock::Ptr next_block = basic_block();
+    IrBlock::Ptr done_block = ir_block();  
+    IrBlock::Ptr next_block = ir_block();
     free_temps();
 
     for (Statement::Ptr t = statement->cases(); t; t = t->next()) {
@@ -610,9 +610,9 @@ void IrGenerator::operator()(Match* statement) {
         enter_scope();
 
         Case::Ptr branch = static_cast<Case*>(t.pointer());
-        IrBlock::Ptr true_block = basic_block();
+        IrBlock::Ptr true_block = ir_block();
         if (t->next()) {
-            next_block = basic_block();
+            next_block = ir_block();
         } else {
             next_block = done_block;
         }
@@ -658,11 +658,11 @@ void IrGenerator::operator()(Function* feature) {
     if (!feature->block() || feature->is_native()) { return; }
 
     // Reset the temporaries for the function.
-    feature->basic_block_del_all();
+    feature->ir_block_del_all();
     temp_ = machine_->regs();
     function_ = feature;
     block_ = 0;
-    emit(basic_block());
+    emit(ir_block());
     enter_scope();
 
     // Pop the formal parameters off the stack in normal order, and save them
@@ -795,12 +795,11 @@ void IrGenerator::exception_catch() {
 	String::Ptr name = env_->name("Exception__current");
 	Constant::Ptr static current(new Constant(Location(), env_, name, 0, 0));
 
-	function_->file()->dependency(current);
 	Operand val = load(Operand(name, Address(0)));
 
 	// Branch to the continuation if there was no exception.
-	IrBlock::Ptr except_block = basic_block();
-	IrBlock::Ptr done_block = basic_block(); 
+	IrBlock::Ptr except_block = ir_block();
+	IrBlock::Ptr done_block = ir_block(); 
 	bz(val, done_block, except_block);
 
 	// Handle the exception by returning from the function.
@@ -859,7 +858,7 @@ void IrGenerator::native_operator(Call* expr) {
     }
 }
 
-IrBlock* IrGenerator::basic_block() {
+IrBlock* IrGenerator::ir_block() {
     IrBlock* block = new IrBlock();
     block->label(env_->name(".l" + stringify(++label_)));
     return block;
@@ -969,9 +968,9 @@ Operand IrGenerator::bool_expr(Expression* expression) {
         return return_;
     }
 
-    IrBlock::Ptr then_block = basic_block();
-    IrBlock::Ptr else_block = basic_block();
-    IrBlock::Ptr done_block = basic_block();
+    IrBlock::Ptr then_block = ir_block();
+    IrBlock::Ptr else_block = ir_block();
+    IrBlock::Ptr done_block = ir_block();
     return_ = RegisterId(++temp_, 0);
 
     // Recursively emit the boolean guard expression.
@@ -1309,7 +1308,6 @@ void IrGenerator::constants() {
         Constant::Ptr cn = env_->constant(i);
         store(Operand(cn->label(), Address(0)), emit(cn->initializer()));
         free_temps();
-        function_->file()->dependency(cn);
     }
 }
 
@@ -1522,7 +1520,7 @@ void IrGenerator::emit(IrBlock* block) {
         block_->next(block);
     }
     block_ = block;
-    function_->basic_block(block);
+    function_->ir_block(block);
 }
 
 void IrGenerator::store(Operand addr, Operand value) {

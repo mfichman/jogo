@@ -21,7 +21,7 @@
  */  
 
 #include "RegisterAllocator.hpp"
-#include "BasicBlockPrinter.hpp"
+#include "IrBlockPrinter.hpp"
 #include "Environment.hpp"
 #include <algorithm>
 
@@ -67,8 +67,8 @@ void RegisterAllocator::operator()(Function* func) {
             graph_[i].neighbors() = RegisterIdSet(func->temp_regs()+1);
         }
         liveness_->operator()(func);
-        for (int i = 0; i < func->basic_blocks(); ++i) {
-            build_graph(func->basic_block(i));
+        for (int i = 0; i < func->ir_blocks(); ++i) {
+            build_graph(func->ir_block(i));
         }
         build_stack();
         color_graph();     
@@ -81,8 +81,8 @@ void RegisterAllocator::operator()(Function* func) {
         spills++;
     }
 
-    for (int i = 0; i < func->basic_blocks(); i++) {
-        rewrite_temporaries(func->basic_block(i)); 
+    for (int i = 0; i < func->ir_blocks(); i++) {
+        rewrite_temporaries(func->ir_block(i)); 
     }
 }
 
@@ -330,8 +330,8 @@ void RegisterAllocator::spill_register(Function* func) {
 
     // Iterate through all blocks, and insert loads/stores before reads/writes
     // of the spilled register.
-    for (int i = 0; i < func->basic_blocks(); i++) {
-        IrBlock::Ptr block = func->basic_block(i);
+    for (int i = 0; i < func->ir_blocks(); i++) {
+        IrBlock::Ptr block = func->ir_block(i);
         IrBlock repl;
         
         // If this is the first block, and we're spilling a caller register,

@@ -24,56 +24,30 @@
 
 #include "Jogo.hpp"
 #include "Environment.hpp"
+#include "TreeNode.hpp"
+#include "RegisterAllocator.hpp"
+#include "LivenessAnalyzer.hpp"
 #include "IrBlock.hpp"
-#include "Object.hpp"
-#include "Machine.hpp"
 #include "Stream.hpp"
-#include <iostream>
-#include <fstream>
 #include <set>
 
-/* Generates code for Intel 64 machines */
-class NasmGenerator : public TreeNode::Functor {
+class IrBlockPrinter : public TreeNode::Functor {
 public:
-    NasmGenerator(Environment* env);
-    typedef Pointer<NasmGenerator> Ptr;
+    IrBlockPrinter(Environment* env, Machine* mach);
+    typedef Pointer<IrBlockPrinter> Ptr;
 
-    Stream* out() const { return out_; }
     void out(Stream* out) { out_ = out; }
     void operator()(File* file);
-    
-private:
-    void operator()(Class* feature);
     void operator()(Module* feature);
-    void operator()(Function* function);
+    void operator()(Class* feature);
+    void operator()(Function* feature);
     void operator()(IrBlock* block);
-    void string(String* string);
-    void instr(const char* instr, Operand r1);
-    void instr(const char* instr, Operand r1, Operand r2);
-    void instr(const char* instr);
-    void instr(const char* instr, Operand r1, const char* label);
 
-    void dispatch_table(Class* feature);
-    void arith(Instruction const& instr);
-    void load(Operand r1, Operand r2);
-    void store(Operand r1, Operand r2);
-
-    void operand(Operand op);
-    void reg(Operand op);
-    void addr(Operand addr);
-    void literal(Operand lit);
-    void label(Operand string);
-    void label(std::string const& string);
-    void align();
-    void stack_check(Function* feature);
-
-    void store_hack(Operand a1, Operand a2);
-    void load_hack(Operand res, Operand a1);
-    
-
+private:
     Environment::Ptr env_;
     Machine::Ptr machine_;
-    Class::Ptr class_;
     Stream::Ptr out_;
-    Opcode opcode_;
+    LivenessAnalyzer::Ptr liveness_;
+    Module::Ptr module_;
+    Class::Ptr class_;
 };

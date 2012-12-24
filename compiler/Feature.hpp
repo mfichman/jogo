@@ -149,10 +149,10 @@ public:
 	Formal* formals() const { return formals_; }
 	Type* type() const { return type_; }
     Block* block() const { return block_; }
-    IrBlock* basic_block(int index) { return basic_block_[index]; }
+    IrBlock* ir_block(int index) { return ir_block_[index]; }
 	Function* called_func(int index) { return called_func_[index]; }
 	ThrowSpec throw_spec() const;
-    int basic_blocks() const { return basic_block_.size(); }
+    int ir_blocks() const { return ir_block_.size(); }
     int local_slots() const { return local_slots_; }
     int arg_slots() const { return arg_slots_; }
     int stack_slots() const { return arg_slots_ + local_slots_; }
@@ -169,8 +169,8 @@ public:
     void arg_slots_inc() { arg_slots_++; }
     void arg_slots(int value) { arg_slots_ = value; }
     void temp_regs(int value) { temp_regs_ = value; }
-    void basic_block(IrBlock* block) { basic_block_.push_back(block); }
-    void basic_block_del_all() { basic_block_.clear(); }
+    void ir_block(IrBlock* block) { ir_block_.push_back(block); }
+    void ir_block_del_all() { ir_block_.clear(); }
     void formals(Formal* formals) { formals_ = formals; }
 	void throw_spec(ThrowSpec spec) { throw_spec_ = spec; }
     void block(Block* block) { block_ = block; }
@@ -182,7 +182,7 @@ private:
 	Formal::Ptr formals_;
 	Type::Ptr type_;
     Block::Ptr block_;
-    std::vector<IrBlock::Ptr> basic_block_;
+    std::vector<IrBlock::Ptr> ir_block_;
 	std::vector<Function*> called_func_;
     int local_slots_;
     int arg_slots_;

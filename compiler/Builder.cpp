@@ -24,15 +24,22 @@
 #include "CodeExpander.hpp"
 #include "IrGenerator.hpp"
 #include "RegisterAllocator.hpp"
-#include "NasmGenerator.hpp"
+#include "Nasm64Generator.hpp"
+#include "Intel64Generator.hpp"
 #include "CCodeGenerator.hpp"
-#include "BasicBlockPrinter.hpp"
+#include "IrBlockPrinter.hpp"
 #include "DeadCodeEliminator.hpp"
 #include "CopyPropagator.hpp"
 #include "TreePrinter.hpp"
 #include "InterfaceGenerator.hpp"
 #include "SemanticAnalyzer.hpp"
 #include "Parser.hpp"
+#include "OutputFormat.hpp"
+#if defined(DARWIN)
+#include "Mach64Output.hpp"
+#elif defined(WINDOWS)
+#elif defined(LINUX
+#endif
 
 #include <cstdlib>
 
@@ -206,16 +213,21 @@ void Builder::operator()(File* file) {
             Stream::stout() << "Compiling " << file->name() << "\n";
             Stream::stout()->flush();
         }
-        if (env_->generator() == "Intel64") {
+        if (env_->generator() == "Nasm64") {
             irgen(file);
             if (env_->dump_ir()) { return; }
-            nasmgen(file);
+            nasm64gen(file);
             if (!env_->assemble()) { return; }
             nasm(file->asm_file(), file->jgo_file());
         } else if (env_->generator() == "C") {
             cgen(file);
             if (!env_->assemble()) { return; }
-            nasm(file->c_file(), file->jgo_file());
+            cc(file->c_file(), file->jgo_file());
+        } else if (env_->generator() == "Intel64") {
+            irgen(file);
+            if (env_->dump_ir()) { return; }
+            if (!env_->assemble()) { return; } 
+            intel64gen(file);
         }
     }
 
@@ -340,7 +352,7 @@ void Builder::irgen(File* file) {
     Machine::Ptr machine = Machine::intel64();
     IrGenerator::Ptr bgen(new IrGenerator(env_, machine));
     RegisterAllocator::Ptr alloc(new RegisterAllocator(env_, machine));
-    BasicBlockPrinter::Ptr bprint(new BasicBlockPrinter(env_, machine));
+    IrBlockPrinter::Ptr bprint(new IrBlockPrinter(env_, machine));
     Stream::Ptr out = Stream::stout();
     out->machine(machine);
     bprint->out(out);
@@ -383,21 +395,45 @@ void Builder::cgen(File* file) {
     c->operator()(file);
 }
 
-void Builder::nasmgen(File* file) {
+void Builder::nasm64gen(File* file) {
     // Generates NASM Intel 64 code for all functions/classes in 'file.'
     // Outputs to a temporary file if this is an intermediate step; otherwise,
     // outputs to a named file in the build directory.
-    NasmGenerator::Ptr nasmgen(new NasmGenerator(env_));
-    nasmgen->out(new Stream(file->asm_file()));  
-    if (nasmgen->out()->error()) {
-        std::string msg = nasmgen->out()->message();
+    Nasm64Generator::Ptr nasm64gen(new Nasm64Generator(env_));
+    nasm64gen->out(new Stream(file->asm_file()));  
+    if (nasm64gen->out()->error()) {
+        std::string msg = nasm64gen->out()->message();
         Stream::sterr() << file->asm_file() << msg << "\n";
         Stream::sterr()->flush();
         Stream::stout()->flush();
         errors_++;
         return;
     }
-    nasmgen->operator()(file);
+    nasm64gen->operator()(file);
+}
+
+void Builder::intel64gen(File* file) {
+    // Output Intel64 (x86-64) machine code directly to the correct object file
+    // format for the current system.
+    Intel64Generator::Ptr intel64gen(new Intel64Generator(env_));
+    intel64gen->out(new Stream(file->jgo_file()));
+    if (intel64gen->out()->error()) {
+        std::string msg = intel64gen->out()->message();
+        Stream::sterr() << file->jgo_file() << msg << "\n";
+        Stream::sterr()->flush();
+        Stream::stout()->flush();
+        errors_++;
+        return;
+    }
+#if defined(DARWIN)
+    OutputFormat::Ptr format(new Mach64Output);
+#elif defined(WINDOWS)
+#error Not supported
+#elif defined(LINUX)
+#error Not supported
+#endif
+    intel64gen->format(format);
+    intel64gen->operator()(file);
 }
 
 void Builder::cc(const std::string& in, const std::string& out) {

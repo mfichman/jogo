@@ -423,7 +423,6 @@ void SemanticAnalyzer::operator()(Member* expression) {
         expression->type(env_->top_type());
         return;
     }
-    dependency(expression, clazz);
     
     if (call) {
         // First lookup: check to see if the member with name 'id' is present
@@ -521,10 +520,8 @@ void SemanticAnalyzer::operator()(Call* call) {
         call->arguments(call->receiver());
         receiver = call->receiver()->type();
         call->type(func->type()->canonical(receiver));
-        dependency(call, receiver->clazz());
     } else {
         call->type(func->type());
-        dependency(call, func);
     }
 
     // Evaluate types of argument expressions
@@ -540,9 +537,6 @@ void SemanticAnalyzer::operator()(Call* call) {
     call->arguments(args(call->arguments(), func, receiver));
     if (function_) {
         function_->called_func(func);
-    }
-    if (call->type()->is_compound()) {
-        dependency(call, call->type()->clazz());
     }
 }
 
@@ -565,7 +559,6 @@ void SemanticAnalyzer::operator()(Construct* expr) {
         expr->type(env_->top_type());
         return;
     }
-    dependency(expr, clazz);
 
     // Look up the constructor using the class object.
     Function::Ptr constr = clazz->function(env_->name("@init"));
@@ -596,9 +589,6 @@ void SemanticAnalyzer::operator()(Construct* expr) {
     }
     if (function_) {
         function_->called_func(constr);
-    }
-    if (clazz->is_compound()) {
-        dependency(expr, clazz);
     }
 }
 
@@ -632,7 +622,6 @@ void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
         return;
     }
     constant(this);
-    dependency(expression, constant);
     expression->constant(constant);
     expression->type(constant->type()); 
     assert(expression->type());
@@ -1158,7 +1147,6 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     }
     mutator(feature);
     accessor(feature);
-    dependency(feature, clazz);
 }
 
 void SemanticAnalyzer::operator()(Closure* expression) {
@@ -1233,7 +1221,6 @@ void SemanticAnalyzer::operator()(Type* type) {
     if (type->is_top() || type->is_void()) {
         return;
     }
-    dependency(type, type->clazz());
     if (type->is_generic() && class_) {
         Type::Ptr ct = class_->type();
         for (Generic::Ptr gen = ct->generics(); gen; gen = gen->next()) {
@@ -1424,9 +1411,6 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
         env_->error();
         return;
     }
-    if (expr->type()->is_compound()) {
-        dependency(expr, expr->type()->clazz());
-    }
 }
 
 void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
@@ -1555,13 +1539,6 @@ void SemanticAnalyzer::mutator(Attribute* feat) {
         Formal::Ptr arg(new Formal(loc, env_->name("_arg0"), ft));
         self->next(arg);
         class_->feature(new Function(loc, env_, set, self, 0, vt, block));
-    }
-}
-
-void SemanticAnalyzer::dependency(TreeNode* node, Feature* dep) {
-    // Adds a dependency to the appropriate file for the node
-    if (node->file()) {
-        node->file()->dependency(dep);
     }
 }
 

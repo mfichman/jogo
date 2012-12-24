@@ -20,18 +20,18 @@
  * IN THE SOFTWARE.
  */  
 
-#include "BasicBlockPrinter.hpp"
+#include "IrBlockPrinter.hpp"
 #include <iostream>
 
 using namespace std;
 
-BasicBlockPrinter::BasicBlockPrinter(Environment* env, Machine* mach) :
+IrBlockPrinter::IrBlockPrinter(Environment* env, Machine* mach) :
     env_(env),
     machine_(mach),
     liveness_(new LivenessAnalyzer(mach)) {
 }
 
-void BasicBlockPrinter::operator()(File* file) {
+void IrBlockPrinter::operator()(File* file) {
     if (env_->errors()) { return; }
     for (int i = 0; i < file->features(); i++) {
         file->feature(i)->operator()(this);
@@ -39,7 +39,7 @@ void BasicBlockPrinter::operator()(File* file) {
     out_->flush();
 }
 
-void BasicBlockPrinter::operator()(Module* feature) {
+void IrBlockPrinter::operator()(Module* feature) {
     module_ = feature;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
@@ -47,7 +47,7 @@ void BasicBlockPrinter::operator()(Module* feature) {
     module_ = 0;
 }
 
-void BasicBlockPrinter::operator()(Class* feature) {
+void IrBlockPrinter::operator()(Class* feature) {
     class_ = feature;
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
@@ -55,18 +55,18 @@ void BasicBlockPrinter::operator()(Class* feature) {
     class_ = 0;
 }
 
-void BasicBlockPrinter::operator()(Function* feature) {
+void IrBlockPrinter::operator()(Function* feature) {
     liveness_->operator()(feature);
 
-    if (feature->basic_blocks()) {
+    if (feature->ir_blocks()) {
         out_ << feature->label() << ":\n";
-        for (int i = 0; i < feature->basic_blocks(); i++) {
-            operator()(feature->basic_block(i));
+        for (int i = 0; i < feature->ir_blocks(); i++) {
+            operator()(feature->ir_block(i));
         } 
     }
 }
 
-void BasicBlockPrinter::operator()(IrBlock* block) {
+void IrBlockPrinter::operator()(IrBlock* block) {
     IrBlock::Ptr branch = block->branch();
     IrBlock::Ptr next = block->next();
     if (block->label()) {

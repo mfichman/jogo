@@ -89,7 +89,6 @@ private:
     void constructor();
     void destructor();
     void copier();
-    void dependency(TreeNode* node, Feature* dep); 
     void assign_enums(Class* clazz);
 
     Environment::Ptr env_;
