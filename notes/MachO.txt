@@ -1,0 +1,19 @@
+Notes on the Mach-O file format
+===============================
+
+mach_header_64
+segment_command_64 ""
+section_64 "__text"
+section_64 "__cstring" ?
+symtab_command
+code for section __text
+relocation_info
+relocation_info
+relocation_info
+code for section __cstring ?
+nlist_64 
+nlist_64 
+0
+string table entry
+string table entry
+string table entry
