@@ -38,6 +38,7 @@ void Nasm64Generator::operator()(File* file) {
     if (env_->errors()) { return; }
 
     //out_ << "default rel\n";
+    // Output string literals, integer literals, and constants (enums, floats)
     out_ << "section .data\n";
     align();
     for (String::Ptr s = env_->strings(); s; s = s->next()) {
@@ -58,11 +59,14 @@ void Nasm64Generator::operator()(File* file) {
         definition_.insert(cons->label()->string());
     }
 
+    // Output the generated code in nasm-format
     out_ << "section .text\n";
     for (int i = 0; i < file->features(); i++) {
         file->feature(i)->operator()(this);
     }
 
+    // Generate extern defs for each symbol that is referenced in this file,
+    // but not defined in this file.
     for (std::set<std::string>::iterator i = symbol_.begin(); 
         i != symbol_.end(); i++) {
 
@@ -75,9 +79,6 @@ void Nasm64Generator::operator()(File* file) {
 #endif
         } 
     }
-    // FIXME: This is stupid.  The NasmGenerator itself should record the
-    // dependencies as they are generated, and output extern declarations as
-    // necessary.
 
     out_->flush();
 }
@@ -105,41 +106,36 @@ void Nasm64Generator::operator()(Module* feature) {
 }
 
 void Nasm64Generator::operator()(Function* feature) {
-    // Emit a function, or an extern declaration if the function is native or
-    // belongs to a different output file.
-    String::Ptr id = feature->name();
+    // Emit the nasm assembly code for the given function.
     if (feature->is_virtual()) { return; }
-    if (feature->is_native()) {
-        out_ << "extern "; label(feature->label()); out_ << "\n";
-    } else if (feature->ir_blocks()) {
-        out_ << "section .text\n";
-        out_ << "global "; label(feature->label()); out_ << "\n";
-        label(feature->label()); out_ << ":\n";
-        definition_.insert(feature->label()->string());
-        out_ << "    push rbp\n"; 
-        out_ << "    mov rbp, rsp\n";
+    if (!feature->ir_blocks()) { return; }
+    if (feature->is_native()) { return; }
 
-        stack_check(feature);
+    out_ << "section .text\n";
+    out_ << "global "; label(feature->label()); out_ << "\n";
+    label(feature->label()); out_ << ":\n";
+    definition_.insert(feature->label()->string());
+    out_ << "    push rbp\n"; 
+    out_ << "    mov rbp, rsp\n";
 
-        if (feature->stack_slots()) {
-            // Allocate space on the stack; ensure that the stack is aligned to
-            // a 16-byte boundary.
-            int stack = feature->stack_slots() * machine_->word_size();
-            if (stack % 16 != 0) {
-                stack += 16 - (stack % 16);
-            }
-            out_ << "    sub rsp, " << stack << "\n";
+    stack_check(feature);
+    if (feature->stack_slots()) {
+        // Allocate space on the stack; ensure that the stack is aligned to
+        // a 16-byte boundary.
+        int stack = feature->stack_slots() * machine_->word_size();
+        if (stack % 16 != 0) {
+            stack += 16 - (stack % 16);
         }
-        
-        for (int i = 0; i < feature->ir_blocks(); i++) {
-            operator()(feature->ir_block(i));
-        }
-        // Make sure that the text section is gets re-aligned at the end of the
-        // function, because the instruction stream can cause it be become
-        // unaligned.
-        align();
+        out_ << "    sub rsp, " << stack << "\n";
     }
-
+    
+    for (int i = 0; i < feature->ir_blocks(); i++) {
+        operator()(feature->ir_block(i));
+    }
+    // Make sure that the text section is gets re-aligned at the end of the
+    // function, because the instruction stream can cause it be become
+    // unaligned.
+    align();
 }
 
 void Nasm64Generator::operator()(IrBlock* block) {
@@ -561,8 +557,7 @@ void Nasm64Generator::stack_check(Function* feature) {
 
 void Nasm64Generator::string(String* string) {
     // Output a string literal, and correctly process escape sequences.
-
-    std::string in = string->string();
+    std::string const& in = string->string();
     std::string out;
     int length = 0;
     bool escaped = true;
@@ -617,7 +612,6 @@ void Nasm64Generator::string(String* string) {
     } else {
         out += "\", 0x0";
     }
-
     out_ << "lit" << (void*)string << ": \n";  
     out_ << "    dq ";
     label("String__vtable");

@@ -53,7 +53,7 @@ void Section::buffer(void const* buffer, int len) {
     memcpy(&buffer_[0] + off, buffer, len);
 }
 
-void Section::pad(int num) {
+void Section::align(int num) {
     // Pad the number of bytes to a multiple of the the given value
     int rem = buffer_.size() % num;
     if (rem) {

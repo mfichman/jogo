@@ -81,6 +81,7 @@ public:
     Register* sp_reg() const { return sp_reg_; }
     Register* float_reg(std::string const& name);
     Register* int_reg(std::string const& name);
+    Register* special_reg(std::string const& name);
     Register* reg(std::string const& name, RegisterId id);
     Register* reg(RegisterId id) const;
     int regs() const { return reg_.size(); }

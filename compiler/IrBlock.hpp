@@ -35,6 +35,7 @@ public:
     // an actual hardware register.  A floating-point register has the FLOAT
     // flag set.
     static int const FLOAT = 0x8000;
+    static int const SPECIAL = 0x4000; // Special reg that is not allocatable
 
     RegisterId() : id_(0), flags_(0) {}
     RegisterId(int id, int flags) : id_(id), flags_(flags) {
@@ -43,6 +44,7 @@ public:
 
     bool is_int() const { return !is_float(); }
     bool is_float() const { return flags_ & FLOAT; }
+    bool is_special() const { return flags_ & SPECIAL; }
     bool is_valid() const { return id_; }
     int flags() const { return flags_; }
     int id() const { return id_; }

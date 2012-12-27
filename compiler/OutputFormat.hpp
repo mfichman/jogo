@@ -26,21 +26,31 @@
 #include "Object.hpp"
 #include "String.hpp"
 #include "Stream.hpp"
+#include "Section.hpp"
 
 /* Interface for output file formats (e.g., COFF, Mach-O) */
 class OutputFormat : public Object {
 public:
     typedef Pointer<OutputFormat> Ptr;
+    typedef int RelocType;
     virtual ~OutputFormat() {}
 
-    virtual void ref(String::Ptr name)=0;
+    virtual void ref(String* name, RelocType type)=0;
     // Records a references to a symbol name at the current byte offset in the
     // text section.  Ref info is used to generate relocation entries.
 
-    virtual void label(String::Ptr label)=0;
+    virtual void label(String* label)=0;
+    virtual void local(String* label)=0;
     // Emits a label at the given location, adding an entry to the symbol
     // table.  This function asserts if a symbol is defined twice.
 
-    virtual void out(Stream::Ptr out)=0;
+    virtual void out(Stream* out)=0;
     // Flushes the output format to the given file.
+
+    virtual Section* text() const=0;
+    // Returns the tet section (for code emit)
+
+    static int const RELOC_ABSOLUTE = 0x1;
+    static int const RELOC_BRANCH = 0x2;
+    static int const RELOC_SIGNED = 0x3;
 };

@@ -200,6 +200,11 @@ bool RegisterAllocator::color_ok(RegisterVertex const& v, RegisterId reg) {
         return false;
     }
 
+    // Conflict: Register is a special (reserved) register (like rsp/rbp)
+    if (reg.is_special()) {
+        return false;
+    } 
+
     // Conflict: Candiate reg is the same as a machine register that
     // matches.
     if (v.neighbors().has(reg)) {

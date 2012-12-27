@@ -74,7 +74,7 @@ def jogo_test(test):
             flags += ' -e'
             run = True
         
-    flags += ' -m --build-dir ../build/test --optimize -o'
+    flags += ' --build-dir ../build/test --optimize -o'
     flags += ' ../bin/test/' + test.lower()
     command = '../bin/jogo ' + test + ' -i ../runtime -i ../lib ' + flags
     if options.full:
@@ -85,7 +85,15 @@ def jogo_test(test):
     if sys.platform == 'win32':
         command = command.replace('/', '\\')
     output = shell(command + ' 2>&1', run)
-    return check(test+'.jg', expected, output)
+    result = check(test+'.jg', expected, output)
+    if result[0] == FAIL:
+        return result
+
+    return result
+    #command += ' -g Intel64'
+    #output = shell(command + ' 2>&1', run)
+    #return check(test+'.jg', expected, output)
+    
 
 def python_test(test):
     # Run a Python test.  Useful for various msicellaneous tests that are not

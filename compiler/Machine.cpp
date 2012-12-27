@@ -36,6 +36,11 @@ Register* Machine::int_reg(std::string const& name) {
     return reg(name, id);
 }
 
+Register* Machine::special_reg(std::string const& name) {
+    RegisterId id(reg_.size(), RegisterId::SPECIAL);
+    return reg(name, id);
+}
+
 Register* Machine::float_reg(std::string const& name) {
     RegisterId id(reg_.size(), RegisterId::FLOAT);
     return reg(name, id);
@@ -70,18 +75,20 @@ Machine* Machine::intel64() {
     // Volatile/temporary register = callee reg. Not saved by the callee, so
     // not safe to be live across function calls
     
-    Register::Ptr rsp = m->int_reg("rsp"); m->sp_reg(rsp); // 1
     Register::Ptr rax = m->int_reg("rax"); m->callee_reg(rax); //2 VOL
-    Register::Ptr rbx = m->int_reg("rbx"); m->caller_reg(rbx); //3
     Register::Ptr rcx = m->int_reg("rcx"); m->callee_reg(rcx); //4 VOL
     Register::Ptr rdx = m->int_reg("rdx"); m->callee_reg(rdx); //5 VOL
+    Register::Ptr rbx = m->int_reg("rbx"); m->caller_reg(rbx); //3
 
+    Register::Ptr rsp = m->special_reg("rsp"); m->sp_reg(rsp); // 1
+    Register::Ptr rbp = m->special_reg("rbp");
+
+    Register::Ptr rsi = m->int_reg("rsi"); m->callee_reg(rsi); //7
 #ifdef WINDOWS
     Register::Ptr rdi = m->int_reg("rdi"); m->caller_reg(rdi); //6
 #else
     Register::Ptr rdi = m->int_reg("rdi"); m->callee_reg(rdi); //6
 #endif
-    Register::Ptr rsi = m->int_reg("rsi"); m->callee_reg(rsi); //7
     Register::Ptr r8 = m->int_reg("r8"); m->callee_reg(r8); //8 VOL
     Register::Ptr r9 = m->int_reg("r9"); m->callee_reg(r9); //9 VOL
     Register::Ptr r10 = m->int_reg("r10"); m->callee_reg(r10);//10 VOL
