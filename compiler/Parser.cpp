@@ -246,6 +246,7 @@ Module* Parser::module() {
         file_alias(scope->string());
         switch (token()) {
         case Token::IDENTIFIER:
+        case Token::OPERATOR:
             module_feature(function(), scope);
             break;
         case Token::CONSTANT:

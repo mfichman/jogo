@@ -218,7 +218,7 @@ void Nasm64Generator::dispatch_table(Class* feature) {
     label(vtable); out_ << ":\n";
     definition_.insert(vtable);
 
-    // Emit the destructor, hash func, equals func, and vtable length
+    // Emit the destructor and vtable length
     out_ << "    dq "; label(dtor->label()); out_ << "\n"; 
     out_ << "    dq " << feature->jump1s() << "\n";
 

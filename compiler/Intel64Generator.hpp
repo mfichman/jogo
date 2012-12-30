@@ -36,6 +36,7 @@ public:
     typedef Pointer<Intel64Generator> Ptr;
     Stream::Ptr out() const { return out_; }
     bool is_extended_reg(RegisterId id) const;
+    void dispatch_table(Class* feature);
     void operator()(File* file);
     void operator()(Class* feature);
     void operator()(Module* feature);
@@ -44,6 +45,7 @@ public:
     void out(Stream::Ptr out) { out_ = out; }
     void format(OutputFormat::Ptr format);
 
+    static RegisterId const RAX;
     static RegisterId const RSP;
     static RegisterId const RBP;
     static uint8_t const MOV_RM_REG = 0x89;
@@ -64,11 +66,13 @@ public:
 private:
     void string(String::Ptr lit);
     void instr(uint8_t op, uint8_t ext, RegisterId reg, uint32_t imm);
+    void instr(uint8_t op, uint8_t ext, RegisterId reg);
     void instr(uint8_t op, RegisterId reg, RegisterId rm);
     void instr(uint8_t op, RegisterId reg, String* label);
     void instr(uint8_t op, RegisterId reg, Operand mem);
     void load(RegisterId res, Operand a1);
-    void store(Operand a1, RegisterId a2);
+    void store(Operand a1, Operand a2);
+    void arith(Instruction const& instr);
 
     void mov(RegisterId reg, RegisterId rm);
     void mov(RegisterId reg, Operand rm);
@@ -79,19 +83,22 @@ private:
     void push(RegisterId reg);
     void pop(RegisterId reg);
     void cmp(RegisterId arg1, RegisterId arg2);
-    void jne(Operand op);
-    void je(Operand op);
-    void jg(Operand op);
-    void jge(Operand op);
-    void jl(Operand op);
-    void jle(Operand op);
-    void call(Operand op);
-    void jmp(Operand op);
+    void test(RegisterId arg1, RegisterId arg2);
+    void jne(String* label);
+    void je(String* label);
+    void jg(String* label);
+    void jge(String* label);
+    void jl(String* label);
+    void jle(String* label);
+    void jz(String* label);
+    void jnz(String* label);
+    void call(String* label);
+    void jmp(String* label);
     void movsd(RegisterId dst, RegisterId src);
     void lea(RegisterId dst, Operand op);
     void bnot(RegisterId src);
-    void band(RegisterId src);
-    void bor(RegisterId src);
+    void band(RegisterId dst, RegisterId src);
+    void bor(RegisterId dst, RegisterId src);
     void nop();
     void leave();
     void ret();

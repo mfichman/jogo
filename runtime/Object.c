@@ -32,9 +32,11 @@
 // _vtable[2..n+1] = Jump table 1 (hash mixing values) 
 // _vtable[n+2..2n+1] = Method pointers
 
+static Int const READONLY_MASK = 0xf000000000000000;
+
 void Object__refcount_inc(Object self) {
      // Increment the object's refcount;
-    if (self) {
+    if (self && !(self->_refcount & READONLY_MASK)) {
         self->_refcount++;
     }
 }
@@ -42,7 +44,7 @@ void Object__refcount_inc(Object self) {
 void Object__refcount_dec(Object self) {
     // Decrement the object's refcount if the object is non-null.  Free the 
     // object if the refcount is below 0
-    if (self) {
+    if (self && !(self->_refcount & READONLY_MASK)) {
         self->_refcount--;
         if (self->_refcount <= 0) {
             // The second entry in the vtable is always the destructor. Call

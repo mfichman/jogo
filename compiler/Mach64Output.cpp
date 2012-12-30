@@ -169,7 +169,11 @@ Mach64Output::out(Stream* out) {
     text.align = 0;
     text.reloff = seg.fileoff + text_->bytes();
     text.nreloc = reloc_.size();
-    text.flags = S_REGULAR|S_ATTR_EXT_RELOC|S_ATTR_LOC_RELOC|S_ATTR_SOME_INSTRUCTIONS;
+    text.flags = 0;
+    text.flags |= S_REGULAR;
+    text.flags |= S_ATTR_EXT_RELOC;
+    text.flags |= S_ATTR_LOC_RELOC;
+    text.flags |= S_ATTR_SOME_INSTRUCTIONS;
     text.reserved1 = 0;
     text.reserved2 = 0;
     text.reserved3 = 0;

@@ -74,7 +74,7 @@ def jogo_test(test):
             flags += ' -e'
             run = True
         
-    flags += ' --build-dir ../build/test --optimize -o'
+    flags += ' --build-dir ../build/test --optimize -o' # -g Intel64 -o'
     flags += ' ../bin/test/' + test.lower()
     command = '../bin/jogo ' + test + ' -i ../runtime -i ../lib ' + flags
     if options.full:

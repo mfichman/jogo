@@ -22,6 +22,7 @@
 
 #include "Intel64Generator.hpp"
 
+RegisterId const Intel64Generator::RAX(1, 0);
 RegisterId const Intel64Generator::RSP(5, 0);
 RegisterId const Intel64Generator::RBP(6, 0);
 
@@ -64,6 +65,9 @@ void Intel64Generator::operator()(File* file) {
 void Intel64Generator::operator()(Class* feature) {
 
     // Emit dispatch table
+    if (feature->destructor()->parent() == feature) {
+        dispatch_table(feature);
+    }
 
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
@@ -129,46 +133,70 @@ void Intel64Generator::operator()(IrBlock* block) {
         case RET: leave(); ret(); break;
         case MOV: mov(res.reg(), a1.reg()); break;
         case LOAD: load(res.reg(), a1); break;
-        case STORE: store(a1, a2.reg()); break;
-//        case BNE: cmp(a1, a2); jne(branch->label(); break;
-//        case BE: instr("cmp", a1, a2); instr("je", branch->label()); break;
-//        case BZ: instr("cmp", a1, "0"); instr("je", branch->label()); break;
-//        case BNZ: instr("cmp", a1, "0"); instr("jne", branch->label()); break; 
-//        case BG: instr("cmp", a1, a2); instr("jg", branch->label()); break;
-//        case BGE: instr("cmp", a1, a2); instr("jge", branch->label()); break;
-//        case BL: instr("cmp", a1, a2); instr("jl", branch->label()); break;
-//        case BLE: instr("cmp", a1, a2); instr("jle", branch->label()); break;
-        case CALL: call(a1); break;
-//        case JUMP: instr("jmp", branch->label()); break;
-//        case MOV: 
-//            if (!!a1.addr() && !a1.is_indirect()) {
-//                out_ << "    lea "; operand(res); out_ << ", ["; 
-//                operand(a1); out_ << "]\n";
-//            } else if (res.is_float()) {
-//                instr("movsd", res, a1);
-//            } else {
-//                instr("mov", res, a1); 
-//            }
-//            break;
-//        case ADD: arith(inst); break;
-//        case SUB: arith(inst); break;
-//        case MUL: arith(inst); break;
-//        case DIV: arith(inst); break;
-//        case NEG: instr("mov", res, a1); instr("neg", res); break;
-//        case STORE: store_hack(a1, a2); break;
-//            // FIXME: Simplify the code path for labels, loads, stores,
-//            // literals, etc.
-//            // Convert literals to just labels with indirect flag set?
-//            // Disallow indirect operations on labels?
-//            // Investigate why leaq doesn't work
-//        case NOTB: instr("mov", res, a1); instr("not", res); break;
-//        case ANDB: instr("mov", res, a1); instr("and", res, a2); break;
-//        case ORB: instr("mov", res, a1); instr("or", res, a2); break; 
-//        case NOP: instr("nop"); break;
-//        case RET: instr("leave"); instr("ret"); break;
+        case STORE: store(a1, a2); break;
+        case BNE: cmp(a1.reg(), a2.reg()); jne(branch->label()); break;
+        case BE: cmp(a1.reg(), a2.reg()); je(branch->label()); break;
+        case BZ: test(a1.reg(), a1.reg()); jz(branch->label()); break;
+        case BNZ: test(a1.reg(), a1.reg()); jnz(branch->label()); break; 
+        case BG: cmp(a1.reg(), a2.reg()); jg(branch->label()); break;
+        case BGE: cmp(a1.reg(), a2.reg()); jge(branch->label()); break;
+        case BL: cmp(a1.reg(), a2.reg()); jl(branch->label()); break;
+        case BLE: cmp(a1.reg(), a2.reg()); jle(branch->label()); break;
+        case CALL: call(a1.label()); break;
+        case JUMP: jmp(branch->label()); break;
+        case ADD: arith(inst); break;
+        case SUB: arith(inst); break;
+        case MUL: arith(inst); break;
+        case DIV: arith(inst); break;
+        case NEG: mov(res.reg(), a1.reg()); neg(res.reg()); break;
+        case NOTB: mov(res.reg(), a1.reg()); bnot(res.reg()); break;
+        case ANDB: mov(res.reg(), a1.reg()); band(res.reg(), a2.reg()); break;
+        case ORB: mov(res.reg(), a1.reg()); bor(res.reg(), a2.reg()); break; 
+        case NOP: text_->uint8(0x90); break;
         default: break;
         }
     }
+}
+
+void Intel64Generator::dispatch_table(Class* feature) {
+    // Output the class dispatch table for calling methods with dynamic
+    // dispatch.  The format is as follows: 
+    //
+    //     vtable[0] is the destructor
+    //     vtable[1] is the hash function
+    //     vtable[2] is the equals function
+    //     vtable[3] is the number of 'slots' in the vtable (n)
+    //     vtable[2..n+3] are the hash mixing values
+    //     vtable[2n+2..2n+3] are the actual method pointers
+
+    String* name = feature->label();
+    Function* dtor = feature->destructor();
+    std::string vtable = name->string()+"__vtable";
+
+    // Output the vtable label 
+    format_->label(env_->name(vtable));
+
+    // Emit the destructor and vtable length
+    format_->ref(dtor->label(), OutputFormat::RELOC_ABSOLUTE);
+    text_->uint64(0);
+    text_->uint64(feature->jump1s());
+
+    // Emit the first jump table
+    for (int i = 0; i < feature->jump1s(); i++) {
+        text_->uint64(feature->jump1(i));
+    } 
+    
+    // Emit the second jump table
+    for (int i = 0; i < feature->jump2s(); i++) {
+        if (feature->jump2(i)) {
+            String* label = feature->jump2(i)->label();
+            format_->ref(label, OutputFormat::RELOC_ABSOLUTE);
+            text_->uint64(0);
+        } else {
+            text_->uint64(0);
+        }
+    }
+    text_->align(16);
 }
 
 bool Intel64Generator::is_extended_reg(RegisterId reg) const {
@@ -177,12 +205,13 @@ bool Intel64Generator::is_extended_reg(RegisterId reg) const {
 
 void Intel64Generator::string(String::Ptr str) {
     // Outputs a string literal definition.
+    static uint64_t const READONLY_MASK = 0xf000000000000000;
     std::string const label = "lit"+stringify((void*)str);
     std::string const out = str->unescaped();
     format_->local(env_->name(label));
     format_->ref(env_->name("String__vtable"), OutputFormat::RELOC_ABSOLUTE); 
     text_->uint64(0); // Placeholder for vtable ref
-    text_->uint64(1); // Reference count
+    text_->uint64(1 | READONLY_MASK); // Reference count
     text_->uint64(out.length()); // Length
     text_->buffer(out.c_str(), out.length()+1);
 }
@@ -202,6 +231,22 @@ void Intel64Generator::instr(uint8_t op, uint8_t ext, RegisterId rm, uint32_t im
     text_->uint8(op);
     text_->uint8(modrm);
     text_->uint32(imm);
+}
+
+void Intel64Generator::instr(uint8_t op, uint8_t ext, RegisterId rm) {
+    // Emits a single-operand instruction w/ extension field
+    assert(!!rm&&"Invalid register ID");
+    uint8_t const rmid = rm.id() - 1;
+    uint8_t rex = REX_PREFIX|REX_W;
+    if (is_extended_reg(rm)) {
+        rex |= REX_B;
+    }
+    uint8_t modrm = MODRM_DIRECT;
+    modrm |= (MODRM_REG & (ext << 3));
+    modrm |= (MODRM_RM & (rmid));
+    text_->uint8(rex);
+    text_->uint8(op);
+    text_->uint8(modrm);
 }
 
 void Intel64Generator::instr(uint8_t op, RegisterId reg, RegisterId rm) {
@@ -293,7 +338,7 @@ void Intel64Generator::load(RegisterId res, Operand a1) {
     Expression* expr = a1.literal();
     if (StringLiteral* le = dynamic_cast<StringLiteral*>(expr)) {
         uint8_t const regid = res.id() - 1;
-        uint8_t const op = MOV_IMM + regid;
+        uint8_t const op = MOV_IMM + (MODRM_RM & regid);
         uint8_t rex = REX_PREFIX|REX_W;
         if (is_extended_reg(res)) {
             rex |= REX_B;
@@ -312,25 +357,125 @@ void Intel64Generator::load(RegisterId res, Operand a1) {
     } else if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(expr)) {
         mov(res, atoll(le->value()->string().c_str()));
     } else if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(expr)) {
-        //assert(!"Not implemented");
-    } else if (a1.label()) {
-        assert("Dndirect label load"&&a1.is_indirect());
-        assert("Offset in label load"&&!a1.addr().value());
+        assert(!"Not implemented");
+    } else if (a1.label() && a1.is_indirect()) {
         mov(res, a1.label());
+    } else if (a1.label()) {
+        uint8_t const regid = res.id() - 1;
+        uint8_t const op = MOV_IMM + (MODRM_RM & regid);
+        uint8_t rex = REX_PREFIX|REX_W;
+        if (is_extended_reg(res)) {
+            rex |= REX_B;
+        }
+        text_->uint8(rex);
+        text_->uint8(op);
+        format_->ref(a1.label(), OutputFormat::RELOC_ABSOLUTE);
+        // Ref the literal in the relocation table
+        text_->uint64(0); // Immediate
     } else {
         mov(res, a1);
     }
 }
 
-void Intel64Generator::store(Operand a1, RegisterId a2) {
-    //
-    if (a1.label()) {
+void Intel64Generator::store(Operand a1, Operand a2) {
+    Expression* expr = a2.literal();
+    assert("Direct store operand"&&a1.is_indirect());
+    if (StringLiteral* le = dynamic_cast<StringLiteral*>(expr)) {
+        assert(!"Not implemented");
+    } else if (BooleanLiteral* le = dynamic_cast<BooleanLiteral*>(expr)) {
+        mov(RAX, le->value()->string()!="0");
+        mov(a1, RAX);
+    } else if (NilLiteral* le = dynamic_cast<NilLiteral*>(expr)) {
+        mov(RAX, (uint64_t)0);
+        mov(a1, RAX);
+    } else if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(expr)) {
+        mov(RAX, atoll(le->value()->string().c_str()));
+        mov(a1, RAX);
+    } else if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(expr)) {
+        assert(!"Not implemented");
+    } else if (a1.label()) {
         assert("Direct label store"&&a1.is_indirect());
         assert("Offset in label store"&&!a1.addr().value());
-        mov(a1.label(), a2);
+        mov(a1.label(), a2.reg());
     } else {
-        mov(a1, a2);
+        mov(a1, a2.reg());
     }
+}
+
+void Intel64Generator::arith(Instruction const& inst) {
+    // Emits an arithmetic instruction.  Depending on the opcode and the
+    // operands, the expression may have to be manipulated because all x86
+    // instructions take only 2 arithmetic operands.
+    Operand res = inst.result();
+    Operand r1 = inst.first();
+    Operand r2 = inst.second();
+    
+    assert(!res.is_float()&&"Not implemented");
+    if (inst.opcode() == DIV && !res.is_float()) {
+        assert(!"Not implemented");
+/*
+        out_ << "    push rdx\n";
+        out_ << "    mov rax, "; operand(r1); out_ << "\n"; 
+        out_ << "    cqo\n";
+        out_ << "    idiv "; operand(r2); out_ << "\n";
+        out_ << "    pop rdx\n";
+        out_ << "    mov "; operand(res); out_ << ", rax\n";
+*/
+        return;
+    }
+
+    uint8_t op = 0;
+    switch (inst.opcode()) {
+    case ADD: op = 0x03; break;
+    case SUB: op = 0x2b; break;
+    //case MUL: name = (res.is_float() ? "mulsd" : "imul"); break;
+    //case DIV: name = (res.is_float() ? "divsd" : "div"); break;
+    default: assert(false);
+    }
+
+    // r10 <- rbx - rdi
+
+    // mov r10, rbx
+    // sub r10, rdi 
+
+    if (res.reg() == r1.reg()) {
+        // t1 <- t1 - t2
+        instr(op, r1.reg(), r2.reg());
+    } else if (res.reg() != r2.reg()) {
+        // t1 <- t2 - t3
+        mov(res.reg(), r1.reg()); 
+        instr(op, res.reg(), r2.reg());
+    } else if (inst.opcode() == ADD || inst.opcode() == MUL) {
+        // t1 <- t2 + t1
+        instr(op, r2.reg(), r1.reg()); 
+    } else if (inst.opcode() == SUB) {
+        // t1 <- t2 - t1 goes to t1 <- -t1 + t2; t1 <- -t1 
+        neg(r1.reg());
+        add(r1.reg(), r2.reg());
+    } else {
+        // t1 <- t2 / t1 
+        //instr("push", r2);
+        //instr(name, r2, r1);
+        //instr((res.is_float() ? "movsd" : "mov"), r1, r2);
+        //instr("pop", r2);        
+        assert(!"Not implemented");
+    }
+}
+
+void Intel64Generator::neg(RegisterId reg) {
+    instr(0xf7, 0x03, reg);
+}
+
+void Intel64Generator::bnot(RegisterId reg) {
+    instr(0xf7, 0x02, reg);
+}
+
+void Intel64Generator::band(RegisterId dst, RegisterId src) {
+    instr(0x23, dst, src);
+}
+
+void Intel64Generator::bor(RegisterId dst, RegisterId src) {
+    instr(0x0b, dst, src);
 }
 
 void Intel64Generator::mov(RegisterId dst, RegisterId src) {
@@ -388,16 +533,90 @@ void Intel64Generator::sub(RegisterId dst, uint64_t imm) {
     instr(0x81, 0x05, dst, imm);
 }
 
-void Intel64Generator::call(Operand a1) {
+void Intel64Generator::call(String* label) {
     text_->uint8(0xe8);
-    format_->ref(a1.label(), OutputFormat::RELOC_BRANCH);
+    format_->ref(label, OutputFormat::RELOC_BRANCH);
     text_->uint32(0); // Displacement
+}
+
+void Intel64Generator::jmp(String* label) {
+    text_->uint8(0xe9);
+    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    text_->uint32(0); // Displacement
+}
+
+void Intel64Generator::jne(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x85);
+    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    text_->uint32(0);
+}
+
+void Intel64Generator::je(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x84);
+    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    text_->uint32(0);
+}
+
+void Intel64Generator::jg(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x8f);
+    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    text_->uint32(0);
+}
+
+void Intel64Generator::jge(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x8d);
+    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    text_->uint32(0);
+}
+
+void Intel64Generator::jl(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x8c);
+    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    text_->uint32(0);
+}
+
+void Intel64Generator::jle(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x8e);
+    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    text_->uint32(0);
+}
+
+void Intel64Generator::jz(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x84);
+    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    text_->uint32(0);
+}
+
+void Intel64Generator::jnz(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x85);
+    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    text_->uint32(0);
 }
 
 void Intel64Generator::push(RegisterId reg) {
     assert(reg.id() >= 1 && reg.id() <= 16);
     uint8_t const regid = reg.id() - 1;
     text_->uint8(0x50+regid);
+}
+
+void Intel64Generator::cmp(RegisterId arg1, RegisterId arg2) {
+    instr(0x3b, arg1, arg2);  
+}
+
+void Intel64Generator::test(RegisterId arg1, RegisterId arg2) {
+    instr(0x85, arg1, arg2);  
+}
+
+void Intel64Generator::add(RegisterId arg1, RegisterId arg2) {
+    instr(0x01, arg1, arg2);
 }
 
 void Intel64Generator::leave() {
