@@ -447,13 +447,13 @@ void Lexer::operator_or_typevar() {
         break;
     case ':':
         read();
-        if (islower(char_)) {
+        /*if (islower(char_)) {
             while (islower(char_)) {
                 read();
             }
             token(Token::TYPEVAR);
             ignore_newline_ = false;
-        } else if (char_ == ':') {
+        } else*/ if (char_ == ':') {
             read();
             token(Token::SCOPE);
         } else {

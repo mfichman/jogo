@@ -54,6 +54,7 @@ private:
     void implicit_import(Type* type, Flags flags=Import::QUALIFIED);
     void implicit_import(String* scope, Flags flags=Import::QUALIFIED);
     void module_feature(Feature* feature, String* scope);
+    void implicit_self(Feature* func, Type* type);
 
     String* name(const std::string& name) { return env_->name(name); }
     void next();
