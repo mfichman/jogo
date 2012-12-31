@@ -91,19 +91,14 @@ env.Append(BUILDERS = { 'NASM': nasm_bld })
 
 # Compiler build #############################################################
 compiler_src = env.Glob('build/compiler/*.cpp')
-<<<<<<< HEAD
 jogo_cmd = os.path.join('bin', 'jogo')
 jgdoc_cmd = os.path.join('bin', 'jgdoc')
 jgmake_cmd = os.path.join('bin', 'jgmake')
+jgi_cmd = os.path.join('bin', 'jgi')
 jogo = env.Program(jogo_cmd, compiler_src + ['build/drivers/Main.cpp'])
 jgdoc = env.Program(jgdoc_cmd, compiler_src + ['build/drivers/Doc.cpp'])
 jgmake = env.Program(jgmake_cmd, compiler_src + ['build/drivers/Make.cpp'])
-=======
-jogo = env.Program('bin/jogo', compiler_src + ['build/drivers/Main.cpp'])
-jgdoc = env.Program('bin/jgdoc', compiler_src + ['build/drivers/Doc.cpp'])
-jgmake = env.Program('bin/jgmake', compiler_src + ['build/drivers/Make.cpp'])
-jgi = env.Program('bin/jgi', compiler_src + ['build/drivers/Debugger.cpp'])
->>>>>>> 3fc597dde7c5ad12b3f9a1f3dfd1fb679351d030
+jgi = env.Program(jgi_cmd, compiler_src + ['build/drivers/Debugger.cpp'])
 compiler = env.StaticLibrary('lib/jogoc', compiler_src)
 
 # Library/runtime build ######################################################
