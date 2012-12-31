@@ -300,9 +300,6 @@ void Builder::link(const std::string& in, const std::string& out) {
     // Output link options for libraries and module dependencies.
 #ifdef WINDOWS
     ss << in << " /OUT:" << out;
-    if (env_->verbose()) {
-        ss << " > NUL";
-    }
 #else
     ss << in << "-o " << out;
 #endif
@@ -432,13 +429,13 @@ void Builder::intel64gen(File* file) {
     }
 #if defined(DARWIN)
     OutputFormat::Ptr format(new Mach64Output);
-#elif defined(WINDOWS)
-#error Not supported
-#elif defined(LINUX)
-#error Not supported
-#endif
     intel64gen->format(format);
     intel64gen->operator()(file);
+#elif defined(WINDOWS)
+    assert(!"Not supported");
+#elif defined(LINUX)
+    assert(!"Not supported");
+#endif
 }
 
 void Builder::cc(const std::string& in, const std::string& out) {
@@ -450,7 +447,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
         ss << " /O2";
     }
     ss << " /DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
-    if (env_->verbose()) {
+    if (!env_->verbose()) {
         ss << " > NUL";
     }
 #else

@@ -22,6 +22,8 @@
 
 #pragma once
 
+#ifdef DARWIN
+
 #include "Jogo.hpp"
 #include "OutputFormat.hpp"
 #include "Section.hpp"
@@ -60,3 +62,5 @@ public:
     std::vector<relocation_info> reloc_; // Relocation table 
     std::map<String::Ptr,int> symbol_;
 };
+
+#endif

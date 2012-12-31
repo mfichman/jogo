@@ -26,6 +26,10 @@ RegisterId const Intel64Generator::RAX(1, 0);
 RegisterId const Intel64Generator::RSP(5, 0);
 RegisterId const Intel64Generator::RBP(6, 0);
 
+#ifdef WINDOWS
+#define atoll _atoi64
+#endif
+
 Intel64Generator::Intel64Generator(Environment* env) :
     env_(env),
     machine_(Machine::intel64()) {
