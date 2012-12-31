@@ -26,7 +26,17 @@
 Lexer::Lexer(Environment* env) :
     env_(env),
     err_(Stream::sterr()),
-    char_(0) {
+    front_(0),
+    char_(0),
+    line_(0),
+    column_(0),
+    string_level_(0),
+    ignore_newline_(false),
+    expect_comment_(false) {
+
+    for(int i = 0; i < LEXER_LOOKAHEAD; i++) {
+        token_[i] = Token();
+    }
 
     keyword_["and"] = Token::AND;
     keyword_["else"] = Token::ELSE;
@@ -36,6 +46,7 @@ Lexer::Lexer(Environment* env) :
     keyword_["if"] = Token::IF;
     keyword_["in"] = Token::IN;
     keyword_["immutable"] = Token::IMMUTABLE;
+    keyword_["embedded"] = Token::EMBEDDED;
     keyword_["import"] = Token::IMPORT;
     keyword_["let"] = Token::LET;
     keyword_["match"] = Token::MATCH;
@@ -86,8 +97,13 @@ void Lexer::input(File* file) {
 const Token& Lexer::token(int index) const {
     // Returns the token at the given index, with '0' being the oldest token.
     // This function will not read ahead more than 4 tokens.
+    if (index < 0) {
+        index += LEXER_LOOKAHEAD;
+    }
     assert("Too much lookahead" && index < LEXER_LOOKAHEAD);
-    return token_[(front_+index)%LEXER_LOOKAHEAD];
+    assert("Invalid index" && index >= 0);
+    int i = (front_+index)%LEXER_LOOKAHEAD;
+    return token_[i];
 }
 
 const std::string& Lexer::value(int index) const {
@@ -102,11 +118,6 @@ const Location& Lexer::loc(int index) const {
 void Lexer::next() {
     // Top-level lexer routine.  This function reads in characters one at a
     // time and attempts to match them to tokens. 
-    if (token(-1) == Token::END) {
-        token(Token::END);
-        front_ = (front_+1)%LEXER_LOOKAHEAD;
-        return;
-    }
     token(Token::NONE);
 
     while (token() == Token::NONE) {
@@ -157,6 +168,7 @@ void Lexer::next() {
             token(Token::END);
         } else {
             token(Token::ERROR);
+            read();
         }
         location_.last_column = column_;
         location_.last_line = line_;
@@ -194,11 +206,13 @@ void Lexer::regex() {
     while (char_ != '/') {
         if (char_ == '\\') {
             read();
+            token_[front_].value() += '\\';
+        } else {
+            read();
         }
-        read();
     }
     read(); 
-    token(Token::REGEX);    
+    token(Token::REGEX);
     value(value().substr(1, value().length()-2));
     ignore_newline_ = false;
 }
@@ -540,6 +554,7 @@ Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {
     case Token::NATIVE: return out << "'native'";
     case Token::WEAK: return out << "'weak'";
     case Token::IMMUTABLE: return out << "'immutable'";
+    case Token::EMBEDDED: return out << "'embedded'";
     case Token::IMPORT: return out << "'import'";
     case Token::FUNC: return out << "'func'";
     case Token::VOID: return out << "Void";

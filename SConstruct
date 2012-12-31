@@ -1,10 +1,10 @@
 import os, sys
 
-# Build specification for the Apollo Programming Language ####################
+# Build specification for the Jogo Programming Language ####################
 
 if 'help' in COMMAND_LINE_TARGETS:
     print
-    print("Apollo build targets")
+    print("Jogo build targets")
     print
     print("release   Create a new release and upload to github.com")
     print("pkg       Create a new installer package")
@@ -36,7 +36,7 @@ if 'release' == build_mode:
 if env['PLATFORM'] == 'darwin':
     env.Append(CXXFLAGS = '-DDARWIN')
     env.Append(CFLAGS = '-DDARWIN')
-    nasm = 'nasm -dDARWIN -fmacho64 -o $TARGET $SOURCE'
+    nasm = '/usr/local/bin/nasm -dDARWIN -fmacho64 -o $TARGET $SOURCE'
 
 # Linux-specific build settings ##############################################
 if env['PLATFORM'] == 'posix':
@@ -49,7 +49,7 @@ if env['PLATFORM'] == 'win32':
     nsis = '"' + os.environ['PROGRAMFILES'] + '\\NSIS\\makensis.exe"\
          /DVERSION='+version + '\
          /V2 /NOCD \
-         dist\\win\\Apollo.nsi'
+         dist\\win\\Jogo.nsi'
 
     nasm = 'nasm -DWINDOWS -fwin64 -o $TARGET $SOURCE'
     nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
@@ -90,21 +90,26 @@ env.Append(BUILDERS = { 'NASM': nasm_bld })
 
 # Compiler build #############################################################
 compiler_src = env.Glob('build/compiler/*.cpp')
-apollo = env.Program('bin/apollo', compiler_src + ['build/drivers/Main.cpp'])
-apdoc = env.Program('bin/apdoc', compiler_src + ['build/drivers/Doc.cpp'])
-apmake = env.Program('bin/apmake', compiler_src + ['build/drivers/Make.cpp'])
-compiler = env.StaticLibrary('lib/apolloc', compiler_src)
+jogo_cmd = os.path.join('bin', 'jogo')
+jgdoc_cmd = os.path.join('bin', 'jgdoc')
+jgmake_cmd = os.path.join('bin', 'jgmake')
+jogo = env.Program(jogo_cmd, compiler_src + ['build/drivers/Main.cpp'])
+jgdoc = env.Program(jgdoc_cmd, compiler_src + ['build/drivers/Doc.cpp'])
+jgmake = env.Program(jgmake_cmd, compiler_src + ['build/drivers/Make.cpp'])
+compiler = env.StaticLibrary('lib/jogoc', compiler_src)
 
 # Library/runtime build ######################################################
 library_src = ' '.join([
     "Array",
     "Boot::Module",
+    "Collection",
     "Coroutine",
     "File",
     "Hash",
     #"Http",
     "Io",
     #"Json",
+    "Math",
     "Object",
     "Os",
     "Pair",
@@ -116,26 +121,24 @@ library_src = ' '.join([
 ])
 
 coroutine = env.NASM('build/runtime/Coroutine.Intel64.asm')
-apollo_cmd = os.path.join('bin', 'apollo')
-apollo_lib = os.path.join('lib', 'Apollo')
-lib = env.Command('aplib', apollo, apollo_cmd + ' $APFLAGS -o ' + apollo_lib + ' ' + library_src)
-env.Depends(lib, apollo)
+lib = env.Command('jglib', jogo, '%s $APFLAGS -o lib/Jogo %s' % (jogo_cmd, library_src))
+env.Depends(lib, jogo)
 env.Depends(lib, coroutine)
 
 # Test commands ##############################################################
 if 'check' in COMMAND_LINE_TARGETS:
-    check = env.Command('check', apollo, 'python scripts/test --verbose')
+    check = env.Command('check', jogo, 'python scripts/test --verbose')
     env.Depends(check, lib)
     env.Depends(check, compiler)
 
 if 'test' in COMMAND_LINE_TARGETS:
-    test = env.Command('test', apollo, 'python scripts/test --full --verbose')
+    test = env.Command('test', jogo, 'python scripts/test --full --verbose')
     env.Depends(test, lib)
     env.Depends(test, compiler)
 
 # Distribution ###############################################################
-library_headers = env.Glob('runtime/*/*.ap')
-library_headers += env.Glob('runtime/*.ap')
+library_headers = env.Glob('runtime/*/*.jg')
+library_headers += env.Glob('runtime/*.jg')
 library_headers += env.Glob('runtime/*/*.h')
 library_headers += env.Glob('runtime/*.h')
 
@@ -143,13 +146,13 @@ binary_files = env.Glob('bin/*')
 library_files = env.Glob('lib/*')
 
 
-pkgmaker = '/Developer/Applications/Utilities/PackageMaker.app/Contents/MacOs/PackageMaker\
-    --doc dist/pkg/Apollo.pmdoc\
-    --title Apollo\
+pkgmaker = '/Applications/PackageMaker.app/Contents/MacOs/PackageMaker\
+    --doc dist/pkg/Jogo.pmdoc\
+    --title Jogo\
     --version ' + version + '\
-    --out "apollo-' + version + '.pkg"'
+    --out "jogo-' + version + '.pkg"'
 
-dpkg = 'dpkg -b dist/root apollo-' + version + '.deb'
+dpkg = 'dpkg -b dist/root jogo-' + version + '.deb'
 
 #rpmbuild = 'rpmbuild\
 #    --define="version ' + version + '"\
@@ -160,7 +163,7 @@ if 'pkg' in COMMAND_LINE_TARGETS:
     for f in library_headers:
         path = f.path.split(os.path.sep)
         path = os.path.join(*path[1:])
-        path = os.path.join(dist_path, 'include', 'apollo', path)
+        path = os.path.join(dist_path, 'include', 'jogo', path)
 
         print(path)
         print(f)
@@ -168,9 +171,10 @@ if 'pkg' in COMMAND_LINE_TARGETS:
         env.Depends('pkg', copy)
     
     for f in binary_files:
-        path = os.path.join(dist_path, f.path)
-        copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
-        env.Depends('pkg', copy)
+        if "bin/test" not in f.path:
+           path = os.path.join(dist_path, f.path)
+           copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
+           env.Depends('pkg', copy)
     
     for f in library_files:
         path = os.path.join(dist_path, f.path)
@@ -179,12 +183,12 @@ if 'pkg' in COMMAND_LINE_TARGETS:
 
 
     if env['PLATFORM'] == 'darwin':
-        pkg = env.Command('pkg', apollo, pkgmaker)
+        pkg = env.Command('pkg', jogo, pkgmaker)
     
     if env['PLATFORM'] == 'posix':
         copy = env.Command('dist/root/DEBIAN', 'dist/deb/DEBIAN', Copy('$TARGET', '$SOURCE'))
         env.Depends('pkg', copy)
-        pkg = env.Command('pkg', apollo, dpkg)
+        pkg = env.Command('pkg', jogo, dpkg)
 
     if env['PLATFORM'] == 'win32':
         path = os.path.join(dist_path, 'LICENSE.txt')
@@ -193,12 +197,12 @@ if 'pkg' in COMMAND_LINE_TARGETS:
         path = os.path.join(dist_path, 'README.txt')
         copy = env.Command(path, 'README.md', Copy('$TARGET', '$SOURCE'))
         env.Depends('pkg', copy)
-        pkg = env.Command('pkg', apollo, nsis)
+        pkg = env.Command('pkg', jogo, nsis)
 
     env.Depends(pkg, lib)
 
 if 'release' in COMMAND_LINE_TARGETS:
-    release = env.Command('release', apollo, 'python scripts/release '+version)
+    release = env.Command('release', jogo, 'python scripts/release '+version)
     env.Depends('pkg', release)
 
 

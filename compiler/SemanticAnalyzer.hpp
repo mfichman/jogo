@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "TreeNode.hpp"
 #include "Environment.hpp"
 #include "Feature.hpp"
@@ -89,7 +89,7 @@ private:
     void constructor();
     void destructor();
     void copier();
-    Type* fix_generics(Type* parent, Type* type);
+    void dependency(TreeNode* node, Feature* dep); 
     void assign_enums(Class* clazz);
 
     Environment::Ptr env_;
@@ -97,6 +97,7 @@ private:
     Class::Ptr class_;
     Function::Ptr function_;
     Type::Ptr return_; // Return value of the current block
+    Type::Ptr type_; // Suggested type of the child expression
     std::vector<Scope::Ptr> scope_;
 
     friend class ContextAnchor;

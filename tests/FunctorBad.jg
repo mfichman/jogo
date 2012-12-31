@@ -1,0 +1,66 @@
+# Test invalid functor setup, etc.
+
+Mesh < Object {
+    val = 1
+}
+
+Material < Object {
+    val = 2
+}
+
+Intf2 < Interface {
+}
+
+Val < Value {
+}
+
+Render[:a] < Functor {
+
+    @case(obj Mesh) {
+    }
+    
+    @case(obj Mesh) {
+        # Duplicate case method
+    }
+    
+    @case() { 
+        # Invalid @case params
+    }
+    
+    @case(obj Material, obj String) {
+        # Invalid @case params
+    }
+
+    @case(obj Intf2) {
+        # Interface in @case
+    }
+
+    @case(obj Val) {
+        # Value in @case
+    }
+
+    @case(obj Array[:a]) {
+        # Generic in @case
+    }
+
+    @case(obj :a) {
+        # Generic in @case
+    }
+}
+
+Intf < Interface {
+    @case(obj Mesh) {
+    }
+}
+
+Bob < Object {
+    @case(obj Mesh) {
+        # Case in a non-functor
+    }
+}
+
+Bob2 < Value {
+    @case(obj Mesh) {
+        # Case in a non-functor
+    }
+}

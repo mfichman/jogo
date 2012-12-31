@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "TreeNode.hpp"
 #include "String.hpp"
 #include "Type.hpp"
@@ -214,10 +214,10 @@ public:
     void arguments(Expression* args) { arguments_ = args; }
     void function(Function* function) { function_ = function; }
     void receiver(Expression* receiver) { receiver_ = receiver; }
+    void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Call> Ptr;
 
 private:
-    void operator()(Functor* functor) { functor->operator()(this); }
     Expression::Ptr expression_;
     Expression::Ptr arguments_;
     Expression::Ptr receiver_;
@@ -401,13 +401,12 @@ public:
         Expression(loc),
         child_(expr),
         check_type_(type) {
-    
     }
 
     Expression* child() const { return child_; }
     Type* check_type() const { return check_type_; }
     void operator()(Functor* functor) { functor->operator()(this); }
-    typedef Pointer<Cast> Ptr;
+    typedef Pointer<Is> Ptr;
 
 private:
     Expression::Ptr child_;

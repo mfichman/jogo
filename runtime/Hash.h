@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_HASH_H
-#define APOLLO_HASH_H
+#ifndef JOGO_HASH_H
+#define JOGO_HASH_H
 
 #include "Primitives.h"
 #include "Pair.h"

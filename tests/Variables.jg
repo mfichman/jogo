@@ -1,0 +1,9 @@
+# jgtest print_ast on
+
+Variables < Object {
+
+    variables1() {
+        one Int
+        two Int = 0
+    }
+}

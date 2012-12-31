@@ -1,0 +1,100 @@
+# jgtest exec on
+
+import Boot
+
+Counter < Object {
+
+    num private Int
+
+    @init(number Int) {
+        num = number
+        Boot::print_str('alloc: ')
+        Boot::print_int(num)
+        Boot::print_str('\n')
+    }
+
+    @destroy() {
+        Boot::print_str('free: ')
+        Boot::print_int(num)
+        Boot::print_str('\n')
+    }
+}
+
+StrongReference < Object {
+    obj Empty
+    num Int
+
+    @init(param Empty, number Int) {
+        num = number
+        Boot::print_str('alloc: ')
+        Boot::print_int(num)
+        Boot::print_str('\n')
+    }
+
+    @destroy() {
+        Boot::print_str('free: ')
+        Boot::print_int(num)
+        Boot::print_str('\n')
+    }
+}
+
+WeakReference < Object {
+    obj weak Empty
+    num Int
+
+    @init(number Int) {
+        num = number
+        Boot::print_str('alloc: ')
+        Boot::print_int(num)
+        Boot::print_str('\n')
+    }
+
+    @destroy() {
+        Boot::print_str('free: ')
+        Boot::print_int(num)
+        Boot::print_str('\n')
+    }
+}
+
+test1() Counter {
+    ret Counter(3)
+}
+
+test2(obj Counter) Counter {
+    ret obj
+}
+
+test3(a Counter, b Counter) {
+}
+
+main() Int {
+    obj1 = Counter(0)
+    obj3 = test1()
+
+    let obj1 = Counter(1) {
+        let obj2 = Counter(2) {
+            
+        }
+    }
+
+    obj4 = test2(Counter(4))
+    obj5 Empty = Counter(5)
+    test3(Counter(6), Counter(7)) 
+    test3(Counter(8), Counter(9)) 
+    if Counter(10) {
+        Counter(11)
+    }
+
+    while not Counter(12) {
+    }
+
+    let obj6 = StrongReference(Counter(13), 14) {
+        obj5 = Counter(15)
+    }
+
+    obj7 = WeakReference(16)
+    obj8 = StrongReference(obj7, 17)
+    obj7.obj = obj8
+
+    ret 0
+}

@@ -1,0 +1,28 @@
+
+
+NoPushFunc < Object {
+
+}
+
+Intf < Interface {
+    push(x String) {
+    }
+}
+
+Intf2 < Interface {
+    test()
+}
+
+BadPushFunc < Object {
+    push() {
+    }
+}
+
+main() Int {
+    v BadPushFunc = ["a"]
+    w Array[Intf2] = [ "hello" ] # "hello" doesn't match Intf2
+    x NoPushFunc = ["a", "b"]
+    y Intf = ["a", "b"] # This is OK
+    z Int = ["a"]
+    ret 0
+}

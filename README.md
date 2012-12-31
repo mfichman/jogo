@@ -1,17 +1,17 @@
-Apollo Compiler
+Jogo Compiler
 ===============
 
-Apollo is a compiler for an experimental programming language.
+Jogo is a compiler for an experimental programming language.
 
-* Quick Tour: https://github.com/mfichman/apollo/wiki/Quick-Tour-of-the-Apollo-Programming-Language
-* Tutorial: https://github.com/mfichman/apollo/wiki
+* Quick Tour: https://github.com/mfichman/jogo/wiki/Quick-Tour-of-the-Jogo-Programming-Language
+* Tutorial: https://github.com/mfichman/jogo/wiki
 
 Downloads
 ---------
 
-* Debian: [apollo-0.2.0.deb](https://github.com/downloads/mfichman/apollo/apollo-0.2.0.deb)
-* OS X: [apollo-0.2.0.pkg](https://github.com/downloads/mfichman/apollo/apollo-0.2.0.pkg)
-* Windows: [apollo-0.2.0.exe](https://github.com/downloads/mfichman/apollo/apollo-0.2.0.exe)
+* Debian: [jogo-0.3.0.deb](https://jogo-downloads.s3.amazonaws.com/jogo-0.3.0.deb)
+* OS X: [jogo-0.3.0.pkg](https://jogo-downloads.s3.amazonaws.com/jogo-0.3.0.pkg)
+* Windows: [jogo-0.3.0.exe](https://jogo-downloads.s3.amazonaws.com/jogo-0.3.0.exe)
 
 
 Building

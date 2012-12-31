@@ -1,0 +1,89 @@
+
+Generic[:a] < Object {
+    test(val :a) {}
+}
+
+Intf[:a] < Interface {
+    test(val :a) {}
+}
+
+GenericCov[:a] < Object {
+    test() :a {
+        ret nil
+    }
+}
+
+IntfCov[:a] < Interface {
+    test() :a {
+    }
+}
+
+Alpha < Object {
+}
+
+Beta < Object {
+}
+
+Super < Interface {
+    one() {}
+}
+
+Sub < Interface {
+    one() {}
+    two() {}
+}
+
+Generic2[:a,:b] < Object {
+    a :a
+    b :b
+    a = b
+    b = a
+    # Not allowed.  Type vars (e.g., :a, :b) are not compatible, because they
+    # could be any type -- even a type that is not compatible.
+    attr1 Generic[:a] = Generic[:b]() 
+    # Not allowed.  Type vars (e.g., :a, :b) are not compatible, because they
+    # could be any type -- even a type that is not compatible.
+    attr2 Generic[:a] = Generic[String]() 
+    # Not allowed.  Type vars (e.g., :a, :b) and defined types (e.g., String)
+    # are not compatible, because they could be any type -- even a type that is
+    # not compatible.
+    attr3 Generic[String] = Generic[:a]() 
+    # Not allowed.  Type vars (e.g., :a, :b) and defined types (e.g., String)
+    # are not compatible, because they could be any type -- even a type that is
+    # not compatible.
+    func1() {
+        a Generic[:a] = Generic[:b]() 
+        # Not allowed.  See above.  This tests local vars.
+        b Generic[:a] = Generic[String]() 
+        # Not allowed.  See above.  This tests local vars.
+        c Generic[String] = Generic[:a]() 
+        # Not allowed.  See above.  This tests local vars.
+        d Intf[Alpha] = Generic[Beta]() 
+        # Fail, because Intf[Alpha]() has a function test() Alpha, which
+        # Generic[Beta] does not have (it only has test() Beta).  Alpha and
+        # Beta are not compatible, hence test() is not covariant.
+        e Intf[Beta] = Generic[Alpha]() 
+        # Fail, because Intf[Beta]() has a function test() Beta, which
+        # Generic[Beta] does not have (it only has test() Alpha).  Alpha and
+        # Beta are not compatible, hence test() is not covariant.
+    }
+    func2() {
+        a GenericCov[Alpha] = GenericCov[Beta]() 
+        # Not allowed.  GenericCov is not an interface.
+        b GenericCov[:a] = GenericCov[Beta]() 
+        # Not allowed.  GenericCov is not an interface.
+        c IntfCov[Super] = GenericCov[Sub]() 
+        # OK, because IntfCov[Super] has function test() Super, GenericCov[Sub]
+        # has function test() Sub, and Sub is subtype of Super, so test() is
+        # covariant.
+        d IntfCov[Sub] = GenericCov[Super]() 
+        # Not OK, because IntfCov[Sub] has function test() Sub,
+        # GenericCov[Super] has function test() Super, and Super is subtype of
+        # Sub, so test() is not covariant.
+    }
+}
+
+
+main() Int {
+    ret 0
+}

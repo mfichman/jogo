@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_SOCKET_LISTENER_H
-#define APOLLO_SOCKET_LISTENER_H
+#ifndef JOGO_SOCKET_LISTENER_H
+#define JOGO_SOCKET_LISTENER_H
 
 #include "Primitives.h"
 #include "Coroutine.h"
@@ -37,7 +37,7 @@ struct Socket_Listener {
     Ptr _vtable;
     U64 _refcount;
     Int handle;
-    Socket_Addr addr;
+    struct Socket_Addr addr;
     Int backlog;
     Coroutine coroutine;
 };

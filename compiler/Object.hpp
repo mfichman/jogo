@@ -26,10 +26,10 @@ class Object {
 public:
     Object() : refcount_(0) {}
     virtual ~Object() {}
-    int refcount() { return refcount_; }
-    void refcount(int refcount) { refcount_ = refcount; }    
+    int refcount() const { return refcount_; }
+    void refcount(int refcount) const { refcount_ = refcount; }    
 
 private:
-    int refcount_;
+    mutable int refcount_;
 };
 

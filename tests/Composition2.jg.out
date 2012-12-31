@@ -1,0 +1,28 @@
+TestValue initialized
+TestValue.test(91)
+91
+42
+101
+81
+TestValue destroyed
+TestValue initialized
+TestValue.test(92)
+92
+42
+102
+82
+TestValue destroyed
+TestObject initialized
+TestObject.test(93)
+93
+43
+103
+83
+TestObject destroyed
+TestObject initialized
+TestObject.test(94)
+94
+43
+104
+84
+TestObject destroyed

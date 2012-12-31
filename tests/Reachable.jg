@@ -1,0 +1,16 @@
+# jgtest exec on
+
+main() Int {
+    output = Io::stdout()
+    i = 0
+    while i < 10 {
+        output.println("#{i}")
+        ++i
+        if true {
+
+        } else {
+            ret 0
+        }
+    } 
+    ret 0
+}

@@ -20,7 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 
 class Options : public Object {
 public:

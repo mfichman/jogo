@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "TreeNode.hpp"
 #include "String.hpp"
 #include "Expression.hpp"
@@ -88,7 +88,6 @@ public:
         Statement(loc),
         guard_(guard),
         children_(children) {
-
     }
 
     Expression* guard() const { return guard_; }

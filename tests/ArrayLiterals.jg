@@ -1,0 +1,70 @@
+# jgtest exec on
+
+Intf < Interface {
+    test()
+}
+
+ArrayLike < Object {
+    @init(count Int) {
+        Io::println(count.str)
+    }
+    push(str String) {
+        Io::println(str)
+    }
+}
+
+One < Object {
+    test() {}
+}
+
+Two < Object {
+    test() {}
+}
+
+print(arr Array[String]) {
+    for x in arr {
+        Io::println(x)
+    }
+}
+
+arraylike(ar ArrayLike) {
+}
+
+Constr < Object {
+    @init(param ArrayLike) {
+        ar = ["quack"]
+    }
+    ar ArrayLike = ["quatro"]
+}
+
+main() Int {
+    list = ["1", "2", "3", "4"]
+    for x in list {
+        Io::println(x)
+    } 
+
+    list = Array[String](0) #[]
+    for x in list {
+        Io::println(x)
+    } 
+
+    list = ["a", "b"]+["c", "d"]
+    for x in list {
+        Io::println(x)
+    }
+    print(["hello"]+["world"])
+
+    ar ArrayLike = [
+        "alpha", 
+        "beta", 
+        "gamma",
+    ]  
+
+    arraylike(["charlie", "foxtrot"])
+    c = Constr(["uno", "dos"])
+    c.ar = ["uno", "dos"]
+
+    ar2 Array[Intf] = [ One(), Two() ]
+
+    ret 0
+}

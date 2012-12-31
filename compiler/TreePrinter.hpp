@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "TreeNode.hpp"
 #include "Environment.hpp"
 #include "Stream.hpp"
@@ -70,6 +70,7 @@ private:
     void operator()(ArrayLiteral* literal);
     void operator()(Member* expression);
     void operator()(ParseError* expression);
+    void operator()(Is* expression);
 
     void print_tabs();
     void print_comment(String* comment);
@@ -78,3 +79,5 @@ private:
     Stream::Ptr out_;
     int indent_level_;
 };
+
+void print(TreeNode* node);

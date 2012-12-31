@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_QUEUE_H
-#define APOLLO_QUEUE_H
+#ifndef JOGO_QUEUE_H
+#define JOGO_QUEUE_H
 
 #include "Primitives.h"
 

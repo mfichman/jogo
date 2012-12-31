@@ -1,4 +1,4 @@
 import os
 
-os.system(os.path.join("..", "bin", "apollo") + " --help")
-os.system(os.path.join("..", "bin", "apollo") + " -h")
+os.system(os.path.join("..", "bin", "jogo") + " --help")
+os.system(os.path.join("..", "bin", "jogo") + " -h")

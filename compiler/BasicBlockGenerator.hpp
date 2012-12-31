@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "Environment.hpp"
 #include "BasicBlock.hpp"
 #include "Object.hpp"
@@ -49,6 +49,8 @@ private:
     void operator()(IntegerLiteral* expression);
     void operator()(FloatLiteral* expression);
     void operator()(BooleanLiteral* expression);
+    void operator()(ArrayLiteral* expression);
+    void operator()(HashLiteral* expression);
     void operator()(Binary* expression);
     void operator()(Unary* expression);
     void operator()(Call* expression);
@@ -110,7 +112,7 @@ private:
     void variable(Variable* var);
     void enter_scope();
     void exit_scope();
-    void call(Function* func, Expression* args);
+    void call(Function* func, Expression* args, Expression* recv);
     void native_operator(Call* expression);
     void scope_cleanup(Variable* var);
 	void exception_catch();
@@ -140,6 +142,7 @@ private:
     Operand pop_ret(Type* type);
     Operand id_operand(String* id);
     Operand stack_value(Type* type);
+    Operand stack_value_temp(Type* type);
     RegisterId temp_inc() { return RegisterId(++temp_, 0); }
     Variable* variable(String* name);
     BasicBlock* basic_block();
@@ -157,6 +160,7 @@ private:
     std::vector<Scope::Ptr> scope_;
     // Mapping from var to temporary
 
+    Operand assign_addr_;
     int local_slots_;
     int arg_slots_;
     // Mapping from a variable to a stack location

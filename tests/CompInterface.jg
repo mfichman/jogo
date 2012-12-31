@@ -1,0 +1,31 @@
+# jgtest exec on
+
+Car < Interface {
+    drive() 
+}
+
+Plane < Interface {
+    fly() 
+}
+
+CarPlane < Interface {
+    Car 
+    Plane
+}
+
+ActualCarPlane < Object {
+    drive() {
+        Io::println('drive')
+    }  
+    fly() {
+        Io::println('fly')
+    }
+}
+
+main() Int {
+
+    x CarPlane = ActualCarPlane()
+    x.drive()
+    x.fly()
+    ret 0
+}

@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "Object.hpp"
 #include "Location.hpp"
 
@@ -38,6 +38,8 @@ public:
 
     class Functor;
     virtual void operator()(Functor *functor)=0;
+
+    typedef Pointer<TreeNode> Ptr;
 
 protected:
     Location location_;

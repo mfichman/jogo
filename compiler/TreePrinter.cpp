@@ -30,9 +30,11 @@ TreePrinter::TreePrinter(Environment* env, Stream* out) :
     out_(out),
     indent_level_(0) {
 
-    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
-        m(this);
-    }    
+    if (env_) {
+       for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
+           m(this);
+       }    
+    }
     out_->flush();
 }
 
@@ -531,4 +533,21 @@ void TreePrinter::operator()(Type* type) {
 
 void TreePrinter::operator()(ParseError* expression) {
     out_ << "Error\n";
+}
+
+void TreePrinter::operator()(Is* expression) {
+    Expression::Ptr child = expression->child();
+    indent_level_++;
+    out_ << "Is\n";
+    print_tabs(); out_ << "type: ";
+    out_ << expression->check_type() << "\n";
+    print_tabs(); out_ << "child: ";
+    child(this);
+    indent_level_--;
+}
+      
+void print(TreeNode* node) {
+    TreePrinter::Ptr printer(new TreePrinter(0));
+    node->operator()(printer);
+    Stream::stout()->flush();
 }

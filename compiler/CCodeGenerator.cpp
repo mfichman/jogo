@@ -130,7 +130,7 @@ void CCodeGenerator::operator()(Construct* expr) {
     Formal::Ptr formal = func->formals();
     Expression::Ptr arg = expr->arguments();
     for (int i = 0; i < args.size(); i++) {
-        if(!formal->type()->is_self() && !formal->type()->equals(arg->type())) {
+        if(!formal->is_self() && !formal->type()->equals(arg->type())) {
             // Cast to the appropriate C-type, since C doesn't know anything 
             // about subtypes, etc..
             out_ << "(";
@@ -341,8 +341,6 @@ void CCodeGenerator::operator()(Type* type) {
         out_ << "void";
     } else if (type->is_enum()) {
         out_ << "Int";
-    } else if (type->is_self()) {
-        out_ << class_->label();
     } else if (type->is_generic()) {
         out_ << "Object";
 	} else if (type->is_primitive()) {
@@ -389,8 +387,8 @@ void CCodeGenerator::operator()(File* file) {
     // can refer to eachother circularly.
 
     for (int i = 0; i < file->dependencies(); i++) {
-        Feature* feat = file->dependency(i);
-        if (Class* cls = dynamic_cast<Class*>(feat)) {
+        TreeNode* dep = file->dependency(i);
+        if (Class* cls = dynamic_cast<Class*>(dep)) {
             class_decl(cls);
 
         }
@@ -406,11 +404,11 @@ void CCodeGenerator::operator()(File* file) {
 
     // Output declarations for any functions used by this file.
     for (int i = 0; i < file->dependencies(); i++) {
-        Feature* feat = file->dependency(i);
-        if (Function* func = dynamic_cast<Function*>(feat)) {
+        TreeNode* dep = file->dependency(i);
+        if (Function* func = dynamic_cast<Function*>(dep)) {
             func_sig(func);
             out_ << ";\n";
-        } else if (Constant* con = dynamic_cast<Constant*>(feat)) {
+        } else if (Constant* con = dynamic_cast<Constant*>(dep)) {
             out_ << "extern ";
             operator()(con->type()); // Constant type
             out_ << " " << con->label() << ";\n";
@@ -501,7 +499,7 @@ void CCodeGenerator::call(Function* function, Expression* args) {
     Expression::Ptr arg = args;
     Formal::Ptr formal = function->formals();
 	for (int i = 0; i < val.size(); i++) {
-        if(!formal->type()->is_self() && !formal->type()->equals(arg->type())) {
+        if(!formal->is_self() && !formal->type()->equals(arg->type())) {
             // Cast to the appropriate C-type, since C doesn't know anything 
             // about subtypes, etc..
             out_ << "(";
@@ -657,7 +655,7 @@ void CCodeGenerator::func_sig(Function* feature) {
     }
     for (Formal* f = feature->formals(); f; f = f->next()) {
         // Arguments
-        if (f->type()->is_self()) {
+        if (f->is_self()) {
             Class* parent = static_cast<Class*>(feature->parent());
             if (feature->file() == file_ || parent->is_value()) {
                 out_ << feature->parent()->label();

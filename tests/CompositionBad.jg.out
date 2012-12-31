@@ -1,0 +1,15 @@
+CompositionBad.jg:15:20: Invalid prototype
+CompositionBad.jg:18:19: Invalid prototype
+CompositionBad.jg:18:19: Unexpected ','
+CompositionBad.jg:18:27: Invalid prototype
+CompositionBad.jg:22:5: Type embedded in 'TestMixin3' must be an object or value
+CompositionBad.jg:23:5: Embedded type 'TestObject' has constructor arguments
+CompositionBad.jg:28:5: Type embedded in 'TestMixin4' must be an interface
+CompositionBad.jg:29:5: Type embedded in 'TestMixin4' must be an interface
+CompositionBad.jg:28:5: Embedded type 'TestObject' has constructor arguments
+CompositionBad.jg:35:5: Type embedded in 'TestMixin5' must be an object or value
+CompositionBad.jg:34:5: Embedded type 'TestObject' has constructor arguments
+CompositionBad.jg:40:5: Embedded type 'TestObject' has constructor arguments
+CompositionBad.jg:41:5: Type 'TestObject' is embedded multiple times in 'TestMixin6'
+CompositionBad.jg:41:5: Embedded type 'TestObject' has constructor arguments
+CompositionBad.jg:45:5: Type 'TestMixin7' is self-embedded

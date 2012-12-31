@@ -1,0 +1,18 @@
+# jgtest exec on 
+
+Func < Object {
+
+    
+    @call() {
+    }
+
+    test() {
+        self()
+        x Func = self
+    }
+
+}
+
+main() Int {
+    ret 0
+}

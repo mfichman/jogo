@@ -59,13 +59,14 @@ Environment::Environment() :
     char_type_ = new Type(loc, name("Char"), 0, this);
     byte_type_ = new Type(loc, name("Byte"), 0, this);
     pair_type_ = new Type(loc, name("Pair"), 0, this);
-    self_type_ = new Type(loc, name("Self"), 0, this);
     any_type_ = new Type(loc, name("Any"), 0, this);
     enum_type_ = new Type(loc, name("Enum"), 0, this);
     object_type_ = new Type(loc, name("Object"), 0, this);
+    functor_type_ = new Type(loc, name("Functor"), 0, this);
     value_type_ = new Type(loc, name("Value"), 0, this);
     interface_type_ = new Type(loc, name("Interface"), 0, this);
     union_type_ = new Type(loc, name("Union"), 0, this);
+    appendable_type_ = new Type(loc, name("Appendable"), 0, this);
 
     module(root_);
 
@@ -187,4 +188,30 @@ bool Environment::is_input(const std::string& import) const {
         }
     }
     return false;
+}
+
+bool SubtypeKey::operator==(SubtypeKey const& other) const {
+    return t1_->equals(other.t1_) && t2_->equals(other.t2_);
+}
+
+bool SubtypeKey::operator<(SubtypeKey const& other) const {
+    if (t1_->equals(other.t1_)) {
+        return t2_->operator<(*other.t2_);
+    } else {
+        return t1_->operator<(*other.t1_);
+    }
+}
+
+SubtypeResult Environment::subtype(Type const* t1, Type const* t2) const {
+    typedef std::map<SubtypeKey, SubtypeResult>::const_iterator Iter;
+    Iter i = subtype_.find(SubtypeKey(t1, t2));
+    if (i == subtype_.end()) {
+        return UNCHECKED; 
+    } else {
+        return i->second;
+    }
+}
+
+void Environment::subtype(Type const* t1, Type const* t2, SubtypeResult res) {
+    subtype_[SubtypeKey(t1, t2)] = res;
 }

@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_PRIMITIVES_H
-#define APOLLO_PRIMITIVES_H
+#ifndef JOGO_PRIMITIVES_H
+#define JOGO_PRIMITIVES_H
 
 #include <stdint.h>
 

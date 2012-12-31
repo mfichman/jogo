@@ -1,0 +1,35 @@
+# jgtest print_ast on
+
+
+IteratorTest < Object {
+    next() String {
+        ret "Hello, world"
+    }
+    
+    more?() Bool {
+        ret true
+    }    
+}
+
+IterableTest < Object {
+    iter() IteratorTest {
+        ret IteratorTest()
+    }
+}
+
+test(var String) {
+}
+
+Loop < Object {
+
+    loop1() {
+        for i in IterableTest() {
+            test(i)
+        }
+    }
+
+    loop2() {
+        while true {
+        }
+    }
+}

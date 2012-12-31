@@ -1,0 +1,12 @@
+# jgtest exec on
+
+main() Int {
+
+    addr = Socket::Addr("this.is.not.valid", 90)
+    if addr.error {
+        Io::println("Host not found")
+    } else{
+        Io::println("No error")
+    }
+    ret 0
+}

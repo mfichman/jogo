@@ -44,20 +44,15 @@ Class::Class(Location loc, Environment* env, Type* type, Type* proto,
         if (!feature_[feat->name()]) {
             feature_[feat->name()] = feat;
         }        
-        if (feat->is_embedded()) {
-            Attribute* attr = dynamic_cast<Attribute*>(feat);
-            mixin(attr->declared_type());
-        }
     }
-
     if (!proto_->is_proto()) {
         proto_ = env->object_type();
     }
-    if (proto->is_object() && !type->equals(env->object_type())) {
-        mixin(env->object_type());
-    }
     if (proto->is_enum_proto()) {
         gen_equal_method();
+    }
+    if (proto->is_functor_proto()) {
+        gen_functor_method();
     }
 }
 
@@ -93,16 +88,30 @@ Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
     gen_equal_method();
 }
 
+void Class::gen_functor_method() {
+    // Gen the functor @call method
+    String::Ptr name = env()->name("@call");
+    if(!feature(name)) {
+        Type::Ptr ret = env()->void_type();
+        Type::Ptr at = env()->any_type();
+        Formal::Ptr self(new Formal(location(), env()->name("self"), type()));
+        self->next(new Formal(location(), env()->name("obj"), at));
+        Block::Ptr block(new Block(location(), env()->string(""), 0));
+        feature(new Function(location(), env(), name, self, 0, ret, block));
+    }
+}
+
 void Class::gen_equal_method() {
     // Generates an automatic @equal method when necessary.
     String::Ptr name = env()->name("@equal");
-    Function::Ptr func = function(name);
-    if(!func) {
+    Feature::Ptr feat = feature(name);
+    if(!feat||feat->parent()!=this) {
         Type::Ptr ret = env()->bool_type();
         Formal::Ptr self(new Formal(location(), env()->name("self"), type())); 
         self->next(new Formal(location(), env()->name("other"), type())); 
-        Feature::Flags flags = Feature::NATIVE|Feature::NODEP;
-        feature(new Function(location(), env(), name, self, flags, ret, 0));
+        Feature::Flags flags = Feature::NATIVE;
+        Function::Ptr func = new Function(location(), env(), name, self, flags, ret, 0);
+        feature(func);
     }
 }
 
@@ -112,6 +121,10 @@ Function* Class::destructor() const {
 
 Function* Class::constructor() const {
     return function(env()->name("@init"));
+}
+
+Function* Class::copier() const {
+    return function(env()->name("@copy"));
 }
 
 String* Class::default_enum_value() const {
@@ -145,10 +158,6 @@ void Class::feature(Feature* feature) {
     if (!feature) {
         return;
     }
-    if (feature->is_embedded()) {
-        Attribute* attr = dynamic_cast<Attribute*>(feature);
-        mixin(attr->declared_type());
-    }
     feature->parent(this);
     features_ = append(features_, feature);
     if (!feature_[feature->name()]) {
@@ -157,8 +166,8 @@ void Class::feature(Feature* feature) {
 }
 
 Feature* Class::feature(String* name) const {
-    // Searches for a feature with name 'name' in this lass or in a mixin
-    // that was added to this class.
+    // Searches for a feature with name 'name' in this lass or in an embedded
+    // attribute that was added to this class.
 
     std::map<String::Ptr, Feature::Ptr>::const_iterator i = feature_.find(name);
     if (i != feature_.end()) {
@@ -169,67 +178,20 @@ Feature* Class::feature(String* name) const {
         return 0;
     }
 
-    for (Type* mixin = mixins_; mixin; mixin = mixin->next()) {
-        Class* clazz = mixin->clazz();
-        if (clazz) {
+    for (Feature::Ptr f = features_; f; f = f->next()) {
+        if (!f->is_embedded()) { continue; }
+        Attribute* attr = dynamic_cast<Attribute*>(f.pointer());
+        Class* clazz = attr->declared_type()->clazz();
+        if (clazz && clazz != this) {
             Feature* func = clazz->feature(name);
-            if (func) {
-                return func;
-            } 
-        }
+            if (func) { return func; }    
+        } 
+    }
+    Class* clazz = env()->object_type()->clazz();
+    if(clazz && clazz != this) {
+        return clazz->feature(name);
     }
     return 0;
-}
-
-bool Class::subtype(Class* other) const {
-    // Returns true if this class is a subtype of 'other.'  A class is a subtype
-    // of another class if it implements all methods found in the class.
-
-    // Check if this comparison has been done before.  If so, then we don't need
-    // to do it again.
-    std::map<Class*, bool>::iterator i = subtype_.find(other);
-    if (i != subtype_.end()) {
-        return i->second;
-    }
-
-    // If 'this' is a union type, then it will be a subtype of 'other' if
-    // 'other' is listed as an alternate.  Likewise, 'this' will be a subtype
-    // of 'other' if 'other' is an alternate and 'this' is listed as an
-    // alternate of 'other'.
-    if (alternates()) {
-        for (Type::Ptr alt = alternates(); alt; alt = alt->next()) {
-            if (alt->clazz() == other) {
-                return true;
-            }  
-        }
-        return false;
-    } else if (other->alternates()) {
-        for (Type::Ptr alt = other->alternates(); alt; alt = alt->next()) {
-            if (alt->clazz() == this) {
-                return true;
-            }
-        }
-        return false;
-    } else if (!other->is_interface()) {
-        return this == other; 
-    }
-
-    // Assume that this type is a subtype of 'other.'  This will break cycles
-    // caused when checking function return values for covariance.
-    subtype_[other] = true;
-
-    for (Feature* f = other->features(); f; f = f->next()) {
-        if (Function* func = dynamic_cast<Function*>(f)) {
-            Function* mine = function(func->name());   
-            if (!mine || !mine->covariant(func)) {
-                // Now we know that the types are not compatible, so mark
-                // 'other' as a disjoint type.
-                subtype_[other] = false;
-                return false;
-            }
-        }
-    }
-    return true;
 }
 
 Constant::Constant(Location loc, Environment* env, String* name, Flags flags, 
@@ -261,8 +223,7 @@ bool Function::covariant(Function* other) const {
     Formal* f2 = other->formals_;
 
     while (f1 && f2) {
-        if (f1->type()->name()->string() == "Self" 
-            && f2->type()->name()->string() == "Self") {
+        if (f1->is_self() && f2->is_self()) {
             /* pass */
         } else if (!f1->type()->equals(f2->type())) {
             return false;
@@ -382,9 +343,9 @@ std::string Module::exe_file() const {
 #endif
 } 
 
-std::string Module::api_file() const {
+std::string Module::jgi_file() const {
     std::string dir = env()->output() + FILE_SEPARATOR + "lib";
-    return dir + FILE_SEPARATOR + name()->string() + ".api";
+    return dir + FILE_SEPARATOR + name()->string() + ".jgi";
 }   
 
 Class* Feature::clazz(String* name) const {

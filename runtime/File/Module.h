@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_FILE_MODULE_H
-#define APOLLO_FILE_MODULE_H
+#ifndef JOGO_FILE_MODULE_H
+#define JOGO_FILE_MODULE_H
 
 #include "../Primitives.h"
 #include "../Io/Stream.h"

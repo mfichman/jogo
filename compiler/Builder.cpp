@@ -21,6 +21,7 @@
  */  
 
 #include "Builder.hpp"
+#include "CodeExpander.hpp"
 #include "BasicBlockGenerator.hpp"
 #include "RegisterAllocator.hpp"
 #include "Intel64CodeGenerator.hpp"
@@ -40,17 +41,17 @@ Builder::Builder(Environment* env) :
     errors_(0) {
 
     // Initialize default includes to be used if the user-defined includes
-    // do not point to the Apollo standard libraries.
+    // do not point to the Jogo standard libraries.
 #ifndef WINDOWS
     env->include("/usr/local/lib");
-    env->include("/usr/local/include/apollo");
+    env->include("/usr/local/include/jogo");
 #else
     std::string program_files = getenv("PROGRAMFILES");
     std::string program_files_x86 = getenv("PROGRAMFILES(x86)");
-    env->include(program_files + "\\Apollo\\lib");
-    env->include(program_files_x86 + "\\Apollo\\lib");
-    env->include(program_files + "\\Apollo\\include\\apollo");
-    env->include(program_files_x86 + "\\Apollo\\include\\apollo");
+    env->include(program_files + "\\Jogo\\lib");
+    env->include(program_files_x86 + "\\Jogo\\lib");
+    env->include(program_files + "\\Jogo\\include\\jogo");
+    env->include(program_files_x86 + "\\Jogo\\include\\jogo");
 #endif
 
     // Run the compiler.  Output to a temporary file if the compiler will
@@ -62,6 +63,12 @@ Builder::Builder(Environment* env) :
 
     // Semantic analysis/type checking phase.
     SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
+
+    // Code expansion
+    if (!env_->errors()) {
+        CodeExpander::Ptr expander(new CodeExpander(env));
+    }
+
     if (env->dump_ast()) {
         TreePrinter::Ptr tprint(new TreePrinter(env, Stream::stout()));
         return;
@@ -87,7 +94,7 @@ void Builder::monolithic_build() {
     for (File* file = env_->files(); file; file = file->next()) {
         if (file->is_output_file()) {
             operator()(file); 
-            ss << file->apo_file() << " ";
+            ss << file->jgo_file() << " ";
             if (File::is_reg(file->o_file())) {
                 ss << file->o_file() << " ";
             }
@@ -105,7 +112,7 @@ void Builder::monolithic_build() {
         link(ss.str(), exe);
     } else {
         File::mkdir(File::dir_name(env_->output()));
-        Stream::Ptr fout(new Stream(env_->output() + ".api"));
+        Stream::Ptr fout(new Stream(env_->output() + ".jgi"));
         InterfaceGenerator::Ptr iface(new InterfaceGenerator(env_, fout));
         for (File* file = env_->files(); file; file = file->next()) {
             if (file->is_output_file()) {
@@ -176,8 +183,8 @@ void Builder::operator()(Module* module) {
     if (module->function(env_->name("main"))) {
         link(module); 
     } else  {
-        File::mkdir(File::dir_name(module->api_file()));
-        Stream::Ptr fout(new Stream(module->api_file()));
+        File::mkdir(File::dir_name(module->jgi_file()));
+        Stream::Ptr fout(new Stream(module->jgi_file()));
         InterfaceGenerator::Ptr iface(new InterfaceGenerator(env_, fout));
         iface->operator()(module);
         archive(module);
@@ -189,13 +196,13 @@ void Builder::operator()(Module* module) {
 
 void Builder::operator()(File* file) {
     // Generates the output files for the given source file.  Depending on the
-    // options, this function will output the AST, IR, .apo, or .apc file.
+    // options, this function will output the AST, IR, .jgo, or .c file.
     if (file->is_interface_file()) { return; }
     if (env_->errors()) { return; }
 
     // Generate native machine code, and then compile or assemble it.
-    if (!env_->make() || !file->is_up_to_date(File::APO)) {
-        File::mkdir(File::dir_name(file->apo_file()));
+    if (!env_->make() || !file->is_up_to_date(File::JGO)) {
+        File::mkdir(File::dir_name(file->jgo_file()));
         if (env_->verbose()) {
             Stream::stout() << "Compiling " << file->name() << "\n";
             Stream::stout()->flush();
@@ -205,11 +212,11 @@ void Builder::operator()(File* file) {
             if (env_->dump_ir()) { return; }
             intel64gen(file);
             if (!env_->assemble()) { return; }
-            nasm(file->asm_file(), file->apo_file());
+            nasm(file->asm_file(), file->jgo_file());
         } else if (env_->generator() == "C") {
             cgen(file);
             if (!env_->assemble()) { return; }
-            nasm(file->c_file(), file->apo_file());
+            nasm(file->c_file(), file->jgo_file());
         }
     }
 
@@ -230,7 +237,7 @@ void Builder::link(Module* module) {
 
     // Output object files and native object files.
     for (int i = 0; i < module->files(); i++) {
-        ss << module->file(i)->apo_file() <<  " ";
+        ss << module->file(i)->jgo_file() <<  " ";
         if (File::is_reg(module->file(i)->o_file())) {
             ss << module->file(i)->o_file() << " ";
         }
@@ -255,7 +262,7 @@ void Builder::link(const std::string& in, const std::string& out) {
 
     // Link the main() routine, which is custom-generated for each linked
     // executable.
-    std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.ap";
+    std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.jg";
     File::Ptr mf = env_->file(env_->name(main));
     operator()(mf);
 
@@ -268,17 +275,22 @@ void Builder::link(const std::string& in, const std::string& out) {
     }
 #else
     for (int i = 0; i < env_->includes(); i++) {
-        ss << "-L\"" << env_->include(i) << "\" ";
+        if (File::is_dir(env_->include(i))) {
+            ss << "-L\"" << env_->include(i) << "\" ";
+        }
     }
     for (int i = 0; i < env_->libs(); i++) {
         ss << "-l" << env_->lib(i) << " ";
     }
 #endif
-    ss << mf->apo_file() << " ";
+    ss << mf->jgo_file() << " ";
 
     // Output link options for libraries and module dependencies.
 #ifdef WINDOWS
-    ss << in << " /OUT:" << out << " > NUL";
+    ss << in << " /OUT:" << out;
+    if (env_->verbose()) {
+        ss << " > NUL";
+    }
 #else
     ss << in << "-o " << out;
 #endif
@@ -297,7 +309,7 @@ void Builder::archive(Module* module) {
     // Links the current module, and outputs an archive and interface file.
     std::stringstream ss;
     for (int i = 0; i < module->files(); i++) {
-        ss << module->file(i)->apo_file() <<  " ";
+        ss << module->file(i)->jgo_file() <<  " ";
         if (File::is_reg(module->file(i)->o_file())) {
             ss << module->file(i)->o_file() << " ";
         }
@@ -327,7 +339,7 @@ void Builder::archive(const std::string& in, const std::string& out) {
 }
 
 void Builder::irgen(File* file) {
-    // Generates code for all basic blocks using the Apollo intermediate
+    // Generates code for all basic blocks using the Jogo intermediate
     // represenation.  Also performs optimizations, if enabled by the
     // environment options.
     Machine::Ptr machine = Machine::intel64();
@@ -364,7 +376,7 @@ void Builder::cgen(File* file) {
     // temporary file if this is an intermediate step; otherwise, outputs
     // to a named file in the build directory.
     CCodeGenerator::Ptr c(new CCodeGenerator(env_));
-    c->out(new Stream(file->apo_file()));  
+    c->out(new Stream(file->jgo_file()));  
     if (c->out()->error()) {
         std::string msg = c->out()->message();
         Stream::sterr() << file->asm_file() << msg << "\n";
@@ -402,6 +414,9 @@ void Builder::cc(const std::string& in, const std::string& out) {
         ss << " /O2";
     }
     ss << " /DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
+    if (env_->verbose()) {
+        ss << " > NUL";
+    }
 #else
     ss << "gcc " << in << " -c -o " << out;
     if (env_->optimize()) {
@@ -443,13 +458,12 @@ void Builder::cc(const std::string& in, const std::string& out) {
 void Builder::nasm(const std::string& in, const std::string& out) {
     // Assembles a single NASM assembly file, and outputs the result to 'out.'
     std::stringstream ss;
-    ss << "nasm ";
 #if defined(WINDOWS)
-    ss << "-fwin64 ";
+    ss << "nasm -fwin64 ";
 #elif defined(LINUX)
-    ss << "-felf64 ";
+    ss << "nasm -felf64 ";
 #elif defined(DARWIN)
-    ss << "-fmacho64 ";
+    ss << "/usr/local/bin/nasm -fmacho64 ";
 #endif 
     ss << in << " -o " << out;
     if (env_->verbose()) {

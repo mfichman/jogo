@@ -46,13 +46,13 @@ public:
         is_input_file_(false),
         is_output_file_(true) {  
     }
-    static std::string const API;
+    static std::string const JGI;
     static std::string const ASM;
     static std::string const C;
-    static std::string const APO;
+    static std::string const JGO;
     static std::string const O; 
     
-    Feature* dependency(int id) { return dependency_[id]; }
+    TreeNode* dependency(int id) { return dependency_[id]; }
     Feature* feature(String* scope, String* name) const;
     Function* function(String* scope, String* name) const;
     Constant* constant(String* scope, String* name) const;
@@ -75,16 +75,16 @@ public:
     int constants() { return constant_.size(); }
     bool is_input_file() const { return is_input_file_; }
     bool is_output_file() const;
-    bool is_interface_file() const { return ext(name_->string())==API; }
+    bool is_interface_file() const { return ext(name_->string())==JGI; }
     bool is_up_to_date(const std::string& ext) const;
     std::string input(const std::string& ext) const;
-    std::string output(const std::string& ext = APO) const;
+    std::string output(const std::string& ext = JGO) const;
     std::string asm_file() const { return output(ASM); }
     std::string c_file() const { return output(C); }
     std::string o_file() const { return output(O); }
-    std::string apo_file() const { return output(APO); }
+    std::string jgo_file() const { return output(JGO); }
     std::string native_file() const { return input(C); }
-    void dependency(Feature* name);
+    void dependency(TreeNode* node);
     void import(Import* import) { import_.push_back(import); }
     void feature(Feature* feature) { feature_.push_back(feature); }
     void next(File* next) { next_ = next; }
@@ -115,7 +115,7 @@ private:
     bool is_output_file_;
     std::vector<Import::Ptr> import_; 
     std::vector<Feature::Ptr> feature_;
-    std::vector<Feature::Ptr> dependency_;
+    std::vector<TreeNode::Ptr> dependency_;
     std::vector<Constant::Ptr> constant_;
     std::map<std::string, String::Ptr> integer_;
     std::map<std::string, String::Ptr> floating_;

@@ -63,16 +63,21 @@ void Intel64CodeGenerator::operator()(File* file) {
     out_ << "extern "; label("Boot_mzero"); out_ << "\n";
     out_ << "extern "; label("Boot_free"); out_ << "\n";
     out_ << "extern "; label("Boot_memcpy"); out_ << "\n";
-    out_ << "extern "; label("Object__dispatch"); out_ << "\n";
-    out_ << "extern "; label("Object__refcount_dec"); out_ << "\n";
-    out_ << "extern "; label("Object__refcount_inc"); out_ << "\n";
     out_ << "extern "; label("Coroutine__yield"); out_ << "\n";
     out_ << "extern "; label("Coroutine__grow_stack"); out_ << "\n";
     out_ << "extern "; label("Coroutine__stack"); out_ << "\n";
-    if (file->name()->string() != "String.ap") {
+    if (file->name()->string() != "String.jg") {
         out_ << "extern "; label("String__vtable"); out_ << "\n";
     }
-    if (file->name()->string() != "Primitives.ap") {
+    if (file->name()->string() != "Object.jg") {
+        out_ << "extern "; label("Object__dispatch"); out_ << "\n";
+        out_ << "extern "; label("Object__refcount_dec"); out_ << "\n";
+        out_ << "extern "; label("Object__refcount_inc"); out_ << "\n";
+        out_ << "extern "; label("Object__equal"); out_ << "\n";
+        out_ << "extern "; label("Object_hash__g"); out_ << "\n";
+        out_ << "extern "; label("Object_same"); out_ << "\n";
+    }
+    if (file->name()->string() != "Primitives.jg") {
         out_ << "extern "; label("Int__vtable"); out_ << "\n";
         out_ << "extern "; label("Float__vtable"); out_ << "\n";
         out_ << "extern "; label("Bool__vtable"); out_ << "\n";
@@ -83,10 +88,25 @@ void Intel64CodeGenerator::operator()(File* file) {
     }
 
     for (int i = 0; i < file->dependencies(); i++) {
-        Feature::Ptr feat = file->dependency(i);
-        if (dynamic_cast<Class*>(feat.pointer())) {
-            // FixMe: This is bogus!
-        } else if (feat->file() != file && !feat->is_nodep()) {
+        TreeNode* dep = file->dependency(i);
+        if (dep->file() == file) {
+            continue;
+        }
+        if (Class* clazz = dynamic_cast<Class*>(dep)) {
+            if (clazz->is_interface()) {
+                continue;
+            }
+            for (Feature* f = clazz->features(); f; f = f->next()) {
+                Function* func = dynamic_cast<Function*>(f);
+                if (func && !func->is_primitive_op()) {
+                    out_ << "extern "; label(f->label()); out_ << "\n";
+                }
+            } 
+        } else if (Function* feat = dynamic_cast<Function*>(dep)) {
+            if (!feat->is_primitive_op()) {
+                out_ << "extern "; label(feat->label()); out_ << "\n";
+            }
+        } else if (Feature* feat = dynamic_cast<Feature*>(dep)) {
             out_ << "extern "; label(feat->label()); out_ << "\n";
         }
     }
@@ -98,7 +118,7 @@ void Intel64CodeGenerator::operator()(Class* feature) {
     // Emit the functions and vtable for the class specified by 'feature'
     class_ = feature;
 
-    if (feature->destructor()) {
+    if (feature->destructor()->parent() == feature) {
         dispatch_table(feature);
     }
 
@@ -121,10 +141,8 @@ void Intel64CodeGenerator::operator()(Function* feature) {
     // belongs to a different output file.
     String::Ptr id = feature->name();
     if (feature->is_virtual()) { return; }
-    if (feature->is_native()) {
-        if (!feature->is_nodep()) {
-            out_ << "extern "; label(feature->label()); out_ << "\n";
-        }
+    if (feature->is_native() && !feature->is_primitive_op()) {
+        out_ << "extern "; label(feature->label()); out_ << "\n";
     } else if (feature->basic_blocks()) {
         out_ << "section .text\n";
         out_ << "global "; label(feature->label()); out_ << "\n";

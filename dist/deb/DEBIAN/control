@@ -1,10 +1,10 @@
-Package: apollo
+Package: jogo
 Version: 0.2.0
 Architecture: all
-Source: apollo
+Source: jogo
 Section: devel
 Maintainer: Matt Fichman <matt.fichman@gmail.com>
 Depends: gcc, nasm
-Homepage: https://github.com/mfichman/apollo
-Description: Compiler and runtime for the Apollo programming language.
+Homepage: https://github.com/mfichman/jogo
+Description: Compiler and runtime for the Jogo programming language.
 

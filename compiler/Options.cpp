@@ -146,14 +146,14 @@ Options::Options(Environment* env, int argc, char** argv) {
 
 void Options::print_version() {
     Stream::Ptr out = Stream::stout();
-    out << "Apollo version " << VERSION << ", compiled on ";
+    out << "Jogo version " << VERSION << ", compiled on ";
     out << __DATE__ << " " << __TIME__ << "\n";
     out->flush();
 }
 
 void Options::print_usage() {
     Stream::Ptr out = Stream::stout();
-    out << "Usage: apollo [OPTIONS] FILE...\n\n";
+    out << "Usage: jogo [OPTIONS] FILE...\n\n";
     out << "   -a, --assembly       Compile, but do not assemble or link.\n";
     out << "   -c, --compile        Compile and assemble, but do not link.\n";
     out << "   -e, --execute        Execute program as a script.\n";

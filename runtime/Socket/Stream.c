@@ -73,17 +73,18 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     Io_Overlapped op;
     OVERLAPPED* evt = &op.overlapped;
 #endif
+    assert(addr && "Invalid null argument");
+    Socket_Addr__copy(&self->peer, addr);
 
     // Check to make sure that the socket isn't already connected to the given
     // address.  If it's connected to a different address, then close the 
     // existing file descriptor and reopen a new connection.
-    if (self->stream && Socket_Addr__equals(self->addr, addr)) { return; }
+    if (self->stream && Socket_Addr__equals(&self->addr, addr)) { return; }
     if (self->stream) {
         Io_Stream_close(self->stream);
         Object__refcount_dec((Object)self->stream);
         self->stream = 0;
     }
-    if (!addr) { return; }
 
     // Allocate a socket
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);

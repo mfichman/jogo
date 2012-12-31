@@ -1,53 +1,54 @@
 #!/usr/bin/python
 
-import optparse, os, subprocess, re, sys, glob, difflib
+# Parallel test execution script for the Jogo compiler.  This script finds all
+# test files in the 'tests' folder, and then executes them in parallel.
+
+import optparse
+import os
+import subprocess
+import re
+import sys
+import glob
+import difflib
+import multiprocessing
+import platform
 
 parser = optparse.OptionParser()
 parser.add_option('-f', '--full', action='store_true', 
     help='Run all tests, including memcheck')
 parser.add_option('-v', '--verbose', action='store_true',  
     help='Print test status')
+parser.add_option('-s', '--serial', action='store_true',
+    help='Run tests serially')
 (options, tests) = parser.parse_args()
 
 os.chdir('tests')
 
-fail_file = open('../build/test.fail', 'w')
-total = 0
-fail = False
-
-if len(tests) == 0:
-    # If no tests are passed as parameters, then glob on the test dir to run 
-    # all the tests.
-    tests = glob.glob('*.ap') + glob.glob('*.c') 
-    tests += glob.glob('*.py') + glob.glob('*.cpp')
+PASS, FAIL = range(2)
 
 def check(test, expected, output):
     # Checks to make sure the output for the test matches the expected output.
-    global fail
     expected = expected.replace('\r', '')
     output = output.replace('\r', '')
-
+    result = [test] 
     if output != expected:
-        fail_file.write(test+'\n')
-        print(''.join(['-' for i in range(79)]))
-        print('FAILED TEST: ' + test)
-        print(''.join(['-' for i in range(79)]))
+        result.append(''.join(['-' for i in range(79)]))
+        result.append('FAILED: ' + test)
+        result.append(''.join(['-' for i in range(79)]))
         expected_lines = expected.split('\n')
         output_lines = output.split('\n')
-        print('\n'.join(difflib.unified_diff(
+        result.append('\n'.join(difflib.unified_diff(
             expected_lines, 
             output_lines, 
             lineterm='',
             fromfile='Expected output',
             tofile='Actual output')))
-        print(''.join(['-' for i in range(79)]))
-        
-        #print(''.join(['-' for i in range(70)])+' Expected')
-        #print(''.join(['-' for i in range(70)])+' Expected')
-        #print(expected)
-        #print(''.join(['-' for i in range(72)])+' Output')
-        #print(output)
-        fail = True
+        result.append(''.join(['-' for i in range(79)]))
+        result = '\n'.join(result)
+        return (FAIL, result)
+    else:
+       result = '\n'.join(result)
+       return (PASS, result)
 
 def shell(command, check=False):
     # Runs 'command' and returns the result.  Sets the 'fail' flag if the 
@@ -59,40 +60,40 @@ def shell(command, check=False):
     else:
         return ret 
 
-def apollo_test(test):
-    # Run a compilation test.  Compile and Apollo source file, and potentially
+def jogo_test(test):
+    # Run a compilation test.  Compile and Jogo source file, and potentially
     # run the resulting program.
-    test = re.sub(r'.ap$', '', test)
+    test = re.sub(r'.jg$', '', test)
     flags = ""
     run = False
-    for line in open(test + '.ap'):
-        if re.search(r'^# aptest print_ast on', line):
+    for line in open(test + '.jg'):
+        if re.search(r'^#.jgtest print_ast on', line):
             flags += ' --dump-ast'
-        elif re.search(r'^# aptest print_ir on', line):
+        elif re.search(r'^#.jgtest print_ir on', line):
             flags += ' --dump-ir'
-        elif re.search(r'^# aptest exec on', line):
+        elif re.search(r'^#.jgtest exec on', line):
             flags += ' -e'
             run = True
         
     flags += ' -m --build-dir ../build/test --optimize -o'
     flags += ' ../bin/test/' + test.lower()
-    command = '../bin/apollo ' + test + ' -i ../runtime -i ../lib ' + flags
+    command = '../bin/jogo ' + test + ' -i ../runtime -i ../lib ' + flags
     if options.full:
-        valgrind = 'valgrind -q --leak-check=full'
+        valgrind = 'valgrind -q --leak-check=full --track-origins=yes'
         valgrind += ' --suppressions=../scripts/valgrind.supp'
         command = valgrind + ' ' + command
-    expected = open(test + '.ap.out', 'rb').read() 
+    expected = open(test + '.jg.out', 'rb').read() 
     if sys.platform == 'win32':
         command = command.replace('/', '\\')
     output = shell(command + ' 2>&1', run)
-    check(test+'.ap', expected, output)
+    return check(test+'.jg', expected, output)
 
 def python_test(test):
     # Run a Python test.  Useful for various msicellaneous tests that are not
     # easily expressed in C++.
     expected = open(test + '.out', 'r').read()
     output = shell('python ' + test + ' 2>&1')
-    check(test, expected, output)
+    return check(test, expected, output)
 
 def native_test(test):
     # C/C++ tests.  Used primarily for unit tests and to test the runtime
@@ -101,16 +102,16 @@ def native_test(test):
     exe = re.sub(r'.c$', '', test)
     output = ""
     if sys.platform == 'win32':
-        command = 'cl ' + test + ' /Fe..\\build\\' + exe + ' /I:.. apollo.lib '
+        command = 'cl ' + test + ' /Fe..\\build\\' + exe + ' /I:.. jogo.lib '
         command += '/link /LIBPATH:..\\lib 2>&1'
         os.popen(command).read()
         output = shell('..\\build\\' + exe + ' 2>&1')
     else:
         command = 'gcc -g ' + test + ' -o ../build/' + exe + ' -L../lib '
-        command += '-lApollo -lm -I .. 2>&1'
+        command += '-lJogo -lm -I .. 2>&1'
         os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
-    check(test, expected, output)
+    return check(test, expected, output)
 
 def cpp_test(test):
     # C++ tests; used for compiler unit tests.
@@ -121,37 +122,67 @@ def cpp_test(test):
         command = 'cl ' + test + ' /MDd /TP /Zi /EHsc /Fe..\\build\\' 
         command += exe + ' /I..\\compiler '
         command += '/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib '
-        command += 'apolloc.lib' 
+        command += 'jogoc.lib' 
         os.popen(command).read()
         output = shell('..\\build\\' + exe + ' 2>&1')
     else:
         command = 'g++ -g ' + test + ' -o ../build/' + exe + ' -L../lib '
-        command += '-lapolloc -lm -I ../compiler 2>&1'
+        command += '-ljogoc -lm -I ../compiler 2>&1'
         output += os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
-    check(test, expected, output)
+    return check(test, expected, output)
 
-for test in tests:
-    # Iterate through all the tests, and run the correct callback for each
-    # test type.
-    if re.search(r'.ap$', test):
-        print(test)
-        apollo_test(test)
-        total += 1
+def any_test(test):
+    # Runs a C++ test and returns the result of the test.
+    if re.search(r'.jg$', test):
+        return jogo_test(test)
     elif re.search(r'.py$', test):
-        print(test)
-        python_test(test)
-        total += 1
-    elif re.search(r'.c$', test) and not os.path.exists(test[:-2]+".ap"):
-        print(test)
-        native_test(test)
-        total += 1
+        return python_test(test)
+    elif re.search(r'.c$', test) and not os.path.exists(test[:-2]+".jg"):
+        return native_test(test)
     elif re.search(r'.cpp$', test):
-        print(test)
-        cpp_test(test)
-        total += 1
+        return cpp_test(test)
+    else:
+        return (None, '')
 
-if fail:
+total = 0
+failed = 0
+
+def print_result(result):
+    # Prints the result of a test.  This is function is a callback used by the
+    # multiprocessing pool to print results as they become available.
+    global total 
+    global failed 
+    status, message = result
+    if status == FAIL:
+        print(message)
+        failed += 1
+        total += 1
+    elif status == PASS:
+        print(message)
+        total += 1
+     
+if len(tests) == 0:
+    # If no tests are passed as parameters, then glob on the test dir to run 
+    # all the tests.
+    tests += glob.glob('*.jg')
+    tests += glob.glob('*.c') 
+    tests += glob.glob('*.py')
+    tests += glob.glob('*.cpp')
+
+# Iterate through all the tests, and run the correct callback for each test
+# type.
+if options.serial or platform.system() == "Windows":
+   for test in tests:
+       print_result(any_test(test))
+else:
+   pool = multiprocessing.Pool(multiprocessing.cpu_count() * 2)
+   for test in tests:
+       pool.apply_async(any_test, [test], callback=print_result)
+   pool.close()
+   pool.join()
+
+if failed > 0:
     # Finally, check for errors.  If there was an error, exit with code 1 to
     # stop the whole build.
     sys.exit(1)

@@ -1,0 +1,86 @@
+# Test union types
+# jgtest exec on
+
+Test < Object {
+}
+
+TestUnion = String | Int | Test
+
+Constructor < Object {
+    @init(string String) {
+        if string {
+            Io::print(string)
+        } else {
+            Io::print('any\n')
+        }
+    }
+}
+
+Generic[:a] < Object {
+    test(obj :a) {
+        if obj {
+            Io::print('true\n')
+        } else { 
+            Io::print('false\n')
+        }
+    }
+}
+
+test(string String) {
+
+    if string {
+        Io::print(string)
+    } else {
+        Io::print('any\n')
+    }
+}
+
+main() Int {
+
+    union TestUnion = 'hello world\n'
+    string String = union
+
+    Io::print(string)
+    
+    union = Test()
+    string = union
+
+    if string {
+        Io::print("fail\n")
+    } else {
+        Io::print("pass\n")
+    }
+
+    union2 TestUnion = 'hello\n'
+
+    test(union2)
+    test(union)
+
+    Constructor(union2)
+    Constructor(union)
+
+    g1 = Generic[String]()
+    g2 = Generic[TestUnion]()
+
+    g1.test(union2)
+    g1.test(union)
+
+    g2.test(union2)
+    g2.test(union)
+
+    union2 = union
+
+    any Any = 'hello\n'
+    union2 = 'hello\n'
+    any = union2
+    Io::print(any)
+
+    # Boxing/unboxing
+    union2 = 9
+
+    int Int = union2
+    Io::print("#{int}\n")
+    Io::stdout().flush()
+
+    ret 0
+}

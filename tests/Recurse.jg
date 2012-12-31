@@ -1,0 +1,16 @@
+# jgtest exec on
+
+count_down(n Int) {
+    if (n) {
+        Boot::print_int(n)
+        Boot::print_str("\n")
+        count_down(n-1)
+    }
+}
+
+main() Int {
+
+    count_down(10)
+    ret 0
+    
+}

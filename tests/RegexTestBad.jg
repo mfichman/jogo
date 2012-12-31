@@ -1,0 +1,8 @@
+# jgtest exec on
+
+main() Int {
+    Io::println(/(a/.error)
+    Io::println(/((a())/.error)
+
+    ret 0
+}

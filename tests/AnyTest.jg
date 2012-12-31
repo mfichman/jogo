@@ -1,0 +1,117 @@
+# jgtest exec on
+
+Test < Object {
+}
+
+Constructor < Object {
+    
+    @init(string String) {
+        if string {
+            Io::print(string)
+        } else {
+            Io::print("any\n")
+        }
+    }
+}
+
+Generic[:a] < Object {
+
+    test(obj :a) {
+        if obj {
+            Io::print("true\n")
+        } else {
+            Io::print("false\n")
+        } 
+    }
+}
+
+test(string String) {
+
+    if string {
+        Io::print(string)
+    } else {
+        Io::print("any\n")
+    }
+}
+
+call_any(any, arg Int) {
+    Io::print(any)
+    Io::print("#{arg}\n")
+}
+
+ret_any() Any {
+    ret "any\n"
+}
+
+ret_any2() Any {
+    ret 99 
+}
+
+main() Int {
+    
+    any Any = "hello world\n"
+    string String = any
+
+    Io::print(string)
+
+    any = Test()
+    string = any
+
+    if string {
+        Io::print("fail\n")
+    } else {
+        Io::print("pass\n")
+    }
+    
+
+    any2 Any = "hello\n"
+
+    test(any2)
+    test(any)
+
+    Constructor(any2)
+    Constructor(any)
+
+    g1 = Generic[String]()
+    g2 = Generic[Any]()
+
+    g1.test(any2)
+    g1.test(any)
+
+
+    g2.test(any2)
+    g2.test(any)
+
+    any = 9
+    int Int = any
+
+    Io::print("#{int}\n")
+
+    call_any("test\n", 0)
+    call_any("test\n", any)
+    any = "hello"
+    call_any("test\n", any)
+
+    string = ret_any()
+    Io::print(string)
+
+    int = ret_any2()
+    Io::print("#{int}\n")
+
+    any = "hello"
+    if any is String {
+        Io::print("pass\n")
+    } else {
+        Io::print("fail\n")
+    }
+    if any is Int {
+        Io::print("fail\n")
+    } else {
+        Io::print("pass\n")
+    }
+    
+    Io::stdout().flush()
+    ret 0
+}
+
+

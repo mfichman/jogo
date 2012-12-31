@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "TreeNode.hpp"
 #include "Statement.hpp"
 #include "Expression.hpp"
@@ -65,7 +65,7 @@ public:
     bool is_immutable() const { return flags_ & IMMUTABLE; }
     bool is_closure() const { return flags_ & CLOSURE; }
     bool is_embedded() const { return flags_ & EMBEDDED; }
-    bool is_nodep() const { return flags_ & NODEP; }
+    bool is_component() const { return flags_ & COMPONENT; }
     void next(Feature* next) { next_ = next; }
     void last(Feature* last) { last_ = last; }
     void flags(Flags flags) { flags_ = flags; }
@@ -78,7 +78,7 @@ public:
     static const int IMMUTABLE = 0x8;
     static const int CLOSURE = 0x20;
     static const int EMBEDDED = 0x40; 
-    static const int NODEP = 0x80;
+    static const int COMPONENT = 0x80;
 
 private:
     String::Ptr name_;
@@ -126,6 +126,7 @@ public:
     Expression* initializer() const { return initializer_; }
     int slot() const { return slot_; }
     void type(Type* type) { type_ = type; assert(type_); }
+    void initializer(Expression* expr) { initializer_ = expr; }
     void slot(int slot) { slot_ = slot; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Attribute> Ptr;
@@ -172,6 +173,7 @@ public:
     void basic_block_del_all() { basic_block_.clear(); }
     void formals(Formal* formals) { formals_ = formals; }
 	void throw_spec(ThrowSpec spec) { throw_spec_ = spec; }
+    void block(Block* block) { block_ = block; }
 	void called_func(Function* func);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
@@ -197,15 +199,16 @@ public:
     Class(Location loc, Environment* env, Type* type, Type* alt);
     Function* constructor() const;
     Function* destructor() const;
+    Function* copier() const;
     Feature* features() const { return features_; }    
     Feature* feature(String* name) const;
     String* comment() const { return comment_; }
     Type* type() const { return type_; }
     Type* alternates() const { return alternates_; }
-    Type* mixins() const { return mixins_; }
     Type* proto() const { return proto_; }
     String* default_enum_value() const;
     bool is_object() const { return type_->is_object(); }
+    bool is_functor() const { return type_->is_functor(); }
     bool is_any() const { return type_->is_any(); }
     bool is_union() const { return type_->is_union(); }
     bool is_interface() const { return type_->is_interface(); }
@@ -215,14 +218,12 @@ public:
     bool is_primitive() const { return type_->is_primitive(); }
     bool is_ref() const { return type_->is_ref(); }
     bool is_compound() const { return type_->is_compound(); }
-    bool subtype(Class* other) const;
     int jump1(int index) const { return jump1_[index]; }
     Function* jump2(int index) const { return jump2_[index]; } 
     int slots() const { return slots_; }
     int jump1s() const { return jump1_.size(); }
     int jump2s() const { return jump2_.size(); }
     void feature(Feature* feature);
-    void mixin(Type* mixin) { mixins_ = append(mixins_, mixin); }
     void jump1(int index, int d);
     void jump2(int index, Function* func);
     void slots_inc(int words) { slots_ += words; }
@@ -231,12 +232,11 @@ public:
 
 private:
     void gen_equal_method();
+    void gen_functor_method();
     std::vector<int> jump1_;
     std::vector<Function::Ptr> jump2_;
-    mutable std::map<Class*, bool> subtype_;
     Type::Ptr type_;
     Type::Ptr alternates_;
-    Type::Ptr mixins_;
     Type::Ptr proto_;
     String::Ptr comment_;
     Feature::Ptr features_;
@@ -259,7 +259,7 @@ public:
     bool is_up_to_date() const;
     std::string lib_file() const;
     std::string exe_file() const;
-    std::string api_file() const;
+    std::string jgi_file() const;
     void feature(Feature* feature);
     void import(Import* import);
     void location(Location location) { location_ = location; }

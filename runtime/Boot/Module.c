@@ -70,7 +70,7 @@ void Boot_print_float(Float fl) {
 
 void Boot_print_char(Char character) {
     // Print a character to stdout.  This function is not part of the public 
-    // API for the Apollo library.
+    // API for the Jogo library.
 
     fputc(character, stdout);
     fflush(stdout);

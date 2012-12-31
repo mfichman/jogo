@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "TreeNode.hpp"
 #include "String.hpp"
 #include <vector>
@@ -40,9 +40,13 @@ public:
     Type* next() const { return next_; }
     Type* last() const { return last_; }
     Type* generic(String* name) const;
+    Type* generic(Type const* type) const;
+    Type* canonical(Type const* type) const;
     Class* clazz() const;
-    bool equals(Type* other) const;
-    bool subtype(Type* other) const;
+    Environment* env() const { return env_; }
+    bool operator<(Type const& other) const;
+    bool equals(Type const* other) const;
+    bool subtype(Type const* other) const;
     bool is_union() const;
     bool is_any() const;
     bool is_bottom() const;
@@ -52,7 +56,6 @@ public:
     bool is_byte() const;
     bool is_char() const;
     bool is_bool() const;
-    bool is_self() const;
     bool is_int() const;
     bool is_float() const;
     bool is_number() const;
@@ -65,6 +68,7 @@ public:
     bool is_boolifiable() const;
     bool is_generic() const;
     bool is_proto() const;
+    bool is_functor() const;
     bool is_primitive() const;
     bool is_alt() const;
     bool is_single() const;
@@ -72,6 +76,7 @@ public:
     bool is_value_proto() const;
     bool is_enum_proto() const;
     bool is_object_proto() const;
+    bool is_functor_proto() const;
     bool is_union_proto() const;
     void is_top(bool flag) { is_top_ = flag; }
     void next(Type* next) { next_ = next; }
@@ -113,5 +118,3 @@ private:
 };
 
 Stream::Ptr operator<<(Stream::Ptr out, const Type* type);
-
-

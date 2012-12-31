@@ -1,0 +1,95 @@
+# jgtest exec on
+
+
+TestValue < Value {
+    attr Int = 42
+    @init() {
+        Io::println("TestValue initialized")   
+    }
+    @destroy() {
+        Io::println("TestValue destroyed")
+    } 
+    test(param Int) Int {
+        Io::println("TestValue.test(#{param})")
+        ret param
+    }
+}
+
+TestObject < Object {
+    attr Int = 43
+    @init() {
+        Io::println("TestObject initialized")   
+    }
+    @destroy() {
+        Io::println("TestObject destroyed")
+    } 
+    test(param Int) Int {
+        Io::println("TestObject.test(#{param})")
+        ret param
+    }
+}
+
+
+ValueInObject < Object {
+    TestValue
+    attr2 Int = 101
+}
+
+ValueInValue < Value {
+    TestValue
+    attr2 Int = 102
+}
+
+ObjectInObject < Object {
+    TestObject
+    attr2 Int = 103
+}
+
+ObjectInValue < Value {
+    TestObject
+    attr2 Int = 104
+}
+
+value_in_object() {
+    x = ValueInObject()
+    Io::println(x.test(91).str)
+    Io::println(x.attr.str)
+    Io::println(x.attr2.str)
+    x.attr = 81
+    Io::println(x.attr.str)
+}
+
+value_in_value() {
+    x = ValueInValue()
+    Io::println(x.test(92).str)
+    Io::println(x.attr.str)
+    Io::println(x.attr2.str)
+    x.attr = 82
+    Io::println(x.attr.str)
+}
+
+object_in_object() {
+    x = ObjectInObject()
+    Io::println(x.test(93).str)
+    Io::println(x.attr.str)
+    Io::println(x.attr2.str)
+    x.attr = 83
+    Io::println(x.attr.str)
+}
+
+object_in_value() {
+    x = ObjectInValue()
+    Io::println(x.test(94).str)
+    Io::println(x.attr.str)
+    Io::println(x.attr2.str)
+    x.attr = 84
+    Io::println(x.attr.str)
+}
+
+main() Int {
+    value_in_object()
+    value_in_value()
+    object_in_object()
+    object_in_value()
+    ret 0
+}

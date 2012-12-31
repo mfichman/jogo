@@ -1,104 +1,49 @@
 #!/usr/bin/python
 # This script uploads a new release to the downloads section of the GitHub
-# repository for the Apollo project.  Argument = version #
+# repository for the Jogo project.  Argument = version #
 
-import httplib, json, getpass, sys, os, base64, mimetypes
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+import sys
+import os
 
-version = sys.argv[1]
-username = raw_input('Username: ')
-password = getpass.getpass()
-repo = '/repos/mfichman/apollo'
-github = 'api.github.com'
-amazon = 'github.s3.amazonaws.com'
-downloads = repo + '/downloads'
+VERSION = sys.argv[1]
+AWS_ACCESS_KEY_FILE = os.path.join(os.environ['HOME'], '.awsaccesskey')
+AWS_SECRET_KEY_FILE = os.path.join(os.environ['HOME'], '.awssecretkey')
+try:
+    AWS_ACCESS_KEY = open(AWS_ACCESS_KEY_FILE).read()
+except:
+    AWS_ACCESS_KEY = raw_input('AWS Access Key ID: ')
+    fd = open(AWS_ACCESS_KEY_FILE, 'w')
+    fd.write(AWS_ACCESS_KEY)
+    fd.close()
+try:
+    AWS_SECRET_KEY = open(AWS_SECRET_KEY_FILE).read()
+except:
+    AWS_SECRET_KEY = raw_input('AWS Secret Key: ')
+    fd = open(AWS_SECRET_KEY_FILE, 'w')
+    fd.write(AWS_SECRET_KEY)
+    fd.close()
+
 
 if 'win32' in sys.platform:
-    pkg = 'apollo-'+version+'.exe'
+    pkg = 'jogo-'+VERSION+'.exe'
     system = 'Windows'
 elif 'darwin' in sys.platform:
-    pkg = 'apollo-'+version+'.pkg'
+    pkg = 'jogo-'+VERSION+'.pkg'
     system = 'OS X'
 elif 'linux' in sys.platform:
-    pkg = 'apollo-'+version+'.deb'
+    pkg = 'jogo-'+VERSION+'.deb'
     system = 'Linux'
-
-
-def basic_auth(req, username, password):
-    code = base64.encodestring(username + ':' + password).replace('\n', '')
-    req.putheader('Authorization', 'Basic ' + code)
-
-
-# Open an HTTP connection to the GiHub API server (v3)
-print('Connecting to ' + github)
-http = httplib.HTTPSConnection(github, 443)
-http.putrequest('GET', downloads)
-http.endheaders()
-http.send('')
-res = http.getresponse()
-data = json.loads(res.read())
-
-for item in data:
-    # Get the list of downloads, and determine if the download is already there
-    # but should be overwritten
-    if item['name'] == pkg:
-        path = downloads + '/' + str(item['id'])
-        print('Deleting ' + path)
-        http.putrequest('DELETE', path)
-        basic_auth(http, username, password)
-        http.endheaders()
-        http.send('')
-        res = http.getresponse()
-        res.read()
-
-# Now post the new upload resource
-http.putrequest('POST', downloads, False, True)
-basic_auth(http, username, password)
-http.putheader('Content-Type', 'application/x-www-form-urlencoded')
-http.putheader('Accept', '*/*')
-body = json.dumps({ 
-    'name': pkg,
-    'description': 'Apollo ' + version + ' for ' + system,
-    'size': os.path.getsize(pkg),
-    'content_type': mimetypes.guess_type(pkg)[0] })
-http.putheader('Content-Length', str(len(body)))
-http.endheaders()
-http.send(body)
-res = http.getresponse()
-upload = json.loads(res.read())
-http.close()
 
 # Generate the message body
 print('Uploading file')
-BOUNDARY = '---------------------------0xdeadbeef1987foobar'
-data = [
-    ['key', upload['path']],
-    ['acl', upload['acl']],
-    ['success_action_status', '201'],
-    ['Filename', upload['name']],
-    ['AWSAccessKeyId', upload['accesskeyid']],
-    ['Policy', upload['policy']],
-    ['Signature', upload['signature']],
-    ['Content-Type', upload['mime_type']],
-    ['file', open(pkg, 'rb').read()]
-]
-body = bytearray()
-for pair in data:
-    body.extend('--' + BOUNDARY + '\r\n')
-    body.extend('Content-Disposition: form-data; name="' + pair[0] + '"\r\n')
-    body.extend('\r\n')
-    body.extend(bytes(pair[1]))
-    body.extend('\r\n')
-body.extend('--' + BOUNDARY + '--')
 
-# Now open a connection to the Amazon AWS server
-http = httplib.HTTPSConnection(amazon, 443)
-http.putrequest('POST', '/')
-http.putheader('Content-Type', 'multipart/form-data; boundary='+BOUNDARY)
-http.putheader('Content-Length', str(len(body)))
-http.endheaders()
-http.send(body)
-res = http.getresponse()
-print(res.msg)
-print(res.read())
-http.close()
 
+conn = S3Connection(AWS_ACCESS_KEY, AWS_SECRET_KEY)
+bucket = conn.create_bucket('jogo-downloads')
+
+key = Key(bucket)
+key.key = pkg
+key.set_contents_from_filename(pkg)
+key.set_acl('public-read')

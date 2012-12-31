@@ -27,10 +27,26 @@
 #include <iostream>
 #include <cstdlib>
 
+#ifdef WINDOWS
+#include <crtdbg.h>
+#endif
+
+#ifdef WINDOWS
+int report_hook(int, char* message, int*) {
+    // Prevents an annoying assertion dialog from popping up in debug mode if
+    // the process crashes.
+    std::cerr << message << std::endl;
+    exit(1);
+    return true;
+}
+#endif
 
 int main(int argc, char** argv) {
     // Create a new empty environment to store the AST and symbols tables, and
     // set the options for compilation.
+#ifdef WINDOWS
+    _CrtSetReportHook(report_hook);
+#endif
     Environment::Ptr env(new Environment());
     Options(env, argc, argv);
     Builder::Ptr builder(new Builder(env));

@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "Environment.hpp"
 #include "Feature.hpp"
 #include "Object.hpp"
@@ -37,7 +37,7 @@
 #undef IN // gdmf windows...
 #undef CONSTANT
 
-/* Token type, containing an enumeration for all valid Apollo tokens */
+/* Token type, containing an enumeration for all valid Jogo tokens */
 class Token { 
 public:
     enum Type {
@@ -50,7 +50,8 @@ public:
         YIELD, FORK, ERROR, END, NONE, DOT, FLOAT, INTEGER, COMMA, COLON,
         LEFT_BRACKET, RIGHT_BRACKET, LEFT_PARENS, RIGHT_PARENS, COMPL, 
         STRING_BEGIN, STRING_END, CHAR, LEFT_BRACE, RIGHT_BRACE, MATCH, FUNC, 
-        PRIVATE, BOOL, NIL, EOF_LITERAL, IS, CONSTANT, WITH, MATCH_OP, REGEX
+        PRIVATE, BOOL, NIL, EOF_LITERAL, IS, CONSTANT, WITH, MATCH_OP, REGEX,
+        EMBEDDED
     };
 
     Token() : type_(NONE) {}

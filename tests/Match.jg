@@ -1,0 +1,51 @@
+# jgtest exec on
+
+import Io
+
+Fruit = APPLE | ORANGE | PEAR | BANANA | STRAWBERRY
+
+switch(fruit Fruit) {
+    match fruit {
+    with Fruit::APPLE: print('apple') 
+    with Fruit::ORANGE: print('orange')
+    with Fruit::PEAR: print('pear')
+    with Fruit::BANANA: print('banana') 
+    with Fruit::STRAWBERRY: print('strawberry')
+    }
+    println('.')
+}
+
+switch2(fruit Fruit) {
+    match fruit {
+    with Fruit::APPLE: 
+        print('apple') 
+        print('1')
+    with Fruit::ORANGE: 
+        print('orange')
+        print('2')
+    with Fruit::PEAR: 
+        print('pear')
+        print('3')
+    with Fruit::BANANA: 
+        print('banana') 
+        print('4')
+    }
+    println('.')
+}
+
+main() Int {
+
+    switch(Fruit::APPLE)
+    switch(Fruit::ORANGE)
+    switch(Fruit::PEAR)
+    switch(Fruit::BANANA)
+    switch(Fruit::STRAWBERRY)
+    
+    switch2(Fruit::APPLE)
+    switch2(Fruit::ORANGE)
+    switch2(Fruit::PEAR)
+    switch2(Fruit::BANANA)
+    switch2(Fruit::STRAWBERRY)
+
+    ret 0
+}

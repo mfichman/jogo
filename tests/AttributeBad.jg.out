@@ -1,0 +1,2 @@
+AttributeBad.jg:8:25: Expression does not conform to type 'String' in assignment of 'bad_attribute'
+AttributeBad.jg:9:9: Local variable declaration shadows attribute

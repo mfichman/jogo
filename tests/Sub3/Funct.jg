@@ -1,0 +1,6 @@
+
+Funct < Functor {
+    @case(str String) {
+        Io::println("String #{str}")
+    }
+}

@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "Environment.hpp"
 #include "Feature.hpp"
 #include "Object.hpp"
@@ -43,7 +43,7 @@ public:
     File* file() const { return file_; }
     Location location() const { return lexer_->loc(); }
     Location last_location() const { return last_location_; } 
-    void input(const std::string& file);
+    void input(const std::string& file, bool optional=false);
     void library(const std::string& file);
     typedef Pointer<Parser> Ptr;
 
@@ -51,8 +51,8 @@ private:
     void file_alias(const std::string& import); 
     void file(const std::string& prefix, const std::string& file);
     void dir(const std::string& prefix, const std::string& dir);
-    void implicit_import(Type* type);
-    void implicit_import(String* scope);
+    void implicit_import(Type* type, Flags flags=Import::QUALIFIED);
+    void implicit_import(String* scope, Flags flags=Import::QUALIFIED);
     void module_feature(Feature* feature, String* scope);
 
     String* name(const std::string& name) { return env_->name(name); }
@@ -69,7 +69,6 @@ private:
     Feature* feature_list();
     Feature* feature();
     Generic* generic_list();
-    Type* mixin_list();
     Type* alternate_list(); 
     Feature* constant_list();
     Attribute* composite();
@@ -115,6 +114,9 @@ private:
     Expression* bitwise_or();
     Expression* bitwise_xor();
     Expression* literal();
+    Expression* array_literal();
+    Expression* hash_literal();
+    Expression* pair();
     Expression* closure();
 
     Token token(int index=0) const { 
@@ -130,6 +132,7 @@ private:
                    Expression* expr);
 
 
+    Type::Ptr type_;
     Environment::Ptr env_;
     Module::Ptr module_;
     File::Ptr file_;

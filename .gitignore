@@ -24,3 +24,9 @@ dist/*
 *.msi
 *.exe
 *.obj
+*.DS_STORE
+a.out
+benchmark/*.6
+benchmark/*.s
+benchmark/build
+.build

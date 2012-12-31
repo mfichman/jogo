@@ -37,7 +37,7 @@ Parser::Parser(Environment* env) :
     // the environment.
 
     if (!env->no_default_libs()) {
-        input("Apollo");
+        input("Jogo");
     }
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));
@@ -46,10 +46,10 @@ Parser::Parser(Environment* env) :
 }
 
 void Parser::library(const std::string& import) {
-    // Reads in a library file given by "import" (not including the .api
+    // Reads in a library file given by "import" (not including the .jgi
     // extension, which is automatically added)
 
-    std::string file = import + ".api";
+    std::string file = import + ".jgi";
     std::vector<std::string> tests;
 
     for (int i = 0; i < env_->includes(); i++) {
@@ -70,7 +70,7 @@ void Parser::library(const std::string& import) {
 }
 
 
-void Parser::input(const std::string& import) {
+void Parser::input(const std::string& import, bool optional) {
     // Reads in a file or directory after searching through the list of include
     // paths.  The includes paths are searched in the order they are specified,
     // so if duplicate files are present in two include directories, then only
@@ -85,18 +85,18 @@ void Parser::input(const std::string& import) {
     // directories to find it.  
     for (int i = 0; i < env_->includes(); i++) {
         const std::string& prefix = env_->include(i);
-        if (File::ext(file) != ".ap") {
+        if (File::ext(file) != ".jg") {
             const std::string base = prefix + FILE_SEPARATOR + file;
             if (File::is_dir(base)) {
                 Parser::dir(prefix, file);
                 return;
             } 
-            if (File::is_reg(base + ".ap")) {
-                Parser::file(prefix, file + ".ap");
+            if (File::is_reg(base + ".jg")) {
+                Parser::file(prefix, file + ".jg");
                 return;
             }
-            if (!env_->is_input(import) && File::is_reg(base + ".api")) {
-                Parser::file(prefix, file + ".api");
+            if (!env_->is_input(import) && File::is_reg(base + ".jgi")) {
+                Parser::file(prefix, file + ".jgi");
                 return;
             }
         } else {
@@ -106,8 +106,15 @@ void Parser::input(const std::string& import) {
             } 
         }
         tests.push_back(prefix + FILE_SEPARATOR + file);
-        tests.push_back(prefix + FILE_SEPARATOR + file + ".api");
-        tests.push_back(prefix + FILE_SEPARATOR + file + ".ap");
+        tests.push_back(prefix + FILE_SEPARATOR + file + ".jgi");
+        tests.push_back(prefix + FILE_SEPARATOR + file + ".jg");
+    }
+    // Optional import means a lookup failure doesn't necessarily halt
+    // compilation.  This is used to implement constants of the form
+    // Module::CONST, where Module may be part of another library, or a
+    // separate file that must be loaded. 
+    if (optional) {
+        return;
     }
     env_->error("Could not find " + import);
     err_ << "Module '" << import << "' not found:\n";
@@ -199,7 +206,8 @@ void Parser::file(const std::string& prefix, const std::string& file) {
     // Now parse other modules that depend on the unit that was added
     if (!file_->is_interface_file()) {
         for (int i = 0; i < file_->imports(); i++) {
-            input(file_->import(i)->scope()->string());
+            Import::Ptr im = file_->import(i);
+            input(im->scope()->string(), im->is_optional());
         }
     }
 }
@@ -213,7 +221,7 @@ void Parser::dir(const std::string& prefix, const std::string& dir) {
     }
     for (File::Iterator i(full_path); i; ++i) {
         std::string name = *i;
-        const std::string ext = ".ap";
+        const std::string ext = ".jg";
         if (name.length() <= ext.length()) {
             continue;
         }
@@ -306,6 +314,7 @@ Class* Parser::clazz(String* scope) {
 
     Generic::Ptr generics = generic_list();
     Type::Ptr type = new Type(loc, name(qn), generics, env_);
+    type_ = type;
     
     // Parse the prototype for the class.
     expect(Token::LESS);
@@ -321,6 +330,7 @@ Class* Parser::clazz(String* scope) {
     Feature::Ptr members = feature_list();
     expect(Token::RIGHT_BRACE);
     file_alias(type->qualified_name()->string());
+    type_ = 0;
     return new Class(loc, env_, type, proto, comment, members);
 }
 
@@ -375,7 +385,7 @@ Feature* Parser::feature() {
         Function* func = function();
         if (func->name()->string() != "@init") {
             String* id = name("self");
-            Formal* self = new Formal(loc, id, env_->self_type());
+            Formal* self = new Formal(loc, id, type_);
             self->next(func->formals());
             func->formals(self);
         }
@@ -392,7 +402,7 @@ Feature* Parser::feature() {
 Attribute* Parser::composite() {
     // Returns an attribute representing an embedded type
     LocationAnchor loc(this);
-    Feature::Flags flags = Feature::EMBEDDED;
+    Feature::Flags flags = Feature::EMBEDDED|Feature::COMPONENT;
     Type::Ptr type = Parser::type();
     Expression::Ptr empty(new Empty(loc));
     return new Attribute(loc, env_, type->name(), flags, type, empty); 
@@ -474,6 +484,18 @@ Function* Parser::function() {
     // Now parse the formal list of arguments, e.g., "a Int, b String"
     Formal::Ptr formals = formal_list();
     expect(Token::RIGHT_PARENS);
+
+    // For each @case, use a different mangled name based on the function arg
+    // type name
+    if (id->string() == "@case") {
+        Class::Ptr cls = formals?formals->type()->clazz():0;
+        std::string nm = cls?cls->label()->string():"";
+        if (formals && formals->type()->is_generic()) {
+            nm = formals->type()->name()->string();
+        }
+        id = name(std::string("@case_")+nm);
+    }
+
 
     // Parse flags
     Feature::Flags flags = Parser::flags();      
@@ -735,7 +757,7 @@ void Parser::import() {
         // module will be added to the file's namespace.  If a qualified import
         // already exists, then make that import non-qualified.
         String::Ptr scope = Parser::scope();
-        Import::Ptr import = new Import(loc, scope, false);
+        Import::Ptr import = new Import(loc, scope, 0);
         module_->import(import);
         file_->import(import);
         if (token() == Token::COMMA) {
@@ -767,6 +789,7 @@ Feature::Flags Parser::flags() {
         switch (token().type()) {
         case Token::NATIVE: next(); flags |= Feature::NATIVE; break;
         case Token::IMMUTABLE: next(); flags |= Feature::IMMUTABLE; break;
+        case Token::EMBEDDED: next(); flags |= Feature::EMBEDDED; break;
         case Token::PRIVATE: next(); flags |= Feature::PRIVATE; break;
         case Token::WEAK: next(); flags |= Feature::WEAK; break;
         default: return flags;
@@ -815,11 +838,11 @@ Expression* Parser::closure() {
     } else {
         qn += "::_Closure" + stringify(func);
     }
-    Formal::Ptr self = new Formal(loc, name("self"), env_->self_type());
+    Type::Ptr type = new Type(loc, name(qn), 0, env_);
+    Formal::Ptr self = new Formal(loc, name("self"), type);
     self->next(func->formals());
     func->formals(self);
 
-    Type::Ptr type = new Type(loc, name(qn), 0, env_);
     Type::Ptr object = new Type(loc, name("Object"), 0, env_);
     Class::Ptr clazz = new Class(loc, env_, type, object, 0, func);
     clazz->flags(Feature::CLOSURE);
@@ -1199,9 +1222,10 @@ Expression* Parser::construct() {
             if (token() == Token::CONSTANT) {
                 String::Ptr id = env_->name(value());
                 next();
+                implicit_import(scope, Import::QUALIFIED|Import::OPTIONAL);
                 return new ConstantIdentifier(loc, scope, id); 
             } else {
-                implicit_import(type->qualified_name());
+                implicit_import(scope);
                 return new Identifier(loc, scope, identifier()); 
             }
         }
@@ -1287,6 +1311,12 @@ Expression* Parser::literal() {
     // Parses a literal expression, variable, or parenthesized expression
     Expression* expr;
     switch(token().type()) {
+    case Token::LEFT_BRACKET:
+        return array_literal();
+        break;
+    case Token::LEFT_BRACE:
+        return hash_literal();
+        break;
     case Token::FLOAT:
         expr = new FloatLiteral(location(), env_->integer(value()));
         break;
@@ -1342,6 +1372,49 @@ Expression* Parser::literal() {
     return expr;
 }
 
+Expression* Parser::array_literal() {
+    // Returns an expression constructing an Array from an array literal.
+    LocationAnchor loc(this);
+    Expression::Ptr args;
+    expect(Token::LEFT_BRACKET);
+    while (token() != Token::RIGHT_BRACKET) {
+        args = append(args, expression());
+        if (token() != Token::COMMA) {
+            break;
+        }
+        next();
+    }
+    expect(Token::RIGHT_BRACKET);
+    return new ArrayLiteral(loc, args);
+}
+
+Expression* Parser::hash_literal() {
+    // Returns an expression constructing a Hash from a hash literal.
+    LocationAnchor loc(this);
+    Expression::Ptr args;
+    expect(Token::LEFT_BRACE);
+    while (token() != Token::RIGHT_BRACE) {
+        args = append(args, pair());
+        if (token() != Token::COMMA) {
+            break;
+        }
+        next();
+    }
+    expect(Token::RIGHT_BRACE);
+    return new HashLiteral(loc, args);
+}
+
+Expression* Parser::pair() {
+    // Returns a Pair expression, e.g., expr1 : expr2
+    LocationAnchor loc(this);
+    Type::Ptr type(new Type(loc, name("Pair"), 0, env_));
+    Expression::Ptr args = expression();  
+    expect(Token::COLON);
+    args = append(args, expression());
+    return new Construct(loc, type, args);
+     
+}
+
 Expression* Parser::regex() {
     // Returns an expression constructing a Regex object from a Regex literal.
     LocationAnchor loc(this);
@@ -1369,7 +1442,6 @@ Expression* Parser::string() {
         } else {
             break;
         }
-        
     }
     Expression::Ptr tmp = new StringLiteral(location(), env_->string(value()));
     expect(Token::STRING_END);
@@ -1404,6 +1476,7 @@ Statement* Parser::let() {
     expect(Token::LET);
     Assignment::Ptr assign = assignment(); 
     while (token() == Token::COMMA) {
+        next();
         assign = append(assign, assignment());
     } 
     return new Let(loc, assign, block()); 
@@ -1450,6 +1523,9 @@ Statement* Parser::for_loop() {
 void Parser::module_feature(Feature* feature, String* scope) {
     // If the scope of the feature is fully-qualified, then use that to select
     // the module.  Otherwise, insert the feature into the current module. 
+    if (!feature) {
+        return;
+    }
     Module::Ptr module = env_->module(scope);
     if (!module) {
         module = new Module(location(), env_, scope);
@@ -1459,18 +1535,18 @@ void Parser::module_feature(Feature* feature, String* scope) {
     file_->feature(feature);
 }
 
-void Parser::implicit_import(Type* type) {
+void Parser::implicit_import(Type* type, Flags flags) {
     // Adds an implicit import for 'type' to the parse tree, if necessary.
     if (!type->is_generic()) {
-        implicit_import(type->scope());
+        implicit_import(type->scope(), flags);
     }
 }
 
-void Parser::implicit_import(String* scope) {
+void Parser::implicit_import(String* scope, Flags flags) {
     // Adds a new import to the module/file if it hasn't been added already. 
     Import::Ptr import = module_->import(scope); 
     if (!scope->string().empty() && !import) {
-        import = new Import(location(), scope, true);
+        import = new Import(location(), scope, flags);
         module_->import(import);
         file_->import(import);
         file_alias(scope->string());

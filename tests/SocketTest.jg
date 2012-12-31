@@ -1,0 +1,37 @@
+# jgtest exec on
+
+
+Test < Object {
+    addr immutable = Socket::Addr('', 0)
+    
+}
+
+main() Int {
+    ret 1
+    stdout = Io::stdout()
+    ls = Socket::listen('localhost', 0)
+
+    client = Coroutine() func() {
+        stdout.println('connecting')
+        sd = Socket::connect('localhost', ls.addr.port)
+        sd.stream.print('hello from client\n')
+        sd.stream.end()
+        stdout.pipe(sd.stream)
+        stdout.println('connected')
+    }
+
+    server = Coroutine() func() {
+        stdout.println('accepting')
+        sd = ls.accept()
+        stdout.println('accepted')
+        sd.stream.print('hello from server\n')
+        stdout.println('printed')
+        stdout.pipe(sd.stream)
+        sd.stream.end()
+    }
+
+    server()
+    client()
+
+    ret 0
+}

@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_ARRAY_H
-#define APOLLO_ARRAY_H
+#ifndef JOGO_ARRAY_H
+#define JOGO_ARRAY_H
 
 #include "Primitives.h"
 

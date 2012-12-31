@@ -38,15 +38,15 @@
 #include <errno.h>
 #endif
 
-std::string const File::API = ".api";
+std::string const File::JGI = ".jgi";
 std::string const File::ASM = ".asm";
 std::string const File::C = ".c";
 #ifdef WINDOWS
-std::string const File::APO = ".ap.obj";
+std::string const File::JGO = ".jg.obj";
 std::string const File::O = ".obj"; 
- // Windows object files _must_ end in .obj, otherwise they don't get linked
+// Windows object files _must_ end in .obj, otherwise they don't get linked
 #else
-std::string const File::APO = ".apo";
+std::string const File::JGO = ".jgo";
 std::string const File::O = ".o"; 
 #endif
 
@@ -161,7 +161,7 @@ Constant* File::constant(String* scope, String* name) const {
     return dynamic_cast<Constant*>(feature(scope, name));
 }
 
-void File::dependency(Feature* feature) {
+void File::dependency(TreeNode* feature) {
     // Add a feature as a dependency of the file, unless it is already listed.
     // FIXME: Uses a linear search, which may result in poor performance for
     // long lists of dependencies.
@@ -185,7 +185,7 @@ std::string File::input(const std::string& ext) const {
 }
 
 std::string File::output(const std::string& ext) const {
-    std::string static main = std::string("Boot") + FILE_SEPARATOR + "Main.ap";
+    std::string static main = std::string("Boot") + FILE_SEPARATOR + "Main.jg";
     std::string name;
     if (main == name_->string()) {
         name = env_->entry_module();
@@ -258,11 +258,12 @@ bool File::is_native_lib(const std::string& name) {
 }
 
 bool File::is_output_file() const {
-    return is_output_file_ && !is_interface_file() && is_input_file_;
+    std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.jg";
+    return is_output_file_ && !is_interface_file() && name_->string() != main;
 }
 
 std::string File::base_name(const std::string& file) {
-    // Returns the last component of a file path, without the .ap extension.
+    // Returns the last component of a file path, without the .jg extension.
 
     size_t slash = file.find_last_of(FILE_SEPARATOR);
     size_t dot = file.find_last_of('.');

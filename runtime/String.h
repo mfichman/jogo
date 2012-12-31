@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_STRING_H
-#define APOLLO_STRING_H
+#ifndef JOGO_STRING_H
+#define JOGO_STRING_H
 
 #include "Primitives.h"
 #include <stdlib.h>
@@ -56,5 +56,8 @@ char* strncpy(char*, const char*, size_t);
 size_t strlen(const char*);
 void* memset(void*, int, size_t);
 void* memcpy(void*, const void*, size_t);
+
+#define String__static(x) { String__vtable, 1, sizeof((x))-1, (x) }
+    
 
 #endif

@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "Apollo.hpp"
+#include "Jogo.hpp"
 #include "TreeNode.hpp"
 #include "Environment.hpp"
 #include "Stream.hpp"
@@ -38,6 +38,7 @@ private:
     void operator()(Class* feature);
     void operator()(Constant* constant);
     void operator()(Function* function);
+    void operator()(Attribute* attr);
     void print_tabs();
 
     Environment::Ptr env_;

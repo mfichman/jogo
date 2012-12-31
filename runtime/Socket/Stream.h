@@ -20,8 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef APOLLO_SOCKET_STREAM_H
-#define APOLLO_SOCKET_STREAM_H
+#ifndef JOGO_SOCKET_STREAM_H
+#define JOGO_SOCKET_STREAM_H
 
 #include "Primitives.h"
 #include "Io/Stream.h"
@@ -33,8 +33,8 @@ struct Socket_Stream {
     Ptr _vtable;
     U64 _refcount;
     Io_Stream stream;
-    Socket_Addr addr;
-    Socket_Addr peer;
+    struct Socket_Addr addr;
+    struct Socket_Addr peer;
 };
 
 Socket_Stream Socket_Stream__init();

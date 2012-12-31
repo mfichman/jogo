@@ -1,0 +1,58 @@
+# jgtest exec on
+
+Val < Value {
+    @init(arg Int) {
+        Io::println("init #{arg}")
+        a = arg
+    }
+
+    @destroy() {
+        Io::println("destroy #{a}")
+    }
+    
+    a Int
+    b private Int
+}
+
+
+
+reassign() {
+    # Should create 2 Vals by ctor, destroy 1, and create a new one via copier.
+    first = Val(1)
+    second = Val(2)
+    second = first
+}
+
+reassign_dtor() {
+    # Should destroy the first 'Val' before creating 2nd one
+    val = Val(3)
+    val = Val(4) 
+}
+
+double_assign() {
+    # Should create 1 new 'Val', then copy it into 'x'
+    x = y = Val(5)
+    x.a = 6
+}
+
+anonymous() {
+    # Temporaries should be properly destroyed at the end of the statement
+    Val(7)
+    Val(8)
+}
+
+assign_let() {
+
+    let x = Val(9), y = Val(10) {
+        z = Val(11)
+    }
+}
+
+main() Int {
+    reassign()
+    reassign_dtor()
+    double_assign()
+    anonymous()
+    assign_let()
+    ret 0
+}

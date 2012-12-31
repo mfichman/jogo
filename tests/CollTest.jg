@@ -1,0 +1,10 @@
+# jgtest exec on
+
+
+main() Int {
+    iter Iterable[String] = Array[String](10)
+    index Indexable[String,String] = Hash[String,String]()
+    append Appendable[String] = Array[String](10)
+
+    ret 0
+}

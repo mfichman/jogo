@@ -21,11 +21,10 @@
  */  
 
 #include "BasicBlockGenerator.hpp"
+#include "DispatchTableGenerator.hpp"
 #include <cassert>
 #include <algorithm>
 #include <stdint.h>
-
-using namespace std;
 
 BasicBlockGenerator::BasicBlockGenerator(Environment* env, Machine* mach) :
     env_(env),
@@ -98,10 +97,55 @@ void BasicBlockGenerator::operator()(BooleanLiteral* expr) {
     return_ = load(expr);
 }
 
+void BasicBlockGenerator::operator()(HashLiteral* expr) {
+    // Generate code for a hash literal
+    Location loc = expr->location();
+    Class::Ptr clazz = expr->type()->clazz();
+    Function::Ptr ctor = clazz->constructor();
+    Function::Ptr insert = clazz->function(env_->name("@insert"));
+    FuncMarshal fm(this);
+    fm.call(ctor->label());
+    Operand array = pop_ret(expr->type());
+    for (Expression* arg = expr->arguments(); arg; arg = arg->next()) {
+        Construct::Ptr pair = dynamic_cast<Construct*>(arg);
+        assert(pair && "Non-pair constructor in hash literal");
+        FuncMarshal fm(this);
+        fm.arg(array);
+        fm.arg(emit(pair->arguments()));
+        fm.arg(emit(pair->arguments()->next()));
+        fm.call(insert->label()); 
+    }
+    return_ = array; 
+}
+
+void BasicBlockGenerator::operator()(ArrayLiteral* expr) {
+    // Generate code for an array literal
+    Location loc = expr->location();
+    int elems = 0;
+    for (Expression* arg = expr->arguments(); arg; arg = arg->next()) {
+        elems++; 
+    }
+    Function::Ptr ctor = expr->type()->clazz()->constructor();
+    Function::Ptr push = expr->type()->clazz()->function(env_->name("push"));
+    String::Ptr size = env_->integer(stringify(elems));
+    FuncMarshal fm(this);
+    fm.arg(load(new IntegerLiteral(loc, size)));
+    fm.call(ctor->label());
+    Operand array = pop_ret(expr->type());
+    for (Expression* arg = expr->arguments(); arg; arg = arg->next()) {
+        FuncMarshal fm(this);
+        fm.arg(array);
+        fm.arg(emit(arg));
+        fm.call(push->label());
+    }
+    return_ = array;
+}
+
 void BasicBlockGenerator::operator()(Box* expr) {
     // Boxes a value type into an object, by allocating memory on the stack
     // for the value type.  This function allocates and initializes a refcount
     // and vtable pointer for the value type.
+    Location loc = expr->location();
     Operand arg = emit(expr->child()); 
     assert(!expr->type()->is_compound() && "Not implemented for values");
     assert(!expr->type()->is_ref());
@@ -112,8 +156,8 @@ void BasicBlockGenerator::operator()(Box* expr) {
     String::Ptr one = env_->integer("1");
     String::Ptr size = env_->integer(stringify(bytes));
     FuncMarshal fm(this);
-    fm.arg(load(new IntegerLiteral(Location(), size)));
-    fm.arg(load(new IntegerLiteral(Location(), one)));
+    fm.arg(load(new IntegerLiteral(loc, size)));
+    fm.arg(load(new IntegerLiteral(loc, one)));
     fm.call(env_->name("Boot_calloc"));
     return_ = pop_ret(expr->type());
     object_temp_.push_back(return_);
@@ -133,7 +177,7 @@ void BasicBlockGenerator::operator()(Box* expr) {
     // Make sure that the refcount starts out at 1, otherwise the object may
     // be freed before the end of the constructor.
     Operand refcount = Operand(return_.reg(), Address(1));
-    store(refcount, new IntegerLiteral(Location(), one));
+    store(refcount, new IntegerLiteral(loc, one));
 
     // Slot 2 is the value slot for primitive types
     Operand addr = Operand(return_.reg(), Address(2));
@@ -280,7 +324,8 @@ void BasicBlockGenerator::operator()(Unary* expr) {
 void BasicBlockGenerator::operator()(Member* expr) {
     // A stand-alone member operator, which means that we indirectly call the
     // getter.
-    call(expr->function(), expr->expression());
+    Function::Ptr func = expr->function();
+    call(func, expr->expression(), expr->expression());
 }
 
 void BasicBlockGenerator::operator()(Call* expr) {
@@ -294,7 +339,7 @@ void BasicBlockGenerator::operator()(Call* expr) {
             return; 
         }
     }
-    call(expr->function(), expr->arguments());
+    call(expr->function(), expr->arguments(), expr->receiver());
 }
 
 void BasicBlockGenerator::operator()(Closure* expr) {
@@ -311,9 +356,11 @@ void BasicBlockGenerator::operator()(Construct* expr) {
     // Push objects in anticipation of the call instruction.  Arguments must
     // be pushed in reverse order.
     FuncMarshal fm(this);
+    Operand valret;
     if(clazz->is_compound()) {
         // Push the 'self' parameter for the Vector constructor
-        fm.arg(stack_value(expr->type()));
+        valret = stack_value_temp(expr->type());
+        fm.arg(valret);
     } 
     Formal::Ptr formal = func->formals();
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
@@ -328,15 +375,13 @@ void BasicBlockGenerator::operator()(Construct* expr) {
 
     // Insert a call expression, then pop the return value off the stack.
     fm.call(func->label());
-    return_ = pop_ret(func->type());
     if (expr->type()->is_primitive()) {
         assert(!"Primitive constructor?");
     } else if (expr->type()->is_ref()) {
+        return_ = pop_ret(func->type());
         object_temp_.push_back(return_);
     } else if (expr->type()->is_compound()) {
-        assert(return_.reg());
-        Variable::Ptr var = new Variable(0, return_, expr->type());
-        value_temp_.insert(std::make_pair(return_.reg(), var));
+        return_ = valret;
     } else {
         assert(!"Invalid type");    
     } 
@@ -470,7 +515,26 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
     // phi-functions until optimizations are needed, since without
     // optimizations, SSA is not needed anyway.
 
+    String::Ptr id = expr->identifier();
+    Variable::Ptr var = variable(id);
+    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
+    Type::Ptr decl = expr->declared_type();
     Expression::Ptr init = expr->initializer();
+    Operand assign_addr;
+    bool is_secondary = var && !expr->is_let() && decl->is_top();
+    bool is_attr = attr;
+
+    if (expr->type()->is_compound()) {
+        if (is_secondary) {
+            value_dtor(var->operand(), expr->type()); // Delete old value 
+            assign_addr = assign_addr_ = var->operand();
+        } else if (is_attr) {
+            // Nothing
+        } else {
+            assign_addr = assign_addr_ = stack_value(expr->type()); 
+        }
+    }
+
     if (dynamic_cast<Empty*>(init.pointer())) {
         String::Ptr value;
         if (expr->type()->is_enum()) {
@@ -485,18 +549,15 @@ void BasicBlockGenerator::operator()(Assignment* expr) {
         return_ = emit(init);
     }
 
-    String::Ptr id = expr->identifier();
-    Variable::Ptr var = variable(id);
-    Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
-    Type::Ptr declared = expr->declared_type();
-
-    if (var && !expr->is_let() && declared->is_top()) {
+    assign_addr_ = assign_addr;
+    if (is_secondary) {
         secondary_assignment(expr);
-    } else if (attr) {
+    } else if (is_attr) {
         attr_assignment(expr);
     } else {
         initial_assignment(expr);
     }
+    assign_addr_ = Operand();
 }
 
 void BasicBlockGenerator::operator()(Return* statement) {
@@ -655,12 +716,22 @@ void BasicBlockGenerator::operator()(Type* feature) {
     // Pass
 }
 
-void BasicBlockGenerator::call(Function* func, Expression* args) {
+void BasicBlockGenerator::call(Function* func, Expression* args, Expression* recv) {
     // Push objects in anticipation of the call instruction.  Arguments must be
     // pushed in reverse order.
+    if (recv) {
+        // Look up the function again, in case it needs to re-resolve
+        Class::Ptr clazz = recv->type()->clazz();
+        func = clazz->function(func->name());
+    }
+
     Formal::Ptr formal = func->formals();
     FuncMarshal fm(this);
     Operand receiver;
+    Operand valret;
+    if (func->type()->is_compound()) {
+        valret = stack_value_temp(func->type());
+    }
     for (Expression::Ptr a = args; a; a = a->next()) {
         Type::Ptr ft = formal->type();
         Operand val = a->type()->is_bool() ? bool_expr(a) : emit(a);
@@ -674,11 +745,7 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
         // Push a pointer for the return value at the end of the argument list.
         // The returned value type data will be stored at that location on the
         // stack.
-        Operand addr = stack_value(func->type());
-        fm.arg(addr);   
-        return_ = mov(addr);
-        Variable::Ptr var = new Variable(0, return_, func->type());   
-        value_temp_.insert(std::make_pair(return_.reg(), var));
+        fm.arg(valret);
     }
 
     Operand fnptr;
@@ -709,6 +776,7 @@ void BasicBlockGenerator::call(Function* func, Expression* args) {
     } else if (func->type()->is_compound()) {
         // Return value is allocated on the stack already, and no value is
         // returned by register.
+        return_ = valret;
     } else if (func->type()->is_ref()) {
         return_ = pop_ret(func->type());
         object_temp_.push_back(return_);
@@ -746,9 +814,8 @@ void BasicBlockGenerator::exception_catch() {
 void BasicBlockGenerator::native_operator(Call* expr) {
     // FixMe: Replace this with a mini-parser that can read three-address-code
     // and output it as an inline function.
-    string id = expr->function()->name()->string();
-
-    vector<Operand> args;
+    std::string id = expr->function()->name()->string();
+    std::vector<Operand> args;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         if (a->type()->is_bool()) {
             args.push_back(bool_expr(a));
@@ -802,7 +869,7 @@ BasicBlock* BasicBlockGenerator::basic_block() {
 Variable* BasicBlockGenerator::variable(String* name) {
     // Look up the variable, starting in the current scope and continuing up
     // the scope stack.
-    vector<Scope::Ptr>::reverse_iterator i;
+    std::vector<Scope::Ptr>::reverse_iterator i;
     for (i = scope_.rbegin(); i != scope_.rend(); i++) {
         Variable* var = (*i)->variable(name);
         if (var) {
@@ -842,8 +909,23 @@ void BasicBlockGenerator::exit_scope() {
 Operand BasicBlockGenerator::stack_value(Type* type) {
     // Allocate space for a local value-type variable or temporary on the
     // stack, and return the address of the allocated space.
+    calculate_size(type->clazz());
     local_slots_inc(type->clazz()->slots());
     return Address(-local_slots_,0); 
+}
+
+Operand BasicBlockGenerator::stack_value_temp(Type* type) {
+    // Allocates storage for a temporary stack variable.
+    Operand val;
+    if (!!assign_addr_) {
+        val = assign_addr_;
+    } else {
+        val = mov(stack_value(type));  
+        Variable::Ptr var = new Variable(0, val, type);
+        value_temp_.insert(std::make_pair(var->operand().reg(), var));
+    }
+    assign_addr_ = Operand();
+    return val;
 }
 
 Operand BasicBlockGenerator::id_operand(String* id) {
@@ -865,11 +947,14 @@ Operand BasicBlockGenerator::id_operand(String* id) {
         return var->operand();
     } else if (attr) {
         Operand self = variable(env_->name("self"))->operand();
-        Operand val = load(Operand(self.reg(), Address(attr->slot())));
-        if (attr->type()->is_float()) {
-            val = Operand(RegisterId(val.reg().id(), RegisterId::FLOAT));
+        if (attr->type()->is_compound()) {
+            return Operand(self.reg(), Address(attr->slot(), 0));
+        } else if (attr->type()->is_float()) {
+            Operand val = load(Operand(self.reg(), Address(attr->slot())));
+            return Operand(RegisterId(val.reg().id(), RegisterId::FLOAT));
+        } else {
+            return load(Operand(self.reg(), Address(attr->slot())));
         }
-        return val;
     } else {
         assert(!"Identifier not found");
     }
@@ -924,6 +1009,7 @@ void BasicBlockGenerator::scope_cleanup(Variable* var) {
     // Emits the code to clean up the stack when exiting block.  This includes 
     // decrementing reference counts, and calling destructors for value types.
     Type::Ptr type = var->type();
+    assert(!!var->operand() && "Nil operand");
     if (!type) {
         // Nil variable type indicates that no cleanup need be done.
     } else if (type->is_primitive()) {
@@ -935,6 +1021,7 @@ void BasicBlockGenerator::scope_cleanup(Variable* var) {
     } else if (type->is_compound()) {
         // Call the value type's destructor, if it exists.
         value_dtor(var->operand(), type);
+        calculate_size(type->clazz());
         local_slots_dec(type->clazz()->slots());
     } else {
         assert(!"Invalid type");
@@ -1021,142 +1108,18 @@ Operand BasicBlockGenerator::pop_ret(Type* type) {
     }
 }
 
-uint64_t fnv_hash(uint64_t hash, String* str) {
-    const string& name = str->string();
-    for (int i = 0; i < name.length(); ++i) {
-        hash = ((hash * 0x01000193) ^ name[i]);
-    }
-    return hash;
-}
-
-typedef vector<Function::Ptr> JumpBucket;
-struct SortJumpBuckets {
-    bool operator()(const JumpBucket& a, const JumpBucket& b) {
-        return a.size() > b.size();
-    }
-};
-
 void BasicBlockGenerator::dispatch_table(Class* feature) {
     // Generate the Pearson perfect hash that will be used for vtable lookups.
     if (!feature->is_object()) {
         return;
     }
-    
-    // Initially set the size of the hash table to the number of functions.
-    // The size of the table will grow to prevent collisions.
-    int n = 0;
-    for (Feature* f = feature->features(); f; f = f->next()) {
-        if (Function* func = dynamic_cast<Function*>(f)) {
-            if (!func->is_constructor() && !func->is_destructor()) {
-                n++;
-            }
-        }
-    }
-    for (Type* m = feature->mixins(); m; m = m->next()) {
-        Class* clazz = m->clazz();   
-        for (Feature* f = clazz->features(); f; f = f->next()) {
-            if (Function* func = dynamic_cast<Function*>(f)) {
-                // Ignore functions that have been overidden
-                if (feature->function(func->name()) == func) {
-                    n++;
-                }
-            }
-        }
-    }
-    if (!n) { return; }
-    n = max(10, n * 2);
-
-    File* file = feature->file();
-
-    // Step 1: Place all keys into buckets using a simple hash.  There will
-    // be collisions, but they will be resolved in steps 2-3.
-    vector<JumpBucket> bucket(n);
-    for (Feature* f = feature->features(); f; f = f->next()) {
-        if (Function* func = dynamic_cast<Function*>(f)) {
-            if (!func->is_constructor() && !func->is_destructor()) {
-                uint64_t hash = fnv_hash(0, func->name()) % n;
-                bucket[hash].push_back(func);
-            }
-        }
-    }
-    for (Type* m = feature->mixins(); m; m = m->next()) {
-        Class* clazz = m->clazz();   
-        for (Feature* f = clazz->features(); f; f = f->next()) {
-            if (Function* func = dynamic_cast<Function*>(f)) {
-                // Ignore functions that have been overidden
-                if (feature->function(func->name()) == func) {
-                    uint64_t hash = fnv_hash(0, func->name()) % n;
-                    bucket[hash].push_back(func);
-                    if (func->file() != file) {
-                        file->dependency(func);
-                    }
-                }
-            }
-        }
-    }
-
-    // Step 2: Sort buckets and process the ones with the most items first.
-    sort(bucket.begin(), bucket.end(), SortJumpBuckets()); 
-    
-    // Step 3: Attempt to place items in the buckets into empty slots in the
-    // second jump table, starting with the largest buckets first.
-    vector<Function*> value(n);
-    vector<Function*> slots;
-    feature->jump1(n-1, 0);
-    for (int i = 0; i < bucket.size(); i++) {
-        if (bucket[i].size() <= 0) { break; }
-        int d = 1; 
-    retry:
-        // Try to place all the values into empty value slots in the second
-        // jump table.  If that doesn't work, then increment the hash mixing
-        // value "d"
-        slots = value;
-        for (int j = 0; j < bucket[i].size(); j++) {
-            uint64_t hash = fnv_hash(d, bucket[i][j]->name()) % n;
-            if (slots[hash]) {
-                d++;
-                goto retry;
-            } else {
-                slots[hash] = bucket[i][j];
-            }
-        }
-
-        // Success! Record the d-value (i.e., hash mixing value) for the 
-        // current bucket, and continue.
-        uint64_t hash = fnv_hash(0, bucket[i][0]->name()) % n;
-        feature->jump1(hash, d);
-        value = slots;
-    }
-    for (int i = 0; i < value.size(); i++) {
-        feature->jump2(i, value[i]);
-    }
-/*  Dump hash values
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        if (Function::Ptr func = dynamic_cast<Function*>(f.pointer())) {
-            if (func->is_destructor() || func->is_constructor()) { 
-                continue; 
-            }
-            std::cout << func->name()->string() << std::endl;
-            uint64_t hash1 = fnv_hash(0, func->name());
-            uint64_t d = feature->jump1(hash1 % n);
-            uint64_t hash2 = fnv_hash(d, func->name());
-            std::cout << "   n: " << n << std::endl;
-            std::cout << "   hash1 %n: " << hash1 % n << std::endl;
-            std::cout << "   hash1: " << hash1 << std::endl;
-            std::cout << "   d: " << d << std::endl;
-            std::cout << "   hash2: " << hash2 << std::endl;
-        }
-    }
-    std::cout << feature->jump1s() << std::endl;
-    std::cout << feature->jump2s() << std::endl;
-*/
+    DispatchTableGenerator gen(feature);    
 }
 
 void BasicBlockGenerator::calculate_size(Class* feature) {
     // Calculate the memory footprint of the given class, and assign an address
     // to each attribute in the class.
     if (feature->slots()) { return; }
-
     if (feature->is_primitive()) {
         // All primitives have size equal to one word when stored on the stack
         // or as an attribute of a type.  FixMe: Eventually, implement alignment
@@ -1168,7 +1131,6 @@ void BasicBlockGenerator::calculate_size(Class* feature) {
     } else if (feature->is_compound()) { 
         // Do nothing
     }
-
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         if (Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer())) {
             Type::Ptr type = attr->type();
@@ -1189,6 +1151,7 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
     // Allocate the memory for the new object by calling calloc with the size
     // of the object.
     Operand self;
+    calculate_size(clazz);
     int bytes = clazz->slots() * machine_->word_size();
     String::Ptr size = env_->integer(stringify(bytes));
     String::Ptr one = env_->integer("1");
@@ -1230,6 +1193,9 @@ void BasicBlockGenerator::ctor_preamble(Class* clazz) {
             if (!init || dynamic_cast<Empty*>(init.pointer())) {
                 continue;
             }
+            if (attr->is_component() && attr->type()->is_object_proto()) {
+                continue;
+            }
             Operand value = emit(init);
             if (init->type()->is_primitive()) {
                 // Don't need to do anything special for primitives
@@ -1258,6 +1224,7 @@ void BasicBlockGenerator::copier_preamble(Class* clazz) {
     Operand self = id_operand(env_->name("self"));
     Operand other = id_operand(env_->name("val"));
     
+    calculate_size(clazz);
     int bytes = clazz->slots() * machine_->word_size();
     String::Ptr size = env_->integer(stringify(bytes));
     FuncMarshal fm(this);
@@ -1354,6 +1321,7 @@ void BasicBlockGenerator::local_slots_inc(int count) {
 
 void BasicBlockGenerator::local_slots_dec(int count) {
     local_slots_ -= count;
+    assert(local_slots_ >= 0);
 }
 
 void BasicBlockGenerator::arg_slots_inc(int count) {
@@ -1409,7 +1377,6 @@ void BasicBlockGenerator::secondary_assignment(Assignment* expr) {
         mov(var->operand(), return_);
         refcount_inc(var->operand());
     } else if (type->is_compound()) {
-        value_dtor(var->operand(), type); // Delete old value 
         value_assign_reg(return_, var->operand(), type);
         // XCOPY: If RHS is a temp, then move TO REG (don't copy or free!)
         // XCOPY: local = val
@@ -1429,15 +1396,15 @@ void BasicBlockGenerator::initial_assignment(Assignment* expr) {
     // Check that the value is in-register; if it isn't then there's an error
     // somewhere in the code generator.  Literal expressions should load the
     // value into a temporary SSA register.
-    assert(!!return_.reg());
     if (type->is_primitive()) {
         // For a primitive, do nothing b/c the value is already assigned a 
         // temporary, and no refcount needs to be incremented.
+        assert(!!return_.reg());
     } else if (type->is_ref()) {
+        assert(!!return_.reg());
         refcount_inc(return_);
     } else if (type->is_compound()) {
-        assert(return_.reg());
-        value_assign_reg(return_, Operand(), type);
+        value_assign_reg(return_, assign_addr_, type);
         // XCOPY: If value is a temp, then move to REG (don't copy or free!)
         // XCOPY: local = val 
     } else {
@@ -1448,7 +1415,7 @@ void BasicBlockGenerator::initial_assignment(Assignment* expr) {
 
 void BasicBlockGenerator::value_assign_mem(Operand src, Operand dst, Type* type) {
     // Assign the value pointed to by 'src' to the mem location at 'dst'. 
-   assert(!!src.reg());
+    assert(!!src.reg());
     if (value_temp_.find(src.reg()) == value_temp_.end()) {
         // Value is not a temporary; invoke copy constructor
         value_copy(src, dst, type); 
@@ -1456,6 +1423,7 @@ void BasicBlockGenerator::value_assign_mem(Operand src, Operand dst, Type* type)
         // Value is a temporary; move data from 'src' to 'dst'
         value_move(src, dst, type);
         value_temp_.erase(src.reg());
+        calculate_size(type->clazz());
         local_slots_dec(type->clazz()->slots()); 
     }  
     return_ = mov(dst);
@@ -1468,28 +1436,20 @@ void BasicBlockGenerator::value_assign_reg(Operand src, Operand dst, Type* type)
     // named variable at 'dst.'  If 'dist' is the nil operand, then either a)
     // allocate new space on the stack or b) do nothing and use 'src' as
     // return_ if 'src' is a temporary that's already on the stack.
-    assert(!!src.reg());
-    if (value_temp_.find(src.reg()) == value_temp_.end()) {
+    if (src == dst) {
+        assert(src == dst && "Temporary not assigned to var location");
+    } else {
         // Value is not a temporary; invoke copy constructor
-        if (!dst) {
-            dst = stack_value(type);
-        }
         value_copy(src, dst, type); 
-    } else {
-        // Value is a temporary; reassign the storage to 'dst'
-        value_temp_.erase(src.reg());
     }
-    if (!dst) {
-        return_ = src;
-    } else {
-        return_ = mov(dst);
-    }
+    return_ = mov(dst);
 }
 
 void BasicBlockGenerator::value_copy(Operand src, Operand dst, Type* type) {
     // Copies a value from 'src' to 'dst', and then increments the refcount
     // for any non-weak object attributes in 'type.'
-    assert(!!src.reg());
+    assert(!!src);
+    assert(!!dst);
     Function::Ptr copy = type->clazz()->function(env_->name("@copy"));
     assert(copy && "Missing copy constructor");
     FuncMarshal fm(this);
@@ -1501,6 +1461,7 @@ void BasicBlockGenerator::value_copy(Operand src, Operand dst, Type* type) {
 void BasicBlockGenerator::value_move(Operand src, Operand dst, Type* type) {
     // Move the value without invoking the copy constructor
     assert(!!src.reg());
+    calculate_size(type->clazz());
     int bytes = type->clazz()->slots() * machine_->word_size();
     String::Ptr size = env_->integer(stringify(bytes));
     FuncMarshal fm(this);

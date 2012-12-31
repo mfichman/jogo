@@ -32,6 +32,9 @@ MarkdownGenerator::MarkdownGenerator(Environment* env) :
 
 void MarkdownGenerator::operator()(Module* feature) {
     std::string qn = feature->qualified_name()->string(); 
+    if (qn.empty()) {
+        qn = "Index";
+    }
     Stream::Ptr out = new Stream(env_->output()+FILE_SEPARATOR+qn+".md");
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         out_ = out;
@@ -61,7 +64,7 @@ void MarkdownGenerator::operator()(Function* feature) {
 
     out_ << "## " << feature->name() << "(";
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
-        if (f->type()->is_self()) {
+        if (f->is_self()) {
             continue;
         }
         out_ << f->name() << " ";
@@ -71,7 +74,9 @@ void MarkdownGenerator::operator()(Function* feature) {
         }
     }
     out_ << ") ";
-    operator()(feature->type());
+    if (!feature->type()->is_void()) {
+        operator()(feature->type());
+    } 
     out_ << "\n";
     if(feature->block() && feature->block()->comment()) {
         out_ << feature->block()->comment() << '\n';

@@ -1,0 +1,19 @@
+# jgtest exec on 
+
+Embed < Object {
+
+    test() {
+        Io::println("Hello")
+    } 
+}
+
+Obj < Object {
+    embed embedded Embed
+}
+
+
+main() Int {
+    obj = Obj()
+    obj.test()
+    ret 0
+}
