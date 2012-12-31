@@ -23,6 +23,7 @@
 #include "Feature.hpp"
 #include "Environment.hpp"
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -109,7 +110,8 @@ void Class::gen_equal_method() {
         Formal::Ptr self(new Formal(location(), env()->name("self"), type())); 
         self->next(new Formal(location(), env()->name("other"), type())); 
         Feature::Flags flags = Feature::NATIVE;
-        feature(new Function(location(), env(), name, self, flags, ret, 0));
+        Function::Ptr func = new Function(location(), env(), name, self, flags, ret, 0);
+        feature(func);
     }
 }
 

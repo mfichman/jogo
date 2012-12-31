@@ -38,6 +38,18 @@
 #include <errno.h>
 #endif
 
+std::string const File::JGI = ".jgi";
+std::string const File::ASM = ".asm";
+std::string const File::C = ".c";
+#ifdef WINDOWS
+std::string const File::JGO = ".jg.obj";
+std::string const File::O = ".obj"; 
+// Windows object files _must_ end in .obj, otherwise they don't get linked
+#else
+std::string const File::JGO = ".jgo";
+std::string const File::O = ".o"; 
+#endif
+
 Feature* File::feature(String* scope, String* name) const {
     // Returns the feature with the scope "scope" and the name "name".
     // Searches through imports included in this file to attempt to find the

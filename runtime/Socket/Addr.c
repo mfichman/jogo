@@ -43,10 +43,9 @@
 
 Socket_Addr Socket_Addr__init(Socket_Addr ret, String str, Int port) {
     // Initialies a new socket address (IP address, port ID pair).
-    Boot_mzero(ret, sizeof(struct Socket_Addr));
     struct in_addr in; 
     memset(&in, 0, sizeof(in));
-
+    Boot_mzero(ret, sizeof(struct Socket_Addr));
     ret->host = 0;
     ret->ip = 0;
     ret->port = port;

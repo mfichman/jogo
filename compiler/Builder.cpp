@@ -128,12 +128,13 @@ void Builder::monolithic_build() {
         }
 #ifdef WINDOWS
         std::string lib = env_->output()+".lib";
+        ss << "build\\runtime\\Coroutine.Intel64.obj";
 #else
         std::string dir = File::dir_name(env_->output());
         std::string out = File::base_name(env_->output());
         std::string lib = dir + FILE_SEPARATOR + "lib" + out + ".a";
-#endif
         ss << "build/runtime/Coroutine.Intel64.o";
+#endif
         archive(ss.str(), lib);
     }
 
@@ -207,7 +208,7 @@ void Builder::operator()(File* file) {
     if (env_->errors()) { return; }
 
     // Generate native machine code, and then compile or assemble it.
-    if (!env_->make() || !file->is_up_to_date(".jgo")) {
+    if (!env_->make() || !file->is_up_to_date(File::JGO)) {
         File::mkdir(File::dir_name(file->jgo_file()));
         if (env_->verbose()) {
             Stream::stout() << "Compiling " << file->name() << "\n";
@@ -263,7 +264,7 @@ void Builder::link(const std::string& in, const std::string& out) {
     // Select the correct linker command for the current OS/platform.
     std::stringstream ss;
 #if defined(WINDOWS)
-    ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:amd64 ";
+    ss << "link.exe /SUBSYSTEM:console /NOLOGO /MACHINE:X64 ";
 #elif defined(LINUX)
     ss << "gcc -m64 ";
 #elif defined(DARWIN)
@@ -276,14 +277,13 @@ void Builder::link(const std::string& in, const std::string& out) {
     std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.jg";
     File::Ptr mf = env_->file(env_->name(main));
     operator()(mf);
-    ss << mf->jgo_file() << " ";
 
 #ifdef WINDOWS
     for (int i = 0; i < env_->includes(); i++) {
         ss << "/LIBPATH:\"" << env_->include(i) << "\" ";
     }
     for (int i = 0; i < env_->libs(); i++) {
-        ss << env_->libs(i) << ".lib ";
+        ss << env_->lib(i) << ".lib ";
     }
 #else
     for (int i = 0; i < env_->includes(); i++) {
@@ -295,13 +295,15 @@ void Builder::link(const std::string& in, const std::string& out) {
         ss << "-l" << env_->lib(i) << " ";
     }
 #endif
+    ss << mf->jgo_file() << " ";
 
     // Output link options for libraries and module dependencies.
 #ifdef WINDOWS
-    ss << in << " /OUT:" << module->exe_file(); 
+    ss << in << " /OUT:" << out;
 #else
     ss << in << "-o " << out;
 #endif
+
     if (env_->verbose()) {
         Stream::stout() << ss.str() << "\n";
         Stream::stout()->flush();
@@ -331,7 +333,7 @@ void Builder::archive(const std::string& in, const std::string& out) {
 
     // Select the correct archive program for the current OS/platform.
 #ifdef WINDOWS
-    assert(!"Not supported");
+    ss << "lib.exe /SUBSYSTEM:console /MACHINE:X64 /NOLOGO /OUT:" << out << " " << in;
 #else
     ss << "ar rcs " << out << " " << in;
 #endif
@@ -427,26 +429,27 @@ void Builder::intel64gen(File* file) {
     }
 #if defined(DARWIN)
     OutputFormat::Ptr format(new Mach64Output);
-#elif defined(WINDOWS)
-#error Not supported
-#elif defined(LINUX)
-#error Not supported
-#endif
     intel64gen->format(format);
     intel64gen->operator()(file);
+#elif defined(WINDOWS)
+    assert(!"Not supported");
+#elif defined(LINUX)
+    assert(!"Not supported");
+#endif
 }
 
 void Builder::cc(const std::string& in, const std::string& out) {
     // Compiles a single C source file, and outputs the result to 'out.'
     std::stringstream ss;
 #if defined(WINDOWS)
-    ss << "cl.exe " << in << " /c /TC /Fo:" << out;
+    ss << "cl.exe " << in << " /nologo /c /TC /Fo\"" << out << "\"";
     if (env_->optimize()) {
         ss << " /O2";
-    } else {
-        ss << " /O0";
     }
     ss << " /DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
+    if (!env_->verbose()) {
+        ss << " > NUL";
+    }
 #else
     ss << "gcc " << in << " -c -o " << out;
     if (env_->optimize()) {
@@ -455,19 +458,22 @@ void Builder::cc(const std::string& in, const std::string& out) {
         ss << " -O0 -g";
     }
     ss << " -DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
+#endif
+
 #ifdef WINDOWS
     ss << " /DWINDOWS";
 #elif defined(DARWIN)
     ss << " -DDARWIN";
 #elif defined(LINUX)
     ss << " -DLINUX -m64 -lm";
+#else
+    #error "Unknown platform"
 #endif
 
-#endif
     for (int i = 0; i < env_->includes(); i++) {
         if (File::is_dir(env_->include(i))) {
 #if defined(WINDOWS)
-            ss << " /I " << env_->include(i); 
+            ss << " /I \"" << env_->include(i) << "\""; 
 #else
             ss << " -I " << env_->include(i);
 #endif

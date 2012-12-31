@@ -18,30 +18,36 @@ void basic() {
     assert(s1.has(r1));
     assert(!s1.has(r31));
     assert(!s1.has(r32));
+    assert(s1.count()==1);
 
     s1.set(r31);
     assert(s1.has(r1));
     assert(s1.has(r31));
     assert(!s1.has(r32));
+    assert(s1.count()==2);
 
     s1.set(r32);
     assert(s1.has(r1));
     assert(s1.has(r31));
     assert(s1.has(r32));
+    assert(s1.count()==3);
 
     s1.set(r127);
     assert(s1.has(r127));
+    assert(s1.count()==4);
 
     RegisterIdSet s2(128);
     s2.set(r1);
     s2.set(r2);
     s2.set(r127);
+    assert(s2.count()==3);
 
     RegisterIdSet s3 = s1 & s2;
     assert(s3.has(r1));
     assert(!s3.has(r31));
     assert(!s3.has(r32));
     assert(s3.has(r127));
+    assert(s3.count()==2);
 
     RegisterIdSet s4 = s1 | s2;
     assert(s4.has(r1));
@@ -49,6 +55,7 @@ void basic() {
     assert(s4.has(r31));
     assert(s4.has(r32));
     assert(s4.has(r127));
+    assert(s4.count()==5);
 
     assert(s4.next(0) == 1);
     assert(s4.next(1) == 2);
@@ -98,6 +105,7 @@ void large() {
     assert(s1.has(r1));
     assert(s1.has(r127));
     assert(s1.has(r511));
+    assert(s1.count()==3);
 
     RegisterIdSet s2(1024);
     s2.set(r2);
@@ -106,6 +114,7 @@ void large() {
     assert(s2.has(r2));
     assert(s2.has(r127));
     assert(s2.has(r1023));
+    assert(s2.count()==3);
 
     RegisterIdSet s3 = s1 & s2;
     assert(!s3.has(r1));
@@ -144,6 +153,7 @@ void large() {
     assert(s6.has(r127));
     assert(s6.has(r511));
     assert(s6.has(r1023));
+    assert(s6.count()==5);
 
     s6.set(RegisterId(0, 0));
     assert(s6.bit(0));

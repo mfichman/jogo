@@ -18,9 +18,10 @@ VariantDir('build/compiler', 'compiler', duplicate=0)
 VariantDir('build/drivers', 'drivers', duplicate=0)
 VariantDir('build/runtime', 'runtime', duplicate=0)
 
+build_dir = os.path.join('build', 'runtime')
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(ENV = os.environ)
-env.Append(APFLAGS = '-m -i runtime --build-dir build/runtime --no-default-libs ')
+env.Append(APFLAGS = '-v -m -i runtime --build-dir ' + build_dir + ' --no-default-libs ')
 
 build_mode = ARGUMENTS.get('mode', 'debug')
 stack_size = '8192'
@@ -90,10 +91,14 @@ env.Append(BUILDERS = { 'NASM': nasm_bld })
 
 # Compiler build #############################################################
 compiler_src = env.Glob('build/compiler/*.cpp')
-jogo = env.Program('bin/jogo', compiler_src + ['build/drivers/Main.cpp'])
-jgdoc = env.Program('bin/jgdoc', compiler_src + ['build/drivers/Doc.cpp'])
-jgmake = env.Program('bin/jgmake', compiler_src + ['build/drivers/Make.cpp'])
-jgi = env.Program('bin/jgi', compiler_src + ['build/drivers/Debugger.cpp'])
+jogo_cmd = os.path.join('bin', 'jogo')
+jgdoc_cmd = os.path.join('bin', 'jgdoc')
+jgmake_cmd = os.path.join('bin', 'jgmake')
+jgi_cmd = os.path.join('bin', 'jgi')
+jogo = env.Program(jogo_cmd, compiler_src + ['build/drivers/Main.cpp'])
+jgdoc = env.Program(jgdoc_cmd, compiler_src + ['build/drivers/Doc.cpp'])
+jgmake = env.Program(jgmake_cmd, compiler_src + ['build/drivers/Make.cpp'])
+jgi = env.Program(jgi_cmd, compiler_src + ['build/drivers/Debugger.cpp'])
 compiler = env.StaticLibrary('lib/jogoc', compiler_src)
 
 # Library/runtime build ######################################################
@@ -104,7 +109,7 @@ library_src = ' '.join([
     "Coroutine",
     "File",
     "Hash",
-    "Http",
+    #"Http",
     "Io",
     #"Json",
     "Math",
@@ -119,7 +124,7 @@ library_src = ' '.join([
 ])
 
 coroutine = env.NASM('build/runtime/Coroutine.Intel64.asm')
-lib = env.Command('jglib', jogo, 'bin/jogo $APFLAGS -o lib/Jogo ' + library_src)
+lib = env.Command('jglib', jogo, '%s $APFLAGS -o lib/Jogo %s' % (jogo_cmd, library_src))
 env.Depends(lib, jogo)
 env.Depends(lib, coroutine)
 
@@ -175,15 +180,16 @@ if 'pkg' in COMMAND_LINE_TARGETS:
         env.Depends('pkg', copy)
     
     for f in binary_files:
-        if "bin/test" not in f.path:
-           path = os.path.join(dist_path, f.path)
-           copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
-           env.Depends('pkg', copy)
+        if os.path.join("bin", "test") not in f.path:
+            path = os.path.join(dist_path, f.path)
+            copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
+            env.Depends('pkg', copy)
     
     for f in library_files:
-        path = os.path.join(dist_path, f.path)
-        copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
-        env.Depends('pkg', copy)
+        if 'joboc' not in f.path:
+            path = os.path.join(dist_path, f.path)
+            copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
+            env.Depends('pkg', copy)
 
 
     if env['PLATFORM'] == 'darwin':

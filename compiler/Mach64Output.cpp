@@ -20,6 +20,8 @@
  * IN THE SOFTWARE.
  */  
 
+#ifdef DARWIN
+
 #include "Mach64Output.hpp"
 #include <mach/vm_prot.h>
 #include <cassert>
@@ -198,3 +200,4 @@ Mach64Output::out(Stream* out) {
     out->flush();
 }
 
+#endif

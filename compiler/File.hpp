@@ -47,6 +47,11 @@ public:
         is_input_file_(false),
         is_output_file_(true) {
     }
+    static std::string const JGI;
+    static std::string const ASM;
+    static std::string const C;
+    static std::string const JGO;
+    static std::string const O; 
     
     Feature* feature(String* scope, String* name) const;
     Function* function(String* scope, String* name) const;
@@ -60,15 +65,15 @@ public:
     Constant::Itr constants() const { return Constant::Itr(constant_); }
     bool is_input_file() const { return is_input_file_; }
     bool is_output_file() const;
-    bool is_interface_file() const { return ext(name_->string())==".jgi"; }
+    bool is_interface_file() const { return ext(name_->string())==JGI; }
     bool is_up_to_date(const std::string& ext) const;
     std::string input(const std::string& ext) const;
-    std::string output(const std::string& ext = ".jgo") const;
-    std::string asm_file() const { return output(".asm"); }
-    std::string c_file() const { return output(".c"); }
-    std::string o_file() const { return output(".o"); }
-    std::string jgo_file() const { return output(".jgo"); }
-    std::string native_file() const { return input(".c"); }
+    std::string output(const std::string& ext = JGO) const;
+    std::string asm_file() const { return output(ASM); }
+    std::string c_file() const { return output(C); }
+    std::string o_file() const { return output(O); }
+    std::string jgo_file() const { return output(JGO); }
+    std::string native_file() const { return input(C); }
     void import(Import* import) { import_[import->scope()] = import; }
     void feature(Feature* feature) { feature_.push_back(feature); }
     void constant(Constant* constant) { constant_.push_back(constant); }

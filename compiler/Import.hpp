@@ -26,6 +26,8 @@
 #include "TreeNode.hpp"
 #include "Iterator.hpp"
 
+#undef OPTIONAL
+
 /* 
  * Class for imports.  Qualified imports only load the module corresponding to
  * the import; non-qualified imports also add any names in the loaded module to

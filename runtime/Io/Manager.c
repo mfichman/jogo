@@ -46,6 +46,9 @@ Io_Manager Io_Manager__init() {
 #ifdef WINDOWS
     WORD version = MAKEWORD(2, 2);
     WSADATA data;
+    // Disable error dialog boxes
+    SetErrorMode(GetErrorMode()|SEM_NOGPFAULTERRORBOX); 
+    
     if (WSAStartup(version, &data) != 0) {
         Boot_abort();
     }

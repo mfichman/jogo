@@ -20,6 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
+#ifdef DARWIN
 #include "Environment.hpp"
 #include "Lexer.hpp"
 #include <mach/mach_traps.h>
@@ -210,3 +211,12 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+#else
+
+#include <cassert>
+int main(int argc, char** argv) {
+    assert(!"Not implemented");
+    return 0;
+}
+
+#endif

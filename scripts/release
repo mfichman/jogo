@@ -7,9 +7,10 @@ from boto.s3.key import Key
 import sys
 import os
 
+HOME = os.path.expanduser('~')
 VERSION = sys.argv[1]
-AWS_ACCESS_KEY_FILE = os.path.join(os.environ['HOME'], '.awsaccesskey')
-AWS_SECRET_KEY_FILE = os.path.join(os.environ['HOME'], '.awssecretkey')
+AWS_ACCESS_KEY_FILE = os.path.join(HOME, '.awsaccesskey')
+AWS_SECRET_KEY_FILE = os.path.join(HOME, '.awssecretkey')
 try:
     AWS_ACCESS_KEY = open(AWS_ACCESS_KEY_FILE).read()
 except:

@@ -278,20 +278,35 @@ Class* Type::clazz() const {
 bool Type::operator<(Type const& other) const {
     // Compares two types and returns true if this type is less than the other,
     // by doing a name comparison and a recursive comparison of the generics.
-    if (qualified_name()->string() < other.qualified_name()->string()) {
-        return true;
+    if (qualified_name() != other.qualified_name()) {
+        return qualified_name()->string() < other.qualified_name()->string();
     }
     Generic* g1 = generics();
     Generic* g2 = other.generics();
-    while (g1 || g2) {
-        if (g1 && !g2) { return true; }
-        if (!g1 && g2) { return false; }
-        if (*g1->type() < *g2->type()) { return true; }
+    while (true) {
+        if (!g1 && g2) { return true; }
+        if (g1 && !g2) { return false; }
+        if (!g1 && !g2) { return false; }
+        if (!g1->type()->equals(g2->type())) { return *g1->type() < *g2->type(); }
         g1 = g1->next();
         g2 = g2->next();
     }
     return false;
 }
+//    if (qualified_name()->string() < other.qualified_name()->string()) {
+//        return true;
+//    }
+//    Generic* g1 = generics();
+//    Generic* g2 = other.generics();
+//    while (g1 || g2) {
+//        if (g1 && !g2) { return true; }
+//        if (!g1 && g2) { return false; }
+//        if (*g1->type() < *g2->type()) { return true; }
+//        g1 = g1->next();
+//        g2 = g2->next();
+//    }
+//    return false;
+//}
 
 Stream::Ptr operator<<(Stream::Ptr out, const Type* type) {
     // Outputs the fully-qualified type for 'type', including all generics, and

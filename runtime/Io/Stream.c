@@ -20,17 +20,12 @@
  * IN THE SOFTWARE.
  */
 
-#include "Io/Stream.h"
-#include "Io/Manager.h"
-#include "Coroutine.h"
-#include "String.h"
-#include "Object.h"
-#include "Boot/Module.h"
 #ifndef WINDOWS
 #include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
 #else
+#include <winsock2.h>
 #include <windows.h>
 #endif
 #ifdef DARWIN
@@ -39,6 +34,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include "Io/Stream.h"
+#include "Io/Manager.h"
+#include "Coroutine.h"
+#include "String.h"
+#include "Object.h"
+#include "Boot/Module.h"
 
 Io_Stream Io_Stream__init(Int desc, Int type) {
     // Initializes a new stream.  Streams are used to write to/from files,

@@ -950,6 +950,7 @@ Operand IrGenerator::id_operand(String* id) {
     } else {
         assert(!"Identifier not found");
     }
+    return Operand();
 }
 
 Operand IrGenerator::bool_expr(Expression* expression) {
@@ -1516,6 +1517,8 @@ void IrGenerator::emit(IrBlock* block) {
 }
 
 void IrGenerator::store(Operand addr, Operand value) {
+    assert((!!value.reg() || value.literal()) && "Stored value must be a reg");
+    assert(!value.addr() && "Can't use an address offset in a STORE instr");
     block_->instr(STORE, Operand(), addr, value);    
 }
 
@@ -1610,16 +1613,20 @@ void FuncMarshal::call(Operand func) {
             int_arg++;
         }
         if (reg) {
-            gen_->mov(reg->id(), arg_[i]); // Pass argument by register
+            Operand arg = gen_->mov(arg_[i]);
+            // A MOV is necessary here, as arg_[i] may not be in a register.
+            // The store operation does not work if the argument is not a
+            // register.
+            gen_->mov(reg->id(), arg); // Pass argument by register
 #ifdef WINDOWS
             gen_->arg_slots_inc(1);
-            gen_->store(Operand(sp, Address(stack_arg)), arg_[i]);
+            gen_->store(Operand(sp, Address(stack_arg)), arg);
             stack_arg++;
             // Windows: also pass the value on the stack
 #endif
         } else {
             gen_->arg_slots_inc(1);
-            gen_->store(Operand(sp, Address(stack_arg)), arg_[i]);
+            gen_->store(Operand(sp, Address(stack_arg)), gen_->mov(arg_[i]));
             stack_arg++;
         }
     }

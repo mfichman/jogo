@@ -139,10 +139,10 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     // be updated to indicate the error code.
     struct sockaddr_in sin;
     int socklen = 0;
-    assert(addr && "Invalid null parameter");
 #ifdef WINDOWS
     HANDLE iocp = (HANDLE)Io_manager()->handle;
 #endif
+    assert(addr && "Invalid null parameter");
 
     if (self->handle && Socket_Addr__equals(&self->addr, addr)) { return; }
     if (self->handle) {

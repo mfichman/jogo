@@ -5,7 +5,7 @@
 #include <string.h>
 
 // Hack to make sure that the 'String__vtable' symbol is defined. 
-Int String__vtable[] = {};
+Int String__vtable[] = {0};
 
 String String__init(const Char* literal) {
     String ret = malloc(sizeof(struct String) + strlen(literal) + 1);
@@ -16,7 +16,9 @@ String String__init(const Char* literal) {
     return ret;
 }
 
-int main_() {}
+int main_() {
+    return 0;
+}
 
 Int Int_max(Int self, Int other) {
     return self < other ? other : self;

@@ -59,9 +59,6 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     // to or written from.  This function is tricky because Windows expects
     // a call to ConnectEx before the wait() on the I/O completion port,
     // whereas the wait() happens before the call to connect() on Unix systems.
-
-    assert(addr && "Invalid null argument");
-    Socket_Addr__copy(&self->peer, addr);
     int sd = 0;
     int ret = 0;
     struct sockaddr_in sin;
@@ -76,6 +73,8 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     Io_Overlapped op;
     OVERLAPPED* evt = &op.overlapped;
 #endif
+    assert(addr && "Invalid null argument");
+    Socket_Addr__copy(&self->peer, addr);
 
     // Check to make sure that the socket isn't already connected to the given
     // address.  If it's connected to a different address, then close the 

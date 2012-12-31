@@ -11,6 +11,7 @@ import sys
 import glob
 import difflib
 import multiprocessing
+import platform
 
 parser = optparse.OptionParser()
 parser.add_option('-f', '--full', action='store_true', 
@@ -110,7 +111,7 @@ def native_test(test):
     output = ""
     if sys.platform == 'win32':
         command = 'cl ' + test + ' /Fe..\\build\\' + exe + ' /I:.. jogo.lib '
-        command += '/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib 2>&1'
+        command += '/link /LIBPATH:..\\lib 2>&1'
         os.popen(command).read()
         output = shell('..\\build\\' + exe + ' 2>&1')
     else:
@@ -126,9 +127,10 @@ def cpp_test(test):
     exe = re.sub(r'.cpp$', '', test) 
     output = ""
     if sys.platform == 'win32':
-        command = 'cl ' + test + ' /Fe..\\build\\' + exe + ' /I:../compiler '
-        command += 'jogoc.lib '
-        command += '/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib 2>&1'
+        command = 'cl ' + test + ' /MDd /TP /Zi /EHsc /Fe..\\build\\' 
+        command += exe + ' /I..\\compiler '
+        command += '/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib '
+        command += 'jogoc.lib' 
         os.popen(command).read()
         output = shell('..\\build\\' + exe + ' 2>&1')
     else:
@@ -178,7 +180,7 @@ if len(tests) == 0:
 
 # Iterate through all the tests, and run the correct callback for each test
 # type.
-if options.serial:
+if options.serial or platform.system() == "Windows":
    for test in tests:
        print_result(any_test(test))
 else:

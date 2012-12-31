@@ -27,6 +27,10 @@
 #include <math.h>
 #include <ctype.h>
 
+#ifdef WINDOWS
+#define snprintf _snprintf
+#endif
+
 String Int_str__g(Int self) {
     // Converts an integer into a string, by first calculating the amount of
     // space needed for the string, and then copying the characters into the

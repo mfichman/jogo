@@ -21,6 +21,8 @@
  */  
 
 #include "DispatchTableGenerator.hpp"
+#include <stdint.h>
+#include <algorithm>
 
 struct SortJumpBuckets {
     bool operator()(JumpBucket const& a, JumpBucket const& b) {

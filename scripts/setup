@@ -13,7 +13,7 @@ def mkdir_p(path):
 def setup_vim():
     # Write default VIM options to the .vimrc file.  Be sure to preserve any
     # existing options, and remove duplicates.
-    home = os.environ['HOME']
+    home = os.path.expanduser('~')
     options = sets.Set()
     try:
         for line in open(os.path.join(home, '.vimrc')):
@@ -32,8 +32,12 @@ def setup_vim():
     options.add('set nowrap')
     options.add('set t_Co=256')
     options.add('set guioptions-=m')
+    options.add('set guioptions-=R')
     options.add('set guioptions-=r')
     options.add('set guioptions-=T')
+    options.add('set guioptions-=L')
+    options.add('set guioptions-=l')
+    options.add('set guioptions-=b')
 
     with open(os.path.join(home, '.vimrc'), 'w') as f:
         f.write('\n'.join(options))

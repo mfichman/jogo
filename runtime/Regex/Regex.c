@@ -87,9 +87,9 @@ Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
     self->gen++; 
 
     for (c = str->data;; c++) {
+        Regex_ThreadList temp = 0;
         self->gen++; 
         Regex_ThreadList_thread(cur, self->instr);
-        Regex_ThreadList temp = 0;
         for (i = 0; i < cur->length; ++i) {
             Regex_Thread th = cur->thread+i;
             Regex_Instr pc = th->pc;
@@ -382,15 +382,18 @@ Regex_Regex Regex_Regex_parse_char(Regex_Regex self) {
 
 Regex_Regex Regex_Regex_parse_class(Regex_Regex self) {
     // Parses a character class expression, e.g., [e]
+    assert(!"Not implemented");
+    return 0;
 }
 
 Regex_Regex Regex_Regex_append(Regex_Regex self, Regex_Instr instr) {
     // Appends 'instr' and resizes 'self' if necessary.
     if (self->capacity <= self->length+1) {
         Int oldsize = sizeof(struct Regex_Instr)*self->capacity;
-        self->capacity *= 2;
-        Int size = sizeof(struct Regex_Instr)*self->capacity;
+        Int size = sizeof(struct Regex_Instr)*self->capacity*2;
         Regex_Regex ret = Regex_Regex_alloc(sizeof(struct Regex_Regex)+size); 
+
+        self->capacity *= 2;
         Boot_memcpy(ret, self, sizeof(struct Regex_Regex)+oldsize);
         Boot_free(self);
         self = ret;

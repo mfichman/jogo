@@ -188,6 +188,7 @@ void Lexer::next() {
             token(Token::END);
         } else {
             token(Token::ERROR);
+            read();
         }
         location_.last_column = column_;
         location_.last_line = line_;

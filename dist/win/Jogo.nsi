@@ -45,13 +45,13 @@ Section "Main"
     ; Make sure windows knows about the change
     ;SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
 
-    ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "%JOGO_HOME%\bin"
+    ${EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\bin"
 SectionEnd
 
 Section "un.Main"
     DeleteRegKey HKLM ${REGKEY}
     DeleteRegValue ${env_hklm} "JOGO_HOME"
-    ${un.EnvVarUpdate} $0 "PATH" "A" "HKLM" "%JOGO_HOME%\bin"
+    ${un.EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\bin"
 
     ;SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
     RMDIR /r "$INSTDIR"
