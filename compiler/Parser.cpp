@@ -249,6 +249,7 @@ Module* Parser::module() {
         file_alias(scope->string());
         switch (token()) {
         case Token::IDENTIFIER:
+        case Token::OPERATOR:
             module_feature(function(), scope);
             break;
         case Token::CONSTANT:
@@ -383,12 +384,7 @@ Feature* Parser::feature() {
     LocationAnchor loc(this);
     if (token(1) == Token::LEFT_PARENS) {
         Function* func = function();
-        if (func->name()->string() != "@init") {
-            String* id = name("self");
-            Formal* self = new Formal(loc, id, type_);
-            self->next(func->formals());
-            func->formals(self);
-        }
+        implicit_self(func, type_);
         return func;
     } else if (token() == Token::TYPE) {
         return composite(); 
@@ -443,7 +439,7 @@ Attribute* Parser::attribute() {
 
     // Read the explicit type, if present
     Type::Ptr type = env_->top_type();
-    if (token() == Token::TYPE || token() == Token::TYPEVAR) {
+    if (token() == Token::TYPE || token() == Token::COLON) {
         type = Parser::type(); 
     }
 
@@ -502,7 +498,7 @@ Function* Parser::function() {
 
     // Parse the return value of the function
     Type::Ptr ret = env_->void_type();
-    if (token() == Token::TYPE || token() == Token::TYPEVAR) {
+    if (token() == Token::TYPE || token() == Token::COLON) {
         ret = Parser::type();
     }
 
@@ -522,7 +518,7 @@ Formal* Parser::formal_list() {
         LocationAnchor loc(this);
         String::Ptr nm = identifier();
         Type::Ptr type = env_->any_type();
-        if (token() == Token::TYPE || token() == Token::TYPEVAR) { 
+        if (token() == Token::TYPE || token() == Token::COLON) { 
             type = Parser::type();
         }
         formals = append(formals, new Formal(loc, nm, type));
@@ -542,11 +538,10 @@ Type* Parser::type() {
     // Read in a type variable, i.e., :a, :b, etc.  These only appear in class
     // definitions for classes with type variables.
     LocationAnchor loc(this);
-    if (token() == Token::TYPEVAR) {
-        String::Ptr id = name(value());
-        Type* type = new Type(loc, id, 0, env_);
+    if (token() == Token::COLON) {
         next();
-        return type;
+        String::Ptr id = env_->name(":"+identifier()->string());
+        return new Type(loc, id, 0, env_);
     }
     String::Ptr qn = scope();
 
@@ -557,10 +552,11 @@ Type* Parser::type() {
         while (true) {
             if (token() == Token::TYPE) {
                 generics = append(generics, new Generic(type()));
-            } else if (token() == Token::TYPEVAR) {
-                Type::Ptr type = new Type(location(), name(value()), 0, env_);
-                generics = append(generics, new Generic(type));
+            } else if (token() == Token::COLON) {
                 next();
+                String::Ptr id = env_->name(":"+identifier()->string());
+                Type::Ptr type = new Type(location(), id, 0, env_);
+                generics = append(generics, new Generic(type));
             } else {
                 break;
             }
@@ -1253,11 +1249,12 @@ Generic* Parser::generic_list() {
 
     // Parse one generic parameter per iteration of this loop
     Generic* generics = 0;
-    while (token() == Token::TYPEVAR) {
+    while (token() == Token::COLON) {
         LocationAnchor loc(this);
-        Type::Ptr type = new Type(loc, name(value()), 0, env_);
-        generics = append(generics, new Generic(type));
         next();
+        String::Ptr id = env_->name(":"+identifier()->string());
+        Type::Ptr type = new Type(loc, id, 0, env_);
+        generics = append(generics, new Generic(type));
         if (token() == Token::COMMA) {
             next();
         } else {
@@ -1526,7 +1523,19 @@ void Parser::module_feature(Feature* feature, String* scope) {
     if (!feature) {
         return;
     }
-    Module::Ptr module = env_->module(scope);
+    std::string parent = Import::parent_scope(scope->string());
+    std::string sub = Import::sub_scope(scope->string());
+    Module::Ptr module = env_->module(env_->name(parent));
+    if (module) {
+        String::Ptr id = env_->name(sub);
+        Class::Ptr clazz = dynamic_cast<Class*>(module_->feature(id));
+        if (clazz) {
+            implicit_self(feature, clazz->type());
+            clazz->feature(feature);
+            return;
+        } 
+    }
+    module = env_->module(scope);
     if (!module) {
         module = new Module(location(), env_, scope);
         env_->module(module);
@@ -1567,3 +1576,13 @@ Expression* Parser::op(const LocationAnchor& loc, const std::string& op,
     return new Unary(loc, name(op), expr);
 }
 
+void Parser::implicit_self(Feature* feature, Type* type) {
+    // Adds the implicit 'self' parameter to a function 
+    Function* func = dynamic_cast<Function*>(feature);
+    if (!func) { return; }
+    if (func->name()->string() == "@init") { return; }
+    String* id = name("self");
+    Formal* self = new Formal(feature->location(), id, type);
+    self->next(func->formals());
+    func->formals(self);
+}

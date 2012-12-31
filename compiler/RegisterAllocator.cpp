@@ -21,7 +21,7 @@
  */  
 
 #include "RegisterAllocator.hpp"
-#include "BasicBlockPrinter.hpp"
+#include "IrBlockPrinter.hpp"
 #include "Environment.hpp"
 #include <algorithm>
 
@@ -67,8 +67,8 @@ void RegisterAllocator::operator()(Function* func) {
             graph_[i].neighbors() = RegisterIdSet(func->temp_regs()+1);
         }
         liveness_->operator()(func);
-        for (int i = 0; i < func->basic_blocks(); ++i) {
-            build_graph(func->basic_block(i));
+        for (int i = 0; i < func->ir_blocks(); ++i) {
+            build_graph(func->ir_block(i));
         }
         build_stack();
         color_graph();     
@@ -81,12 +81,12 @@ void RegisterAllocator::operator()(Function* func) {
         spills++;
     }
 
-    for (int i = 0; i < func->basic_blocks(); i++) {
-        rewrite_temporaries(func->basic_block(i)); 
+    for (int i = 0; i < func->ir_blocks(); i++) {
+        rewrite_temporaries(func->ir_block(i)); 
     }
 }
 
-void RegisterAllocator::build_graph(BasicBlock* block) {
+void RegisterAllocator::build_graph(IrBlock* block) {
     // Build the register interference graph.  Each vertex in the graph is a
     // temporary name.  Each edge represents a conflict between two
     // temporaries; that is, the temporaries are live at at least one code
@@ -200,6 +200,11 @@ bool RegisterAllocator::color_ok(RegisterVertex const& v, RegisterId reg) {
         return false;
     }
 
+    // Conflict: Register is a special (reserved) register (like rsp/rbp)
+    if (reg.is_special()) {
+        return false;
+    } 
+
     // Conflict: Candiate reg is the same as a machine register that
     // matches.
     if (v.neighbors().has(reg)) {
@@ -261,11 +266,11 @@ void RegisterAllocator::color_graph() {
     }
 }
 
-void RegisterAllocator::rewrite_temporaries(BasicBlock* block) {
+void RegisterAllocator::rewrite_temporaries(IrBlock* block) {
     // Loop through all instructions and replace temporaries with real
     // allocated registers.
 
-    BasicBlock repl;
+    IrBlock repl;
     for (int i = 0; i < block->instrs(); i++) {
         Instruction instr = block->instr(i);
         Operand first = instr.first();
@@ -332,9 +337,9 @@ void RegisterAllocator::spill_register(Function* func) {
 
     // Iterate through all blocks, and insert loads/stores before reads/writes
     // of the spilled register.
-    for (int i = 0; i < func->basic_blocks(); i++) {
-        BasicBlock::Ptr block = func->basic_block(i);
-        BasicBlock repl;
+    for (int i = 0; i < func->ir_blocks(); i++) {
+        IrBlock::Ptr block = func->ir_block(i);
+        IrBlock repl;
         
         // If this is the first block, and we're spilling a caller register,
         // then add a store

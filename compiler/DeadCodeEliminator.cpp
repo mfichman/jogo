@@ -50,13 +50,13 @@ void DeadCodeEliminator::operator()(Class* feature) {
 
 void DeadCodeEliminator::operator()(Function* feature) {
     liveness_->operator()(feature);
-    for (int i = 0; i < feature->basic_blocks(); i++) {
-        operator()(feature->basic_block(i));
+    for (int i = 0; i < feature->ir_blocks(); i++) {
+        operator()(feature->ir_block(i));
     } 
 }
 
-void DeadCodeEliminator::operator()(BasicBlock* block) {
-    BasicBlock repl;
+void DeadCodeEliminator::operator()(IrBlock* block) {
+    IrBlock repl;
     
     // Loop through each instruction.  If the result of the instruction is
     // dead after the instruction, then the instruction is dead code.

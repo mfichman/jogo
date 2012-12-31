@@ -386,6 +386,7 @@ void CCodeGenerator::operator()(File* file) {
     // reference type.  This needs to come first, because reference types
     // can refer to eachother circularly.
 
+/*
     for (int i = 0; i < file->dependencies(); i++) {
         TreeNode* dep = file->dependency(i);
         if (Class* cls = dynamic_cast<Class*>(dep)) {
@@ -393,6 +394,7 @@ void CCodeGenerator::operator()(File* file) {
 
         }
     }
+*/
 
     // Now output the data layout of the class as a C type definition..
 //    for (int i = 0; i < file->dependencies(); i++) {
@@ -403,6 +405,7 @@ void CCodeGenerator::operator()(File* file) {
 //    }
 
     // Output declarations for any functions used by this file.
+/*
     for (int i = 0; i < file->dependencies(); i++) {
         TreeNode* dep = file->dependency(i);
         if (Function* func = dynamic_cast<Function*>(dep)) {
@@ -414,6 +417,7 @@ void CCodeGenerator::operator()(File* file) {
             out_ << " " << con->label() << ";\n";
         }
     }
+*/
     
     for (int i = 0; i < file->features(); i++) {
         file->feature(i)->operator()(this);

@@ -72,21 +72,21 @@ Coroutine Coroutine__init(Object func) {
 void Coroutine__destroy(Coroutine self) {
     Coroutine_Stack stack = 0;
 
-	// Set the exception flag, then resume the coroutine and unwind the stack,
-	// calling destructors for objects referenced by the coroutine.
-	Int save_except = Exception__current;
-	Exception__current = 1;
+    // Set the exception flag, then resume the coroutine and unwind the stack,
+    // calling destructors for objects referenced by the coroutine.
+    Int save_except = Exception__current;
+    Exception__current = 1;
 
     if (self->status == CoroutineStatus_SUSPENDED) {
-		// Temporarily re-increment the refcount so that there's no double 
-		// free; otherwise, the reference counting in resume() would cause
-		// the coroutine to be destroyed twice.
-		self->_refcount++;
-	    Coroutine__call(self);
-		self->_refcount--;
+        // Temporarily re-increment the refcount so that there's no double 
+        // free; otherwise, the reference counting in resume() would cause
+        // the coroutine to be destroyed twice.
+        self->_refcount++;
+        Coroutine__call(self);
+        self->_refcount--;
     }
-	
-	// Free the stack, and the pointer to the closure object so that no memory
+    
+    // Free the stack, and the pointer to the closure object so that no memory
     // is leaked.
     for (stack = self->stack; stack;) {
         Coroutine_Stack temp = stack;
@@ -97,7 +97,7 @@ void Coroutine__destroy(Coroutine self) {
     Object__refcount_dec(self->function);
     Boot_free(self);
 
-	Exception__current = save_except;
+    Exception__current = save_except;
 }
 
 void Coroutine_resume(Coroutine self) {
@@ -106,6 +106,10 @@ void Coroutine_resume(Coroutine self) {
     if (!self) { return; }
     if (self->status == CoroutineStatus_DEAD) { return; }
     if (self->status == CoroutineStatus_RUNNING) { return; }
+    // If the user tries to resume a coroutine that is in the 'IO' state, then
+    // it will just immediately block again.  So, to avoid that tricky case,
+    // just return immediately from resume().
+    if (self->status == CoroutineStatus_IO) { return; }
 
     // Note: The coroutine's refcount gets incremented by one while the 
     // coroutine is running, so that the coroutine won't get freed while its
@@ -133,13 +137,19 @@ void Coroutine__exit() {
 void Coroutine__yield() {
     // Yields the the current coroutine to the coroutine's caller.  This is a
     // no-op if the coroutine is the main coroutine.
-    if (Coroutine__current && Coroutine__current->caller) {
+    if (Coroutine__current == &Coroutine__main) {
+        fprintf(stderr, "yield() called on main coroutine");
+        abort();
+    } else if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_SUSPENDED;
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
     } else if (Coroutine__current) {
-		Coroutine__current->status = CoroutineStatus_SUSPENDED;
-		Coroutine__swap(Coroutine__current, &Coroutine__main);
-	}
+        Coroutine__current->status = CoroutineStatus_SUSPENDED;
+        Coroutine__swap(Coroutine__current, &Coroutine__main);
+    } else {
+        fprintf(stderr, "no coroutine");
+        abort();
+    }
 }
 
 Ptr Coroutine__grow_stack() {
@@ -161,11 +171,22 @@ void Coroutine__iowait() {
     // Causes this coroutine to wait until I/O is available.  Note: calling
     // this function if no I/O is pending will cause the Coroutine to block
     // indefinitely. 
-    Coroutine__current->status = CoroutineStatus_SUSPENDED;
     Object__refcount_inc((Object)Coroutine__current);
     Io_manager()->waiting++;
-    //Coroutine__swap(Coroutine__current, &Coroutine__main);
-    Coroutine__yield();
+
+    if (Coroutine__current && Coroutine__current->caller) {
+        Coroutine__current->status = CoroutineStatus_IO;
+        Coroutine__swap(Coroutine__current, Coroutine__current->caller);
+    } else if (Coroutine__current) {
+        Coroutine__current->status = CoroutineStatus_IO;
+        Coroutine__swap(Coroutine__current, &Coroutine__main);
+    } else {
+        fprintf(stderr, "iowait() on main coroutine");
+        abort();
+    }
+    // Same as the impl of yield, except it sets the status to 'IO' rather than
+    // 'SUSPENDED'
+
     Io_manager()->waiting--;
     Object__refcount_dec((Object)Coroutine__current); 
 }
@@ -175,6 +196,10 @@ void Coroutine__ioresume(Coroutine self) {
     if (!self) { return; }
     if (self->status == CoroutineStatus_DEAD) { return; }
     if (self->status == CoroutineStatus_RUNNING) { return; }
+    if (self->status != CoroutineStatus_IO) {
+        fprintf(stderr, "Illegal coroutine state: %lld", self->status);
+        abort();
+    }
 
     // Note: The coroutine's refcount gets incremented by one while the 
     // coroutine is running, so that the coroutine won't get freed while its
@@ -183,5 +208,5 @@ void Coroutine__ioresume(Coroutine self) {
     Object__refcount_inc((Object)self);
     Coroutine__swap(Coroutine__current, self);
     Object__refcount_dec((Object)self);
-}   
+}
 

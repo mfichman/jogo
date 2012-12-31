@@ -22,8 +22,10 @@ main() Int {
     # Initializes I/O and the first coroutine.
     manager = Io::manager()
     coroutine = Coroutine(Main())
-    coroutine()
-    manager.run()
+    while coroutine.status != CoroutineStatus::DEAD {
+        coroutine()
+        manager.run()
+    }
     manager.shutdown()
     ret 0 
 }

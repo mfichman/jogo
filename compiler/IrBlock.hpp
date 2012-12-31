@@ -37,6 +37,7 @@ public:
     // an actual hardware register.  A floating-point register has the FLOAT
     // flag set.
     static int const FLOAT = 0x8000;
+    static int const SPECIAL = 0x4000; // Special reg that is not allocatable
 
     RegisterId() : id_(0), flags_(0) {}
     RegisterId(int id, int flags) : id_(id), flags_(flags) {
@@ -45,6 +46,7 @@ public:
 
     bool is_int() const { return !is_float(); }
     bool is_float() const { return flags_ & FLOAT; }
+    bool is_special() const { return flags_ & SPECIAL; }
     bool is_valid() const { return id_; }
     int flags() const { return flags_; }
     int id() const { return id_; }
@@ -208,12 +210,12 @@ private:
     mutable Liveness::Ptr liveness_;
 };
 
-/* Class for basic block nodes */
-class BasicBlock : public Object {
+/* Sequence of intermediate-representation (IR) instructions */
+class IrBlock : public Object {
 public:
-    BasicBlock() : branch_(0), next_(0), round_(0) {}
-    BasicBlock* branch() const { return branch_; }
-    BasicBlock* next() const { return next_; }
+    IrBlock() : branch_(0), next_(0), round_(0) {}
+    IrBlock* branch() const { return branch_; }
+    IrBlock* next() const { return next_; }
     String* label() const { return label_; }
     Instruction const& instr(int index) const { return instrs_[index]; }
     Instruction& instr(int index) { return instrs_[index]; }
@@ -221,19 +223,19 @@ public:
     int instrs() const { return instrs_.size(); }
     bool is_terminated() const;
     bool is_ret() const;
-    void swap(BasicBlock* other) { instrs_.swap(other->instrs_); }
-    void branch(BasicBlock* branch) { branch_ = branch; }
-    void next(BasicBlock* branch) { next_ = branch; }
+    void swap(IrBlock* other) { instrs_.swap(other->instrs_); }
+    void branch(IrBlock* branch) { branch_ = branch; }
+    void next(IrBlock* branch) { next_ = branch; }
     void label(String* label) { label_ = label; }
     Instruction const& instr(Instruction const& inst);
     Instruction const& instr(Opcode op, Operand res, Operand one, Operand two);
     void round_inc() { round_++; }
-    typedef Pointer<BasicBlock> Ptr; 
+    typedef Pointer<IrBlock> Ptr; 
 
 private:
     std::vector<Instruction> instrs_;
-    BasicBlock* branch_;
-    BasicBlock* next_;
+    IrBlock* branch_;
+    IrBlock* next_;
     String::Ptr label_;
     int round_;
 };

@@ -1,0 +1,167 @@
+Notes on the x86-64 Instruction Encoding
+========================================
+
+Format: 
+
+REX prefix (*)
+    + b0100 (fixed prefix)
+    + W:1 (64-bit operand if set)
+    + R:1 (extension to MODRM.reg field)
+    + X:1 (extension to SIG.index field)
+    + B:1 (extension to MODRM.rm/SIB.index field)
+opcode 
+    + op OR
+    + 0x0f op OR
+    + 0x0f 0x38 op OR
+    + 0x0f 0x3a op
+VEX/XOP opcode (**)
+ModR/M and SIB bytes
+    + mod:2 (b11 = register-direct addresssing)
+    + reg:3 (3-bit opcode ext OR 3-bit reg reference)
+    + r/m:3 (direct or indirect reg operand)
+SIB
+    + scale:2 (b00=1, b01=2, b10=4, b11=8)
+    + index:3 (index register to use)
+    + base:3 (base register to use)
+
+
+(*) Long mode only; required for new regs/64-bit operands.  Not required for:
+call, enter, leave, pop, push, ret
+
+(**) Required for > 3 operands, 128-bit XMM dest regs.  Not encoded 
+
+
+Examples: 
+
+0x89 => mov r/m r
+0x8b => mov r r/m
+
+------------------------------------------------------------------------------
+mov rax, rbx = 0x48 89 d8
+------------------------------------------------------------------------------
+0x48 = 0100 1000 (REX prefix)
+    + 0100
+    + W:1 (64-bit operand)
+    + RXB:000
+0x89 = mov opcode
+0xd8 = 1101 1000
+    + mod:11 (register-direct)
+    + reg:011 (rbx)
+    + r/m:000 (rax)
+
+
+------------------------------------------------------------------------------
+mov rax, r14 = 0x4c 89 f0
+------------------------------------------------------------------------------
+0x4c = 0100 1100 (REX prefix)
+    + 0100
+    + W:1 (64-bit operand)
+    + R:1 (new register)
+    + X:0
+    + B:0
+0x89 = mov opcode
+0xf0 = 1111 0000
+    + mod:11 (register-direct)
+    + reg:110 (r14)
+    + r/m:000 (rax)
+
+
+------------------------------------------------------------------------------
+mov rax, imm64 = 0x48 b8 00 00 00 00 00 00 00 00
+------------------------------------------------------------------------------
+0x48 = 0100 1000 (REX prefix)
+    + 0100
+    + W:1 (64-bit operand)
+    + RXB:000
+0xb8 = mov opcode (+r)
+
+
+------------------------------------------------------------------------------
+mov rax, [rbx] = 0x48 8b 03 
+------------------------------------------------------------------------------
+0x48 = 0100 1000 (REX prefix)
+    + 0100
+    + W:1 (64-bit operand)
+    + RXB:000
+0x8b = mov opcode
+0x03 = 0000 0011
+    + mod:00 (not direct?)
+    + reg:000 (rax)
+    + r/m:011 (rbx)
+
+
+------------------------------------------------------------------------------
+mov [rax], rbx = 0x48 89 18
+------------------------------------------------------------------------------
+0x48 = 0100 1000 (REX prefix)
+    + 0100
+    + W:1 (64-bit operand)
+    + RXB:000
+0x89 = mov opcode
+0x18 = 0001 1000 
+    + mod:00 (indirect)
+    + reg:011 (rbx)
+    + r/m:000 (rax)
+
+
+------------------------------------------------------------------------------
+mov r14, [r15] = 0x4e 8b 37
+------------------------------------------------------------------------------
+0x4d = 0100 1101
+    + 0100 
+    + W:1 (64-bit operand)
+    + R:1 
+    + X:0
+    + B:1
+0x8b = mov opcode
+0x37 = 0011 0111
+    + mod:00 (indirect)
+    + reg:110
+    + r/m:111
+
+
+------------------------------------------------------------------------------
+call addr = 0xe8 00 00 00 00
+------------------------------------------------------------------------------
+0xe8 = vsll
+
+
+------------------------------------------------------------------------------
+mov rax, [rel x] = 0x48 8b 05 00 00 00 00
+------------------------------------------------------------------------------
+0x48 = 0100 1000 (REX prefix)
+    + 0100
+    + W:1 (64-operand)
+    + RXB:000
+0x8b = mov opcode
+0x05 = 0000 0101
+    + mod:00 (indirect)
+    + reg:000 (rax)
+    + r/m:101 (would be rbp, but mod=00 means this is rip instead)
+
+
+------------------------------------------------------------------------------
+mov rax, [rbx+4] = 0x48 8b 05 00 00 00 00
+-----------------------------------------------------------------------------
+0x48 = 0100 1000 (REX prefix)
+    + 0100
+    + W:1 (64-bit operand)
+    + RXB:000
+0x8b = mov opcode
+0x50 = 0101 0000
+    + mod:01 (indirect?)
+    + reg:010
+    + r/m:000 (rax)
+
+
+(r12 <- load 'hello world\n')
+0x49 = 0100 1001
+    + 0100
+    + W:1 
+    + RX:00
+    + B:1
+0xc4
+
+
+
+

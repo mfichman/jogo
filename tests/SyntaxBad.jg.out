@@ -8,9 +8,10 @@ SyntaxBad.jg:11:15: Unexpected identifier
 SyntaxBad.jg:13:13: Unexpected '@'
 SyntaxBad.jg:23:9: Invalid character: '`'
 SyntaxBad.jg:29:1: Expected '=' or a type name
-SyntaxBad.jg:30:7: Expected '=' or a type name
+SyntaxBad.jg:30:9: Expected an identifier
 SyntaxBad.jg:34:1: Unexpected end of file
 SyntaxBad.jg:28:5: Type 'Int' is embedded multiple times in 'Blarg'
+SyntaxBad.jg:30:7: Undeclared generic type ':'
 SyntaxBad.jg:11:15: Undefined variable 'im'
 SyntaxBad.jg:11:9: Guard expression must have type 'Bool'
 SyntaxBad.jg:11:18: Undefined variable 'h'

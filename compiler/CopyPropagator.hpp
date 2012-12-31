@@ -24,7 +24,7 @@
 
 #include "Jogo.hpp"
 #include "Environment.hpp"
-#include "BasicBlock.hpp"
+#include "IrBlock.hpp"
 #include "LivenessAnalyzer.hpp"
 #include "Object.hpp"
 
@@ -38,7 +38,7 @@ public:
     void operator()(Module* feature);
     void operator()(Class* feature);
     void operator()(Function* feature);
-    void operator()(BasicBlock* block);
+    void operator()(IrBlock* block);
 
 private:
     Environment::Ptr env_;

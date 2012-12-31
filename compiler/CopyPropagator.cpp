@@ -48,12 +48,12 @@ void CopyPropagator::operator()(Class* feature) {
 }
 
 void CopyPropagator::operator()(Function* feature) {
-    for (int i = 0; i < feature->basic_blocks(); i++) {
-        operator()(feature->basic_block(i));
+    for (int i = 0; i < feature->ir_blocks(); i++) {
+        operator()(feature->ir_block(i));
     } 
 }
 
-void CopyPropagator::operator()(BasicBlock* block) {
+void CopyPropagator::operator()(IrBlock* block) {
     // Removes unnecessary forward copy instructions.  Consider the following
     // instruction sequence:
     // mov r1, r2

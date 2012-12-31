@@ -161,25 +161,6 @@ Constant* File::constant(String* scope, String* name) const {
     return dynamic_cast<Constant*>(feature(scope, name));
 }
 
-void File::dependency(TreeNode* feature) {
-    // Add a feature as a dependency of the file, unless it is already listed.
-    // FIXME: Uses a linear search, which may result in poor performance for
-    // long lists of dependencies.
-    if (!this || !feature) { return; }
-	if (Function* func = dynamic_cast<Function*>(feature)) {
-		if (func->is_primitive_op()) {
-			return;
-		}
-	}
-    for (size_t i = 0; i < dependency_.size(); i++) {
-        if (dependency_[i] == feature) {
-            return;
-        }
-    }
-    
-    dependency_.push_back(feature);
-}
-
 std::string File::input(const std::string& ext) const {
     return File::no_ext_name(path_->string()) + ext;
 }

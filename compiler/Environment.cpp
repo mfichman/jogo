@@ -40,7 +40,7 @@ Environment::Environment() :
     verbose_(false),
     monolithic_build_(true),
     no_default_libs_(false),
-    generator_("Intel64"),
+    generator_("Nasm64"),
     errors_(0) {
 
     Location loc;

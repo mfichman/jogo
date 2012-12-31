@@ -83,7 +83,10 @@ Stream::Ptr operator<<(Stream::Ptr out, const Token& token);
 class Lexer : public Object {
 public:
     Lexer(Environment* env);
+    ~Lexer();
+    void input(); // Read from stdin
     void input(File* file);
+    void init(); 
     void next();
     const std::string& value(int index=0) const;
     const Token& token(int index=0) const;
@@ -107,7 +110,7 @@ private:
 
     Environment::Ptr env_;
     Stream::Ptr err_;
-    std::ifstream input_;
+    std::istream* input_;
     Token token_[LEXER_LOOKAHEAD];
     Location location_;
     int front_;

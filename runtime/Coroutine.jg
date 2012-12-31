@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-CoroutineStatus = NEW | RUNNING | SUSPENDED | DEAD
+CoroutineStatus = NEW | RUNNING | SUSPENDED | DEAD | IO
 
 Coroutine < Object {
     # Implements a coroutine, or lightweight cooperative thread.  The coroutine
@@ -57,7 +57,7 @@ Coroutine < Object {
         # new, then the execution begins starting at 'function'.  If the
         # coroutine is dead, then this function has no effect.  Otherwise, the
         # execution resumes from the last yield.
-        resume()
+        self.resume()
     }
 
     resume() native {

@@ -119,6 +119,67 @@ Int Int_abs__g(Int self) {
     return self >= 0 ? self : -self;
 }
 
+Float Int_exp__g(Float self) {
+    return exp(self);
+}
+
+Float Int_ln__g(Float self) {
+    return log(self);
+}
+
+Float Int_log__g(Float self) {
+    return log10(self);
+}
+
+Float Int_sqrt__g(Float self) {
+    return sqrt(self);
+}
+
+Float Int_ceil__g(Float self) {
+    return ceil(self);
+}
+
+Float Int_floor__g(Float self) {
+    return floor(self);
+}
+
+Float Int_sin__g(Float self) {
+    return sin(self);
+}
+
+Float Int_cos__g(Float self) {
+    return cos(self);
+}
+
+Float Int_tan__g(Float self) {
+    return tan(self);
+}
+
+Float Int_arcsin__g(Float self) {
+    return asin(self);
+}
+
+Float Int_arccos__g(Float self) {
+    return acos(self);
+}
+
+Float Int_arctan__g(Float self) {
+    return atan(self);
+}
+
+Float Int_sinh__g(Float self) {
+    return sinh(self);
+}
+
+Float Int_cosh__g(Float self) {
+    return cosh(self);
+}
+
+Float Int_tanh__g(Float self) {
+    return tanh(self);
+}
+
+
 Float Float__init() {
     return 0;
 }

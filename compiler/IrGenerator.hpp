@@ -24,7 +24,7 @@
 
 #include "Jogo.hpp"
 #include "Environment.hpp"
-#include "BasicBlock.hpp"
+#include "IrBlock.hpp"
 #include "Object.hpp"
 #include "Machine.hpp"
 #include "Scope.hpp"
@@ -33,10 +33,10 @@
 
 
 /* Code generator structure; creates basic block flow graphs */
-class BasicBlockGenerator : public TreeNode::Functor {
+class IrGenerator : public TreeNode::Functor {
 public:
-    BasicBlockGenerator(Environment* env, Machine* mach);
-    typedef Pointer<BasicBlockGenerator> Ptr; 
+    IrGenerator(Environment* env, Machine* mach);
+    typedef Pointer<IrGenerator> Ptr; 
     void operator()(File* file);
 
 private:
@@ -79,7 +79,7 @@ private:
     void operator()(Closure* expression);
     void operator()(Type* type);
 
-    Operand emit(TreeNode* node, BasicBlock* yes, BasicBlock* no, bool inv); 
+    Operand emit(TreeNode* node, IrBlock* yes, IrBlock* no, bool inv); 
     Operand emit(TreeNode* node);
     Operand emit(Opcode op, Operand t2, Operand t3);
     Operand emit(Opcode op, Operand t2); 
@@ -97,17 +97,17 @@ private:
     void store(Operand addr, Operand value);
     void call(Operand func);
     void ret();
-    void bne(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
-    void be(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
-    void bnz(Operand t2, BasicBlock* branch, BasicBlock* next);
-    void bz(Operand t2, BasicBlock* branch, BasicBlock* next);
-    void bg(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
-    void bl(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
-    void bge(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
-    void ble(Operand t2, Operand t3, BasicBlock* branch, BasicBlock* next);
-    void jump(BasicBlock* target);
-    void emit(BasicBlock* block); 
-    void branch(Opcode o, Operand t2, Operand t3, BasicBlock* b, BasicBlock* n);
+    void bne(Operand t2, Operand t3, IrBlock* branch, IrBlock* next);
+    void be(Operand t2, Operand t3, IrBlock* branch, IrBlock* next);
+    void bnz(Operand t2, IrBlock* branch, IrBlock* next);
+    void bz(Operand t2, IrBlock* branch, IrBlock* next);
+    void bg(Operand t2, Operand t3, IrBlock* branch, IrBlock* next);
+    void bl(Operand t2, Operand t3, IrBlock* branch, IrBlock* next);
+    void bge(Operand t2, Operand t3, IrBlock* branch, IrBlock* next);
+    void ble(Operand t2, Operand t3, IrBlock* branch, IrBlock* next);
+    void jump(IrBlock* target);
+    void emit(IrBlock* block); 
+    void branch(Opcode o, Operand t2, Operand t3, IrBlock* b, IrBlock* n);
 
     void variable(Variable* var);
     void enter_scope();
@@ -145,16 +145,16 @@ private:
     Operand stack_value_temp(Type* type);
     RegisterId temp_inc() { return RegisterId(++temp_, 0); }
     Variable* variable(String* name);
-    BasicBlock* basic_block();
+    IrBlock* ir_block();
 
     Environment::Ptr env_;
     Machine::Ptr machine_;
     Class::Ptr class_;
     Module::Ptr module_;
     Function::Ptr function_;
-    BasicBlock::Ptr block_;
-    BasicBlock::Ptr true_;
-    BasicBlock::Ptr false_;
+    IrBlock::Ptr block_;
+    IrBlock::Ptr true_;
+    IrBlock::Ptr false_;
     Operand return_;
     
     std::vector<Scope::Ptr> scope_;
@@ -184,14 +184,14 @@ private:
 /* Helper class for mashalling function parameters */
 class FuncMarshal {
 public:
-    FuncMarshal(BasicBlockGenerator* gen) : 
+    FuncMarshal(IrGenerator* gen) : 
         gen_(gen), int_args_(0), float_args_(0) {
     }
     void arg(Operand op); 
     void call(Operand func);
 
 private:
-    BasicBlockGenerator* gen_;
+    IrGenerator* gen_;
     std::vector<Operand> arg_;
     int int_args_;
     int float_args_;
@@ -200,13 +200,13 @@ private:
 /* Helper class for unmarshalling function parameters */
 class FuncUnmarshal {
 public:
-    FuncUnmarshal(BasicBlockGenerator* gen) :
+    FuncUnmarshal(IrGenerator* gen) :
         gen_(gen), int_args_(0), float_args_(0), stack_args_(0) {
     }
     void arg(String* name, Type* type);
 
 private:
-    BasicBlockGenerator* gen_;
+    IrGenerator* gen_;
     int int_args_;
     int float_args_;
     int stack_args_;

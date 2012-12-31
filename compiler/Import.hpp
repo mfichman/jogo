@@ -51,6 +51,7 @@ public:
     static std::string scope_name(std::string const& file);
     static std::string module_name(std::string const& file);
     static std::string parent_scope(std::string const& scope);
+    static std::string sub_scope(std::string const& scope);
     Import* next() const { return next_; }
     Import* last() const { return last_; }
     void next(Import* next) { next_ = next; }

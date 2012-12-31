@@ -23,36 +23,34 @@
 #pragma once
 
 #include "Jogo.hpp"
-#include "Environment.hpp"
-#include "File.hpp"
-#include "Machine.hpp"
+#include "Object.hpp"
+#include "String.hpp"
+#include "Stream.hpp"
+#include "Section.hpp"
 
-/* Builds modules, executables, and dependencies in order. */
-
-class Builder : public TreeNode::Functor {
+/* Interface for output file formats (e.g., COFF, Mach-O) */
+class OutputFormat : public Object {
 public:
-    Builder(Environment* env);
-    typedef Pointer<Builder> Ptr;
-    
-    void operator()(Module* module);
-    void operator()(File* file);
-    int errors() const { return errors_; }
+    typedef Pointer<OutputFormat> Ptr;
+    typedef int RelocType;
+    virtual ~OutputFormat() {}
 
-private:
-    void modular_build();
-    void monolithic_build();
-    void link(Module* module);
-    void link(const std::string& in, const std::string& out);
-    void archive(Module* module);
-    void archive(const std::string& in, const std::string& out);
-    void irgen(File* file); 
-    void cgen(File* file);
-    void nasm64gen(File* file);
-    void intel64gen(File* file);
-    void cc(const std::string& in, const std::string& out);
-    void nasm(const std::string& in, const std::string& out);
-    void execute(const std::string& exe);
+    virtual void ref(String* name, RelocType type)=0;
+    // Records a references to a symbol name at the current byte offset in the
+    // text section.  Ref info is used to generate relocation entries.
 
-    Environment::Ptr env_;
-    int errors_;
+    virtual void label(String* label)=0;
+    virtual void local(String* label)=0;
+    // Emits a label at the given location, adding an entry to the symbol
+    // table.  This function asserts if a symbol is defined twice.
+
+    virtual void out(Stream* out)=0;
+    // Flushes the output format to the given file.
+
+    virtual Section* text() const=0;
+    // Returns the tet section (for code emit)
+
+    static int const RELOC_ABSOLUTE = 0x1;
+    static int const RELOC_BRANCH = 0x2;
+    static int const RELOC_SIGNED = 0x3;
 };

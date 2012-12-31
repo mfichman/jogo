@@ -35,6 +35,7 @@ extern Int CoroutineStatus_NEW;
 extern Int CoroutineStatus_RUNNING;
 extern Int CoroutineStatus_SUSPENDED;
 extern Int CoroutineStatus_DEAD;
+extern Int CoroutineStatus_IO;
 
 typedef struct Coroutine* Coroutine;
 struct Coroutine {

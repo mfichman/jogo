@@ -127,9 +127,10 @@ Options::Options(Environment* env, int argc, char** argv) {
         }
     } 
 
-    if (env->generator() != "Intel64" && env->generator() != "C") {
+    std::string gen = env->generator();
+    if (gen != "Intel64" && gen != "C" && gen != "Nasm64") {
         print_usage();
-        err << "Invalid code generator (options: Intel64, C)\n\n";
+        err << "Invalid code generator (options: Intel64, Nasm64, C)\n\n";
         err->flush();
         exit(1);
     }

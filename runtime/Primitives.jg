@@ -33,6 +33,7 @@ Int < Value {
     @neg() native Int
     @compl() native Int
 
+    str() String { ret self.str }
     str?() native String {
         # Returns the string representation of 'self'        
     }
@@ -55,8 +56,84 @@ Int < Value {
         }
     }
 
+    exp() Float { ret self.exp }
+    exp?() native Float {
+        # Returns the exponential of 'self'
+    }
+
+    ln() Float { ret self.ln }
+    ln?() native Float {
+        # Returns the natural logarithm of 'self'
+    }
+
+    log() Float { ret self.log }
+    log?() native Float {
+        # Returns the base-10 logarithm of 'self'
+    }
+    
+    sqrt() Float { ret self.sqrt }
+    sqrt?() native Float {
+        # Returns the square root of 'self'
+    }
+    
+    ceil() Float { ret self.ceil } 
+    ceil?() native Float {
+        # Returns the smallest integer not less than 'self'
+    }
+    
+    floor() Float { ret self.floor }
+    floor?() native Float {
+        # Returns the largest integer not greater than 'self'
+    }
+
+    abs() Int { ret self.abs }
     abs?() native Int {
         # Returns the absolute value of 'self'
+    }
+    
+    sin() Float { ret self.sin }
+    sin?() native Float {
+        # Returns the sine of 'self'
+    }
+
+    cos() Float { ret self.cos }
+    cos?() native Float {
+        # Returns the cosine of 'self'
+    }
+
+    tan() Float { ret self.tan }
+    tan?() native Float {
+        # Returns the tangent of 'self'
+    }
+
+    arcsin() Float { ret self.arcsin }
+    arcsin?() native Float {
+        # Returns the arc-sine of 'self'
+    }
+
+    arccos() Float { ret self.arccos }
+    arccos?() native Float {
+        # Returns the arc-cosine of 'self'
+    }
+
+    arctan(value Float) Float { ret self.arctan?(value) }
+    arctan?(value Float) native Float {
+        # Returns the arc-tangent of 'self'/'value'
+    }
+
+    sinh() Float { ret self.sinh }
+    sinh?() native Float {
+        # Returns the hyperbolic sine of 'self'
+    }
+
+    cosh() Float { ret self.cosh }
+    cosh?() native Float {
+        # Returns the hyperbolic cosine of 'self'
+    }
+
+    tanh() Float { ret self.tanh }
+    tanh?() native Float {
+        # Returns the hyperbolic tangent of 'self'
     }
 }
 
@@ -72,6 +149,7 @@ Float < Value {
     @equal(other Float) native Bool
     @less(other Float) native Bool
 
+    str() String { ret self.str }
     str?() native String {
         # Returns the string representation of 'self'
     }
@@ -94,66 +172,82 @@ Float < Value {
 #        }
 #    } 
 
+    exp() Float { ret self.exp }
     exp?() native Float {
         # Returns the exponential of 'self'
     }
 
+    ln() Float { ret self.ln }
     ln?() native Float {
         # Returns the natural logarithm of 'self'
     }
 
+    log() Float { ret self.log }
     log?() native Float {
         # Returns the base-10 logarithm of 'self'
     }
     
+    sqrt() Float { ret self.sqrt }
     sqrt?() native Float {
         # Returns the square root of 'self'
     }
     
+    ceil() Float { ret self.ceil } 
     ceil?() native Float {
         # Returns the smallest integer not less than 'self'
     }
     
+    floor() Float { ret self.floor }
     floor?() native Float {
         # Returns the largest integer not greater than 'self'
     }
 
+    abs() Float { ret self.abs }
     abs?() native Float {
         # Returns the absolute value of 'self'
     }
     
+    sin() Float { ret self.sin }
     sin?() native Float {
         # Returns the sine of 'self'
     }
 
+    cos() Float { ret self.cos }
     cos?() native Float {
         # Returns the cosine of 'self'
     }
 
+    tan() Float { ret self.tan }
     tan?() native Float {
         # Returns the tangent of 'self'
     }
 
+    arcsin() Float { ret self.arcsin }
     arcsin?() native Float {
         # Returns the arc-sine of 'self'
     }
 
+    arccos() Float { ret self.arccos }
     arccos?() native Float {
         # Returns the arc-cosine of 'self'
     }
 
+    arctan(value Float) Float { ret self.arctan?(value) }
     arctan?(value Float) native Float {
         # Returns the arc-tangent of 'self'/'value'
     }
 
+    sinh() Float { ret self.sinh }
     sinh?() native Float {
         # Returns the hyperbolic sine of 'self'
     }
 
+    cosh() Float { ret self.cosh }
     cosh?() native Float {
         # Returns the hyperbolic cosine of 'self'
     }
 
+    tanh() Float { ret self.tanh }
     tanh?() native Float {
         # Returns the hyperbolic tangent of 'self'
     }
@@ -169,6 +263,7 @@ Char < Value {
     @equal(other Char) native Bool
     @less(other Char) native Bool
 
+    str() String { ret self.str }
     str?() native String {
         # Returns a string representation of this character.
     }

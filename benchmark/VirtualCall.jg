@@ -1,0 +1,27 @@
+
+
+Obj < Object {
+    x = 0
+    call() {
+        x = x + 1
+    }
+}
+
+Intf < Interface {
+    call() {
+    }
+}
+
+main() Int {
+
+    obj = Obj()
+    intf Intf = obj
+    
+    i = 0
+    while i < 100000000 {
+        intf.call()
+        i = i + 1
+    }
+    Io::println("#{obj.x}")
+    ret 0
+}

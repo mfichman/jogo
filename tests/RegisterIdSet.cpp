@@ -1,4 +1,4 @@
-#include "BasicBlock.hpp"
+#include "IrBlock.hpp"
 
 RegisterId const r1(1, 0);
 RegisterId const r2(2, 0);

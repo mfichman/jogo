@@ -67,3 +67,45 @@ char String::escape(const std::string& str) {
     default: return c[0];
     }
 }
+
+std::string const String::unescaped() const {
+    // Removes the escape sequences from this string and returns the actual
+    // string, as intended by the programmer
+    std::string const& in = string();
+    std::string out;
+    int length = 0;
+    for (int i = 0; i < in.length(); i++) {
+        char c = in[i];
+        if (c == '\\') {
+            // Output escape sequences.  For NASM, the actual hex codes must
+            // be output for non-visible characters; there is no escape
+            // character.
+            c = in[++i];
+            if (isdigit(c)) { // Octal code
+                char c2 = in[++i];
+                char c3 = in[++i]; 
+                out += std::string("0o") + c + c2 + c3;
+            } else if (c == 'x') { // Hexadecimal code
+                char c1 = in[++i];
+                char c2 = in[++i];
+                out += std::string("0x") + c1 + c2;
+            } else {
+                switch (c) {
+                case 'a': out += "\a"; break; // alarm
+                case 'b': out += "\b"; break; // backspace
+                case 't': out += "\t"; break; // horizontal tab
+                case 'n': out += "\n"; break; // newline
+                case 'v': out += "\v"; break; // vertical tab
+                case 'f': out += "\f"; break; // form feed
+                case 'r': out += "\r"; break; // carriage return
+                case '"': out += "\""; break; // quote
+                case '\'': out += "\'"; break; // quote
+                default: out += c; break;
+                }
+            }
+        } else {
+            out += c;
+        }
+    }
+    return out;
+}

@@ -44,7 +44,7 @@ public:
         module_(module),
         env_(env),
         is_input_file_(false),
-        is_output_file_(true) {  
+        is_output_file_(true) {
     }
     static std::string const JGI;
     static std::string const ASM;
@@ -52,7 +52,6 @@ public:
     static std::string const JGO;
     static std::string const O; 
     
-    TreeNode* dependency(int id) { return dependency_[id]; }
     Feature* feature(String* scope, String* name) const;
     Function* function(String* scope, String* name) const;
     Constant* constant(String* scope, String* name) const;
@@ -71,7 +70,6 @@ public:
     Feature* feature(int index) { return feature_[index]; }
     int imports() const { return import_.size(); }
     int features() const { return feature_.size(); }
-    int dependencies() { return dependency_.size(); }
     int constants() { return constant_.size(); }
     bool is_input_file() const { return is_input_file_; }
     bool is_output_file() const;
@@ -84,7 +82,6 @@ public:
     std::string o_file() const { return output(O); }
     std::string jgo_file() const { return output(JGO); }
     std::string native_file() const { return input(C); }
-    void dependency(TreeNode* node);
     void import(Import* import) { import_.push_back(import); }
     void feature(Feature* feature) { feature_.push_back(feature); }
     void next(File* next) { next_ = next; }
@@ -115,7 +112,6 @@ private:
     bool is_output_file_;
     std::vector<Import::Ptr> import_; 
     std::vector<Feature::Ptr> feature_;
-    std::vector<TreeNode::Ptr> dependency_;
     std::vector<Constant::Ptr> constant_;
     std::map<std::string, String::Ptr> integer_;
     std::map<std::string, String::Ptr> floating_;

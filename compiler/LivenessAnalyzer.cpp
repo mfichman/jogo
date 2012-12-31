@@ -25,7 +25,7 @@
 using namespace std;
 
 void LivenessAnalyzer::operator()(Function* feature) {
-    if (!feature->basic_blocks()) { return; }
+    if (!feature->ir_blocks()) { return; }
     finished_ = false;
     reset_ = true;
     function_ = feature;
@@ -34,13 +34,13 @@ void LivenessAnalyzer::operator()(Function* feature) {
     // fully statisfied.
     while (!finished_) {
         finished_ = true;
-        round_ = feature->basic_block(0)->round();
-        operator()(feature->basic_block(0));
+        round_ = feature->ir_block(0)->round();
+        operator()(feature->ir_block(0));
         reset_ = false;
     }
 }
 
-void LivenessAnalyzer::operator()(BasicBlock* block) {
+void LivenessAnalyzer::operator()(IrBlock* block) {
     // Compute liveness information for the basic block.  This algorithm is 
     // partly based on the notes found here, with slight optimizations: 
     // http://www.classes.cs.uchicago.edu/archive/2004/spring/22620-1/docs/liveness.pdf 
@@ -102,7 +102,7 @@ void LivenessAnalyzer::operator()(BasicBlock* block) {
 
         // If this is the first instruction of the function, then we need to
         // add all the registers belonging to the caller to the def[n] set.
-        if (block == function_->basic_block(0) && i == 0) {
+        if (block == function_->ir_block(0) && i == 0) {
             inw |= machine_->caller_set();
         }
 

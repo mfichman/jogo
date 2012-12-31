@@ -23,7 +23,7 @@
 #include "Import.hpp"
 #include "File.hpp"
 
-std::string Import::file_name(const std::string& scope) {
+std::string Import::file_name(std::string const& scope) {
     // Converts a module name to the name of the file that contains the 
     // module.
     std::string out;
@@ -39,7 +39,7 @@ std::string Import::file_name(const std::string& scope) {
     return out;
 }
 
-std::string Import::scope_name(const std::string& file) {
+std::string Import::scope_name(std::string const& file) {
     // Given the file name, returns the module's scope name.  This is equal
     // to the directory name with the '/' replaced by '::'.  For example,
     // 'Foo/Bar.jg' would have scope name 'Foo'.
@@ -64,7 +64,7 @@ std::string Import::scope_name(const std::string& file) {
     return name;
 }
 
-std::string Import::module_name(const std::string& file) {
+std::string Import::module_name(std::string const& file) {
     // Given the file name, returns the module's name.  This is equal to the
     // no-ext name with '/' replaced by '::'.  For example, 'Foo/Bar.jg' would
     // return Foo::Bar.
@@ -81,15 +81,28 @@ std::string Import::module_name(const std::string& file) {
     return name;
 }
 
-std::string Import::parent_scope(const std::string& scope) {
+std::string Import::parent_scope(std::string const& scope) {
     // Given the import (a::b) return the parent scope (a).
 
     size_t pos = scope.find_last_of(':');
     if (pos == std::string::npos) {
         return "";
     }    
+    if (pos > 0) {
+        return scope.substr(0, pos);
+    } else {
+        return scope;
+    }
+}
+
+std::string Import::sub_scope(std::string const& scope) {
+    // Given the import (a::b) return the sub scope (b).
+    size_t pos = scope.find_last_of(':');
+    if (pos == std::string::npos) {
+        return scope;
+    }    
     if (pos > 0 && scope[pos-1] == ':') {
-        return scope.substr(0, pos-1);
+        return scope.substr(pos+1, std::string::npos);
     } else {
         return scope;
     }

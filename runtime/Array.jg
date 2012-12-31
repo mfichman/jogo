@@ -115,7 +115,7 @@ Array[:a] < Object {
     
     append(element :a) {
         # Adds 'element' to the end of the array (synonym for 'push')
-        push(element)
+        self.push(element)
     }
 
     pop() :a {
@@ -138,13 +138,13 @@ Array[:a] < Object {
     prefix(end Int) Array[:a] {
         # Returns a new array containing all of the elements from the beginning
         # of the array to the element before 'end'
-        ret slice(0, end)
+        ret self.slice(0, end)
     }
 
     suffix(begin Int) Array[:a] {
         # Returns a new array containing elements starting at 'begin' and
         # continuing to the end of this string.
-        ret slice(begin, count)
+        ret self.slice(begin, count)
     }
 
     slice(begin Int, end Int) Array[:a] {
