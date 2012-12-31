@@ -41,16 +41,15 @@ void Nasm64Generator::operator()(File* file) {
     // Output string literals, integer literals, and constants (enums, floats)
     out_ << "section .data\n";
     align();
-    for (String::Ptr s = env_->strings(); s; s = s->next()) {
+    for (String::Itr s = env_->strings(); s; ++s) {
         string(s);
     }
-    for (String::Ptr s = env_->integers(); s; s = s->next()) {
+    for (String::Itr s = env_->integers(); s; ++s) {
         out_ << "lit" << (void*)s.pointer() << ":\n";
-        out_ << "    dq " << s << "\n";
+        out_ << "    dq " << s.pointer() << "\n";
         align();
     }
-    for (int i = 0; i < file->constants(); i++) {
-        Constant::Ptr cons = file->constant(i);
+    for (Constant::Itr cons = file->constants(); cons; ++cons) {
         if (cons->type()->is_value() && !cons->type()->is_primitive()) {
             assert(!"Not supported");
         }
@@ -61,8 +60,8 @@ void Nasm64Generator::operator()(File* file) {
 
     // Output the generated code in nasm-format
     out_ << "section .text\n";
-    for (int i = 0; i < file->features(); i++) {
-        file->feature(i)->operator()(this);
+    for (Feature::Itr f = file->features(); f; ++f) {
+        f(this);
     }
 
     // Generate extern defs for each symbol that is referenced in this file,
@@ -97,12 +96,6 @@ void Nasm64Generator::operator()(Class* feature) {
     }
 
     class_ = 0;
-}
-
-void Nasm64Generator::operator()(Module* feature) {
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        f(this);
-    }
 }
 
 void Nasm64Generator::operator()(Function* feature) {

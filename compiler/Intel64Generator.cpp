@@ -47,8 +47,8 @@ void Intel64Generator::operator()(File* file) {
     //    string(s);
     //}
 
-    for (int i = 0; i < file->features(); i++) {
-        file->feature(i)->operator()(this);
+    for (Feature::Itr f = file->features(); f; ++f) {
+        f(this);
     }
 
     text_->align(16);
@@ -69,12 +69,6 @@ void Intel64Generator::operator()(Class* feature) {
         dispatch_table(feature);
     }
 
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        f(this);
-    }
-}
-
-void Intel64Generator::operator()(Module* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }

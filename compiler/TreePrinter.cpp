@@ -31,7 +31,7 @@ TreePrinter::TreePrinter(Environment* env, Stream* out) :
     indent_level_(0) {
 
     if (env_) {
-       for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
+       for (Module::Itr m = env_->modules(); m; ++m) {
            m(this);
        }    
     }
@@ -105,7 +105,8 @@ void TreePrinter::operator()(Module* feature) {
     out_ << "Module\n";
     print_tabs(); out_ << "name: " << feature->name() << "\n";
     int i = 0;
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+    // FixMe: Don't iterate over modules?
+    for (Feature::Itr f = feature->features(); f; ++f) {
         if (!f->file()->is_interface_file()) {
             print_tabs(); out_ << "feature" << i << ": ";
             f(this);

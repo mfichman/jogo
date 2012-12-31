@@ -47,7 +47,6 @@ Environment::Environment() :
     root_ = new Module(loc, this, name(""));
     builtin_file_ = new File(name(""), name(""), root_, this);
     loc.file = builtin_file_;
-    builtins_ = new Module(loc, this, name(""));
     void_type_ = new Type(loc, name("Void"), 0, this);
     bool_type_ = new Type(loc, name("Bool"), 0, this);
     int_type_ = new Type(loc, name("Int"), 0, this);
@@ -69,7 +68,6 @@ Environment::Environment() :
     appendable_type_ = new Type(loc, name("Appendable"), 0, this);
 
     module(root_);
-
     include(".");
 #ifdef WINDOWS
     lib("kernel32");
@@ -100,8 +98,6 @@ String* Environment::integer(const std::string& str) const {
 	std::map<std::string, String::Ptr>::iterator i = integer_.find(str);
 	if (i == integer_.end()) {
 		String* name = new String(str);
-        name->next(integers_);
-        integers_ = name;
 		integer_.insert(std::make_pair(str, name));	
 		return name;
 	} else {
@@ -115,8 +111,6 @@ String* Environment::floating(const std::string& str) const {
 	std::map<std::string, String::Ptr>::iterator i = floating_.find(str);
 	if (i == floating_.end()) {
 		String* name = new String(str);
-        name->next(floats_);
-        floats_ = name;
 		floating_.insert(std::make_pair(str, name));	
 		return name;
 	} else {
@@ -129,46 +123,12 @@ String* Environment::string(const std::string& str) const {
 
 	std::map<std::string, String::Ptr>::iterator i = string_.find(str);
 	if (i == string_.end()) {
-		String* name = new String(str);
-        name->next(strings_);
-        strings_ = name; 
-		string_.insert(std::make_pair(str, name));	
+        String::Ptr name(new String(str));
+		string_.insert(std::make_pair(str, name));
 		return name;
 	} else {
 		return i->second;
 	}
-}
-
-Module* Environment::module(String* scope) const {
-    // Look up a module by file_name path
-    std::map<String::Ptr, Module::Ptr>::const_iterator i = module_.find(scope);
-    if (i == module_.end()) {
-        return 0;
-    } else {
-        return i->second;
-    }
-}
-
-File* Environment::file(String* scope) {
-    // Look up a module by file_name path
-    std::map<String::Ptr, File::Ptr>::iterator i = file_.find(scope);
-    if (i == file_.end()) {
-        return 0;
-    } else {
-        return i->second;
-    }
-}
-
-void Environment::file(File* file) {
-    file_[file->name()] = file;
-    file->next(files_);
-    files_ = file;
-}
-
-void Environment::module(Module* module) {
-    module_[module->name()] = module;
-    module->next(modules_);
-    modules_ = module;
 }
 
 bool Environment::gen_library() const { 

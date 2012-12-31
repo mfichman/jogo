@@ -23,6 +23,7 @@
 #pragma once
 
 #include "Jogo.hpp"
+#include "Iterator.hpp"
 #include "Object.hpp"
 #include "Location.hpp"
 

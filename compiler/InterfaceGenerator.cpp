@@ -30,14 +30,14 @@ InterfaceGenerator::InterfaceGenerator(Environment* env, Stream* out) :
 
 void InterfaceGenerator::operator()(File* file) {
     if (env_->errors()) { return; }
-    for (int i = 0; i < file->features(); i++) {
-        file->feature(i)->operator()(this);
+    for (Feature::Itr f = file->features(); f; ++f) {
+        f(this);
     }
     out_->flush();
 }
 
 void InterfaceGenerator::operator()(Module* feature) {
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+    for (Feature::Itr f = feature->features(); f; ++f) {
         f(this);
     }
 }

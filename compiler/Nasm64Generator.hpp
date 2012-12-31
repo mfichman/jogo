@@ -44,7 +44,6 @@ public:
     
 private:
     void operator()(Class* feature);
-    void operator()(Module* feature);
     void operator()(Function* function);
     void operator()(IrBlock* block);
     void string(String* string);

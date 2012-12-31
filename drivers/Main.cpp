@@ -23,6 +23,7 @@
 #include "Environment.hpp"
 #include "Builder.hpp"
 #include "Options.hpp"
+#include "Iterator.hpp"
 
 #include <iostream>
 #include <cstdlib>

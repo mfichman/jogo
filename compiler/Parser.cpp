@@ -205,8 +205,7 @@ void Parser::file(const std::string& prefix, const std::string& file) {
 
     // Now parse other modules that depend on the unit that was added
     if (!file_->is_interface_file()) {
-        for (int i = 0; i < file_->imports(); i++) {
-            Import::Ptr im = file_->import(i);
+        for (Import::Itr im = file_->imports(); im; ++im) {
             input(im->scope()->string(), im->is_optional());
         }
     }
@@ -750,9 +749,7 @@ void Parser::import() {
         // module will be added to the file's namespace.  If a qualified import
         // already exists, then make that import non-qualified.
         String::Ptr scope = Parser::scope();
-        Import::Ptr import = new Import(loc, scope, 0);
-        module_->import(import);
-        file_->import(import);
+        file_->import(new Import(loc, scope, 0));
         if (token() == Token::COMMA) {
             next();
         } else {
@@ -1550,10 +1547,10 @@ void Parser::implicit_import(Type* type, Flags flags) {
 
 void Parser::implicit_import(String* scope, Flags flags) {
     // Adds a new import to the module/file if it hasn't been added already. 
-    Import::Ptr import = module_->import(scope); 
+    Import::Ptr import = file_->import(scope); 
     if (!scope->string().empty() && !import) {
         import = new Import(location(), scope, flags);
-        module_->import(import);
+        //module_->import(import);
         file_->import(import);
         file_alias(scope->string());
     }

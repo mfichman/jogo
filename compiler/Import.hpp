@@ -24,6 +24,7 @@
 
 #include "Jogo.hpp"
 #include "TreeNode.hpp"
+#include "Iterator.hpp"
 
 /* 
  * Class for imports.  Qualified imports only load the module corresponding to
@@ -56,6 +57,7 @@ public:
     void last(Import* last) { last_ = last; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Import> Ptr;
+    typedef Iterator<Import> Itr;
 
     static int const QUALIFIED = 0x1;
     static int const OPTIONAL = 0x2;

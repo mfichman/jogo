@@ -38,7 +38,6 @@ public:
 
     void out(Stream* out) { out_ = out; }
     void operator()(File* file);
-    void operator()(Module* feature);
     void operator()(Class* feature);
     void operator()(Function* feature);
     void operator()(IrBlock* block);
@@ -48,6 +47,5 @@ private:
     Machine::Ptr machine_;
     Stream::Ptr out_;
     LivenessAnalyzer::Ptr liveness_;
-    Module::Ptr module_;
     Class::Ptr class_;
 };

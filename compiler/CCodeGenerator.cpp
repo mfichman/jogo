@@ -44,7 +44,7 @@ void CCodeGenerator::operator()(Constant* feature) {
 
 
 void CCodeGenerator::operator()(Module* unit) {
-    for (Feature::Ptr f = unit->features(); f; f = f->next()) {
+    for (Feature::Itr f = unit->features(); f; ++f) {
         f(this);
     }
 }
@@ -366,15 +366,14 @@ void CCodeGenerator::operator()(File* file) {
     out_ << "Ptr Boot_calloc(Int size);\n";
     out_ << "void Boot_free(Ptr memory);\n";
 
-    for (String::Ptr s = env_->strings(); s; s = s->next()) {
+    for (String::Itr s = env_->strings(); s; ++s) {
         out_ << "static struct String lit" << (void*)s.pointer() << " = { "; 
         out_ << "String__vtable, "; // Vtable
         out_ << "1, "; // Refcount
         out_ << (int)s->string().length() << ", ";
         out_ << "\"" << s->string() << "\" };\n";
     }
-    for (int i = 0; i < file->constants(); i++) {
-        Constant::Ptr cons = file->constant(i);
+    for (Constant::Itr cons = env_->constants(); cons; ++cons) {
         if (cons->type()->is_value() && !cons->type()->is_primitive()) {
             assert(!"Not supported");
         }
@@ -419,8 +418,8 @@ void CCodeGenerator::operator()(File* file) {
     }
 */
     
-    for (int i = 0; i < file->features(); i++) {
-        file->feature(i)->operator()(this);
+    for (Feature::Itr f = file->features(); f; ++f) {
+        f(this);
     }
     file_ = 0;
     out_->flush();
@@ -836,8 +835,7 @@ void CCodeGenerator::class_decl(Class* feature) {
 }
 
 void CCodeGenerator::constants() {
-    for (int i = 0; i < env_->constants(); i++) {
-        Constant::Ptr cons = env_->constant(i);
+    for (Constant::Itr cons = env_->constants(); cons; ++cons) {
         Operand ret = emit(cons->initializer());
         out_ << cons->label() << " = " << ret << ";\n";
     }

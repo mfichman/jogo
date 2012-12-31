@@ -44,6 +44,7 @@ public:
     void parent(Expression* parent) { parent_ = parent; }
     void type(Type* type) { type_ = type; assert(type_); }
     typedef Pointer<Expression> Ptr;
+    typedef Iterator<Expression> Itr;
 
 private:
 	Expression::Ptr next_;
@@ -61,6 +62,7 @@ public:
     }
     String* value() const { return value_; } 
     typedef Pointer<StringLiteral> Ptr;
+    typedef Iterator<StringLiteral> Itr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -76,6 +78,7 @@ public:
     }
     String* value() const { return value_; } 
     typedef Pointer<IntegerLiteral> Ptr;
+    typedef Iterator<IntegerLiteral> Itr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -87,6 +90,7 @@ class NilLiteral : public Expression {
 public:
     NilLiteral(Location loc) : Expression(loc) {}
     typedef Pointer<NilLiteral> Ptr;
+    typedef Iterator<NilLiteral> Itr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -101,6 +105,7 @@ public:
     }
     String* value() const { return value_; } 
     typedef Pointer<FloatLiteral> Ptr;
+    typedef Iterator<FloatLiteral> Itr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -115,6 +120,8 @@ public:
         value_(value) {
     }
     String* value() const { return value_; }
+    typedef Pointer<BooleanLiteral> Ptr;
+    typedef Iterator<BooleanLiteral> Itr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -128,6 +135,8 @@ public:
         Expression(loc),
         arguments_(args) {
     }
+    typedef Pointer<HashLiteral> Ptr;
+    typedef Iterator<HashLiteral> Itr;
 
     Expression* arguments() const { return arguments_; }
 
@@ -143,6 +152,8 @@ public:
         Expression(loc),
         arguments_(args) {
     }
+    typedef Pointer<ArrayLiteral> Ptr;
+    typedef Iterator<ArrayLiteral> Itr;
 
     Expression* arguments() const { return arguments_; }
 
@@ -163,6 +174,8 @@ public:
         left->parent(this);
         right->parent(this);
     }
+    typedef Pointer<Binary> Ptr;
+    typedef Iterator<Binary> Itr;
 
     String* operation() const { return operation_; }
     Expression* left() const { return left_; }
@@ -185,6 +198,8 @@ public:
 
         child->parent(this);
     }
+    typedef Pointer<Unary> Ptr;
+    typedef Iterator<Unary> Itr;
 
     String* operation() const { return operation_; }
     Expression* child() { return child_; }
@@ -216,6 +231,7 @@ public:
     void receiver(Expression* receiver) { receiver_ = receiver; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Call> Ptr;
+    typedef Iterator<Call> Itr;
 
 private:
     Expression::Ptr expression_;
@@ -240,6 +256,8 @@ public:
     Expression* expression() const { return expression_; }
     Function* function() const { return function_; }
     void function(Function* function) { function_ = function; }
+    typedef Pointer<Member> Ptr;
+    typedef Iterator<Member> Itr;
 
 private:
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -265,6 +283,7 @@ public:
     void arguments(Expression* args) { arguments_ = args; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Construct> Ptr;
+    typedef Iterator<Construct> Itr;
 
 private:
     Type::Ptr clazz_;
@@ -285,6 +304,7 @@ public:
     String* identifier() const { return identifier_; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Identifier> Ptr;
+    typedef Iterator<Identifier> Itr;
 
 private:
     String::Ptr scope_;

@@ -25,6 +25,7 @@
 #include "Jogo.hpp"
 #include "Object.hpp"
 #include "Stream.hpp"
+#include "Iterator.hpp"
 #include <string>
 #include <sstream>
 
@@ -40,6 +41,7 @@ public:
     bool is_empty() const { return string_.empty(); }
     void next(String* next) { next_ = next; }
     typedef Pointer<String> Ptr;
+    typedef Iterator<String> Itr;
     
 
     static char escape(const std::string& code);

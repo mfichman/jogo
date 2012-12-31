@@ -53,7 +53,6 @@ public:
 
     typedef Pointer<RegisterAllocator> Ptr;
     void operator()(File* file);
-    void operator()(Module* feature);
     void operator()(Class* feature);
     void operator()(Function* feature);
 

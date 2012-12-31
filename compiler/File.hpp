@@ -24,6 +24,7 @@
 
 #include <Object.hpp>
 #include <Feature.hpp>
+#include <Iterator.hpp>
 #include <string>
 #include <vector>
 
@@ -51,21 +52,12 @@ public:
     Function* function(String* scope, String* name) const;
     Constant* constant(String* scope, String* name) const;
     Class* clazz(String* scope, String* name) const;
+    Import* import(String* name) const { return query(import_, name); }
     String* name() const { return name_; }
     String* path() const { return path_; }
-    File* next() const { return next_; }
-    Constant* constant(int index) { return constant_[index]; }
-    String* integer(const std::string& str);
-    String* floating(const std::string& str);
-    String* string(const std::string& str);
-    String* integers() const { return integers_; }
-    String* floats() const { return floats_; }
-    String* strings() const { return strings_; }
-    Import* import(int index) { return import_[index]; }
-    Feature* feature(int index) { return feature_[index]; }
-    int imports() const { return import_.size(); }
-    int features() const { return feature_.size(); }
-    int constants() { return constant_.size(); }
+    Import::Itr imports() const { return Import::Itr(import_); }
+    Feature::Itr features() const { return Feature::Itr(feature_); }
+    Constant::Itr constants() const { return Constant::Itr(constant_); }
     bool is_input_file() const { return is_input_file_; }
     bool is_output_file() const;
     bool is_interface_file() const { return ext(name_->string())==".jgi"; }
@@ -77,13 +69,13 @@ public:
     std::string o_file() const { return output(".o"); }
     std::string jgo_file() const { return output(".jgo"); }
     std::string native_file() const { return input(".c"); }
-    void import(Import* import) { import_.push_back(import); }
+    void import(Import* import) { import_[import->scope()] = import; }
     void feature(Feature* feature) { feature_.push_back(feature); }
-    void next(File* next) { next_ = next; }
     void constant(Constant* constant) { constant_.push_back(constant); }
     void is_input_file(bool input) { is_input_file_ = input; }
     void is_output_file(bool output) { is_output_file_ = output; }
     typedef Pointer<File> Ptr;
+    typedef Iterator<File> Itr;
 
     class Iterator;
     static bool is_dir(const std::string& file);
@@ -102,15 +94,11 @@ private:
     String::Ptr path_;
     Module::Ptr module_;
     Environment* env_;
-    File::Ptr next_;
     bool is_input_file_;
     bool is_output_file_;
-    std::vector<Import::Ptr> import_; 
-    std::vector<Feature::Ptr> feature_;
-    std::vector<Constant::Ptr> constant_;
-    std::map<std::string, String::Ptr> integer_;
-    std::map<std::string, String::Ptr> floating_;
-    std::map<std::string, String::Ptr> string_;
+    mutable std::map<String::Ptr, Import::Ptr> import_; 
+    mutable std::vector<Feature::Ptr> feature_;
+    mutable std::vector<Constant::Ptr> constant_;
     String::Ptr strings_;
     String::Ptr integers_;
     String::Ptr floats_;

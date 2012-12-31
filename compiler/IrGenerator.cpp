@@ -42,8 +42,8 @@ void IrGenerator::operator()(File* file) {
         return;
     }
 
-    for (int i = 0; i < file->features(); i++) {
-        file->feature(i)->operator()(this); 
+    for (Feature::Itr f = file->features(); f; ++f) {
+        f(this); 
     }
 }
 
@@ -59,13 +59,6 @@ void IrGenerator::operator()(Class* feature) {
     exit_scope();
     dispatch_table(feature);
     class_ = 0;
-}
-
-void IrGenerator::operator()(Module* feature) {
-    module_ = feature;
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        f(this);
-    }
 }
 
 void IrGenerator::operator()(Formal* formal) {
@@ -1304,9 +1297,8 @@ void IrGenerator::free_temps() {
 }
 
 void IrGenerator::constants() {
-    for (int i = 0; i < env_->constants(); i++) {
-        Constant::Ptr cn = env_->constant(i);
-        store(Operand(cn->label(), Address(0)), emit(cn->initializer()));
+    for (Constant::Itr cons = env_->constants(); cons; ++cons) {
+        store(Operand(cons->label(), Address(0)), emit(cons->initializer()));
         free_temps();
     }
 }

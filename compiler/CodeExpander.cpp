@@ -25,14 +25,14 @@
 CodeExpander::CodeExpander(Environment* environment) :
     env_(environment) {
 
-    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
+    for (Module::Itr m = env_->modules(); m; ++m) {
         m(this);
     }    
 }
 
 void
 CodeExpander::operator()(Module* feature) {
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+    for (Feature::Itr f = feature->features(); f; ++f) {
         f(this);
     }
 }

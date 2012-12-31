@@ -34,6 +34,7 @@ class SemanticAnalyzer : public TreeNode::Functor {
 public:
 	SemanticAnalyzer(Environment* environment);
     typedef Pointer<SemanticAnalyzer> Ptr;
+    void operator()(File* file);
 
 private:
     void operator()(Class* unit);

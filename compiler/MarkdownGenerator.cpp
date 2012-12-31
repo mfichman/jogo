@@ -25,7 +25,7 @@
 MarkdownGenerator::MarkdownGenerator(Environment* env) :
     env_(env) {
 
-    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
+    for (Module::Itr m = env_->modules(); m; ++m) {
         m(this);
     }
 }
@@ -36,7 +36,7 @@ void MarkdownGenerator::operator()(Module* feature) {
         qn = "Index";
     }
     Stream::Ptr out = new Stream(env_->output()+FILE_SEPARATOR+qn+".md");
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+    for (Feature::Itr f = feature->features(); f; ++f) {
         out_ = out;
         f(this); // lol
     }

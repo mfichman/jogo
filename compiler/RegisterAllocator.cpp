@@ -36,18 +36,12 @@ RegisterAllocator::RegisterAllocator(Environment* env, Machine* machine) :
 
 void RegisterAllocator::operator()(File* file) {
     if (env_->errors()) { return; }
-    for (int i = 0; i < file->features(); i++) {
-        file->feature(i)->operator()(this);
-    }
-}
-
-void RegisterAllocator::operator()(Class* feature) {
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+    for (Feature::Itr f = file->features(); f; ++f) {
         f(this);
     }
 }
 
-void RegisterAllocator::operator()(Module* feature) {
+void RegisterAllocator::operator()(Class* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }

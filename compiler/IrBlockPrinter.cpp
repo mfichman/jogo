@@ -33,18 +33,10 @@ IrBlockPrinter::IrBlockPrinter(Environment* env, Machine* mach) :
 
 void IrBlockPrinter::operator()(File* file) {
     if (env_->errors()) { return; }
-    for (int i = 0; i < file->features(); i++) {
-        file->feature(i)->operator()(this);
+    for (Feature::Itr f = file->features(); f; ++f) {
+        f(this);
     }
     out_->flush();
-}
-
-void IrBlockPrinter::operator()(Module* feature) {
-    module_ = feature;
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
-        f(this);
-    } 
-    module_ = 0;
 }
 
 void IrBlockPrinter::operator()(Class* feature) {

@@ -30,6 +30,7 @@
 #include "Type.hpp"
 #include "IrBlock.hpp"
 #include "Import.hpp"
+#include "OrderedMap.hpp"
 #include <vector>
 
 
@@ -71,6 +72,7 @@ public:
     void flags(Flags flags) { flags_ = flags; }
     void parent(Feature* parent) { parent_ = parent; }
     typedef Pointer<Feature> Ptr;
+    typedef Iterator<Feature> Itr;
 
     static const int PRIVATE = 0x1;
     static const int NATIVE = 0x2;
@@ -102,6 +104,7 @@ public:
     void initializer(Expression* init) { initializer_ = init; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Constant> Ptr;
+    typedef Iterator<Constant> Itr;
 
 private:
     Type::Ptr type_;
@@ -130,6 +133,7 @@ public:
     void slot(int slot) { slot_ = slot; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Attribute> Ptr;
+    typedef Iterator<Attribute> Itr;
 
 private:
     Type::Ptr declared_type_;
@@ -177,6 +181,7 @@ public:
 	void called_func(Function* func);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
+    typedef Iterator<Function> Itr;
 
 private:
 	Formal::Ptr formals_;
@@ -229,6 +234,7 @@ public:
     void slots_inc(int words) { slots_ += words; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Class> Ptr;
+    typedef Iterator<Class> Itr;
 
 private:
     void gen_equal_method();
@@ -250,28 +256,24 @@ class Module : public Feature {
 public:
     Module(Location loc, Environment* env, String* name); 
 
-    Feature* features() const { return features_; }
-    Feature* feature(String* name) const { return query(feature_, name); }
-    Import* imports() const { return imports_; }
-    Import* import(String* name) const { return query(import_, name); }
+    Feature* feature(String* name) const { return feature_.value(name); }
     File* file(int index) const { return file_[index]; }
+    Feature::Itr features() const { return feature_.iterator(); }
     int files() const { return file_.size(); }
+    // FIXME: Convert to a File::Itr
     bool is_up_to_date() const;
     std::string lib_file() const;
     std::string exe_file() const;
     std::string jgi_file() const;
     void feature(Feature* feature);
-    void import(Import* import);
     void location(Location location) { location_ = location; }
     void file(File* file) { file_.push_back(file); }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Module> Ptr; 
+    typedef Iterator<Module> Itr;
 
 private:
-    Feature::Ptr features_;
-    Import::Ptr imports_;
-    std::map<String::Ptr, Feature::Ptr> feature_;
-    std::map<String::Ptr, Import::Ptr> import_;
+    OrderedMap<String::Ptr, Feature> feature_;
     std::vector<File*> file_;
 };
 

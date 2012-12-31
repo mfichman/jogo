@@ -98,7 +98,7 @@ void Builder::monolithic_build() {
     // The builds result goes to the file specified by the 'output' option.
     std::stringstream ss;
 
-    for (File* file = env_->files(); file; file = file->next()) {
+    for (File::Itr file = env_->files(); file; ++file) {
         if (file->is_output_file()) {
             operator()(file); 
             ss << file->jgo_file() << " ";
@@ -121,9 +121,9 @@ void Builder::monolithic_build() {
         File::mkdir(File::dir_name(env_->output()));
         Stream::Ptr fout(new Stream(env_->output() + ".jgi"));
         InterfaceGenerator::Ptr iface(new InterfaceGenerator(env_, fout));
-        for (File* file = env_->files(); file; file = file->next()) {
+        for (File::Itr file = env_->files(); file; ++file) {
             if (file->is_output_file()) {
-                iface(file);
+                iface(file.pointer());
             }
         }
 #ifdef WINDOWS

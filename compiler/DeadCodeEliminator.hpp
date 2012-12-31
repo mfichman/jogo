@@ -35,7 +35,6 @@ public:
     void operator()(File* file);
     
 private:
-    void operator()(Module* feature);
     void operator()(Class* feature);
     void operator()(Function* feature);
     void operator()(IrBlock* block);

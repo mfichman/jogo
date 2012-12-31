@@ -42,24 +42,19 @@ SemanticAnalyzer::SemanticAnalyzer(Environment* environment) :
     operator()(env_->string_type());
     operator()(env_->bool_type());
 
-    for (Feature::Ptr m = env_->modules(); m; m = m->next()) {
+    for (Module::Itr m = env_->modules(); m; ++m) {
         m(this);
     }    
     err_->flush();
 }
 
 void SemanticAnalyzer::operator()(Module* feature) {
-    std::string module_name = feature->name()->string();
-    if (module_name.empty()) {
-        module_name = "root module";
-    } else {
-        module_name = "'" + module_name + "'";
-    }
-
     // Iterate through all functions and classes in the module, and check 
     // their semantics.  Ensure there are no duplicate functions or classes.
+    // FixMe: Do not iterate over features by module.  Iterate over files or
+    // over features in general instead.
     std::set<String::Ptr> features;
-    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+    for (Feature::Itr f = feature->features(); f; ++f) {
         if (Class::Ptr clazz = dynamic_cast<Class*>(f.pointer())) {
             if (clazz->is_closure()) { continue; }
         }

@@ -38,59 +38,14 @@
 #include <errno.h>
 #endif
 
-String* File::integer(const std::string& str) {
-    // Returns a name if it exists, otherwise, a new one is created.
-
-	std::map<std::string, String::Ptr>::iterator i = integer_.find(str);
-	if (i == integer_.end()) {
-		String* name = new String(str);
-        name->next(integers_);
-        integers_ = name;
-		integer_.insert(std::make_pair(str, name));	
-		return name;
-	} else {
-		return i->second;
-	}
-}
-
-String* File::floating(const std::string& str) {
-    // Returns a name if it exists, otherwise, a new one is created.
-
-	std::map<std::string, String::Ptr>::iterator i = floating_.find(str);
-	if (i == floating_.end()) {
-		String* name = new String(str);
-        name->next(floats_);
-        floats_ = name;
-		floating_.insert(std::make_pair(str, name));	
-		return name;
-	} else {
-		return i->second;
-	}
-}
-
-String* File::string(const std::string& str) {
-    // Returns a name if it exists, otherwise, a new one is created.
-
-	std::map<std::string, String::Ptr>::iterator i = string_.find(str);
-	if (i == string_.end()) {
-		String* name = new String(str);
-        name->next(strings_);
-        strings_ = name; 
-		string_.insert(std::make_pair(str, name));	
-		return name;
-	} else {
-		return i->second;
-	}
-}
-
 Feature* File::feature(String* scope, String* name) const {
     // Returns the feature with the scope "scope" and the name "name".
     // Searches through imports included in this file to attempt to find the
     // feature.
     if (scope && scope->string() != "") {
+        // Look up scope::name in the environment feature list.
+
         Module* module = env_->module(scope);
-        // FIXME: If module lookup fails, then take the last segment and look
-        // for that class
         Feature* feat = module ? module->feature(name) : 0;
         if (feat) {
             return feat;
@@ -119,11 +74,14 @@ Feature* File::feature(String* scope, String* name) const {
     }
 
     // Search the imports for the constant
-    for (size_t i = 0; i < import_.size(); ++i) {
-        if (import_[i]->is_qualified()) {
+    for (std::map<String::Ptr, Import::Ptr>::iterator i = import_.begin(); 
+        i != import_.end(); ++i) {
+
+        // Look up scope::name in the global env
+        if (i->second->is_qualified()) {
             continue;
         }
-        Module* m = env_->module(import_[i]->scope());
+        Module* m = env_->module(i->second->scope());
         if (!m) {
             continue;
         }

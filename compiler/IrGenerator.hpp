@@ -42,7 +42,6 @@ public:
 private:
     void operator()(Constant* feature);
     void operator()(Class* unit);
-    void operator()(Module* unit);
     void operator()(Formal* formal);
     void operator()(StringLiteral* expression);
     void operator()(NilLiteral* expression);
@@ -150,7 +149,6 @@ private:
     Environment::Ptr env_;
     Machine::Ptr machine_;
     Class::Ptr class_;
-    Module::Ptr module_;
     Function::Ptr function_;
     IrBlock::Ptr block_;
     IrBlock::Ptr true_;

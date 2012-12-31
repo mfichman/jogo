@@ -39,7 +39,6 @@ public:
     void dispatch_table(Class* feature);
     void operator()(File* file);
     void operator()(Class* feature);
-    void operator()(Module* feature);
     void operator()(Function* feature);
     void operator()(IrBlock* block);
     void out(Stream::Ptr out) { out_ = out; }

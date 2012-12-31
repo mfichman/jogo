@@ -27,6 +27,7 @@
 #include "Feature.hpp"
 #include "String.hpp"
 #include "File.hpp"
+#include "OrderedMap.hpp"
 #include <map>
 
 enum SubtypeResult { UNCHECKED, YES, NO };
@@ -53,16 +54,17 @@ public:
     String* integer(const std::string& str) const;
     String* floating(const std::string& str) const;
     String* string(const std::string& str) const;
-    String* integers() const { return integers_; }
-    String* floats() const { return floats_; }
-    String* strings() const { return strings_; }
-    File* files() const { return files_; }
+    Module* module(String* scope) const { return query(module_, scope); }
+    File* file(String* name) const { return query(file_, name); }
     Module* root() const { return root_; }
-    Module* builtins() const { return builtins_; }
-    Module* module(String* scope) const;
-    Module* modules() const { return modules_; }
-    File* file(String* name);
-    Constant* constant(int index) { return constant_[index]; }
+    Feature* feature(String* name) const { return feature_.value(name); }
+    String::Itr integers() const { return String::Itr(integer_); }
+    String::Itr floats() const { return String::Itr(floating_); }
+    String::Itr strings() const { return String::Itr(string_); }
+    File::Itr files() const { return File::Itr(file_); }
+    Constant::Itr constants() const { return Constant::Itr(constant_); }
+    Feature::Itr features() const { return feature_.iterator(); }
+    Module::Itr modules() const { return Module::Itr(module_); }
     const std::string& include(int index) const { return include_[index]; }
     const std::string& input(int index) const { return input_[index]; }
     const std::string& lib(int index) const { return lib_[index]; }
@@ -71,6 +73,7 @@ public:
     const std::string& program_path() const { return program_path_; }
     const std::string& entry_point() const { return entry_point_; }
     const std::string& entry_module() const { return entry_module_; }
+    const std::string& generator() const { return generator_; }
     bool make() const { return make_; }
     bool optimize() const { return optimize_; }
     bool link() const { return link_; }
@@ -85,13 +88,11 @@ public:
     bool no_default_libs() const { return no_default_libs_; }
     bool monolithic_build() const { return monolithic_build_; }
     bool is_input(const std::string& input) const;
-    const std::string& generator() const { return generator_; }
     
     int errors() const { return errors_; }
     int includes() const { return include_.size(); }
     int inputs() const { return input_.size(); }
     int libs() const { return lib_.size(); }
-    int constants() const { return constant_.size(); }
     void include(const std::string& path) { include_.push_back(path); }
     void input(const std::string& path) { input_.push_back(path); }
     void lib(const std::string& path) { lib_.push_back(path); }
@@ -113,8 +114,9 @@ public:
     void program_path(const std::string& path) { program_path_ = path; }
     void entry_point(const std::string& entry) { entry_point_ = entry; }
     void entry_module(const std::string& entry) { entry_module_ = entry; }
-    void module(Module* module);
-    void file(File* name);
+    void module(Module* module) { module_[module->name()] = module; }
+    void file(File* file) { file_[file->name()] = file; }
+    void feature(Feature* feature) { feature_.insert(feature); }
     void constant(Constant* cons) { constant_.push_back(cons); }
     void error(const std::string& error) { errors_++; }
     void error() { errors_++; }
@@ -148,21 +150,16 @@ private:
     mutable std::map<std::string, String::Ptr> integer_;
     mutable std::map<std::string, String::Ptr> floating_;
     mutable std::map<std::string, String::Ptr> string_;
-    std::map<String::Ptr, Module::Ptr> module_;
-    std::map<String::Ptr, File::Ptr> file_;
-    std::vector<std::string> include_;
-    std::vector<std::string> input_;
-    std::vector<std::string> lib_;
-    std::vector<Constant::Ptr> constant_;
+    mutable std::map<String::Ptr, Module::Ptr> module_;
+    mutable std::map<String::Ptr, File::Ptr> file_;
+    mutable std::vector<std::string> include_;
+    mutable std::vector<std::string> input_;
+    mutable std::vector<std::string> lib_;
+    mutable std::vector<Constant::Ptr> constant_;
+    OrderedMap<String::Ptr, Feature> feature_;
 
     File::Ptr builtin_file_;
-    File::Ptr files_;
-    mutable String::Ptr strings_;
-    mutable String::Ptr integers_;
-    mutable String::Ptr floats_;
     Module::Ptr root_;
-    Module::Ptr builtins_;
-    Module::Ptr modules_;
     Type::Ptr void_type_;
     Type::Ptr bool_type_;
     Type::Ptr int_type_;

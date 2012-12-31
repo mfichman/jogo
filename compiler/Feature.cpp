@@ -289,24 +289,8 @@ void Module::feature(Feature* feature) {
     if (!feature) {
         return;
     }
-
     feature->parent(this);
-    features_ = append(features_, feature);
-    if (!feature_[feature->name()]) {
-        feature_[feature->name()] = feature;
-    }
-}
-
-void Module::import(Import* import) {
-    if (!import) {
-        return; 
-    }
-
-    Import::Ptr im(import);
-    if (!import_[import->scope()]) {
-        import_[import->scope()] = import;
-        imports_ = append(imports_, import);
-    }
+    feature_.insert(feature); 
 }
 
 bool Module::is_up_to_date() const {
