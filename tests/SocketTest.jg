@@ -7,7 +7,6 @@ Test < Object {
 }
 
 main() Int {
-    ret 1
     stdout = Io::stdout()
     ls = Socket::listen('localhost', 0)
 

@@ -1613,7 +1613,9 @@ void FuncMarshal::call(Operand func) {
             int_arg++;
         }
         if (reg) {
-            Operand arg = gen_->mov(arg_[i]);
+            //Operand arg = gen_->mov(arg_[i]);
+            // FIXME: This line breaks something somehow.
+            Operand arg = arg_[i];
             // A MOV is necessary here, as arg_[i] may not be in a register.
             // The store operation does not work if the argument is not a
             // register.
@@ -1626,7 +1628,9 @@ void FuncMarshal::call(Operand func) {
 #endif
         } else {
             gen_->arg_slots_inc(1);
-            gen_->store(Operand(sp, Address(stack_arg)), gen_->mov(arg_[i]));
+            //gen_->store(Operand(sp, Address(stack_arg)), gen_->mov(arg_[i]));
+            gen_->store(Operand(sp, Address(stack_arg)), arg_[i]);
+            // FIXME: This line breaks something somehow
             stack_arg++;
         }
     }
