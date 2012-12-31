@@ -28,7 +28,7 @@ Environment::Ptr env(new Environment());
 
 void print_usage() {
     Stream::Ptr out = Stream::stout();
-    out << "Usage: apmake [OPTIONS] PACKAGE...\n\n";
+    out << "Usage: jgmake [OPTIONS] PACKAGE...\n\n";
     out << "  -h, --help     Print this help message.\n";
     out << "  -v, --verbose  Print extra information during compilation.\n";
     out << "  --version      Print the program version number.\n";
