@@ -55,8 +55,9 @@ def shell(command, check=False):
     # command failed.
     proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     ret = proc.stdout.read()
-    if proc.wait() != 0 and check:
-        return ret + '\nInvalid exit status' 
+    code = proc.wait()
+    if code != 0 and check:
+        return ret + "\nInvalid exit status: %d" % code
     else:
         return ret 
 
