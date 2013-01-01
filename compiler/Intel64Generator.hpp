@@ -56,6 +56,7 @@ public:
     static uint8_t const MODRM_INDIRECT = 0x00; // 1000 0000
     static uint8_t const MODRM_REG = 0x38;
     static uint8_t const MODRM_RM = 0x07;
+    static uint8_t const NOP = 0x90;
     static uint8_t const REX_PREFIX = 0x40;
     static uint8_t const REX_W = 0x08; // 64-bit operand 
     static uint8_t const REX_R = 0x04; // MODRM.reg extension
@@ -91,8 +92,8 @@ private:
     void jle(String* label);
     void jz(String* label);
     void jnz(String* label);
-    void call(String* label);
     void jmp(String* label);
+    void call(Operand target);
     void movsd(RegisterId dst, RegisterId src);
     void lea(RegisterId dst, Operand op);
     void bnot(RegisterId src);

@@ -5,7 +5,6 @@ Stringlike < Interface {
     prefix(end Int) String
 }
 
-
 main() Int {
 
     str Stringlike = "hello world\n"

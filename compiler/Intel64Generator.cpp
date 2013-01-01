@@ -55,7 +55,7 @@ void Intel64Generator::operator()(File* file) {
         f(this);
     }
 
-    text_->align(16);
+    text_->align(16, NOP);
     
     for (std::set<String*>::iterator i = string_.begin(); 
         i != string_.end(); ++i) {
@@ -86,7 +86,7 @@ void Intel64Generator::operator()(Function* feature) {
     function_ = feature;
 
     // stack_check
-    text_->align(16);
+    text_->align(16, NOP);
     if (feature->label()->string() == env_->entry_point()) {
         format_->label(env_->name("main_"));
     } else if (feature->label()->string() == "Boot_main") {
@@ -126,6 +126,12 @@ void Intel64Generator::operator()(IrBlock* block) {
         Operand res = inst.result();
         Operand a1 = inst.first();
         Operand a2 = inst.second();
+    
+        if (LOAD != inst.opcode() && STORE != inst.opcode()) {
+            assert("Memory operand not supported"&&!a1.is_indirect());
+            assert("Memory operand not supported"&&!a2.is_indirect());
+            assert("Memory operand not supported"&&!res.is_indirect());
+        }
 
         switch (inst.opcode()) {
         case RET: leave(); ret(); break;
@@ -140,7 +146,7 @@ void Intel64Generator::operator()(IrBlock* block) {
         case BGE: cmp(a1.reg(), a2.reg()); jge(branch->label()); break;
         case BL: cmp(a1.reg(), a2.reg()); jl(branch->label()); break;
         case BLE: cmp(a1.reg(), a2.reg()); jle(branch->label()); break;
-        case CALL: call(a1.label()); break;
+        case CALL: call(a1); break;
         case JUMP: jmp(branch->label()); break;
         case ADD: arith(inst); break;
         case SUB: arith(inst); break;
@@ -194,7 +200,7 @@ void Intel64Generator::dispatch_table(Class* feature) {
             text_->uint64(0);
         }
     }
-    text_->align(16);
+    text_->align(16, NOP);
 }
 
 bool Intel64Generator::is_extended_reg(RegisterId reg) const {
@@ -327,6 +333,9 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, Operand mem) {
     } else {
         text_->uint8(offset);
     }
+    // FixMe: If using MODRM w/ R12, then SIB must be specified.  For now, the
+    // R12 register is disabled -- the register allocator will not color
+    // temporaries to that register.
 }
 
 void Intel64Generator::load(RegisterId res, Operand a1) {
@@ -531,10 +540,17 @@ void Intel64Generator::sub(RegisterId dst, uint64_t imm) {
     instr(0x81, 0x05, dst, imm);
 }
 
-void Intel64Generator::call(String* label) {
-    text_->uint8(0xe8);
-    format_->ref(label, OutputFormat::RELOC_BRANCH);
-    text_->uint32(0); // Displacement
+void Intel64Generator::call(Operand target) {
+    // Emits a call-label or call-register instruction with target 'target'
+    String* label = target.label();
+    if (label) {
+        text_->uint8(0xe8);
+        format_->ref(label, OutputFormat::RELOC_BRANCH);
+        text_->uint32(0); // Displacement
+    } else {
+        assert("Missing call target register" && !!target.reg());
+        instr(0xff, 0x02, target.reg());
+    }    
 }
 
 void Intel64Generator::jmp(String* label) {

@@ -38,7 +38,7 @@ public:
     void uint16(uint16_t val);
     void uint8(uint8_t val);
     void buffer(void const* buf, int len);
-    void align(int num);
+    void align(int num, uint8_t fill=0);
 private:
     std::vector<uint8_t> buffer_;
 };

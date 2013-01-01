@@ -93,7 +93,10 @@ Machine* Machine::intel64() {
     Register::Ptr r9 = m->int_reg("r9"); m->callee_reg(r9); //9 VOL
     Register::Ptr r10 = m->int_reg("r10"); m->callee_reg(r10);//10 VOL
     Register::Ptr r11 = m->int_reg("r11"); m->callee_reg(r11); //11 VOL
-    Register::Ptr r12 = m->int_reg("r12"); m->caller_reg(r12); //12
+    Register::Ptr r12 = m->special_reg("r12"); m->caller_reg(r12); //12
+    // FixMe: R12 has some weird behavior when indirect addressing is used.  To
+    // simplify code generation, don't use R12.  When the code generator is more
+    // sophisticated, this can be re-enabled.
     Register::Ptr r13 = m->int_reg("r13"); m->caller_reg(r13); //13
     Register::Ptr r14 = m->int_reg("r14"); m->caller_reg(r14); //14
     Register::Ptr r15 = m->int_reg("r15"); m->caller_reg(r15); //15

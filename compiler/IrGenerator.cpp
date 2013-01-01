@@ -187,7 +187,7 @@ void IrGenerator::operator()(Cast* expr) {
         return;
     }
     Class::Ptr clazz = expr->type()->clazz();
-    Operand vtable1 = Operand(arg.reg(), Address(0));
+    Operand vtable1 = load(Operand(arg.reg(), Address(0)));
     Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
     return_ = RegisterId(temp_++, 0);
 
