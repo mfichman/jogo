@@ -360,7 +360,7 @@ void Builder::irgen(File* file) {
     bprint->out(out);
 
     bgen->operator()(file);
-    if (env_->dump_ir()) {
+    if (env_->dump_ir() && env_->verbose()) {
         bprint->operator()(file);
     }
     if (env_->optimize()) {
@@ -370,7 +370,7 @@ void Builder::irgen(File* file) {
         elim->operator()(file);
     }
 
-    if (env_->dump_ir()) {
+    if (env_->dump_ir() && env_->verbose()) {
         bprint->operator()(file);
     }
     alloc->operator()(file);

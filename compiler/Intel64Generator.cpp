@@ -55,8 +55,14 @@ void Intel64Generator::operator()(File* file) {
         f(this);
     }
 
-    text_->align(16, NOP);
-    
+    for (Constant::Itr cons = file->constants(); cons; ++cons) {
+        if (cons->type()->is_value() && !cons->type()->is_primitive()) {
+            assert(!"Not supported");
+        }
+        format_->label(cons->label());
+        text_->uint64(0); // Data
+    }
+
     for (std::set<String*>::iterator i = string_.begin(); 
         i != string_.end(); ++i) {
         string(*i);  
@@ -86,7 +92,7 @@ void Intel64Generator::operator()(Function* feature) {
     function_ = feature;
 
     // stack_check
-    text_->align(16, NOP);
+    text_->align(8, NOP);
     if (feature->label()->string() == env_->entry_point()) {
         format_->label(env_->name("main_"));
     } else if (feature->label()->string() == "Boot_main") {
@@ -131,7 +137,10 @@ void Intel64Generator::operator()(IrBlock* block) {
             assert("Memory operand not supported"&&!a1.is_indirect());
             assert("Memory operand not supported"&&!a2.is_indirect());
             assert("Memory operand not supported"&&!res.is_indirect());
-        }
+            assert("Literal operand not supported"&&!a1.literal());
+            assert("Literal operand not supported"&&!a2.literal());
+            assert("Literal operand not supported"&&!res.literal());
+        } 
 
         switch (inst.opcode()) {
         case RET: leave(); ret(); break;
@@ -176,6 +185,7 @@ void Intel64Generator::dispatch_table(Class* feature) {
     String* name = feature->label();
     Function* dtor = feature->destructor();
     std::string vtable = name->string()+"__vtable";
+    text_->align(8, NOP);
 
     // Output the vtable label 
     format_->label(env_->name(vtable));
@@ -200,7 +210,6 @@ void Intel64Generator::dispatch_table(Class* feature) {
             text_->uint64(0);
         }
     }
-    text_->align(16, NOP);
 }
 
 bool Intel64Generator::is_extended_reg(RegisterId reg) const {
@@ -303,6 +312,7 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, Operand mem) {
     Address disp = mem.addr();
     assert("Not an indirect operand"&&mem.is_indirect());
     assert(reg.id() >= 1 && reg.id() <= 16);
+    int const r13 = 13;
     uint8_t const regid = reg.id() - 1;
     uint8_t const rmid = (rm.id() ? rm.id() : RBP.id()) - 1;
     uint8_t rex = REX_PREFIX|REX_W;
@@ -314,7 +324,10 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, Operand mem) {
     }
     int32_t const offset = disp.value() * machine_->word_size();
     uint8_t modrm = 0;
-    if (offset == 0) {
+    // Select the mod field.   Note that r13 is a special case: if mod is 00,
+    // then the address loaded is [RIP+disp32] rather than [R13] as one might
+    // expect.
+    if (offset == 0 && rmid != r13) {
         modrm = MODRM_INDIRECT;
     } else if (offset > INT8_MAX || offset < INT8_MIN) {
         modrm = MODRM_DISP32;
@@ -326,7 +339,7 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, Operand mem) {
     text_->uint8(rex);
     text_->uint8(op);
     text_->uint8(modrm);
-    if (offset == 0) {
+    if (offset == 0 && rmid != r13) {
         // No displacement
     } else if (offset > INT8_MAX || offset < INT8_MIN) {
         text_->uint32(offset);

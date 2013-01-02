@@ -210,7 +210,7 @@ void IrGenerator::operator()(Cast* expr) {
     if (clazz->is_primitive()) {
         // Slot 2 is the value slot for primitive types
         Operand addr = Operand(arg.reg(), Address(2));
-        block_->instr(MOV, return_, addr, Operand());
+        block_->instr(LOAD, return_, addr, Operand());
     } else if (clazz->is_ref()) {
         block_->instr(MOV, return_, arg, Operand());
     } else if (clazz->is_compound()) {
@@ -227,7 +227,7 @@ void IrGenerator::operator()(Is* expr) {
     Operand arg = emit(expr->child());
 
     Class::Ptr clazz = expr->check_type()->clazz();
-    Operand vtable1 = Operand(arg.reg(), Address(0));
+    Operand vtable1 = load(Operand(arg.reg(), Address(0)));
     Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
     return_ = RegisterId(temp_++, 0);
 
@@ -535,7 +535,7 @@ void IrGenerator::operator()(Assignment* expr) {
         } else {
             value = env_->integer("0");
         }
-        return_ = mov(new IntegerLiteral(Location(), value));
+        return_ = load(new IntegerLiteral(Location(), value));
     } else if (init->type()->is_bool()) {
         return_ = bool_expr(init.pointer());
     } else {
@@ -853,7 +853,7 @@ void IrGenerator::native_operator(Call* expr) {
 
 IrBlock* IrGenerator::ir_block() {
     IrBlock* block = new IrBlock();
-    block->label(env_->name(".l" + stringify(++label_)));
+    block->label(env_->name(".L" + stringify(++label_)));
     return block;
 }
 
