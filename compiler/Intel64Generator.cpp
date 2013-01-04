@@ -313,7 +313,6 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, Operand mem) {
     Address disp = mem.addr();
     assert("Not an indirect operand"&&mem.is_indirect());
     assert(reg.id() >= 1 && reg.id() <= 16);
-    int const r13 = 13;
     uint8_t const regid = reg.id() - 1;
     uint8_t const rmid = (rm.id() ? rm.id() : RBP.id()) - 1;
     uint8_t rex = REX_PREFIX|REX_W;
@@ -323,11 +322,21 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, Operand mem) {
     if (is_extended_reg(rm)) {
         rex |= REX_B; 
     }
-    int32_t const offset = disp.value() * machine_->word_size();
+    int32_t offset = disp.value() * machine_->word_size();
+    if (!rm.id() && offset > 0) {
+        offset += machine_->word_size();
+        // Add +1*word_size if loading from above the implied base pointer, b/c
+        // the SP is stored at offset 0 from the base pointer.  The IR assumes
+        // that arguments start at 0, not 1*word_size.  Offsets below the BP
+        // are treated normally.
+    }
     uint8_t modrm = 0;
     // Select the mod field.   Note that r13 is a special case: if mod is 00,
     // then the address loaded is [RIP+disp32] rather than [R13] as one might
     // expect.
+    int const r13 = 13;
+    // Special case: R13 cannot use MODRM_INDIRECT, b/c with that encoding RIP
+    // is used as the indirect register memory operand instead of R13.
     if (offset == 0 && rmid != r13) {
         modrm = MODRM_INDIRECT;
     } else if (offset > INT8_MAX || offset < INT8_MIN) {
@@ -340,6 +349,15 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, Operand mem) {
     text_->uint8(rex);
     text_->uint8(op);
     text_->uint8(modrm);
+
+    int const rsp = 4;
+    // Special case: RSP requires an SIB byte in indirect addressing mode.
+    if (rmid == rsp) {
+        uint8_t const rsp_sib = 0x24;
+        // scale = 00, index = 100 (rsp), base = 100 (rsp) -> 0x24
+        text_->uint8(rsp_sib);
+    }
+
     if (offset == 0 && rmid != r13) {
         // No displacement
     } else if (offset > INT8_MAX || offset < INT8_MIN) {
@@ -534,14 +552,16 @@ void Intel64Generator::mov(RegisterId reg, uint64_t imm) {
     // intruction instead.
     uint8_t const regid = reg.id() - 1;
     uint8_t const op = MOV_IMM + (MODRM_RM & regid);
-    uint8_t rex = REX_PREFIX;
+    uint8_t rex = 0;
     if (imm > UINT32_MAX) {
         rex |= REX_W;
     }
     if (is_extended_reg(reg)) { 
         rex |= REX_B;
     }
-    text_->uint8(rex);
+    if (rex) {
+        text_->uint8(REX_PREFIX|rex);
+    }
     text_->uint8(op);
     if (imm > UINT32_MAX) {
         text_->uint64(imm);
