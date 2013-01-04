@@ -38,6 +38,7 @@ Intel64Generator::Intel64Generator(Environment* env) :
 void Intel64Generator::format(OutputFormat::Ptr format) { 
     format_ = format; 
     text_ = format->text();
+    data_ = format->data();
 }
 
 void Intel64Generator::operator()(File* file) {
@@ -47,10 +48,6 @@ void Intel64Generator::operator()(File* file) {
     // FIXME: Output constants
     // FIXME: Output integer literals?
     // FIXME: Output strings
-    //for (String::Ptr s = env_->strings(); s; s = s->next()) {
-    //    string(s);
-    //}
-
     for (Feature::Itr f = file->features(); f; ++f) {
         f(this);
     }
@@ -59,7 +56,7 @@ void Intel64Generator::operator()(File* file) {
         if (cons->type()->is_value() && !cons->type()->is_primitive()) {
             assert(!"Not supported");
         }
-        format_->label(cons->label());
+        format_->sym(cons->label(), OutputFormat::SYM_TEXT);
         text_->uint64(0); // Data
     }
 
@@ -69,6 +66,8 @@ void Intel64Generator::operator()(File* file) {
     }
     string_.clear();
 
+    text_->align(machine_->word_size(), NOP);
+    data_->align(machine_->word_size());
     format_->out(out_);
 }
 
@@ -92,13 +91,12 @@ void Intel64Generator::operator()(Function* feature) {
     function_ = feature;
 
     // stack_check
-    text_->align(8, NOP);
     if (feature->label()->string() == env_->entry_point()) {
-        format_->label(env_->name("main_"));
+        format_->sym(env_->name("main_"), OutputFormat::SYM_TEXT);
     } else if (feature->label()->string() == "Boot_main") {
-        format_->label(env_->name("main"));
+        format_->sym(env_->name("main"), OutputFormat::SYM_TEXT);
     } else {
-        format_->label(feature->label()); 
+        format_->sym(feature->label(), OutputFormat::SYM_TEXT); 
     }
 
     push(RBP);
@@ -125,7 +123,7 @@ void Intel64Generator::operator()(IrBlock* block) {
     IrBlock::Ptr branch = block->branch();
     IrBlock::Ptr next = block->next();
     if (block->label()) {
-        format_->local(block->label());
+        format_->sym(block->label(), OutputFormat::SYM_LTEXT);
     }
     for (int i = 0; i < block->instrs(); i++) {
         Instruction const& inst = block->instr(i);
@@ -185,29 +183,29 @@ void Intel64Generator::dispatch_table(Class* feature) {
     String* name = feature->label();
     Function* dtor = feature->destructor();
     std::string vtable = name->string()+"__vtable";
-    text_->align(8, NOP);
 
     // Output the vtable label 
-    format_->label(env_->name(vtable));
+    data_->align(machine_->word_size());
+    format_->sym(env_->name(vtable), OutputFormat::SYM_DATA);
 
     // Emit the destructor and vtable length
-    format_->ref(dtor->label(), OutputFormat::RELOC_ABSOLUTE);
-    text_->uint64(0);
-    text_->uint64(feature->jump1s());
+    format_->ref(dtor->label(), OutputFormat::REF_DATA);
+    data_->uint64(0);
+    data_->uint64(feature->jump1s());
 
     // Emit the first jump table
     for (int i = 0; i < feature->jump1s(); i++) {
-        text_->uint64(feature->jump1(i));
+        data_->uint64(feature->jump1(i));
     } 
     
     // Emit the second jump table
     for (int i = 0; i < feature->jump2s(); i++) {
         if (feature->jump2(i)) {
             String* label = feature->jump2(i)->label();
-            format_->ref(label, OutputFormat::RELOC_ABSOLUTE);
-            text_->uint64(0);
+            format_->ref(label, OutputFormat::REF_DATA);
+            data_->uint64(0);
         } else {
-            text_->uint64(0);
+            data_->uint64(0);
         }
     }
 }
@@ -221,12 +219,14 @@ void Intel64Generator::string(String::Ptr str) {
     static uint64_t const READONLY_MASK = 0xf000000000000000;
     std::string const label = "lit"+stringify((void*)str);
     std::string const out = str->unescaped();
-    format_->local(env_->name(label));
-    format_->ref(env_->name("String__vtable"), OutputFormat::RELOC_ABSOLUTE); 
-    text_->uint64(0); // Placeholder for vtable ref
-    text_->uint64(1 | READONLY_MASK); // Reference count
-    text_->uint64(out.length()); // Length
-    text_->buffer(out.c_str(), out.length()+1);
+    String::Ptr const vtable = env_->name("String__vtable");
+    data_->align(machine_->word_size());
+    format_->sym(env_->name(label), OutputFormat::SYM_LDATA);
+    format_->ref(vtable, OutputFormat::REF_DATA);
+    data_->uint64(0); // Placeholder for vtable ref
+    data_->uint64(1 | READONLY_MASK); // Reference count
+    data_->uint64(out.length()); // Length
+    data_->buffer(out.c_str(), out.length()+1);
 }
 
 void Intel64Generator::instr(uint8_t op, uint8_t ext, RegisterId rm, uint32_t imm) {
@@ -285,8 +285,9 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, RegisterId rm) {
 }
 
 void Intel64Generator::instr(uint8_t op, RegisterId reg, String* label) {
-    // Emits an instruction that uses the memory value at the given label as 
-    // the second operand.
+    // Emits an instruction that uses the memory value at the given label as
+    // the second operand.  DO NOT use this for branch instructions, as it
+    // assumes 'label' is in the data section!
     uint8_t const regid = reg.id() - 1;
     uint8_t const rmid = RBP.id() - 1;
     // RBP = use rip-relative addressing to load the operand from a PC-relative
@@ -301,7 +302,7 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, String* label) {
     text_->uint8(rex);
     text_->uint8(op);
     text_->uint8(modrm);
-    format_->ref(label, OutputFormat::RELOC_SIGNED);
+    format_->ref(label, OutputFormat::REF_SIGNED);
     text_->uint32(0); // Immediate
 }
 
@@ -365,8 +366,8 @@ void Intel64Generator::load(RegisterId res, Operand a1) {
         }
         text_->uint8(rex);
         text_->uint8(op);
-        std::string const label = "lit"+stringify((void*)le->value());
-        format_->ref(env_->name(label), OutputFormat::RELOC_ABSOLUTE);
+        String::Ptr const label = env_->name("lit"+stringify((void*)le->value()));
+        format_->ref(label, OutputFormat::REF_TEXT);
         // Ref the literal in the relocation table
         text_->uint64(0); // Immediate
         string_.insert(le->value());
@@ -389,7 +390,7 @@ void Intel64Generator::load(RegisterId res, Operand a1) {
         }
         text_->uint8(rex);
         text_->uint8(op);
-        format_->ref(a1.label(), OutputFormat::RELOC_ABSOLUTE);
+        format_->ref(a1.label(), OutputFormat::REF_TEXT);
         // Ref the literal in the relocation table
         text_->uint64(0); // Immediate
     } else {
@@ -558,7 +559,7 @@ void Intel64Generator::call(Operand target) {
     String* label = target.label();
     if (label) {
         text_->uint8(0xe8);
-        format_->ref(label, OutputFormat::RELOC_BRANCH);
+        format_->ref(label, OutputFormat::REF_BRANCH);
         text_->uint32(0); // Displacement
     } else {
         assert("Missing call target register" && !!target.reg());
@@ -568,63 +569,63 @@ void Intel64Generator::call(Operand target) {
 
 void Intel64Generator::jmp(String* label) {
     text_->uint8(0xe9);
-    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    format_->ref(label, OutputFormat::REF_BRANCH);
     text_->uint32(0); // Displacement
 }
 
 void Intel64Generator::jne(String* label) {
     text_->uint8(0x0f);
     text_->uint8(0x85);
-    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    format_->ref(label, OutputFormat::REF_BRANCH);
     text_->uint32(0);
 }
 
 void Intel64Generator::je(String* label) {
     text_->uint8(0x0f);
     text_->uint8(0x84);
-    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    format_->ref(label, OutputFormat::REF_BRANCH);
     text_->uint32(0);
 }
 
 void Intel64Generator::jg(String* label) {
     text_->uint8(0x0f);
     text_->uint8(0x8f);
-    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    format_->ref(label, OutputFormat::REF_BRANCH);
     text_->uint32(0);
 }
 
 void Intel64Generator::jge(String* label) {
     text_->uint8(0x0f);
     text_->uint8(0x8d);
-    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    format_->ref(label, OutputFormat::REF_BRANCH);
     text_->uint32(0);
 }
 
 void Intel64Generator::jl(String* label) {
     text_->uint8(0x0f);
     text_->uint8(0x8c);
-    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    format_->ref(label, OutputFormat::REF_BRANCH);
     text_->uint32(0);
 }
 
 void Intel64Generator::jle(String* label) {
     text_->uint8(0x0f);
     text_->uint8(0x8e);
-    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    format_->ref(label, OutputFormat::REF_BRANCH);
     text_->uint32(0);
 }
 
 void Intel64Generator::jz(String* label) {
     text_->uint8(0x0f);
     text_->uint8(0x84);
-    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    format_->ref(label, OutputFormat::REF_BRANCH);
     text_->uint32(0);
 }
 
 void Intel64Generator::jnz(String* label) {
     text_->uint8(0x0f);
     text_->uint8(0x85);
-    format_->ref(label, OutputFormat::RELOC_BRANCH);
+    format_->ref(label, OutputFormat::REF_BRANCH);
     text_->uint32(0);
 }
 

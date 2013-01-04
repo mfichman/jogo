@@ -38,28 +38,26 @@
 /* Helps output basic blocks in the Mach-O format */
 class Mach64Output : public OutputFormat {
 public:
-    Mach64Output() : text_(new Section), string_(new Section) {
-        string_->uint8(0);
-        // The string table must have a 0-byte at the beginning, b/c the
-        // nlist_64 struct uses an offset of 0 into the string table to
-        // represent a 0-length string.
-    }
+    Mach64Output();
     Section* text() const { return text_; }
-    void ref(String* name, RelocType type); // Add to reloc table
-    void label(String* label); // Add a label
-    void local(String* label); // Local label
+    Section* data() const { return data_; }
+    void ref(String* name, RelocType rtype);
+    void sym(String* name, SymType type);
     void out(Stream* out);
 
 public:
-    static int const TEXT_SECT = 1;
+    static int const OUT_SECT_TEXT = 1;
+    static int const OUT_SECT_DATA = 2;
     //static int const CSTRING_SECT = 2;
     //Section cstring_;
     Section::Ptr text_;
+    Section::Ptr data_;
     Section::Ptr string_;
 
     std::ofstream out_;
-    std::vector<nlist_64> symtab_; // Symbol table
-    std::vector<relocation_info> reloc_; // Relocation table 
+    std::vector<nlist_64> sym_; // Symbol table
+    std::vector<relocation_info> text_reloc_; // Relocation table 
+    std::vector<relocation_info> data_reloc_; // Relocation table 
     std::map<String::Ptr,int> symbol_;
 };
 

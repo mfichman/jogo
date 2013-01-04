@@ -33,14 +33,14 @@ class OutputFormat : public Object {
 public:
     typedef Pointer<OutputFormat> Ptr;
     typedef int RelocType;
+    typedef int SymType;
     virtual ~OutputFormat() {}
 
-    virtual void ref(String* name, RelocType type)=0;
+    virtual void ref(String* name, RelocType rtype)=0;
     // Records a references to a symbol name at the current byte offset in the
     // text section.  Ref info is used to generate relocation entries.
 
-    virtual void label(String* label)=0;
-    virtual void local(String* label)=0;
+    virtual void sym(String* name, SymType type)=0;
     // Emits a label at the given location, adding an entry to the symbol
     // table.  This function asserts if a symbol is defined twice.
 
@@ -48,9 +48,17 @@ public:
     // Flushes the output format to the given file.
 
     virtual Section* text() const=0;
-    // Returns the tet section (for code emit)
+    virtual Section* data() const=0;
+    // Returns the text/data sections (for code emit)
 
-    static int const RELOC_ABSOLUTE = 0x1;
-    static int const RELOC_BRANCH = 0x2;
-    static int const RELOC_SIGNED = 0x3;
+    static int const REF_BRANCH = 0x1;
+    static int const REF_SIGNED = 0x2;
+    static int const REF_DATA = 0x3;
+    static int const REF_TEXT = 0x4;
+
+    static int const SYM_LOCAL = 0x1;
+    static int const SYM_DATA = 0x2;
+    static int const SYM_LDATA = 0x3;
+    static int const SYM_TEXT = 0x4;
+    static int const SYM_LTEXT = 0x5;
 };

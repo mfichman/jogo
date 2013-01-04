@@ -121,6 +121,7 @@ private:
     OutputFormat::Ptr format_;
     Machine::Ptr machine_;
     Section::Ptr text_;
+    Section::Ptr data_;
     Function::Ptr function_;
     std::set<String*> string_;
 };
