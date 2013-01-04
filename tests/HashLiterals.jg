@@ -34,9 +34,8 @@ Key < Object {
 
 main() Int {
     hash = { 'a': 'one', 'b': 'two' }
-    for pair in hash {
-        Io::println("#{pair.first} => #{pair.second}")
-    }
+    Io::println("#{'a'} => #{hash['a']}")
+    Io::println("#{'b'} => #{hash['b']}")
 
     hash = Hash[String,String]()
     for pair in hash {
@@ -44,15 +43,15 @@ main() Int {
     }
 
     hash2 Hash[String,Intf] = { 'a': One(), 'b': Two() }
-    for pair in hash2 {
-        Io::println("#{pair.first} => #{pair.second.x()}")
-    }
+    Io::println("#{'a'} => #{hash2['a'].x()}")
+    Io::println("#{'b'} => #{hash2['b'].x()}")
 
     hash3 HashLike = { '1': 'Spock', '2': 'Kirk', '3': 'Picard' }
     
-    hash9 = { Key(1): 'Bilbo', Key(2): 'Frodo' } 
-    for x in hash9 {
-        Io::println("#{x.first.val} => #{x.second}") 
-    }
+    k1 = Key(1)
+    k2 = Key(2)
+    hash9 = { k1: 'Bilbo', k2: 'Frodo' } 
+    Io::println("#{1} => #{hash9[k1]}")
+    Io::println("#{2} => #{hash9[k2]}")
     ret 0
 }

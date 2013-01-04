@@ -26,9 +26,9 @@
 #include "Environment.hpp"
 #include "File.hpp"
 #include "Machine.hpp"
+#include "ProcessGroup.hpp"
 
 /* Builds modules, executables, and dependencies in order. */
-
 class Builder : public TreeNode::Functor {
 public:
     Builder(Environment* env);
@@ -54,5 +54,6 @@ private:
     void execute(const std::string& exe);
 
     Environment::Ptr env_;
+    ProcessGroup procs_;
     int errors_;
 };

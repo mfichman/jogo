@@ -311,7 +311,7 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, Operand mem) {
     // with a possible offset. 
     RegisterId rm = mem.reg();
     Address disp = mem.addr();
-    assert("Not an indirect operand"&&mem.is_indirect());
+    assert("Not an indirect operand" && (mem.is_indirect() || op == LEA));
     assert(reg.id() >= 1 && reg.id() <= 16);
     uint8_t const regid = reg.id() - 1;
     uint8_t const rmid = (rm.id() ? rm.id() : RBP.id()) - 1;
@@ -411,6 +411,8 @@ void Intel64Generator::load(RegisterId res, Operand a1) {
         format_->ref(a1.label(), OutputFormat::REF_TEXT);
         // Ref the literal in the relocation table
         text_->uint64(0); // Immediate
+    } else if (!!a1.addr() && !a1.is_indirect()) {
+        lea(res, a1);
     } else {
         mov(res, a1);
     }
@@ -523,14 +525,25 @@ void Intel64Generator::mov(RegisterId dst, RegisterId src) {
 }
 
 void Intel64Generator::mov(RegisterId reg, Operand rm) {
-    // Moves a value from memory into 'reg', using 'rm' as the base, and 'disp'
-    // as an offset from the base.
+    // Moves a value from memory into 'reg', using 'rm' as the base.
+    // FIXME: This logic below is necessary to support an IR instruction like
+    // rax <- rbx+4, which translates to an LEA.  If support for that IR
+    // instruction is removed, then this logic is not necessary.  Alternatively,
+    // this behavior could be made explicit by adding an LEA instruction.
     instr(MOV_REG_RM, reg, rm);
+/*
+    if (!rm.addr()) {
+        mov(reg, rm.reg());
+    } else if(rm.is_indirect()) {
+        instr(MOV_REG_RM, reg, rm);
+    } else {
+        instr(LEA, reg, rm);
+    }
+*/
 }
 
 void Intel64Generator::mov(Operand rm, RegisterId reg) {
-    // Moves a value to memory from 'reg', using 'rm' as the base, and 'disp'
-    // as an offset from the base.
+    // Moves a value to memory from 'reg', using 'rm' as the base.
     instr(MOV_RM_REG, reg, rm);
 }
 
@@ -569,6 +582,10 @@ void Intel64Generator::mov(RegisterId reg, uint64_t imm) {
         text_->uint32(imm);
     }
 }
+
+void Intel64Generator::lea(RegisterId reg, Operand rm) {
+    instr(LEA, reg, rm);
+} 
 
 void Intel64Generator::sub(RegisterId dst, uint64_t imm) {
     instr(0x81, 0x05, dst, imm);

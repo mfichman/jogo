@@ -83,7 +83,7 @@ private:
     Operand emit(Opcode op, Operand t2, Operand t3);
     Operand emit(Opcode op, Operand t2); 
     Operand mov(Operand res, Operand t2); 
-    Operand mov(Operand t2) { return emit(MOV, t2); }
+    Operand mov(Operand t2);
     Operand neg(Operand t2) { return emit(NEG, t2); }
     Operand add(Operand t2, Operand t3) { return emit(ADD, t2, t3); }
     Operand sub(Operand t2, Operand t3) { return emit(SUB, t2, t3); }
@@ -92,7 +92,8 @@ private:
     Operand notb(Operand t2) { return emit(NOTB, t2); }
     Operand andb(Operand t2, Operand t3) { return emit(ANDB, t2, t3); }
     Operand orb(Operand t2, Operand t3) { return emit(ORB, t2, t3); }
-    Operand load(Operand addr) { return emit(LOAD, addr); }
+    Operand load(Operand addr);
+    Operand load(Operand res, Operand addr);
     void store(Operand addr, Operand value);
     void call(Operand func);
     void ret();

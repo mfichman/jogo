@@ -159,10 +159,7 @@ void Nasm64Generator::operator()(IrBlock* block) {
         case CALL: instr("call", a1); break;
         case JUMP: instr("jmp", branch->label()); break;
         case MOV: 
-            if (!!a1.addr() && !a1.is_indirect()) {
-                out_ << "    lea "; operand(res); out_ << ", ["; 
-                operand(a1); out_ << "]\n";
-            } else if (res.is_float()) {
+            if (res.is_float()) {
                 instr("movsd", res, a1);
             } else {
                 instr("mov", res, a1); 
@@ -479,7 +476,7 @@ void Nasm64Generator::load_hack(Operand res, Operand a1) {
         std::stringstream ss(le->value()->string());
         int number;
         ss >> number;
-        if(number < INTEL64_MAX_IMM) {
+        if (number < INTEL64_MAX_IMM) {
             out_ << "    " << mov << " ";
             operand(res);
             out_ << ", " << number << "\n";
@@ -493,14 +490,14 @@ void Nasm64Generator::load_hack(Operand res, Operand a1) {
             operand(res);
             out_ << "]\n";
         }
-    } else if(FloatLiteral* le = dynamic_cast<FloatLiteral*>(a1.literal())) {
+    } else if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(a1.literal())) {
         out_ << "    push rax\n";
         out_ << "    mov rax, lit" << (void*)le->value() << "\n"; 
         out_ << "    movsd ";   
         operand(res);
         out_ << ", [rax]\n"; 
         out_ << "    pop rax\n";
-    } else if(a1.label() && a1.is_indirect()) {
+    } else if (a1.label() && a1.is_indirect()) {
         out_ << "    " << mov << " ";
         operand(res);
         out_ << ", ";
@@ -511,6 +508,11 @@ void Nasm64Generator::load_hack(Operand res, Operand a1) {
         out_ << ", [";
         operand(res);
         out_ << "]\n";
+    } else if (!!a1.addr() && !a1.is_indirect()) {
+        // Load effective address.  An IR instruction like rax <- load rbx+3
+        // gets translated to an LEAQ instruction
+        out_ << "    lea "; operand(res); out_ << ", ["; 
+        operand(a1); out_ << "]\n";
     } else {
         instr(mov, res, a1); 
     }

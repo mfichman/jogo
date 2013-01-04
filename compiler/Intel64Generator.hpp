@@ -57,6 +57,7 @@ public:
     static uint8_t const MODRM_REG = 0x38;
     static uint8_t const MODRM_RM = 0x07;
     static uint8_t const NOP = 0x90;
+    static uint8_t const LEA = 0x8d; // Load effective address
     static uint8_t const REX_PREFIX = 0x40;
     static uint8_t const REX_W = 0x08; // 64-bit operand 
     static uint8_t const REX_R = 0x04; // MODRM.reg extension
@@ -74,6 +75,7 @@ private:
     void store(Operand a1, Operand a2);
     void arith(Instruction const& instr);
 
+    void lea(RegisterId reg, RegisterId rm);
     void mov(RegisterId reg, RegisterId rm);
     void mov(RegisterId reg, Operand rm);
     void mov(Operand rm, RegisterId reg);

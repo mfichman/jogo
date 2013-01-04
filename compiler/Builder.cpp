@@ -102,11 +102,13 @@ void Builder::monolithic_build() {
         if (file->is_output_file()) {
             operator()(file); 
             ss << file->jgo_file() << " ";
-            if (File::is_reg(file->o_file())) {
+            if (File::is_reg(file->native_file())) {
                 ss << file->o_file() << " ";
             }
         }
     }
+    procs_.wait();
+    errors_ += procs_.errors();
     if (!env_->link() || errors_ || env_->errors()) { return; }
     if (env_->dump_ir()) { return; }
 
@@ -185,7 +187,9 @@ void Builder::operator()(Module* module) {
     for (int i = 0; i < module->files(); i++) {
         operator()(module->file(i));
     }     
-    if (!env_->link()) { return; }
+    procs_.wait();
+    errors_ += procs_.errors();
+    if (!env_->link() || errors_ || env_->errors()) { return; }
 
     if (module->function(env_->name("main"))) {
         link(module); 
@@ -250,7 +254,7 @@ void Builder::link(Module* module) {
     // Output object files and native object files.
     for (int i = 0; i < module->files(); i++) {
         ss << module->file(i)->jgo_file() <<  " ";
-        if (File::is_reg(module->file(i)->o_file())) {
+        if (File::is_reg(module->file(i)->native_file())) {
             ss << module->file(i)->o_file() << " ";
         }
     }
@@ -277,6 +281,7 @@ void Builder::link(const std::string& in, const std::string& out) {
     std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.jg";
     File::Ptr mf = env_->file(env_->name(main));
     operator()(mf);
+    procs_.wait();
 
 #ifdef WINDOWS
     for (int i = 0; i < env_->includes(); i++) {
@@ -483,9 +488,10 @@ void Builder::cc(const std::string& in, const std::string& out) {
         Stream::stout() << ss.str() << "\n";
         Stream::stout()->flush();
     }
-    if (system(ss.str().c_str())) {
-        errors_++;
-    } 
+    procs_.process(ss.str());
+    //if (system(ss.str().c_str())) {
+    //    errors_++;
+    //} 
 }
 
 void Builder::nasm(const std::string& in, const std::string& out) {
@@ -503,9 +509,7 @@ void Builder::nasm(const std::string& in, const std::string& out) {
         Stream::stout() << ss.str() << "\n";
         Stream::stout()->flush();
     }
-    if (system(ss.str().c_str())) {
-        errors_++;
-    }
+    procs_.process(ss.str());
 }
 
 void Builder::execute(const std::string& exe) {

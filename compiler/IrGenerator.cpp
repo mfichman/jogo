@@ -202,17 +202,16 @@ void IrGenerator::operator()(Cast* expr) {
     emit(mismatch_block);
     String::Ptr zero = env_->integer("0");
     Location loc;
-    block_->instr(MOV, return_, load(new IntegerLiteral(loc, zero)), Operand());
+    mov(return_, load(new IntegerLiteral(loc, zero)));
     jump(done_block);
 
     // Otherwise, keep the same value in the result.
     emit(ok_block);
     if (clazz->is_primitive()) {
         // Slot 2 is the value slot for primitive types
-        Operand addr = Operand(arg.reg(), Address(2));
-        block_->instr(LOAD, return_, addr, Operand());
+        load(return_, Operand(arg.reg(), Address(2)));
     } else if (clazz->is_ref()) {
-        block_->instr(MOV, return_, arg, Operand());
+        mov(return_, arg);
     } else if (clazz->is_compound()) {
         assert(!"Not implemented");
     } else {
@@ -903,7 +902,7 @@ Operand IrGenerator::stack_value(Type* type) {
     // stack, and return the address of the allocated space.
     calculate_size(type->clazz());
     local_slots_inc(type->clazz()->slots());
-    return Address(-local_slots_,0); 
+    return load(Address(-local_slots_, 0));  // Translates to LEA
 }
 
 Operand IrGenerator::stack_value_temp(Type* type) {
@@ -940,7 +939,8 @@ Operand IrGenerator::id_operand(String* id) {
     } else if (attr) {
         Operand self = variable(env_->name("self"))->operand();
         if (attr->type()->is_compound()) {
-            return Operand(self.reg(), Address(attr->slot(), 0));
+            return load(Operand(self.reg(), Address(attr->slot(), 0)));
+            // Basically an LEA
         } else if (attr->type()->is_float()) {
             Operand val = load(Operand(self.reg(), Address(attr->slot())));
             return Operand(RegisterId(val.reg().id(), RegisterId::FLOAT));
@@ -1199,7 +1199,7 @@ void IrGenerator::ctor_preamble(Class* clazz) {
                 refcount_inc(value);
             } else if (init->type()->is_compound()) {
                 Operand addr = Operand(self.reg(), Address(attr->slot(), 0)); 
-                value_assign_mem(value, addr, init->type());
+                value_assign_mem(value, load(addr), init->type()); // LEA
                 // XCOPY: If RHS is a temp, then move and free stack (don't copy)
                 // XCOPY: attr = val
             } else {
@@ -1229,8 +1229,7 @@ void IrGenerator::copier_preamble(Class* clazz) {
         Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer());
         if (attr && attr->type()->is_ref()) {
             Operand addr = Operand(self.reg(), Address(attr->slot())); 
-            Operand ptr = load(addr); 
-            refcount_inc(ptr); 
+            refcount_inc(load(addr)); 
         }
     }
 }
@@ -1263,7 +1262,7 @@ void IrGenerator::dtor_epilog(Function* feature) {
             refcount_dec(load(addr));
         } else if (attr->type()->is_compound()) {
             Operand addr = Operand(self.reg(), Address(attr->slot(), 0));
-            value_dtor(addr, attr->type()); 
+            value_dtor(load(addr), attr->type()); 
         } else {
             assert(!"Invalid type");
         }
@@ -1343,9 +1342,10 @@ void IrGenerator::attr_assignment(Assignment* expr) {
             refcount_inc(return_);
         }
     } else if (type->is_compound()) {
-        Operand addr = Operand(self->operand().reg(), Address(attr->slot(), 0));  
-        value_dtor(addr, type);
-        value_assign_mem(return_, addr, type);
+        Operand addr = Operand(self->operand().reg(), Address(attr->slot(), 0));
+        Operand val= load(addr);
+        value_dtor(val, type);
+        value_assign_mem(return_, val, type);
         // XCOPY: If RHS is a temp, then move and free stack (don't copy)
         // XCOPY: attr = val
     } else {
@@ -1471,9 +1471,7 @@ void IrGenerator::value_dtor(Operand op, Type* type) {
     fm.call(dtor->label());
 }
 
-Operand IrGenerator::emit(TreeNode* node, IrBlock* yes, 
-    IrBlock* no, bool inv) {
-
+Operand IrGenerator::emit(TreeNode* node, IrBlock* yes, IrBlock* no, bool inv) {
     IrBlock* true_save = true_;
     IrBlock* false_save = false_;
     bool invert_branch_save_ = invert_branch_;
@@ -1493,17 +1491,34 @@ Operand IrGenerator::emit(TreeNode* node) {
 }
 
 Operand IrGenerator::emit(Opcode op, Operand t2, Operand t3) {
+    assert("Literal or label in non-mem instr" && !t2.object());
+    assert("Literal or label in non-mem instr" && !t3.object());
+    assert("Address in non-mem instr" && !t2.addr());
+    assert("Address in non-mem instr" && !t3.addr());
     Instruction in = block_->instr(op, temp_inc(), t2, t3);
     return in.result();
 }
 
 Operand IrGenerator::emit(Opcode op, Operand t2) {
+    assert("Literal or label in non-mem instr" && !t2.object());
+    assert("Address in non-mem instr" && !t2.addr());
     Instruction in = block_->instr(op, temp_inc(), t2, Operand());
     return in.result();
 }
 
+Operand IrGenerator::mov(Operand t2) {
+    assert("Literal or label in non-mem instr" && !t2.object());
+    assert("Address in non-mem instr" && !t2.addr());
+    Instruction in = block_->instr(MOV, temp_inc(), t2, Operand());
+    return in.result(); 
+}
+
 Operand IrGenerator::mov(Operand res, Operand t2) { 
     // FixMe: This could be a problem for SSA analysis.
+    assert("Literal or label in non-mem instr" && !res.object());
+    assert("Literal or label in non-mem instr" && !t2.object());
+    assert("Address in non-mem instr" && !res.addr());
+    assert("Address in non-mem instr" && !t2.addr());
     Instruction in = block_->instr(MOV, res, t2, Operand());
     return in.result();
 }
@@ -1517,12 +1532,27 @@ void IrGenerator::emit(IrBlock* block) {
 }
 
 void IrGenerator::store(Operand addr, Operand value) {
-    assert((!!value.reg() || value.literal()) && "Stored value must be a reg");
-    assert(!value.addr() && "Can't use an address offset in a STORE instr");
+    assert("Can't store a label" && !value.label());
+    assert("Stored value must be a reg" && (!!value.reg() || value.literal()));
+    assert("Can't use an address offset in a STORE instr" && !value.addr());
+    assert("Non-indirect store instruction" && addr.is_indirect());
     block_->instr(STORE, Operand(), addr, value);    
 }
 
+Operand IrGenerator::load(Operand addr) {
+    Instruction in = block_->instr(LOAD, temp_inc(), addr, Operand());
+    return in.result();
+}
+
+Operand IrGenerator::load(Operand res, Operand addr) {
+    // FIXME: This is a problem for true SSA analysis
+    Instruction in = block_->instr(LOAD, res, addr, Operand());
+    return in.result();
+}
+
 void IrGenerator::call(Operand func) {
+    assert("Target must be reg or label" && (!!func.reg() || func.label()));
+    assert("Literal in call instruction" && !func.literal());
     block_->instr(CALL, Operand(), func, Operand());
 }
 

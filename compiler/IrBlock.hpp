@@ -147,6 +147,7 @@ public:
     Operand(Address addr) : addr_(addr) {}
     // Represents the contents of a memory address, e.g., MEM[ADDR]
 
+    Object* object() const { return obj_; }
     Expression* literal() const { return dynamic_cast<Expression*>(obj_.pointer()); }
     String* label() const { return dynamic_cast<String*>(obj_.pointer()); }
     RegisterId reg() const { return reg_; }
