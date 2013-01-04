@@ -84,11 +84,27 @@ std::string const String::unescaped() const {
             if (isdigit(c)) { // Octal code
                 char c2 = in[++i];
                 char c3 = in[++i]; 
-                out += std::string("0o") + c + c2 + c3;
+                out += (c-'0')*64 + (c2-'0')*8 + (c3-'0');
             } else if (c == 'x') { // Hexadecimal code
                 char c1 = in[++i];
                 char c2 = in[++i];
-                out += std::string("0x") + c1 + c2;
+                char byte = 0;
+                if (isupper(c1)) {
+                    byte += c1-'A'+10;
+                } else if (islower(c1)) {
+                    byte += c1-'a'+10;
+                } else {
+                    byte += c1-'0';
+                }
+                byte *= 16;
+                if (isupper(c2)) {
+                    byte += c2-'A'+10;
+                } else if (islower(c2)) {
+                    byte += c2-'a'+10;
+                } else {
+                    byte += c2-'0';
+                }
+                out += byte;
             } else {
                 switch (c) {
                 case 'a': out += "\a"; break; // alarm
