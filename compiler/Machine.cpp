@@ -27,8 +27,11 @@ Machine::Machine() : word_size_(0) {
 }
 
 Register* Machine::reg(std::string const& name, RegisterId id) {
+    assert("Register already exists"&&!reg(name));
+    Register::Ptr newreg(new Register(name, id));
+    regmap_.insert(std::make_pair(name, newreg));
     reg_.resize(id.id()+1);
-    return reg_[id.id()] = new Register(name, id);
+    return reg_[id.id()] = newreg;
 }
 
 Register* Machine::int_reg(std::string const& name) {

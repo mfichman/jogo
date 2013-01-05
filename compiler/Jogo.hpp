@@ -100,6 +100,16 @@ V query(const std::map<K, V>& map, typename K::Value::Ptr str) {
     }
 }
 
+template <typename V>
+V query(const std::map<std::string, V>& map, std::string const& str) {
+    typename std::map<std::string, V>::const_iterator i = map.find(str);
+    if (i == map.end()) {
+        return V();
+    } else {
+        return i->second;
+    }
+}
+
 template <typename T>
 std::string stringify(T t) {
     std::stringstream ss;

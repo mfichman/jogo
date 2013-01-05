@@ -84,6 +84,7 @@ public:
     Register* special_reg(std::string const& name);
     Register* reg(std::string const& name, RegisterId id);
     Register* reg(RegisterId id) const;
+    Register* reg(std::string const& name) { return query(regmap_, name); }
     int regs() const { return reg_.size(); }
     int caller_regs() const { return caller_reg_.size(); }
     int callee_regs() const { return callee_reg_.size(); }
@@ -121,5 +122,6 @@ private:
     RegisterIdSet return_set_;
     RegisterIdSet caller_set_;
     RegisterIdSet callee_set_;
+    std::map<std::string, Register::Ptr> regmap_;
 };
 
