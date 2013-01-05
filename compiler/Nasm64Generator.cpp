@@ -528,7 +528,7 @@ void Nasm64Generator::stack_check(Function* feature) {
     
     // Push any argument register before we call the routine to grow the stack.
     // It would be nice to have the register allocator handle this, but the
-    // stack pointer register is hidden to the register allocator.
+    // stack pointer register is hidden from the register allocator.
     int index = 0;
     for (Formal* f = feature->formals(); f; f = f->next()) {
         if (index < machine_->int_arg_regs()) {

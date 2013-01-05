@@ -108,10 +108,15 @@ bool IrBlock::is_ret() const {
 }
 
 
-Instruction const& IrBlock::instr(const Instruction& inst) { 
+Instruction const& IrBlock::instr(Instruction const& inst) { 
     instrs_.push_back(inst); 
     return instrs_.back();
 }
+
+Instruction const& IrBlock::instr(int index, Instruction const& inst) {
+    return instrs_[index] = inst;
+}
+
 
 Instruction const& IrBlock::instr(Opcode op, Operand res, Operand one, Operand two) {
     instrs_.push_back(Instruction(op, res, one, two));

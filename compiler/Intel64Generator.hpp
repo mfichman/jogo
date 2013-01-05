@@ -47,6 +47,7 @@ public:
     static RegisterId const RAX;
     static RegisterId const RSP;
     static RegisterId const RBP;
+    static RegisterId const RDX;
     static uint8_t const MOV_RM_REG = 0x89;
     static uint8_t const MOV_REG_RM = 0x8b;
     static uint8_t const MOV_IMM = 0xb8;
@@ -63,17 +64,24 @@ public:
     static uint8_t const REX_R = 0x04; // MODRM.reg extension
     static uint8_t const REX_X = 0x02; // ??
     static uint8_t const REX_B = 0x01; // MODRM.rm extension
+    static uint32_t const MIN_STACK = 4096;
 
 private:
     void string(String::Ptr lit);
     void instr(uint8_t op, uint8_t ext, RegisterId reg, uint32_t imm);
     void instr(uint8_t op, uint8_t ext, RegisterId reg);
     void instr(uint8_t op, RegisterId reg, RegisterId rm);
+    void instr(uint8_t op, uint8_t op2, RegisterId reg, RegisterId rm);
     void instr(uint8_t op, RegisterId reg, String* label);
     void instr(uint8_t op, RegisterId reg, Operand mem);
+    void rex(RegisterId reg, RegisterId rm);
     void load(RegisterId res, Operand a1);
     void store(Operand a1, Operand a2);
-    void arith(Instruction const& instr);
+    void add(RegisterId res, RegisterId a1, RegisterId a2);
+    void sub(RegisterId res, RegisterId a1, RegisterId a2);
+    void mul(RegisterId res, RegisterId a1, RegisterId a2);
+    void div(RegisterId res, RegisterId a1, RegisterId a2);
+    void stack_check(Function* func);
 
     void lea(RegisterId reg, RegisterId rm);
     void mov(RegisterId reg, RegisterId rm);
@@ -111,10 +119,10 @@ private:
     void mulsd(RegisterId dst, RegisterId src);
     void divsd(RegisterId dst, RegisterId src);
     void add(RegisterId dst, RegisterId src);
+    void add(RegisterId dst, uint32_t imm);
     void sub(RegisterId dst, RegisterId src);
     void sub(RegisterId dst, uint64_t imm);
     void imul(RegisterId dst, RegisterId src);
-    void div(RegisterId dst, RegisterId src);
     void neg(RegisterId reg);
 
 private:

@@ -116,10 +116,12 @@ void CopyPropagator::operator()(IrBlock* block) {
             if (!machine_->reg(rhs.reg()) && !rhs.is_indirect() && !!rhs.reg()) {
                 assert(!!rhs&&"Nil operand");
                 eq[result] = rhs;
+                lit.erase(result);
             }
         } 
         if (LOAD == instr.opcode() && !instr.first().is_indirect()) {
             lit[result] = instr.first();
+            eq.erase(result);
         }
         
         // Remove return registers from the alias set, b/c their value will be

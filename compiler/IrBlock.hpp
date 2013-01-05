@@ -229,6 +229,7 @@ public:
     void next(IrBlock* branch) { next_ = branch; }
     void label(String* label) { label_ = label; }
     Instruction const& instr(Instruction const& inst);
+    Instruction const& instr(int index, Instruction const& inst);
     Instruction const& instr(Opcode op, Operand res, Operand one, Operand two);
     void round_inc() { round_++; }
     typedef Pointer<IrBlock> Ptr; 

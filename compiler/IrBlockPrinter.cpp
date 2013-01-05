@@ -66,9 +66,11 @@ void IrBlockPrinter::operator()(IrBlock* block) {
     }
     for (int i = 0; i < block->instrs(); i++) {
         const Instruction& instr = block->instr(i);
+        if (instr.opcode() == NOP) { continue; }
         Operand res = instr.result();
         Operand first = instr.first();
         Operand second = instr.second();
+
         out_ << "    ";
         switch (instr.opcode()) {
         case ADD: out_ << res << " <- " << first << " + " << second; break;
@@ -125,6 +127,7 @@ void IrBlockPrinter::operator()(IrBlock* block) {
             break;
         case RET: out_ << "ret"; break;
         case NOP: break;
+        default: assert(!"Not supported");
         }
     
         if (env_->dump_liveness()) {
@@ -145,7 +148,7 @@ void IrBlockPrinter::operator()(IrBlock* block) {
             }
             out_ << "}";
         }
-        out_ << "\n";
+        out_ << '\n';
     }
 }
 

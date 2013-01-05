@@ -55,7 +55,9 @@ Mach64Output::ref(String* label, RelocType rtype) {
         sym->n_type = N_UNDF|N_EXT; // Symbol is undefined.
         sym->n_sect = NO_SECT; // Not known yet.
         sym->n_value = 0; // Address of the symbol unknown.
-        string_->uint8('_');
+        if (label->string()[0] != '.') {
+            string_->uint8('_');
+        }
         string_->buffer(label->string().c_str(), label->string().size()+1);  
         symnum = sym_.size()-1;
         // FixMe: Encode a string's name properly if it is a literal
@@ -116,7 +118,9 @@ Mach64Output::sym(String* label, SymType type) {
         sym_.resize(sym_.size()+1);
         sym = &sym_.back();
         sym->n_un.n_strx = string_->bytes(); // Offset to name in string table
-        string_->uint8('_');
+        if (label->string()[0] != '.') {
+            string_->uint8('_');
+        }
         string_->buffer(label->string().c_str(), label->string().size()+1);  
     } else {
         sym = &sym_[i->second];

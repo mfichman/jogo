@@ -47,11 +47,13 @@ void DeadCodeEliminator::operator()(Function* feature) {
     for (int i = 0; i < feature->ir_blocks(); i++) {
         operator()(feature->ir_block(i));
     } 
+    liveness_->operator()(feature);
+    for (int i = 0; i < feature->ir_blocks(); i++) {
+        operator()(feature->ir_block(i));
+    } 
 }
 
 void DeadCodeEliminator::operator()(IrBlock* block) {
-    IrBlock repl;
-    
     // Loop through each instruction.  If the result of the instruction is
     // dead after the instruction, then the instruction is dead code.
     // For example, if the liveness is x := ..., out={} then the statement is 
@@ -61,10 +63,13 @@ void DeadCodeEliminator::operator()(IrBlock* block) {
         RegisterId const result = instr.result().reg();
         RegisterIdSet const& out = instr.liveness()->out();
         
-        if (!result || out.has(result)) {
-            repl.instr(instr); 
-        } 
+        if (instr.opcode() == MOV && instr.result() == instr.first()) {
+            block->instr(i, Instruction(NOP, Operand(), Operand(), Operand()));
+        } else if (!result || out.has(result)) {
+            //repl.instr(instr); 
+        } else {
+            block->instr(i, Instruction(NOP, Operand(), Operand(), Operand()));
+        }
     }
-    block->swap(&repl);
 }
 

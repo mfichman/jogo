@@ -25,6 +25,7 @@
 RegisterId const Intel64Generator::RAX(1, 0);
 RegisterId const Intel64Generator::RSP(5, 0);
 RegisterId const Intel64Generator::RBP(6, 0);
+RegisterId const Intel64Generator::RDX(2, 0);
 
 #ifdef WINDOWS
 #define atoll _atoi64
@@ -56,8 +57,8 @@ void Intel64Generator::operator()(File* file) {
         if (cons->type()->is_value() && !cons->type()->is_primitive()) {
             assert(!"Not supported");
         }
-        format_->sym(cons->label(), OutputFormat::SYM_TEXT);
-        text_->uint64(0); // Data
+        format_->sym(cons->label(), OutputFormat::SYM_DATA);
+        data_->uint64(0); // Data
     }
 
     for (std::set<String*>::iterator i = string_.begin(); 
@@ -101,6 +102,7 @@ void Intel64Generator::operator()(Function* feature) {
 
     push(RBP);
     mov(RBP, RSP);
+    stack_check(feature);
 
     if (feature->stack_slots()) {
         // Allocate space on the stack; ensure that the stack is aligned to a
@@ -155,18 +157,51 @@ void Intel64Generator::operator()(IrBlock* block) {
         case BLE: cmp(a1.reg(), a2.reg()); jle(branch->label()); break;
         case CALL: call(a1); break;
         case JUMP: jmp(branch->label()); break;
-        case ADD: arith(inst); break;
-        case SUB: arith(inst); break;
-        case MUL: arith(inst); break;
-        case DIV: arith(inst); break;
+        case ADD: add(res.reg(), a1.reg(), a2.reg()); break;
+        case SUB: sub(res.reg(), a1.reg(), a2.reg()); break;
+        case MUL: mul(res.reg(), a1.reg(), a2.reg()); break;
+        case DIV: div(res.reg(), a1.reg(), a2.reg()); break;
         case NEG: mov(res.reg(), a1.reg()); neg(res.reg()); break;
         case NOTB: mov(res.reg(), a1.reg()); bnot(res.reg()); break;
         case ANDB: mov(res.reg(), a1.reg()); band(res.reg(), a2.reg()); break;
         case ORB: mov(res.reg(), a1.reg()); bor(res.reg(), a2.reg()); break; 
-        case NOP: text_->uint8(0x90); break;
+        case NOP: break;
         default: break;
         }
     }
+}
+
+void Intel64Generator::stack_check(Function* func) {
+    // Emits a stack check, and code to dynamically grow the stack if it is too
+    // small.  Also, saves any registers that are in use and may be used by the
+    // coroutine stack allocator function.
+    String::Ptr start = env_->name(func->label()->string()+"__start");
+    mov(RAX, env_->name("Coroutine__stack"));  
+    add(RAX, MIN_STACK);
+    cmp(RSP, RAX);
+    jge(start);
+
+    // Push any argument register before we call the routine to grow the stack.
+    // It would be nice to have the register allocator handle this, but the
+    // stack pointer register is hidden from the register allocator.
+    int index = 0;
+    for (Formal* f = func->formals(); f; f = f->next()) {
+        if (index < machine_->int_arg_regs()) {
+            push(machine_->int_arg_reg(index)->id());
+            index++;
+        } else {
+            break;
+        }
+    }
+
+    call(env_->name("Coroutine__grow_stack"));
+    mov(RSP, RAX);
+
+    // Pop any argument registers that are used in the function.
+    for (int i = index-1; i >= 0; i--) {
+        pop(machine_->int_arg_reg(i)->id());
+    }
+    format_->sym(start, OutputFormat::SYM_LTEXT);
 }
 
 void Intel64Generator::dispatch_table(Class* feature) {
@@ -233,14 +268,10 @@ void Intel64Generator::instr(uint8_t op, uint8_t ext, RegisterId rm, uint32_t im
     // Emits a register-immediate (32-bit immediate) instruction
     assert(!!rm&&"Invalid register ID");
     uint8_t const rmid = rm.id() - 1;
-    uint8_t rex = REX_PREFIX|REX_W;
-    if (is_extended_reg(rm)) {
-        rex |= REX_B;
-    }
     uint8_t modrm = MODRM_DIRECT;
     modrm |= (MODRM_REG & (ext << 3));
     modrm |= (MODRM_RM & (rmid));
-    text_->uint8(rex);
+    rex(RegisterId(), rm);
     text_->uint8(op);
     text_->uint8(modrm);
     text_->uint32(imm);
@@ -250,14 +281,10 @@ void Intel64Generator::instr(uint8_t op, uint8_t ext, RegisterId rm) {
     // Emits a single-operand instruction w/ extension field
     assert(!!rm&&"Invalid register ID");
     uint8_t const rmid = rm.id() - 1;
-    uint8_t rex = REX_PREFIX|REX_W;
-    if (is_extended_reg(rm)) {
-        rex |= REX_B;
-    }
     uint8_t modrm = MODRM_DIRECT;
     modrm |= (MODRM_REG & (ext << 3));
     modrm |= (MODRM_RM & (rmid));
-    text_->uint8(rex);
+    rex(RegisterId(), rm);
     text_->uint8(op);
     text_->uint8(modrm);
 }
@@ -265,22 +292,27 @@ void Intel64Generator::instr(uint8_t op, uint8_t ext, RegisterId rm) {
 void Intel64Generator::instr(uint8_t op, RegisterId reg, RegisterId rm) {
     // Emits a simple register-register instruction 
     // dst = reg, src = rm
+    instr(0, op, reg, rm);
+}
+
+void Intel64Generator::instr(uint8_t op, uint8_t op2, RegisterId reg, RegisterId rm) {
+    // Emits a simple register-register instruction 
+    // dst = reg, src = rm
     assert(!!reg&&"Invalid register ID");
     assert(!!rm&&"Invalid register ID");
     uint8_t const regid = reg.id() - 1;
     uint8_t const rmid = rm.id() - 1;
-    uint8_t rex = REX_PREFIX|REX_W;
-    if (is_extended_reg(reg)) {
-        rex |= REX_R; 
-    }
-    if (is_extended_reg(rm)) {
-        rex |= REX_B; 
-    }
     uint8_t modrm = MODRM_DIRECT;
     modrm |= (MODRM_REG & (regid << 3));
     modrm |= (MODRM_RM & (rmid));
-    text_->uint8(rex);
-    text_->uint8(op);
+    rex(reg, rm);
+    if (op == 0x0f) {
+        text_->uint8(op);
+    } else if (op) {
+        assert(!"Invalid opcode");
+    } else {
+    }
+    text_->uint8(op2);
     text_->uint8(modrm);
 }
 
@@ -292,14 +324,10 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, String* label) {
     uint8_t const rmid = RBP.id() - 1;
     // RBP = use rip-relative addressing to load the operand from a PC-relative
     // address.
-    uint8_t rex = REX_PREFIX|REX_W;
-    if (is_extended_reg(reg)) {
-        rex |= REX_R;
-    }
     uint8_t modrm = MODRM_INDIRECT;
     modrm |= (MODRM_REG & (regid << 3));
     modrm |= (MODRM_RM & rmid);
-    text_->uint8(rex);
+    rex(reg, RegisterId());
     text_->uint8(op);
     text_->uint8(modrm);
     format_->ref(label, OutputFormat::REF_SIGNED);
@@ -315,13 +343,6 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, Operand mem) {
     assert(reg.id() >= 1 && reg.id() <= 16);
     uint8_t const regid = reg.id() - 1;
     uint8_t const rmid = (rm.id() ? rm.id() : RBP.id()) - 1;
-    uint8_t rex = REX_PREFIX|REX_W;
-    if (is_extended_reg(reg)) {
-        rex |= REX_R; 
-    }
-    if (is_extended_reg(rm)) {
-        rex |= REX_B; 
-    }
     int32_t offset = disp.value() * machine_->word_size();
     if (!rm.id() && offset > 0) {
         offset += machine_->word_size();
@@ -346,7 +367,7 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, Operand mem) {
     }
     modrm |= (MODRM_REG & (regid << 3));
     modrm |= (MODRM_RM & (rmid));
-    text_->uint8(rex);
+    rex(reg, rm);
     text_->uint8(op);
     text_->uint8(modrm);
 
@@ -370,19 +391,27 @@ void Intel64Generator::instr(uint8_t op, RegisterId reg, Operand mem) {
     // temporaries to that register.
 }
 
+void Intel64Generator::rex(RegisterId reg, RegisterId rm) {
+    // Outputs the REX byte for the given registers, if necessary
+    uint8_t rex = REX_PREFIX|REX_W;
+    if (is_extended_reg(reg)) {
+        rex |= REX_R; 
+    }
+    if (is_extended_reg(rm)) {
+        rex |= REX_B; 
+    }
+    text_->uint8(rex);
+}
+
 void Intel64Generator::load(RegisterId res, Operand a1) {
     // Loads the literal or a register-indirect memory location specified into
     // a register
     assert(!!res);
     Expression* expr = a1.literal();
     if (StringLiteral* le = dynamic_cast<StringLiteral*>(expr)) {
-        uint8_t const regid = res.id() - 1;
-        uint8_t const op = MOV_IMM + (MODRM_RM & regid);
-        uint8_t rex = REX_PREFIX|REX_W;
-        if (is_extended_reg(res)) {
-            rex |= REX_B;
-        }
-        text_->uint8(rex);
+        uint8_t const rmid = res.id() - 1;
+        uint8_t const op = MOV_IMM + (MODRM_RM & rmid);
+        rex(RegisterId(), res);
         text_->uint8(op);
         String::Ptr const label = env_->name("lit"+stringify((void*)le->value()));
         format_->ref(label, OutputFormat::REF_TEXT);
@@ -400,13 +429,9 @@ void Intel64Generator::load(RegisterId res, Operand a1) {
     } else if (a1.label() && a1.is_indirect()) {
         mov(res, a1.label());
     } else if (a1.label()) {
-        uint8_t const regid = res.id() - 1;
-        uint8_t const op = MOV_IMM + (MODRM_RM & regid);
-        uint8_t rex = REX_PREFIX|REX_W;
-        if (is_extended_reg(res)) {
-            rex |= REX_B;
-        }
-        text_->uint8(rex);
+        uint8_t const rmid = res.id() - 1;
+        uint8_t const op = MOV_IMM + (MODRM_RM & rmid);
+        rex(RegisterId(), res);
         text_->uint8(op);
         format_->ref(a1.label(), OutputFormat::REF_TEXT);
         // Ref the literal in the relocation table
@@ -443,64 +468,63 @@ void Intel64Generator::store(Operand a1, Operand a2) {
     }
 }
 
-void Intel64Generator::arith(Instruction const& inst) {
-    // Emits an arithmetic instruction.  Depending on the opcode and the
-    // operands, the expression may have to be manipulated because all x86
-    // instructions take only 2 arithmetic operands.
-    Operand res = inst.result();
-    Operand r1 = inst.first();
-    Operand r2 = inst.second();
-    
+void Intel64Generator::add(RegisterId res, RegisterId r1, RegisterId r2) {
     assert(!res.is_float()&&"Not implemented");
-    if (inst.opcode() == DIV && !res.is_float()) {
-        assert(!"Not implemented");
-/*
-        out_ << "    push rdx\n";
-        out_ << "    mov rax, "; operand(r1); out_ << "\n"; 
-        out_ << "    cqo\n";
-        out_ << "    idiv "; operand(r2); out_ << "\n";
-        out_ << "    pop rdx\n";
-        out_ << "    mov "; operand(res); out_ << ", rax\n";
-*/
-        return;
+
+    if (res == r2) { // res <- res + r2
+        add(res, r2);
+    } else if (res == r2) { // res <- r1 + res
+        add(res, r1);
+    } else { // res <- r1 + r2
+        mov(res, r1); 
+        add(res, r2);
     }
+}
 
-    uint8_t op = 0;
-    switch (inst.opcode()) {
-    case ADD: op = 0x03; break;
-    case SUB: op = 0x2b; break;
-    //case MUL: name = (res.is_float() ? "mulsd" : "imul"); break;
-    //case DIV: name = (res.is_float() ? "divsd" : "div"); break;
-    default: assert(false);
+void Intel64Generator::sub(RegisterId res, RegisterId r1, RegisterId r2) {
+    assert(!res.is_float()&&"Not implemented");
+
+    if (res == r2) { // res <- res - r2
+        sub(res, r2);
+    } else if (res == r2) { // res <- r1 - res
+        neg(res);
+        add(res, r1);
+    } else { // res <- r1 - r2
+        mov(res, r1);
+        sub(res, r2); 
     }
+}
 
-    // r10 <- rbx - rdi
+void Intel64Generator::mul(RegisterId res, RegisterId r1, RegisterId r2) {
+    assert(!res.is_float()&&"Not implemented");
 
-    // mov r10, rbx
-    // sub r10, rdi 
-
-    if (res.reg() == r1.reg()) {
-        // t1 <- t1 - t2
-        instr(op, r1.reg(), r2.reg());
-    } else if (res.reg() != r2.reg()) {
-        // t1 <- t2 - t3
-        mov(res.reg(), r1.reg()); 
-        instr(op, res.reg(), r2.reg());
-    } else if (inst.opcode() == ADD || inst.opcode() == MUL) {
-        // t1 <- t2 + t1
-        instr(op, r2.reg(), r1.reg()); 
-    } else if (inst.opcode() == SUB) {
-        // t1 <- t2 - t1 goes to t1 <- -t1 + t2; t1 <- -t1 
-        neg(r1.reg());
-        add(r1.reg(), r2.reg());
-    } else {
-        // t1 <- t2 / t1 
-        //instr("push", r2);
-        //instr(name, r2, r1);
-        //instr((res.is_float() ? "movsd" : "mov"), r1, r2);
-        //instr("pop", r2);        
-        assert(!"Not implemented");
+    if (res == r2) { // res <- res * r2
+        imul(res, r2);
+    } else if (res == r2) { // res <- r1 * res
+        imul(res, r1);
+    } else { // res <- r1 + r2
+        mov(res, r1); 
+        imul(res, r2);
     }
+}
+
+void Intel64Generator::div(RegisterId res, RegisterId r1, RegisterId r2) {
+    assert(!res.is_float()&&"Not implemented");
+
+    push(RDX);
+    mov(RAX, r1);
+    cqo();  
+    idiv(r2);
+    pop(RDX);
+    mov(res, RAX);
+}
+
+void Intel64Generator::imul(RegisterId reg, RegisterId rm) {
+    instr(0x0f, 0xaf, reg, rm);
+}
+
+void Intel64Generator::idiv(RegisterId reg) {
+    instr(0xf7, 0x07, reg);
 }
 
 void Intel64Generator::neg(RegisterId reg) {
@@ -521,7 +545,9 @@ void Intel64Generator::bor(RegisterId dst, RegisterId src) {
 
 void Intel64Generator::mov(RegisterId dst, RegisterId src) {
     // Emits a register-register or move instruction.
-    instr(MOV_REG_RM, dst, src);
+    if (dst != src) {
+        instr(MOV_REG_RM, dst, src);
+    }
 }
 
 void Intel64Generator::mov(RegisterId reg, Operand rm) {
@@ -586,10 +612,6 @@ void Intel64Generator::mov(RegisterId reg, uint64_t imm) {
 void Intel64Generator::lea(RegisterId reg, Operand rm) {
     instr(LEA, reg, rm);
 } 
-
-void Intel64Generator::sub(RegisterId dst, uint64_t imm) {
-    instr(0x81, 0x05, dst, imm);
-}
 
 void Intel64Generator::call(Operand target) {
     // Emits a call-label or call-register instruction with target 'target'
@@ -668,21 +690,46 @@ void Intel64Generator::jnz(String* label) {
 
 void Intel64Generator::push(RegisterId reg) {
     assert(reg.id() >= 1 && reg.id() <= 16);
-    uint8_t const regid = reg.id() - 1;
-    text_->uint8(0x50+regid);
+    uint8_t const regid = reg.id()-1;
+    if (is_extended_reg(reg)) {
+        text_->uint8(REX_PREFIX|REX_W|REX_B);
+    }
+    text_->uint8(0x50+(MODRM_RM & regid));
 }
 
-void Intel64Generator::cmp(RegisterId arg1, RegisterId arg2) {
-    instr(0x3b, arg1, arg2);  
+void Intel64Generator::pop(RegisterId reg) {
+    assert(reg.id() >= 1 && reg.id() <= 16);
+    uint8_t const regid = reg.id()-1;
+    if (is_extended_reg(reg)) {
+        text_->uint8(REX_PREFIX|REX_W|REX_B);
+    }
+    text_->uint8(0x58+(MODRM_RM & regid));
 }
 
-void Intel64Generator::test(RegisterId arg1, RegisterId arg2) {
-    instr(0x85, arg1, arg2);  
+void Intel64Generator::cmp(RegisterId dst, RegisterId src) {
+    instr(0x3b, dst, src);  
 }
 
-void Intel64Generator::add(RegisterId arg1, RegisterId arg2) {
-    instr(0x01, arg1, arg2);
+void Intel64Generator::test(RegisterId dst, RegisterId src) {
+    instr(0x85, dst, src);  
 }
+
+void Intel64Generator::add(RegisterId dst, RegisterId src) {
+    instr(0x03, dst, src);
+}
+
+void Intel64Generator::add(RegisterId reg, uint32_t imm) {
+    instr(0x81, 0x00, reg, imm);
+}
+
+void Intel64Generator::sub(RegisterId dst, RegisterId src) {
+    instr(0x2b, dst, src);
+}
+
+void Intel64Generator::sub(RegisterId dst, uint64_t imm) {
+    instr(0x81, 0x05, dst, imm);
+}
+
 
 void Intel64Generator::leave() {
     text_->uint8(0xc9);
@@ -690,4 +737,8 @@ void Intel64Generator::leave() {
 
 void Intel64Generator::ret() {
     text_->uint8(0xc3); 
+}
+
+void Intel64Generator::cqo() {
+    text_->uint8(0x99);
 }
