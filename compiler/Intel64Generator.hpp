@@ -52,12 +52,15 @@ public:
     static RegisterId const RSP;
     static RegisterId const RBP;
     static RegisterId const RDX;
+    static RegisterId const R13;
     static RegisterId const R15;
     static RegisterId const XMM0;
     static RegisterId const XMM15;
 
     static uint8_t const MOV_RM_REG = 0x89;
     static uint8_t const MOV_REG_RM = 0x8b;
+    static uint8_t const MOVSD_RM_REG = 0x11;
+    static uint8_t const MOVSD_REG_RM = 0x10;
     static uint8_t const MOV_IMM = 0xb8;
     static uint8_t const MODRM_DIRECT = 0xc0;
     static uint8_t const MODRM_DISP8 = 0x40; // 0100 0000
@@ -77,15 +80,25 @@ public:
 
 private:
     void string(String::Ptr lit);
-    void instr(uint8_t op, uint8_t ext, RegisterId reg, uint32_t imm);
-    void instr(uint8_t op, uint8_t ext, RegisterId reg);
-    void instr(uint8_t op, RegisterId reg, RegisterId rm);
-    void instr(uint8_t op, RegisterId reg, String* label);
-    void instr(uint8_t op, RegisterId reg, Operand mem);
-    void instr2op(uint8_t op, RegisterId reg, RegisterId rm);
+    // Instruction formats for general-purpose registers
+    void gp(uint8_t op, uint8_t ext, RegisterId reg, uint32_t imm);
+    void gp(uint8_t op, uint8_t ext, RegisterId reg);
+    void gp(uint8_t op, RegisterId reg, RegisterId rm);
+    void gp(uint8_t op, RegisterId reg, String* label);
+    void gp(uint8_t op, RegisterId reg, Operand mem);
+    void gp2op(uint8_t op, RegisterId reg, RegisterId rm);
+    
+    // Instruction formats for SSE registers
     void ssesd(uint8_t op, RegisterId reg, RegisterId rm);
+    void ssesd(uint8_t op, RegisterId reg, Operand mem);
+
+    // Helper functions for the above instruction formats
     void rex(RegisterId reg, RegisterId rm);
     void modrm(uint8_t mod, RegisterId reg, RegisterId rm);
+    void modrm(uint8_t mod, uint8_t reg, uint8_t rm);
+    void operands(RegisterId reg, Operand rm);
+
+    // Helpers for more complex IR opcodes
     void load(RegisterId res, Operand a1);
     void store(Operand a1, Operand a2);
     void add(RegisterId res, RegisterId a1, RegisterId a2);
@@ -94,6 +107,7 @@ private:
     void div(RegisterId res, RegisterId a1, RegisterId a2);
     void stack_check(Function* func);
 
+    // Functions for actual x86-64 instructions mnemonics
     void lea(RegisterId reg, RegisterId rm);
     void mov(RegisterId reg, RegisterId rm);
     void mov(RegisterId reg, Operand rm);
@@ -116,6 +130,9 @@ private:
     void jmp(String* label);
     void call(Operand target);
     void movsd(RegisterId dst, RegisterId src);
+    void movsd(Operand rm, RegisterId reg);
+    void movsd(RegisterId reg, Operand rm);
+    void movq(RegisterId dst, RegisterId src);
     void lea(RegisterId dst, Operand op);
     void bnot(RegisterId src);
     void band(RegisterId dst, RegisterId src);

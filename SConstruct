@@ -21,8 +21,8 @@ VariantDir('build/runtime', 'runtime', duplicate=0)
 build_dir = os.path.join('build', 'runtime')
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(ENV = os.environ)
-env.Append(APFLAGS = '-v -m -i runtime --build-dir ' + build_dir)
-env.Append(APFLAGS = ' --no-default-libs') # -g Intel64')
+env.Append(APFLAGS = '-m -i runtime --build-dir ' + build_dir)
+env.Append(APFLAGS = ' --no-default-libs -g Intel64')
 
 build_mode = ARGUMENTS.get('mode', 'debug')
 stack_size = '8192'
