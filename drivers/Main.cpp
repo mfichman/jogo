@@ -51,5 +51,6 @@ int main(int argc, char** argv) {
     Environment::Ptr env(new Environment());
     Options(env, argc, argv);
     Builder::Ptr builder(new Builder(env));
-    return builder->errors();
+    exit(builder->errors());
+    return 1;
 }

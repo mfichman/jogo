@@ -30,8 +30,8 @@ def check(test, expected, output):
     # Checks to make sure the output for the test matches the expected output.
     expected = expected.replace('\r', '')
     output = output.replace('\r', '')
-    result = [test] 
     if output != expected:
+        result = []
         result.append(''.join(['-' for i in range(79)]))
         result.append('FAILED: ' + test)
         result.append(''.join(['-' for i in range(79)]))
@@ -47,8 +47,7 @@ def check(test, expected, output):
         result = '\n'.join(result)
         return (FAIL, result)
     else:
-       result = '\n'.join(result)
-       return (PASS, result)
+        return (PASS, test)
 
 def shell(command, check=False):
     # Runs 'command' and returns the result.  Sets the 'fail' flag if the 
@@ -76,29 +75,35 @@ def jogo_test(test):
             flags += ' -e'
             run = True
         
-    flags += ' --build-dir ../build/test --optimize  -g Intel64 -o '
-    flags += ' ../bin/test/' + test.lower()
-    command = '../bin/jogo ' + test + ' -i ../runtime -i ../lib ' + flags
-    if options.full:
-        valgrind = 'valgrind -q --leak-check=full --track-origins=yes'
-        valgrind += ' --suppressions=../scripts/valgrind.supp'
-        command = valgrind + ' ' + command
+    flags += ' --build-dir ../build/test -o ../bin/test/%s' % (test.lower())
+    command = '../bin/jogo %s -i ../runtime -i ../lib %s' % (test, flags)
     expected = open(test + '.jg.out', 'rb').read() 
     if sys.platform == 'win32':
         command = command.replace('/', '\\')
-    output = shell(command + ' 2>&1', run)
-    result = check(test+'.jg', expected, output)
-    if result[0] == FAIL:
-        return result
 
-    return result
-    #command += ' -g Intel64'
-    #output = shell(command + ' 2>&1', run)
-    #return check(test+'.jg', expected, output)
+    if run and options.full:
+        configs = [
+            "-g Nasm64", "-g Nasm64 --optimize",
+            "-g Intel64", "-g Intel64 --optimize",
+        ]
+    else:
+        configs = ["-g Intel64 --optimize"]
+
+    message = []
+    status = PASS
+    for config in configs:
+        output = shell('%s %s 2>&1' % (command, config), run)
+        result = check('%s.jg %s' % (test, config), expected, output)
+        if result[0] == FAIL:
+            status = FAIL
+            message.append(result[1])
+    if status == PASS:
+        message = ['%s.jg' % test]
+    return (status, '\n'.join(message))
     
 
 def python_test(test):
-    # Run a Python test.  Useful for various msicellaneous tests that are not
+    # Run a Python test.  Useful for various miscellaneous tests that are not
     # easily expressed in C++.
     expected = open(test + '.out', 'r').read()
     output = shell('python ' + test + ' 2>&1')
@@ -182,14 +187,14 @@ if len(tests) == 0:
 # Iterate through all the tests, and run the correct callback for each test
 # type.
 if options.serial or platform.system() == "Windows":
-   for test in tests:
-       print_result(any_test(test))
+    for test in tests:
+        print_result(any_test(test))
 else:
-   pool = multiprocessing.Pool(multiprocessing.cpu_count() * 2)
-   for test in tests:
-       pool.apply_async(any_test, [test], callback=print_result)
-   pool.close()
-   pool.join()
+    pool = multiprocessing.Pool(multiprocessing.cpu_count() * 2)
+    for test in tests:
+        pool.apply_async(any_test, [test], callback=print_result)
+    pool.close()
+    pool.join()
 
 if failed > 0:
     # Finally, check for errors.  If there was an error, exit with code 1 to

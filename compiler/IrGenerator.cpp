@@ -681,7 +681,7 @@ void IrGenerator::operator()(Function* feature) {
     }
 
     // If this is main(), then emit the code to load constants.
-    if (feature->qualified_name()->string() == "Boot::main") {
+    if (feature->label()->string() == "Boot_main") {
         constants();
     }
 
