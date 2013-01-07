@@ -4,7 +4,7 @@ Jogo Compiler
 Jogo is a compiler for an experimental programming language.
 
 * Quick Tour: https://github.com/mfichman/jogo/wiki/Quick-Tour-of-the-Jogo-Programming-Language
-* Tutorial: https://github.com/mfichman/jogo/wiki
+* Wiki: https://github.com/mfichman/jogo/wiki
 
 Downloads
 ---------
