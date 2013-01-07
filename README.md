@@ -25,6 +25,4 @@ Testing
 -------
 
 1. Install [python](http://www.python.org)
-2. Install [valgrind](http://www.valgrind.org)
-3. Install [nasm](http://www.nasm.us/pub/nasm/releasebuilds/2.09.10/)
-4. Run "scons check" or "scons test"
+4. Run "scons check"
