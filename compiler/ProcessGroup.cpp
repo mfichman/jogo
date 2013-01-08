@@ -25,7 +25,9 @@
 
 void ProcessGroup::process(std::string const& args) {
 #ifdef WINDOWS
-#error Not implemented
+    if (system(args.c_str())) {
+        errors_++;
+    }
 #else
     pid_t pid = fork();
     if (pid < 0) {
@@ -47,7 +49,6 @@ void ProcessGroup::wait() {
     // Wait for all child processes to complete.  Records the number of child
     // errors; these errors are stored in the 'errors' attribute.
 #ifdef WINDOWS
-#error Not implemented
 #else
     for (size_t i = 0; i < process_.size(); ++i) {
         while (true) {

@@ -35,11 +35,8 @@
 #include "SemanticAnalyzer.hpp"
 #include "Parser.hpp"
 #include "OutputFormat.hpp"
-#if defined(DARWIN)
 #include "Mach64Output.hpp"
-#elif defined(WINDOWS)
-#elif defined(LINUX
-#endif
+#include "Coff64Output.hpp"
 
 #include <cstdlib>
 
@@ -304,7 +301,7 @@ void Builder::link(const std::string& in, const std::string& out) {
 
     // Output link options for libraries and module dependencies.
 #ifdef WINDOWS
-    ss << in << " /OUT:" << out;
+    ss << in << " /DEBUG /OUT:" << out;
 #else
     ss << in << "-o " << out;
 #endif
@@ -434,23 +431,23 @@ void Builder::intel64gen(File* file) {
     }
 #if defined(DARWIN)
     OutputFormat::Ptr format(new Mach64Output);
-    intel64gen->format(format);
-    intel64gen->operator()(file);
 #elif defined(WINDOWS)
-    assert(!"Not supported");
+    OutputFormat::Ptr format(new Coff64Output);
 #elif defined(LINUX)
     assert(!"Not supported");
 #endif
+    intel64gen->format(format);
+    intel64gen->operator()(file);
 }
 
 void Builder::cc(const std::string& in, const std::string& out) {
     // Compiles a single C source file, and outputs the result to 'out.'
     std::stringstream ss;
 #if defined(WINDOWS)
-    ss << "cl.exe " << in << " /nologo /c /TC /Fo\"" << out << "\"";
+    ss << "cl.exe " << in << " /nologo /Zi /c /Fo\"" << out << "\"";
     if (env_->optimize()) {
         ss << " /O2";
-    }
+    } 
     ss << " /DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
     if (!env_->verbose()) {
         ss << " > NUL";
@@ -489,9 +486,6 @@ void Builder::cc(const std::string& in, const std::string& out) {
         Stream::stout()->flush();
     }
     procs_.process(ss.str());
-    //if (system(ss.str().c_str())) {
-    //    errors_++;
-    //} 
 }
 
 void Builder::nasm(const std::string& in, const std::string& out) {

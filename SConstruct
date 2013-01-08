@@ -21,8 +21,8 @@ VariantDir('build/runtime', 'runtime', duplicate=0)
 build_dir = os.path.join('build', 'runtime')
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(ENV = os.environ)
-env.Append(APFLAGS = '-m -i runtime --build-dir ' + build_dir)
-env.Append(APFLAGS = ' --no-default-libs -g Intel64 ')
+env.Append(JGFLAGS = '-m -i runtime --build-dir ' + build_dir)
+env.Append(JGFLAGS = ' --no-default-libs -g Intel64 ')
 
 build_mode = ARGUMENTS.get('mode', 'debug')
 stack_size = '8192'
@@ -32,7 +32,7 @@ revision = '0'
 version = major_version + '.' + minor_version + '.' + revision
 
 if 'release' == build_mode:
-    env.Append(APFLAGS = '--optimize')
+    env.Append(JGFLAGS = '--optimize')
 
 # OS X-specific build settings ###############################################
 if env['PLATFORM'] == 'darwin':
@@ -125,7 +125,9 @@ library_src = ' '.join([
 ])
 
 coroutine = env.NASM('build/runtime/Coroutine.Intel64.asm')
-lib = env.Command('jglib', jogo, '%s $APFLAGS -o lib/Jogo %s' % (jogo_cmd, library_src))
+
+jogo_lib = os.path.join('lib', 'Jogo')
+lib = env.Command('jglib', jogo, '%s $JGFLAGS -o %s %s' % (jogo_cmd, jogo_lib, library_src))
 env.Depends(lib, jogo)
 env.Depends(lib, coroutine)
 
@@ -163,7 +165,7 @@ dpkg = 'dpkg -b dist/root jogo-' + version + '.deb'
 #    --define="_topdir /dist/root
 
 if 'doc' in COMMAND_LINE_TARGETS:
-    doc = env.Command('doc', jgdoc, 'bin/jgdoc $APFLAGS -o wiki ' + library_src)
+    doc = env.Command('doc', jgdoc, 'bin/jgdoc $JGFLAGS -o wiki ' + library_src)
     env.Depends(doc, jogo)
     env.Depends(doc, coroutine)
     env.Depends(doc, lib)  

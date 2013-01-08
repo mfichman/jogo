@@ -37,7 +37,8 @@ int report_hook(int, char* message, int*) {
     // Prevents an annoying assertion dialog from popping up in debug mode if
     // the process crashes.
     std::cerr << message << std::endl;
-    exit(1);
+    int* zero = 0;
+    *zero;
     return true;
 }
 #endif
