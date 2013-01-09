@@ -32,7 +32,7 @@ class Section : public Object {
 public:
     typedef Pointer<Section> Ptr;
     int bytes() const { return buffer_.size(); }
-    uint8_t const* text() const { return &buffer_[0]; }
+    uint8_t const* text() const { return buffer_.size() ? &buffer_.front() : 0; }
     void uint64(uint64_t val);
     void uint32(uint32_t val);
     void uint16(uint16_t val);

@@ -277,6 +277,7 @@ uint8_t Intel64Generator::reg_code(RegisterId id) const {
         return id.id() - XMM0.id();
     } else {
         assert(!"Invalid RegisterId");
+        return 0;
     }
 }
 
