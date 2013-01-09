@@ -439,13 +439,15 @@ void Builder::intel64gen(File* file) {
     }
 #if defined(DARWIN)
     OutputFormat::Ptr format(new Mach64Output);
+    intel64gen->format(format);
+    intel64gen->operator()(file);
 #elif defined(WINDOWS)
     OutputFormat::Ptr format(new Coff64Output);
+    intel64gen->format(format);
+    intel64gen->operator()(file);
 #elif defined(LINUX)
     assert(!"Not supported");
 #endif
-    intel64gen->format(format);
-    intel64gen->operator()(file);
 }
 
 void Builder::cc(const std::string& in, const std::string& out) {

@@ -68,7 +68,7 @@ public:
     static uint8_t const MODRM_INDIRECT = 0x00; // 1000 0000
     static uint8_t const MODRM_REG = 0x38;
     static uint8_t const MODRM_RM = 0x07;
-    static uint8_t const NOP = 0x90;
+    static uint8_t const XNOP = 0x90;
     static uint8_t const LEA = 0x8d; // Load effective address
     static uint8_t const REX_PREFIX = 0x40;
     static uint8_t const REX_W = 0x08; // 64-bit operand 

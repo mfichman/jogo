@@ -80,7 +80,7 @@ public:
     void is_input_file(bool input) { is_input_file_ = input; }
     void is_output_file(bool output) { is_output_file_ = output; }
     typedef Pointer<File> Ptr;
-    typedef Iterator<File> Itr;
+    typedef ::Iterator<File> Itr;
 
     class Iterator;
     static bool is_dir(const std::string& file);
