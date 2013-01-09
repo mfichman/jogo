@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
-import os, sys, sets, shutil
+import shutil
+import os
+import sys
 
 def mkdir_p(path):
     # Make a directory, and ignore the error if the directory already exists.
@@ -14,7 +16,7 @@ def setup_vim():
     # Write default VIM options to the .vimrc file.  Be sure to preserve any
     # existing options, and remove duplicates.
     home = os.path.expanduser('~')
-    options = sets.Set()
+    options = set()
     try:
         for line in open(os.path.join(home, '.vimrc')):
             options.add(line.strip())
@@ -74,10 +76,10 @@ def setup_deps():
     # Install all dependencies needed for development
     print('Installing dependencies')
     if os.system('which apt-get') == 0:
-        os.system('sudo apt-get install scons valgrind vim nasm g++')
+        os.system('sudo apt-get install scons vim nasm g++')
         os.system('sudo easy_install boto')
     elif os.system('which yum') == 0:
-        os.system('sudo yum install scons valgrind vim nasm g++')
+        os.system('sudo yum install scons vim nasm g++')
         os.system('sudo easy_install boto')
     elif os.system('which brew') == 0:
         os.system('brew install scons')
