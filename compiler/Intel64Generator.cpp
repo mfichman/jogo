@@ -20,8 +20,10 @@
  * IN THE SOFTWARE.
  */  
 
+#define __STDC_LIMIT_MACROS
 #include "Intel64Generator.hpp"
-
+#include <cstdlib>
+#include <stdint.h>
 
 #ifdef WINDOWS
 #define atoll _atoi64
@@ -74,7 +76,7 @@ void Intel64Generator::operator()(File* file) {
     }
     string_.clear();
 
-    text_->align(machine_->word_size(), NOP);
+    text_->align(machine_->word_size(), XNOP);
     data_->align(machine_->word_size());
     format_->out(out_);
 }

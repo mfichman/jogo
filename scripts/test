@@ -13,7 +13,7 @@ import difflib
 import multiprocessing
 import platform
 
-parser = optparse.OptionParser()
+parser = optparse.OptionParser(description="Run compiler and runtime tests.")
 parser.add_option('-f', '--full', action='store_true', 
     help='Run all tests, including memcheck')
 parser.add_option('-v', '--verbose', action='store_true',  

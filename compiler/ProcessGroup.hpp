@@ -25,11 +25,14 @@
 #include <string>
 #include <vector>
 
-#ifdef WINDOWS
+#if defined(WINDOWS)
 #include <windows.h>
-#else
+#elif defined(DARWIN)
 #include <unistd.h>
+#else
+#include <sys/wait.h>
 #endif
+#include <cstdlib>
 
 /* Tracks the execution of a group of processes */
 class ProcessGroup {
