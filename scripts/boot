@@ -1,0 +1,27 @@
+#!/usr/bin/python
+
+# This script checks out the Jogo git repo and then builds the software and
+# runs the tests.  In general, it is usually called by the vmtest script, but
+# it can also be run manually.  Git and Python must be installed to run this
+# script, but those are the only dependencies.
+
+import optparse
+import os
+import sys
+from subprocess import *
+
+parser = optparse.OptionParser(description='Bootstrap the workspace and run tests')
+(options, test) = parser.parse_args()
+
+gitrepo = 'git://github.com/mfichman/jogo.git'
+
+check_call(['apt-get', 'install', '-y', 'git'])
+os.chdir(os.path.expanduser('~'))
+if os.path.exists('jogo'):
+    os.chdir('jogo')
+    check_call(['git', 'pull'])
+else:
+    check_call(['git', 'clone', gitrepo])
+    os.chdir('jogo')
+check_call(['python', 'scripts/setup'])
+check_call(['scons', 'check'])

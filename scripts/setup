@@ -76,10 +76,10 @@ def setup_deps():
     # Install all dependencies needed for development
     print('Installing dependencies')
     if os.system('which apt-get') == 0:
-        os.system('sudo apt-get install scons vim nasm g++')
+        os.system('sudo apt-get -y install scons vim nasm g++ python-setuptools')
         os.system('sudo easy_install boto')
     elif os.system('which yum') == 0:
-        os.system('sudo yum install scons vim nasm g++')
+        os.system('sudo yum -y install scons vim nasm g++')
         os.system('sudo easy_install boto')
     elif os.system('which brew') == 0:
         os.system('brew install scons')
