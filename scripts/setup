@@ -40,9 +40,11 @@ def setup_vim():
     options.add('set guioptions-=L')
     options.add('set guioptions-=l')
     options.add('set guioptions-=b')
+    if sys.platform == 'win32':
+        options.add('set bs=2') 
 
     with open(os.path.join(home, '.vimrc'), 'w') as f:
-        f.write('\n'.join(options))
+        f.write('\n'.join(sorted(options)))
 
     # Write the other vim files (syntax, colors, etc).
     vimhome = ''
