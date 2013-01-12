@@ -118,7 +118,7 @@ Int Io_Stream_result(Io_Stream self, Int bytes) {
     // Calling this method also increments the reference count, to retain the
     // coroutine so that it won't be collected while an I/O event is
     // outstanding. 
-#if defined(WINDOWS)
+#ifdef WINDOWS
     HANDLE handle = (HANDLE)self->handle;
 	Bool is_console = (Io_StreamType_CONSOLE == self->type);
 	Bool has_io = (Io_StreamMode_ASYNC == self->mode) && !is_console;
@@ -149,28 +149,23 @@ Int Io_Stream_result(Io_Stream self, Int bytes) {
     } else {
         return bytes;
     }
-#elif defined(DARWIN)
+#else
     return 0;
 #endif
 }
 
+#ifdef WINDOWS
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     // Read characters from the stream until 'buffer' is full, an I/O error 
-    // is raised, or the end of the input is reached.
-
+    // is raised, or the end of the input is reached (Windows impl)
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->capacity - buffer->end;
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
-#ifdef WINDOWS
     DWORD read = 0;
     HANDLE handle = (HANDLE)self->handle;
     Int ret = 0;
-#endif
-    
     if (self->status == Io_StreamStatus_EOF) { return; }
-
-#ifdef WINDOWS
 
     // Read from the file, async or syncronously
     if (is_blocking && !is_console) {
@@ -188,8 +183,29 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 	read = Io_Stream_result(self, read);
     self->op.overlapped.Offset += read;
     buffer->end += read;
-#else
+}
+#endif
+
+#ifdef LINUX
+void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
+    // Read characters from the stream until 'buffer' is full, an I/O error 
+    // is raised, or the end of the input is reached (Linux impl)
+    assert(!"Not implemented");
+}
+#endif
+
 #ifdef DARWIN
+void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
+    // Read characters from the stream until 'buffer' is full, an I/O error 
+    // is raised, or the end of the input is reached (Darwin impl)
+    Byte* buf = buffer->data + buffer->begin;
+    Int len = buffer->capacity - buffer->end;
+    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
+    Bool is_console = (Io_StreamType_CONSOLE == self->type);
+    
+    if (self->status == Io_StreamStatus_EOF) { return; }
+
+    // Wait for the fd to be ready, and then do the read.
     if(!is_blocking && !is_console) {
         struct kevent ev;
         Int kqfd = Io_manager()->handle;
@@ -203,7 +219,6 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         }
         Coroutine__iowait();
     }
-#endif
 
     Int ret = read(self->handle, buf, len);
     if (ret == 0) {
@@ -217,18 +232,17 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
             self->status = Io_StreamStatus_EOF;
         }
     }
-#endif
 }
+#endif
 
+#ifdef WINDOWS
 void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
     // Write characters from the buffer into the stream until 'buffer' is full,
-    // an I/O error is raised, or the stream is closed.
-
+    // an I/O error is raised, or the stream is closed (Windows impl).
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->end - buffer->begin;
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
-#ifdef WINDOWS
     HANDLE handle = (HANDLE)self->handle;
     DWORD written = 0;
     // Write to the file, async or synchronously
@@ -248,8 +262,25 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
     written = Io_Stream_result(self, written);
     self->op.overlapped.Offset += written; 
     buffer->begin += written;
-#else
+}
+#endif
+
+#ifdef LINUX
+void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
+    // Write characters from the buffer into the stream until 'buffer' is full,
+    // an I/O error is raised, or the stream is closed (Linux impl).
+    assert(!"Not implemented");
+}
+#endif
+
 #ifdef DARWIN
+void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
+    // Write characters from the buffer into the stream until 'buffer' is full,
+    // an I/O error is raised, or the stream is closed (Darwin impl).
+    Byte* buf = buffer->data + buffer->begin;
+    Int len = buffer->end - buffer->begin;
+    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
+    Bool is_console = (Io_StreamType_CONSOLE == self->type);
     if(!is_blocking && !is_console) {
         struct kevent ev;
         Int kqfd = Io_manager()->handle;
@@ -263,7 +294,6 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
         }
         Coroutine__iowait();
     }
-#endif
 
     Int ret = write(self->handle, buf, len);
     if (ret == -1) {
@@ -272,8 +302,8 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
     } else {
         buffer->begin += ret;
     }
-#endif
 }
+#endif
 
 Int Io_Stream_get(Io_Stream self) {
     // Read a single character from the stream.  Returns EOF if the end of the

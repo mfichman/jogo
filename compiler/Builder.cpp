@@ -37,6 +37,7 @@
 #include "OutputFormat.hpp"
 #include "Mach64Output.hpp"
 #include "Coff64Output.hpp"
+#include "Elf64Output.hpp"
 
 #include <cstdlib>
 
@@ -439,15 +440,13 @@ void Builder::intel64gen(File* file) {
     }
 #if defined(DARWIN)
     OutputFormat::Ptr format(new Mach64Output);
-    intel64gen->format(format);
-    intel64gen->operator()(file);
 #elif defined(WINDOWS)
     OutputFormat::Ptr format(new Coff64Output);
+#elif defined(LINUX)
+    OutputFormat::Ptr format(new Elf64Output);
+#endif
     intel64gen->format(format);
     intel64gen->operator()(file);
-#elif defined(LINUX)
-    assert(!"Not supported");
-#endif
 }
 
 void Builder::cc(const std::string& in, const std::string& out) {

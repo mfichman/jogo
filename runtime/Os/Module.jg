@@ -18,6 +18,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+error() native Int {
+    # Returns the last os-level error.  This aliases to errno on Unix-like
+    # systems, and GetLastError on Windows systems.
+}
+
 strerror(error Int) native String {
     # Given an OS-level error code, returns a message describing the error.
 }

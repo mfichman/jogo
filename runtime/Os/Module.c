@@ -57,3 +57,13 @@ String Os_strerror(Int error) {
     Boot_abort();
     return 0;
 }
+
+Int Os_error() {
+    // Returns the last OS-level error
+#ifdef WINDOWS
+    return GetLastError();
+#else
+    return errno;
+#endif
+}
+

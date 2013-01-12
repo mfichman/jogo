@@ -35,8 +35,7 @@ Coff64Output::Coff64Output() :
     string_->uint8(0); // ?
 }
 
-void
-Coff64Output::ref(String* label, RelocType rtype) {
+void Coff64Output::ref(String* label, RelocType rtype) {
     // Refer to a symbol by name at the current text/data output location.
     // This function adds an entry to the relocation table.  The size can be
     // either 4 or 8 bytes.  A 4-byte entry indicates the instruction uses
@@ -87,8 +86,7 @@ Coff64Output::ref(String* label, RelocType rtype) {
     }
 }
 
-void
-Coff64Output::sym(String* label, SymType type) {
+void Coff64Output::sym(String* label, SymType type) {
     // Finds the symbol table entry for 'label' and updates it to the current
     // offset of the text segment.
     std::map<String::Ptr,size_t>::iterator i = symbol_.find(label);
@@ -121,8 +119,7 @@ Coff64Output::sym(String* label, SymType type) {
     } 
 }
 
-void
-Coff64Output::out(Stream* out) {
+void Coff64Output::out(Stream* out) {
     // Writes out the full text of the object file format to the given stream.
 
     IMAGE_FILE_HEADER header;
