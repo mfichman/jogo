@@ -62,6 +62,7 @@ Io_Manager Io_Manager__init() {
 #elif defined(DARWIN)
     ret->handle = (Int)kqueue();
 #else
+    assert(!"Not implemented");
     ret->handle = 0;
 #endif
     return ret;

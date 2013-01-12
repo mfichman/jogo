@@ -60,19 +60,6 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     // a call to ConnectEx before the wait() on the I/O completion port,
     // whereas the wait() happens before the call to connect() on Unix systems.
     int sd = 0;
-    int ret = 0;
-    struct sockaddr_in sin;
-#ifdef WINDOWS
-    // Initialize a bunch of Windows-specific crap needed to load a pointer to
-    // the ConnectEx function...
-    DWORD code = SIO_GET_EXTENSION_FUNCTION_POINTER;
-    GUID guid = WSAID_CONNECTEX;
-    LPFN_CONNECTEX ConnectEx = 0;
-    DWORD bytes = 0; 
-    DWORD len = sizeof(ConnectEx);
-    Io_Overlapped op;
-    OVERLAPPED* evt = &op.overlapped;
-#endif
     assert(addr && "Invalid null argument");
     Socket_Addr__copy(&self->peer, addr);
 
@@ -90,19 +77,34 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     // Call the Io::Stream constructor.  This will associate the socket with an
-    // I/O completion port, which is necessary for the ConnectEx call below.
+    // I/O completion port, which is necessary for the ConnectEx call.
     self->stream = Io_Stream__init(sd, Io_StreamType_SOCKET);
     Io_Stream_mode__s(self->stream, Io_StreamMode_ASYNC);
     if (sd < 0) {
         self->stream->status = Io_StreamStatus_ERROR;
-#ifdef WINDOWS
-        self->stream->error = GetLastError();     
-#else
-        self->stream->error = errno;
-#endif
+        self->stream->error = Os_error();
         return;
     }
+    Socket_Stream_connect(self);
+} 
+
 #ifdef WINDOWS
+void Socket_Stream_connect(Socket_Stream self) {
+    // Windows version of connect() 
+
+    // Initialize a bunch of Windows-specific crap needed to load a pointer to
+    // the ConnectEx function...
+    DWORD code = SIO_GET_EXTENSION_FUNCTION_POINTER;
+    GUID guid = WSAID_CONNECTEX;
+    LPFN_CONNECTEX ConnectEx = 0;
+    DWORD bytes = 0; 
+    DWORD len = sizeof(ConnectEx);
+    Io_Overlapped op;
+    OVERLAPPED* evt = &op.overlapped;
+    SOCKET sd = (SOCKET)self->stream->handle;
+    int ret = 0;
+    struct sockaddr_in sin;
+
     // Get a pointer to the ConnectEx() function.  Sigh.  Windows.  This 
     // function never blocks, however, so we don't have to worry about I/O 
     // completion ports.
@@ -143,17 +145,29 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
             return;
         }
     }
+}
+#endif
 
-#else
+#ifdef LINUX
+void Socket_Stream_connect(Socket_Stream self) {
+    // Linux version of connect()
+
+    assert(!"Not implemented");
+}
+#endif
+
+#ifdef DARWIN
+void Socket_Stream_connect(Socket_Stream self) {
+    // OS X version of connect
+    int sd = (int)self->stream->handle;
+    int ret = 0;
+    struct sockaddr_in sin;
+
     // Set the socket in non-blocking mode, so that the call to connect() below
     // does not block.
     if (fcntl(sd, F_SETFL, O_NONBLOCK) < 0) {
         self->stream->status = Io_StreamStatus_ERROR;
-#ifdef WINDOWS
-        self->stream->error = GetLastError();
-#else
         self->stream->error = errno;
-#endif
         return;
     }
 
@@ -186,7 +200,5 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     if (ret < 0) {
         self->stream->error = errno;
     }
-    
+}
 #endif
-} 
-

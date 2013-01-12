@@ -49,4 +49,8 @@ Stream < Object {
         # This function will block the current coroutine until the connection 
         # succeeds or fails.
     }
+    
+    connect() private native {
+        # Platform-specific socket connection implementation.
+    }
 }

@@ -20,26 +20,12 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef JOGO_SOCKET_STREAM_H
-#define JOGO_SOCKET_STREAM_H
+#ifndef JOGO_OS_MODULE_H
+#define JOGO_OS_MODULE_H
 
-#include "Primitives.h"
-#include "Io/Stream.h"
-#include "Socket/Module.h"
-#include "Coroutine.h"
+#include "String.h"
 
-typedef struct Socket_Stream* Socket_Stream;
-struct Socket_Stream {
-    Ptr _vtable;
-    U64 _refcount;
-    Io_Stream stream;
-    struct Socket_Addr addr;
-    struct Socket_Addr peer;
-};
-
-Socket_Stream Socket_Stream__init();
-void Socket_Stream_close(Socket_Stream self);
-void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr);
-void Socket_Stream_connect(Socket_Stream self);
+String Os_strerror(Int error);
+Int Os_error();
 
 #endif

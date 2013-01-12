@@ -22,29 +22,27 @@
 
 #pragma once
 
-#ifdef WINDOWS
-
-#include "Jogo.hpp"
-#include "OutputFormat.hpp"
-#include "Section.hpp"
+#include <OutputFormat.hpp>
+#include <Section.hpp>
 #include <stdint.h>
-#include <winnt.h>
+#include <elf.h>
 #include <fstream>
-#include <vector>
 
-// COFF Header - IMAGE_FILE_HEADER
-// Section Headers - IMAGE_SECTION_HEADER
-// Code 
-// Relocations - IMAGE_RELOCATION
-// Data
-// Relocations - IMAGE_RELOCATION
-// Symbol Table - IMAGE_SYMBOL
-// String Table (immediately after Symbol Table)
+#ifdef LINUX
 
-/* Helps output basic blocks in the Mach-O format */
-class Coff64Output : public OutputFormat {
+// ELF Header - Elf64_Ehdr
+// Program header table (optional) - Elf64_Phdr
+// Section 1
+// Section 2
+// ...
+// section header table - Elf64_Shdr
+// Elf64_Rel - gets addend from the original value of the reloc word
+// Elf64_Rela - explicitly contains the addend
+
+/* Outputs basic blocks in ELF-64 format */
+class Elf64Output : public OutputFormat {
 public:
-    Coff64Output();
+    Elf64Output();
     Section* text() const { return text_; }
     Section* data() const { return data_; }
     void ref(String* name, RelocType rtype);
@@ -52,16 +50,22 @@ public:
     void out(Stream* out);
 
 public:
+    static int const OUT_SECT_NULL = 0;
     static int const OUT_SECT_TEXT = 1;
     static int const OUT_SECT_DATA = 2;
+    static int const OUT_SECT_RELTEXT = 3;
+    static int const OUT_SECT_RELDATA = 4;
+    static int const OUT_SECT_SYMTAB = 5;
+    static int const OUT_SECT_STRTAB = 6;
+    static int const OUT_SECT_LAST = 6;
     Section::Ptr text_;
     Section::Ptr data_;
     Section::Ptr string_;
-
+    
     std::ofstream out_;
-    std::vector<IMAGE_SYMBOL> sym_; // Symbol table
-    std::vector<IMAGE_RELOCATION> text_reloc_; // Relocation table 
-    std::vector<IMAGE_RELOCATION> data_reloc_; // Relocation table 
+    std::vector<Elf64_Sym> sym_; // Symbol table
+    std::vector<Elf64_Rela> text_reloc_; // Relocation table
+    std::vector<Elf64_Rela> data_reloc_; // Relocation table
     std::map<String::Ptr,size_t> symbol_;
 };
 
