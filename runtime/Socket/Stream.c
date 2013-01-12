@@ -61,17 +61,17 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     // whereas the wait() happens before the call to connect() on Unix systems.
     int sd = 0;
     assert(addr && "Invalid null argument");
-    Socket_Addr__copy(&self->peer, addr);
 
     // Check to make sure that the socket isn't already connected to the given
     // address.  If it's connected to a different address, then close the 
     // existing file descriptor and reopen a new connection.
-    if (self->stream && Socket_Addr__equals(&self->addr, addr)) { return; }
+    if (self->stream && Socket_Addr__equals(&self->peer, addr)) { return; }
     if (self->stream) {
         Io_Stream_close(self->stream);
         Object__refcount_dec((Object)self->stream);
         self->stream = 0;
     }
+    Socket_Addr__copy(&self->peer, addr);
 
     // Allocate a socket
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -175,8 +175,8 @@ void Socket_Stream_connect(Socket_Stream self) {
     // when the connection is complete.
     memset(&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = htonl(addr->ip);
-    sin.sin_port = htons(addr->port);
+    sin.sin_addr.s_addr = htonl(self->peer.ip);
+    sin.sin_port = htons(self->peer.port);
     ret = connect(sd, (struct sockaddr*)&sin, sizeof(sin));
     if (ret < 0 && errno != EINPROGRESS) {
         self->stream->status = Io_StreamStatus_ERROR;

@@ -22,13 +22,13 @@
 
 #pragma once
 
+#ifdef LINUX
+
 #include <OutputFormat.hpp>
 #include <Section.hpp>
 #include <stdint.h>
 #include <elf.h>
 #include <fstream>
-
-#ifdef LINUX
 
 // ELF Header - Elf64_Ehdr
 // Program header table (optional) - Elf64_Phdr
