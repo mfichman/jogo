@@ -50,6 +50,8 @@ public:
     void out(Stream* out);
 
 public:
+    void sort_symtab();
+
     static int const OUT_SECT_NULL = 0;
     static int const OUT_SECT_TEXT = 1;
     static int const OUT_SECT_DATA = 2;
@@ -67,6 +69,7 @@ public:
     std::vector<Elf64_Rela> text_reloc_; // Relocation table
     std::vector<Elf64_Rela> data_reloc_; // Relocation table
     std::map<String::Ptr,size_t> symbol_;
+    size_t local_syms_; 
 };
 
 #endif

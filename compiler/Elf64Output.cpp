@@ -24,6 +24,7 @@
 
 #include "Elf64Output.hpp"
 #include <cassert>
+#include <iostream>
 
 Elf64Output::Elf64Output() :
     text_(new Section),
@@ -80,7 +81,7 @@ void Elf64Output::ref(String* label, RelocType rtype) {
         reloc.r_info = ELF64_R_INFO(symnum, R_X86_64_PC32);
         reloc.r_addend = -sizeof(uint32_t);
         text_reloc_.push_back(reloc);
-    }
+    } 
 }
 
 void Elf64Output::sym(String* label, SymType type) {
@@ -111,11 +112,45 @@ void Elf64Output::sym(String* label, SymType type) {
         assert(!"Unknown section type");
     }
     if (type & SYM_LOCAL) {
-        //sym->st_info = ELF64_ST_INFO(STB_LOCAL, STT_NOTYPE);
-        sym->st_info = ELF64_ST_INFO(STB_GLOBAL, STT_NOTYPE);
+        sym->st_info = ELF64_ST_INFO(STB_LOCAL, STT_NOTYPE);
     } else {
         sym->st_info = ELF64_ST_INFO(STB_GLOBAL, STT_NOTYPE);
     } 
+}
+
+void Elf64Output::sort_symtab() {
+    // With ELF, the local symbols must come first in the symbol table.
+    // Annoying, but true.  As a result, this function is necessary to 
+    // reorder the symbols with the local ones first.
+
+    std::vector<Elf64_Sym> symtmp;
+    std::vector<size_t> redirect(sym_.size());
+    // Mapping from old => new position of the symbol in the symbol table.
+    for (int i = 0; i < sym_.size(); ++i) {
+        if (ELF64_ST_BIND(sym_[i].st_info) == STB_LOCAL) {
+            redirect[i] = symtmp.size(); 
+            symtmp.push_back(sym_[i]);
+        }
+    } 
+    local_syms_ = symtmp.size();
+    for (int i = 0; i < sym_.size(); ++i) {
+        if (ELF64_ST_BIND(sym_[i].st_info) == STB_GLOBAL) {
+            redirect[i] = symtmp.size();
+            symtmp.push_back(sym_[i]);
+        }
+    }
+    for (int i = 0; i < text_reloc_.size(); ++i) {
+        Elf64_Word type = ELF64_R_TYPE(text_reloc_[i].r_info);
+        Elf64_Word sym = redirect[ELF64_R_SYM(text_reloc_[i].r_info)];
+        text_reloc_[i].r_info = ELF64_R_INFO(sym, type);
+    }
+    for (int i = 0; i < data_reloc_.size(); ++i) {
+        Elf64_Word type = ELF64_R_TYPE(data_reloc_[i].r_info);
+        Elf64_Word sym = ELF64_R_SYM(data_reloc_[i].r_info);
+        assert(sym<sym_.size());
+        data_reloc_[i].r_info = ELF64_R_INFO(sym, type);
+    }
+    sym_ = symtmp;
 }
 
 void Elf64Output::out(Stream* out) {
@@ -128,6 +163,8 @@ void Elf64Output::out(Stream* out) {
     Elf64_Shdr reldata;
     Elf64_Shdr symtab;
     Elf64_Shdr strtab;
+
+    sort_symtab(); // Fix local/global symbol ordering
 
     memset(&null, 0, sizeof(null));
     memset(&header, 0, sizeof(header));
@@ -243,7 +280,7 @@ void Elf64Output::out(Stream* out) {
     symtab.sh_size = sizeof(sym_.front())*sym_.size();
     offset += symtab.sh_size;
     symtab.sh_link = OUT_SECT_STRTAB;
-    symtab.sh_info = 3; // FIXME: Should be index of first extern symbol
+    symtab.sh_info = local_syms_;
     symtab.sh_addralign = 4;
     symtab.sh_entsize = sizeof(sym_.front());
 
@@ -273,7 +310,7 @@ void Elf64Output::out(Stream* out) {
     out->write((char*)text_->text(), text_->bytes());
     out->write((char*)data_->text(), data_->bytes());
     out->write((char*)&text_reloc_.front(), text_reloc_.size()*sizeof(text_reloc_.front()));
-    out->write((char*)&data_reloc_.back(), data_reloc_.size()*sizeof(data_reloc_.back()));
+    out->write((char*)&data_reloc_.front(), data_reloc_.size()*sizeof(data_reloc_.back()));
     out->write((char*)&sym_.front(), sym_.size()*sizeof(sym_.front()));
     out->write((char*)string_->text(), string_->bytes());
     out->flush();

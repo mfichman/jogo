@@ -34,18 +34,24 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#ifdef WINDOWS
+#if defined(WINDOWS)
 #include <windows.h>
-#else
+#elif defined(LINUX)
+#include <sys/epoll.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <errno.h>
+#elif defined(DARWIN)
+#include <sys/event.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <errno.h>
 #endif
-#ifdef DARWIN
-#include <sys/event.h>
-#endif
 
+
+#ifdef WINDOWS
 Socket_Stream Socket_Listener_accept(Socket_Listener self) {
     // Waits for a client to connect, then returns a pointer to the established
     // connection.  The code below is a bit tricky, because Windows expects the
@@ -54,7 +60,6 @@ Socket_Stream Socket_Listener_accept(Socket_Listener self) {
     // receive the incoming socket afterwards.
     Socket_Stream stream = 0;
 
-#if defined(WINDOWS)
     // Begin the call to accept() by creating a new socket and issuing a call 
     // to AcceptEx.
     char buffer[(sizeof(struct sockaddr_in)+16)*2];
@@ -98,22 +103,25 @@ Socket_Stream Socket_Listener_accept(Socket_Listener self) {
         }
     }
 
-#elif defined(DARWIN)
-    // Register to wait for a READ event, which signals that we can call 
-    // accept() without blocking.
-    struct kevent ev;
-    int kqfd = Io_manager()->handle;  
-    int fd = self->handle;
-    int flags = EV_ADD|EV_ONESHOT;
-    EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Coroutine__current);
-    int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
+    stream = Socket_Stream__init();
+    stream->stream = Io_Stream__init(sd, Io_StreamType_SOCKET);
+    return stream;
+}
+#endif
+
+#ifdef LINUX
+Socket_Stream Socket_Listener_accept(Socket_Listener self) {
+    // Waits for a client to connect, then returns a pointer to the established
+    // connection.  
+    struct epoll_event ev;
+    Int epfd = Io_manager()->handle;
+    Int fd = self->handle;
+    ev.events = EPOLLIN|EPOLLONESHOT;
+    ev.data.ptr = Coroutine__current;
+    Int ret = epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &ev);
     if (ret < 0) {
         Boot_abort();
     }
-#else
-#endif
-
-#ifndef WINDOWS
     // Wait until the socket becomes readable.  At that point, there will be
     // a peer waiting in the accept queue.
     Coroutine__iowait();
@@ -121,16 +129,48 @@ Socket_Stream Socket_Listener_accept(Socket_Listener self) {
     // Accept the peer, and create a new stream socket.
     struct sockaddr_in sin;
     socklen_t len = sizeof(sin);
-    int sd = accept(self->handle, (struct sockaddr*)&sin, &len);
+    Int sd = accept(self->handle, (struct sockaddr*)&sin, &len);
     if (sd < 0) {
         Boot_abort();
     }  
-#endif
-
-    stream = Socket_Stream__init();
+    Socket_Stream stream = Socket_Stream__init();
     stream->stream = Io_Stream__init(sd, Io_StreamType_SOCKET);
     return stream;
 }
+#endif
+
+#ifdef DARWIN
+Socket_Stream Socket_Listener_accept(Socket_Listener self) {
+    // Waits for a client to connect, then returns a pointer to the established
+    // connection.  
+
+    // Register to wait for a READ event, which signals that we can call 
+    // accept() without blocking.
+    struct kevent ev;
+    Int kqfd = Io_manager()->handle;  
+    Int fd = self->handle;
+    Int flags = EV_ADD|EV_ONESHOT;
+    EV_SET(&ev, fd, EVFILT_READ, flags, 0, 0, Coroutine__current);
+    Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
+    if (ret < 0) {
+        Boot_abort();
+    }
+    // Wait until the socket becomes readable.  At that point, there will be
+    // a peer waiting in the accept queue.
+    Coroutine__iowait();
+
+    // Accept the peer, and create a new stream socket.
+    struct sockaddr_in sin;
+    socklen_t len = sizeof(sin);
+    Int sd = accept(self->handle, (struct sockaddr*)&sin, &len);
+    if (sd < 0) {
+        Boot_abort();
+    }  
+    Socket_Stream stream = Socket_Stream__init();
+    stream->stream = Io_Stream__init(sd, Io_StreamType_SOCKET);
+    return stream;
+}
+#endif
 
 void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     // Listens for connections using the given address.  If the socket fails to
@@ -154,6 +194,15 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     if (self->handle < 0) { 
         Boot_abort();
     }
+
+#ifdef LINUX
+    // Register the socket with epoll
+    Int epfd = Io_manager()->handle;
+    struct epoll_event ev;
+    ev.events = 0;
+    ev.data.ptr = 0; 
+    epoll_ctl(epfd, EPOLL_CTL_ADD, self->handle, &ev);
+#endif 
     
 #ifdef WINDOWS
     CreateIoCompletionPort((HANDLE)self->handle, iocp, 0, 0); 
@@ -166,7 +215,7 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     sin.sin_port = htons(addr->port);
 
     if (bind(self->handle, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
-        Boot_abort();
+        Boot_abort(); // FIXME: Remove these Boot_aborts
     } 
 
     socklen = sizeof(sin);
@@ -193,7 +242,7 @@ void Socket_Listener_close(Socket_Listener self) {
 
 void Socket_Listener_reuse_addr__s(Socket_Listener self, Bool flag) {
     Int sd = self->handle;
-    int len = sizeof(flag);
+    Int len = sizeof(flag);
     if (!sd) { return; } 
     if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (const char*)&flag, len) < 0) {
         Boot_abort();

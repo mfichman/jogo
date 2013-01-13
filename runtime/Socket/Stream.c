@@ -24,6 +24,7 @@
 #include <winsock2.h>
 #include <mswsock.h>
 #endif
+// These need to come first to avoid conflicts with windows.h
 
 #include "Socket/Stream.h"
 #include "Io/Stream.h"
@@ -36,16 +37,20 @@
 #include <assert.h>
 #include <errno.h>
 
-#ifdef WINDOWS
+#if defined(WINDOWS)
 #include <windows.h>
-#else
+#elif defined(LINUX)
 #include <sys/socket.h>
+#include <sys/epoll.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
-#endif
-#ifdef DARWIN
+#elif defined(DARWIN)
+#include <sys/socket.h>
 #include <sys/event.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
 #endif
 
 void Socket_Stream_close(Socket_Stream self) {
@@ -151,8 +156,54 @@ void Socket_Stream_connect(Socket_Stream self) {
 #ifdef LINUX
 void Socket_Stream_connect(Socket_Stream self) {
     // Linux version of connect()
+    int sd = (int)self->stream->handle;
+    int ret = 0;
+    struct sockaddr_in sin;
 
-    assert(!"Not implemented");
+    // Set the socket in non-blocking mode, so that the call to connect() below
+    // does not block.
+    if (fcntl(sd, F_SETFL, O_NONBLOCK) < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = errno;
+        return;
+    }
+
+    // Call connect() asynchronously.  The kqueue or epoll call will indicate
+    // when the connection is complete.
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = htonl(self->peer.ip);
+    sin.sin_port = htons(self->peer.port);
+    ret = connect(sd, (struct sockaddr*)&sin, sizeof(sin));
+    if (ret < 0 && errno != EINPROGRESS) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = errno;
+        return;
+    }
+
+    struct epoll_event ev;
+    Int epfd = Io_manager()->handle;
+    ev.events = EPOLLOUT|EPOLLONESHOT; 
+    ev.data.ptr = Coroutine__current;
+    ret = epoll_ctl(epfd, EPOLL_CTL_MOD, sd, &ev); 
+    if (ret < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = errno;
+        return;
+    }
+
+    // Need to do this to get the error code
+    Coroutine__iowait();
+    int res = 0;
+    int len = sizeof(res);
+    ret = getsockopt(sd, SOL_SOCKET, SO_ERROR, &res, &len);
+    if (ret < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = errno;
+    } else if(res < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = res;
+    }
 }
 #endif
 
@@ -190,6 +241,7 @@ void Socket_Stream_connect(Socket_Stream self) {
     EV_SET(&ev, sd, EVFILT_WRITE, flags, 0, 0, Coroutine__current); 
     ret = kevent(kqfd, &ev, 1, 0, 0, 0);
     if (ret < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
         self->stream->error = errno;
         return;
     }
@@ -198,6 +250,7 @@ void Socket_Stream_connect(Socket_Stream self) {
     Coroutine__iowait();
     ret = read(sd, 0, 0);
     if (ret < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
         self->stream->error = errno;
     }
 }

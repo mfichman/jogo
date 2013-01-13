@@ -40,7 +40,11 @@ Environment::Environment() :
     verbose_(false),
     monolithic_build_(true),
     no_default_libs_(false),
+#ifdef LINUX
+    generator_("Nasm64"),
+#else
     generator_("Intel64"),
+#endif
     errors_(0) {
 
     Location loc;
