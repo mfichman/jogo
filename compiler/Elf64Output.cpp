@@ -146,7 +146,7 @@ void Elf64Output::sort_symtab() {
     }
     for (int i = 0; i < data_reloc_.size(); ++i) {
         Elf64_Word type = ELF64_R_TYPE(data_reloc_[i].r_info);
-        Elf64_Word sym = ELF64_R_SYM(data_reloc_[i].r_info);
+        Elf64_Word sym = redirect[ELF64_R_SYM(data_reloc_[i].r_info)];
         assert(sym<sym_.size());
         data_reloc_[i].r_info = ELF64_R_INFO(sym, type);
     }
