@@ -42,6 +42,7 @@ def setup_vim():
     options.add('set guioptions-=b')
     if sys.platform == 'win32':
         options.add('set bs=2') 
+        options.add('set guifont=consolas')
 
     with open(os.path.join(home, '.vimrc'), 'w') as f:
         f.write('\n'.join(sorted(options)))
