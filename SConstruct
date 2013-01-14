@@ -177,8 +177,6 @@ if 'pkg' in COMMAND_LINE_TARGETS:
         path = os.path.join(*path[1:])
         path = os.path.join(dist_path, 'include', 'jogo', path)
 
-        print(path)
-        print(f)
         copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
         env.Depends('pkg', copy)
     
@@ -189,7 +187,7 @@ if 'pkg' in COMMAND_LINE_TARGETS:
             env.Depends('pkg', copy)
     
     for f in library_files:
-        if 'joboc' not in f.path:
+        if 'jogoc' not in f.path:
             path = os.path.join(dist_path, f.path)
             copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
             env.Depends('pkg', copy)
