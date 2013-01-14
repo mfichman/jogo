@@ -19,6 +19,7 @@ main() Int {
             Io::println(Os::strerror(file.error))
             ret
         }
+        yield
         line1 = file.scanln()
         stdout.println(line1)
         line2 = file.scanln()
@@ -39,6 +40,7 @@ main() Int {
     
     coro1()
     coro2()
+    coro1()
 
     ret 0
 }

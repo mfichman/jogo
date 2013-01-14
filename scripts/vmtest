@@ -1,0 +1,92 @@
+#!/usr/bin/python
+
+# This script runs the Jogo tests on VMs using VirtualBox.  In the future it
+# may be adapted to work with EC2 as well.  For now, it just works with local
+# VMs in VirtualBox.
+
+import optparse
+import sys
+import os
+import re
+from subprocess import *
+
+parser = optparse.OptionParser(description='Run tests in a virtual machine')
+(options, test) = parser.parse_args()
+
+vboxmanage = 'VBoxManage'
+vmboottype = 'gui' # 'headless'
+vmuser = 'root' #'matt'
+vmpassword = 'Aegis387!'
+vmname = 'jogo-debian'
+vmsnapshot = 'jogo-snapshot'
+bootdst = '/root/boot'
+keyfile = os.path.join('scripts', 'id_rsa')
+bootsrc = os.path.join('scripts', 'boot')
+
+def startvm(): 
+    # Starts the VM with the given name
+    cmd = [vboxmanage, 'startvm', '--type', 'gui', vmname]
+    proc = Popen(cmd, stderr=PIPE)
+    proc.communicate()
+
+def stopvm():
+    # Stops the VM with the given name
+    cmd = [vboxmanage, 'controlvm', vmname, 'poweroff']
+    proc = Popen(cmd, stderr=PIPE)
+    proc.communicate()
+
+def execvm(*args):
+    # Runs a command on the virtual machine
+    cmd = ['ssh', '-i', keyfile, '%s@%s' % (vmuser, vmip)]
+    cmd += args
+    print(" ".join(cmd))
+    proc = Popen(cmd)
+    if proc.wait() != 0:
+        sys.stderr.write("\nError: Couldn't run %s\n" % ' '.join(cmd))
+        sys.exit(1)
+
+def copyto(src, dst):
+    # Copies a file to the virtual machine
+    cmd = ['scp', '-i', keyfile, src, 'root@%s:%s' % (vmip, dst)]
+    proc = Popen(cmd)
+    if proc.wait() != 0:
+        sys.stderr.write("Error: Couldn't copy %s\n" % src)
+        sys.exit(1)
+
+def snapshot():
+    # Takes a snapshot of a VM for Jogo
+    cmd = [vboxmanage, 'snapshot', vmname, 'take', vmsnapshot]
+    proc = Popen(cmd)
+    if proc.wait() != 0:
+        sys.stderr.write("Error: Snapshot failed\n")
+        sys.exit(1)
+
+def restore():
+    # Restores a snapshot of a VM
+    cmd = [vboxmanage, 'snapshot', vmname, 'restore', vmsnapshot]
+    proc = Popen(cmd)
+    return proc.wait() == 0
+
+def ip():
+    # Gets the IP of the host
+    global vmip
+    ipkey = '/VirtualBox/GuestInfo/Net/1/V4/IP'
+    cmd = [vboxmanage, 'guestproperty', 'wait', vmname, ipkey]
+    Popen(cmd, stdout=PIPE).wait()
+    cmd = [vboxmanage, 'guestproperty', 'get', vmname, ipkey]
+    proc = Popen(cmd, stdout=PIPE)
+    if proc.wait() != 0:
+        sys.stderr.write("Error: IP read failed\n")
+        sys.exit(1)
+    regex = re.compile("Value: (.*)")
+    match = regex.match(proc.stdout.read())
+    vmip = match.group(1)
+
+stopvm()
+if not restore(): snapshot()
+startvm()
+ip()
+copyto(bootsrc, bootdst)
+execvm('ls')
+stopvm()
+#execvm('python', bootdst)

@@ -24,6 +24,7 @@
 #include <winsock2.h>
 #include <mswsock.h>
 #endif
+// These need to come first to avoid conflicts with windows.h
 
 #include "Socket/Stream.h"
 #include "Io/Stream.h"
@@ -36,16 +37,20 @@
 #include <assert.h>
 #include <errno.h>
 
-#ifdef WINDOWS
+#if defined(WINDOWS)
 #include <windows.h>
-#else
+#elif defined(LINUX)
 #include <sys/socket.h>
+#include <sys/epoll.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
-#endif
-#ifdef DARWIN
+#elif defined(DARWIN)
+#include <sys/socket.h>
 #include <sys/event.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
 #endif
 
 void Socket_Stream_close(Socket_Stream self) {
@@ -60,9 +65,38 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     // a call to ConnectEx before the wait() on the I/O completion port,
     // whereas the wait() happens before the call to connect() on Unix systems.
     int sd = 0;
-    int ret = 0;
-    struct sockaddr_in sin;
+    assert(addr && "Invalid null argument");
+
+    // Check to make sure that the socket isn't already connected to the given
+    // address.  If it's connected to a different address, then close the 
+    // existing file descriptor and reopen a new connection.
+    if (self->stream && Socket_Addr__equals(&self->peer, addr)) { return; }
+    if (self->stream) {
+        Io_Stream_close(self->stream);
+        Object__refcount_dec((Object)self->stream);
+        self->stream = 0;
+    }
+    Socket_Addr__copy(&self->peer, addr);
+
+    // Allocate a socket
+    sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+    // Call the Io::Stream constructor.  This will associate the socket with an
+    // I/O completion port, which is necessary for the ConnectEx call.
+    self->stream = Io_Stream__init(sd, Io_StreamType_SOCKET);
+    Io_Stream_mode__s(self->stream, Io_StreamMode_ASYNC);
+    if (sd < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = Os_error();
+        return;
+    }
+    Socket_Stream_connect(self);
+} 
+
 #ifdef WINDOWS
+void Socket_Stream_connect(Socket_Stream self) {
+    // Windows version of connect() 
+
     // Initialize a bunch of Windows-specific crap needed to load a pointer to
     // the ConnectEx function...
     DWORD code = SIO_GET_EXTENSION_FUNCTION_POINTER;
@@ -72,37 +106,10 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     DWORD len = sizeof(ConnectEx);
     Io_Overlapped op;
     OVERLAPPED* evt = &op.overlapped;
-#endif
-    assert(addr && "Invalid null argument");
-    Socket_Addr__copy(&self->peer, addr);
+    SOCKET sd = (SOCKET)self->stream->handle;
+    int ret = 0;
+    struct sockaddr_in sin;
 
-    // Check to make sure that the socket isn't already connected to the given
-    // address.  If it's connected to a different address, then close the 
-    // existing file descriptor and reopen a new connection.
-    if (self->stream && Socket_Addr__equals(&self->addr, addr)) { return; }
-    if (self->stream) {
-        Io_Stream_close(self->stream);
-        Object__refcount_dec((Object)self->stream);
-        self->stream = 0;
-    }
-
-    // Allocate a socket
-    sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-    // Call the Io::Stream constructor.  This will associate the socket with an
-    // I/O completion port, which is necessary for the ConnectEx call below.
-    self->stream = Io_Stream__init(sd, Io_StreamType_SOCKET);
-    Io_Stream_mode__s(self->stream, Io_StreamMode_ASYNC);
-    if (sd < 0) {
-        self->stream->status = Io_StreamStatus_ERROR;
-#ifdef WINDOWS
-        self->stream->error = GetLastError();     
-#else
-        self->stream->error = errno;
-#endif
-        return;
-    }
-#ifdef WINDOWS
     // Get a pointer to the ConnectEx() function.  Sigh.  Windows.  This 
     // function never blocks, however, so we don't have to worry about I/O 
     // completion ports.
@@ -143,17 +150,21 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
             return;
         }
     }
+}
+#endif
 
-#else
+#ifdef LINUX
+void Socket_Stream_connect(Socket_Stream self) {
+    // Linux version of connect()
+    int sd = (int)self->stream->handle;
+    int ret = 0;
+    struct sockaddr_in sin;
+
     // Set the socket in non-blocking mode, so that the call to connect() below
     // does not block.
     if (fcntl(sd, F_SETFL, O_NONBLOCK) < 0) {
         self->stream->status = Io_StreamStatus_ERROR;
-#ifdef WINDOWS
-        self->stream->error = GetLastError();
-#else
         self->stream->error = errno;
-#endif
         return;
     }
 
@@ -161,8 +172,62 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     // when the connection is complete.
     memset(&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = htonl(addr->ip);
-    sin.sin_port = htons(addr->port);
+    sin.sin_addr.s_addr = htonl(self->peer.ip);
+    sin.sin_port = htons(self->peer.port);
+    ret = connect(sd, (struct sockaddr*)&sin, sizeof(sin));
+    if (ret < 0 && errno != EINPROGRESS) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = errno;
+        return;
+    }
+
+    struct epoll_event ev;
+    Int epfd = Io_manager()->handle;
+    ev.events = EPOLLOUT|EPOLLERR|EPOLLONESHOT; 
+    ev.data.ptr = Coroutine__current;
+    ret = epoll_ctl(epfd, EPOLL_CTL_MOD, sd, &ev); 
+    if (ret < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = errno;
+        return;
+    }
+
+    // Need to do this to get the error code
+    Coroutine__iowait();
+    int res = 0;
+    int len = sizeof(res);
+    ret = getsockopt(sd, SOL_SOCKET, SO_ERROR, &res, &len);
+    if (ret < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = errno;
+    } else if(res) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = res;
+    }
+}
+#endif
+
+#ifdef DARWIN
+void Socket_Stream_connect(Socket_Stream self) {
+    // OS X version of connect
+    int sd = (int)self->stream->handle;
+    int ret = 0;
+    struct sockaddr_in sin;
+
+    // Set the socket in non-blocking mode, so that the call to connect() below
+    // does not block.
+    if (fcntl(sd, F_SETFL, O_NONBLOCK) < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
+        self->stream->error = errno;
+        return;
+    }
+
+    // Call connect() asynchronously.  The kqueue or epoll call will indicate
+    // when the connection is complete.
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = htonl(self->peer.ip);
+    sin.sin_port = htons(self->peer.port);
     ret = connect(sd, (struct sockaddr*)&sin, sizeof(sin));
     if (ret < 0 && errno != EINPROGRESS) {
         self->stream->status = Io_StreamStatus_ERROR;
@@ -176,6 +241,7 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     EV_SET(&ev, sd, EVFILT_WRITE, flags, 0, 0, Coroutine__current); 
     ret = kevent(kqfd, &ev, 1, 0, 0, 0);
     if (ret < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
         self->stream->error = errno;
         return;
     }
@@ -184,9 +250,8 @@ void Socket_Stream_peer__s(Socket_Stream self, Socket_Addr addr) {
     Coroutine__iowait();
     ret = read(sd, 0, 0);
     if (ret < 0) {
+        self->stream->status = Io_StreamStatus_ERROR;
         self->stream->error = errno;
     }
-    
+}
 #endif
-} 
-

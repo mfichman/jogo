@@ -20,15 +20,18 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef WINDOWS
+#if defined(WINDOWS)
+#include <winsock2.h>
+#include <windows.h>
+#elif defined(LINUX)
 #include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
-#else
-#include <winsock2.h>
-#include <windows.h>
-#endif
-#ifdef DARWIN
+#include <sys/epoll.h>
+#elif defined(DARWIN)
+#include <unistd.h>
+#include <errno.h>
+#include <sys/socket.h>
 #include <sys/event.h>
 #endif
 #include <stdlib.h>
@@ -58,7 +61,7 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
     ret->mode = Io_StreamMode_ASYNC;
     ret->type = type;
 
-#ifdef WINDOWS 
+#if defined(WINDOWS)
     // Associate the handle with an IO completion port.  The Io::Manager
     // expects the completion key below to be a pointer to an Io::Stream
     // object with an attached coroutine that will be resumed when an I/O
@@ -68,6 +71,16 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
         ret->op.overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
         // A manual reset event is used because ReadFile and WriteFile set 
         // the event to the nonsignalled state automatically
+    }
+#elif defined(LINUX) 
+    Bool is_console = (Io_StreamType_CONSOLE == ret->type);
+    Bool is_file = (Io_StreamType_FILE == ret->type);
+    if (!is_console && !is_file) {
+        Int epfd = Io_manager()->handle;
+        struct epoll_event ev;
+        ev.events = 0;
+        ev.data.ptr = 0; 
+        epoll_ctl(epfd, EPOLL_CTL_ADD, ret->handle, &ev);
     }
 #endif
     return ret;
@@ -118,7 +131,7 @@ Int Io_Stream_result(Io_Stream self, Int bytes) {
     // Calling this method also increments the reference count, to retain the
     // coroutine so that it won't be collected while an I/O event is
     // outstanding. 
-#if defined(WINDOWS)
+#ifdef WINDOWS
     HANDLE handle = (HANDLE)self->handle;
 	Bool is_console = (Io_StreamType_CONSOLE == self->type);
 	Bool has_io = (Io_StreamMode_ASYNC == self->mode) && !is_console;
@@ -149,28 +162,23 @@ Int Io_Stream_result(Io_Stream self, Int bytes) {
     } else {
         return bytes;
     }
-#elif defined(DARWIN)
+#else
     return 0;
 #endif
 }
 
+#ifdef WINDOWS
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     // Read characters from the stream until 'buffer' is full, an I/O error 
-    // is raised, or the end of the input is reached.
-
+    // is raised, or the end of the input is reached (Windows impl)
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->capacity - buffer->end;
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
-#ifdef WINDOWS
     DWORD read = 0;
     HANDLE handle = (HANDLE)self->handle;
     Int ret = 0;
-#endif
-    
     if (self->status == Io_StreamStatus_EOF) { return; }
-
-#ifdef WINDOWS
 
     // Read from the file, async or syncronously
     if (is_blocking && !is_console) {
@@ -188,8 +196,60 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 	read = Io_Stream_result(self, read);
     self->op.overlapped.Offset += read;
     buffer->end += read;
-#else
+}
+#endif
+
+#ifdef LINUX
+void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
+    // Read characters from the stream until 'buffer' is full, an I/O error 
+    // is raised, or the end of the input is reached (Linux impl)
+    Byte* buf = buffer->data + buffer->begin;
+    Int len = buffer->capacity - buffer->end;
+    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
+    Bool is_console = (Io_StreamType_CONSOLE == self->type);
+    Bool is_file = (Io_StreamType_FILE == self->type);
+    
+    if (self->status == Io_StreamStatus_EOF) { return; }
+
+    if(!is_blocking && !is_console && !is_file) {
+        struct epoll_event ev;
+        Int epfd = Io_manager()->handle;
+        Int fd = self->handle; 
+        ev.events = EPOLLIN|EPOLLONESHOT;      
+        ev.data.ptr = Coroutine__current;
+        Int ret = epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &ev);
+        if (ret < 0) {
+            self->status = Io_StreamStatus_ERROR;
+            self->error = errno;
+            return; 
+        }
+        Coroutine__iowait();
+    }
+
+    Int ret = read(self->handle, buf, len);
+    if (ret == 0) {
+        self->status = Io_StreamStatus_EOF;
+    } else if (ret == -1) {
+        self->status = Io_StreamStatus_ERROR;
+        self->error = errno;
+    } else {
+        buffer->end += ret;
+    }
+}
+#endif
+
 #ifdef DARWIN
+void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
+    // Read characters from the stream until 'buffer' is full, an I/O error 
+    // is raised, or the end of the input is reached (Darwin impl)
+    Byte* buf = buffer->data + buffer->begin;
+    Int len = buffer->capacity - buffer->end;
+    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
+    Bool is_console = (Io_StreamType_CONSOLE == self->type);
+    
+    if (self->status == Io_StreamStatus_EOF) { return; }
+
+    // Wait for the fd to be ready, and then do the read.
     if(!is_blocking && !is_console) {
         struct kevent ev;
         Int kqfd = Io_manager()->handle;
@@ -203,7 +263,6 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         }
         Coroutine__iowait();
     }
-#endif
 
     Int ret = read(self->handle, buf, len);
     if (ret == 0) {
@@ -217,18 +276,17 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
             self->status = Io_StreamStatus_EOF;
         }
     }
-#endif
 }
+#endif
 
+#ifdef WINDOWS
 void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
     // Write characters from the buffer into the stream until 'buffer' is full,
-    // an I/O error is raised, or the stream is closed.
-
+    // an I/O error is raised, or the stream is closed (Windows impl).
     Byte* buf = buffer->data + buffer->begin;
     Int len = buffer->end - buffer->begin;
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
-#ifdef WINDOWS
     HANDLE handle = (HANDLE)self->handle;
     DWORD written = 0;
     // Write to the file, async or synchronously
@@ -248,8 +306,51 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
     written = Io_Stream_result(self, written);
     self->op.overlapped.Offset += written; 
     buffer->begin += written;
-#else
+}
+#endif
+
+#ifdef LINUX
+void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
+    // Write characters from the buffer into the stream until 'buffer' is full,
+    // an I/O error is raised, or the stream is closed (Linux impl).
+    Byte* buf = buffer->data + buffer->begin;
+    Int len = buffer->end - buffer->begin;
+    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
+    Bool is_console = (Io_StreamType_CONSOLE == self->type);
+    Bool is_file = (Io_StreamType_CONSOLE == self->type);
+    if(!is_blocking && !is_console && !is_file) {
+        struct epoll_event ev;
+        Int epfd = Io_manager()->handle;
+        Int fd = self->handle; 
+        ev.events = EPOLLOUT|EPOLLONESHOT;      
+        ev.data.ptr = Coroutine__current;
+        Int ret = epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &ev);
+        if (ret < 0) {
+            self->status = Io_StreamStatus_ERROR;
+            self->error = errno;
+            return; 
+        }
+        Coroutine__iowait();
+    }
+    
+    Int ret = write(self->handle, buf, len);
+    if (ret == -1) {
+        self->status = Io_StreamStatus_ERROR;
+        self->error = errno;
+    } else {
+        buffer->begin += ret;
+    }
+}
+#endif
+
 #ifdef DARWIN
+void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
+    // Write characters from the buffer into the stream until 'buffer' is full,
+    // an I/O error is raised, or the stream is closed (Darwin impl).
+    Byte* buf = buffer->data + buffer->begin;
+    Int len = buffer->end - buffer->begin;
+    Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
+    Bool is_console = (Io_StreamType_CONSOLE == self->type);
     if(!is_blocking && !is_console) {
         struct kevent ev;
         Int kqfd = Io_manager()->handle;
@@ -258,12 +359,12 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
         EV_SET(&ev, fd, EVFILT_WRITE, flags, 0, 0, Coroutine__current); 
         Int ret = kevent(kqfd, &ev, 1, 0, 0, 0);
         if (ret < 0) {
+            self->status = Io_StreamStatus_ERROR;
             self->error = errno;
             return;
         }
         Coroutine__iowait();
     }
-#endif
 
     Int ret = write(self->handle, buf, len);
     if (ret == -1) {
@@ -272,8 +373,8 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
     } else {
         buffer->begin += ret;
     }
-#endif
 }
+#endif
 
 Int Io_Stream_get(Io_Stream self) {
     // Read a single character from the stream.  Returns EOF if the end of the

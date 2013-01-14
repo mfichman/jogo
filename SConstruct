@@ -86,7 +86,10 @@ else:
     env.Append(CXXFLAGS = '-DVERSION=\\"'+version+'\\"')
     env.Append(CFLAGS = '-DCOROUTINE_STACK_SIZE='+stack_size)
     env.Append(CFLAGS = '-Wall -Werror -std=c99 -Iruntime')
-    dist_path = 'dist/root/usr/local'
+    if env['PLATFORM'] == 'darwin':
+        dist_path = 'dist/root/usr/local'
+    else:
+        dist_path = 'dist/root/usr'
 
 env.Append(BUILDERS = { 'NASM': nasm_bld })
 
@@ -177,8 +180,6 @@ if 'pkg' in COMMAND_LINE_TARGETS:
         path = os.path.join(*path[1:])
         path = os.path.join(dist_path, 'include', 'jogo', path)
 
-        print(path)
-        print(f)
         copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
         env.Depends('pkg', copy)
     
@@ -189,7 +190,7 @@ if 'pkg' in COMMAND_LINE_TARGETS:
             env.Depends('pkg', copy)
     
     for f in library_files:
-        if 'joboc' not in f.path:
+        if 'jogoc' not in f.path:
             path = os.path.join(dist_path, f.path)
             copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
             env.Depends('pkg', copy)

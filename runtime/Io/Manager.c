@@ -28,17 +28,20 @@
 #include "Coroutine.h"
 #include "String.h"
 #include "Object.h"
-#ifndef WINDOWS
+#if defined(WINDOWS)
+#include <windows.h>
+#elif defined(LINUX)
 #include <unistd.h>
 #include <errno.h>
-#else
-#include <windows.h>
-#endif
-#ifdef DARWIN
+#include <sys/epoll.h>
+#elif defined(DARWIN)
+#include <unistd.h>
+#include <errno.h>
 #include <sys/event.h>
 #endif 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 Io_Manager Io_Manager__init() {
     // Initialize an event manager, and allocate an I/O completion port.
@@ -61,8 +64,8 @@ Io_Manager Io_Manager__init() {
     ret->handle = (Int)CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
 #elif defined(DARWIN)
     ret->handle = (Int)kqueue();
-#else
-    ret->handle = 0;
+#elif defined(LINUX)
+    ret->handle = (Int)epoll_create(1);
 #endif
     return ret;
 }
@@ -92,29 +95,61 @@ void Io_Manager__destroy(Io_Manager self) {
 #endif
 }
 
+#ifdef WINDOWS
 void Io_Manager_poll(Io_Manager self) {
     // Poll for an I/O event, and then resume the coroutine associated with
-    // that event.
-#ifdef WINDOWS
+    // that event (Windows).
     HANDLE handle = (HANDLE)self->handle;
     DWORD bytes = 0;
     ULONG_PTR udata = 0;
     Io_Overlapped* op = 0;
     OVERLAPPED** evt = (OVERLAPPED**)&op;
-#endif
     if (Coroutine__current != &Coroutine__main) {
         fprintf(stderr, "Io::Manager::poll() called by user coroutine");
         fflush(stderr);
         abort();
     }
 
-#if defined(WINDOWS)
     SetLastError(ERROR_SUCCESS);
     self->iobytes = 0;
     GetQueuedCompletionStatus(handle, &bytes, &udata, evt, INFINITE);
     self->iobytes = bytes;
     Coroutine__ioresume(op->coroutine);
-#elif defined(DARWIN)
+}
+#endif
+
+#ifdef LINUX
+void Io_Manager_poll(Io_Manager self) {
+    // Poll for an I/O event, and then resume the coroutine associated with
+    // that event.
+    if (Coroutine__current != &Coroutine__main) {
+        fprintf(stderr, "Io::Manager::poll() called by user coroutine");
+        fflush(stderr);
+        abort();
+    }
+    struct epoll_event event;
+    int timeout = -1;
+    int res = epoll_wait(self->handle, &event, 1, timeout);
+    if (res < 0) {
+        Boot_abort();
+    } else if (res == 0) {
+        return;
+    }
+    assert("Null coroutine"&&event.data.ptr);
+    Coroutine__ioresume((Coroutine)event.data.ptr);
+}
+#endif
+
+#ifdef DARWIN
+void Io_Manager_poll(Io_Manager self) {
+    // Poll for an I/O event, and then resume the coroutine associated with
+    // that event.
+    if (Coroutine__current != &Coroutine__main) {
+        fprintf(stderr, "Io::Manager::poll() called by user coroutine");
+        fflush(stderr);
+        abort();
+    }
+
     struct kevent event;
     int res = kevent(self->handle, 0, 0, &event, 1, NULL);
     self->iobytes = event.data;
@@ -123,7 +158,7 @@ void Io_Manager_poll(Io_Manager self) {
     } else if (res == 0) {
         return;
     }
+    assert("Null coroutine"&&event.udata);
     Coroutine__ioresume((Coroutine)event.udata);
-#else
-#endif
 }
+#endif

@@ -1303,7 +1303,7 @@ Type* Parser::alternate_list() {
 
 Expression* Parser::literal() {
     // Parses a literal expression, variable, or parenthesized expression
-    Expression* expr;
+    Expression* expr = 0;
     switch(token().type()) {
     case Token::LEFT_BRACKET:
         return array_literal();

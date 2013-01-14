@@ -37,7 +37,8 @@
 #include "OutputFormat.hpp"
 #include "Mach64Output.hpp"
 #include "Coff64Output.hpp"
-
+#include "Elf64Output.hpp"
+#include <iostream>
 #include <cstdlib>
 
 std::string const VCVARSALL = "vcvarsall.bat amd64";
@@ -311,7 +312,13 @@ void Builder::link(const std::string& in, const std::string& out) {
 #ifdef WINDOWS
     ss << in << " /DEBUG /OUT:" << out;
 #else
-    ss << in << "-o " << out;
+    ss << in << "-o " << out << " ";
+    // Dependencies must be linked after the dependent .o files.  Linux gcc is
+    // stupid about this, so we linke all the libraries both before and after
+    // all the .o files in case there are circular dependencies.
+    for (int i = 0; i < env_->libs(); i++) {
+        ss << "-l" << env_->lib(i) << " ";
+    }
 #endif
 
     if (env_->verbose()) {
@@ -342,16 +349,18 @@ void Builder::archive(const std::string& in, const std::string& out) {
     remove(out.c_str());
 
     // Select the correct archive program for the current OS/platform.
-#ifdef WINDOWS
+#if defined(WINDOWS)
     ss << "lib.exe /SUBSYSTEM:console /MACHINE:X64 /NOLOGO /OUT:" << out << " " << in;
-#else
+#elif defined(DARWIN)
+    ss << "ar rcs " << out << " " << in;
+#elif defined(LINUX)
     ss << "ar rcs " << out << " " << in;
 #endif
     if (env_->verbose()) {
         Stream::stout() << ss.str() << "\n";
         Stream::stout()->flush();
     } 
-    File::mkdir(File::dir_name(out).c_str());;
+    File::mkdir(File::dir_name(out).c_str());
     if (system(ss.str().c_str())) { 
         errors_++;
     } 
@@ -439,15 +448,13 @@ void Builder::intel64gen(File* file) {
     }
 #if defined(DARWIN)
     OutputFormat::Ptr format(new Mach64Output);
-    intel64gen->format(format);
-    intel64gen->operator()(file);
 #elif defined(WINDOWS)
     OutputFormat::Ptr format(new Coff64Output);
+#elif defined(LINUX)
+    OutputFormat::Ptr format(new Elf64Output);
+#endif
     intel64gen->format(format);
     intel64gen->operator()(file);
-#elif defined(LINUX)
-    assert(!"Not supported");
-#endif
 }
 
 void Builder::cc(const std::string& in, const std::string& out) {
