@@ -183,7 +183,7 @@ void Socket_Stream_connect(Socket_Stream self) {
 
     struct epoll_event ev;
     Int epfd = Io_manager()->handle;
-    ev.events = EPOLLOUT|EPOLLONESHOT; 
+    ev.events = EPOLLOUT|EPOLLERR|EPOLLONESHOT; 
     ev.data.ptr = Coroutine__current;
     ret = epoll_ctl(epfd, EPOLL_CTL_MOD, sd, &ev); 
     if (ret < 0) {
@@ -200,7 +200,7 @@ void Socket_Stream_connect(Socket_Stream self) {
     if (ret < 0) {
         self->stream->status = Io_StreamStatus_ERROR;
         self->stream->error = errno;
-    } else if(res < 0) {
+    } else if(res) {
         self->stream->status = Io_StreamStatus_ERROR;
         self->stream->error = res;
     }
