@@ -22,7 +22,7 @@ build_dir = os.path.join('build', 'runtime')
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(ENV = os.environ)
 env.Append(JGFLAGS = '-m -i runtime --build-dir ' + build_dir)
-env.Append(JGFLAGS = ' --no-default-libs -g Intel64')
+env.Append(JGFLAGS = ' --no-default-libs -g Intel64 ')
 
 build_mode = ARGUMENTS.get('mode', 'debug')
 stack_size = '8192'
@@ -86,7 +86,10 @@ else:
     env.Append(CXXFLAGS = '-DVERSION=\\"'+version+'\\"')
     env.Append(CFLAGS = '-DCOROUTINE_STACK_SIZE='+stack_size)
     env.Append(CFLAGS = '-Wall -Werror -std=c99 -Iruntime')
-    dist_path = 'dist/root/usr/local'
+    if env['PLATFORM'] == 'darwin':
+        dist_path = 'dist/root/usr/local'
+    else:
+        dist_path = 'dist/root/usr'
 
 env.Append(BUILDERS = { 'NASM': nasm_bld })
 
