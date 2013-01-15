@@ -36,6 +36,18 @@ print(str String) {
     }
 }
 
+scanln() String {
+    # Scans all input up to the end of the line.  Reads the end-of-line
+    # character, but doesn't return it.
+    ret stdin().scanln()
+}
+
+scan(str String) String {
+    # Scans for the delimiter specified by 'str' and returns all input up to
+    # the delimiter.
+    ret stdin().scan(str)
+}
+
 stderr() native Stream {
     # Returns the standard error stream
 }

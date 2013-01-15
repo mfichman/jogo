@@ -128,9 +128,9 @@ void Boot_abort() {
     LPTSTR buffer = 0;
     
     FormatMessage(flags, 0, id, 0, (LPTSTR)&buffer, 1, 0);
-    fprintf(stderr, "%s\n", buffer);
+    fprintf(stderr, "%d: %s\n", id, buffer);
 #else
-    fprintf(stderr, "%s\n", strerror(errno));
+    fprintf(stderr, "%d: %s\n", errno, strerror(errno));
 #endif
     fflush(stderr);
     abort();

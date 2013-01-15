@@ -135,7 +135,7 @@ Int Io_Stream_result(Io_Stream self, Int bytes) {
     HANDLE handle = (HANDLE)self->handle;
 	Bool is_console = (Io_StreamType_CONSOLE == self->type);
 	Bool has_io = (Io_StreamMode_ASYNC == self->mode) && !is_console;
-
+	DWORD err = GetLastError();
     while (ERROR_IO_PENDING == GetLastError() || has_io) {
         // Yield to the event manager if async mode is enabled; otherwise,
         // block the entire process.
@@ -159,9 +159,12 @@ Int Io_Stream_result(Io_Stream self, Int bytes) {
         self->status = Io_StreamStatus_ERROR;
         self->error = GetLastError();
         return 0;
-    } else {
+    } else if (bytes == 0) {
+		self->status = Io_StreamStatus_EOF;
         return bytes;
-    }
+    } else {
+	    return bytes;
+	}
 #else
     return 0;
 #endif
@@ -175,9 +178,9 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     Int len = buffer->capacity - buffer->end;
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
-    DWORD read = 0;
     HANDLE handle = (HANDLE)self->handle;
-    Int ret = 0;
+    DWORD read = 0;
+    DWORD ret = 0;
     if (self->status == Io_StreamStatus_EOF) { return; }
 
     // Read from the file, async or syncronously
@@ -192,7 +195,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 
     self->op.coroutine = Coroutine__current;
     SetLastError(ERROR_SUCCESS);
-    ReadFile(handle, buf, len, &read, &self->op.overlapped);
+    ret = ReadFile(handle, buf, len, &read, &self->op.overlapped);
 	read = Io_Stream_result(self, read);
     self->op.overlapped.Offset += read;
     buffer->end += read;
@@ -289,6 +292,7 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
     HANDLE handle = (HANDLE)self->handle;
     DWORD written = 0;
+    DWORD ret = 0;
     // Write to the file, async or synchronously
     
     if (is_blocking && !is_console) {
@@ -302,7 +306,7 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
 
     self->op.coroutine = Coroutine__current;
     SetLastError(ERROR_SUCCESS);
-    WriteFile(handle, buf, len, &written, &self->op.overlapped);
+    ret = WriteFile(handle, buf, len, &written, &self->op.overlapped);
     written = Io_Stream_result(self, written);
     self->op.overlapped.Offset += written; 
     buffer->begin += written;
@@ -533,9 +537,11 @@ void Io_Stream_close(Io_Stream self) {
 void Io_Stream_end(Io_Stream self) {
     // Writes the EOF if this is a socket stream.
     Io_Stream_flush(self);
-    if(Io_StreamType_SOCKET == self->type) {
+    if (Io_StreamType_SOCKET == self->type) {
 #ifdef WINDOWS
-        shutdown((SOCKET)self->handle, SD_SEND);
+        if (shutdown((SOCKET)self->handle, SD_SEND)) {
+            Boot_abort();
+        }
 #else
         shutdown(self->handle, SHUT_WR);
 #endif

@@ -13,8 +13,8 @@ main() Int {
     client = Coroutine() func() {
         stdout.println('connecting')
         sd = Socket::connect('localhost', ls.addr.port)
-        sd.stream.print('hello from client\n')
-        sd.stream.end()
+        sd.print('hello from client\n')
+        sd.end()
         stdout.pipe(sd.stream)
         stdout.println('connected')
     }
@@ -23,10 +23,10 @@ main() Int {
         stdout.println('accepting')
         sd = ls.accept()
         stdout.println('accepted')
-        sd.stream.print('hello from server\n')
+        sd.print('hello from server\n')
         stdout.println('printed')
         stdout.pipe(sd.stream)
-        sd.stream.end()
+        sd.end()
     }
 
     server()

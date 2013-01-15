@@ -136,8 +136,8 @@ void Socket_Stream_connect(Socket_Stream self) {
     // immediately, allowing this function to yield to the I/O manager.
     memset(&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = htonl(addr->ip);
-    sin.sin_port = htons(addr->port);
+    sin.sin_addr.s_addr = htonl(self->peer.ip);
+    sin.sin_port = htons(self->peer.port);
     if (!ConnectEx(sd, (struct sockaddr*)&sin, sizeof(sin), 0, 0, 0, evt)) { 
         if (ERROR_IO_PENDING == GetLastError()) {
             // Wait for the I/O manager to yield after polling the I/O
@@ -147,8 +147,21 @@ void Socket_Stream_connect(Socket_Stream self) {
         if (ERROR_SUCCESS != GetLastError()) {
             self->stream->status = Io_StreamStatus_ERROR;
             self->stream->error = GetLastError();
-            return;
         }
+    }
+
+    // The following setsockopt() call is needed when calling ConectEx.  From
+    // the MSDN documentation: 
+    //
+    // When the ConnectEx function returns TRUE, the socket s is in the default
+    // state for a connected socket. The socket s does not enable previously
+    // set properties or options until SO_UPDATE_CONNECT_CONTEXT is set on the
+    // socket. Use the setsockopt function to set the SO_UPDATE_CONNECT_CONTEXT
+    // option.
+    if (ERROR_SUCCESS == GetLastError()) {
+       if (setsockopt(sd, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0)) {
+           Boot_abort();
+       }
     }
 }
 #endif

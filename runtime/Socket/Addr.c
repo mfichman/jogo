@@ -51,6 +51,8 @@ Socket_Addr Socket_Addr__init(Socket_Addr ret, String str, Int port) {
     ret->port = port;
     ret->error = 0;
 
+	if (str->length == 0) { return ret; }
+
     // Attempt to translate the hostname as a dotted quad first.  Then, try to
     // translate the hostname as a DNS name.
     if (inet_pton(AF_INET, str->data, &in) != 1) { 

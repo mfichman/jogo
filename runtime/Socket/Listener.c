@@ -102,6 +102,20 @@ Socket_Stream Socket_Listener_accept(Socket_Listener self) {
             Boot_abort();
         }
     }
+    
+    // The following setsockopt() call is needed when calling AcceptEx.  From
+    // the MSDN documentation: 
+    //
+    // When the AcceptEx function returns, the socket sAcceptSocket is in the
+    // default state for a connected socket. The socket sAcceptSocket does not
+    // inherit the properties of the socket associated with sListenSocket
+    // parameter until SO_UPDATE_ACCEPT_CONTEXT is set on the socket. Use the
+    // setsockopt function to set the SO_UPDATE_ACCEPT_CONTEXT option,
+    // specifying sAcceptSocket as the socket handle and sListenSocket as the
+    // option value.
+    if (setsockopt(sd, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, &ls, sizeof(ls))) {
+        Boot_abort();
+    }
 
     stream = Socket_Stream__init();
     stream->stream = Io_Stream__init(sd, Io_StreamType_SOCKET);
