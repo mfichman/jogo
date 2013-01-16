@@ -1616,11 +1616,6 @@ void IrGenerator::jump(IrBlock* target) {
 void FuncMarshal::arg(Operand op) {
     // Add an argument to the list, and keep track of the number of float/int
     // args so that they are assigned to argument registers/stack properly.
-    if (op.is_float()) {
-        float_args_++;
-    } else {
-        int_args_++; 
-    }
     arg_.push_back(op);
 }
 
@@ -1638,9 +1633,18 @@ void FuncMarshal::call(Operand func) {
         if (arg_[i].is_float()) {
             reg = gen_->machine_->float_arg_reg(float_arg);
             float_arg++;
+#ifdef WINDOWS
+            int_arg++;
+            // Note: On Windows, registers are assigned ONLY for certain arg
+            // numbers, so if there are interleaved args, its possible that the
+            // first float/int doesn't even get to use an arg register
+#endif
         } else {
             reg = gen_->machine_->int_arg_reg(int_arg);
             int_arg++;
+#ifdef WINDOWS
+            float_arg++;
+#endif
         }
         if (reg) {
             //Operand arg = gen_->mov(arg_[i]);
@@ -1675,8 +1679,14 @@ void FuncUnmarshal::arg(String* name, Type* type) {
     Register* reg = 0;
     if (type->is_float()) {
         reg = gen_->machine_->float_arg_reg(float_args_++);
+#ifdef WINDOWS
+        int_args_++;
+#endif
     } else {
         reg = gen_->machine_->int_arg_reg(int_args_++);
+#ifdef WINDOWS
+        float_args_++;
+#endif
     } 
     if (reg) {
         // Variable is passed by register; precolor the temporary for this

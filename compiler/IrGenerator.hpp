@@ -183,8 +183,7 @@ private:
 /* Helper class for mashalling function parameters */
 class FuncMarshal {
 public:
-    FuncMarshal(IrGenerator* gen) : 
-        gen_(gen), int_args_(0), float_args_(0) {
+    FuncMarshal(IrGenerator* gen) : gen_(gen) {
     }
     void arg(Operand op); 
     void call(Operand func);
@@ -192,8 +191,6 @@ public:
 private:
     IrGenerator* gen_;
     std::vector<Operand> arg_;
-    int int_args_;
-    int float_args_;
 };
 
 /* Helper class for unmarshalling function parameters */
