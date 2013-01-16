@@ -40,6 +40,9 @@ public:
         type_(type),
         scope_(0),
         is_immutable_(immut) {
+        
+        assert("Literal or label in variable" && !op.object());
+        assert("Address in variable" && !op.addr());
     }
 
     String* name() const { return name_; }

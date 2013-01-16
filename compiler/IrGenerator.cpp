@@ -1001,7 +1001,7 @@ void IrGenerator::scope_cleanup(Variable* var) {
     // Emits the code to clean up the stack when exiting block.  This includes 
     // decrementing reference counts, and calling destructors for value types.
     Type::Ptr type = var->type();
-    assert(!!var->operand() && "Nil operand");
+    assert("Nil operand" && !!var->operand());
     if (!type) {
         // Nil variable type indicates that no cleanup need be done.
     } else if (type->is_primitive()) {
@@ -1662,8 +1662,8 @@ void FuncMarshal::call(Operand func) {
 #endif
         } else {
             gen_->arg_slots_inc(1);
-            //gen_->store(Operand(sp, Address(stack_arg)), gen_->mov(arg_[i]));
-            gen_->store(Operand(sp, Address(stack_arg)), arg_[i]);
+            gen_->store(Operand(sp, Address(stack_arg)), gen_->mov(arg_[i]));
+            ///gen_->store(Operand(sp, Address(stack_arg)), arg_[i]);
             // FIXME: This line breaks something somehow
             stack_arg++;
         }
@@ -1700,12 +1700,14 @@ void FuncUnmarshal::arg(String* name, Type* type) {
         // the stack.
 #ifdef WINDOWS
         RegisterId id(0, type->is_float() ? RegisterId::FLOAT : 0);
-        Operand op(id, Address(++stack_args_));
+        //Operand op(id, Address(++stack_args_));
+        Operand op = gen_->load(Operand(id, Address(++stack_args_)));
         gen_->variable(new Variable(name, op, 0));
 #endif
     } else {
         RegisterId id(0, type->is_float() ? RegisterId::FLOAT : 0);
-        Operand op(id, Address(++stack_args_));
+        //Operand op(id, Address(++stack_args_));
+        Operand op = gen_->load(Operand(id, Address(++stack_args_)));
         gen_->variable(new Variable(name, op, 0));
     }
 }

@@ -117,7 +117,7 @@ def native_test(test):
     exe = re.sub(r'.c$', '', test)
     output = ""
     if sys.platform == 'win32':
-        command = 'cl ' + test + ' /Fe..\\build\\' + exe + ' /I:.. jogo.lib '
+        command = 'cl ' + test + ' /MD /Fe..\\build\\' + exe + ' /I:.. jogo.lib '
         command += '/link /LIBPATH:..\\lib 2>&1'
         os.popen(command).read()
         output = shell('..\\build\\' + exe + ' 2>&1')
@@ -134,9 +134,9 @@ def cpp_test(test):
     exe = re.sub(r'.cpp$', '', test) 
     output = ""
     if sys.platform == 'win32':
-        command = 'cl ' + test + ' /MDd /TP /Zi /EHsc /Fe..\\build\\' 
+        command = 'cl ' + test + ' /MD /TP /Zi /EHsc /Fe..\\build\\' 
         command += exe + ' /I..\\compiler '
-        command += '/link /NODEFAULTLIB:LIBCMT.lib /LIBPATH:..\\lib '
+        command += '/link /LIBPATH:..\\lib '
         command += 'jogoc.lib' 
         os.popen(command).read()
         output = shell('..\\build\\' + exe + ' 2>&1')
