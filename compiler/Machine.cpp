@@ -86,10 +86,11 @@ Machine* Machine::intel64() {
     Register::Ptr rsp = m->special_reg("rsp"); m->sp_reg(rsp); // 1
     Register::Ptr rbp = m->special_reg("rbp");
 
-    Register::Ptr rsi = m->int_reg("rsi"); m->callee_reg(rsi); //7
 #ifdef WINDOWS
+    Register::Ptr rsi = m->int_reg("rsi"); m->caller_reg(rsi); //7
     Register::Ptr rdi = m->int_reg("rdi"); m->caller_reg(rdi); //6
 #else
+    Register::Ptr rsi = m->int_reg("rsi"); m->callee_reg(rsi); //7
     Register::Ptr rdi = m->int_reg("rdi"); m->callee_reg(rdi); //6
 #endif
     Register::Ptr r8 = m->int_reg("r8"); m->callee_reg(r8); //8 VOL

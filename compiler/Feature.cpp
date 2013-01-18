@@ -254,6 +254,19 @@ bool Function::is_virtual() const {
     return clazz && clazz->is_interface();
 }
 
+int Function::stack_slots() const {
+#ifdef WINDOWS
+    // Windows requires that at least 4 argument slots are allocated,
+    // regardless of whether or not they are used.  This space can be used
+    // by the called function, so if it is not allocated properly then the
+    // called function can smash the calling function's stack.
+    int const win_min_arg_slots = 4;
+    return std::max(arg_slots_, win_min_arg_slots) + local_slots_;
+#else
+    return arg_slots_ + local_slots_; 
+#endif
+}
+
 Function::ThrowSpec Function::throw_spec() const {
 	// Returns THROW if this function can throw an exception; otherwise
 	// returns NOTHROW.  The result is computed lazily, but all of the 

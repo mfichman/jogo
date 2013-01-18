@@ -1692,18 +1692,6 @@ void FuncMarshal::call(Operand func) {
             stack_arg++;
         }
     }
-#ifdef WINDOWS
-    // Windows requires that at least 4 argument slots are allocated,
-    // regardless of whether or not they are used.  This spaced can be used by
-    // the called function, so if it is not allocated properly then the called
-    // function can smash the calling function's stack.
-    int const min_arg_slots = 4;
-    int const pad = min_arg_slots - gen_->arg_slots();
-    if (pad > 0) {
-        gen_->arg_slots_inc(pad);
-        stack_arg += pad;
-    }
-#endif
     gen_->call(func);
     gen_->arg_slots_dec(stack_arg);
 }

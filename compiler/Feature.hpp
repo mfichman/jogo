@@ -159,7 +159,7 @@ public:
     int ir_blocks() const { return ir_block_.size(); }
     int local_slots() const { return local_slots_; }
     int arg_slots() const { return arg_slots_; }
-    int stack_slots() const { return arg_slots_ + local_slots_; }
+    int stack_slots() const;
 	int called_funcs() const { return called_func_.size(); }
     int temp_regs() const { return temp_regs_; }
     bool covariant(Function* other) const;
