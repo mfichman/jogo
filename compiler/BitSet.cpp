@@ -22,7 +22,6 @@
 
 #include "BitSet.hpp"
 
-
 bool BitSet::set(int value) {
     // Sets the bit at index 'value' to one; also handles negative values.
     int offset = (value < 0) ? value * -2 - 1 : value * 2;
@@ -32,7 +31,7 @@ bool BitSet::set(int value) {
     if (index >= data_.size()) {
         data_.resize(index+1);
     }
-    
+
     // Return true if the bit was previously NOT set.
     bool ret = !(data_[index] & (1 << bit));
     data_[index] |= 1 << bit;
@@ -72,7 +71,7 @@ BitSet BitSet::operator&(const BitSet& other) const {
     // then return a new BitSet.
     BitSet ret;
     ret.data_.resize(std::max(other.data_.size(), data_.size()));
-    
+
     for (int i = 0; i < ret.data_.size(); i++) {
         if (i >= other.data_.size()) {
             ret.data_[i] = 0;

@@ -687,8 +687,12 @@ void IrGenerator::operator()(Function* feature) {
 
     // Generate code for the body of the function.
     emit(feature->block());
-    if (feature->type()->is_void() || feature->is_constructor()) {
-        func_return();
+    if (!block_->is_ret()) {
+        if (function_->is_constructor()) {
+            func_return(variable(env_->name("self"))->operand());
+        } else if (feature->type()->is_void()) {
+            func_return(Operand());
+        }
     }
     exit_scope();
     feature->temp_regs(temp_);
@@ -796,7 +800,7 @@ void IrGenerator::exception_catch() {
 
 	// Handle the exception by returning from the function.
 	emit(except_block);
-	func_return();
+	func_return(Operand()); // Return no value b/c this is not a normal return.
 
 	// Start a new code block that continues after the exception check.
 	emit(done_block);
@@ -884,17 +888,23 @@ void IrGenerator::exit_scope() {
     // to perform cleanup at the end of the scope.
     Scope::Ptr scope = scope_.back();
 
-    if (!scope->has_return()) {    
-		// Remove variables in reverse order!
-		for (int i = scope->variables()-1; i >= 0; i--) { 
-			scope_cleanup(scope->variable(i));
-		}
-        scope_.pop_back();
-        return;
-    }
-
-    func_return();
+	// Remove variables in reverse order!
+	for (int i = scope->variables()-1; i >= 0; i--) { 
+		scope_cleanup(scope->variable(i));
+	}
     scope_.pop_back();
+
+    if (scope->has_return()) {    
+        // Emit code to destroy variables in all the enclosing parent scopes as
+        // well; otherwise, objects in those enclosing scopes will not be
+        // cleaned up.  Then, emit the 'ret' instruction.
+        if (function_->is_constructor()) {
+            assert("Bad return val for constructor"&&!scope->return_val());
+            func_return(variable(env_->name("self"))->operand());
+        } else {
+            func_return(scope->return_val()); 
+        } 
+    }
 }
 
 Operand IrGenerator::stack_value(Type* type) {
@@ -1020,24 +1030,45 @@ void IrGenerator::scope_cleanup(Variable* var) {
     }
 }
 
-void IrGenerator::func_return() {
+void IrGenerator::func_return(Operand retval) {
     // Search backwards through the vector and clean up variables in the 
     // containing scope.  Do NOT clean up variables in the top scope; those
 	// variables are parameters and they are anchored (hence j > 1).
     for (int j = scope_.size()-1; j > 0; j--) {
         Scope::Ptr s = scope_[j];
         for (int i = s->variables()-1; i >= 0; i--) {
-            scope_cleanup(s->variable(i));
+            Variable::Ptr var = s->variable(i); 
+            Type::Ptr type = var->type();
+            assert("Nil operand" && !!var->operand());
+            if (!type) {
+                // Nil variable type indicates that no cleanup need be done.
+            } else if (type->is_primitive()) {
+                // Do nothing, b/c the primitive has no destructor.
+            } else if (type->is_ref()) {
+                // Emit a branch to check the variable's reference count and
+                // free it if necessary.
+                refcount_dec(var->operand());               
+            } else if (type->is_compound()) {
+                // Call the value type's destructor, if it exists.  Do not
+                // decrement the local_slots counter here, because this is a
+                // return, not a block exit.
+                value_dtor(var->operand(), type);
+            } else {
+                assert(!"Invalid type");
+            }
+            // This is similar to scope_cleanup, except that it doesn't
+            // decrement the local_slots counter.
         }
     }
 
-    // Emit an actual return.  Emit code to return the value saved in the var
-    // '_ret' if the variable has been set.
-    Operand retval = scope_.back()->return_val();
-    if (function_->is_constructor()) {
-        retval = variable(env_->name("self"))->operand();
+    // If this is the destructor, then release all the pointers held by the
+    // object, and then call free() to release memory if the object was
+    // dynamically allocated.
+    if (function_->is_destructor()) {
+        dtor_epilog(function_);
     }
-    if (!scope_.empty() && !!retval) {
+    
+    if (!!retval) {
         // Return the value by register, if the architecture supports return by
         // register
         if (retval.is_float() && machine_->float_return_regs()) {
@@ -1048,14 +1079,6 @@ void IrGenerator::func_return() {
             assert(!"No return register");
         }
     }
-    
-    // If this is the destructor, then release all the pointers held by the
-    // object, and then call free() to release memory if the object was
-    // dynamically allocated.
-    if (function_->is_destructor()) {
-        dtor_epilog(function_);
-    }
-    
     ret();
 }
 
@@ -1282,8 +1305,8 @@ void IrGenerator::dtor_epilog(Function* feature) {
 }
 
 void IrGenerator::free_temps() {
-    // Free all object temporaries that were used to evaluate the expression by
-    // decrementing their refcount.
+    // Free all object and value temporaries that were used to evaluate the
+    // expression by decrementing their refcount.
     for (int i = 0; i < object_temp_.size(); i++) {
         refcount_dec(object_temp_[i]);
     }
@@ -1628,6 +1651,7 @@ void FuncMarshal::call(Operand func) {
     int int_arg = 0;
     int float_arg = 0;
     int stack_arg = 0;
+
     for (int i = 0; i < arg_.size(); ++i) {
         Register* reg = 0;
         if (arg_[i].is_float()) {
@@ -1668,6 +1692,18 @@ void FuncMarshal::call(Operand func) {
             stack_arg++;
         }
     }
+#ifdef WINDOWS
+    // Windows requires that at least 4 argument slots are allocated,
+    // regardless of whether or not they are used.  This spaced can be used by
+    // the called function, so if it is not allocated properly then the called
+    // function can smash the calling function's stack.
+    int const min_arg_slots = 4;
+    int const pad = min_arg_slots - gen_->arg_slots();
+    if (pad > 0) {
+        gen_->arg_slots_inc(pad);
+        stack_arg += pad;
+    }
+#endif
     gen_->call(func);
     gen_->arg_slots_dec(stack_arg);
 }

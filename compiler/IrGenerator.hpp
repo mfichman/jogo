@@ -119,7 +119,7 @@ private:
     void refcount_inc(Operand var);
     void refcount_dec(Operand var);
     void dispatch_table(Class* clazz);
-    void func_return();
+    void func_return(Operand val);
     void ctor_preamble(Class* clazz);
     void dtor_epilog(Function* func);
     void copier_preamble(Class* clazz);
@@ -138,6 +138,7 @@ private:
     void value_copy(Operand src, Operand dst, Type* type);
     void value_move(Operand src, Operand dst, Type* type);
     void value_dtor(Operand op, Type* type);
+    int arg_slots() const { return arg_slots_; }
     Operand bool_expr(Expression* expr);
     Operand pop_ret(Type* type);
     Operand id_operand(String* id);

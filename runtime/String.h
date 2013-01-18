@@ -51,11 +51,13 @@ extern Int String__vtable[];
 
 // These functions are from the C standard library, duplicated here because
 // String.h clashes with the C library string.h
+#ifndef _WIN32
 int strerror_r(int, char*, size_t);
 char* strncpy(char*, const char*, size_t);
 size_t strlen(const char*);
 void* memset(void*, int, size_t);
 void* memcpy(void*, const void*, size_t);
+#endif
 
 #define String__static(x) { String__vtable, 1, sizeof((x))-1, (x) }
     
