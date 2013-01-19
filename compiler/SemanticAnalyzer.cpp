@@ -1055,6 +1055,10 @@ void SemanticAnalyzer::operator()(Constant* feature) {
             err_ << "Non-literal constant\n";
             env_->error();
         }
+	} else if (!clazz) {
+		err_ << feature->location();
+		err_ << "Missing constant type or initializer\n";
+		env_->error();
     } else if (clazz->is_enum()) {
         feature->type(clazz->type());
     }
