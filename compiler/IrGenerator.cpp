@@ -792,7 +792,7 @@ void IrGenerator::exception_catch() {
 	// return.  Currently, only an exception throw is allowed, to support cleaning
 	// up coroutines.
 	String::Ptr name = env_->name("Exception__current");
-	Constant::Ptr static current(new Constant(Location(), env_, name, 0, 0));
+	Constant::Ptr static current(new Constant(Location(), env_, name, 0, 0, 0));
 
 	Operand val = load(Operand(name, Address(0)));
 
@@ -1327,6 +1327,9 @@ void IrGenerator::constants() {
         Expression* init = cons->initializer();
         if(IntegerLiteral::Ptr lit = dynamic_cast<IntegerLiteral*>(init)) {
         } else if(FloatLiteral::Ptr lit = dynamic_cast<FloatLiteral*>(init)) {
+        } else if(Empty::Ptr lit = dynamic_cast<Empty*>(init)) {
+            // FIXME: Extern constants should be loaded from a per-lib startup
+            // func/initialization routine.
         } else {
             store(Operand(cons->label(), Address(0)), emit(cons->initializer()));
             free_temps();

@@ -22,6 +22,12 @@
 
 #include "Nasm64Generator.hpp"
 #include <sstream>
+#include <stdint.h>
+
+#ifdef WINDOWS
+#define atoll _atoi64
+#define strtoll _strtoi64
+#endif
 
 static const int INTEL64_MAX_IMM = 4096;
 static const int INTEL64_MIN_STACK = 4096;
@@ -73,6 +79,7 @@ void Nasm64Generator::operator()(File* file) {
         } else {
             out_ << " dq 0\n";
         }
+        assert(cons->label()->string()!="");
         definition_.insert(cons->label()->string());
     }
 
@@ -411,9 +418,7 @@ void Nasm64Generator::literal(Operand literal) {
     } else if (NilLiteral* le = dynamic_cast<NilLiteral*>(expr)) {
         out_ << "0";
     } else if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(expr)) {
-        std::stringstream ss(le->value()->string());
-        int number;
-        ss >> number;
+        int64_t number = strtoll(le->value()->string().c_str(), 0, 0);
         if(number < INTEL64_MAX_IMM) {
             out_ << le->value();
         } else {
@@ -502,13 +507,11 @@ void Nasm64Generator::load_hack(Operand res, Operand a1) {
 
     char const* mov = (res.is_float() ? "movsd" : "mov qword");
     if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(a1.literal())) {
-        std::stringstream ss(le->value()->string());
-        int number;
-        ss >> number;
+        int64_t number = strtoll(le->value()->string().c_str(), 0, 0);
         if (number < INTEL64_MAX_IMM) {
             out_ << "    " << mov << " ";
             operand(res);
-            out_ << ", " << number << "\n";
+            out_ << ", " << le->value() << "\n";
         } else {
             out_ << "    " << mov << " ";
             operand(res);

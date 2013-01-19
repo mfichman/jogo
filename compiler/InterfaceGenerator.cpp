@@ -61,7 +61,12 @@ void InterfaceGenerator::operator()(Class* feature) {
 
 void InterfaceGenerator::operator()(Constant* constant) {
     print_tabs();
-    out_ << constant->name() << "\n";
+    if (dynamic_cast<Module*>(constant->parent())) {
+        out_ << constant->qualified_name();
+    } else {
+        out_ << constant->name();
+    }
+    out_ << " " << constant->type() << "\n";
 }
 
 void InterfaceGenerator::operator()(Function* function) {

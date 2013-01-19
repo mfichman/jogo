@@ -46,8 +46,8 @@ def setup_vim():
     if 'linux' in sys.platform:
         options.add('set guifont=Ubuntu\ Mono')
 
-    with open(os.path.join(home, '.vimrc'), 'w') as f:
-        f.write('\n'.join(sorted(options)))
+    #with open(os.path.join(home, '.vimrc'), 'w') as f:
+    #    f.write('\n'.join(sorted(options)))
 
     # Write the other vim files (syntax, colors, etc).
     vimhome = ''

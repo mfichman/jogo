@@ -195,9 +195,9 @@ Feature* Class::feature(String* name) const {
 }
 
 Constant::Constant(Location loc, Environment* env, String* name, Flags flags, 
-    Expression* init) :
-
+    Type* type, Expression* init) :
     Feature(loc, env, name, flags),
+    declared_type_(type),
     initializer_(init) {
 }
 

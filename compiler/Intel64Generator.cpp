@@ -27,6 +27,7 @@
 
 #ifdef WINDOWS
 #define atoll _atoi64
+#define strtoll _strtoi64
 #endif
 
 Machine::Ptr const Intel64Generator::MACHINE = Machine::intel64();
@@ -195,7 +196,7 @@ void Intel64Generator::operator()(IrBlock* block) {
 
 uint64_t Intel64Generator::literal(FloatLiteral* lit) {
     // FIXME: This function assumes that the architecure the compiler is run on
-    // is Intel 64.  This is not necessarily the case.  If the architecure has
+    // is Intel 64.  1GThis is not necessarily the case.  If the architecure has
     // a binary format that is different from the output architecure, then this
     // function will not work!
     assert("Bad architecture" && sizeof(double) == sizeof(uint64_t));
@@ -210,7 +211,10 @@ uint64_t Intel64Generator::literal(IntegerLiteral* lit) {
     // is Intel 64.  This is not necessarily the case.  If the architecure has
     // a binary format that is different from the output architecure, then this
     // function will not work!
-    return atoll(lit->value()->string().c_str());
+    
+    return strtoll(lit->value()->string().c_str(), 0, 0);
+
+    //return //atoll(lit->value()->string().c_str());
 }
 
 void Intel64Generator::stack_check(Function* func) {
@@ -582,7 +586,7 @@ void Intel64Generator::store(Operand a1, Operand a2) {
         mov(RAX, (uint64_t)0);
         mov(a1, RAX);
     } else if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(expr)) {
-        mov(RAX, atoll(le->value()->string().c_str()));
+        mov(RAX, literal(le));
         mov(a1, RAX);
     } else if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(expr)) {
         assert(!"Not implemented");

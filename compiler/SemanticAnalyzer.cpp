@@ -1033,7 +1033,7 @@ void SemanticAnalyzer::operator()(Constant* feature) {
     // Analyze a constant value.
     Expression::Ptr init = feature->initializer();
     Feature::Ptr parent = feature->parent();
-    if (init && feature->type() && init->type()) { return; }
+    if (feature->type() && init->type()) { return; }
 
     if (parent->feature(feature->name()) != feature) {
         err_ << feature->location();
@@ -1044,24 +1044,30 @@ void SemanticAnalyzer::operator()(Constant* feature) {
 
     Class::Ptr clazz = dynamic_cast<Class*>(parent.pointer());
     feature->type(env_->bottom_type());
-    if (init) {
-        init(this);
+    init(this);
+
+    if (dynamic_cast<StringLiteral*>(init.pointer())) {
         feature->type(init->type());
-        if (dynamic_cast<StringLiteral*>(init.pointer())) {
-        } else if (dynamic_cast<IntegerLiteral*>(init.pointer())) {
-        } else if (dynamic_cast<FloatLiteral*>(init.pointer())) {
-        } else {
+    } else if (dynamic_cast<IntegerLiteral*>(init.pointer())) {
+        feature->type(init->type());
+    } else if (dynamic_cast<FloatLiteral*>(init.pointer())) {
+        feature->type(init->type());
+    } else if (!init || dynamic_cast<Empty*>(init.pointer())) {
+        if (clazz && clazz->is_enum()) {
+            feature->type(clazz->type());
+        } else if (!feature->declared_type()->is_top()) {
+            feature->type(feature->declared_type());
+       	} else {
             err_ << feature->location();
-            err_ << "Non-literal constant\n";
-            env_->error();
+       		err_ << "Missing constant type or initializer\n";
+       		env_->error();
         }
-	} else if (!clazz) {
-		err_ << feature->location();
-		err_ << "Missing constant type or initializer\n";
-		env_->error();
-    } else if (clazz->is_enum()) {
-        feature->type(clazz->type());
+    } else {
+        err_ << feature->location();
+        err_ << "Non-literal constant\n";
+        env_->error();
     }
+
     env_->constant(feature);
 }
 

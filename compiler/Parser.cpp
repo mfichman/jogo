@@ -419,12 +419,16 @@ Constant* Parser::constant() {
 
     // Read the initializer, which is optional.
     Expression::Ptr init;
+    Type::Ptr type = env_->top_type();
     if (token() == Token::ASSIGN) {
         next();
         init = expression();
+    } else if (token() == Token::TYPE) {
+        type = Parser::type();
+        init = new Empty(loc);
     }
    
-    Constant* con = new Constant(loc, env_, id, flags, init); 
+    Constant* con = new Constant(loc, env_, id, flags, type, init); 
     file_->constant(con);
     return con;
 }
@@ -1522,6 +1526,7 @@ void Parser::module_feature(Feature* feature, String* scope) {
     }
     std::string parent = Import::parent_scope(scope->string());
     std::string sub = Import::sub_scope(scope->string());
+    // First attempt a look up of the form [Module::]+Class
     Module::Ptr module = env_->module(env_->name(parent));
     if (module) {
         String::Ptr id = env_->name(sub);
@@ -1532,6 +1537,7 @@ void Parser::module_feature(Feature* feature, String* scope) {
             return;
         } 
     }
+    // Now do a lookup of the form [Module::]*Module
     module = env_->module(scope);
     if (!module) {
         module = new Module(location(), env_, scope);

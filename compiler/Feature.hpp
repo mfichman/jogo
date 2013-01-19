@@ -96,8 +96,9 @@ private:
 class Constant : public Feature {
 public:
     Constant(Location loc, Environment* env, String* name, Flags flags, 
-        Expression* init);
+        Type* type, Expression* init);
 
+    Type* declared_type() const { return declared_type_; }
     Type* type() const { return type_; }
     Expression* initializer() const { return initializer_; }
     void type(Type* type) { type_ = type; assert(type_); } 
@@ -107,6 +108,7 @@ public:
     typedef Iterator<Constant> Itr;
 
 private:
+    Type::Ptr declared_type_;
     Type::Ptr type_;
     Expression::Ptr initializer_;
 };

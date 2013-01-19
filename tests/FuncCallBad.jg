@@ -1,0 +1,9 @@
+
+
+unary(x Int) {
+}
+
+main() Int {
+    unary()
+    ret 0
+}

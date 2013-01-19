@@ -27,7 +27,7 @@ syn keyword apConstant true false nil self eof
 
 
 syn match apFunction "^ *[@]\?[a-z0-9_][a-z0-9_]*[=!?]\?\((.*{\)\@="
-
+syn match apFunction "^ *[@]\?[a-z0-9_][a-z0-9_]*[=!?]\?\((.*native\)\@="
 "syn match apFunction "[a-z][A-Za-z0-9_]*[=!?]\=\((.*{\)\@="
 "syn match apFunction "[a-z][A-Za-z0-9_]*[=!?]\=\([^\)]*func\)\@="
 syn match apString ":\@<!:[a-z][a-z0-9_]*"
@@ -40,6 +40,7 @@ syn match apString "[a-zA-Z0-9_]\@<!\/.*\/"
 syn keyword apOperator + - / * <> == != ^ ?
 
 syn match apNumber "\<[0-9][0-9]*\>"
+syn match apNumber "\<0x[0-9][0-9]*\>"
 
 hi def link apKeyword Keyword
 hi def link apTodo Todo

@@ -98,6 +98,7 @@ int main(int argc, char** argv) {
 
     if (!env->inputs()) {
         for (File::Iterator i("src"); i; ++i) {
+            std::string fn = std::string("src") + FILE_SEPARATOR + *i;
             search("src", *i);
         }
     }
