@@ -49,6 +49,9 @@ main() Int {
     Io::println(vec.x.str)
     Io::println(vec.y.str)
     Io::println(vec.z.str)
+
+    q = -9.0
+    Io::println(q.str)
     
     ret 0
 }

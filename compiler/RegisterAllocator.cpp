@@ -199,6 +199,11 @@ bool RegisterAllocator::color_ok(RegisterVertex const& v, RegisterId reg) {
         return false;
     } 
 
+    // Conflict: Register is a return register
+    if (machine_->return_set().has(reg)) {
+        return false;
+    }
+
     // Conflict: Candiate reg is the same as a machine register that
     // matches.
     if (v.neighbors().has(reg)) {

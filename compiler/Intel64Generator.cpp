@@ -176,7 +176,7 @@ void Intel64Generator::operator()(IrBlock* block) {
         case SUB: sub(res.reg(), a1.reg(), a2.reg()); break;
         case MUL: mul(res.reg(), a1.reg(), a2.reg()); break;
         case DIV: div(res.reg(), a1.reg(), a2.reg()); break;
-        case NEG: mov(res.reg(), a1.reg()); neg(res.reg()); break;
+        case NEG: neg(res.reg(), a1.reg()); break;
         case NOTB: mov(res.reg(), a1.reg()); bnot(res.reg()); break;
         case ANDB: mov(res.reg(), a1.reg()); band(res.reg(), a2.reg()); break;
         case ORB: mov(res.reg(), a1.reg()); bor(res.reg(), a2.reg()); break; 
@@ -601,6 +601,7 @@ void Intel64Generator::sub(RegisterId res, RegisterId r1, RegisterId r2) {
     if (res == r1) { // res <- res - r2
         (this->*sub)(res, r2);
     } else if (res == r2) { // res <- r1 - res
+        assert("Not implemented"&&!res.is_float());
         neg(res);
         (this->*sub)(res, r1);
     } else { // res <- r1 - r2
@@ -649,6 +650,30 @@ void Intel64Generator::div(RegisterId res, RegisterId r1, RegisterId r2) {
         movsd(res, r1);
         divsd(res, r2);
     }
+}
+
+void Intel64Generator::neg(RegisterId res, RegisterId a1) {
+    // If reg is floating point, then we need to subtract from zero to do a
+    // negation.
+    if (res.is_float()) {
+        mov(RAX, (uint64_t)0);
+        cvtsi2ssq(res, RAX);
+        subsd(res, a1);
+    } else {
+        mov(res, a1);
+        neg(res);
+    }
+}
+
+void Intel64Generator::cvtsi2ssq(RegisterId dst, RegisterId src) {
+    // Moves a 64-bit GP reg value to an XMM register, doing conversion to
+    // floating point.
+    assert("Invalid cvtsi2ssq" && dst.is_float() && !src.is_float());
+    text_->uint8(0xf3); // CVTSI prefix
+    rex(dst, src);  
+    text_->uint8(0x0f);
+    text_->uint8(0x2a);
+    modrm(MODRM_DIRECT, dst, src); 
 }
 
 void Intel64Generator::movq(RegisterId dst, RegisterId src) {

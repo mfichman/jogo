@@ -148,6 +148,7 @@ Float < Value {
     @div(other Float) native Float
     @equal(other Float) native Bool
     @less(other Float) native Bool
+    @neg() native Float
 
     str() String { ret self.str }
     str?() native String {

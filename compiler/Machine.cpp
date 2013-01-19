@@ -106,6 +106,7 @@ Machine* Machine::intel64() {
     Register::Ptr r15 = m->int_reg("r15"); m->caller_reg(r15); //15
 
     Register::Ptr xmm0 = m->float_reg("xmm0"); m->callee_reg(xmm0);
+    // Use xmm0 as an accumulator, like rax for integer instructions
     Register::Ptr xmm1 = m->float_reg("xmm1"); m->callee_reg(xmm1);
     Register::Ptr xmm2 = m->float_reg("xmm2"); m->callee_reg(xmm2);
     Register::Ptr xmm3 = m->float_reg("xmm3"); m->callee_reg(xmm3);
@@ -123,7 +124,7 @@ Machine* Machine::intel64() {
     Register::Ptr xmm15 = m->float_reg("xmm15"); m->callee_reg(xmm15);
     // Disabled b/c NASM doesn't support xmm8-xmm15
     
-    m->return_reg(rax);
+    m->return_reg(rax); // Return reg isn't used as a gp reg?
 #ifdef WINDOWS
     m->arg_reg(rcx);
     m->arg_reg(rdx);

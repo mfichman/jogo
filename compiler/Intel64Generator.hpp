@@ -106,6 +106,7 @@ private:
     void mul(RegisterId res, RegisterId a1, RegisterId a2);
     void div(RegisterId res, RegisterId a1, RegisterId a2);
     void stack_check(Function* func);
+    void neg(RegisterId res, RegisterId a1);
 
     // Functions for actual x86-64 instructions mnemonics
     void lea(RegisterId reg, RegisterId rm);
@@ -152,6 +153,7 @@ private:
     void sub(RegisterId dst, uint64_t imm);
     void imul(RegisterId dst, RegisterId src);
     void neg(RegisterId reg);
+    void cvtsi2ssq(RegisterId dst, RegisterId src);
 
 private:
     Environment::Ptr env_;
