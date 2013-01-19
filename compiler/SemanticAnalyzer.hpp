@@ -82,7 +82,7 @@ private:
     void variable(Variable* var);
     void enter_scope();
     void exit_scope();
-    Expression::Ptr args(Expression* expr, Function* func, Type* receiver);
+    Expression::Ptr args(Expression* call, Expression* expr, Function* func, Type* rec);
     void initial_assignment(Assignment* expr);
     void secondary_assignment(Assignment* expr); 
     void mutator(Attribute* feature);

@@ -102,19 +102,22 @@ Builder::Builder(Environment* env) :
 void Builder::process_path() {
     // Read in additional include directories from JOGO_PATH 
     char const* jogo_path = getenv("JOGO_PATH");
-    if (jogo_path) {
-        std::string include;
-        for (char const* c = jogo_path; *c; ++c) {
-            if (*c == PATH_SEPARATOR) {
-                if (!include.empty()) {
-                    env_->include(include);
-                }
-                include.clear();
+    if (!jogo_path) {
+        return;
+    }
+    std::string include;
+    for (char const* c = jogo_path; *c; ++c) {
+        if (*c == PATH_SEPARATOR) {
+            if (!include.empty()) {
+                env_->include(include);
             }
+            include.clear();
+        } else {
+            include += *c;
         }
-        if (!include.empty()) {
-            env_->include(include);
-        }
+    }
+    if (!include.empty()) {
+        env_->include(include);
     }
 }
 

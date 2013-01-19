@@ -529,7 +529,7 @@ void SemanticAnalyzer::operator()(Call* call) {
     }
     type_ = 0;
 
-    call->arguments(args(call->arguments(), func, receiver));
+    call->arguments(args(call, call->arguments(), func, receiver));
     if (function_) {
         function_->called_func(func);
     }
@@ -580,7 +580,7 @@ void SemanticAnalyzer::operator()(Construct* expr) {
         err_ << "Class '" << type << "' has no constructor\n";
         env_->error();
     } else {
-        expr->arguments(args(expr->arguments(), constr, type));  
+        expr->arguments(args(expr, expr->arguments(), constr, type));  
     }
     if (function_) {
         function_->called_func(constr);
@@ -1268,7 +1268,7 @@ void SemanticAnalyzer::operator()(Type* type) {
     }
 }
 
-Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec) {
+Expression::Ptr SemanticAnalyzer::args(Expression* call, Expression* args, Function* fn, Type* rec) {
     // Check argument types versus formal parameter types
     String::Ptr id = fn->name();
     Formal::Ptr formal = fn ? fn->formals() : 0;
@@ -1320,8 +1320,10 @@ Expression::Ptr SemanticAnalyzer::args(Expression* args, Function* fn, Type* rec
     if (formal) {
         if (args) {
             err_ << args->location();
-        } else {
+        } else if (rec) {
             err_ << rec->location();
+        } else {
+            err_ << call->location();
         }
         err_ << "Not enough arguments to function '" << id << "'\n";
         env_->error();
