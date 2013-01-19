@@ -46,7 +46,11 @@ void Nasm64Generator::operator()(File* file) {
     }
     for (String::Itr s = env_->integers(); s; ++s) {
         out_ << "lit" << (void*)s.pointer() << ":\n";
-        out_ << "    dq " << s.pointer() << "\n";
+        out_ << "    dq ";
+        if (s->string()[0] == '.') {
+            out_ << '0';
+        }
+        out_ << s.pointer() << "\n";
         align();
     }
     for (Constant::Itr cons = file->constants(); cons; ++cons) {
