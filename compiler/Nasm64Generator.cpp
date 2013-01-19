@@ -169,7 +169,7 @@ void Nasm64Generator::operator()(IrBlock* block) {
         case SUB: arith(inst); break;
         case MUL: arith(inst); break;
         case DIV: arith(inst); break;
-        case NEG: instr("mov", res, a1); instr("neg", res); break;
+        case NEG: neg(res, a1); break;
         case STORE: store_hack(a1, a2); break;
             // FIXME: Simplify the code path for labels, loads, stores,
             // literals, etc.
@@ -228,6 +228,17 @@ void Nasm64Generator::dispatch_table(Class* feature) {
         }
     }
     align();
+}
+
+void Nasm64Generator::neg(Operand res, Operand a1) {
+    if (res.is_float()) {
+        out_ << "    mov rax, 0\n";
+        out_ << "    cvtsi2sd "; operand(res); out_ << ", rax\n";
+        instr("subsd", res, a1);
+    } else {
+        instr("mov", res, a1); 
+        instr("neg", res); 
+    }
 }
 
 void Nasm64Generator::arith(Instruction const& inst) {

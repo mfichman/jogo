@@ -657,7 +657,7 @@ void Intel64Generator::neg(RegisterId res, RegisterId a1) {
     // negation.
     if (res.is_float()) {
         mov(RAX, (uint64_t)0);
-        cvtsi2ssq(res, RAX);
+        cvtsi2sd(res, RAX);
         subsd(res, a1);
     } else {
         mov(res, a1);
@@ -665,11 +665,11 @@ void Intel64Generator::neg(RegisterId res, RegisterId a1) {
     }
 }
 
-void Intel64Generator::cvtsi2ssq(RegisterId dst, RegisterId src) {
+void Intel64Generator::cvtsi2sd(RegisterId dst, RegisterId src) {
     // Moves a 64-bit GP reg value to an XMM register, doing conversion to
     // floating point.
-    assert("Invalid cvtsi2ssq" && dst.is_float() && !src.is_float());
-    text_->uint8(0xf3); // CVTSI prefix
+    assert("Invalid cvtsi2sd" && dst.is_float() && !src.is_float());
+    text_->uint8(0xf2); // CVTSI prefix
     rex(dst, src);  
     text_->uint8(0x0f);
     text_->uint8(0x2a);

@@ -53,6 +53,7 @@ private:
     void instr(const char* instr, Operand r1, const char* label);
 
     void dispatch_table(Class* feature);
+    void neg(Operand r1, Operand r2);
     void arith(Instruction const& instr);
     void load(Operand r1, Operand r2);
     void store(Operand r1, Operand r2);

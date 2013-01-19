@@ -153,7 +153,7 @@ private:
     void sub(RegisterId dst, uint64_t imm);
     void imul(RegisterId dst, RegisterId src);
     void neg(RegisterId reg);
-    void cvtsi2ssq(RegisterId dst, RegisterId src);
+    void cvtsi2sd(RegisterId dst, RegisterId src);
 
 private:
     Environment::Ptr env_;
