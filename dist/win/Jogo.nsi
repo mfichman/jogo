@@ -32,7 +32,7 @@ Section "Main"
     WriteRegStr HKLM ${REGKEY} "Publisher" "Matt Fichman <matt.fichman@gmail.com>"
     WriteRegStr HKLM ${REGKEY} "URLInfoAbout" "https://github.com/mfichman/jogo"
     WriteRegStr HKLM ${REGKEY} "URLUpdateInfo" "https://github.com/mfichman/jogo"
-    WriteRegStr HKLM ${REGKEY} "UninstallString" "$INSTDIR/Uninstall.exe"
+    WriteRegStr HKLM ${REGKEY} "UninstallString" "$\"$INSTDIR/Uninstall.exe$\""
 
     ; Set JOGO_HOME environment variable
     ; Include for some of the windows messages defines
@@ -49,10 +49,16 @@ Section "Main"
 SectionEnd
 
 Section "un.Main"
+    DELETE "$INSTDIR\Uninstall.exe"
+    RMDIR /r "$INSTDIR\bin"
+    RMDIR /r "$INSTDIR\include"
+    RMDIR /r "$INSTDIR\lib"
+    DELETE "$INSTDIR\LICENSE.txt"
+    DELETE "$INSTDIR\README.txt"
+    RMDIR "$INSTDIR"
     DeleteRegKey HKLM ${REGKEY}
     DeleteRegValue ${env_hklm} "JOGO_HOME"
     ${un.EnvVarUpdate} $0 "PATH" "A" "HKLM" "$INSTDIR\bin"
 
     ;SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
-    RMDIR /r "$INSTDIR"
 SectionEnd

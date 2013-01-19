@@ -65,6 +65,7 @@ Builder::Builder(Environment* env) :
     env->include(program_files + "\\Jogo\\include\\jogo");
     env->include(program_files_x86 + "\\Jogo\\include\\jogo");
 #endif
+    process_path();
 
     // Run the compiler.  Output to a temporary file if the compiler will
     // continue on to another stage; otherwise,  the file directly.
@@ -95,6 +96,25 @@ Builder::Builder(Environment* env) :
         monolithic_build();
     } else {
         modular_build();
+    }
+}
+
+void Builder::process_path() {
+    // Read in additional include directories from JOGO_PATH 
+    char const* jogo_path = getenv("JOGO_PATH");
+    if (jogo_path) {
+        std::string include;
+        for (char const* c = jogo_path; *c; ++c) {
+            if (*c == PATH_SEPARATOR) {
+                if (!include.empty()) {
+                    env_->include(include);
+                }
+                include.clear();
+            }
+        }
+        if (!include.empty()) {
+            env_->include(include);
+        }
     }
 }
 

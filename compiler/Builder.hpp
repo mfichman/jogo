@@ -39,6 +39,7 @@ public:
     int errors() const { return errors_; }
 
 private:
+    void process_path();
     void modular_build();
     void monolithic_build();
     void link(Module* module);

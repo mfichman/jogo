@@ -24,7 +24,7 @@
 #include "Builder.hpp"
 #include <vector>
 
-Environment::Ptr env(new Environment());
+Environment::Ptr env(new Environment);
 
 void print_usage() {
     Stream::Ptr out = Stream::stout();
@@ -38,7 +38,7 @@ void print_usage() {
 
 void print_version() {
     Stream::Ptr out = Stream::stout();
-    out << "Apmake version " << VERSION << ", compiled on ";
+    out << "jgmake version " << VERSION << ", compiled on ";
     out << __DATE__ << " " << __TIME__ << "\n";
     out->flush();
 }
@@ -91,6 +91,9 @@ void search(std::string prefix, std::string name) {
 int main(int argc, char** argv) {
     // This program recursively finds and builds all files in the source
     // directory, and then generates the output in the lib/bin directory.
+#ifdef WINDOWS
+    _CrtSetReportHook(report_hook);
+#endif
     parse_options(argc, argv);
 
     if (!env->inputs()) {
