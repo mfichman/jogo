@@ -52,6 +52,15 @@ main() Int {
 
     q = -9.0
     Io::println(q.str)
+    Io::println(9.0.str)
+    
+    r = 8.
+    Io::println(r.str)
+    Io::println(8..str)
+    
+    s = .7
+    Io::println(s.str)
+    Io::println(.7.str)
     
     ret 0
 }

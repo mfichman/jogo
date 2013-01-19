@@ -246,6 +246,9 @@ void Lexer::number_or_dot() {
     if (char_ == '.') {
         // Read in the decimal point and everything after it.
         read();
+		if (!isdigit(char_) && value()[0] == '.') {
+		    return token(Token::DOT);
+		}
         if (islower(char_) && !value().empty()) {
             // Put the '.' back, b/c we have a situation like 7.sin that must
             // be resolved. 
@@ -340,7 +343,7 @@ void Lexer::operator_or_typevar() {
 
     switch (char_) {
     case ',': read(); token(Token::COMMA); break;
-    case '.': read(); token(Token::DOT); break;
+    case '.': number_or_dot(); break;
     case '/': read(); token(Token::DIV); break;
     case '%': read(); token(Token::MOD); break;
     case '^': read(); token(Token::XORB); break;
