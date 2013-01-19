@@ -55,9 +55,6 @@ void Intel64Generator::operator()(File* file) {
     if (env_->errors()) { return; }
     format_->sym(env_->name("__file"), OutputFormat::SYM_LDATA);
 
-    // FIXME: Output constants
-    // FIXME: Output integer literals?
-    // FIXME: Output strings
     for (Feature::Itr f = file->features(); f; ++f) {
         f(this);
     }
@@ -67,7 +64,17 @@ void Intel64Generator::operator()(File* file) {
             assert(!"Not supported");
         }
         format_->sym(cons->label(), OutputFormat::SYM_DATA);
-        data_->uint64(0); // Data
+        Expression* init = cons->initializer();
+        if (IntegerLiteral::Ptr lit = dynamic_cast<IntegerLiteral*>(init)) {
+            data_->uint64(literal(lit)); 
+        } else if (FloatLiteral::Ptr lit = dynamic_cast<FloatLiteral*>(init)) {
+            data_->uint64(literal(lit));
+        } else if (StringLiteral::Ptr lit = dynamic_cast<StringLiteral*>(init)) {
+            // FixMe: Declare equal to the corresponding string literal symbol
+            data_->uint64(0); // Data
+        } else {
+            data_->uint64(0); // Data
+        }
     }
 
     for (std::set<String*>::iterator i = string_.begin(); 
@@ -184,6 +191,26 @@ void Intel64Generator::operator()(IrBlock* block) {
         default: break;
         }
     }
+}
+
+uint64_t Intel64Generator::literal(FloatLiteral* lit) {
+    // FIXME: This function assumes that the architecure the compiler is run on
+    // is Intel 64.  This is not necessarily the case.  If the architecure has
+    // a binary format that is different from the output architecure, then this
+    // function will not work!
+    assert("Bad architecture" && sizeof(double) == sizeof(uint64_t));
+    double immf = atof(lit->value()->string().c_str());
+    uint64_t imm = 0;
+    memcpy(&imm, &immf, sizeof(imm));
+    return imm;
+}
+
+uint64_t Intel64Generator::literal(IntegerLiteral* lit) {
+    // FIXME: This function assumes that the architecure the compiler is run on
+    // is Intel 64.  This is not necessarily the case.  If the architecure has
+    // a binary format that is different from the output architecure, then this
+    // function will not work!
+    return atoll(lit->value()->string().c_str());
 }
 
 void Intel64Generator::stack_check(Function* func) {
@@ -337,16 +364,11 @@ void Intel64Generator::gp(uint8_t op, RegisterId reg, String* label) {
     // assumes 'label' is in the data section!
     assert(!!reg&&"Invalid register ID");
     assert(is_gp_reg(reg));
-    uint8_t const regid = reg_code(reg);
-    uint8_t const rmid = reg_code(RBP);
-    // RBP = use rip-relative addressing to load the operand from a PC-relative
-    // address.
-    uint8_t modrm = MODRM_INDIRECT;
-    modrm |= (MODRM_REG & (regid << 3));
-    modrm |= (MODRM_RM & rmid);
     rex(reg, RegisterId());
     text_->uint8(op);
-    text_->uint8(modrm);
+    operands(reg, RBP);
+    // RBP = use rip-relative addressing to load the operand from a PC-relative
+    // address.
     format_->ref(label, OutputFormat::REF_SIGNED);
     text_->uint32(0); // Immediate
 }
@@ -397,6 +419,22 @@ void Intel64Generator::ssesd(uint8_t op, RegisterId reg, Operand mem) {
     text_->uint8(0x0f);
     text_->uint8(op);
     operands(reg, mem);
+}
+
+void Intel64Generator::ssesd(uint8_t op, RegisterId reg, String* label) {
+    // Emits an instruction that uses the memory value at the given label as
+    // the second operand.  DO NOT use this for branch instructions, as it
+    // assumes 'label' is in the data section!
+    assert(!!reg&&"Invalid register ID");
+    text_->uint8(SD_PREFIX);
+    rex(reg, RegisterId());
+    text_->uint8(0x0f);
+    text_->uint8(op);
+    operands(reg, RBP);
+    // RBP = use rip-relative addressing to load the operand from a PC-relative
+    // address.
+    format_->ref(label, OutputFormat::REF_SIGNED);
+    text_->uint32(0); // Immediate;
 }
 
 void Intel64Generator::rex(RegisterId reg, RegisterId rm) {
@@ -502,16 +540,11 @@ void Intel64Generator::load(RegisterId res, Operand a1) {
     } else if (NilLiteral* le = dynamic_cast<NilLiteral*>(expr)) {
         mov(res, (uint64_t)0);
     } else if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(expr)) {
-        mov(res, atoll(le->value()->string().c_str()));
+        mov(res, literal(le));
     } else if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(expr)) {
-        assert("Bad architecture" && sizeof(double) == sizeof(uint64_t));
-        double immf = atof(le->value()->string().c_str());
-        uint64_t imm = 0;
-        memcpy(&imm, &immf, sizeof(imm));
-        mov(RAX, imm);
+        mov(RAX, literal(le));
         movq(res, RAX);
     } else if (a1.label() && a1.is_indirect()) {
-        assert("Not implemented" && !res.is_float());
         mov(res, a1.label());
     } else if (a1.label()) {
         assert("Not implemented" && !res.is_float());
@@ -669,7 +702,7 @@ void Intel64Generator::cvtsi2sd(RegisterId dst, RegisterId src) {
     // Moves a 64-bit GP reg value to an XMM register, doing conversion to
     // floating point.
     assert("Invalid cvtsi2sd" && dst.is_float() && !src.is_float());
-    text_->uint8(0xf2); // CVTSI prefix
+    text_->uint8(SD_PREFIX); // CVTSI prefix
     rex(dst, src);  
     text_->uint8(0x0f);
     text_->uint8(0x2a);
@@ -768,7 +801,11 @@ void Intel64Generator::mov(Operand rm, RegisterId reg) {
 void Intel64Generator::mov(RegisterId reg, String* label) {
     // Emits an instruction to move the memory value stored at the label into
     // the given register.
-    gp(MOV_REG_RM, reg, label);
+    if (reg.is_float()) {
+        ssesd(MOVSD_REG_RM, reg, label);
+    } else {
+        gp(MOV_REG_RM, reg, label);
+    }
 }
 
 void Intel64Generator::mov(String* label, RegisterId reg) {

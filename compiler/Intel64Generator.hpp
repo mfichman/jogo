@@ -80,17 +80,23 @@ public:
 
 private:
     void string(String::Ptr lit);
+
+    // Conversion functions
+    uint64_t literal(FloatLiteral* literal);
+    uint64_t literal(IntegerLiteral* literal);
+
     // Instruction formats for general-purpose registers
     void gp(uint8_t op, uint8_t ext, RegisterId reg, uint32_t imm);
     void gp(uint8_t op, uint8_t ext, RegisterId reg);
     void gp(uint8_t op, RegisterId reg, RegisterId rm);
-    void gp(uint8_t op, RegisterId reg, String* label);
     void gp(uint8_t op, RegisterId reg, Operand mem);
+    void gp(uint8_t op, RegisterId reg, String* label);
     void gp2op(uint8_t op, RegisterId reg, RegisterId rm);
     
     // Instruction formats for SSE registers
     void ssesd(uint8_t op, RegisterId reg, RegisterId rm);
     void ssesd(uint8_t op, RegisterId reg, Operand mem);
+    void ssesd(uint8_t op, RegisterId reg, String* label);
 
     // Helper functions for the above instruction formats
     void rex(RegisterId reg, RegisterId rm);

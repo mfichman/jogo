@@ -58,7 +58,21 @@ void Nasm64Generator::operator()(File* file) {
             assert(!"Not supported");
         }
         out_ << "global "; label(cons->label()); out_ << "\n";
-        label(cons->label()); out_ << " dq 0\n";
+        Expression* init = cons->initializer();
+        label(cons->label());
+        if(IntegerLiteral::Ptr lit = dynamic_cast<IntegerLiteral*>(init)) {
+            out_ << " dq " << lit->value() << "\n";
+        } else if(FloatLiteral::Ptr lit = dynamic_cast<FloatLiteral*>(init)) {
+            out_ << " dq ";
+            if (lit->value()->string()[0] == '.') {
+                out_ << '0';
+            } 
+            out_ << lit->value() << "\n";
+        } else if (StringLiteral::Ptr lit = dynamic_cast<StringLiteral*>(init)) {
+            out_ << " dq 0\n"; // Output the value of the literal label?
+        } else {
+            out_ << " dq 0\n";
+        }
         definition_.insert(cons->label()->string());
     }
 
@@ -513,16 +527,12 @@ void Nasm64Generator::load_hack(Operand res, Operand a1) {
         out_ << ", [rax]\n"; 
         out_ << "    pop rax\n";
     } else if (a1.label() && a1.is_indirect()) {
-        out_ << "    " << mov << " ";
-        operand(res);
-        out_ << ", ";
-        label(a1.label()->string());
+        out_ << "    mov rax, ";
+        label(a1.label()->string()); // Load the label
         out_ << "\n";
         out_ << "    " << mov << " ";
         operand(res);
-        out_ << ", [";
-        operand(res);
-        out_ << "]\n";
+        out_ << ", [rax]\n"; // Now load the value of the label
     } else if (!!a1.addr() && !a1.is_indirect()) {
         // Load effective address.  An IR instruction like rax <- load rbx+3
         // gets translated to an LEAQ instruction

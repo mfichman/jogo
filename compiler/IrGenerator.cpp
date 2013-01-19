@@ -386,6 +386,9 @@ void IrGenerator::operator()(Constant* expr) {
 
 void IrGenerator::operator()(ConstantIdentifier* expr) {
     return_ = load(Operand(expr->constant()->label(), Address(0)));
+    if (expr->type()->is_float()) {
+        return_.reg(RegisterId(return_.reg().id(), RegisterId::FLOAT));
+    }
 }
 
 void IrGenerator::operator()(Identifier* expr) {
@@ -1321,8 +1324,13 @@ void IrGenerator::free_temps() {
 
 void IrGenerator::constants() {
     for (Constant::Itr cons = env_->constants(); cons; ++cons) {
-        store(Operand(cons->label(), Address(0)), emit(cons->initializer()));
-        free_temps();
+        Expression* init = cons->initializer();
+        if(IntegerLiteral::Ptr lit = dynamic_cast<IntegerLiteral*>(init)) {
+        } else if(FloatLiteral::Ptr lit = dynamic_cast<FloatLiteral*>(init)) {
+        } else {
+            store(Operand(cons->label(), Address(0)), emit(cons->initializer()));
+            free_temps();
+        }
     }
 }
 

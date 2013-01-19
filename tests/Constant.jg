@@ -16,6 +16,7 @@ Nested < Object {
 
 CONSTANT1 = 1
 CONSTANT2 = 2900999
+FLOAT = 3.4
 
 main() Int {
 
@@ -36,6 +37,9 @@ main() Int {
 
     var4 = Sub3::ROOT
     Io::println(Sub3::ROOT.str)
+
+    var5 = FLOAT
+    Io::println(FLOAT.str)
 
     ret 0
 }

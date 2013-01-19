@@ -1031,9 +1031,9 @@ void SemanticAnalyzer::operator()(Function* feature) {
 
 void SemanticAnalyzer::operator()(Constant* feature) {
     // Analyze a constant value.
-    Expression::Ptr initializer = feature->initializer();
+    Expression::Ptr init = feature->initializer();
     Feature::Ptr parent = feature->parent();
-    if (initializer && feature->type() && initializer->type()) { return; }
+    if (init && feature->type() && init->type()) { return; }
 
     if (parent->feature(feature->name()) != feature) {
         err_ << feature->location();
@@ -1044,10 +1044,18 @@ void SemanticAnalyzer::operator()(Constant* feature) {
 
     Class::Ptr clazz = dynamic_cast<Class*>(parent.pointer());
     feature->type(env_->bottom_type());
-    if(initializer) {
-        initializer(this);
-        feature->type(initializer->type());
-    } else if(clazz->is_enum()) {
+    if (init) {
+        init(this);
+        feature->type(init->type());
+        if (dynamic_cast<StringLiteral*>(init.pointer())) {
+        } else if (dynamic_cast<IntegerLiteral*>(init.pointer())) {
+        } else if (dynamic_cast<FloatLiteral*>(init.pointer())) {
+        } else {
+            err_ << feature->location();
+            err_ << "Non-literal constant\n";
+            env_->error();
+        }
+    } else if (clazz->is_enum()) {
         feature->type(clazz->type());
     }
     env_->constant(feature);
