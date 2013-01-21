@@ -51,7 +51,7 @@ public:
     void operator()(Call* expression);
     void operator()(Construct* expression);
     void operator()(Identifier* expression);
-    void operator()(ConstantIdentifier* expression);
+    void operator()(ConstantRef* expression);
     void operator()(Let* statement);
     void operator()(Block* statement);
     void operator()(Simple* statement);

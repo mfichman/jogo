@@ -587,7 +587,7 @@ void SemanticAnalyzer::operator()(Construct* expr) {
     }
 }
 
-void SemanticAnalyzer::operator()(ConstantIdentifier* expression) {
+void SemanticAnalyzer::operator()(ConstantRef* expression) {
     String::Ptr id = expression->identifier();
     String::Ptr scope = expression->scope();
     

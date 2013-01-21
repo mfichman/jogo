@@ -384,7 +384,7 @@ void IrGenerator::operator()(Constant* expr) {
     // block.
 }
 
-void IrGenerator::operator()(ConstantIdentifier* expr) {
+void IrGenerator::operator()(ConstantRef* expr) {
     return_ = load(Operand(expr->constant()->label(), Address(0)));
     if (expr->type()->is_float()) {
         return_.reg(RegisterId(return_.reg().id(), RegisterId::FLOAT));

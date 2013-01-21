@@ -65,7 +65,7 @@ public:
     virtual void operator()(Is* expression) {}
     virtual void operator()(Call* expression) {}
     virtual void operator()(Construct* expression) {}
-    virtual void operator()(ConstantIdentifier* expression) {}
+    virtual void operator()(ConstantRef* expression) {}
     virtual void operator()(Identifier* expression) {}
     virtual void operator()(Empty* empty) {}
     virtual void operator()(Block* statement) {}

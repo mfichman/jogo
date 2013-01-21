@@ -164,7 +164,7 @@ void CCodeGenerator::operator()(Identifier* expr) {
 }
 
 
-void CCodeGenerator::operator()(ConstantIdentifier* expression) {
+void CCodeGenerator::operator()(ConstantRef* expression) {
 }
 
 

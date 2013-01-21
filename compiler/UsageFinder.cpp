@@ -107,7 +107,7 @@ void UsageFinder::operator()(Member* expr) {
 }
 
 
-void UsageFinder::operator()(ConstantIdentifier* expr) {
+void UsageFinder::operator()(ConstantRef* expr) {
     assert(!"Not implemented");
 }
 

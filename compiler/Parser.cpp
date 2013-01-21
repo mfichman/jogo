@@ -1220,7 +1220,7 @@ Expression* Parser::construct() {
                 String::Ptr id = env_->name(value());
                 next();
                 implicit_import(scope, Import::QUALIFIED|Import::OPTIONAL);
-                return new ConstantIdentifier(loc, scope, id); 
+                return new ConstantRef(loc, scope, id); 
             } else {
                 implicit_import(scope);
                 return new Identifier(loc, scope, identifier()); 
@@ -1348,7 +1348,7 @@ Expression* Parser::literal() {
         expr = new Identifier(location(), name(""), name(value()));
         break;
     case Token::CONSTANT:
-        expr = new ConstantIdentifier(location(), name(""), name(value()));
+        expr = new ConstantRef(location(), name(""), name(value()));
         break;
     case Token::LEFT_PARENS:
         next();

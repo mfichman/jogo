@@ -312,9 +312,9 @@ private:
 };
 
 /* Constant identifier access expression */
-class ConstantIdentifier : public Expression {
+class ConstantRef : public Expression {
 public:
-    ConstantIdentifier(Location loc, String* scope, String* ident) :
+    ConstantRef(Location loc, String* scope, String* ident) :
         Expression(loc),
         scope_(scope),
         identifier_(ident) {
@@ -325,7 +325,7 @@ public:
     Constant* constant() const { return constant_; }
     void constant(Constant* constant) { constant_ = constant; }
     void operator()(Functor* functor) { functor->operator()(this); }
-    typedef Pointer<ConstantIdentifier> Ptr;
+    typedef Pointer<ConstantRef> Ptr;
     
 private:
     String::Ptr scope_;

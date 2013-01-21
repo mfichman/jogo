@@ -48,7 +48,7 @@ class HashLiteral;
 class ArrayLiteral;
 class Construct;
 class Identifier;
-class ConstantIdentifier;
+class ConstantRef;
 class Case;
 class Simple;
 class Block;
