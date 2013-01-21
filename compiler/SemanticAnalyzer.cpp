@@ -622,7 +622,7 @@ void SemanticAnalyzer::operator()(ConstantRef* expression) {
     assert(expression->type());
 }
 
-void SemanticAnalyzer::operator()(Identifier* expression) {
+void SemanticAnalyzer::operator()(IdentifierRef* expression) {
     // Determine the type of the identifier from the variable store.  If the
     // variable is undeclared, set the type of the expression to no-type to
     // prevent further error messages.
@@ -689,7 +689,7 @@ void SemanticAnalyzer::operator()(Identifier* expression) {
             Location loc = expression->location();
             String::Ptr scope = env_->name("");
             String::Ptr name = env_->name("self");
-            Identifier::Ptr self = new Identifier(loc, scope, name);
+            IdentifierRef::Ptr self = new IdentifierRef(loc, scope, name);
             self->type(class_->type());
             call->receiver(self);
             return;
@@ -1188,10 +1188,10 @@ void SemanticAnalyzer::operator()(Closure* expression) {
 
         // Add a new formal to the constructor; also add a statement to assign
         // the formal to the attribute stored in the closure object.
-        Expression::Ptr arg = new Identifier(loc, env_->name(""), id); 
+        Expression::Ptr arg = new IdentifierRef(loc, env_->name(""), id); 
         String::Ptr fid = env_->name("_"+id->string());
         Formal::Ptr formal = new Formal(loc, fid, var->type()); 
-        Identifier::Ptr rhs = new Identifier(loc, env_->name(""), fid);
+        IdentifierRef::Ptr rhs = new IdentifierRef(loc, env_->name(""), fid);
         Assignment::Ptr as = new Assignment(loc, id, env_->top_type(), rhs); 
         Statement::Ptr stmt = new Simple(loc, as);
         if (args) {
@@ -1525,7 +1525,7 @@ void SemanticAnalyzer::accessor(Attribute* feat) {
 
         Location loc = class_->location();
         String::Ptr id = feat->name();
-        Identifier::Ptr attr(new Identifier(loc, env_->name(""), id));
+        IdentifierRef::Ptr attr(new IdentifierRef(loc, env_->name(""), id));
         Return::Ptr ret(new Return(loc, attr)); 
         Block::Ptr block(new Block(loc, 0, ret));
         Type::Ptr st = class_->type();
@@ -1544,7 +1544,7 @@ void SemanticAnalyzer::mutator(Attribute* feat) {
         Location loc = class_->location();
         String::Ptr id = env_->name("_arg0");
         String::Ptr fn = feat->name();
-        Identifier::Ptr val(new Identifier(loc, env_->name(""), id)); 
+        IdentifierRef::Ptr val(new IdentifierRef(loc, env_->name(""), id)); 
         Assignment::Ptr assign(new Assignment(loc, fn, env_->top_type(), val)); 
         Block::Ptr block(new Block(loc, 0, new Simple(loc, assign)));
         Type::Ptr st = class_->type();

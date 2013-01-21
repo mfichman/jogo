@@ -321,9 +321,9 @@ void TreePrinter::operator()(ConstantRef* expression) {
 }
 
 
-void TreePrinter::operator()(Identifier* expression) {
+void TreePrinter::operator()(IdentifierRef* expression) {
     indent_level_++;
-    out_ << "Identifier\n";
+    out_ << "IdentifierRef\n";
     print_tabs(); out_ << "name: ";
     out_ << expression->identifier() << "\n";
     indent_level_--; 

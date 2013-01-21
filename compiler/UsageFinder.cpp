@@ -85,7 +85,7 @@ void UsageFinder::operator()(Construct* expr) {
     assert(!"Not implemented");
 }
 
-void UsageFinder::operator()(Identifier* expr) {
+void UsageFinder::operator()(IdentifierRef* expr) {
     if (Call::Ptr call = dynamic_cast<Call*>(expr->parent())) {
         if (call->function() == search_) {
             usage_.push_back(Usage(expr));

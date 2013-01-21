@@ -391,7 +391,7 @@ void IrGenerator::operator()(ConstantRef* expr) {
     }
 }
 
-void IrGenerator::operator()(Identifier* expr) {
+void IrGenerator::operator()(IdentifierRef* expr) {
     // Simply look up the value of the variable as stored previously.
     return_ = id_operand(expr->identifier());
 }
@@ -961,7 +961,7 @@ Operand IrGenerator::id_operand(String* id) {
             return load(Operand(self.reg(), Address(attr->slot())));
         }
     } else {
-        assert(!"Identifier not found");
+        assert(!"IdentifierRef not found");
     }
     return Operand();
 }

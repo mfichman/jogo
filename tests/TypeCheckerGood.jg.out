@@ -77,16 +77,16 @@ Module
           expression: Call
             expression: Member
               identifier: check2
-              expression: Identifier
+              expression: IdentifierRef
                 name: t
-            argument0: Identifier
+            argument0: IdentifierRef
               name: t
             argument1: Call
               expression: Member
                 identifier: check1
-                expression: Identifier
+                expression: IdentifierRef
                   name: t
-              argument0: Identifier
+              argument0: IdentifierRef
                 name: t
         child2: Statement
           expression: Assignment
@@ -96,9 +96,9 @@ Module
             initializer: Call
               expression: Member
                 identifier: check1
-                expression: Identifier
+                expression: IdentifierRef
                   name: t
-              argument0: Identifier
+              argument0: IdentifierRef
                 name: t
         child3: Statement
           expression: Assignment
@@ -108,9 +108,9 @@ Module
             initializer: Call
               expression: Member
                 identifier: @add
-                expression: Identifier
+                expression: IdentifierRef
                   name: a
-              argument0: Identifier
+              argument0: IdentifierRef
                 name: a
               argument1: IntegerLiteral(10)
         child4: Statement
@@ -130,26 +130,26 @@ Module
             name: c
             type: CycleType2
             declared: <<top>>
-            initializer: Identifier
+            initializer: IdentifierRef
               name: d
         child7: Statement
           expression: Assignment
             name: d
             type: CycleType1
             declared: <<top>>
-            initializer: Identifier
+            initializer: IdentifierRef
               name: c
         child8: Statement
           expression: Call
             expression: Member
               identifier: @index
-              expression: Identifier
+              expression: IdentifierRef
                 name: t
-            argument0: Identifier
+            argument0: IdentifierRef
               name: t
-            argument1: Identifier
+            argument1: IdentifierRef
               name: c
-            argument2: Identifier
+            argument2: IdentifierRef
               name: d
         child9: Statement
           expression: Assignment
@@ -160,28 +160,28 @@ Module
         child10: Conditional
           guard: Binary
             operation: and
-            left: Identifier
+            left: IdentifierRef
               name: e
             right: Unary
-              child: Identifier
+              child: IdentifierRef
                 name: e
               operation: not
           true: Block
           false: Conditional
             guard: Binary
               operation: or
-              left: Identifier
+              left: IdentifierRef
                 name: e
-              right: Identifier
+              right: IdentifierRef
                 name: e
             true: Block
             false: Block
         child11: While
           guard: Binary
             operation: and
-            left: Identifier
+            left: IdentifierRef
               name: e
-            right: Identifier
+            right: IdentifierRef
               name: b
           block: Block
     feature4: Function

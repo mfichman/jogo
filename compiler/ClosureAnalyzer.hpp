@@ -49,7 +49,7 @@ private:
     void operator()(Unary* expression);
     void operator()(Call* expression);
     void operator()(Construct* expression);
-    void operator()(Identifier* expression);
+    void operator()(IdentifierRef* expression);
     void operator()(Block* statement);
     void operator()(Simple* statement);
     void operator()(Let* let);

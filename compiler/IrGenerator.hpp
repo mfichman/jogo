@@ -56,7 +56,7 @@ private:
     void operator()(Is* expression);
     void operator()(Member* expression);
     void operator()(Construct* expression);
-    void operator()(Identifier* expression);
+    void operator()(IdentifierRef* expression);
     void operator()(ConstantRef* expression);
     void operator()(Empty* expression);
     void operator()(Cast* expression);

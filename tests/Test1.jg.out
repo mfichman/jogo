@@ -61,7 +61,7 @@ Module
       name: jim
       type: Int
       initializer: Call
-        expression: Identifier
+        expression: IdentifierRef
           name: f
         argument0: IntegerLiteral(99)
         argument1: IntegerLiteral(19)
@@ -72,7 +72,7 @@ Module
       initializer: Call
         expression: Member
           identifier: foo
-          expression: Identifier
+          expression: IdentifierRef
             name: jim
         argument0: IntegerLiteral(1)
         argument1: IntegerLiteral(2)

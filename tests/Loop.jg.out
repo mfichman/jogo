@@ -95,9 +95,9 @@ Module
             guard: Call
               expression: Member
                 identifier: more?
-                expression: Identifier
+                expression: IdentifierRef
                   name: _i
-              argument0: Identifier
+              argument0: IdentifierRef
                 name: _i
             block: Block
               child0: Let
@@ -108,16 +108,16 @@ Module
                   initializer: Call
                     expression: Member
                       identifier: next
-                      expression: Identifier
+                      expression: IdentifierRef
                         name: _i
-                    argument0: Identifier
+                    argument0: IdentifierRef
                       name: _i
                 block: Block
                   child0: Statement
                     expression: Call
-                      expression: Identifier
+                      expression: IdentifierRef
                         name: test
-                      argument0: Identifier
+                      argument0: IdentifierRef
                         name: i
     feature1: Function
       name: loop2

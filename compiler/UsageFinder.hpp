@@ -50,7 +50,7 @@ public:
     void operator()(Unary* expression);
     void operator()(Call* expression);
     void operator()(Construct* expression);
-    void operator()(Identifier* expression);
+    void operator()(IdentifierRef* expression);
     void operator()(ConstantRef* expression);
     void operator()(Let* statement);
     void operator()(Block* statement);

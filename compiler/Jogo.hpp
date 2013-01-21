@@ -47,7 +47,7 @@ class Call;
 class HashLiteral;
 class ArrayLiteral;
 class Construct;
-class Identifier;
+class IdentifierRef;
 class ConstantRef;
 class Case;
 class Simple;

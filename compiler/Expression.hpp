@@ -290,10 +290,10 @@ private:
     Expression::Ptr arguments_;
 };
 
-/* Identifier expression (variable access) */
-class Identifier : public Expression {
+/* IdentifierRef expression (variable access) */
+class IdentifierRef : public Expression {
 public:
-    Identifier(Location loc, String* scope, String* ident) :
+    IdentifierRef(Location loc, String* scope, String* ident) :
         Expression(loc),
         scope_(scope),
         identifier_(ident) {
@@ -303,8 +303,8 @@ public:
     String* scope() const { return scope_; }
     String* identifier() const { return identifier_; }
     void operator()(Functor* functor) { functor->operator()(this); }
-    typedef Pointer<Identifier> Ptr;
-    typedef Iterator<Identifier> Itr;
+    typedef Pointer<IdentifierRef> Ptr;
+    typedef Iterator<IdentifierRef> Itr;
 
 private:
     String::Ptr scope_;

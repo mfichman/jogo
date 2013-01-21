@@ -148,7 +148,7 @@ void CCodeGenerator::operator()(Construct* expr) {
 }
 
 
-void CCodeGenerator::operator()(Identifier* expr) {
+void CCodeGenerator::operator()(IdentifierRef* expr) {
     // Simply look up the value of the variable as stored previously.
     String::Ptr id = expr->identifier();
     Variable::Ptr var = variable(id);

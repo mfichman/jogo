@@ -1115,7 +1115,7 @@ Expression* Parser::increment() {
         next();
         String::Ptr id = identifier();
         Expression::Ptr t1 = new IntegerLiteral(loc, env_->integer("1"));    
-        Expression::Ptr t2 = new Identifier(loc, name(""), id);
+        Expression::Ptr t2 = new IdentifierRef(loc, name(""), id);
         Expression::Ptr t3 = op(loc, "@add", t2, t1);
         return new Assignment(loc, id, env_->top_type(), t3);
     }
@@ -1123,7 +1123,7 @@ Expression* Parser::increment() {
         next();
         String::Ptr id = identifier();
         Expression::Ptr t1 = new IntegerLiteral(loc, env_->integer("1"));    
-        Expression::Ptr t2 = new Identifier(loc, name(""), id);
+        Expression::Ptr t2 = new IdentifierRef(loc, name(""), id);
         Expression::Ptr t3 = op(loc, "@sub", t2, t1);
         return new Assignment(loc, id, env_->top_type(), t3);
     }
@@ -1223,7 +1223,7 @@ Expression* Parser::construct() {
                 return new ConstantRef(loc, scope, id); 
             } else {
                 implicit_import(scope);
-                return new Identifier(loc, scope, identifier()); 
+                return new IdentifierRef(loc, scope, identifier()); 
             }
         }
         
@@ -1345,7 +1345,7 @@ Expression* Parser::literal() {
         }
         break;
     case Token::IDENTIFIER:
-        expr = new Identifier(location(), name(""), name(value()));
+        expr = new IdentifierRef(location(), name(""), name(value()));
         break;
     case Token::CONSTANT:
         expr = new ConstantRef(location(), name(""), name(value()));
@@ -1504,11 +1504,11 @@ Statement* Parser::for_loop() {
     Assignment* t2 = new Assignment(loc, i, env_->top_type(), t1);
 
     // while (_i.more()) 
-    Expression* t3 = new Identifier(loc, name(""), i);
+    Expression* t3 = new IdentifierRef(loc, name(""), i);
     Expression* t4 = op(loc, "more?", t3, 0); 
 
     // id = _i.next()    
-    Expression* t5 = new Identifier(loc, name(""), i);
+    Expression* t5 = new IdentifierRef(loc, name(""), i);
     Expression* t6 = op(loc, "next", t5, 0);
     Assignment* t7 = new Assignment(loc, id, env_->top_type(), t6);
     Let* t8 = new Let(loc, t7, block);

@@ -63,7 +63,7 @@ Module
             name: x
             type: String
             declared: <<top>>
-            initializer: Identifier
+            initializer: IdentifierRef
               name: _arg0
     feature6: Function
       name: x?
@@ -73,5 +73,5 @@ Module
         type: Comment
       block: Block
         child0: Return
-          expression: Identifier
+          expression: IdentifierRef
             name: x

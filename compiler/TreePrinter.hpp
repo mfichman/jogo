@@ -47,7 +47,7 @@ private:
     void operator()(Unary* expression);
     void operator()(Call* expression);
     void operator()(Construct* expression);
-    void operator()(Identifier* expression);
+    void operator()(IdentifierRef* expression);
     void operator()(ConstantRef* expression);
     void operator()(Empty* empty);
     void operator()(Let* statement);

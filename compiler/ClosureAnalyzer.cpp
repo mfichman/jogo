@@ -84,8 +84,8 @@ void ClosureAnalyzer::operator()(Construct* expression) {
     }
 }
 
-void ClosureAnalyzer::operator()(Identifier* expression) {
-    // Identifier usage; could be referencing a local var or a var outside the
+void ClosureAnalyzer::operator()(IdentifierRef* expression) {
+    // IdentifierRef usage; could be referencing a local var or a var outside the
     // closure, depending.
     String::Ptr id = expression->identifier();
     if (!variable(id)) {

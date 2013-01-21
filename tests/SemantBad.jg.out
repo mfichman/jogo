@@ -161,7 +161,7 @@ Module
           declared: Int
           initializer: IntegerLiteral(10)
       child2: Return
-        expression: Identifier
+        expression: IdentifierRef
           name: a
   feature5: Function
     name: assign
@@ -223,7 +223,7 @@ Module
             name: value
             type: <<top>>
             declared: <<top>>
-            initializer: Identifier
+            initializer: IdentifierRef
               name: _arg0
     feature5: Function
       name: value?
@@ -233,7 +233,7 @@ Module
         type: Container[:a]
       block: Block
         child0: Return
-          expression: Identifier
+          expression: IdentifierRef
             name: value
   feature7: Class
     name: One
@@ -268,7 +268,7 @@ Module
             name: one
             type: <<top>>
             declared: <<top>>
-            initializer: Identifier
+            initializer: IdentifierRef
               name: _arg0
     feature4: Function
       name: one?
@@ -278,7 +278,7 @@ Module
         type: One[:a]
       block: Block
         child0: Return
-          expression: Identifier
+          expression: IdentifierRef
             name: one
   feature8: Class
     name: Two
@@ -317,7 +317,7 @@ Module
             name: two
             type: <<top>>
             declared: <<top>>
-            initializer: Identifier
+            initializer: IdentifierRef
               name: _arg0
     feature5: Function
       name: two?
@@ -327,7 +327,7 @@ Module
         type: Two[:a,:b]
       block: Block
         child0: Return
-          expression: Identifier
+          expression: IdentifierRef
             name: two
     feature6: Function
       name: three=
@@ -344,7 +344,7 @@ Module
             name: three
             type: <<top>>
             declared: <<top>>
-            initializer: Identifier
+            initializer: IdentifierRef
               name: _arg0
     feature7: Function
       name: three?
@@ -354,5 +354,5 @@ Module
         type: Two[:a,:b]
       block: Block
         child0: Return
-          expression: Identifier
+          expression: IdentifierRef
             name: three

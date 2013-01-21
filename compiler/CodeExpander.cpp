@@ -72,13 +72,13 @@ CodeExpander::stub(Function* func, Attribute* attr) {
     Location loc = class_->location();
     Expression::Ptr args;
 
-    Expression::Ptr self(new Identifier(loc, env_->name(""), attr->name()));
+    Expression::Ptr self(new IdentifierRef(loc, env_->name(""), attr->name()));
     for (Formal::Ptr f = func->formals(); f; f = f->next()) {
         Expression::Ptr arg;
         if (f->name()->string() == "self") {
             arg = self; 
         } else {
-            arg = new Identifier(loc, env_->name(""), f->name());
+            arg = new IdentifierRef(loc, env_->name(""), f->name());
         }
         arg->type(f->type());
         args = append(args.pointer(), arg.pointer());
@@ -128,9 +128,9 @@ CodeExpander::functor(Class* clazz) {
     Location loc;
     Statement::Ptr stmt;
     String::Ptr fn = func->formals()->next()->name();
-    Identifier::Ptr guard(new Identifier(loc, env_->name(""), fn));
-    Expression::Ptr arg0(new Identifier(loc, env_->name(""), env_->name("self")));
-    Expression::Ptr arg1(new Identifier(loc, env_->name(""), fn));
+    IdentifierRef::Ptr guard(new IdentifierRef(loc, env_->name(""), fn));
+    Expression::Ptr arg0(new IdentifierRef(loc, env_->name(""), env_->name("self")));
+    Expression::Ptr arg1(new IdentifierRef(loc, env_->name(""), fn));
     arg0->type(func->formals()->type());
     arg1->type(func->formals()->next()->type());
 
@@ -145,7 +145,7 @@ CodeExpander::functor(Class* clazz) {
                 // This is a functor case, so generate a branch for it.  Each 
                 // branch looks like this: self.@case_Type(obj)
                 Type::Ptr type = func->formals()->next()->type();
-                Identifier::Ptr id(new Identifier(loc, env_->name(""), nm));
+                IdentifierRef::Ptr id(new IdentifierRef(loc, env_->name(""), nm));
                 Call::Ptr expr(new Call(loc, id, arg));
                 expr->function(func);
                 Statement::Ptr yes(new Simple(loc, expr));
