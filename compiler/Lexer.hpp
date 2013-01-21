@@ -55,8 +55,8 @@ public:
     };
 
     Token() : type_(NONE) {}
-    Token(const Type& type) : type_(type) {}
-    const Token& operator=(const Type& type) { 
+    Token(Type const& type) : type_(type) {}
+    const Token& operator=(Type const& type) { 
         type_ = type; 
         return *this; 
     }
