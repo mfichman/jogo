@@ -21,95 +21,129 @@
  */  
 
 #include "Environment.hpp"
+#include "ArgParser.hpp"
 #include "Builder.hpp"
-#include <vector>
+#include <fstream>
 
 Environment::Ptr env(new Environment);
+ArgParser::Ptr argp;
 
-void print_usage() {
-    Stream::Ptr out = Stream::stout();
-    out << "Usage: jgmake [OPTIONS] PACKAGE...\n\n";
-    out << "  -h, --help     Print this help message.\n";
-    out << "  -v, --verbose  Print extra information during compilation.\n";
-    out << "  --version      Print the program version number.\n";
-    out << "\n";
-    out->flush();
+void parse_option(std::string const& flag) {
+    if ("library" == flag) {
+        env->lib(argp->required_arg());
+    } else if ("include" == flag) {
+        env->include(argp->required_arg()); 
+    } else if ("generator" == flag) {
+        env->generator(argp->required_arg());
+    } else if ("verbose" == flag) {
+        env->verbose(true);
+    } else {
+        argp->bad_option(flag);
+    }
 }
 
-void print_version() {
-    Stream::Ptr out = Stream::stout();
-    out << "jgmake version " << VERSION << ", compiled on ";
-    out << __DATE__ << " " << __TIME__ << "\n";
-    out->flush();
+void parse_short_option(std::string const& flag) {
+    // Parses a short-form option ('-x')
+    switch (flag[0]) {
+    case 'l': parse_option("library"); break;
+    case 'i': parse_option("include"); break;
+    case 'g': parse_option("generator"); break;
+    case 'v': parse_option("verbose"); break;
+    case 'c': parse_option("clean"); break;
+    case 'r': parse_option("reset"); break;
+    default: argp->bad_short_option(flag); break;
+    }
 }
 
-void parse_options(int argc, char** argv) {
-    Stream::Ptr err = Stream::sterr();
+void parse_options() {
+    // Parse command line options, and update the environment to match the 
+    // specified options.
+    argp->usage(
+        "Usage: jgmake [OPTIONS] PACKAGE...\n\n"
+        "Builds a Jogo project from the current working directory.  Source files should\n"
+        "be under ./src; output files go to ./build, ./lib, ./bin, and ./doc.  Options\n"
+        "given to jgmake are recorded.  After an option is set, it will remain set the\n"
+        "next time jgmake is run.\n\n"
+        "   -l, --library LIB    Compile and link with native library LIB.\n"
+        "   -i, --include DIR    Add the directory DIR to the search path.\n"
+        "   -g, --generator GEN  Use code generator GEN.\n"
+        "   -h, --help           Print this help message.\n"
+        "   -v, --verbose        Print extra information during compilation.\n"
+        "   -r, --reset          Erase all build options.\n"
+        "   -c, --clean          Remove all output directories.\n"
+        "   --version            Print the program version number.\n");
 
-    std::string flag;
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-' && argv[i][1] != '-') {
-            flag = argv[i] + 1;
-            if ("v" == flag) { flag = "verbose"; }
-            else if ("h" == flag) { flag = "help"; } 
-            else {
-                print_usage();
-                err << "Unknown flag '" << argv[i] << "'\n\n";
-                err->flush();
-                exit(1);
-            }
-        } else if (argv[i][0] == '-') {
-            flag = argv[i] + 2;
-        } else if (flag.empty()) {
-            env->input(argv[i]);
-        }
-    
-        if ("help" == flag) {
-            print_usage();
-            exit(0);
-        } else if ("version" == flag) {
-            print_version();
-            exit(0);
-        } else if ("verbose" == flag) {
-            env->verbose(true);
+    for (ArgToken tok = argp->next(); tok; tok = argp->next()) {
+        // Convert abbreviated flags into the longer descriptive form (e.g.,
+        // convert -p to --path)
+        if (ArgToken::SHORT == tok.type()) {
+            parse_short_option(tok.value());
+        } else if (ArgToken::LONG == tok.type()) {
+            parse_option(tok.value());
+        } else {
+            env->input(tok.value());
         }
     } 
+
+    std::string gen = env->generator();
+    if (gen != "Intel64" && gen != "C" && gen != "Nasm64") {
+        argp->error("Invalid code generator (options: Intel64, NAsm64, C)"); 
+    }
 }
 
-void search(std::string prefix, std::string name) {
-    // Searches for modules in directory "dir"
-    std::string dir = prefix + FILE_SEPARATOR + name; 
-    if (!File::is_dir(dir) || name[0] == '.') { return; }
-    env->input(Import::module_name(name));
-    for (File::Iterator i(dir); i; ++i) {
-        if ((*i)[0] != '.') {
-            search(prefix, name + FILE_SEPARATOR + *i);
+void load_options() {
+    // Loads options from the options file.  FIXME: This settings file loader
+    // is pretty haggard.  It should be replaced with JSON.
+    std::ifstream opts(".jgmake");
+    int c = opts.get();
+    while (c != '\n' && !opts.fail()) {
+        std::string include;
+        while (c != ',' && c != '\n' && !opts.fail()) {
+            include += c;
+            c = opts.get();
         }
+        env->include(include);
+        c = opts.get(); 
     }
+    c = opts.get();
+    while (c != '\n' && !opts.fail()) {
+        std::string lib;
+        while (c != ',' && c != '\n' && !opts.fail()) {
+            lib += c;
+            c = opts.get();
+        }
+        env->lib(lib);
+        c = opts.get(); 
+    }
+}
+
+void save_options() {
+    // Saves options to the options file.
+    std::ofstream opts(".jgmake");
+    for (int i = 0; i < env->includes(); ++i) {
+        opts << env->include(i) << ",";
+    }
+    opts << std::endl;
+    for (int i = 0; i < env->libs(); ++i) {
+        opts << env->lib(i) << ",";
+    }
+    opts << std::endl;
 }
 
 int main(int argc, char** argv) {
     // This program recursively finds and builds all files in the source
     // directory, and then generates the output in the lib/bin directory.
-#ifdef WINDOWS
-    _CrtSetReportHook(report_hook);
-#endif
-    parse_options(argc, argv);
+    argp = new ArgParser(env, argc, argv);
+    load_options(); 
+    parse_options();
+    save_options();
 
-    if (!env->inputs()) {
-        for (File::Iterator i("src"); i; ++i) {
-            std::string fn = std::string("src") + FILE_SEPARATOR + *i;
-            search("src", *i);
-        }
-    }
-
-    env->include("lib");
-    env->include("src");
-    env->include("runtime");
-    env->build_dir("build");
+    env->workspace_load();
     env->output(".");
     env->make(true);
+    env->optimize(true);
     env->monolithic_build(false);
+
 
     Builder::Ptr builder(new Builder(env));
     return builder->errors();

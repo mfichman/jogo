@@ -22,7 +22,6 @@
 
 #include "Environment.hpp"
 #include "Builder.hpp"
-#include "Options.hpp"
 #include "Iterator.hpp"
 #include "ArgParser.hpp"
 
@@ -99,23 +98,23 @@ void parse_options() {
     // Parse command line options, and update the environment to match the 
     // specified options.
     argp->usage(
-       "Usage: jogo [OPTIONS] FILE...\n\n"
-       "   -a, --assembly       Compile, but do not assemble or link.\n"
-       "   -c, --compile        Compile and assemble, but do not link.\n"
-       "   -e, --execute        Execute program as a script.\n"
-       "   -l, --library LIB    Compile and link with native library LIB.\n"
-       "   -o, --output FILE    Write compiler output to FILE.\n"
-       "   -i, --include DIR    Add the directory DIR to the search path.\n"
-       "   -m, --make           Compile input files and out-of-date dependencies.\n"
-       "   -h, --help           Print this help message.\n"
-       "   -v, --verbose        Print extra information during compilation.\n"
-       "   -g, --generator GEN  Use code generator GEN.\n"
-       "   --build-dir DIR      Output directory for object files.\n"
-       "   --dump-ir            Output the intermediate representation.\n"
-       "   --dump-ast           Output the abstract syntax tree.\n"
-       "   --dump-liveness      Output liveness info when printing the IR.\n"
-       "   --version            Print the compiler version number.\n"
-    );
+        "Usage: jogo [OPTIONS] FILE...\n\n"
+        "Compiles Jogo source files into a library or executable.\n\n"
+        "   -a, --assembly       Compile, but do not assemble or link.\n"
+        "   -c, --compile        Compile and assemble, but do not link.\n"
+        "   -e, --execute        Execute program as a script.\n"
+        "   -l, --library LIB    Compile and link with native library LIB.\n"
+        "   -i, --include DIR    Add the directory DIR to the search path.\n"
+        "   -o, --output FILE    Write compiler output to FILE.\n"
+        "   -m, --make           Compile input files and out-of-date dependencies.\n"
+        "   -h, --help           Print this help message.\n"
+        "   -v, --verbose        Print extra information during compilation.\n"
+        "   -g, --generator GEN  Use code generator GEN.\n"
+        "   --build-dir DIR      Output directory for object files.\n"
+        "   --dump-ir            Output the intermediate representation.\n"
+        "   --dump-ast           Output the abstract syntax tree.\n"
+        "   --dump-liveness      Output liveness info when printing the IR.\n"
+        "   --version            Print the compiler version number.\n");
 
     for (ArgToken tok = argp->next(); tok; tok = argp->next()) {
         // Convert abbreviated flags into the longer descriptive form (e.g.,

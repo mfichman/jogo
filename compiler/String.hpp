@@ -37,18 +37,13 @@ public:
 
     const std::string& string() const { return string_; }
     const std::string unescaped() const;
-    String* next() const { return next_; }
     bool is_empty() const { return string_.empty(); }
-    void next(String* next) { next_ = next; }
     typedef Pointer<String> Ptr;
     typedef Iterator<String> Itr;
-    
-
     static char escape(const std::string& code);
 
 private:
     std::string string_;
-    String::Ptr next_;
 };
 
 inline Stream::Ptr operator<<(Stream::Ptr out, const String* name) {

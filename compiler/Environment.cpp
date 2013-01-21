@@ -68,15 +68,6 @@ Environment::Environment() :
     appendable_type_ = new Type(loc, name("Appendable"), 0, this);
 
     module(root_);
-    include(".");
-#ifdef WINDOWS
-    lib("kernel32");
-    lib("ws2_32");
-    lib("mswsock");
-    lib("wsock32");
-#else
-    lib("m");
-#endif
 }
 
 String* Environment::name(const std::string& str) const {
@@ -175,3 +166,60 @@ SubtypeResult Environment::subtype(Type const* t1, Type const* t2) const {
 void Environment::subtype(Type const* t1, Type const* t2, SubtypeResult res) {
     subtype_[SubtypeKey(t1, t2)] = res;
 }
+
+void Environment::workspace_search(std::string prefix, std::string name) {
+    // Searches for modules in directory "dir"
+    std::string dir = prefix + FILE_SEPARATOR + name; 
+    if (!File::is_dir(dir) || name[0] == '.') { return; }
+    input(Import::module_name(name));
+    for (File::Iterator i(dir); i; ++i) {
+        if ((*i)[0] != '.') {
+            workspace_search(prefix, name + FILE_SEPARATOR + *i);
+        }
+    }
+}
+
+void Environment::workspace_load() {
+    // Sets up the environment for a default workspace.
+    if (!inputs()) {
+        for (File::Iterator i("src"); i; ++i) {
+            std::string fn = std::string("src") + FILE_SEPARATOR + *i;
+            workspace_search("src", *i);
+        }
+    }
+    include("lib");
+    include("src");
+    include("runtime");
+    build_dir("build");
+}
+
+Feature* Environment::feature(String* qn) const {
+    // Attempts to find the function, attribute, class, or module with the
+    // given fully-qualified name.
+    std::string parent = Import::parent_scope(qn->string());
+    std::string sub = Import::sub_scope(qn->string()); 
+
+    Module::Ptr ret = module(qn);
+    if (ret) { return ret; }
+
+    if (parent.empty()) {
+        // No parent, so the requested node is a top-level function, module,
+        // attribute or class.
+        return root()->feature(name(sub));
+    } else {
+        Module::Ptr mod = module(name(parent));
+        Feature::Ptr ret = mod ? mod->feature(name(sub)) : 0;
+        if (ret) { return ret; }
+        // Found a module-level identifier.
+        
+        std::string mn = Import::parent_scope(parent);
+        std::string cn = Import::sub_scope(parent);
+        mod = module(name(mn));
+        Class::Ptr clazz = mod ? mod->clazz(name(cn)) : 0; 
+        return clazz ? clazz->feature(name(sub)) : 0;
+        // Found an identifier that was nested within a class.
+    }
+}
+
+//void Environment::feature(String* scope) {
+//}

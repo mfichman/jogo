@@ -89,7 +89,7 @@ std::string Import::parent_scope(std::string const& scope) {
         return "";
     }    
     if (pos > 0) {
-        return scope.substr(0, pos);
+        return scope.substr(0, pos-1);
     } else {
         return scope;
     }

@@ -57,23 +57,22 @@ public:
     Module* module(String* scope) const { return query(module_, scope); }
     File* file(String* name) const { return query(file_, name); }
     Module* root() const { return root_; }
-    Feature* feature(String* name) const { return feature_.value(name); }
+    Feature* feature(String* qn) const;
     String::Itr integers() const { return String::Itr(integer_); }
     String::Itr floats() const { return String::Itr(floating_); }
     String::Itr strings() const { return String::Itr(string_); }
     File::Itr files() const { return File::Itr(file_); }
     Constant::Itr constants() const { return Constant::Itr(constant_); }
-    Feature::Itr features() const { return feature_.iterator(); }
     Module::Itr modules() const { return Module::Itr(module_); }
-    const std::string& include(int index) const { return include_[index]; }
-    const std::string& input(int index) const { return input_[index]; }
-    const std::string& lib(int index) const { return lib_[index]; }
-    const std::string& output() const { return output_; }
-    const std::string& build_dir() const { return build_dir_; }
-    const std::string& program_path() const { return program_path_; }
-    const std::string& entry_point() const { return entry_point_; }
-    const std::string& entry_module() const { return entry_module_; }
-    const std::string& generator() const { return generator_; }
+    std::string const& include(int index) const { return include_[index]; }
+    std::string const& input(int index) const { return input_[index]; }
+    std::string const& lib(int index) const { return lib_[index]; }
+    std::string const& output() const { return output_; }
+    std::string const& build_dir() const { return build_dir_; }
+    std::string const& program_path() const { return program_path_; }
+    std::string const& entry_point() const { return entry_point_; }
+    std::string const& entry_module() const { return entry_module_; }
+    std::string const& generator() const { return generator_; }
     bool make() const { return make_; }
     bool optimize() const { return optimize_; }
     bool link() const { return link_; }
@@ -116,8 +115,9 @@ public:
     void entry_module(const std::string& entry) { entry_module_ = entry; }
     void module(Module* module) { module_[module->name()] = module; }
     void file(File* file) { file_[file->name()] = file; }
-    void feature(Feature* feature) { feature_.insert(feature); }
     void constant(Constant* cons) { constant_.push_back(cons); }
+    void workspace_load();
+    void workspace_search(std::string prefix, std::string name);
     void error(const std::string& error) { errors_++; }
     void error() { errors_++; }
     const Location& location() const;
@@ -156,7 +156,6 @@ private:
     mutable std::vector<std::string> input_;
     mutable std::vector<std::string> lib_;
     mutable std::vector<Constant::Ptr> constant_;
-    OrderedMap<String::Ptr, Feature> feature_;
 
     File::Ptr builtin_file_;
     Module::Ptr root_;

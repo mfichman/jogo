@@ -49,10 +49,16 @@ Builder::Builder(Environment* env) :
 
     // Initialize default includes to be used if the user-defined includes
     // do not point to the Jogo standard libraries.
+    env->include(".");
 #ifndef WINDOWS
+    env->lib("m");
     env->include("/usr/local/lib");
     env->include("/usr/local/include/jogo");
 #else
+    env->lib("kernel32");
+    env->lib("ws2_32");
+    env->lib("mswsock");
+    env->lib("wsock32");
     char const* pathstr = getenv("PATH");
     std::string path = pathstr ? pathstr : "";
     path += ";C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC";
