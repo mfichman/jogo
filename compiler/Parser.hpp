@@ -154,8 +154,10 @@ public:
         loc.file = location_.file;
         loc.first_line = location_.first_line;
         loc.first_column = location_.first_column;
+        loc.first_offset = location_.first_offset;
         loc.last_line = parser_->last_location().last_line;
         loc.last_column = parser_->last_location().last_column;
+        loc.last_offset = parser_->last_location().last_offset;
         return loc;
     }
 

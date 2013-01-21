@@ -97,8 +97,10 @@ void Lexer::init() {
     // Initializes the lexer and reads the first few tokens.
     location_.first_line = 0;
     location_.first_column = 0;
+    location_.first_offset = 0;
     location_.last_line = 0;
     location_.last_column = 0;
+    location_.last_offset = 0;
     line_ = 1;
     column_ = -1;
     char_ = 0;
@@ -146,6 +148,7 @@ void Lexer::next() {
             location_.first_column = column_+1;   
             location_.first_line = line_;
         }
+        location_.first_offset = offset_;
         token_[front_].location(location_);
         value("");
 
@@ -192,6 +195,7 @@ void Lexer::next() {
         }
         location_.last_column = column_;
         location_.last_line = line_;
+        location_.last_offset = offset_;
         token_[front_].location(location_);
     }
     //Stream::stout() << token(0) << "\n"; // << ", '" << value(-1) << "'\n";
@@ -537,6 +541,7 @@ void Lexer::read() {
     } else {
         column_++;
     }   
+    offset_++;
     if (char_) {
         token_[front_].value() += char_;
     }

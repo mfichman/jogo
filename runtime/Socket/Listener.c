@@ -225,7 +225,7 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     
     memset(&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = htonl(INADDR_ANY);
+    sin.sin_addr.s_addr = htonl(addr->ip);
     sin.sin_port = htons(addr->port);
 
     if (bind(self->handle, (struct sockaddr*)&sin, sizeof(sin)) < 0) {

@@ -117,6 +117,7 @@ private:
     int char_;
     int line_;
     int column_;
+    int offset_;
     std::map<std::string, Token::Type> keyword_; 
     int string_level_;
     bool ignore_newline_;

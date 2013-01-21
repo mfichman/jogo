@@ -37,18 +37,21 @@ public:
         last_column(0) {
     }
     Location(const Location& copy) {
-
         file = copy.file; 
         first_line = copy.first_line;
         first_column = copy.first_column;
+        first_offset = copy.first_offset;
         last_line = copy.last_line;
         last_column = copy.last_column;
+        last_offset = copy.last_offset;
     }
     File* file;
     int first_line;
     int first_column;
+    int first_offset;
     int last_line;
     int last_column;
+    int last_offset;
 };
 
 Stream::Ptr operator<<(Stream::Ptr out, const Location& location);
