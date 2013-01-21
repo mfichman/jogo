@@ -68,7 +68,6 @@ public:
     bool is_input_file() const { return is_input_file_; }
     bool is_output_file() const;
     bool is_interface_file() const { return ext(name_->string())==JGI; }
-    bool is_up_to_date(const std::string& ext) const;
     std::string input(const std::string& ext) const;
     std::string output(const std::string& ext = JGO) const;
     std::string asm_file() const { return output(ASM); }

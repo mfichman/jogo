@@ -264,6 +264,7 @@ public:
     int files() const { return file_.size(); }
     // FIXME: Convert to a File::Itr
     bool is_up_to_date() const;
+    bool is_exe() const;
     std::string lib_file() const;
     std::string exe_file() const;
     std::string jgi_file() const;

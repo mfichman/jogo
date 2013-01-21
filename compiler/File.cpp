@@ -134,13 +134,6 @@ std::string File::output(const std::string& ext) const {
     return env_->build_dir() + FILE_SEPARATOR + name + ext;
 }
 
-bool File::is_up_to_date(const std::string& ext) const {
-    time_t t1 = mtime(output(ext));
-    time_t t2 = mtime(path_->string()); 
-    time_t t3 = mtime(env_->program_path());
-    return t1 >= t2 && t1 >= t3;
-}
-
 time_t File::mtime(const std::string& name) {
     struct stat info;
     if (stat(name.c_str(), &info)) {
@@ -151,11 +144,11 @@ time_t File::mtime(const std::string& name) {
 }
 
 bool File::is_up_to_date(const std::string& in, const std::string& out) {
-    // Return true if the output file is older than both the input file and the
-    // compiler binary.
+    // Return true if the output file is older than the input file.
     time_t t1 = mtime(out);
     time_t t2 = mtime(in); 
-    return t1 >= t2;
+    //time_t t3 = mtime(env_->program_path());
+    return t1 >= t2;// && t1 >= t3;
 }
 
 bool File::is_dir(const std::string& name) {

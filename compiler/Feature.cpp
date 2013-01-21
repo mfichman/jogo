@@ -308,12 +308,37 @@ void Module::feature(Feature* feature) {
     feature_.insert(feature); 
 }
 
+bool Module::is_exe() const {
+    // Returns true if this module is an executable module (false if it is a
+    // static library).
+    return function(env()->name("main"));
+}
+
 bool Module::is_up_to_date() const {
     // Return true if the module is up to date, that is, if all dependent
-    // source files have a later modification time than the output file.
+    // source files have a later modification time than the output file.  Also,
+    // check dependent packages as well to see if they need to be relinked.
     std::string out = function(env()->name("main")) ? exe_file() : lib_file();
+    File::Ptr libjogo = env()->file(env()->name("Jogo.jgi"));
     for (int i = 0; i < files(); i++) {
-        if (!File::is_up_to_date(file(i)->path()->string(), out)) {
+        File::Ptr file = Module::file(i);
+        std::string const& source = file->path()->string();
+        if (!File::is_up_to_date(source, out)) {
+            return false;
+        }
+        std::string const& native = file->native_file();
+        if (File::is_reg(native) && !File::is_up_to_date(native, out)) {
+            return false;
+        }
+        for (Import::Itr im = file->imports(); im; ++im) {
+            Module::Ptr mod = env()->module(im->scope());
+            std::string const& lib = mod->lib_file();
+            if (File::is_reg(lib) && !File::is_up_to_date(lib, out)) {
+            std::cout << lib << std::endl;
+                return false;
+            }
+        }
+        if (!File::is_up_to_date(libjogo->path()->string(), out)) {
             return false;
         }
     }

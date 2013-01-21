@@ -177,8 +177,7 @@ void Builder::modular_build() {
     // executable module with a "main" function specified, using the "main"
     // function for the module as the entry point.
      
-    // Create any out-of-date static libraries first, then create the static
-    // libraries.
+    // Create any out-of-date static libraries first.
     for (int i = 0; i < env_->inputs(); i++) {
         std::string name = Import::module_name(env_->input(i)); 
         Module::Ptr m = env_->module(env_->name(name));
@@ -186,16 +185,17 @@ void Builder::modular_build() {
             Stream::sterr() << "Module '" << env_->input(i) << "' not found\n";
             Stream::sterr()->flush();
             errors_++;
-        } else if (!m->function(env_->name("main"))) {
+        } else if (!m->is_exe()) {
             env_->lib(m->name()->string());
             m(this);
         }
     }
 
+    // Now, create or possibly relink exectubles.
     for (int i = 0; i < env_->inputs(); i++) {
         std::string name = Import::module_name(env_->input(i)); 
         Module::Ptr m = env_->module(env_->name(name));
-        if (m && m->function(env_->name("main"))) {
+        if (m && m->is_exe()) {
             m(this);
         }
     }
@@ -240,7 +240,9 @@ void Builder::operator()(File* file) {
     if (env_->errors()) { return; }
 
     // Generate native machine code, and then compile or assemble it.
-    if (!env_->make() || !file->is_up_to_date(File::JGO)) {
+    std::string const& source = file->path()->string();
+    std::string const& jgo = file->jgo_file();
+    if (!env_->make() || !File::is_up_to_date(source, jgo)) {
         File::mkdir(File::dir_name(file->jgo_file()));
         if (env_->verbose()) {
             Stream::stout() << "Compiling " << file->name() << "\n";
@@ -266,10 +268,10 @@ void Builder::operator()(File* file) {
 
     // Compile any native files.  Native files have the same name as the source
     // file, but with a .c extension.
-    if (File::is_reg(file->native_file())) {
-        bool ok1 = File::is_up_to_date(file->native_file(), file->o_file());
-        bool ok2 = File::is_up_to_date(env_->program_path(), file->o_file());
-        if (!env_->make() || !(ok1 && ok2)) {
+    std::string const& native = file->native_file();
+    if (File::is_reg(native)) {
+        std::string const& o = file->o_file();
+        if (!env_->make() || !File::is_up_to_date(native, o)) {
             cc(file->native_file(), file->o_file());
         }
     }
