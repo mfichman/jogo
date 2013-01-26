@@ -82,10 +82,10 @@ void Boot_dummy(Int a, Int b, Int c) {
     Boot_print_int(c);
 }
 
-Ptr Boot_malloc(Int size) {
+VoidPtr Boot_malloc(Int size) {
     // Allocates 'size' bytes of memory, and aborts if the memory couldn't be
     // allocated.
-    Ptr ret = malloc(size);
+    VoidPtr ret = malloc(size);
     if (!ret) {
         fprintf(stderr, "Out of memory\n");
         fflush(stderr);
@@ -94,10 +94,10 @@ Ptr Boot_malloc(Int size) {
     return ret;
 }
 
-Ptr Boot_calloc(Int size) {
+VoidPtr Boot_calloc(Int size) {
     // Allocates 'size' byte of zeroed memory, and aborts if the memory
     // couldn't be allocated.
-    Ptr ret = calloc(size, 1);
+    VoidPtr ret = calloc(size, 1);
     if (!ret) {
         fprintf(stderr, "Out of memory\n");
         fflush(stderr);
@@ -106,16 +106,16 @@ Ptr Boot_calloc(Int size) {
     return ret;
 }
 
-void Boot_mzero(Ptr val, Int size) {
+void Boot_mzero(VoidPtr val, Int size) {
     // Zeros 'size' bytes starting at 'val'
     memset(val, 0, size);
 }
 
-void Boot_memcpy(Ptr src, Ptr dst, Int size) {
+void Boot_memcpy(VoidPtr src, VoidPtr dst, Int size) {
     memcpy(src, dst, size); 
 }
 
-void Boot_free(Ptr memory) {
+void Boot_free(VoidPtr memory) {
     // Frees the memory at address 'memory'
     free(memory);
 }

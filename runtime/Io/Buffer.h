@@ -27,7 +27,7 @@
 
 typedef struct Io_Buffer* Io_Buffer;
 struct Io_Buffer {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Int capacity;
     Int begin;

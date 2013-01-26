@@ -33,7 +33,7 @@ typedef struct HashBucket {
 
 typedef struct Hash* Hash;
 struct Hash {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Int capacity;
     Int count;
@@ -51,7 +51,7 @@ extern void Hash__vtable();
 
 typedef struct HashIter* HashIter;
 struct HashIter {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Hash hash;
     Int index;
@@ -62,7 +62,7 @@ Bool HashIter_more__g(HashIter self);
 
 typedef struct HashValueIter* HashValueIter;
 struct HashValueIter {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Hash hash;
     Int index;
@@ -73,7 +73,7 @@ Bool HashValueIter_more__g(HashValueIter self);
 
 typedef struct HashKeyIter* HashKeyIter;
 struct HashKeyIter {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Hash hash;
     Int index;

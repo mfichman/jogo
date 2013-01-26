@@ -30,7 +30,7 @@
 
 typedef struct Socket_Stream* Socket_Stream;
 struct Socket_Stream {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Io_Stream stream;
     struct Socket_Addr addr;

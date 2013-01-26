@@ -152,7 +152,7 @@ void Coroutine__yield() {
     }
 }
 
-Ptr Coroutine__grow_stack() {
+VoidPtr Coroutine__grow_stack() {
     // Grows the coroutine stack, and keeps track of the next stack pointer.
     // Returns the pointer to the next stack.  Each function call has a section
     // that checks the stack to make sure it has enough remaining space.

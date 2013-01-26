@@ -213,7 +213,17 @@ void Builder::operator()(Module* module) {
     // archives the results into a single static library, or performs the link
     // step if the output is an executable.
     if (env_->errors()) { return; }
-    if (env_->make() && module->is_up_to_date()) { return; }
+    if (env_->make() && module->is_up_to_date()) {  
+        if (env_->verbose()) {
+            Stream::stout() << "Skipping " << module->name() << "\n";
+            Stream::stout()->flush();
+        }
+        return; 
+    }
+    if (env_->verbose()) {
+        Stream::stout() << "Building " << module->name() << "\n";
+        Stream::stout()->flush();
+    }
 
     // Set the entry point for the executable module
     env_->entry_point(module->label()->string() + "_main");
@@ -309,7 +319,7 @@ void Builder::link(const std::string& in, const std::string& out) {
 #elif defined(LINUX)
     ss << "gcc -m64 ";
 #elif defined(DARWIN)
-    ss << "gcc -Wl,-no_pie ";
+    ss << "gcc -Wl,-no_pie -framework OpenGL -framework GLUT -framework Cocoa ";
 #endif
     env_->entry_module(out);
 

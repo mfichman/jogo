@@ -25,7 +25,7 @@
 
 #include <stdint.h>
 
-typedef void* Ptr;
+typedef void* VoidPtr;
 
 typedef int64_t Int;
 typedef int64_t Bool;

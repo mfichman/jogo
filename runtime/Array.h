@@ -27,7 +27,7 @@
 
 typedef struct Array* Array;
 struct Array {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Int capacity;
     Int count;

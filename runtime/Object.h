@@ -26,13 +26,13 @@
 #include "Primitives.h"
 
 struct Object {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount; 
 };
 
 void Object__refcount_inc(Object obj);
 void Object__refcount_dec(Object obj);
-Ptr Object__dispatch(Object self, String id);
+VoidPtr Object__dispatch(Object self, String id);
 Int Object_hash__g(Object self);
 
 #endif

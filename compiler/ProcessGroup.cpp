@@ -66,6 +66,7 @@ void ProcessGroup::wait() {
             }
         }
     }
+    process_.clear();
 #endif
 }
 

@@ -18,6 +18,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+ManagerReactor < Interface {
+    # A ManagerReactor is invoked when poll() is called from the main
+    # coroutine.  Some libraries require certain tasks to be run on the main
+    # stack, rather than a coroutine split stack.  Such tasks can be added to
+    # the IO manager so that they will be run during each poll().  
+    @call() {
+    }
+}
+
 Manager < Object {
     # The Io::Manager coordinates coroutines that have blocked waiting for I/O,
     # and provides the core asynchronous I/O implementation.  The Io::Manager is
@@ -32,6 +41,9 @@ Manager < Object {
 
     scheduled Queue[Coroutine]
     # Set of tasks that are active and waiting to be scheduled.
+
+    callback Array[ManagerReactor]
+    # List of reactors to the Manager state
 
     handle Int
     # Handle to the file descriptor that is used for OS-level polling.  On
@@ -69,9 +81,9 @@ Manager < Object {
         # Run the event loop.  Select a coroutine from the 'scheduled' queue,
         # and begin executing it.  If there are no more tasks, and no
         # outstanding I/O requests, then return.
-
         while scheduled.count > 0 or waiting > 0 {
-            while scheduled.count > 0 {
+            count = scheduled.count
+            while count > 0 {
                 # Dequeue scheduled tasks until the entire queue is empty.  At
                 # that point, all coroutines have either exited, or are waiting
                 # on some external event (file I/O, timer, etc.)
@@ -80,12 +92,16 @@ Manager < Object {
                 if next.status == CoroutineStatus::SUSPENDED {
                     scheduled.enq(next)
                 }
+                --count
             }
             # All coroutines are sleeping.
-            if waiting > 0 {
-                self.poll()
-            }
+            self.poll()
         }
+    }
+
+    reactor(reactor ManagerReactor) {
+        # Add a new ManagerReactor, which will be invoked during poll() 
+        callback.push(reactor)
     }
 
     poll() native {
@@ -97,5 +113,14 @@ Manager < Object {
         # Shuts down the I/O manager; no additional I/O operations can be done
         # after this method is called.
     }
+
+    run_reactors() private {
+        # Runs any registered reactors    
+        if callback.count {
+           for reactor in callback {
+               reactor()
+           }
+        }
+    } 
 }
 

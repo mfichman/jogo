@@ -334,7 +334,6 @@ bool Module::is_up_to_date() const {
             Module::Ptr mod = env()->module(im->scope());
             std::string const& lib = mod->lib_file();
             if (File::is_reg(lib) && !File::is_up_to_date(lib, out)) {
-            std::cout << lib << std::endl;
                 return false;
             }
         }

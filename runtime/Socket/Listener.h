@@ -34,7 +34,7 @@
 
 typedef struct Socket_Listener* Socket_Listener;
 struct Socket_Listener {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Int handle;
     struct Socket_Addr addr;

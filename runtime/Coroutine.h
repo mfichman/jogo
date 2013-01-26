@@ -39,7 +39,7 @@ extern Int CoroutineStatus_IO;
 
 typedef struct Coroutine* Coroutine;
 struct Coroutine {
-    Ptr _vtable; // 0
+    VoidPtr _vtable; // 0
     U64 _refcount; // 8
     Object function;  //16
     Int status; // 24
@@ -60,7 +60,7 @@ void Coroutine__exit();
 void Coroutine__call(Coroutine self);
 void Coroutine__iowait();
 void Coroutine__ioresume(Coroutine self);
-Ptr Coroutine__grow_stack();
+VoidPtr Coroutine__grow_stack();
 
 extern Coroutine_Stack Coroutine__stack;
 extern Coroutine Coroutine__current;

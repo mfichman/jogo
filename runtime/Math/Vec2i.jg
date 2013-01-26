@@ -1,4 +1,4 @@
-# Copyright (c) 2010 Matt Fichman
+# Copyright (c) 2012 Matt Fichman
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,11 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-main() Int {
-    # Initializes I/O and the first coroutine.
-    manager = Io::manager()
-    manager.task(Coroutine(Main()))
-    manager.run()
-    manager.shutdown()
-    ret 0 
+Vec2i < Value {
+    x Int
+    y Int
 }

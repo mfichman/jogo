@@ -26,15 +26,17 @@
 #include "Primitives.h"
 #include "Coroutine.h"
 #include "Queue.h"
+#include "Array.h"
 #ifdef WINDOWS
 #include <windows.h>
 #endif
 
 typedef struct Io_Manager* Io_Manager;
 struct Io_Manager {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Queue scheduled;
+    Array callback;
     Int handle;
     Int waiting;
     Int iobytes;

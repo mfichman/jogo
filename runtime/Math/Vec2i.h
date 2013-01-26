@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 Matt Fichman
+ * Copyright (c) 2013 Matt Fichman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -20,22 +20,14 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef JOGO_PAIR_H
-#define JOGO_PAIR_H
+#ifndef JOGO_VEC2I_H
+#define JOGO_VEC2I_H
 
 #include "Primitives.h"
-
-typedef struct Pair* Pair;
-struct Pair {
-    VoidPtr _vtable;
-    VoidPtr _refcount;
-    Object first;
-    Object second;
+typedef struct Math_Vec2i* Math_Vec2i;
+struct Math_Vec2i {
+    Int x;
+    Int y; 
 };
 
-Pair Pair__init(Object first, Object second);
-Object Pair__first__g(Pair self);
-Object Pair__second__g(Pair self);
-
 #endif
-

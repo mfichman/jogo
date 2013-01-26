@@ -25,11 +25,11 @@
 
 #include "Primitives.h"
 
-Ptr Boot_malloc(Int size);
-Ptr Boot_calloc(Int size);
-void Boot_mzero(Ptr val, Int size);
-void Boot_memcpy(Ptr src, Ptr dst, Int size);
-void Boot_free(Ptr memory);
+VoidPtr Boot_malloc(Int size);
+VoidPtr Boot_calloc(Int size);
+void Boot_mzero(VoidPtr val, Int size);
+void Boot_memcpy(VoidPtr src, VoidPtr dst, Int size);
+void Boot_free(VoidPtr memory);
 void Boot_abort();
 
 #endif

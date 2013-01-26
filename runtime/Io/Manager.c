@@ -59,6 +59,7 @@ Io_Manager Io_Manager__init() {
     ret->_vtable = Io_Manager__vtable;
     ret->_refcount = 1;
     ret->scheduled = Queue__init(0);
+    ret->callback = Array__init(0);
     ret->waiting = 0;
 #if defined(WINDOWS)
     ret->handle = (Int)CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
@@ -109,6 +110,10 @@ void Io_Manager_poll(Io_Manager self) {
         fflush(stderr);
         abort();
     }
+    Io_Manager_run_reactors(self);
+    if (self->waiting() == 0) {
+        return;
+    }
 
     SetLastError(ERROR_SUCCESS);
     self->iobytes = 0;
@@ -127,6 +132,11 @@ void Io_Manager_poll(Io_Manager self) {
         fflush(stderr);
         abort();
     }
+    Io_Manager_run_reactors(self);
+    if (self->waiting() == 0) {
+        return;
+    }
+
     struct epoll_event event;
     int timeout = -1;
     int res = epoll_wait(self->handle, &event, 1, timeout);
@@ -148,6 +158,10 @@ void Io_Manager_poll(Io_Manager self) {
         fprintf(stderr, "Io::Manager::poll() called by user coroutine");
         fflush(stderr);
         abort();
+    }
+    Io_Manager_run_reactors(self);
+    if (self->waiting == 0) {
+        return;
     }
 
     struct kevent event;

@@ -30,7 +30,7 @@
 
 typedef struct Io_Stream* Io_Stream;
 struct Io_Stream {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Int handle;
     Io_Buffer read_buf;

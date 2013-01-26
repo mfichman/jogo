@@ -27,7 +27,7 @@
 
 typedef struct Queue* Queue;
 struct Queue {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Int capacity;
     Int front;
@@ -47,7 +47,7 @@ extern void Queue__vtable();
 
 typedef struct QueueIter* QueueIter;
 struct QueueIter {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Queue queue;
     Int index;

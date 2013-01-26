@@ -27,7 +27,7 @@
 #include <stdlib.h>
 
 struct String {
-    Ptr _vtable;
+    VoidPtr _vtable;
     U64 _refcount;
     Int length;
     Char data[];

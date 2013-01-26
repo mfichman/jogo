@@ -50,20 +50,20 @@ void Object__refcount_dec(Object self) {
             // The second entry in the vtable is always the destructor. Call
             // the destructor and then release the memory.
             typedef void (*Destructor)(Object);  
-            Destructor dtor = ((Ptr*)self->_vtable)[0];
+            Destructor dtor = ((VoidPtr*)self->_vtable)[0];
             dtor(self);
         } 
     }
 }
 
-Ptr Object__dispatch(Object self, String id) {
+VoidPtr Object__dispatch(Object self, String id) {
     // Dispatch using the vtable to the correct method implementation.
     // FixMe: Investigate a more efficient way to do this; possibly using some
     // form of caching.  The method dispatch performance penalty is only
     // invoked when calling through an interface.
     U64 n = ((U64*)self->_vtable)[1];
     U64* jump1 = ((U64*)self->_vtable) + 2;
-    Ptr* jump2 = ((Ptr*)self->_vtable) + 2 + n;
+    VoidPtr* jump2 = ((VoidPtr*)self->_vtable) + 2 + n;
     U64 d = 0;
     U64 hash = 0;
     Char* c = 0;
