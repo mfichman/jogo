@@ -26,7 +26,6 @@
 #include "Object.h"
 #include "String.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 
 struct Coroutine Coroutine__main;
@@ -138,8 +137,7 @@ void Coroutine__yield() {
     // Yields the the current coroutine to the coroutine's caller.  This is a
     // no-op if the coroutine is the main coroutine.
     if (Coroutine__current == &Coroutine__main) {
-        fprintf(stderr, "yield() called on main coroutine");
-        abort();
+        Os_cpanic("Coroutine::yield() called by main coroutine");
     } else if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_SUSPENDED;
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
@@ -147,8 +145,7 @@ void Coroutine__yield() {
         Coroutine__current->status = CoroutineStatus_SUSPENDED;
         Coroutine__swap(Coroutine__current, &Coroutine__main);
     } else {
-        fprintf(stderr, "no coroutine");
-        abort();
+        Os_cpanic("No coroutine to yield to");
     }
 }
 
@@ -181,8 +178,7 @@ void Coroutine__iowait() {
         Coroutine__current->status = CoroutineStatus_IO;
         Coroutine__swap(Coroutine__current, &Coroutine__main);
     } else {
-        fprintf(stderr, "iowait() on main coroutine");
-        abort();
+        Os_cpanic("Coroutine::iowait() called by main coroutine");
     }
     // Same as the impl of yield, except it sets the status to 'IO' rather than
     // 'SUSPENDED'
@@ -197,8 +193,7 @@ void Coroutine__ioresume(Coroutine self) {
     if (self->status == CoroutineStatus_DEAD) { return; }
     if (self->status == CoroutineStatus_RUNNING) { return; }
     if (self->status != CoroutineStatus_IO) {
-        fprintf(stderr, "Illegal coroutine state: %lld", self->status);
-        abort();
+        Os_cpanic("Illegal coroutine state");
     }
 
     // Note: The coroutine's refcount gets incremented by one while the 

@@ -22,6 +22,7 @@
 
 #include "Primitives.h"
 #include "String.h"
+#include "Boot/Module.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -49,12 +50,7 @@ String Int_str__g(Int self) {
         length++;
     }
 
-    ret = malloc(sizeof(struct String) + length + 1); 
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
+    ret = Boot_malloc(sizeof(struct String) + length + 1); 
     ret->_vtable = String__vtable;
     ret->_refcount = 1;
     ret->length = length;
@@ -289,11 +285,6 @@ String Char_str__g(Char self) {
     // Returns the string representation of the character.
     
     String ret = String_alloc(2);
-    if (!ret) {
-        fprintf(stderr, "Out of memory");
-        fflush(stderr);
-        abort();
-    }
     ret->length = 1;
     ret->data[0] = self;
     return ret;

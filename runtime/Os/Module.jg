@@ -26,3 +26,8 @@ error() native Int {
 strerror(error Int) native String {
     # Given an OS-level error code, returns a message describing the error.
 }
+
+panic(error String) native String {
+    # Print the error to stderr and then abort.
+}
+

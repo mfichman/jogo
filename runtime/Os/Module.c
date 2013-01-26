@@ -67,3 +67,12 @@ Int Os_error() {
 #endif
 }
 
+void Os_cpanic(char const* msg) {
+    fprintf(stderr, "%s", msg);
+    abort();
+}
+
+void Os_panic(String msg) {
+    Os_cpanic(msg->data);
+}
+

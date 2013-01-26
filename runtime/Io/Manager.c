@@ -106,9 +106,7 @@ void Io_Manager_poll(Io_Manager self) {
     Io_Overlapped* op = 0;
     OVERLAPPED** evt = (OVERLAPPED**)&op;
     if (Coroutine__current != &Coroutine__main) {
-        fprintf(stderr, "Io::Manager::poll() called by user coroutine");
-        fflush(stderr);
-        abort();
+        Os_cpanic("Io::Manager::poll() called by user coroutine");
     }
     Io_Manager_run_reactors(self);
     if (self->waiting() == 0) {
@@ -128,9 +126,7 @@ void Io_Manager_poll(Io_Manager self) {
     // Poll for an I/O event, and then resume the coroutine associated with
     // that event.
     if (Coroutine__current != &Coroutine__main) {
-        fprintf(stderr, "Io::Manager::poll() called by user coroutine");
-        fflush(stderr);
-        abort();
+        Os_cpanic("Io::Manager::poll() called by user coroutine");
     }
     Io_Manager_run_reactors(self);
     if (self->waiting() == 0) {
@@ -155,9 +151,7 @@ void Io_Manager_poll(Io_Manager self) {
     // Poll for an I/O event, and then resume the coroutine associated with
     // that event.
     if (Coroutine__current != &Coroutine__main) {
-        fprintf(stderr, "Io::Manager::poll() called by user coroutine");
-        fflush(stderr);
-        abort();
+        Os_cpanic("Io::Manager::poll() called by user coroutine");
     }
     Io_Manager_run_reactors(self);
     if (self->waiting == 0) {

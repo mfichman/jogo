@@ -86,12 +86,7 @@ void Array__insert(Array self, Int index, Object obj) {
         } else {
             self->capacity = index+1;
         }
-        temp = calloc(sizeof(Object), self->capacity);
-        if (!temp) {
-            fprintf(stderr, "Out of memory");
-            fflush(stderr);
-            abort();
-        }
+        temp = Boot_calloc(sizeof(Object)*self->capacity);
 
         // Copy data from the old array into the new array
         for (i = 0; i < self->count; ++i) {

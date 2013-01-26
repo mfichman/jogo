@@ -95,7 +95,7 @@ VoidPtr Boot_malloc(Int size) {
 }
 
 VoidPtr Boot_calloc(Int size) {
-    // Allocates 'size' byte of zeroed memory, and aborts if the memory
+    // Allocates 'size' bytes of zeroed memory, and aborts if the memory
     // couldn't be allocated.
     VoidPtr ret = calloc(size, 1);
     if (!ret) {
