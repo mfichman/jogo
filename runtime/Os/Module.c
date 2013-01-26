@@ -68,7 +68,8 @@ Int Os_error() {
 }
 
 void Os_cpanic(char const* msg) {
-    fprintf(stderr, "%s", msg);
+    fprintf(stderr, "%s\n", msg);
+    fflush(stderr);
     abort();
 }
 
