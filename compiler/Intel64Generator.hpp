@@ -52,6 +52,7 @@ public:
     static RegisterId const RSP;
     static RegisterId const RBP;
     static RegisterId const RDX;
+    static RegisterId const RBX;
     static RegisterId const R13;
     static RegisterId const R15;
     static RegisterId const XMM0;

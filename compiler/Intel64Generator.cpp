@@ -34,7 +34,8 @@ Machine::Ptr const Intel64Generator::MACHINE = Machine::intel64();
 RegisterId const Intel64Generator::RAX(MACHINE->reg("rax")->id());
 RegisterId const Intel64Generator::RSP(MACHINE->reg("rsp")->id());
 RegisterId const Intel64Generator::RBP(MACHINE->reg("rbp")->id());
-RegisterId const Intel64Generator::RDX(MACHINE->reg("rbx")->id());
+RegisterId const Intel64Generator::RBX(MACHINE->reg("rbx")->id());
+RegisterId const Intel64Generator::RDX(MACHINE->reg("rdx")->id());
 RegisterId const Intel64Generator::R13(MACHINE->reg("r13")->id());
 RegisterId const Intel64Generator::R15(MACHINE->reg("r15")->id());
 RegisterId const Intel64Generator::XMM0(MACHINE->reg("xmm0")->id());
@@ -669,9 +670,12 @@ void Intel64Generator::mul(RegisterId res, RegisterId r1, RegisterId r2) {
 void Intel64Generator::div(RegisterId res, RegisterId r1, RegisterId r2) {
     if (!res.is_float()) {
         push(RDX);
+        push(RBX);
         mov(RAX, r1);
+        mov(RBX, r2);
         cqo();  
-        idiv(r2);
+        idiv(RBX);
+        pop(RBX);
         pop(RDX);
         mov(res, RAX);
         return;

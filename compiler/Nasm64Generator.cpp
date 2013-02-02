@@ -276,9 +276,12 @@ void Nasm64Generator::arith(Instruction const& inst) {
     
     if (inst.opcode() == DIV && !res.is_float()) {
         out_ << "    push rdx\n";
+        out_ << "    push rbx\n";
         out_ << "    mov rax, "; operand(r1); out_ << "\n"; 
+        out_ << "    mov rbx, "; operand(r2); out_ << "\n";
         out_ << "    cqo\n";
-        out_ << "    idiv "; operand(r2); out_ << "\n";
+        out_ << "    idiv rbx\n";
+        out_ << "    pop rbx\n";
         out_ << "    pop rdx\n";
         out_ << "    mov "; operand(res); out_ << ", rax\n";
         return;

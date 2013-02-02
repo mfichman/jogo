@@ -335,10 +335,13 @@ bool Module::is_up_to_date() const {
             return false;
         }
         for (Import::Itr im = file->imports(); im; ++im) {
-            Module::Ptr mod = env()->module(im->scope());
-            std::string const& lib = mod->lib_file();
-            if (File::is_reg(lib) && !File::is_up_to_date(lib, out)) {
-                return false;
+            String::Ptr scope = im->scope();
+            Module::Ptr mod = env()->module(scope);
+            if (mod) {
+               std::string const& lib = mod->lib_file();
+               if (File::is_reg(lib) && !File::is_up_to_date(lib, out)) {
+                   return false;
+               }
             }
         }
         if (!File::is_up_to_date(libjogo->path()->string(), out)) {
