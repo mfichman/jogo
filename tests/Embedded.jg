@@ -7,13 +7,23 @@ Embed < Object {
     } 
 }
 
+Embed2 < Value {
+    x Int = 99
+
+    test2() {
+        Io::println(x.str)
+    }
+}
+
 Obj < Object {
     embed embedded Embed
+    embed2 embedded = Embed2()
 }
 
 
 main() Int {
     obj = Obj()
     obj.test()
+    obj.test2()
     ret 0
 }

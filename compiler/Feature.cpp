@@ -181,7 +181,11 @@ Feature* Class::feature(String* name) const {
     for (Feature::Ptr f = features_; f; f = f->next()) {
         if (!f->is_embedded()) { continue; }
         Attribute* attr = dynamic_cast<Attribute*>(f.pointer());
-        Class* clazz = attr->declared_type()->clazz();
+        Type* type = attr->type();
+        if (!type) {
+            type = attr->declared_type();
+        }
+        Class* clazz = type->clazz();
         if (clazz && clazz != this) {
             Feature* func = clazz->feature(name);
             if (func) { return func; }    
