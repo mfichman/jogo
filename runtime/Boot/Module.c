@@ -35,7 +35,7 @@ extern char *strerror(int errnum);
 
 void Boot_print_ptr(Object object) {
     // Writes a pointer value to stdout, and then flushes it.
-    fprintf(stdout, "%p, vtable: %p", object, object->_vtable);
+    fprintf(stdout, "%p, vtable: %p", (void*)object, (void*)object->_vtable);
     fflush(stdout);
 }
 
@@ -111,8 +111,8 @@ void Boot_mzero(VoidPtr val, Int size) {
     memset(val, 0, size);
 }
 
-void Boot_memcpy(VoidPtr src, VoidPtr dst, Int size) {
-    memcpy(src, dst, size); 
+void Boot_memcpy(VoidPtr dst, VoidPtr src, Int size) {
+    memcpy(dst, src, size); 
 }
 
 void Boot_free(VoidPtr memory) {

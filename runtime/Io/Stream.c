@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 Matt Fichman
+ * Copyright (c) 2013 Matt Fichman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -39,6 +39,7 @@
 #include <assert.h>
 #include "Io/Stream.h"
 #include "Io/Manager.h"
+#include "Os/Module.h"
 #include "Coroutine.h"
 #include "String.h"
 #include "Object.h"
@@ -546,4 +547,25 @@ void Io_Stream_end(Io_Stream self) {
         shutdown(self->handle, SHUT_WR);
 #endif
     }
+}
+
+String Io_Stream_readall(Io_Stream self) {
+    Io_Buffer buf = Io_Buffer__init(1024);
+    while (self->status == Io_StreamStatus_OK) {
+        Io_Stream_read(self, buf); 
+        if (buf->end == buf->capacity) {
+            Io_Buffer tmp = Io_Buffer__init(buf->capacity * 2);
+            Boot_memcpy(tmp->data, buf->data, buf->end);
+            tmp->end = buf->end;
+            Boot_free(buf);
+            buf = tmp;
+        } 
+    }
+    String ret = String_alloc(buf->end);
+    if (buf->end) {
+        Boot_memcpy(ret->data, buf->data, buf->end);
+        ret->length = buf->end;
+    }
+    Boot_free(buf);
+    return ret;
 }

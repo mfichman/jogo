@@ -89,7 +89,9 @@ Manager < Object {
                 # on some external event (file I/O, timer, etc.)
                 next = scheduled.deq()
                 next.resume()
-                if next.status == CoroutineStatus::SUSPENDED {
+                if next.status == CoroutineStatus::IO {
+                    scheduled.enq(next)
+                } else if next.status == CoroutineStatus::SUSPENDED {
                     scheduled.enq(next)
                 }
                 --count

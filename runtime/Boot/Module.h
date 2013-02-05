@@ -28,7 +28,7 @@
 VoidPtr Boot_malloc(Int size);
 VoidPtr Boot_calloc(Int size);
 void Boot_mzero(VoidPtr val, Int size);
-void Boot_memcpy(VoidPtr src, VoidPtr dst, Int size);
+void Boot_memcpy(VoidPtr dst, VoidPtr src, Int size);
 void Boot_free(VoidPtr memory);
 void Boot_abort();
 

@@ -36,6 +36,7 @@ struct Socket_Addr {
 Socket_Addr Socket_Addr__init(Socket_Addr ret, String str, Int port);
 String Socket_Addr_host__g(Socket_Addr self);
 Bool Socket_Addr__equals(Socket_Addr self, Socket_Addr other);
+void Socket_Addr__copy(Socket_Addr self, Socket_Addr other);
 extern void Socket_Addr__vtable();
 
 #endif

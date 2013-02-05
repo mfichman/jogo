@@ -153,4 +153,8 @@ Stream < Object {
         # Writes the EOF, if this is a socket stream.  This closes the socket
         # stream for writing, but does not close it for reading.
     }
+
+    readall() native String {
+        # Reads until EOF and returns the result as a string.
+    }
 }

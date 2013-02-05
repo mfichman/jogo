@@ -23,6 +23,7 @@
 #include "Coroutine.h"
 #include "Io/Manager.h"
 #include "Boot/Module.h"
+#include "Os/Module.h"
 #include "Object.h"
 #include "String.h"
 #include <stdlib.h>
@@ -130,6 +131,8 @@ void Coroutine__exit() {
         Coroutine__current->status = CoroutineStatus_DEAD;
         Coroutine__swap(Coroutine__current, &Coroutine__main);
         // If there is no caller, then yield to the main coroutine.
+    } else {
+        Os_cpanic("No coroutine to yield to");
     }
 }
 
@@ -183,12 +186,14 @@ void Coroutine__iowait() {
     // Same as the impl of yield, except it sets the status to 'IO' rather than
     // 'SUSPENDED'
 
+    assert(Coroutine__current->_refcount > 0);
     Io_manager()->waiting--;
     Object__refcount_dec((Object)Coroutine__current); 
 }
 
 void Coroutine__ioresume(Coroutine self) {
-    // Resume the coroutine, but preserve the caller.
+    // Resume the coroutine, but preserve the caller.  This function is called
+    // by the I/O manager when a pending I/O request completes.
     if (!self) { return; }
     if (self->status == CoroutineStatus_DEAD) { return; }
     if (self->status == CoroutineStatus_RUNNING) { return; }
@@ -196,12 +201,7 @@ void Coroutine__ioresume(Coroutine self) {
         Os_cpanic("Illegal coroutine state");
     }
 
-    // Note: The coroutine's refcount gets incremented by one while the 
-    // coroutine is running, so that the coroutine won't get freed while its
-    // stack is active.
     self->status = CoroutineStatus_RUNNING;
-    Object__refcount_inc((Object)self);
     Coroutine__swap(Coroutine__current, self);
-    Object__refcount_dec((Object)self);
 }
 

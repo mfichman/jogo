@@ -38,8 +38,8 @@ struct Regex_Match {
     struct Regex_Span group[MAXGROUPS];
 };
 
-typedef enum Regex_InstrType Regex_InstrType;
 enum Regex_InstrType { CHAR, MATCH, JUMP, SPLIT, ANY, START, END };
+typedef enum Regex_InstrType Regex_InstrType;
 
 typedef struct Regex_Instr* Regex_Instr;
 struct Regex_Instr {
@@ -86,11 +86,13 @@ Regex_Regex Regex_Regex_parse_class(Regex_Regex self);
 Regex_Regex Regex_Regex_parse_alt(Regex_Regex self);
 Regex_Regex Regex_Regex_parse_plus(Regex_Regex self);
 Regex_Regex Regex_Regex_parse_char(Regex_Regex self);
-extern Int Regex_Regex__vtable[];
+extern void Regex_Regex__vtable();
 
 Regex_Match Regex_Match__init();
 void Regex_Match_group(Regex_Match self, Int index, Regex_Span ret);
-extern Int Regex_Match__vtable[];
+extern void Regex_Match__vtable();
+
+void Regex_Span__init();
 
 
 #endif

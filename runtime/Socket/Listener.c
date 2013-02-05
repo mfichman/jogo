@@ -28,6 +28,7 @@
 
 #include "Socket/Listener.h"
 #include "Io/Manager.h"
+#include "Boot/Module.h"
 #include "Object.h"
 
 #include <stdio.h>
@@ -192,7 +193,7 @@ void Socket_Listener_addr__s(Socket_Listener self, Socket_Addr addr) {
     // is unable to bind to a port, then the status of the socket listener will
     // be updated to indicate the error code.
     struct sockaddr_in sin;
-    int socklen = 0;
+    unsigned int socklen = 0;
 #ifdef WINDOWS
     HANDLE iocp = (HANDLE)Io_manager()->handle;
 #endif

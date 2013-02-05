@@ -22,6 +22,7 @@
 
 #include "Regex/Regex.h"
 #include "Boot/Module.h"
+#include "Object.h"
 #include "String.h"
 #include <stdio.h>
 #include <assert.h>
@@ -73,7 +74,7 @@ Regex_Regex Regex_Regex__init(String str) {
 }
 
 void Regex_Regex__destroy(Regex_Regex self) {
-    Object__refcount_dec(self->error);
+    Object__refcount_dec((Object)self->error);
     Boot_free(self);
 }
 

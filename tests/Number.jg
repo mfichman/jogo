@@ -3,6 +3,6 @@
 main() Int {
     Io::println(0x00010.str)
     Io::println(0x09.str)
-    
+    Io::println(0xDEADBEEF.str) 
     ret 0
 }

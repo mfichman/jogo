@@ -29,6 +29,7 @@
 #include "Socket/Stream.h"
 #include "Io/Stream.h"
 #include "Io/Manager.h"
+#include "Os/Module.h"
 #include "Object.h"
 #include "String.h"
 

@@ -47,7 +47,7 @@ String String_lowercase__g(String self);
 Int String_int__g(String self);
 Float String_float_g(String self);
 Int String_hash__g(String self);
-extern Int String__vtable[];
+extern void String__vtable();
 
 // These functions are from the C standard library, duplicated here because
 // String.h clashes with the C library string.h
@@ -59,7 +59,7 @@ void* memset(void*, int, size_t);
 void* memcpy(void*, const void*, size_t);
 #endif
 
-#define String__static(x) { String__vtable, 1, sizeof((x))-1, (x) }
+#define String__static(x) { String__vtable, 1, sizeof((x))-1, x }
     
 
 #endif

@@ -513,6 +513,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
     }
 #else
     ss << "gcc " << in << " -c -o " << out;
+    ss << " -std=c99 -Wall -Werror ";
     if (env_->optimize()) {;
         ss << " -O2";
     } else {

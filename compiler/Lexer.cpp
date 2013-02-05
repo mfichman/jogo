@@ -159,7 +159,8 @@ void Lexer::next() {
             value("");
             token(Token::SEPARATOR);
             ignore_newline_ = true;
-        } else if (char_ == '/' && token(-1).is_operator()) {
+        } else if (char_ == '/' && token(-1).is_operator()
+            && token(-1) != Token::RIGHT_PARENS) {
             regex();
             expect_comment_ = false; 
         } else if (isdigit(char_)) {
@@ -276,7 +277,7 @@ void Lexer::number_or_dot() {
     } else if (char_ == 'x' && value() == "0") {
         // Read in a hexadecimal integer
         read();
-        while (isdigit(char_)) {
+        while (ishexnumber(char_)) {
             read();
         }
         ignore_newline_ = false;
