@@ -30,9 +30,9 @@
 #include <sys/socket.h>
 #define __USE_POSIX
 #include <netdb.h>
-#include <stdio.h>
 #include <errno.h>
 #endif
+#include <stdio.h>
 
 String Os_strerror(Int error) {
     // Returns a message describing the OS-level error.

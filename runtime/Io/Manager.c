@@ -110,7 +110,7 @@ void Io_Manager_poll(Io_Manager self) {
         Os_cpanic("Io::Manager::poll() called by user coroutine");
     }
     Io_Manager_run_reactors(self);
-    if (self->waiting() == 0) {
+    if (self->waiting == 0) {
         return;
     }
 

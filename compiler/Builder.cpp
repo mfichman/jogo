@@ -509,7 +509,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
     } 
     ss << " /DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
     if (!env_->verbose()) {
-        ss << " > NUL";
+       // ss << " > NUL";
     }
 #else
     ss << "gcc " << in << " -c -o " << out;

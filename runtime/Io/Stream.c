@@ -551,6 +551,7 @@ void Io_Stream_end(Io_Stream self) {
 
 String Io_Stream_readall(Io_Stream self) {
     Io_Buffer buf = Io_Buffer__init(1024);
+    String ret = 0;
     while (self->status == Io_StreamStatus_OK) {
         Io_Stream_read(self, buf); 
         if (buf->end == buf->capacity) {
@@ -561,7 +562,7 @@ String Io_Stream_readall(Io_Stream self) {
             buf = tmp;
         } 
     }
-    String ret = String_alloc(buf->end);
+    ret = String_alloc(buf->end);
     if (buf->end) {
         Boot_memcpy(ret->data, buf->data, buf->end);
         ret->length = buf->end;
