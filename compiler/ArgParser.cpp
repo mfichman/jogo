@@ -22,6 +22,7 @@
 
 #include "ArgParser.hpp"
 #include <iostream>
+#include <cstdlib>
 
 ArgParser::ArgParser(Environment* env, int argc, char** argv) :
     argindex_(0),

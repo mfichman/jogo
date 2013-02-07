@@ -23,6 +23,7 @@
 #include "Nasm64Generator.hpp"
 #include <sstream>
 #include <stdint.h>
+#include <cstdlib>
 
 #ifdef WINDOWS
 #define atoll _atoi64

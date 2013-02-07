@@ -27,6 +27,7 @@
 #include "Object.h"
 #include "String.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <assert.h>
 
 struct Coroutine Coroutine__main;
@@ -84,6 +85,12 @@ void Coroutine__destroy(Coroutine self) {
         self->_refcount++;
         Coroutine__call(self);
         self->_refcount--;
+    } else if (self->status == CoroutineStatus_RUNNING) {
+        Os_cpanic("Coroutine freed while running");
+    } else if (self->status == CoroutineStatus_IO) {
+        Os_cpanic("Coroutine freed while waiting for I/O");
+    } else if (self->status == CoroutineStatus_DEAD) {
+        // Stack references are already freed.
     }
     
     // Free the stack, and the pointer to the closure object so that no memory
@@ -103,6 +110,7 @@ void Coroutine__destroy(Coroutine self) {
 void Coroutine_resume(Coroutine self) {
     // Resumes a coroutine, and sets the 'caller' coroutine to the current 
     // coroutine.  Returns immediately if the coroutine is DEAD or nil.
+    //printf("resuming coroutine %p\n", self);
     if (!self) { return; }
     if (self->status == CoroutineStatus_DEAD) { return; }
     if (self->status == CoroutineStatus_RUNNING) { return; }
@@ -139,6 +147,7 @@ void Coroutine__exit() {
 void Coroutine__yield() {
     // Yields the the current coroutine to the coroutine's caller.  This is a
     // no-op if the coroutine is the main coroutine.
+    //printf("yielding coroutine %p\n", Coroutine__current);
     if (Coroutine__current == &Coroutine__main) {
         Os_cpanic("Coroutine::yield() called by main coroutine");
     } else if (Coroutine__current && Coroutine__current->caller) {
@@ -171,6 +180,7 @@ void Coroutine__iowait() {
     // Causes this coroutine to wait until I/O is available.  Note: calling
     // this function if no I/O is pending will cause the Coroutine to block
     // indefinitely. 
+    //printf("waiting on I/O for %p\n", Coroutine__current);
     Object__refcount_inc((Object)Coroutine__current);
     Io_manager()->waiting++;
 
@@ -186,14 +196,14 @@ void Coroutine__iowait() {
     // Same as the impl of yield, except it sets the status to 'IO' rather than
     // 'SUSPENDED'
 
-    assert(Coroutine__current->_refcount > 0);
+    Object__refcount_dec((Object)Coroutine__current);
     Io_manager()->waiting--;
-    Object__refcount_dec((Object)Coroutine__current); 
 }
 
 void Coroutine__ioresume(Coroutine self) {
     // Resume the coroutine, but preserve the caller.  This function is called
     // by the I/O manager when a pending I/O request completes.
+    //printf("I/O complete for %p\n", self);
     if (!self) { return; }
     if (self->status == CoroutineStatus_DEAD) { return; }
     if (self->status == CoroutineStatus_RUNNING) { return; }
@@ -202,6 +212,8 @@ void Coroutine__ioresume(Coroutine self) {
     }
 
     self->status = CoroutineStatus_RUNNING;
+    Object__refcount_inc((Object)self);
     Coroutine__swap(Coroutine__current, self);
+    Object__refcount_dec((Object)self);
 }
 

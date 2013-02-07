@@ -277,7 +277,7 @@ void Lexer::number_or_dot() {
     } else if (char_ == 'x' && value() == "0") {
         // Read in a hexadecimal integer
         read();
-        while (ishexnumber(char_)) {
+        while (isxdigit(char_)) {
             read();
         }
         ignore_newline_ = false;

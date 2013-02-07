@@ -415,10 +415,17 @@ void Regex_Regex_dump(Regex_Regex self) {
     Int i = 0;
     for (i = 0; i < self->length; i++) {
         struct Regex_Instr instr = self->instr[i];
+#ifdef LINUX
+        printf("%03lx ", i);
+        switch (instr.type) {
+        case SPLIT: printf("split %03lx\n", instr.target); break;
+        case JUMP: printf("jump %03lx\n", instr.target); break;
+#else
         printf("%03llx ", i);
         switch (instr.type) {
         case SPLIT: printf("split %03llx\n", instr.target); break;
         case JUMP: printf("jump %03llx\n", instr.target); break;
+#endif
         case CHAR: printf("char %c\n", (Char)instr.target); break;
         case MATCH: printf("match\n"); break;
         case ANY: printf("any\n"); break;
