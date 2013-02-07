@@ -4,7 +4,7 @@ compiler:
   - clang
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq nasm
+  - sudo apt-get install -qq nasm gcc-multilib
   - git submodule update --init --recursive
 script: scons check
 notifications:
