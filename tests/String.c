@@ -5,9 +5,8 @@
 #include <string.h>
 
 // Hack to make sure that the 'String__vtable' symbol is defined. 
-Int String__vtable[] = {0};
 
-String String__init(const Char* literal) {
+String String__literal(const Char* literal) {
     String ret = malloc(sizeof(struct String) + strlen(literal) + 1);
     ret->_vtable = 0;
     ret->_refcount = 1;
@@ -20,15 +19,11 @@ int main_() {
     return 0;
 }
 
-Int Int_max(Int self, Int other) {
-    return self < other ? other : self;
-}
-
 int main() {
     String str1, str2, str3, str4, str5, str6, str7, str8, str9;
-    str1 = String__init("hello "); 
+    str1 = String__literal("hello "); 
     assert(String_length__g(str1) == 6);
-    str2 = String__init("world!");
+    str2 = String__literal("world!");
     assert(String_length__g(str2) == 6);
 
     // Concatenation
@@ -37,8 +32,8 @@ int main() {
     assert(strncmp(str3->data, "hello world!", 12) == 0);
     
     // Equality check
-    str4 = String__init("hello world!");
-    str5 = String__init("hello world?");
+    str4 = String__literal("hello world!");
+    str5 = String__literal("hello world?");
     assert(String__equal(str3, str4));
     assert(!String__equal(str3, str5));
 

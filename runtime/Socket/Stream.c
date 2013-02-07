@@ -209,7 +209,7 @@ void Socket_Stream_connect(Socket_Stream self) {
     // Need to do this to get the error code
     Coroutine__iowait();
     int res = 0;
-    int len = sizeof(res);
+    socklen_t len = sizeof(res);
     ret = getsockopt(sd, SOL_SOCKET, SO_ERROR, &res, &len);
     if (ret < 0) {
         self->stream->status = Io_StreamStatus_ERROR;

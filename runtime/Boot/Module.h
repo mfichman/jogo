@@ -30,6 +30,8 @@ VoidPtr Boot_calloc(Int size);
 void Boot_mzero(VoidPtr val, Int size);
 void Boot_memcpy(VoidPtr dst, VoidPtr src, Int size);
 void Boot_free(VoidPtr memory);
+void Boot_print_float(Float num);
+void Boot_print_int(Int num);
 void Boot_abort();
 
 #endif

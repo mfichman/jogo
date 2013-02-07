@@ -1,4 +1,3 @@
-ValueBad.jg:Modification of function param
 ValueBad.jg:18:5: Uninitialized value type attribute 'params'
 ValueBad.jg:33:11: Primitives and value types cannot be used in generics
 ValueBad.jg:36:5: Uninitialized value type variable 'params'

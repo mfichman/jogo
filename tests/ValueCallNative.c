@@ -1,4 +1,5 @@
 #include <Primitives.h>
+#include <Boot/Module.h>
 #include <stdio.h>
 
 struct Val {
