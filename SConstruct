@@ -80,7 +80,7 @@ else:
         env.Append(CFLAGS = '-g')
     env.Append(LDFLAGS = '-lm')
     env.Append(CXXFLAGS = '-DCOROUTINE_STACK_SIZE='+stack_size)
-    env.Append(CXXFLAGS = '-Wall -Werror -pedantic -ansi')
+    env.Append(CXXFLAGS = '-Wall -Werror -ansi')
     env.Append(CXXFLAGS = '-Wno-unused')
     env.Append(CXXFLAGS = '-Wno-sign-compare')
     env.Append(CXXFLAGS = '-DVERSION=\\"'+version+'\\"')

@@ -317,7 +317,7 @@ uint8_t Intel64Generator::reg_code(RegisterId id) const {
 
 void Intel64Generator::string(String::Ptr str) {
     // Outputs a string literal definition.
-    static uint64_t const READONLY_MASK = 0xf000000000000000;
+    static uint64_t const READONLY_MASK = 0xf000000000000000LL;
     std::string const label = "lit"+stringify((void*)str);
     std::string const out = str->unescaped();
     String::Ptr const vtable = env_->name("String__vtable");
