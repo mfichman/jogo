@@ -77,6 +77,7 @@ Coroutine Coroutine__init(Object func) {
         Int exit = (Int)Coroutine__exit;
         Int call = (Int)Object__dispatch(func, &call_str);
         Int bogus = 0; // Bogus return addr for exit's stack frame
+        ret->sp -= 1; // MUST ensure that the SP starts out aligned!!
         Coroutine__marshal(ret, bogus); // Simulate a fn call to exit()
         ret->stack->data[--ret->sp] = exit;
         ret->stack->data[--ret->sp] = call;
@@ -94,26 +95,29 @@ Coroutine Coroutine__init(Object func) {
         // At the time Coroutine__swap is called for the first time, the call
         // stack looks like this:
         //
-        // arg3 arg2 arg1 arg0 bogus exit call tos ARG0 regs...+15
+        // align arg3 arg2 arg1 arg0 bogus exit call tos ARG0 regs...+15
         //
         // Coroutine__swap pops regs, ARG0, and tos for its own use.  When
         // Coroutine__swap's ret instruction is executed, the coroutine will
         // jump to the function 'call.' Upon entering 'call', the stack looks
         // like this:
         //
-        // arg3 arg2 arg1 arg0 bogus exit 
+        // align arg3 arg2 arg1 arg0 bogus exit 
+        // 
         //
         // From here, 'call' can build its stack frame.  When 'call' exits, it
         // pops the return address for 'exit' off the stack, and 'exit' begins
         // executing.  Upon entering exit, the stack looks like this:
         //
-        // arg3 arg2 arg1 arg0 bogus 
+        // align arg3 arg2 arg1 arg0 bogus 
         //
         // Coroutine__exit never returns, so 'bogus' is never jumped to.
         // Instead, the coroutine swaps to another coroutine before it falls
         // off the end of 'exit'.  arg3-0 are needed on Windows as a backing
         // store for the arg regs (according to the Win64 calling convention),
-        // even though Coroutine__exit has no parameters.
+        // even though Coroutine__exit has no parameters.  WARNING: The stack
+        // frame for Coroutine__exit will be misaligned by 8 bytes...this could
+        // cause bugs if that function ever calls anything else.
     } else {
         ret->status = CoroutineStatus_DEAD; 
     }
