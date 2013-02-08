@@ -1,6 +1,10 @@
-import os, sys
+import platform
+import os
+import sys
 
 # Build specification for the Jogo Programming Language ####################
+(system, _, release, version, machine, proc) = platform.uname()
+print(' '.join((system, release, version, machine, proc)))
 
 if 'help' in COMMAND_LINE_TARGETS:
     print
