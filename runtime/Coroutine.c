@@ -30,39 +30,91 @@
 #include <stdio.h>
 #include <assert.h>
 
+#define COROUTINE_BUFFER 4
+
 struct Coroutine Coroutine__main;
 Coroutine Coroutine__current = &Coroutine__main;
 Coroutine_Stack Coroutine__stack = 0;
 Int Exception__current = 0;
 
+
+void Coroutine__marshal(Coroutine self, Int ra) {
+    // Marshals a function call on the coroutine stack
+    Int base_pointer = self->sp;
+#ifdef WINDOWS
+    Int stack_arg_regs = 4;
+    Int i = 0;
+    for(i = 0; i < stack_arg_regs; i++) {
+        --self->sp;
+    }
+#endif
+    self->stack->data[--self->sp] = ra;
+
+    // Stack diagram:
+    // low memory 
+    // [+5] arg3 (Windows only)
+    // [+4] arg2 (Windows only)
+    // [+3] arg1 (Windows only)
+    // [+2] arg0 (Windows only)
+    // [+1] return address
+    // high memory
+}
+
 Coroutine Coroutine__init(Object func) {
     // Initializes a function with a new stack and instruction pointer. When
     // the coroutine is resumed, it will begin executing at 'function' with its
     // own stack.
-    Int stack_index = COROUTINE_STACK_SIZE - 2 - 1 - 15 - 1; 
-    // -2 is for the two return addresses that are initially on the stack
-    // -1 is for the top-of-stack pointer
-    // -15 is for the initial values of RBP + caller regs
-    // -1 is for initial arg to @call
-    
     Coroutine ret = Boot_calloc(sizeof(struct Coroutine)); 
     ret->stack = Boot_calloc(sizeof(struct Coroutine_Stack));
     ret->_vtable = Coroutine__vtable;
     ret->_refcount = 1; 
     ret->function = func;
     ret->caller = 0;
-    ret->sp = (Int)(ret->stack->data + stack_index); // ESP = R6
+    ret->sp = COROUTINE_STACK_SIZE;
 
     Object__refcount_inc(func);
     if (func) {
         static struct String call_str = String__static("@call");
         Int exit = (Int)Coroutine__exit;
         Int call = (Int)Object__dispatch(func, &call_str);
-        ret->stack->data[COROUTINE_STACK_SIZE-1] = exit;
-        ret->stack->data[COROUTINE_STACK_SIZE-2] = call;
-        ret->stack->data[COROUTINE_STACK_SIZE-3] = (Int)ret->stack->data;
-        ret->stack->data[COROUTINE_STACK_SIZE-4] = (Int)func;
+        Int bogus = 0; // Bogus return addr for exit's stack frame
+        Coroutine__marshal(ret, bogus); // Simulate a fn call to exit()
+        ret->stack->data[--ret->sp] = exit;
+        ret->stack->data[--ret->sp] = call;
+        ret->stack->data[--ret->sp] = (Int)ret->stack->data;
+        // This is the top-of-stack pointer, which Coroutine__swap restores.
+        // It is a pointer to the end of the stack space -- when this is
+        // reached, a new stack segment is allocated.
+        ret->stack->data[--ret->sp] = (Int)func; 
+        // ARG0 in the .asm file.  This is the 'self' pointer for the closure
+        // that gets invoked when the coroutine starts for the first time.
+        ret->sp -= 15; // For the 15 registers pushed in the .asm file
+        ret->sp = (Int)(ret->stack->data + ret->sp); 
+        // Make relative to the top-of-stack
         ret->status = CoroutineStatus_NEW; // New coroutine status code 
+        // At the time Coroutine__swap is called for the first time, the call
+        // stack looks like this:
+        //
+        // arg3 arg2 arg1 arg0 bogus exit call tos ARG0 regs...+15
+        //
+        // Coroutine__swap pops regs, ARG0, and tos for its own use.  When
+        // Coroutine__swap's ret instruction is executed, the coroutine will
+        // jump to the function 'call.' Upon entering 'call', the stack looks
+        // like this:
+        //
+        // arg3 arg2 arg1 arg0 bogus exit 
+        //
+        // From here, 'call' can build its stack frame.  When 'call' exits, it
+        // pops the return address for 'exit' off the stack, and 'exit' begins
+        // executing.  Upon entering exit, the stack looks like this:
+        //
+        // arg3 arg2 arg1 arg0 bogus 
+        //
+        // Coroutine__exit never returns, so 'bogus' is never jumped to.
+        // Instead, the coroutine swaps to another coroutine before it falls
+        // off the end of 'exit'.  arg3-0 are needed on Windows as a backing
+        // store for the arg regs (according to the Win64 calling convention),
+        // even though Coroutine__exit has no parameters.
     } else {
         ret->status = CoroutineStatus_DEAD; 
     }
