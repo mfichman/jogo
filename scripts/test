@@ -118,15 +118,19 @@ def native_test(test):
     output = ""
     if sys.platform == 'win32':
         command = 'cl ' + test + ' /MD /Fe..\\build\\' + exe + ' /I:.. jogo.lib '
-        command += '/link /LIBPATH:..\\lib 2>&1'
-        os.popen(command).read()
+        command += '/link /LIBPATH:..\\lib ws2_32.lib 2>&1'
+        err = os.popen(command).read()
         output = shell('..\\build\\' + exe + ' 2>&1')
     else:
         command = 'gcc -g ' + test + ' -o ../build/' + exe + ' -L../lib '
         command += '-lJogo -lm -I .. 2>&1'
-        os.popen(command).read()
+        err = os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
-    return check(test, expected, output)
+    (res, msg) = check(test, expected, output)
+    if res == FAIL:
+        return (res, msg+err)
+    else:
+        return (res, msg)
 
 def cpp_test(test):
     # C++ tests; used for compiler unit tests.
