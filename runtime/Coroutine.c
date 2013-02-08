@@ -40,7 +40,6 @@ Int Exception__current = 0;
 
 void Coroutine__marshal(Coroutine self, Int ra) {
     // Marshals a function call on the coroutine stack
-    Int base_pointer = self->sp;
 #ifdef WINDOWS
     Int stack_arg_regs = 4;
     Int i = 0;
