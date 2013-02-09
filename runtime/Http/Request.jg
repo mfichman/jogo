@@ -1,0 +1,131 @@
+# Copyright (c) 2010 Matt Fichman
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+Method = GET | HEAD | POST | PUT | DELETE | TRACE | CONNECT
+
+Method::str?() String {
+    # Returns the Method enumeration as a string.
+    match self {
+    with Method::GET: ret "GET"
+    with Method::HEAD: ret "HEAD"
+    with Method::POST: ret "POST"
+    with Method::PUT: ret "PUT"
+    with Method::DELETE: ret "DELETE"
+    with Method::TRACE: ret "TRACE"
+    with Method::CONNECT: ret "CONNECT"
+    } 
+}
+
+Request < Object {
+    # The request object stores information about the type of request that will
+    # be sent to the server.  Request objects may be reused multiple times for
+    # efficiency.
+
+    method = Method::GET
+    # The method to use for communication with the server.
+
+    path = Uri::Path('')
+    # Path to the resource requested by the server. 
+
+    headers immutable = Hash[String, String]()
+    # Set of headers to use with the request.  A few headers are set by
+    # default, but may be overridden:
+    # * Connection: close
+    # * User-Agent: Jogo HTTP Client
+    # * Accept-Charset: utf-8
+    # * Accept-Encoding: identity 
+
+    body String
+    # Body of the request (optional)
+}
+
+Request::@init() {
+    headers["Connection"] = "close"
+    headers["User-Agent"] = "Jogo HTTP Client"
+    headers["Accept-Charset"] = "utf-8"
+    headers["Accept-Encoding"] = "identity"
+}
+
+Request::write(stream Io::Stream) {
+    # Outputs the request headers and optionally the body.  If the body is
+    # non-nil, Request::write will output this string as the request body.
+    # Otherwise, the caller should write the body to the stream after calling
+    # write().  Status of the stream should be queried after completing this
+    # function.
+    stream.print("#{method} #{path} HTTP/1.1\r\n")
+    for header in headers {
+        stream.print("#{header.first}: #{header.second}\r\n")
+    }
+    stream.print("\r\n")
+    if body {
+       stream.print(body)
+       stream.flush()
+    }
+}
+
+Request::read(stream Io::Stream) {
+    # 
+}
+
+Status < Enum {
+    # Encodes an HTTP status value.  The first code below ("UNKNOWN") is used
+    # to indicate an invalid status code returned by the server.
+    INVALID_CODE = 0
+    CONTINUE = 100
+    SWITCHING_PROTOCOLS = 101
+    OK = 200
+    CREATED = 201
+    ACCEPTED = 202
+    NON_AUTHORITATIVE_INFO = 203
+    NO_CONTENT = 204
+    RESET_CONTENT = 205 
+    PARTIAL_CONTENT = 206
+    MULTIPLE_CHOICES = 300
+    MOVED_PERMANENTLY = 301
+    FOUND = 302
+    SEE_OTHER = 303
+    NOT_MODIFIED = 304
+    USE_PROXY = 305
+    TEMPORARY_REDIRECT = 307
+    BAD_REQUEST = 400
+    UNAUTHORIZED = 401
+    PAYMENT_REQUIRED = 402 
+    FORBIDDEN = 403
+    NOT_FOUND = 404
+    METHOD_NOT_ALLOWED = 405
+    NOT_ACCEPTABLE = 406
+    PROXY_AUTHENTICATION_REQUIRED = 407
+    REQUEST_TIMEOUT = 408
+    CONFLICT = 409
+    GONE = 410
+    LENGTH_REQUIRED = 411
+    PRECONDITION_FAILED = 412
+    REQUEST_ENTITY_TOO_LARGE = 413
+    UNSUPPORTED_MEDIA_TYPE = 415
+    REQUESTED_RANGE_NOT_SATISFIABLE = 416
+    EXPECTATION_FAILED = 417
+    INTERNAL_SERVER_ERROR = 500
+    NOT_IMPLEMENTED = 501
+    BAD_GATEWAY = 502
+    SERVICE_UNAVAILABLE = 503
+    GATEWAY_TIMEOUT = 504
+    VERSION_NOT_SUPPORTED = 505
+}
+

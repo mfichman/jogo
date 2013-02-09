@@ -24,48 +24,25 @@ Client < Object {
     # 'stream' attribute.  Optionally, a client can be created via the Http
     # module factory functions (i.e., Http::open).
     
-    socket immutable Socket::Stream
-    # The stream to be used for issuing requests. 
-
-
-#    @init(host String, port Int) {
-#        # Initializes a new HTTP client object 
-#        socket = Socket::connect(host, port)
-#    }
-#
-#    methodstr(method Method) private String {
-#        # Returns the Method enumeration as a string.
-#        match method {
-#        with Method::GET: ret "GET"
-#        with Method::HEAD: ret "HEAD"
-#        with Method::POST: ret "POST"
-#        with Method::PUT: ret "PUT"
-#        with Method::DELETE: ret "DELETE"
-#        with Method::TRACE: ret "TRACE"
-#        with Method::CONNECT: ret "CONNECT"
-#        } 
-#    }
-#
-
+    socket immutable Socket::Stream # Stream to be used for issuing requests. 
+    host immutable String # Host the client is connected to
+    port immutable Int # Port the client is connected to
 }
 
-Client::@init(host String, port Int) {
+Client::@init(phost String, pport Int) {
     # Initializes a new HTTP client object 
+    host = phost
+    port = pport
     socket = Socket::connect(host, port)
 }
 
-Client::request(request Request) Response {
-    # Issues a new request using the given IO stream.
-#    method = self.methodstr(request.method)
-#    socket.print("#{method} #{request.path} HTTP/1.1\n")
-#    for header in request.headers {
-#        socket.print("#{header.first}: #{header.second}\n")
-#    }
-#    socket.print("\n")
-#    socket.flush()
-#    ret Response(socket.stream)
-    request.write(socket.stream)
-    #response = Response()
-    #ret response.read(socket.stream)
-    ret nil
+Client::write(req Request) Response {
+    # Issues a new request using the given IO stream.  This method will modify
+    # the request to update the 'Host' header, as required by HTTP/1.1
+    req.headers['Host'] = host
+    req.write(socket.stream)
+    res = Response()
+    res.headers['Host'] = host
+    res.read(socket.stream)
+    ret res
 }

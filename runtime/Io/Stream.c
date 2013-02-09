@@ -175,7 +175,7 @@ Int Io_Stream_result(Io_Stream self, Int bytes) {
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     // Read characters from the stream until 'buffer' is full, an I/O error 
     // is raised, or the end of the input is reached (Windows impl)
-    Byte* buf = buffer->data + buffer->begin;
+    Byte* buf = buffer->data + buffer->end;
     Int len = buffer->capacity - buffer->end;
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
@@ -207,7 +207,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     // Read characters from the stream until 'buffer' is full, an I/O error 
     // is raised, or the end of the input is reached (Linux impl)
-    Byte* buf = buffer->data + buffer->begin;
+    Byte* buf = buffer->data + buffer->end;
     Int len = buffer->capacity - buffer->end;
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
@@ -246,7 +246,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     // Read characters from the stream until 'buffer' is full, an I/O error 
     // is raised, or the end of the input is reached (Darwin impl)
-    Byte* buf = buffer->data + buffer->begin;
+    Byte* buf = buffer->data + buffer->end;
     Int len = buffer->capacity - buffer->end;
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
@@ -550,23 +550,28 @@ void Io_Stream_end(Io_Stream self) {
 }
 
 String Io_Stream_readall(Io_Stream self) {
-    Io_Buffer buf = Io_Buffer__init(1024);
+    Io_Buffer buf = self->read_buf;
     String ret = 0;
+    // Read any leftover bytes that are still in the read_buf
     while (self->status == Io_StreamStatus_OK) {
-        Io_Stream_read(self, buf); 
         if (buf->end == buf->capacity) {
             Io_Buffer tmp = Io_Buffer__init(buf->capacity * 2);
-            Boot_memcpy(tmp->data, buf->data, buf->end);
-            tmp->end = buf->end;
-            Boot_free(buf);
+            Boot_memcpy(tmp->data, buf->data+buf->begin, buf->end-buf->begin);
+            tmp->end = buf->end-buf->begin;
+            if (buf != self->read_buf) {
+                Boot_free(buf);
+            }
             buf = tmp;
         } 
+        Io_Stream_read(self, buf); 
     }
     ret = String_alloc(buf->end);
     if (buf->end) {
         Boot_memcpy(ret->data, buf->data, buf->end);
         ret->length = buf->end;
     }
-    Boot_free(buf);
+    if (buf != self->read_buf) {
+        Boot_free(buf);
+    }
     return ret;
 }
