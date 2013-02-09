@@ -1,0 +1,155 @@
+# Copyright (c) 2010 Matt Fichman
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+Authority < Value {
+    user immutable String 
+    host immutable String
+    port immutable String # * DIGIT
+    @init(puser String, phost String, pport String) {
+        user = puser
+        host = phost
+        port = pport
+    }
+}
+
+Path < Value {
+    value embedded immutable String
+    @init(pvalue String) {
+        value = pvalue
+    }
+}
+
+Query < Value {
+    value embedded immutable String 
+    @init(pvalue String) {
+        value = pvalue
+    }
+}
+
+Uri < Value {
+    # Defines a generic URI as defined by RFC3986.    
+    scheme String # ALPHA * (ALPHA | DIGIT | '+' | '-' | '.' )
+    authority = Authority('', '', '') # user '@' host ':' port
+    path = Path('') # * ANY  
+    query = Query('') # '?' * ANY
+    fragment String # '#' * ANY
+
+}
+
+
+Uri::@init(value String) {
+    # Parses a URI, given a string as input.
+    i = self.parse_scheme(value, 0)
+    i = self.parse_authority(value, i)
+    i = self.parse_path(value, i)
+    i = self.parse_query(value, i)
+    i = self.parse_fragment(value, i)
+}
+
+Uri::parse_scheme(value String, start Int) private Int {
+    # Parse everything up to the first ':' character
+    i = start
+    while (c = value[i]) and c != ':'c and not self.is_reserved(c) {
+        ++i
+        c = value[i]
+    }
+    scheme = value.slice(start, i)
+    if value[i] == ':'c {
+        ++i
+    }
+    ret i
+}
+
+Uri::is_reserved(char Char) Bool {
+    ret char == '/'c or char == '#'c or char == '?'c
+}
+
+Uri::parse_authority(value String, ind Int) private Int {
+    # Parse up to the first /
+    if value[ind] != '/'c or value[ind+1] != '/'c {
+        ret ind
+    }
+    i = ind + 2
+    start = ind + 2
+        
+    while (c = value[i]) and c != '@'c and not self.is_reserved(c) {
+        ++i
+    }
+    user = ''
+    if value[i] == '@'c {
+        user = value.slice(start, i)
+        start = i + 1
+    } else {
+        i = start
+    }
+    while (c = value[i]) and c != ':'c and not self.is_reserved(c) {
+        ++i
+    }
+    host = ''
+    if value[i] == ':'c or value[i] == '/'c {
+        host = value.slice(start, i)
+        start = i + 1
+    } else {
+        i = start
+    }
+    while (c = value[i]) and not self.is_reserved(c)  {
+        ++i
+    }
+    port = value.slice(start, i)
+    authority = Authority(user, host, port)
+    ret i
+}
+
+Uri::parse_path(value String, start Int) private Int {
+    # Parse to the first ?
+    i = start
+    while (c = value[i]) and (c == '/'c or not self.is_reserved(c)) {
+        ++i
+    }
+    path = Path(value.slice(start, i))
+    if c == '?'c {
+        ++i
+    }
+    ret i
+}
+
+Uri::parse_query(value String, start Int) private Int {
+    # parse to the #
+    i = start
+    while (c = value[i]) and c != '#'c {
+        ++i
+    }
+    query = Query(value.slice(start, i))
+    if c == '#'c {
+        ++i
+    }
+    ret i
+}
+
+Uri::parse_fragment(value String, start Int) private Int {
+    # Parse to the end
+    i = start
+    while (c = value[i]) {
+        ++i
+    }
+    fragment = value.slice(start, i)
+    ret i
+}
+

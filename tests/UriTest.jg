@@ -1,0 +1,69 @@
+# jgtest exec on
+
+print(uri Uri::Uri) {
+    Io::println("scheme=#{uri.scheme}")
+    Io::println("user=#{uri.authority.user}")
+    Io::println("host=#{uri.authority.host}")
+    Io::println("port=#{uri.authority.port}")
+    Io::println("path=#{uri.path.str}")
+    Io::println("query=#{uri.query.str}")
+    Io::println("fragment=#{uri.fragment.str}\n")
+}
+
+full() {
+    uri = Uri::Uri('http://mfichman@github.com:887/test.xml?x=y#frag')
+    print(uri)
+}
+
+no_user() {
+    uri = Uri::Uri('http://github.com:887/test.xml?x=y#frag')
+    print(uri)
+}
+
+no_port() {
+    uri = Uri::Uri('http://mfichman@github.com/test.xml?x=y#frag')
+    print(uri)
+}
+
+no_authority() {
+    uri = Uri::Uri('http:///test.xml?x=y#frag')
+    print(uri)
+}
+
+no_path() {
+    uri = Uri::Uri('http://mfichman@github.com:887?x=y#frag')
+    print(uri)
+}
+
+no_query() {
+    uri = Uri::Uri('http://mfichman@github.com:887/test.xml#frag')
+    print(uri)
+}
+
+no_fragment() {
+    uri = Uri::Uri('http://mfichman@github.com:887/test.xml?x=y')
+    print(uri)
+}
+
+no_scheme() {
+    uri = Uri::Uri('//mfichman@github.com:887/test.xml?x=y#frag')
+    print(uri)
+}
+
+path_only() {
+    uri = Uri::Uri('/path/to/something')
+    print(uri)
+}
+
+main() Int {
+    full()
+    no_user()
+    no_port()
+    no_authority()
+    no_path()
+    no_query()
+    no_fragment()
+    no_scheme()
+    path_only()
+    ret 0
+}

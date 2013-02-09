@@ -762,7 +762,7 @@ void SemanticAnalyzer::operator()(While* statement) {
     Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
     guard(this);
-    if (!guard->type()->is_bool()) {
+    if (!guard->type()->is_boolifiable()) {
         err_ << statement->location();
         err_ << "Guard expression must have type '";
         err_ << env_->bool_type() << "'";
