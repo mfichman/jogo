@@ -42,7 +42,6 @@ Client::write(req Request) Response {
     req.headers['Host'] = host
     req.write(socket.stream)
     res = Response()
-    res.headers['Host'] = host
     res.read(socket.stream)
     ret res
 }

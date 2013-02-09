@@ -18,6 +18,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
+open(uri Uri::Uri) Io::Stream {
+    if uri.scheme == 'http' {
+        socket = Socket::connect(uri.host, 80) #FIXME: Uri.port
+        req = Http::Request()
+        req.method = Http::Method::GET
+        req.headers['Host'] = uri.host
+        req.body = ''
+        req.path = uri.path
+        req.write(socket.stream)
+        res = Http::Response()
+        res.read_headers(socket.stream)
+        ret socket.stream
+    } else {
+        ret nil
+    }
+}
+
 Authority < Value {
     user immutable String 
     host immutable String
@@ -63,6 +81,18 @@ Uri::@init(value String) {
     i = self.parse_path(value, i)
     i = self.parse_query(value, i)
     i = self.parse_fragment(value, i)
+}
+
+Uri::host?() String {
+    ret authority.host
+}
+
+Uri::port?() String {
+    ret authority.port
+}
+
+Uri::user?() String {
+    ret authority.user
 }
 
 Uri::is_reserved(char Char) Bool {

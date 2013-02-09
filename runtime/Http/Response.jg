@@ -39,8 +39,7 @@ Response::@init() {
 Response::write(stream Io::Stream) {
 }
 
-Response::read(stream Io::Stream) {
-    # Reads a response from the stream.
+Response::read_headers(stream Io::Stream) {
     version = stream.scan(" ")
     stat = stream.scan(" ")
     message = stream.scan("\r")
@@ -53,6 +52,11 @@ Response::read(stream Io::Stream) {
     }
     stream.scan("\r") 
     stream.get()
+}
+
+Response::read(stream Io::Stream) {
+    # Reads a response from the stream.
+    self.read_headers(stream)
     body = stream.readall()
 }
 
