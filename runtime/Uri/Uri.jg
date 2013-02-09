@@ -63,6 +63,10 @@ Uri::@init(value String) {
     i = self.parse_fragment(value, i)
 }
 
+Uri::is_reserved(char Char) Bool {
+    ret char == '/'c or char == '#'c or char == '?'c
+}
+
 Uri::parse_scheme(value String, start Int) private Int {
     # Parse everything up to the first ':' character
     i = start
@@ -75,10 +79,6 @@ Uri::parse_scheme(value String, start Int) private Int {
         ++i
     }
     ret i
-}
-
-Uri::is_reserved(char Char) Bool {
-    ret char == '/'c or char == '#'c or char == '?'c
 }
 
 Uri::parse_authority(value String, ind Int) private Int {
