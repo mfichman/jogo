@@ -50,12 +50,14 @@ Uri < Value {
     path = Path('') # * ANY  
     query = Query('') # '?' * ANY
     fragment String # '#' * ANY
-
 }
 
 
 Uri::@init(value String) {
     # Parses a URI, given a string as input.
+    if value.empty { 
+        ret
+    }
     i = self.parse_scheme(value, 0)
     i = self.parse_authority(value, i)
     i = self.parse_path(value, i)

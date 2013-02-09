@@ -137,6 +137,10 @@ String < Object {
         # Returns an iterator over the characters in this string
         ret StringIter(self)
     }
+
+    empty?() Bool {
+        ret self.length == 0
+    }
 }
 
 StringIter < Object {

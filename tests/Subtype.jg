@@ -1,0 +1,8 @@
+
+void() {
+}
+
+function() String {
+    ret void()
+}
+

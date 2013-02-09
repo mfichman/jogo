@@ -41,6 +41,11 @@ SubtypeEval::operator bool() {
     if (!sub_->is_value() && self_->is_nil()) { return true; }
     // Nil is assignable to anything but a value type
 	if (sub_->is_primitive() && self_->is_nil()) { return true; }
+    // Nil is assignable to primitives
+    if (self_->is_void() && sub_->is_void()) { return true; }
+    // Void is a subtype of itself
+    if (self_->is_void() || sub_->is_void()) { return false; }
+    // Void is not a subtype of anything; nothing is a subtype of void
     if (sub_->clazz() == self_->clazz()) { 
         return self_->equals(sub_);
     }
