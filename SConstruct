@@ -131,6 +131,7 @@ library_src = ' '.join([
     "Regex",
     "Socket",
     "String",
+    "Uri",
 ])
 
 coroutine = env.NASM('build/runtime/Coroutine.Intel64.asm')

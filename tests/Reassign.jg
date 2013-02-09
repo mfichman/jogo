@@ -1,0 +1,32 @@
+# jgtest exec on
+
+Val < Value {
+    val Int
+    @init(val Int) {
+        self.val = val
+    }
+}
+
+main() Int {
+    x = 0
+    y = x
+    x = x + 1
+    Io::println(y.str)
+    Io::println(x.str)
+    y = x
+    x = x + 1
+    Io::println(y.str)
+    Io::println(x.str)
+
+    a = Val(0)
+    b = a
+    a = Val(1) 
+    Io::println(b.val.str)
+    Io::println(a.val.str)
+    b = a
+    a = Val(2)
+    Io::println(b.val.str)
+    Io::println(a.val.str)
+
+    ret 0
+}

@@ -539,9 +539,9 @@ void IrGenerator::operator()(Assignment* expr) {
         }
         return_ = load(new IntegerLiteral(Location(), value));
     } else if (init->type()->is_bool()) {
-        return_ = bool_expr(init.pointer());
+        return_ = mov(bool_expr(init.pointer()));
     } else {
-        return_ = emit(init);
+        return_ = mov(emit(init));
     }
 
     assign_addr_ = assign_addr;
