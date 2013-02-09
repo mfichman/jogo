@@ -1,0 +1,12 @@
+
+main() Int {
+    x String
+    if x == nil {
+        Io::println('pass')
+    }
+    y Char
+    if y == nil {
+        Io::println('pass')
+    }
+    ret 0
+}

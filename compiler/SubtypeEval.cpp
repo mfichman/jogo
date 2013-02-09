@@ -40,6 +40,7 @@ SubtypeEval::operator bool() {
     // Top is a supertype of everything
     if (!sub_->is_value() && self_->is_nil()) { return true; }
     // Nil is assignable to anything but a value type
+	if (sub_->is_primitive() && self_->is_nil()) { return true; }
     if (sub_->clazz() == self_->clazz()) { 
         return self_->equals(sub_);
     }
@@ -55,6 +56,7 @@ bool SubtypeEval::subtype() {
     // alternate of 'other'.
     Class const* self = self_->clazz();
     Class const* sub = sub_->clazz();
+	assert(self&&sub&&"No types in subtype evaluation");
     SubtypeResult res = env_->subtype(self_, sub_);
     if (res == YES) { return true; }
     if (res == NO) { return false; }
