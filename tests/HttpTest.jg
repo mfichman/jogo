@@ -11,5 +11,6 @@ main() Int {
     res = Http::Response()
     res.read(fd)
     res.write(Io::stdout())
+    Io::println(res.body)
     ret 0
 }

@@ -6,4 +6,11 @@ X-TestHeader: bob
 Accept-Charset: utf-8
 
 hello!
+Cache-Control: private, max-age=0
+Content-Type: text/html; charset=ISO-8859-1
+Date: Sun, 10 Feb 2013 20:56:03 GMT
+Expires: -1
+
+<html></html>
+<html></html>
 
