@@ -540,6 +540,8 @@ void IrGenerator::operator()(Assignment* expr) {
         return_ = load(new IntegerLiteral(Location(), value));
     } else if (init->type()->is_bool()) {
         return_ = mov(bool_expr(init.pointer()));
+    } else if (init->type()->is_compound()) {
+        return_ = emit(init);
     } else {
         return_ = mov(emit(init));
     }

@@ -104,6 +104,7 @@ private:
     void modrm(uint8_t mod, RegisterId reg, RegisterId rm);
     void modrm(uint8_t mod, uint8_t reg, uint8_t rm);
     void operands(RegisterId reg, Operand rm);
+    void pcrel(RegisterId reg, String* label);
 
     // Helpers for more complex IR opcodes
     void load(RegisterId res, Operand a1);

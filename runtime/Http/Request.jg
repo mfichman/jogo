@@ -44,6 +44,9 @@ Request < Object {
     path = Uri::Path('')
     # Path to the resource requested by the server. 
 
+    version = 'HTTP/1.1'
+    # HTTP version to use.
+
     headers immutable = Hash[String, String]()
     # Set of headers to use with the request.  A few headers are set by
     # default, but may be overridden:
@@ -69,7 +72,7 @@ Request::write(stream Io::Stream) {
     # Otherwise, the caller should write the body to the stream after calling
     # write().  Status of the stream should be queried after completing this
     # function.
-    stream.print("#{method} #{path} HTTP/1.1\r\n")
+    stream.print("#{method} #{path} #{version}\r\n")
     for header in headers {
         stream.print("#{header.first}: #{header.second}\r\n")
     }
@@ -80,52 +83,38 @@ Request::write(stream Io::Stream) {
     }
 }
 
-Request::read(stream Io::Stream) {
-    # 
+Request::read_headers(stream Io::Stream) {
+    # Read only the response headers; do not read the request body.
+    match stream.scan(' ') {
+    with 'GET': method = Method::GET
+    with 'HEAD': method = Method::HEAD
+    with 'POST': method = Method::POST
+    with 'PUT': method = Method::PUT
+    with 'DELETE': method = Method::DELETE
+    with 'TRACE': method = Method::TRACE
+    with 'CONNECT': method = Method::CONNECT
+    }    
+    path = Uri::Path(stream.scan(' '))
+    version = stream.scan('\n')
+    while stream.status == Io::StreamStatus::OK and 
+        stream.peek() != '\r'c and 
+        stream.peek() != '\n'c {
+
+        key = stream.scan(':')
+        while stream.status == Io::StreamStatus::OK and 
+            stream.peek() == ' 'c  {
+        
+            stream.get()
+        }
+        value = stream.scan('\n') 
+        headers[key] = value
+    }
+    stream.scan('\n') 
 }
 
-Status < Enum {
-    # Encodes an HTTP status value.  The first code below ("UNKNOWN") is used
-    # to indicate an invalid status code returned by the server.
-    INVALID_CODE = 0
-    CONTINUE = 100
-    SWITCHING_PROTOCOLS = 101
-    OK = 200
-    CREATED = 201
-    ACCEPTED = 202
-    NON_AUTHORITATIVE_INFO = 203
-    NO_CONTENT = 204
-    RESET_CONTENT = 205 
-    PARTIAL_CONTENT = 206
-    MULTIPLE_CHOICES = 300
-    MOVED_PERMANENTLY = 301
-    FOUND = 302
-    SEE_OTHER = 303
-    NOT_MODIFIED = 304
-    USE_PROXY = 305
-    TEMPORARY_REDIRECT = 307
-    BAD_REQUEST = 400
-    UNAUTHORIZED = 401
-    PAYMENT_REQUIRED = 402 
-    FORBIDDEN = 403
-    NOT_FOUND = 404
-    METHOD_NOT_ALLOWED = 405
-    NOT_ACCEPTABLE = 406
-    PROXY_AUTHENTICATION_REQUIRED = 407
-    REQUEST_TIMEOUT = 408
-    CONFLICT = 409
-    GONE = 410
-    LENGTH_REQUIRED = 411
-    PRECONDITION_FAILED = 412
-    REQUEST_ENTITY_TOO_LARGE = 413
-    UNSUPPORTED_MEDIA_TYPE = 415
-    REQUESTED_RANGE_NOT_SATISFIABLE = 416
-    EXPECTATION_FAILED = 417
-    INTERNAL_SERVER_ERROR = 500
-    NOT_IMPLEMENTED = 501
-    BAD_GATEWAY = 502
-    SERVICE_UNAVAILABLE = 503
-    GATEWAY_TIMEOUT = 504
-    VERSION_NOT_SUPPORTED = 505
+Request::read(stream Io::Stream) {
+    # Reads the whole request, including the body.
+    self.read_headers(stream)
+    body = stream.readall()
 }
 

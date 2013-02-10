@@ -20,9 +20,14 @@ main() Int {
 
     a = Val(0)
     b = a
+    c = b
     a = Val(1) 
     Io::println(b.val.str)
     Io::println(a.val.str)
+    b = Val(3)
+    Io::println(c.val.str)
+    
+    
     b = a
     a = Val(2)
     Io::println(b.val.str)

@@ -371,11 +371,7 @@ void Intel64Generator::gp(uint8_t op, RegisterId reg, String* label) {
     assert(is_gp_reg(reg));
     rex(reg, RegisterId());
     text_->uint8(op);
-    operands(reg, RBP);
-    // RBP = use rip-relative addressing to load the operand from a PC-relative
-    // address.
-    format_->ref(label, OutputFormat::REF_SIGNED);
-    text_->uint32(0); // Immediate
+    pcrel(reg, label);
 }
 
 void Intel64Generator::gp(uint8_t op, RegisterId reg, Operand mem) {
@@ -435,11 +431,7 @@ void Intel64Generator::ssesd(uint8_t op, RegisterId reg, String* label) {
     rex(reg, RegisterId());
     text_->uint8(0x0f);
     text_->uint8(op);
-    operands(reg, RBP);
-    // RBP = use rip-relative addressing to load the operand from a PC-relative
-    // address.
-    format_->ref(label, OutputFormat::REF_SIGNED);
-    text_->uint32(0); // Immediate;
+    pcrel(reg, label);
 }
 
 void Intel64Generator::rex(RegisterId reg, RegisterId rm) {
@@ -452,6 +444,17 @@ void Intel64Generator::rex(RegisterId reg, RegisterId rm) {
         rex |= REX_B; 
     }
     text_->uint8(rex);
+}
+
+void Intel64Generator::pcrel(RegisterId reg, String* label) {
+    // Set up operands to load from a PC-relative address.  If
+    // RBP+MODRM_INDIRECT is used, then the address given by 'reg' is
+    // RIP-relative rather than RBP-relative.
+    uint8_t const regid = reg_code(reg);
+    uint8_t const rmid = reg_code(RBP);
+    modrm(MODRM_INDIRECT, regid, rmid);
+    format_->ref(label, OutputFormat::REF_SIGNED);
+    text_->uint32(0); // 32-bit immediate offset
 }
 
 void Intel64Generator::operands(RegisterId reg, Operand mem) {
@@ -469,15 +472,16 @@ void Intel64Generator::operands(RegisterId reg, Operand mem) {
         // the SP is stored at offset 0 from the base pointer.  The IR assumes
         // that arguments start at 0, not 1*word_size.  Offsets below the BP
         // are treated normally.
-    }
+    } 
+
+    // Select the mod field.   Note that R13/RBP is a special case: if mod is
+    // 00, then the address loaded is [RIP+disp32] rather than [R13] or [RBP]
+    // as one might expect.
     uint8_t modrm = 0;
-    // Select the mod field.   Note that r13 is a special case: if mod is 00,
-    // then the address loaded is [RIP+disp32] rather than [R13] as one might
-    // expect.
-    int const r13 = 13;
-    // Special case: R13 cannot use MODRM_INDIRECT, b/c with that encoding RIP
-    // is used as the indirect register memory operand instead of R13.
-    if (offset == 0 && rmid != r13) {
+
+    // Special case: R13/RBP cannot use MODRM_INDIRECT, b/c with that encoding
+    // RIP is used as the indirect register memory operand instead of R13/RBP.
+    if (offset == 0 && rm != R13 && rm != RBP) {
         modrm = MODRM_INDIRECT;
     } else if (offset > INT8_MAX || offset < INT8_MIN) {
         modrm = MODRM_DISP32;
@@ -495,7 +499,7 @@ void Intel64Generator::operands(RegisterId reg, Operand mem) {
         text_->uint8(rsp_sib);
     }
 
-    if (offset == 0 && rm != R13) {
+    if (offset == 0 && rm != R13 && rm != RBP) {
         // No displacement
     } else if (offset > INT8_MAX || offset < INT8_MIN) {
         text_->uint32(offset);
@@ -509,6 +513,7 @@ void Intel64Generator::operands(RegisterId reg, Operand mem) {
 
 void Intel64Generator::modrm(uint8_t mod, RegisterId reg, RegisterId rm) {
     // Outputs the MODRM byte for a register-register instruction.
+    assert(mod==MODRM_DIRECT&&"Only MODRM_DIRECT is supported");
     assert(!!reg&&"Invalid register ID");
     assert(!!rm&&"Invalid register ID");
     uint8_t const regid = reg_code(reg);
@@ -518,7 +523,6 @@ void Intel64Generator::modrm(uint8_t mod, RegisterId reg, RegisterId rm) {
 
 void Intel64Generator::modrm(uint8_t mod, uint8_t reg, uint8_t rm) {
     // Outputs the MODRM byte for a register-register instruction.
-    assert(mod==MODRM_DIRECT&&"Only MODRM_DIRECT is supported");
     uint8_t modrm = mod;
     modrm |= (MODRM_REG & (reg << 3));
     modrm |= (MODRM_RM & (rm));

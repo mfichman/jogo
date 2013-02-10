@@ -58,4 +58,15 @@ Buffer < Object {
         # Sets the index following the last byte stored in this buffer.
         end = value.min(capacity+1).max(begin).max(0)
     }
+
+    empty?() Bool {
+        # Returns true if the buffer is completely empty.
+        ret begin == end
+    }
+
+    full?() Bool {
+        # Returns true if there is no more space to write in this buffer.
+        ret end == capacity 
+    }
+    
 }

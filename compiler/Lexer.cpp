@@ -320,6 +320,9 @@ void Lexer::ident_or_keyword() {
     std::map<std::string, Token::Type>::iterator i = keyword_.find(value());
     if (i != keyword_.end()) {
         token(i->second);
+        if (Token(i->second).is_operator()) {
+            ignore_newline_ = true;
+        }
     } else if (value() == "true" || value() == "false") {
         token(Token::BOOL);
     } else if (value() == "nil") {

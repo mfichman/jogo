@@ -153,7 +153,9 @@ Int Io_Stream_result(Io_Stream self, Int bytes) {
     }
     if (ERROR_HANDLE_EOF == GetLastError()) {
         // End-of-file has been reached.
-        self->status = Io_StreamStatus_EOF;
+        if (Io_Buffer_empty__g(self->read_buf)) {
+            self->status = Io_StreamStatus_EOF;
+        }
         return 0;
     } else if (ERROR_SUCCESS != GetLastError()) {
         // Some other error; set the error code.
@@ -161,7 +163,10 @@ Int Io_Stream_result(Io_Stream self, Int bytes) {
         self->error = GetLastError();
         return 0;
     } else if (bytes == 0) {
-		self->status = Io_StreamStatus_EOF;
+        if (Io_Buffer_empty__g(self->read_buf)) {
+		    self->status = Io_StreamStatus_EOF;
+        }
+        return 0;
         return bytes;
     } else {
 	    return bytes;
@@ -232,7 +237,9 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 
     Int ret = read(self->handle, buf, len);
     if (ret == 0) {
-        self->status = Io_StreamStatus_EOF;
+        if (Io_Buffer_empty__g(self->read_buf)) {
+            self->status = Io_StreamStatus_EOF;
+        }
     } else if (ret == -1) {
         self->status = Io_StreamStatus_ERROR;
         self->error = errno;
@@ -250,7 +257,13 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     Int len = buffer->capacity - buffer->end;
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
+    Bool is_file = (Io_StreamType_FILE == self->type);
     
+    if (self->eof) { self->status = Io_StreamStatus_EOF; }
+    // Kqueue will hang if we attempt to wait on the fd again.  However, we
+    // can't set the EOF status until the user has read all the bytes from the
+    // buffer.  So, we have an internal 'eof' flag that tracks when kqueue has
+    // notified us that the stream is done.
     if (self->status == Io_StreamStatus_EOF) { return; }
 
     // Wait for the fd to be ready, and then do the read.
@@ -270,14 +283,20 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 
     Int ret = read(self->handle, buf, len);
     if (ret == 0) {
-        self->status = Io_StreamStatus_EOF;
+        if (Io_Buffer_empty__g(self->read_buf)) {
+            self->status = Io_StreamStatus_EOF;
+        }
     } else if (ret == -1) {
         self->status = Io_StreamStatus_ERROR;
         self->error = errno;
     } else {
         buffer->end += ret;
-        if (self->type == Io_StreamType_FILE && Io_manager()->iobytes <= len) {
-            self->status = Io_StreamStatus_EOF;
+        if (is_file && Io_manager()->iobytes <= len) {
+            if (Io_Buffer_empty__g(self->read_buf)) {
+                self->status = Io_StreamStatus_EOF;
+            } else {
+                self->eof = 1;
+            }
         }
     }
 }
@@ -567,8 +586,8 @@ String Io_Stream_readall(Io_Stream self) {
     }
     ret = String_alloc(buf->end);
     if (buf->end) {
-        Boot_memcpy(ret->data, buf->data, buf->end);
-        ret->length = buf->end;
+        Boot_memcpy(ret->data, buf->data+buf->begin, buf->end-buf->begin);
+        ret->length = buf->end-buf->begin;
     }
     if (buf != self->read_buf) {
         Boot_free(buf);

@@ -37,21 +37,37 @@ Response::@init() {
 }
 
 Response::write(stream Io::Stream) {
+    # Write a response to the output stream.
+    #stream.print("#{version} #{status} #{status}\r\n")
+    for header in headers {
+        stream.print("#{header.first}: #{header.second}\r\n")
+    }
+    stream.print("\r\n")
+    if body {
+       stream.print(body)
+       stream.flush()
+    }
 }
 
 Response::read_headers(stream Io::Stream) {
-    version = stream.scan(" ")
-    stat = stream.scan(" ")
-    message = stream.scan("\r")
-    stream.get()
-    while stream.status == Io::StreamStatus::OK and stream.peek() != '\r'c {
-        key = stream.scan(":")
-        value = stream.scan("\r") 
-        stream.get()
+    # Read only the response headers; do not read the request body.
+    version = stream.scan(' ')
+    stat = stream.scan(' ')
+    message = stream.scan('\n')
+    while stream.status == Io::StreamStatus::OK and 
+        stream.peek() != '\r'c and
+        stream.peek() != '\n'c  {
+
+        key = stream.scan(':')
+        while stream.status == Io::StreamStatus::OK and
+            stream.peek() == ' 'c {
+        
+            stream.get()
+        }
+        value = stream.scan('\n') 
         headers[key] = value
     }
-    stream.scan("\r") 
-    stream.get()
+    stream.scan('\n') 
 }
 
 Response::read(stream Io::Stream) {
@@ -60,13 +76,48 @@ Response::read(stream Io::Stream) {
     body = stream.readall()
 }
 
-response(stream Io::Stream) {
-    # 
+Status < Enum {
+    # Encodes an HTTP status value.  The first code below ("UNKNOWN") is used
+    # to indicate an invalid status code returned by the server.
+    INVALID_CODE = 0
+    CONTINUE = 100
+    SWITCHING_PROTOCOLS = 101
+    OK = 200
+    CREATED = 201
+    ACCEPTED = 202
+    NON_AUTHORITATIVE_INFO = 203
+    NO_CONTENT = 204
+    RESET_CONTENT = 205 
+    PARTIAL_CONTENT = 206
+    MULTIPLE_CHOICES = 300
+    MOVED_PERMANENTLY = 301
+    FOUND = 302
+    SEE_OTHER = 303
+    NOT_MODIFIED = 304
+    USE_PROXY = 305
+    TEMPORARY_REDIRECT = 307
+    BAD_REQUEST = 400
+    UNAUTHORIZED = 401
+    PAYMENT_REQUIRED = 402 
+    FORBIDDEN = 403
+    NOT_FOUND = 404
+    METHOD_NOT_ALLOWED = 405
+    NOT_ACCEPTABLE = 406
+    PROXY_AUTHENTICATION_REQUIRED = 407
+    REQUEST_TIMEOUT = 408
+    CONFLICT = 409
+    GONE = 410
+    LENGTH_REQUIRED = 411
+    PRECONDITION_FAILED = 412
+    REQUEST_ENTITY_TOO_LARGE = 413
+    UNSUPPORTED_MEDIA_TYPE = 415
+    REQUESTED_RANGE_NOT_SATISFIABLE = 416
+    EXPECTATION_FAILED = 417
+    INTERNAL_SERVER_ERROR = 500
+    NOT_IMPLEMENTED = 501
+    BAD_GATEWAY = 502
+    SERVICE_UNAVAILABLE = 503
+    GATEWAY_TIMEOUT = 504
+    VERSION_NOT_SUPPORTED = 505
 }
 
-#@init(stream Io::Stream) {
-#    # Parses a new request from the given stream.
-#    #version = stream.scan(" ")
-#    #stream.scan(" ") # = status
-#    #message = stream.scanln()
-#}

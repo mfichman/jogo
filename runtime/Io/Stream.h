@@ -41,6 +41,8 @@ struct Io_Stream {
     Int error;
 #ifdef WINDOWS
     Io_Overlapped op;
+#elif DARWIN
+    Bool eof;
 #endif
 };
 
@@ -76,6 +78,7 @@ void Io_Stream_mode__s(Io_Stream self, Io_StreamMode mode);
 Int Io_Stream_result(Io_Stream self, Int bytes);
 String Io_Stream_readall(Io_Stream self);
 void Io_Stream__destroy(Io_Stream self);
+Bool Io_Buffer_empty__g(Io_Buffer self);
 extern void Io_Stream__vtable();
 
 #endif
