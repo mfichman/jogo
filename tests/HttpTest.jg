@@ -1,0 +1,15 @@
+# jgtest exec on
+
+
+main() Int {
+    fd = File::open('HttpTestReq.txt', 'r')
+    req = Http::Request()
+    req.read(fd)    
+    req.write(Io::stdout()) 
+
+    fd = File::open('HttpTestRes.txt', 'r')
+    res = Http::Response()
+    res.read(fd)
+    res.write(Io::stdout())
+    ret 0
+}
