@@ -573,6 +573,7 @@ String Io_Stream_readall(Io_Stream self) {
     String ret = 0;
     // Read any leftover bytes that are still in the read_buf
     while (self->status == Io_StreamStatus_OK) {
+		Int size = buf->end-buf->begin;
         if (buf->end == buf->capacity) {
             Io_Buffer tmp = Io_Buffer__init(buf->capacity * 2);
             Boot_memcpy(tmp->data, buf->data+buf->begin, buf->end-buf->begin);
@@ -581,8 +582,11 @@ String Io_Stream_readall(Io_Stream self) {
                 Boot_free(buf);
             }
             buf = tmp;
-        } 
-        Io_Stream_read(self, buf); 
+        }
+        Io_Stream_read(self, buf);
+		if (size == (buf->end-buf->begin)) {
+			break;
+		}
     }
     ret = String_alloc(buf->end);
     if (buf->end) {
@@ -592,5 +596,7 @@ String Io_Stream_readall(Io_Stream self) {
     if (buf != self->read_buf) {
         Boot_free(buf);
     }
+	self->read_buf->begin = 0;
+	self->read_buf->end = 0;
     return ret;
 }
