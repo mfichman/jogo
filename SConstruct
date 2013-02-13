@@ -25,7 +25,7 @@ VariantDir('build/runtime', 'runtime', duplicate=0)
 build_dir = os.path.join('build', 'runtime')
 env = Environment(CPPPATH = ['build/compiler'])
 env.Append(ENV = os.environ)
-env.Append(JGFLAGS = '-m -i runtime --build-dir ' + build_dir)
+env.Append(JGFLAGS = '-v -m -i runtime --build-dir ' + build_dir)
 env.Append(JGFLAGS = ' --no-default-libs -g Intel64 ')
 
 build_mode = ARGUMENTS.get('mode', 'debug')
@@ -60,11 +60,11 @@ if env['PLATFORM'] == 'win32':
     nasm = 'nasm -DWINDOWS -fwin64 -o $TARGET $SOURCE'
     nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
     if 'release' == build_mode:
-        env.Append(CXXFLAGS = '/MD /Zi /O2')
-        env.Append(CFLAGS = '/MD /Zi /O2')
+        env.Append(CXXFLAGS = '/MT /Zi /O2')
+        env.Append(CFLAGS = '/MT /Zi /O2')
     else:
-        env.Append(CXXFLAGS = '/MD /Zi')
-        env.Append(CFLAGS = '/MD /Zi') 
+        env.Append(CXXFLAGS = '/MT /Zi')
+        env.Append(CFLAGS = '/MT /Zi') 
         env.Append(LINKFLAGS = '/DEBUG')
     env.Append(CXXFLAGS = '/DCOROUTINE_STACK_SIZE='+stack_size)
     env.Append(CXXFLAGS = '/DWINDOWS')

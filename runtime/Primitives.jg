@@ -320,11 +320,32 @@ Bool < Value {
     str?() native String {
         # Returns the string representation of 'self'
     }
+    
 }
 
 Byte < Value {
     # Unsigned, 8-bit integer value.   A byte is always 8-bits long, regardless
     # of the platform.
+    is_utf8_1byte() native Bool {
+        # Returns true if the byte is the beginning of a UTF-8 1-byte code point
+        # That is, if the byte is: 0b0xxxxxxx (0x00000000 to 0x0000007f)
+    }
+    is_utf8_2byte() native Bool {
+        # Returns true if the byte is the beginning of a UTF-8 2-byte code point
+        # That is, if the byte is: 0b110xxxxx (0x00000080 to 0x000007ff)
+    }
+    is_utf8_3byte() native Bool {
+        # Returns true if the byte is the beginning of a UTF-8 3-byte code point
+        # That is, if the byte is: 0b1110xxxx (0x00000800 to 0x0000ffff)
+    }
+    is_utf8_4byte() native Bool {
+        # Returns true if the byte is the beginning of a UTF-8 4-byte code point
+        # That is, if the byte is: 0b11110xxx (0x00010000 to 0x001fffff)
+    }
+    is_utf8_ext() native Bool {
+        # Returns true if the byte is a UTF-8 extension byte for a multibyte
+        # code point.  That is, if the byte is 0xb10xxxxxx
+    }
 }
 
 Any < Object {

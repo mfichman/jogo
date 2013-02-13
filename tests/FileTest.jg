@@ -12,12 +12,12 @@ main() Int {
     if not file.error {
         hello = file.scan('\n')
         stdout.print("#{hello}\n")    
-        while eof != file.peek() {
-            if file.peek() != '\r'c {
-                stdout.put('*'c)
-                stdout.put(file.get())
+        while file.status == Io::StreamStatus::OK {
+            if file.peekc() != '\r'c {
+                stdout.putc('*'c)
+                stdout.putc(file.getc())
             } else {
-                file.get()
+                file.getc()
             }
         }
     } else {
@@ -34,10 +34,10 @@ main() Int {
     stdout.print(array.last)
     stdout.print(array.pop())
 
-    stdout.put('c'c)
-    stdout.put('h'c)
-    stdout.put('a'c)
-    stdout.put('r'c)
+    stdout.putc('c'c)
+    stdout.putc('h'c)
+    stdout.putc('a'c)
+    stdout.putc('r'c)
     stdout.print('\n')
 
 #    stdout.flush()
@@ -45,24 +45,24 @@ main() Int {
 #    msg = stdin.scan('\n')
 #    stdout.print(msg)
     
-    stdout.put('\x48'c)
-    stdout.put('\x45'c)
-    stdout.put('\x4c'c)
-    stdout.put('\x4C'c)
-    stdout.put('\x4f'c)
-    stdout.put('\x0A'c)
+    stdout.putc('\x48'c)
+    stdout.putc('\x45'c)
+    stdout.putc('\x4c'c)
+    stdout.putc('\x4C'c)
+    stdout.putc('\x4f'c)
+    stdout.putc('\x0A'c)
 
-    stdout.put('\150'c)
-    stdout.put('\145'c)
-    stdout.put('\154'c)
-    stdout.put('\154'c)
-    stdout.put('\157'c)
-    stdout.put('\012'c)
+    stdout.putc('\150'c)
+    stdout.putc('\145'c)
+    stdout.putc('\154'c)
+    stdout.putc('\154'c)
+    stdout.putc('\157'c)
+    stdout.putc('\012'c)
 
-    stdout.put('\r'c)
-    stdout.put('\t'c)
-    stdout.put('\n'c)
-    stdout.put('\\'c)
+    stdout.putc('\r'c)
+    stdout.putc('\t'c)
+    stdout.putc('\n'c)
+    stdout.putc('\\'c)
     stdout.flush()
     
     ret 0

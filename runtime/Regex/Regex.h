@@ -52,7 +52,7 @@ typedef struct Regex_Regex* Regex_Regex;
 struct Regex_Regex {
     VoidPtr _vtable;
     U64 _refcount;
-    Char* next;
+    Byte* next;
     Int gen;
     Int length;
     Int capacity;

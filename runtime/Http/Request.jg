@@ -97,14 +97,14 @@ Request::read_headers(stream Io::Stream) {
     path = Uri::Path(stream.scan(' '))
     version = stream.scan('\n')
     while stream.status == Io::StreamStatus::OK and 
-        stream.peek() != '\r'c and 
-        stream.peek() != '\n'c {
+        stream.peekc() != '\r'c and 
+        stream.peekc() != '\n'c {
 
         key = stream.scan(':')
         while stream.status == Io::StreamStatus::OK and 
-            stream.peek() == ' 'c  {
+            stream.peekc() == ' 'c  {
         
-            stream.get()
+            stream.getc()
         }
         value = stream.scan('\n') 
         headers[key] = value

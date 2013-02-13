@@ -30,7 +30,7 @@ struct String {
     VoidPtr _vtable;
     U64 _refcount;
     Int length;
-    Char data[];
+    Byte data[];
 };
 
 String String_alloc(Int length);

@@ -29,7 +29,7 @@ typedef void* VoidPtr;
 
 typedef int64_t Int;
 typedef int64_t Bool;
-typedef char Char;
+typedef uint32_t Char; // Unicode code point
 typedef uint8_t Byte;
 typedef double Float;
 

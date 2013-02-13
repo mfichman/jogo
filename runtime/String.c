@@ -53,7 +53,7 @@ String String_expand(String self, Int length) {
     // of 'length' and 'self->length'.
     Int len = sizeof(struct String) + Int_max(length, self->length) + 1;
     String ret = Boot_malloc(len);
-    Char* c = ret->data;
+    Byte* c = ret->data;
     Int i = 0;
     ret->_vtable = String__vtable;
     ret->_refcount = 1;
@@ -74,7 +74,7 @@ String String__add(String self, String string) {
     // optimization.  Copy the vtable from another string (FixMe: eventually
     // copy this from a static location)
     Int length = self->length + string->length;
-    Char* c = 0;
+    Byte* c = 0;
     Int i = 0;
 
     String ret = Boot_malloc(sizeof(struct String) + length + 1); 
@@ -101,7 +101,7 @@ String String_slice(String self, Int begin, Int end) {
     // and we get a performance boost from less indirection.
     Int length = 0;
     String ret = 0;
-    Char* c = 0;
+    Byte* c = 0;
     Int i = 0;
 
     end = (end > self->length) ? self->length : end;
@@ -148,7 +148,7 @@ Bool String__equal(String self, String string) {
 
 String String_uppercase__g(String self) {
     // Create a new string with all lowercase letters replaced by uppercase
-    Char *c = 0;
+    Byte* c = 0;
     Int i = 0;
 
     String ret = Boot_malloc(sizeof(struct String) + self->length + 1);
@@ -165,7 +165,7 @@ String String_uppercase__g(String self) {
 
 String String_lowercase__g(String self) {
     // Create a new string with all uppercase letters replaced by lowercase
-    Char* c = 0;
+    Byte* c = 0;
     Int i = 0;
 
     String ret = Boot_malloc(sizeof(struct String) + self->length + 1);
@@ -184,7 +184,7 @@ Int String_int__g(String self) {
     // Converts a base-10 representation of a string into an integer.
     Int ret = 0;
     Int neg = 0;
-    Char* c = 0;
+    Byte* c = 0;
     if (self->length <= 0) {
         return 0;
     }
@@ -209,7 +209,7 @@ Int String_hash__g(String self) {
     // Returns the hash code of this string.  This function uses the Java hash
     // code implementation, i.e., s[0]*31^(n-1) + s[1]*32^(n-2) ...
     Int hash = 0;
-    Char* c = 0;
+    Byte* c = 0;
     for (c = self->data; *c; ++c) {
         hash = 31 * hash + (*c);
     }

@@ -127,10 +127,8 @@ def native_test(test):
         err = os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
     (res, msg) = check(test, expected, output)
-    if res == FAIL:
-        return (res, msg+err)
-    else:
-        return (res, msg)
+    if res == FAIL: return (res, msg+err)
+    else: return (res, msg)
 
 def cpp_test(test):
     # C++ tests; used for compiler unit tests.
@@ -138,18 +136,22 @@ def cpp_test(test):
     exe = re.sub(r'.cpp$', '', test) 
     output = ""
     if sys.platform == 'win32':
-        command = 'cl ' + test + ' /MD /TP /Zi /EHsc /Fe..\\build\\' 
+        command = 'cl ' + test + ' /MT /TP /Zi /EHsc /Fe..\\build\\' 
         command += exe + ' /I..\\compiler '
         command += '/link /LIBPATH:..\\lib '
         command += 'jogoc.lib' 
-        os.popen(command).read()
+        err = os.popen(command).read()
         output = shell('..\\build\\' + exe + ' 2>&1')
     else:
         command = 'g++ -g ' + test + ' -o ../build/' + exe + ' -L../lib '
         command += '-ljogoc -lm -I ../compiler 2>&1'
         output += os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
-    return check(test, expected, output)
+        err = ''
+    
+    (res, msg) =  check(test, expected, output)
+    if res == FAIL: return (res, msg+err)
+    else: return (res, msg)
 
 def any_test(test):
     # Runs a C++ test and returns the result of the test.

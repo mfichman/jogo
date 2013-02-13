@@ -114,7 +114,7 @@ Socket_Stream Socket_Listener_accept(Socket_Listener self) {
     // setsockopt function to set the SO_UPDATE_ACCEPT_CONTEXT option,
     // specifying sAcceptSocket as the socket handle and sListenSocket as the
     // option value.
-    if (setsockopt(sd, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, &ls, sizeof(ls))) {
+    if (setsockopt(sd, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char const*)&ls, sizeof(ls))) {
         Boot_abort();
     }
 

@@ -66,7 +66,7 @@ VoidPtr Object__dispatch(Object self, String id) {
     VoidPtr* jump2 = ((VoidPtr*)self->_vtable) + 2 + n;
     U64 d = 0;
     U64 hash = 0;
-    Char* c = 0;
+    Byte* c = 0;
     for (c = id->data; *c; ++c) {
         hash = ((hash * 0x01000193) ^ (*c)); 
     }
@@ -81,7 +81,7 @@ VoidPtr Object__dispatch(Object self, String id) {
 Int Object_hash__g(Object self) {
     // This function hashes each byte of the pointer value using the Java
     // String hash function.
-    Char* array = (Char*)self;
+    Byte* array = (Byte*)&self;
     Int hash = 0;
     Int i = 0;
     for (; i < sizeof(Int); ++i) {

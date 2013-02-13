@@ -18,6 +18,67 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+#TokenType = LBRACKET | RBRACKET | LBRACE | RBRACE | STRING | INT | NULL;
+
+TokenType < Enum {
+    # Types of tokens used by JSON.  Taken from http://json.org.  The Tokenizer
+    # lexes these tokens and emits them in a stream.  The Tokenizer will only
+    # ever emit valid JSON streams.  If an error is detected, the Tokenizer
+    # will emit an ERROR token.  For example: { "key": } would emit an ERROR
+    # token after the first ":"
+    STRING # Unicode chars, escape sequences NO control chars
+    NUMBER # Leading - allowed; must have a leading digit before "."
+    COLON # Indicates the second part of a key-value pair
+    COMMA # Indicates the next element
+    OBJSTART # Start of an object in the stream (JSON notation: "{")
+    OBJEND # End of an object in the stream (JSON notation: "}")
+    ARRAYSTART # Start of an array in the stream (JSON notation: "[")
+    ARRAYEND # End of an array in the stream (JSON notation: "]")
+    BOOLEAN # Either "false" or "true"
+    NULL # Only "null"
+    ERROR # Indicates invalid JSON or an illegal character
+    END # Indicates there are no more JSON tokens to be read
+}
+
+Token < Value {
+    # Represents a JSON token.  The type indicates which JSON element was
+    # lexed; the value indicates the text for that element.  The value is only
+    # valid for literals, e.g., STRING and NUMBER.
+    type TokenType # JSON element that was parsed
+    value String # Only valid for STRING or NUMBER TokenTypes
+}
+
+Reader < Interface {
+    get() Char {}
+    peek() Char {}
+}
+
+Tokenizer < Object {
+    # Reads input from a Unicode character iterator and outputs a valid stream
+    # of JSON tokens.
+    reader immutable Reader # Input from the user
+    buf private Char # Next character to give to the reader
+    expect private TokenType # Next token type to expect
+}
+
+Tokenizer::@init(preader Reader) {
+    # Initializes the tokenizer and reads in the first token.
+    reader = preader 
+    next()
+}
+
+Tokenizer::more?() Bool {
+    # Returns true if there is another JSON token in the string, and there are
+    # no more errors.
+    ret out != TokenType::END and out != TokenType::ERROR
+}
+
+Tokenizer::next() Token {
+    # Returns the next JSON token read from the input iterator.
+    out = buf
+    ret out 
+}
+
 Parser < Object {
     # Parses a JSON file from the given input stream.  For more information on
     # the JSON file format, see [json.org](http://www.json.org).

@@ -164,12 +164,11 @@ void Builder::monolithic_build() {
         }
 #ifdef WINDOWS
         std::string lib = env_->output()+".lib";
-        ss << "build\\runtime\\Coroutine.Intel64.obj";
 #else
         std::string dir = File::dir_name(env_->output());
         std::string out = File::base_name(env_->output());
         std::string lib = dir + FILE_SEPARATOR + "lib" + out + ".a";
-        ss << "build/runtime/Coroutine.Intel64.o";
+        //ss << "build/runtime/Coroutine.Intel64.o";
 #endif
         archive(ss.str(), lib);
     }
@@ -391,11 +390,21 @@ void Builder::archive(const std::string& in, const std::string& out) {
 
     // Select the correct archive program for the current OS/platform.
 #if defined(WINDOWS)
+    ss << VCVARSALL << " > NUL && ";
     ss << "lib.exe /SUBSYSTEM:console /MACHINE:X64 /NOLOGO /OUT:" << out << " " << in;
+    if (env_->no_default_libs()) {
+        ss << "build\\runtime\\Coroutine.Intel64.obj";
+    }
 #elif defined(DARWIN)
     ss << "ar rcs " << out << " " << in;
+    if (env_->no_default_libs()) {
+        ss << "build/runtime/Coroutine.Intel64.o";
+    }
 #elif defined(LINUX)
     ss << "ar rcs " << out << " " << in;
+    if (env_->no_default_libs()) {
+        ss << "build/runtime/Coroutine.Intel64.o";
+    }
 #endif
     if (env_->verbose()) {
         Stream::stout() << ss.str() << "\n";
@@ -503,7 +512,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << VCVARSALL << " > NUL && ";
-    ss << "cl.exe " << in << " /nologo /Zi /c /Fo\"" << out << "\"";
+    ss << "cl.exe " << in << " /MT /nologo /Zi /c /Fo\"" << out << "\"";
     if (env_->optimize()) {
         ss << " /O2";
     } 

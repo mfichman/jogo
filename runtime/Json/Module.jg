@@ -18,15 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-Value = String | Int | Bool | Float | Array[Value] | Hash[String,Value]
+Value = String|Int|Bool|Float|Array[Value]|Hash[String,Value]
 
-read(stream Io::Stream) Hash[String,Value] {
-    ret nil
-}
-
-write(stream Io::Stream, hash Hash[String,Value]) {
-
-}
 
 
 

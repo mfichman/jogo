@@ -400,11 +400,10 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
 }
 #endif
 
-Int Io_Stream_get(Io_Stream self) {
-    // Read a single character from the stream.  Returns EOF if the end of the
+Byte Io_Stream_getb(Io_Stream self) {
+    // Read a single byte from the stream.  Returns EOF if the end of the
     // stream has been reached.  If an error occurs while reading from the
     // stream, then 'status' will be set to 'ERROR.'
-
     Io_Buffer buf = self->read_buf;
     if (buf->begin == buf->end) {
         buf->begin = 0;
@@ -412,19 +411,21 @@ Int Io_Stream_get(Io_Stream self) {
         Io_Stream_read(self, buf);
     }
 
+    if ((buf->begin + 1) >= buf->end) {
+        self->status = Io_StreamStatus_EOF; // Reading the last char now
+    }
     if (buf->begin >= buf->end) {
         // EOF
-        return -1;
+        return 0;
     } else {
         return buf->data[buf->begin++];
     }
 }
 
-Int Io_Stream_peek(Io_Stream self) {
+Byte Io_Stream_peekb(Io_Stream self) {
     // Return the next character that would be read from the stream.  Returns
     // EOF if the end of the file has been reached.  If an error occurs while
     // reading from the stream, then 'status' will be set to 'ERROR.'
-
     Io_Buffer buf = self->read_buf;
     if (buf->begin == buf->end) {
         buf->begin = 0;
@@ -434,16 +435,15 @@ Int Io_Stream_peek(Io_Stream self) {
 
     if (buf->begin >= buf->end) {
         // EOF
-        return -1;
+        return 0;
     } else {
         return buf->data[buf->begin];
     }
 }
 
-void Io_Stream_put(Io_Stream self, Char ch) {
+void Io_Stream_putb(Io_Stream self, Byte byte) {
     // Insert a single character into the stream.  If an error occurs while 
     // writing to the stream, then 'status' will be set to 'ERROR.'
-
     Io_Buffer buf = self->write_buf;
     if (buf->end == buf->capacity) {
         Io_Stream_flush(self);
@@ -451,8 +451,35 @@ void Io_Stream_put(Io_Stream self, Char ch) {
     if (buf->end >= buf->capacity) {
         return;
     } else {
-        buf->data[buf->end++] = ch;
+        buf->data[buf->end++] = byte;
     }
+}
+
+Char Io_Stream_getc(Io_Stream self) {
+    // Returns the next Unicode character in the stream.
+    return Io_Stream_getb(self); // FIXME: Implement Unicode
+}
+
+Char Io_Stream_peekc(Io_Stream self) {
+    return Io_Stream_peekb(self); // FIXME: Implement Unicode
+}
+
+void Io_Stream_putc(Io_Stream self, Char ch) {
+    Io_Stream_putb(self, ch); // FIXME: Implement Unicode
+}
+
+Int Io_Stream_geti(Io_Stream self) {
+    assert(!"Not implemented");
+    return 0;
+}
+
+Int Io_Stream_peeki(Io_Stream self) {
+    assert(!"Not implemented");
+    return 0;
+}
+
+void Io_Stream_puti(Io_Stream self, Int in) {
+    assert(!"Not implemented");
 }
 
 String Io_Stream_scan(Io_Stream self, String delim) {
@@ -464,8 +491,9 @@ String Io_Stream_scan(Io_Stream self, String delim) {
 
     while (1) {
         // Loop until we find a delimiter somewhere in the input stream
-        Char next = Io_Stream_get(self);
-        Char* c = 0;
+        Char next = Io_Stream_getc(self);
+        Byte* c = 0;
+        assert("Non-ASCII character in stream" && next < 0xf0);
         // Resize the string if necessary
         if (ret->length >= length) {
             String exp = String_expand(ret, length*2);            
@@ -495,7 +523,7 @@ void Io_Stream_print(Io_Stream self, String str) {
 
     Int i = 0;
     for (; i < str->length; i++) {
-        Io_Stream_put(self, str->data[i]);
+        Io_Stream_putc(self, str->data[i]);
     }
 }
 

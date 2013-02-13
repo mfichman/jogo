@@ -84,7 +84,7 @@ Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
     Regex_ThreadList cur = Regex_ThreadList__init(self, self->length);
     Regex_ThreadList next = Regex_ThreadList__init(self, self->length);
     Int i = 0;
-    Char* c = 0;
+    Byte* c = 0;
     self->gen++; 
 
     for (c = str->data;; c++) {
@@ -213,7 +213,7 @@ Regex_Regex Regex_Regex_parse_alt(Regex_Regex self) {
 
 Regex_Regex Regex_Regex_parse_concat(Regex_Regex self) {
     // Parses a concat expression, e.g., e1e2
-    Char c = 0;
+    Byte c = 0;
     self = Regex_Regex_parse_closure(self);
     c = *self->next;
     while (c && c != '|' && c != ')') {
@@ -334,7 +334,7 @@ Regex_Regex Regex_Regex_parse_opt(Regex_Regex self) {
 }
 
 Regex_Regex Regex_Regex_parse_char(Regex_Regex self) {
-    Char c = *self->next;
+    Byte c = *self->next;
     // Modify the instruction seq to fit instructions for the char.
     if (c == '\\') {
         struct Regex_Instr instr = {0}; 
@@ -426,7 +426,7 @@ void Regex_Regex_dump(Regex_Regex self) {
         case SPLIT: printf("split %03llx\n", instr.target); break;
         case JUMP: printf("jump %03llx\n", instr.target); break;
 #endif
-        case CHAR: printf("char %c\n", (Char)instr.target); break;
+        case CHAR: printf("char %c\n", (Byte)instr.target); break;
         case MATCH: printf("match\n"); break;
         case ANY: printf("any\n"); break;
         case START: printf("start\n"); break;

@@ -39,7 +39,7 @@ String Int_str__g(Int self) {
     Int length = 0;
     Int val = self;
     String ret = 0;
-    Char *c = 0;
+    Byte *c = 0;
 
     if (self < 0) { length++; }
     while (val) { 
