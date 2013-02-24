@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <ctype.h>
+#include <assert.h>
 
 #ifdef WINDOWS
 #define snprintf _snprintf
@@ -36,27 +37,27 @@ String Int_str__g(Int self) {
     // Converts an integer into a string, by first calculating the amount of
     // space needed for the string, and then copying the characters into the
     // string.
-    Int length = 0;
+    Int bytes = 0;
     Int val = self;
     String ret = 0;
     Byte *c = 0;
 
-    if (self < 0) { length++; }
+    if (self < 0) { bytes++; }
     while (val) { 
         val /= 10; 
-        length++;
+        bytes++;
     }
     if (self == 0) {
-        length++;
+        bytes++;
     }
 
-    ret = Boot_malloc(sizeof(struct String) + length + 1); 
+    ret = Boot_malloc(sizeof(struct String) + bytes + 1); 
     ret->_vtable = String__vtable;
     ret->_refcount = 1;
-    ret->length = length;
+    ret->bytes = bytes;
     
     // Now copy over the characters for each decimal place
-    c = ret->data + ret->length - 1;
+    c = ret->data + ret->bytes - 1;
     val = self < 0 ? -self : self;
     if (!val) {
         *c-- = '0';
@@ -69,7 +70,7 @@ String Int_str__g(Int self) {
         *c-- = '-';
         val = -val;
     }
-    ret->data[ret->length] = '\0'; // Add nul-terminator for C usage
+    ret->data[ret->bytes] = '\0'; // Add nul-terminator for C usage
     return ret;
 }
 
@@ -273,7 +274,7 @@ Bool Float__less(Float self, Float other) {
 String Float_str__g(Float self) {
     String ret = String_alloc(64);
     snprintf(ret->data, 64, "%g", self); 
-    ret->length = strlen(ret->data);
+    ret->bytes = strlen(ret->data);
     return ret;
 }
 
@@ -283,9 +284,9 @@ Char Char__init() {
 
 String Char_str__g(Char self) {
     // Returns the string representation of the character.
-    
     String ret = String_alloc(2);
-    ret->length = 1;
+    assert(self < 0xf && "Not implemented for Unicode chars");
+    ret->bytes = 1;
     ret->data[0] = self;
     return ret;
 }
@@ -293,7 +294,6 @@ String Char_str__g(Char self) {
 Bool Char__equal(Char self, Char other) {
     return self == other;
 }
-
 
 Bool Char__less(Char self, Char other) {
     return self < other;
@@ -358,6 +358,69 @@ String Bool_str__g(Bool self) {
     } else {
         false_str._refcount++;
         return &false_str;
+    }
+}
+
+Byte Byte__init() {
+    return 0;
+}
+
+Bool Byte_is_utf8_start__g(Byte self) {
+    Byte const mask = 0xc0;
+    Byte const val = 0x80; 
+    return (self & mask) != 0x80;
+}
+
+Char Char__getutf8(Byte** begin, Byte* end) {
+    // Returns the next Unicode code point starting at *begin.  Increments
+    // *begin to point at the next character after the Unicode code point that
+    // was read.
+    static const U32 offset[6] = {
+        0x00000000UL, 0x00003080UL, 0x000E2080UL,
+        0x03C82080UL, 0xFA082080UL, 0x82082080UL
+    };
+    U32 ch = 0;
+    U32 size = 0;
+    do {
+        if (*begin >= end) {
+            // Expected another char, but got nothing.  Return the EOF marker.
+            return -1;
+        }
+        ch <<= 6;
+        ch += (U32)(*((*begin)++));
+        size++;
+    } while (!Byte_is_utf8_start__g(**begin));
+    return ch-offset[size-1];
+}
+
+void Char__pututf8(Char ch, Byte** begin, Byte* end) {
+    // Writes 'self' as a Unicode byte sequence to the buffer beginning at
+    // '*begin' and ending at 'end'.  Increments *begin to the end of the byte
+    // sequence written.
+    if (ch < 0x80) { // 1 byte
+        if (((*begin)+1) > end) { *begin = end; return; }
+        (*begin)[0] = ch & 0x7f;
+        *begin += 1;
+    } else if (ch < 0x800) { // 2 bytes
+        if (((*begin)+2) > end) { *begin = end; return; }
+        (*begin)[0] = ((ch >> 6) & 0x1f) | 0xc0;
+        (*begin)[1] = (ch & 0x3f) | 0x80;
+        *begin += 2;
+    } else if (ch < 0x10000) { // 3 bytes
+        if (((*begin)+3) > end) { *begin = end; return; }
+        (*begin)[0] = ((ch >> 12) & 0xf) | 0xe0;
+        (*begin)[1] = ((ch >> 6) & 0x3f) | 0x80;
+        (*begin)[2] = (ch & 0x3f) | 0x80;
+        *begin += 3;
+    } else if (ch < 0x200000) { // 4 bytes
+        if (((*begin)+4) > end) { *begin = end; return; }
+        (*begin)[0] = ((ch >> 18) & 0x7) | 0xf0;
+        (*begin)[1] = ((ch >> 12) & 0x3f) | 0x80;
+        (*begin)[2] = ((ch >> 6) & 0x3f) | 0x80;
+        (*begin)[3] = (ch & 0x3f) | 0x80;
+        *begin += 4;
+    } else {
+        assert(!"Invalid Unicode sequence");
     }
 }
 

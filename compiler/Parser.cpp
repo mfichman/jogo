@@ -1328,7 +1328,7 @@ Expression* Parser::literal() {
         expr = new NilLiteral(location());
         break;
     case Token::EOF_LITERAL:
-        expr = new IntegerLiteral(location(), env_->integer("-1"));
+        expr = new IntegerLiteral(location(), env_->integer("0xffffffff"));
         expr->type(env_->char_type());
         break;
     case Token::CHAR: {

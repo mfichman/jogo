@@ -34,6 +34,7 @@ typedef uint8_t Byte;
 typedef double Float;
 
 typedef uint64_t U64;
+typedef uint32_t U32;
 
 typedef struct String* String;
 typedef struct Object* Object;
@@ -67,5 +68,9 @@ Char Char__init();
 String Char_str__g(Char self);
 Bool Char__less(Char self, Char other);
 Bool Char__equal(Char self, Char other);
+Char Char__getutf8(Byte** begin, Byte* end);
+void Char__pututf8(Char self, Byte** begin, Byte* end);
+
+Byte Byte__init();
 
 #endif

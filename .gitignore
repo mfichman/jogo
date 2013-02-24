@@ -30,3 +30,6 @@ benchmark/*.6
 benchmark/*.s
 benchmark/build
 .build
+*.pdb
+*.suo
+*.ilk

@@ -29,18 +29,18 @@
 struct String {
     VoidPtr _vtable;
     U64 _refcount;
-    Int length;
+    Int bytes;
     Byte data[];
 };
 
-String String_alloc(Int length);
+String String_alloc(Int bytes);
 Char String__index(String self, Int index);
 String String__add(String self, String string);
-String String_expand(String self, Int length);
+String String_expand(String self, Int bytes);
 String String_slice(String self, Int begin, Int end);
 String String_prefix(String self, Int end);
 String String_suffix(String self, Int begin);
-Int String_length__g(String self);
+Int String_bytes__g(String self);
 Bool String__equal(String self, String string);
 String String_uppercase__g(String self);
 String String_lowercase__g(String self);

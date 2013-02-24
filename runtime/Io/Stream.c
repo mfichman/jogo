@@ -411,12 +411,10 @@ Byte Io_Stream_getb(Io_Stream self) {
         Io_Stream_read(self, buf);
     }
 
-    if ((buf->begin + 1) >= buf->end) {
-        self->status = Io_StreamStatus_EOF; // Reading the last char now
-    }
     if (buf->begin >= buf->end) {
         // EOF
-        return 0;
+        self->status = Io_StreamStatus_EOF;
+        return 0xff;
     } else {
         return buf->data[buf->begin++];
     }
@@ -435,7 +433,7 @@ Byte Io_Stream_peekb(Io_Stream self) {
 
     if (buf->begin >= buf->end) {
         // EOF
-        return 0;
+        return 0xff;
     } else {
         return buf->data[buf->begin];
     }
@@ -457,15 +455,33 @@ void Io_Stream_putb(Io_Stream self, Byte byte) {
 
 Char Io_Stream_getc(Io_Stream self) {
     // Returns the next Unicode character in the stream.
-    return Io_Stream_getb(self); // FIXME: Implement Unicode
+    Io_Buffer buf = self->read_buf;
+    Byte* start = 0;
+    Char ch = 0;
+    Io_Stream_fillto(self, 6); // UTF-8 sequences have at most 6 chars.
+    start = buf->data+buf->begin;
+    ch = Char__getutf8(&start, buf->data+buf->end); 
+    buf->begin = start-buf->data;
+    return ch;
 }
 
 Char Io_Stream_peekc(Io_Stream self) {
-    return Io_Stream_peekb(self); // FIXME: Implement Unicode
+    // Peeks the next Unicode character in the stream.  
+    Io_Buffer buf = self->read_buf;
+    Byte* start = 0;
+    Io_Stream_fillto(self, 4); // UTF-8 sequences have at most 4 octets.
+    start = buf->data+buf->begin;
+    return Char__getutf8(&start, buf->data+buf->end); 
 }
 
 void Io_Stream_putc(Io_Stream self, Char ch) {
-    Io_Stream_putb(self, ch); // FIXME: Implement Unicode
+    // Reads in a UTF-8 character from standard input
+    Io_Buffer buf = self->write_buf;
+    Byte* start = 0;
+    Io_Stream_emptyto(self, 4); // UTF-8 sequences have at most 4 octets.
+    start = buf->data+buf->end;
+    Char__pututf8(ch, &start, buf->data+buf->capacity);
+    buf->end = start-buf->data;
 }
 
 Int Io_Stream_geti(Io_Stream self) {
@@ -480,6 +496,35 @@ Int Io_Stream_peeki(Io_Stream self) {
 
 void Io_Stream_puti(Io_Stream self, Int in) {
     assert(!"Not implemented");
+}
+
+void Io_Stream_emptyto(Io_Stream self, Int num) {
+    // Write until there are at least 'num' empty bytes in the buffer, or there
+    // is an error.
+    Io_Buffer buf = self->write_buf;
+    assert(num <= buf->capacity && "Buffer is too small");
+    if ((buf->capacity-buf->begin) > num) {
+        Io_Stream_flush(self);
+    }
+}
+
+void Io_Stream_fillto(Io_Stream self, Int num) {
+    // Read until there are at least 'num' bytes in the buffer, or the stream
+    // reaches end-of-file.
+    Io_Buffer buf = self->read_buf;
+    assert(num <= buf->capacity && "Buffer is too small");
+    if ((buf->capacity-buf->begin) < num) { 
+        // Unicode char may overflow the buffer.  
+        Io_Buffer_compact(buf);
+    }
+    if (buf->begin == buf->end) {
+        buf->begin = 0;
+        buf->end = 0;
+        Io_Stream_read(self, buf);
+    } else if ((buf->end-buf->begin) < num) {
+        // Read in more data if available
+        Io_Stream_read(self, buf);
+    }
 }
 
 String Io_Stream_scan(Io_Stream self, String delim) {
@@ -506,6 +551,8 @@ String Io_Stream_scan(Io_Stream self, String delim) {
             return ret;
         }
         for (c = delim->data; *c; ++c) {
+            assert("Non-ASCII character in delim string" && next < 0xf0);
+            // FixMe: String is Unicode; treat it as such
             if (*c == next) {
                 ret->data[ret->length] = '\0';
                 return ret;
@@ -523,7 +570,7 @@ void Io_Stream_print(Io_Stream self, String str) {
 
     Int i = 0;
     for (; i < str->length; i++) {
-        Io_Stream_putc(self, str->data[i]);
+        Io_Stream_putb(self, str->data[i]);
     }
 }
 

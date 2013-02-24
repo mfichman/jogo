@@ -1,0 +1,18 @@
+# jgtest exec on
+
+main() Int {
+    count = 0
+    fd = File::open('UnicodeFile.txt', 'r')
+    while fd.peekc() != eof {
+        Io::stdout().putc(fd.getc())
+        ++count
+    }
+    Io::stdout().println(count.str)
+    Io::stdout().flush()
+
+    fd = File::open('UnicodeFile.txt', 'r')
+    str = fd.readall()
+    Io::print(str)
+    Io::stdout().flush()
+    ret 0
+}

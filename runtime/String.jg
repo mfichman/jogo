@@ -48,8 +48,20 @@ String < Object {
         ret true
     }
 
-    length?() native Int {
-        # Returns the length of the string.
+    length?() Int {
+        # Returns the length of the string in charactersk.
+        ret self.chars
+    }
+    
+    bytes?() native Int {
+        # Returns the length of this string in bytes.
+    }
+    
+    chars?() native Int {
+        # Returns the length of this string in characters.  Strings are UTF-8
+        # encoded, so the number of bytes used to represent the string may
+        # differ from the number of characters in the string.  Some UTF-8
+        # characters expand to more than one byte.
     }
 
     slice(begin Int, end Int) native String {

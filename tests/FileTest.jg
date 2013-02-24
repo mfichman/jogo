@@ -12,7 +12,7 @@ main() Int {
     if not file.error {
         hello = file.scan('\n')
         stdout.print("#{hello}\n")    
-        while file.status == Io::StreamStatus::OK {
+        while file.peekc() != eof {
             if file.peekc() != '\r'c {
                 stdout.putc('*'c)
                 stdout.putc(file.getc())

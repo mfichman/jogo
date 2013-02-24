@@ -52,3 +52,10 @@ void Io_Buffer__insert(Io_Buffer self, Int index, Byte byte) {
     }
 }
 
+void Io_Buffer_compact(Io_Buffer self) {
+    // Compact the valid bytes of the buffer to the begining of the buffer.
+    memmove(self->data+self->begin, self->begin, self->end-self->begin);
+    self->end -= self->begin;
+    self->begin = 0;
+}
+
