@@ -104,7 +104,7 @@ Io_Stream File_open(String path, String mode) {
         modeOk = 0;
     }
     if (modeOk) {
-        fd = open(path->data, flags, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+        fd = open((char*)path->data, flags, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
         error = errno;
     }
     Io_Stream ret = Io_Stream__init(fd, Io_StreamType_FILE);

@@ -68,8 +68,6 @@ Char Char__init();
 String Char_str__g(Char self);
 Bool Char__less(Char self, Char other);
 Bool Char__equal(Char self, Char other);
-Char Char__getutf8(Byte** begin, Byte* end);
-void Char__pututf8(Char self, Byte** begin, Byte* end);
 
 Byte Byte__init();
 

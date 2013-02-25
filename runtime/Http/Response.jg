@@ -55,14 +55,14 @@ Response::read_headers(stream Io::Stream) {
     stat = stream.scan(' ')
     message = stream.scan('\n')
     while stream.status == Io::StreamStatus::OK and 
-        stream.peekc() != '\r'c and
-        stream.peekc() != '\n'c  {
+        stream.peek() != '\r'b and
+        stream.peek() != '\n'b  {
 
         key = stream.scan(':')
         while stream.status == Io::StreamStatus::OK and
-            stream.peekc() == ' 'c {
+            stream.peek() == ' 'b {
         
-            stream.getc()
+            stream.get()
         }
         value = stream.scan('\n') 
         headers[key] = value

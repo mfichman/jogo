@@ -18,7 +18,8 @@ syn region apComment start="#" end="$" contains=apTodo
 
 syn region apString matchgroup=apStringDelim start=+"+ skip=+\\\\\|\\"+ end=+"+ contains=apInterpolation
 syn region apString matchgroup=apStringDelim start=+'+ skip=+\\\\\|\\'+ end=+'+
-syn match apString "\'(.\|..)\'c"
+syn match apType "'\@<=c"
+syn match apType "'\@<=b"
 
 syn region apInterpolation matchgroup=apStringDelim start="#{" end="}" contained contains=ALL
 

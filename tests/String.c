@@ -6,12 +6,12 @@
 
 // Hack to make sure that the 'String__vtable' symbol is defined. 
 
-String String__literal(const Char* literal) {
+String String__literal(char const* literal) {
     String ret = malloc(sizeof(struct String) + strlen(literal) + 1);
     ret->_vtable = 0;
     ret->_refcount = 1;
     ret->length = strlen(literal);
-    strcpy(ret->data, literal);
+    strcpy((char*)ret->data, literal);
     return ret;
 }
 
@@ -22,13 +22,13 @@ int main_() {
 int main() {
     String str1, str2, str3, str4, str5, str6, str7, str8, str9;
     str1 = String__literal("hello "); 
-    assert(String_length__g(str1) == 6);
+    assert(String_len__g(str1) == 6);
     str2 = String__literal("world!");
-    assert(String_length__g(str2) == 6);
+    assert(String_len__g(str2) == 6);
 
     // Concatenation
     str3 = String__add(str1, str2);
-    assert(String_length__g(str3) == 12);
+    assert(String_len__g(str3) == 12);
     assert(strncmp(str3->data, "hello world!", 12) == 0);
     
     // Equality check
@@ -40,11 +40,11 @@ int main() {
     // Slice (substring)
     str6 = String_slice(str3, -1, 20);
     assert(String__equal(str6, str3));
-    assert(String_length__g(str6) == 12);
+    assert(String_len__g(str6) == 12);
     str7 = String_slice(str3, 5, 1);
-    assert(String_length__g(str7) == 0);
+    assert(String_len__g(str7) == 0);
     str8 = String_slice(str3, 2, 6);    
-    assert(String_length__g(str8) == 4);
+    assert(String_len__g(str8) == 4);
     assert(strncmp(str8->data, "llo ", 4) == 0);
 
     // Index

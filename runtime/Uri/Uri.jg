@@ -95,19 +95,19 @@ Uri::user?() String {
     ret authority.user
 }
 
-Uri::is_reserved(char Char) Bool {
-    ret char == '/'c or char == '#'c or char == '?'c
+Uri::is_reserved(char Byte) Bool {
+    ret char == '/'b or char == '#'b or char == '?'b
 }
 
 Uri::parse_scheme(value String, start Int) private Int {
     # Parse everything up to the first ':' character
     i = start
-    while (c = value[i]) and c != ':'c and not self.is_reserved(c) {
+    while (c = value[i]) and c != ':'b and not self.is_reserved(c) {
         ++i
         c = value[i]
     }
     scheme = value.slice(start, i)
-    if value[i] == ':'c {
+    if value[i] == ':'b {
         ++i
     }
     ret i
@@ -115,27 +115,27 @@ Uri::parse_scheme(value String, start Int) private Int {
 
 Uri::parse_authority(value String, ind Int) private Int {
     # Parse up to the first /
-    if value[ind] != '/'c or value[ind+1] != '/'c {
+    if value[ind] != '/'b or value[ind+1] != '/'b {
         ret ind
     }
     i = ind + 2
     start = ind + 2
         
-    while (c = value[i]) and c != '@'c and not self.is_reserved(c) {
+    while (c = value[i]) and c != '@'b and not self.is_reserved(c) {
         ++i
     }
     user = ''
-    if value[i] == '@'c {
+    if value[i] == '@'b {
         user = value.slice(start, i)
         start = i + 1
     } else {
         i = start
     }
-    while (c = value[i]) and c != ':'c and not self.is_reserved(c) {
+    while (c = value[i]) and c != ':'b and not self.is_reserved(c) {
         ++i
     }
     host = ''
-    if value[i] == ':'c or value[i] == '/'c {
+    if value[i] == ':'b or value[i] == '/'b {
         host = value.slice(start, i)
         start = i + 1
     } else {
@@ -152,11 +152,11 @@ Uri::parse_authority(value String, ind Int) private Int {
 Uri::parse_path(value String, start Int) private Int {
     # Parse to the first ?
     i = start
-    while (c = value[i]) and (c == '/'c or not self.is_reserved(c)) {
+    while (c = value[i]) and (c == '/'b or not self.is_reserved(c)) {
         ++i
     }
     path = Path(value.slice(start, i))
-    if c == '?'c {
+    if c == '?'b {
         ++i
     }
     ret i
@@ -165,11 +165,11 @@ Uri::parse_path(value String, start Int) private Int {
 Uri::parse_query(value String, start Int) private Int {
     # parse to the #
     i = start
-    while (c = value[i]) and c != '#'c {
+    while (c = value[i]) and c != '#'b {
         ++i
     }
     query = Query(value.slice(start, i))
-    if c == '#'c {
+    if c == '#'b {
         ++i
     }
     ret i

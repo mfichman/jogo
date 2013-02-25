@@ -22,7 +22,7 @@ String < Object {
     # Represents an immutable character string.  New strings can be created
     # via a substring or concatenation operation on an existing string.
 
-    @index(index Int) native Char {
+    @index(index Int) native Byte {
         # Returns the character at index index.  If the index refers to a
         # location beyond the length of the string, then
     }
@@ -38,7 +38,7 @@ String < Object {
     @less(string String) Bool {
         # Returns true if this string is lexically less than 'string'.
         i = 0
-        while i < self.length or i < string.length {
+        while i < self.len or i < string.len {
             if self[i] < string[i] {
                 ++i
             } else {
@@ -48,22 +48,10 @@ String < Object {
         ret true
     }
 
-    length?() Int {
+    len?() native Int {
         # Returns the length of the string in charactersk.
-        ret self.chars
     }
     
-    bytes?() native Int {
-        # Returns the length of this string in bytes.
-    }
-    
-    chars?() native Int {
-        # Returns the length of this string in characters.  Strings are UTF-8
-        # encoded, so the number of bytes used to represent the string may
-        # differ from the number of characters in the string.  Some UTF-8
-        # characters expand to more than one byte.
-    }
-
     slice(begin Int, end Int) native String {
         # Returns a new string containing the elements starting at 'begin' and 
         # ending at the character before 'end'.
@@ -78,17 +66,17 @@ String < Object {
     suffix(begin Int) String {
         # Return a new string containing elements starting at 'begin' and 
         # continuing to the end of this string.
-        ret self.slice(begin, self.length)
+        ret self.slice(begin, self.len)
     }
 
     starts_with(string String) Bool {
         # Returns true if this string starts with the exact string specified
         # by 'string'
-        if string.length > self.length {
+        if string.len > self.len {
             ret false
         }
         i = 0
-        while i < string.length {
+        while i < string.len {
             if string[i] != self[i] {
                 ret false
             }    
@@ -100,11 +88,11 @@ String < Object {
     ends_with(string String) Bool {
         # Returns true if this string ends with the exact string specified by
         # 'string'
-        if string.length > self.length {
+        if string.len > self.len {
             ret false
         }
         i = 1
-        while i <= string.length {
+        while i <= string.len {
             if string[-i] != self[-i] {
                 ret false
             } 
@@ -135,7 +123,7 @@ String < Object {
         # number, then zero is returned.
     }
 
-    char?() Char {
+    byte?() Byte {
         # Converts the string to a character by returning the first character
         # in the string.
         ret self[0]
@@ -151,7 +139,7 @@ String < Object {
     }
 
     empty?() Bool {
-        ret self.length == 0
+        ret self.len == 0
     }
 }
 
@@ -169,11 +157,11 @@ StringIter < Object {
     }
     
     more?() Bool {
-        # Returns true if there are more elements in the array.
-        ret index < string.length
+        # Returns true if there are more elements in the string.
+        ret index < string.len
     }
 
-    next() Char {
+    next() Byte {
         # Returns the next character in the string.
         val = string[index]
         ++index

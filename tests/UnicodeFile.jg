@@ -3,11 +3,13 @@
 main() Int {
     count = 0
     fd = File::open('UnicodeFile.txt', 'r')
-    while fd.peekc() != eof {
-        Io::stdout().putc(fd.getc())
+    fd.peek()
+    while fd.status == Io::StreamStatus::OK {
+        Io::stdout().put(fd.get())
+        fd.peek()
         ++count
     }
-    Io::stdout().println(count.str)
+    #Io::stdout().println(count.str)
     Io::stdout().flush()
 
     fd = File::open('UnicodeFile.txt', 'r')

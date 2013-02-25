@@ -56,10 +56,10 @@ Socket_Addr Socket_Addr__init(Socket_Addr ret, String str, Int port) {
 
     // Attempt to translate the hostname as a dotted quad first.  Then, try to
     // translate the hostname as a DNS name.
-    if (inet_pton(AF_INET, str->data, &in) != 1) { 
+    if (inet_pton(AF_INET, (char*)str->data, &in) != 1) { 
         struct addrinfo* res = 0;
         struct sockaddr_in* sin = 0;
-        int error = getaddrinfo(str->data, 0, 0, &res);
+        int error = getaddrinfo((char*)str->data, 0, 0, &res);
         if (error) {
 #ifdef WINDOWS
             ret->error = GetLastError();

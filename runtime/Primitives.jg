@@ -329,6 +329,9 @@ Byte < Value {
     is_utf8_start?() native Bool {
         # Returns true if the byte is the beginning of a UTF-8 code point.
     }
+
+    @equal(other Byte) native Bool
+    @less(other Byte) native Bool
 }
 
 Any < Object {

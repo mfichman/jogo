@@ -4,7 +4,7 @@ main() Int {
     stdout = Io::stdout()
     
     for char in 'the quick brown fox jumps over the lazy dog\n' {
-        stdout.putc(char)
+        stdout.put(char)
     } 
 
     the = 'the'

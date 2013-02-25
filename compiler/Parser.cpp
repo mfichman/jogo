@@ -1337,6 +1337,12 @@ Expression* Parser::literal() {
         expr->type(env_->char_type());
         break;
     }
+    case Token::BYTE: {
+        int code = String::escape(value());
+        expr = new IntegerLiteral(location(), env_->integer(stringify(code)));
+        expr->type(env_->byte_type());
+        break;
+    }
     case Token::BOOL:
         if (value() == "true") {
             expr = new BooleanLiteral(location(), env_->integer("1"));

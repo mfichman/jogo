@@ -20,43 +20,18 @@
  * IN THE SOFTWARE.
  */
 
-#include "Io/Buffer.h"
-#include "Boot/Module.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <memory.h>
+#ifndef UTF8_UTF8_H
+#define UTF8_UTF8_H
 
-Io_Buffer Io_Buffer__init(Int capacity) {
-    Io_Buffer ret = Boot_calloc(sizeof(struct Io_Buffer) + capacity);
-    ret->_vtable = Io_Buffer__vtable;
-    ret->_refcount = 1;
-    ret->capacity = capacity;
-    ret->begin = 0;
-    ret->end = 0;
-    return ret; 
-}
+typedef struct Utf8_Iter* Utf8_Iter;
+struct Utf8_Iter {
+    VoidPtr _vtable;
+    U64 _refcount;
+    String string;
+    Int index;
+};
 
-Byte Io_Buffer__index(Io_Buffer self, Int index) {
-    if (index < self->begin || index >= self->end) {
-        return 0;
-    } else {
-        return self->data[self->begin+index];
-    }
-}
+Bool Utf8_Iter_more__g(Utf8_Iter self);
+Char Utf8_Iter_next(Utf8_Iter self);
 
-void Io_Buffer__insert(Io_Buffer self, Int index, Byte byte) {
-    if (index < self->begin || index >= self->end) {
-        return;
-    } else {
-        self->data[index] = byte;
-    }
-}
-
-void Io_Buffer_compact(Io_Buffer self) {
-    // Compact the valid bytes of the buffer to the begining of the buffer.
-    memmove(self->data+self->begin, self->data, self->end-self->begin);
-    self->end -= self->begin;
-    self->begin = 0;
-}
-
+#endif

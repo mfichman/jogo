@@ -117,53 +117,25 @@ Stream < Object {
     println(string String) {
         # Prints a string followed by '\n', and flushes the output.
         self.print(string)
-        self.putc('\n'c)
+        self.put('\n'b)
         self.flush()
     }
 
-    getc() native Char {
+    get() native Byte {
         # Returns the next Unicode character in the input stream. 
     }
 
-    putc(char Char) native {
+    put(char Byte) native {
         # Writes the Unicode character 'char' to the output buffer.  The
         # character is not guaranteed to be written to the output stream until
         # 'flush()' is called.
     }
 
-    peekc() native Char {
+    peek() native Byte {
         # Reads a character, but does not remove it from the internal buffer.
         # Call 'get' to read the next character and remove it.
     }
     
-    getb() native Byte {
-        # Returns the next Byte in the input stream. 
-    }
-
-    putb(byte Byte) native {
-        # Writes 'byte' to the output buffer.  The character is not guaranteed
-        # to be written to the output stream until 'flush()' is called. 
-    }
-
-    peekb() native Byte { 
-        # Reads a byte, but does not remove it from the internal buffer.
-        # Call 'get_byte' to read the next byte and remove it.
-    }
-
-    geti() native Int {
-        # Returns the next Int in the input stream. 
-    }
-
-    puti(int Int) native {
-        # Writes 'int' to the output buffer.  The character is not guaranteed
-        # to be written to the output stream until 'flush()' is called. 
-    }
-
-    peeki() native Int {
-        # Reads a int, but does not remove it from the internal buffer.
-        # Call 'get_int' to read the next int and remove it.
-    }
-
     flush() native {
         # Writes any characters in the internal output buffer to the output
         # stream.

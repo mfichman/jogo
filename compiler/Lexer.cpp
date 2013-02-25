@@ -495,6 +495,10 @@ void Lexer::string_or_char() {
         read();
         token(Token::CHAR);
         value(value().substr(1, value().length()-2));
+    } else if (char_ == 'b') {
+        read();
+        token(Token::BYTE);
+        value(value().substr(1, value().length()-2));
     } else {
         token(Token::STRING);
         value(value().substr(1, value().length()-2));
@@ -625,6 +629,7 @@ Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {
     case Token::STRING_BEGIN: return out << "string";
     case Token::STRING_END: return out << "string";
     case Token::CHAR: return out << "'char'";
+    case Token::BYTE: return out << "'byte'";
     case Token::RETURN: return out << "'return'";
     case Token::FOR: return out << "'for'";
     case Token::SCOPE: return out << "'::'";

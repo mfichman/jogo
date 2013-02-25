@@ -9,12 +9,12 @@ main() Int {
 К богатым пристаням стремятся;
 "
     Io::print(str)
-    Io::println("По оживлённым берегам".chars.str)
-    Io::println("Громады стройные теснятся".chars.str)
-    Io::println("Дворцов и башен; корабли".chars.str)
-    Io::println("Толпой со всех концов земли".chars.str)
-    Io::println("К богатым пристаням стремятся;".chars.str)
-    Io::println(str.chars.str)
+    Io::println(Utf8::len("По оживлённым берегам").str)
+    Io::println(Utf8::len("Громады стройные теснятся").str)
+    Io::println(Utf8::len("Дворцов и башен; корабли").str)
+    Io::println(Utf8::len("Толпой со всех концов земли").str)
+    Io::println(Utf8::len("К богатым пристаням стремятся;").str)
+    Io::println(Utf8::len(str).str)
     ret 0
 }
 

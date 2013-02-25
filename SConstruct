@@ -132,6 +132,7 @@ library_src = ' '.join([
     "Socket",
     "String",
     "Uri",
+    "Utf8",
 ])
 
 coroutine = env.NASM('build/runtime/Coroutine.Intel64.asm')

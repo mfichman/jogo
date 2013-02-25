@@ -45,13 +45,13 @@ String Os_strerror(Int error) {
         return ret;
     }
 #else
-    if (!strerror_r(error, ret->data, 1024)) {
+    if (!strerror_r(error, (char*)ret->data, 1024)) {
         return ret;
     }
     const char* msg = gai_strerror(error);
     if (msg) {
-        strncpy(ret->data, msg, 1024);
-        ret->length = strlen(ret->data);
+        strncpy((char*)ret->data, msg, 1024);
+        ret->length = strlen((char*)ret->data);
         return ret;
    }
 #endif
@@ -75,6 +75,6 @@ void Os_cpanic(char const* msg) {
 }
 
 void Os_panic(String msg) {
-    Os_cpanic(msg->data);
+    Os_cpanic((char*)msg->data);
 }
 

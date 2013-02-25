@@ -400,7 +400,7 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
 }
 #endif
 
-Byte Io_Stream_getb(Io_Stream self) {
+Byte Io_Stream_get(Io_Stream self) {
     // Read a single byte from the stream.  Returns EOF if the end of the
     // stream has been reached.  If an error occurs while reading from the
     // stream, then 'status' will be set to 'ERROR.'
@@ -420,7 +420,7 @@ Byte Io_Stream_getb(Io_Stream self) {
     }
 }
 
-Byte Io_Stream_peekb(Io_Stream self) {
+Byte Io_Stream_peek(Io_Stream self) {
     // Return the next character that would be read from the stream.  Returns
     // EOF if the end of the file has been reached.  If an error occurs while
     // reading from the stream, then 'status' will be set to 'ERROR.'
@@ -439,7 +439,7 @@ Byte Io_Stream_peekb(Io_Stream self) {
     }
 }
 
-void Io_Stream_putb(Io_Stream self, Byte byte) {
+void Io_Stream_put(Io_Stream self, Byte byte) {
     // Insert a single character into the stream.  If an error occurs while 
     // writing to the stream, then 'status' will be set to 'ERROR.'
     Io_Buffer buf = self->write_buf;
@@ -451,51 +451,6 @@ void Io_Stream_putb(Io_Stream self, Byte byte) {
     } else {
         buf->data[buf->end++] = byte;
     }
-}
-
-Char Io_Stream_getc(Io_Stream self) {
-    // Returns the next Unicode character in the stream.
-    Io_Buffer buf = self->read_buf;
-    Byte* start = 0;
-    Char ch = 0;
-    Io_Stream_fillto(self, 6); // UTF-8 sequences have at most 6 chars.
-    start = buf->data+buf->begin;
-    ch = Char__getutf8(&start, buf->data+buf->end); 
-    buf->begin = start-buf->data;
-    return ch;
-}
-
-Char Io_Stream_peekc(Io_Stream self) {
-    // Peeks the next Unicode character in the stream.  
-    Io_Buffer buf = self->read_buf;
-    Byte* start = 0;
-    Io_Stream_fillto(self, 4); // UTF-8 sequences have at most 4 octets.
-    start = buf->data+buf->begin;
-    return Char__getutf8(&start, buf->data+buf->end); 
-}
-
-void Io_Stream_putc(Io_Stream self, Char ch) {
-    // Reads in a UTF-8 character from standard input
-    Io_Buffer buf = self->write_buf;
-    Byte* start = 0;
-    Io_Stream_emptyto(self, 4); // UTF-8 sequences have at most 4 octets.
-    start = buf->data+buf->end;
-    Char__pututf8(ch, &start, buf->data+buf->capacity);
-    buf->end = start-buf->data;
-}
-
-Int Io_Stream_geti(Io_Stream self) {
-    assert(!"Not implemented");
-    return 0;
-}
-
-Int Io_Stream_peeki(Io_Stream self) {
-    assert(!"Not implemented");
-    return 0;
-}
-
-void Io_Stream_puti(Io_Stream self, Int in) {
-    assert(!"Not implemented");
 }
 
 void Io_Stream_emptyto(Io_Stream self, Int num) {
@@ -536,7 +491,7 @@ String Io_Stream_scan(Io_Stream self, String delim) {
 
     while (1) {
         // Loop until we find a delimiter somewhere in the input stream
-        Char next = Io_Stream_getc(self);
+        Char next = Io_Stream_get(self);
         Byte* c = 0;
         assert("Non-ASCII character in stream" && next < 0xf0);
         // Resize the string if necessary
@@ -570,7 +525,7 @@ void Io_Stream_print(Io_Stream self, String str) {
 
     Int i = 0;
     for (; i < str->length; i++) {
-        Io_Stream_putb(self, str->data[i]);
+        Io_Stream_put(self, str->data[i]);
     }
 }
 
