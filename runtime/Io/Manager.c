@@ -23,9 +23,9 @@
 
 #include "Io/Manager.h"
 #include "Io/Stream.h"
-#include "Io/Module.h"
-#include "Boot/Module.h"
-#include "Os/Module.h"
+#include "Io/Io.h"
+#include "Boot/Boot.h"
+#include "Os/Os.h"
 #include "Coroutine.h"
 #include "String.h"
 #include "Object.h"

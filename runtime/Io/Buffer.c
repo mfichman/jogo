@@ -21,7 +21,7 @@
  */
 
 #include "Io/Buffer.h"
-#include "Boot/Module.h"
+#include "Boot/Boot.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

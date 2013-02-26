@@ -20,7 +20,7 @@
  * IN THE SOFTWARE.
  */
 
-#include "File/Module.h"
+#include "File/File.h"
 #include "String.h"
 #ifdef WINDOWS
 #include <windows.h>

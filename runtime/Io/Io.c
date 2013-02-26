@@ -20,61 +20,62 @@
  * IN THE SOFTWARE.
  */
 
-#include "Primitives.h"
+#include "Io/Io.h"
+#include "Io/Stream.h"
+#include "Io/Manager.h"
 #include "String.h"
-#include "Boot/Module.h"
+#include <stdio.h>
 #ifdef WINDOWS
 #include <windows.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#define __USE_POSIX
-#include <netdb.h>
-#include <errno.h>
 #endif
-#include <stdio.h>
 
-String Os_strerror(Int error) {
-    // Returns a message describing the OS-level error.
-    String ret = String_alloc(1024);
-#ifdef WINDOWS
-    DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;
-    LPTSTR buffer = ret->data;
-    ret->length = FormatMessage(flags, 0, error, 0, buffer, 1024, 0);
-    if (ret->length) {
-        return ret;
+Io_Manager Io_manager() {
+    static Io_Manager manager = 0;
+    if (!manager) {
+        manager = Io_Manager__init();
     }
-#else
-    if (!strerror_r(error, (char*)ret->data, 1024)) {
-        return ret;
-    }
-    const char* msg = gai_strerror(error);
-    if (msg) {
-        strncpy((char*)ret->data, msg, 1024);
-        ret->length = strlen((char*)ret->data);
-        return ret;
-   }
-#endif
-    Boot_abort();
-    return 0;
+    manager->_refcount++;
+    return manager;
 }
 
-Int Os_error() {
-    // Returns the last OS-level error
+Io_Stream Io_stderr() {
+    static Io_Stream err = 0;
+    if (!err) {
 #ifdef WINDOWS
-    return GetLastError();
+        HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);
+        err = Io_Stream__init((Int)handle, Io_StreamType_CONSOLE);
 #else
-    return errno;
+        err = Io_Stream__init(2, Io_StreamType_CONSOLE);
 #endif
+    }
+    err->_refcount++;
+    return err;
 }
 
-void Os_cpanic(char const* msg) {
-    fprintf(stderr, "%s\n", msg);
-    fflush(stderr);
-    abort();
+Io_Stream Io_stdout() {
+    static Io_Stream out = 0;
+    if (!out) {
+#ifdef WINDOWS
+        HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+        out = Io_Stream__init((Int)handle, Io_StreamType_CONSOLE);
+#else
+        out = Io_Stream__init(1, Io_StreamType_CONSOLE);
+#endif
+    }
+    out->_refcount++;
+    return out;
 }
 
-void Os_panic(String msg) {
-    Os_cpanic((char*)msg->data);
+Io_Stream Io_stdin() {
+    static Io_Stream in = 0;
+    if (!in) {
+#ifdef WINDOWS
+        HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
+        in = Io_Stream__init((Int)handle, Io_StreamType_CONSOLE);
+#else
+        in = Io_Stream__init(0, Io_StreamType_CONSOLE);
+#endif
+    }
+    in->_refcount++;
+    return in;
 }
-

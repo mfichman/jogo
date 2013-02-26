@@ -21,7 +21,7 @@
  */
 
 #include "Regex/Regex.h"
-#include "Boot/Module.h"
+#include "Boot/Boot.h"
 #include "Object.h"
 #include "String.h"
 #include <stdio.h>

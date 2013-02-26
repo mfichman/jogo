@@ -25,7 +25,7 @@
 
 #include "Primitives.h"
 #include "Coroutine.h"
-#include "Socket/Module.h"
+#include "Socket/Socket.h"
 #include "Socket/Stream.h"
 
 #ifdef WINDOWS

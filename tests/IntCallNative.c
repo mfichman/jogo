@@ -1,5 +1,5 @@
 #include <Primitives.h>
-#include <Boot/Module.h>
+#include <Boot/Boot.h>
 #include <stdio.h>
 
 void func1(Int a, Int b, Int c) {

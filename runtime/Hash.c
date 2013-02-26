@@ -20,7 +20,7 @@
  * IN THE SOFTWARE.
  */
 
-#include "Boot/Module.h"
+#include "Boot/Boot.h"
 #include "Hash.h"
 #include "String.h"
 #include "Object.h"

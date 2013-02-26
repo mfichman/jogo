@@ -25,7 +25,7 @@
 
 #include "Primitives.h"
 #include "Io/Stream.h"
-#include "Socket/Module.h"
+#include "Socket/Socket.h"
 #include "Coroutine.h"
 
 typedef struct Socket_Stream* Socket_Stream;

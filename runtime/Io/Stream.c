@@ -39,11 +39,11 @@
 #include <assert.h>
 #include "Io/Stream.h"
 #include "Io/Manager.h"
-#include "Os/Module.h"
+#include "Os/Os.h"
 #include "Coroutine.h"
 #include "String.h"
 #include "Object.h"
-#include "Boot/Module.h"
+#include "Boot/Boot.h"
 
 Io_Stream Io_Stream__init(Int desc, Int type) {
     // Initializes a new stream.  Streams are used to write to/from files,

@@ -22,8 +22,8 @@
 
 #include "Coroutine.h"
 #include "Io/Manager.h"
-#include "Boot/Module.h"
-#include "Os/Module.h"
+#include "Boot/Boot.h"
+#include "Os/Os.h"
 #include "Object.h"
 #include "String.h"
 #include <stdlib.h>

@@ -21,8 +21,8 @@
  */
 
 
-#include "Socket/Module.h"
-#include "Boot/Module.h"
+#include "Socket/Socket.h"
+#include "Boot/Boot.h"
 #include "String.h"
 
 #include <stdio.h>

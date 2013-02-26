@@ -1,5 +1,5 @@
 #include <Primitives.h>
-#include <Boot/Module.h>
+#include <Boot/Boot.h>
 #include <stdio.h>
 
 void mixed4(Int a, Float b, Int c, Float d) {
