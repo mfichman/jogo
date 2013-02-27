@@ -1,0 +1,38 @@
+
+
+
+
+main() Int {
+    ls = Socket::listen('127.0.0.1', 0)
+
+    client = Coroutine() func() {
+        # Block this coroutine (but other coros should keep running)
+        Io::println('connecting')
+        sd = ls.accept()
+        Io::println(sd.scanln())
+        sd.end()
+    }
+    client()
+
+    i = 10
+    while i > 0 {
+        Io::println(i.str)
+        --i
+        yield
+    }
+
+    server = Coroutine() func() {
+        sd = Socket::connect('localhost', ls.addr.port)
+        sd.println('hello')
+        sd.get()
+        Io::println('done')
+        sd.end()
+        Os::exit(0)
+    }
+    Io::manager().scheduled.enq(server)
+
+    while true {
+        yield
+    }
+    ret 0
+}
