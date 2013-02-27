@@ -29,6 +29,6 @@ String Os_strerror(Int error);
 Int Os_error();
 void Os_panic(String msg);
 void Os_cpanic(char const* msg);
-
+void Os_exit(Int code);
 
 #endif

@@ -39,13 +39,13 @@ Manager < Object {
     # current coroutine yields or blocks on I/O.   When a task has finished
     # running, the task is removed from the task queue. 
 
-    scheduled Queue[Coroutine]
+    scheduled immutable Queue[Coroutine]
     # Set of tasks that are active and waiting to be scheduled.
 
-    callback Array[ManagerReactor]
+    callback immutable Array[ManagerReactor]
     # List of reactors to the Manager state
 
-    handle Int
+    handle immutable Int
     # Handle to the file descriptor that is used for OS-level polling.  On
     # BSD-based systems, it is a kqueue fd; for Linux, it is an epoll fd; and
     # for Windows, it is an I/O completion port.

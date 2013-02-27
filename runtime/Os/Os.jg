@@ -31,3 +31,6 @@ panic(error String) native String {
     # Print the error to stderr and then abort.
 }
 
+exit(code Int) native {
+    # Exits the program, with exit code 'code.'
+}

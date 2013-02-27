@@ -491,9 +491,8 @@ String Io_Stream_scan(Io_Stream self, String delim) {
 
     while (1) {
         // Loop until we find a delimiter somewhere in the input stream
-        Char next = Io_Stream_get(self);
+        Byte next = Io_Stream_get(self);
         Byte* c = 0;
-        assert("Non-ASCII character in stream" && next < 0xf0);
         // Resize the string if necessary
         if (ret->length >= length) {
             String exp = String_expand(ret, length*2);            
@@ -501,13 +500,11 @@ String Io_Stream_scan(Io_Stream self, String delim) {
             ret = exp;
             length = length*2;
         }
-        if (next == -1) {
+        if (next == 0xff) {
             ret->data[ret->length] = '\0';
             return ret;
         }
         for (c = delim->data; *c; ++c) {
-            assert("Non-ASCII character in delim string" && next < 0xf0);
-            // FixMe: String is Unicode; treat it as such
             if (*c == next) {
                 ret->data[ret->length] = '\0';
                 return ret;

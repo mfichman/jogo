@@ -29,6 +29,7 @@
 #include "Coroutine.h"
 #include "String.h"
 #include "Object.h"
+#include "Queue.h"
 #if defined(WINDOWS)
 #include <windows.h>
 #elif defined(LINUX)
@@ -103,8 +104,10 @@ void Io_Manager_poll(Io_Manager self) {
     // that event (Windows).
     HANDLE handle = (HANDLE)self->handle;
     DWORD bytes = 0;
+    DWORD timeout = 0;
     ULONG_PTR udata = 0;
     Io_Overlapped* op = 0;
+    Int tasks = Queue_count__g(self->scheduled);
     OVERLAPPED** evt = (OVERLAPPED**)&op;
     if (Coroutine__current != &Coroutine__main) {
         Os_cpanic("Io::Manager::poll() called by user coroutine");
@@ -113,10 +116,13 @@ void Io_Manager_poll(Io_Manager self) {
     if (self->waiting == 0) {
         return;
     }
+    if (tasks <= 0) {
+        timeout = INFINITE;
+    }
 
     SetLastError(ERROR_SUCCESS);
     self->iobytes = 0;
-    GetQueuedCompletionStatus(handle, &bytes, &udata, evt, INFINITE);
+    GetQueuedCompletionStatus(handle, &bytes, &udata, evt, timeout);
     self->iobytes = bytes;
     Coroutine__ioresume(op->coroutine);
 }
@@ -134,9 +140,10 @@ void Io_Manager_poll(Io_Manager self) {
         return;
     }
 
+    Int tasks = Queue_count__g(self->scheduled);
     struct epoll_event event;
-    int timeout = -1;
-    int res = epoll_wait(self->handle, &event, 1, timeout);
+    int timeout = 0;
+    int res = epoll_wait(self->handle, &event, 1, (tasks <= 0 ? -1 : timeout));
     if (res < 0) {
         Boot_abort();
     } else if (res == 0) {
@@ -159,8 +166,10 @@ void Io_Manager_poll(Io_Manager self) {
         return;
     }
 
+    Int tasks = Queue_count__g(self->scheduled);
+    struct timespec timeout = { 0, 0 };
     struct kevent event;
-    int res = kevent(self->handle, 0, 0, &event, 1, NULL);
+    int res = kevent(self->handle, 0, 0, &event, 1, (tasks <= 0 ? 0 : &timeout));
     self->iobytes = event.data;
     if (res < 0) {
         Boot_abort();

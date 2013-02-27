@@ -78,3 +78,6 @@ void Os_panic(String msg) {
     Os_cpanic((char*)msg->data);
 }
 
+void Os_exit(Int code) {
+    exit(code);
+}
