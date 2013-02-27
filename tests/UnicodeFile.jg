@@ -5,11 +5,11 @@ main() Int {
     fd = File::open('UnicodeFile.txt', 'r')
     fd.peek()
     while fd.status == Io::StreamStatus::OK {
-        Io::stdout().put(fd.get())
+        Utf8::put(Io::stdout(), Utf8::get(fd))
         fd.peek()
         ++count
     }
-    #Io::stdout().println(count.str)
+    Io::stdout().println(count.str)
     Io::stdout().flush()
 
     fd = File::open('UnicodeFile.txt', 'r')

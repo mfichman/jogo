@@ -11,7 +11,7 @@ SyntaxBad.jg:29:1: Expected '=' or a type name
 SyntaxBad.jg:30:9: Expected an identifier
 SyntaxBad.jg:34:1: Unexpected end of file
 SyntaxBad.jg:28:5: Type 'Int' is embedded multiple times in 'Blarg'
-SyntaxBad.jg:30:7: Undeclared generic type ':'
+SyntaxBad.jg:30:7: Undefined generic type ':'
 SyntaxBad.jg:11:15: Undefined variable 'im'
 SyntaxBad.jg:11:18: Undefined variable 'h'
 SyntaxBad.jg:15:9: Undefined variable 'foo'

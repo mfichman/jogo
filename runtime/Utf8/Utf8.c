@@ -22,8 +22,14 @@
 
 #include "Primitives.h"
 #include "String.h"
+#include "Io/Stream.h"
 #include "Utf8/Utf8.h"
 #include <assert.h>
+
+static const U32 offset[6] = {
+    0x00000000UL, 0x00003080UL, 0x000E2080UL,
+    0x03C82080UL, 0xFA082080UL, 0x82082080UL
+};
 
 Bool is_utf8_start(Byte self) {
     Byte const mask = 0xc0;
@@ -34,10 +40,6 @@ Char get_utf8(Byte** begin, Byte* end) {
     // Returns the next Unicode code point starting at *begin.  Increments
     // *begin to point at the next character after the Unicode code point that
     // was read.
-    static const U32 offset[6] = {
-        0x00000000UL, 0x00003080UL, 0x000E2080UL,
-        0x03C82080UL, 0xFA082080UL, 0x82082080UL
-    };
     U32 ch = 0;
     U32 size = 0;
     do {
@@ -83,6 +85,45 @@ void put_utf8(Char ch, Byte** begin, Byte* end) {
     }
 }
 
+void Utf8_put(Io_Stream stream, Char ch) {
+    // Writes 'ch' to the given stream using the UTF-8 encoding. 
+    if (ch < 0x80) { // 1 byte
+        Io_Stream_put(stream, ch & 0x7f);
+    } else if (ch < 0x800) { // 2 bytes
+        Io_Stream_put(stream, ((ch >> 6) & 0x1f) | 0xc0);
+        Io_Stream_put(stream, (ch & 0x3f) | 0x80);
+    } else if (ch < 0x10000) { // 3 bytes
+        Io_Stream_put(stream, ((ch >> 12) & 0xf) | 0xe0);
+        Io_Stream_put(stream, ((ch >> 6) & 0x3f) | 0x80);
+        Io_Stream_put(stream, (ch & 0x3f) | 0x80);
+    } else if (ch < 0x200000) { // 4 bytes
+        Io_Stream_put(stream, ((ch >> 18) & 0x7) | 0xf0);
+        Io_Stream_put(stream, ((ch >> 12) & 0x3f) | 0x80);
+        Io_Stream_put(stream, ((ch >> 6) & 0x3f) | 0x80);
+        Io_Stream_put(stream, (ch & 0x3f) | 0x80);
+    } else {
+        assert(!"Invalid Unicode sequence");
+    }
+}
+
+Char Utf8_get(Io_Stream stream) {
+    // Reads the next UTF-8 character from the stream, and returns it.  If the
+    // stream reaches EOF or enters an error state in the middle of a
+    // character, return EOF.
+    U32 ch = 0;
+    U32 size = 0;
+    do {
+        if (Io_StreamStatus_OK != stream->status) {
+            // Expected another char, but got nothing.  Return the EOF marker.
+            return -1;
+        }
+        ch <<= 6;
+        ch += Io_Stream_get(stream);
+        size++;
+    } while (!is_utf8_start(Io_Stream_peek(stream)));
+    return ch-offset[size-1];
+}
+
 Int Utf8_len(String str) {
     struct Utf8_Iter i = { 0, 0, str, 0 };
     Int count = 0;
@@ -94,8 +135,13 @@ Int Utf8_len(String str) {
 }
 
 Bool Utf8_valid(String str) {
-    assert(!"Not implemented");
-    return 0;
+    struct Utf8_Iter i = { 0, 0, str, 0 };
+    while (Utf8_Iter_more__g(&i)) {
+        if (Utf8_Iter_next(&i) < 0) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 Char Utf8_char(String str, Int index) {
@@ -110,7 +156,6 @@ Char Utf8_char(String str, Int index) {
     }
     return 0;
 }
-
 
 Char Utf8_Iter_next(Utf8_Iter self) {
     Byte* data = self->string->data;

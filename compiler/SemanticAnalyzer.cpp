@@ -706,7 +706,7 @@ void SemanticAnalyzer::operator()(IdentifierRef* expression) {
     // rule unique to Jogo (as far as I know), and allows both of the following
     // forms: 7.cos() and cos(7).  If there is a function named 'cos' in the
     // same scope, that function is used instead of the member function.
-    if (!call->function() && call->arguments()) {
+    if (scope->is_empty() && !call->function() && call->arguments()) {
         Expression::Ptr arg = call->arguments();
         arg(this);
 
@@ -719,7 +719,11 @@ void SemanticAnalyzer::operator()(IdentifierRef* expression) {
     // If all attempts to resolve the function fail, then it is missing.
     if (!call->function()) {
         err_ << call->location();
-        err_ << "Undeclared function '" << id << "'\n";
+        err_ << "Undefined function '";
+        if (!scope->is_empty()) {
+            err_ << scope << "::";
+        }
+        err_ << id << "'\n";
         env_->error();
     }
 }
@@ -1242,7 +1246,7 @@ void SemanticAnalyzer::operator()(Type* type) {
             } 
         }
         err_ << type->location();
-        err_ << "Undeclared generic type '" << type->name() << "'\n";
+        err_ << "Undefined generic type '" << type->name() << "'\n";
         env_->error();
         type->is_top(true);
         return;

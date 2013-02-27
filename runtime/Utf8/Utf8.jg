@@ -33,6 +33,14 @@ char(str String, index Int) native Char {
     # a valid UTF-8 string, this function returns -1.
 }
 
+put(stream Io::Stream, ch Char) native {
+    # Writes 'ch' to 'stream' using the UTF-8 encoding.
+}
+
+get(stream Io::Stream) native Char {
+    # Reads 'ch' from 'stream' using the UTF-8 encoding.
+}
+
 Iter < Object {
     # Iterates over all the UTF-8 characters in a string.
     string String
