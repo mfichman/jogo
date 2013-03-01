@@ -19,10 +19,11 @@ Building
 
 1. Check out the repository
 2. Install [scons](http://www.scons.org)
-3. Type "scons"
+3. Install [nasm](http://www.nasm.us)
+4. Type "scons"
 
 Testing
 -------
 
 1. Install [python](http://www.python.org)
-4. Run "scons check"
+2. Run "scons check"
