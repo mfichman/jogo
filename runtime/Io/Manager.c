@@ -122,10 +122,11 @@ void Io_Manager_poll(Io_Manager self) {
 
     SetLastError(ERROR_SUCCESS);
     self->iobytes = 0;
-    if (GetQueuedCompletionStatus(handle, &bytes, &udata, evt, timeout)) {
-		self->iobytes = bytes;
-		Coroutine__ioresume(op->coroutine);
-	}
+    GetQueuedCompletionStatus(handle, &bytes, &udata, evt, timeout);
+    self->iobytes = bytes;
+    if(op) {
+	    Coroutine__ioresume(op->coroutine);
+    }
 }
 #endif
 

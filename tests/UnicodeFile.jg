@@ -5,9 +5,12 @@ main() Int {
     fd = File::open('UnicodeFile.txt', 'r')
     fd.peek()
     while fd.status == Io::StreamStatus::OK {
-        Utf8::put(Io::stdout(), Utf8::get(fd))
+        ch = Utf8::get(fd)
+        Utf8::put(Io::stdout(), ch)
         fd.peek()
-        ++count
+        if ch != '\r'c { # Ignore \r chars that are added on Windows
+            ++count
+        }
     }
     Io::stdout().println(count.str)
     Io::stdout().flush()

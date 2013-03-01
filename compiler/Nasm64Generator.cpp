@@ -585,60 +585,50 @@ void Nasm64Generator::stack_check(Function* feature) {
 void Nasm64Generator::string(String* string) {
     // Output a string literal, and correctly process escape sequences.
     std::string const& in = string->string();
-    std::string out;
+    std::string out = "`";
     int length = 0;
-    bool escaped = true;
-    bool first = true;
     for (int i = 0; i < in.length(); i++) {
         char c = in[i];
         if (c == '\\') {
-            // Output escape sequences.  For NASM, the actual hex codes must
-            // be output for non-visible characters; there is no escape
-            // character.
-            if (!escaped) out += "\"";
-            if (!first) out += ", ";
-
+            // Output escape sequences properly using NASM syntax.
             c = in[++i];
             if (isdigit(c)) { // Octal code
                 char c2 = in[++i];
                 char c3 = in[++i]; 
-                out += std::string("0o") + c + c2 + c3;
+                out += std::string("\\") + c + c2 + c3;
             } else if (c == 'x') { // Hexadecimal code
                 char c1 = in[++i];
                 char c2 = in[++i];
-                out += std::string("0x") + c1 + c2;
+                out += std::string("\\x") + c1 + c2;
             } else {
                 switch (c) {
-                case 'a': out += "0x7"; break; // alarm
-                case 'b': out += "0x8"; break; // backspace
-                case 't': out += "0x9"; break; // horizontal tab
-                case 'n': out += "0xa"; break; // newline
-                case 'v': out += "0xb"; break; // vertical tab
-                case 'f': out += "0xc"; break; // form feed
-                case 'r': out += "0xd"; break; // carriage return
-                case '"': out += "0x22"; break; // quote
-                case '\'': out += "0x27"; break; // quote
-                default: out += std::string("\"") + c + '"'; break;
+                case 'a': out += "\\x7"; break; // alarm
+                case 'b': out += "\\x8"; break; // backspace
+                case 't': out += "\\x9"; break; // horizontal tab
+                case 'n': out += "\\xa"; break; // newline
+                case 'v': out += "\\xb"; break; // vertical tab
+                case 'f': out += "\\xc"; break; // form feed
+                case 'r': out += "\\xd"; break; // carriage return
+                case '"': out += "\\x22"; break; // quote
+                case '\'': out += "\\x27"; break; // quote
+                case '?': out += "\\?"; break; // special case for Nasm
+                case 'e': out += "\\e"; break;
+                case '\\': out += "\\\\"; break;
+                default: out += c; break;
                 }
             }
-            escaped = true;
+        } else if (c == '`') {
+            out += "\\`";
+        } else if (isspace(c)) {
+            char buf[512];
+            out += "\\x";
+            out += itoa(c, buf, 16);
         } else {
-            if (escaped) {
-                if (!first) out += ", ";
-                out += "\"";
-            }
             out += c;
-            escaped = false;
         }
         length++;
-        first = false;
     }
-    if (escaped) {
-        if (!first) out += ", ";
-        out += "0x0";
-    } else {
-        out += "\", 0x0";
-    }
+    out += "\\x0`";
     out_ << "lit" << (void*)string << ": \n";  
     out_ << "    dq ";
     label("String__vtable");

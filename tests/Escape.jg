@@ -8,5 +8,7 @@ main() Int {
     Boot::print_str("\"")
     Boot::print_str("\#")
     Boot::print_str('\'')
+    Boot::print_str('`')
+    Boot::print_str('\n')
     ret 0
 }

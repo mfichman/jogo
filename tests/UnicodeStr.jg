@@ -18,7 +18,8 @@ main() Int {
 
     for ch in Utf8::Iter(str) {
         Utf8::put(Io::stdout(), ch)
-    } 
+    }
+    Io::stdout().flush()
 
     ret 0
 }
