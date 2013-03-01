@@ -57,4 +57,5 @@ private:
     Environment::Ptr env_;
     ProcessGroup procs_;
     int errors_;
+    std::string vcvarsall_;
 };
