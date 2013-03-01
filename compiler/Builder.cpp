@@ -61,6 +61,7 @@ Builder::Builder(Environment* env) :
     env->lib("wsock32");
     char const* pathstr = getenv("PATH");
     std::string path = pathstr ? pathstr : "";
+    path += ";C:\\Program Files (x86)\\Microsoft Visual Studio 11.0\\VC";
     path += ";C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC";
     SetEnvironmentVariable("PATH", path.c_str());
 
