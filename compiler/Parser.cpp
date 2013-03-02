@@ -1305,6 +1305,31 @@ Type* Parser::alternate_list() {
     return alt;
 }
 
+Expression* Parser::byte_or_char_literal() {
+    // Parses the byte literal and converts it to canonical decimal form.
+    String::Ptr val(new String(value()));
+    uint64_t code = 0;
+    try {
+        std::string const unescaped = val->unescaped();
+        if (unescaped.size() > 1) {
+            if (token().type() == Token::CHAR) {
+                err_ << location() << "Character literal is too long\n";
+            } else if (token().type() == Token::BYTE) {
+                err_ << location() << "Byte literal is too long\n";
+            } else {
+                assert(!"Unreachable");
+            }
+        } else {
+            code = (uint8_t)unescaped[0];
+        }
+    } catch (StringEscapeError const& err) {
+        err_ << location() << err.message() << "\n";
+        error(); 
+    }
+    String::Ptr integer = env_->integer(stringify(code));
+    return new IntegerLiteral(location(), integer);
+}
+
 Expression* Parser::literal() {
     // Parses a literal expression, variable, or parenthesized expression
     Expression* expr = 0;
@@ -1321,25 +1346,31 @@ Expression* Parser::literal() {
     case Token::INTEGER:
         expr = new IntegerLiteral(location(), env_->integer(value()));
         break;
-    case Token::STRING:
-        expr = new StringLiteral(location(), env_->string(value()));
+    case Token::STRING: {
+        try {
+            String::Ptr str = env_->string(value());
+            str->unescaped();
+            expr = new StringLiteral(location(), str);
+        } catch (StringEscapeError const& err) {
+            err_ << location() << err.message() << "\n";
+            expr = new StringLiteral(location(), env_->string(""));
+        }
         break;
+    }
     case Token::NIL:
         expr = new NilLiteral(location());
         break;
     case Token::EOF_LITERAL:
-        expr = new IntegerLiteral(location(), env_->integer("0xffffffff"));
+        expr = new IntegerLiteral(location(), env_->integer("-1"));
         expr->type(env_->char_type());
         break;
     case Token::CHAR: {
-        int code = String::escape(value());
-        expr = new IntegerLiteral(location(), env_->integer(stringify(code)));
+        expr = byte_or_char_literal();
         expr->type(env_->char_type());
         break;
     }
     case Token::BYTE: {
-        int code = String::escape(value());
-        expr = new IntegerLiteral(location(), env_->integer(stringify(code)));
+        expr = byte_or_char_literal();
         expr->type(env_->byte_type());
         break;
     }

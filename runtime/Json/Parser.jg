@@ -18,8 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-#TokenType = LBRACKET | RBRACKET | LBRACE | RBRACE | STRING | INT | NULL;
-
 TokenType < Enum {
     # Types of tokens used by JSON.  Taken from http://json.org.  The Tokenizer
     # lexes these tokens and emits them in a stream.  The Tokenizer will only
@@ -48,15 +46,10 @@ Token < Value {
     value String # Only valid for STRING or NUMBER TokenTypes
 }
 
-Reader < Interface {
-    get() Char {}
-    peek() Char {}
-}
-
 Tokenizer < Object {
     # Reads input from a Unicode character iterator and outputs a valid stream
-    # of JSON tokens.
-    reader immutable Reader # Input from the user
+    # of JSON tokens.  Can be used as an Iterator[Json::Token].
+    reader immutable Iter[Char] # Input from the user
     buf private Char # Next character to give to the reader
     expect private TokenType # Next token type to expect
 }
@@ -64,7 +57,7 @@ Tokenizer < Object {
 Tokenizer::@init(preader Reader) {
     # Initializes the tokenizer and reads in the first token.
     reader = preader 
-    next()
+    self.next()
 }
 
 Tokenizer::more?() Bool {
@@ -79,95 +72,95 @@ Tokenizer::next() Token {
     ret out 
 }
 
-Parser < Object {
-    # Parses a JSON file from the given input stream.  For more information on
-    # the JSON file format, see [json.org](http://www.json.org).
-
-    value immutable Value
-    errors immutable Array[String]
-    stream private Io::Stream
-    pos private = 0
-    line private = 0
-    file String
-    char Char # Current character
-    
-    @init(stream Io::Stream, file String) {
-        self.stream = stream
-        self.file = file;
-        token()
-    }
-
-    error(message String) private {
-        # Adds 'message' to the list of error messages, along with the current
-        # file name, line number, and character number.
-        error.push("#{file}:#{line}:#{pos}: #{message}")
-    }
-
-    get() Char private {
-        # Returns the next character in the stream, and updates the current
-        # line number and character number.
-        char = stream.get()
-        if char == '\n'c {
-            pos = 0
-            ++line
-        } else {
-            ++pos
-        }
-        ret car
-    }
-
-    token() Char private {
-        # Reads until the beginning of the next token, that is until the 
-        # next non-whitespace character.
-        char = get()
-        while char.is_space {
-            char = get()
-        }
-        ret char
-    }
-
-    object() Hash[String,Value] {
-        if char != '{'c {
-            error.push("Missing '{'")
-        }
-        hash = Hash[String,Value]() 
-        while char == '{'c or char == ','c {
-            hash.insert(pair())
-            token()
-        }
-        
-    }
-
-    pair() Pair[String,Value] {
-        string = string()
-        if token() != ':'c {
-            error("Expected ':', not '#{token()}'")
-        }
-        value = value() 
-        ret Pair(string, value)
-    }
-
-    array() Array[Value] {
-        if token() != '['c {
-            error("Expected '[', not '#{token()}'")
-        }
-        array = Array[Value]() 
-        while char == '['c or char == ','c {
-            array.push(value())
-            token()
-        }
-        ret array 
-    }
-
-    value() Value {
-    }
-
-    string() String {
-        while char != '"'c and char != eof {
-            
-        }
-    }
-
-    number() Number {
-    } 
-}
+#Parser < Object {
+#    # Parses a JSON file from the given input stream.  For more information on
+#    # the JSON file format, see [json.org](http://www.json.org).
+#
+#    value immutable Value
+#    errors immutable Array[String]
+#    stream private Io::Stream
+#    pos private = 0
+#    line private = 0
+#    file String
+#    char Char # Current character
+#}
+#    
+#Parser::@init(stream Io::Stream, file String) {
+#    self.stream = stream
+#    self.file = file;
+#    token()
+#}
+#
+#Parser::error(message String) private {
+#    # Adds 'message' to the list of error messages, along with the current
+#    # file name, line number, and character number.
+#    errors.push("#{file}:#{line}:#{pos}: #{message}")
+#}
+#
+#Parser::get() Char private {
+#    # Returns the next character in the stream, and updates the current
+#    # line number and character number.
+#    char = stream.get()
+#    if char == '\n'c {
+#        pos = 0
+#        ++line
+#    } else {
+#        ++pos
+#    }
+#    ret car
+#}
+#
+#Parser::token() Char private {
+#    # Reads until the beginning of the next token, that is until the 
+#    # next non-whitespace character.
+#    char = self.get()
+#    while char.is_space {
+#        char = self.get()
+#    }
+#    ret char
+#}
+#
+#Parser::object() Hash[String,Value] {
+#    if char != '{'c {
+#        self.error("Missing '{'")
+#    }
+#    hash = Hash[String,Value]() 
+#    while char == '{'c or char == ','c {
+#        self.hash.insert(pair())
+#        self.token()
+#    }
+#    
+#}
+#
+#Parser::pair() Pair[String,Value] {
+#    string = self.string()
+#    if token() != ':'c {
+#        error("Expected ':', not '#{token()}'")
+#    }
+#    value = self.value() 
+#    ret Pair(string, value)
+#}
+#
+#Parser::array() Array[Value] {
+#    if token() != '['c {
+#        self.error("Expected '[', not '#{token()}'")
+#    }
+#    array = Array[Value]() 
+#    while char == '['c or char == ','c {
+#        array.push(value())
+#        self.token()
+#    }
+#    ret array 
+#}
+#
+#Parser::value() Value {
+#}
+#
+#string() String {
+#    while char != '"'c and char != eof {
+#        
+#    }
+#}
+#
+#number() Number {
+#} 

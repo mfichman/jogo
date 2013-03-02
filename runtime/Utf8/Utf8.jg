@@ -18,6 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+#ERROR = Char(0x0d)
+#EOF = Char(0x0c)
+
 len(str String) native Int {
     # Returns the number of UTF-8 characters in the given string.  If the
     # string is not valid, then this function the index of the first invalid

@@ -255,18 +255,24 @@ Float < Value {
 }
 
 Char < Value {
-    # Represents a single character.  The size of this type is always 64-bits.
-    # While a String is logically a sequence of characters, its internal
-    # representation of a character may is smaller than 64-bits for efficiency,
-    # because the String class uses UTF-8 encoding.
+    # Represents a single Unicode character.  The size of this type is always
+    # 64-bits.  A String is logically a sequence of bytes, not characters, so
+    # conversion must be done using a selected encoding to get a Char from a
+    # string.
+    EOF = Char(0xffffffffffffffff)
+    ERR = Char(0xfffffffffffffffe)
 
-    @init() native
+    @init(int Int) native
     @equal(other Char) native Bool
     @less(other Char) native Bool
 
     str() String { ret self.str }
     str?() native String {
         # Returns a string representation of this character.
+    }
+
+    int?() native Int {
+        # Returns the equivalent integer value of this Unicode character.
     }
 
     is_alnum?() native Bool {

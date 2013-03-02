@@ -1,0 +1,21 @@
+# jgtest exec on
+
+printc(ch Char) native
+printi(int Int) native
+printb(byte Byte) native
+
+
+main() Int {
+    printi(Char::EOF.int) 
+    printi(Char::ERR.int)
+    printc('\x0f'c)
+    printc('\xff'c)
+    printb('\x0f'b)
+    printb('\xff'b)
+    printi(0xf)
+    printi(0xff)
+    printi(0xffff)
+    printi(0xffffffff)
+    printi(0xffffffffffffffff)
+    ret 0 
+}

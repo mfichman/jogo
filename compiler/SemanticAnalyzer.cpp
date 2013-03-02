@@ -1056,6 +1056,17 @@ void SemanticAnalyzer::operator()(Constant* feature) {
         feature->type(init->type());
     } else if (dynamic_cast<FloatLiteral*>(init.pointer())) {
         feature->type(init->type());
+    } else if (Construct* constr = dynamic_cast<Construct*>(init.pointer())) {
+        Expression* arg = constr->arguments();
+        if (init->type()->is_primitive()&&arg&&!arg->next()
+            &&dynamic_cast<IntegerLiteral*>(arg)) {
+            // OK: Usable as a constant
+        } else {
+            err_ << feature->location();
+            err_ << "Non-literal constant\n";
+            env_->error();
+        }
+        feature->type(init->type());
     } else if (!init || dynamic_cast<Empty*>(init.pointer())) {
         if (clazz && clazz->is_enum()) {
             feature->type(clazz->type());

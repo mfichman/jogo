@@ -53,12 +53,12 @@ main() Int {
     stdout.put('\x4f'b)
     stdout.put('\x0A'b)
 
-    stdout.put('\150'b)
-    stdout.put('\145'b)
-    stdout.put('\154'b)
-    stdout.put('\154'b)
-    stdout.put('\157'b)
-    stdout.put('\012'b)
+    stdout.put('\o150'b)
+    stdout.put('\o145'b)
+    stdout.put('\o154'b)
+    stdout.put('\o154'b)
+    stdout.put('\o157'b)
+    stdout.put('\o012'b)
 
     stdout.put('\r'b)
     stdout.put('\t'b)

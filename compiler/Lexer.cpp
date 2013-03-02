@@ -494,11 +494,11 @@ void Lexer::string_or_char() {
     if (char_ == 'c') {
         read();
         token(Token::CHAR);
-        value(value().substr(1, value().length()-2));
+        value(value().substr(1, value().length()-3));
     } else if (char_ == 'b') {
         read();
         token(Token::BYTE);
-        value(value().substr(1, value().length()-2));
+        value(value().substr(1, value().length()-3));
     } else {
         token(Token::STRING);
         value(value().substr(1, value().length()-2));

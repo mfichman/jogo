@@ -291,6 +291,10 @@ String Char_str__g(Char self) {
     return ret;
 }
 
+Int Char_int__g(Char self) {
+    return self;
+}
+
 Bool Char__equal(Char self, Char other) {
     return self == other;
 }

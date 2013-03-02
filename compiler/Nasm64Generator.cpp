@@ -26,8 +26,7 @@
 #include <cstdlib>
 
 #ifdef WINDOWS
-#define atoll _atoi64
-#define strtoll _strtoi64
+#define strtoull _strtoui64
 #endif
 
 static const int INTEL64_MAX_IMM = 4096;
@@ -66,6 +65,12 @@ void Nasm64Generator::operator()(File* file) {
         }
         out_ << "global "; label(cons->label()); out_ << "\n";
         Expression* init = cons->initializer();
+        if (Construct* constr = dynamic_cast<Construct*>(init)) {
+            init = constr->arguments();
+            // Support for primitive constructors, e.g., Char(0xf).  FIXME:
+            // Should use constant folding instead, to allow all constant
+            // expressions.
+        } 
         label(cons->label());
         if(IntegerLiteral::Ptr lit = dynamic_cast<IntegerLiteral*>(init)) {
             out_ << " dq " << lit->value() << "\n";
@@ -422,7 +427,7 @@ void Nasm64Generator::literal(Operand literal) {
     } else if (NilLiteral* le = dynamic_cast<NilLiteral*>(expr)) {
         out_ << "0";
     } else if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(expr)) {
-        int64_t number = strtoll(le->value()->string().c_str(), 0, 0);
+        uint64_t number = strtoull(le->value()->string().c_str(), 0, 0);
         if(number < INTEL64_MAX_IMM) {
             out_ << le->value();
         } else {
@@ -511,7 +516,7 @@ void Nasm64Generator::load_hack(Operand res, Operand a1) {
 
     char const* mov = (res.is_float() ? "movsd" : "mov qword");
     if (IntegerLiteral* le = dynamic_cast<IntegerLiteral*>(a1.literal())) {
-        int64_t number = strtoll(le->value()->string().c_str(), 0, 0);
+        uint64_t number = strtoull(le->value()->string().c_str(), 0, 0);
         if (number < INTEL64_MAX_IMM) {
             out_ << "    " << mov << " ";
             operand(res);
@@ -584,57 +589,20 @@ void Nasm64Generator::stack_check(Function* feature) {
 
 void Nasm64Generator::string(String* string) {
     // Output a string literal, and correctly process escape sequences.
-    std::string const& in = string->string();
+    std::string const& in = string->unescaped();
     std::string out = "`";
-    int length = 0;
     for (int i = 0; i < in.length(); i++) {
-        char c = in[i];
-        if (c == '\\') {
-            // Output escape sequences properly using NASM syntax.
-            c = in[++i];
-            if (isdigit(c)) { // Octal code
-                char c2 = in[++i];
-                char c3 = in[++i]; 
-                out += std::string("\\") + c + c2 + c3;
-            } else if (c == 'x') { // Hexadecimal code
-                char c1 = in[++i];
-                char c2 = in[++i];
-                out += std::string("\\x") + c1 + c2;
-            } else {
-                switch (c) {
-                case 'a': out += "\\x7"; break; // alarm
-                case 'b': out += "\\x8"; break; // backspace
-                case 't': out += "\\x9"; break; // horizontal tab
-                case 'n': out += "\\xa"; break; // newline
-                case 'v': out += "\\xb"; break; // vertical tab
-                case 'f': out += "\\xc"; break; // form feed
-                case 'r': out += "\\xd"; break; // carriage return
-                case '"': out += "\\x22"; break; // quote
-                case '\'': out += "\\x27"; break; // quote
-                case '?': out += "\\?"; break; // special case for Nasm
-                case 'e': out += "\\e"; break;
-                case '\\': out += "\\\\"; break;
-                default: out += c; break;
-                }
-            }
-        } else if (c == '`') {
-            out += "\\`";
-        } else if (isspace(c)) {
-            char buf[512];
-            out += "\\x";
-            out += itoa(c, buf, 16);
-        } else {
-            out += c;
-        }
-        length++;
+        char buf[512];
+        sprintf(buf, "\\x%02x", (uint8_t)in[i]);
+        out += buf;
     }
-    out += "\\x0`";
+    out += "\\x00`";
     out_ << "lit" << (void*)string << ": \n";  
     out_ << "    dq ";
     label("String__vtable");
     out_ << "\n"; // vtable
     out_ << "    dq 1\n"; // reference count
-    out_ << "    dq " << length << "\n";
+    out_ << "    dq " << (int)in.length() << "\n";
     out_ << "    db " << out << "\n";
     align();
 }

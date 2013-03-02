@@ -368,7 +368,8 @@ void IrGenerator::operator()(Construct* expr) {
     // Insert a call expression, then pop the return value off the stack.
     fm.call(func->label());
     if (expr->type()->is_primitive()) {
-        assert(!"Primitive constructor?");
+        //assert(!"Primitive constructor?");
+        return_ = pop_ret(func->type());
     } else if (expr->type()->is_ref()) {
         return_ = pop_ret(func->type());
         object_temp_.push_back(return_);
@@ -1333,8 +1334,9 @@ void IrGenerator::constants() {
             // FIXME: Extern constants should be loaded from a per-lib startup
             // func/initialization routine.
         } else {
-            store(Operand(cons->label(), Address(0)), emit(cons->initializer()));
-            free_temps();
+            //store(Operand(cons->label(), Address(0)), emit(cons->initializer()));
+            //free_temps();
+            //FIXME: Allow non-literal constants?
         }
     }
 }

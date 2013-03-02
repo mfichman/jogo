@@ -26,8 +26,7 @@
 #include <stdint.h>
 
 #ifdef WINDOWS
-#define atoll _atoi64
-#define strtoll _strtoi64
+#define strtoull _strtoui64
 #endif
 
 Machine::Ptr const Intel64Generator::MACHINE = Machine::intel64();
@@ -67,6 +66,12 @@ void Intel64Generator::operator()(File* file) {
         }
         format_->sym(cons->label(), OutputFormat::SYM_DATA);
         Expression* init = cons->initializer();
+        if (Construct* constr = dynamic_cast<Construct*>(init)) {
+            init = constr->arguments();
+            // Support for primitive constructors, e.g., Char(0xf).  FIXME:
+            // Should use constant folding instead, to allow all constant
+            // expressions.
+        } 
         if (IntegerLiteral::Ptr lit = dynamic_cast<IntegerLiteral*>(init)) {
             data_->uint64(literal(lit)); 
         } else if (FloatLiteral::Ptr lit = dynamic_cast<FloatLiteral*>(init)) {
@@ -212,10 +217,7 @@ uint64_t Intel64Generator::literal(IntegerLiteral* lit) {
     // is Intel 64.  This is not necessarily the case.  If the architecure has
     // a binary format that is different from the output architecure, then this
     // function will not work!
-    
-    return strtoll(lit->value()->string().c_str(), 0, 0);
-
-    //return //atoll(lit->value()->string().c_str());
+    return strtoull(lit->value()->string().c_str(), 0, 0);
 }
 
 void Intel64Generator::stack_check(Function* func) {

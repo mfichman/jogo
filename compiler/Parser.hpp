@@ -115,6 +115,7 @@ private:
     Expression* bitwise_or();
     Expression* bitwise_xor();
     Expression* literal();
+    Expression* byte_or_char_literal();
     Expression* array_literal();
     Expression* hash_literal();
     Expression* pair();

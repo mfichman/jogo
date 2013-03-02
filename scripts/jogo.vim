@@ -42,7 +42,7 @@ syn match apString "[a-zA-Z0-9_]\@<!\/.*\/"
 syn keyword apOperator + - / * <> == != ^ ?
 
 syn match apNumber "\<[0-9][0-9]*\>"
-syn match apNumber "\<0x[0-9A-F][0-9A-F]*\>"
+syn match apNumber "\<0x[0-9A-Fa-f][0-9A-Fa-f]*\>"
 
 hi def link apKeyword Keyword
 hi def link apTodo Todo

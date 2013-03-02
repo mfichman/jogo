@@ -159,4 +159,18 @@ Stream < Object {
         # Reads until EOF and returns the result as a string.
     }
 
+    iter() Stream {
+        # Support for using the stream as an iterator.
+        ret self
+    }
+
+    more?() Bool {
+        # Returns true if there are more characters in the stream.
+        ret status == StreamStatus::OK
+    }
+    
+    next() Byte {
+        # Returns the next byte in the iterator.
+        ret self.get()
+    }
 }

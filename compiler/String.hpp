@@ -26,6 +26,7 @@
 #include "Object.hpp"
 #include "Stream.hpp"
 #include "Iterator.hpp"
+#include <stdint.h>
 #include <string>
 #include <sstream>
 
@@ -40,10 +41,17 @@ public:
     bool is_empty() const { return string_.empty(); }
     typedef Pointer<String> Ptr;
     typedef Iterator<String> Itr;
-    static char escape(const std::string& code);
 
 private:
     std::string string_;
+};
+
+class StringEscapeError {
+public:
+    StringEscapeError(std::string const& msg) : message_(msg) {}
+    const std::string& message() const { return message_; }
+private:
+    std::string message_;
 };
 
 inline Stream::Ptr operator<<(Stream::Ptr out, const String* name) {

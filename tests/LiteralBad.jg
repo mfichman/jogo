@@ -1,0 +1,7 @@
+
+
+main() Int {
+    0x # invalid sequence
+    0xfffffffffffffffff.str # integer too large
+    ret 0
+}

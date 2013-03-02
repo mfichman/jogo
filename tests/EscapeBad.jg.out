@@ -1,0 +1,14 @@
+EscapeBad.jg:4:5: Invalid hexadecimal sequence in literal
+EscapeBad.jg:5:5: Invalid octal sequence in literal
+EscapeBad.jg:6:5: Invalid hexadecimal sequence in literal
+EscapeBad.jg:7:5: Invalid hexadecimal sequence in literal
+EscapeBad.jg:8:5: Invalid octal sequence in literal
+EscapeBad.jg:9:5: Invalid octal sequence in literal
+EscapeBad.jg:10:5: Invalid octal sequence in literal
+EscapeBad.jg:11:5: Invalid hexadecimal sequence in literal
+EscapeBad.jg:12:5: Invalid octal sequence in literal
+EscapeBad.jg:13:5: Invalid hexadecimal sequence in literal
+EscapeBad.jg:14:5: Invalid hexadecimal sequence in literal
+EscapeBad.jg:15:5: Invalid octal sequence in literal
+EscapeBad.jg:16:5: Invalid octal sequence in literal
+EscapeBad.jg:17:5: Invalid octal sequence in literal
