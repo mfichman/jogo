@@ -1,2 +1,5 @@
-
-faIL
+LiteralBad.jg:4:5: Invalid integer literal
+LiteralBad.jg:5:5: Integer literal is too large
+LiteralBad.jg:6:5: Integer literal is too large
+LiteralBad.jg:7:5: Integer literal is too large
+LiteralBad.jg:9:5: Integer literal is too large

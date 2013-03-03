@@ -27,6 +27,12 @@
 #include <fstream>
 #include <iostream>
 #include <cassert>
+#include <cerrno>
+
+#ifdef WINDOWS
+#define strtoll _strtoi64
+#define strtoull _strtoui64
+#endif
 
 Parser::Parser(Environment* env) :
 	env_(env),
@@ -1330,6 +1336,47 @@ Expression* Parser::byte_or_char_literal() {
     return new IntegerLiteral(location(), integer);
 }
 
+Expression* Parser::string_literal() {
+    try {
+        String::Ptr str = env_->string(value());
+        str->unescaped();
+        return new StringLiteral(location(), str);
+    } catch (StringEscapeError const& err) {
+        err_ << location() << err.message() << "\n";
+        error();
+        return new StringLiteral(location(), env_->string(""));
+    }
+}
+
+Expression* Parser::integer_literal() {
+    int base = 0;
+    if (value().length() < 2) {
+        base = 10;
+    } else if (value()[0] == '0' && value()[1] == 'x') {
+        base = 16;
+    } else if (value()[0] == '0' && value()[1] == 'o') {
+        base = 8;
+    } else {
+        base = 10;
+    }
+    errno = 0;
+    char* end = 0;
+    uint64_t val = 0;
+    if (base == 16 || base == 8) {
+        val = strtoull(value().c_str(), &end, base);
+    } else {
+        val = strtoll(value().c_str(), &end, base);
+    }
+    if (errno == EINVAL || errno == ERANGE) {
+        err_ << location() << "Integer literal is too large\n";
+        error();
+    } else if (end != value().c_str()+value().length()) {
+        err_ << location() << "Invalid integer literal\n";
+        error();
+    }
+    return new IntegerLiteral(location(), env_->integer(value()));
+}
+
 Expression* Parser::literal() {
     // Parses a literal expression, variable, or parenthesized expression
     Expression* expr = 0;
@@ -1344,17 +1391,10 @@ Expression* Parser::literal() {
         expr = new FloatLiteral(location(), env_->integer(value()));
         break;
     case Token::INTEGER:
-        expr = new IntegerLiteral(location(), env_->integer(value()));
+        expr = integer_literal();
         break;
     case Token::STRING: {
-        try {
-            String::Ptr str = env_->string(value());
-            str->unescaped();
-            expr = new StringLiteral(location(), str);
-        } catch (StringEscapeError const& err) {
-            err_ << location() << err.message() << "\n";
-            expr = new StringLiteral(location(), env_->string(""));
-        }
+        expr = string_literal();
         break;
     }
     case Token::NIL:

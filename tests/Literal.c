@@ -1,8 +1,9 @@
 #include <Primitives.h>
+#include <stdio.h>
 #include <stdint.h>
 
 void printc(Char ch) {
-    printf("%llx\n", ch);
+    printf("%llx\n", (uint64_t)ch);
 }
 
 void printi(Int num) {
@@ -10,7 +11,7 @@ void printi(Int num) {
 }
 
 void printb(Byte byte) {
-    printf("%llx\n", byte);
+    printf("%llx\n", (uint64_t)byte);
 }
 
 

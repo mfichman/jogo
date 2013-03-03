@@ -3,5 +3,9 @@
 main() Int {
     0x # invalid sequence
     0xfffffffffffffffff.str # integer too large
+    18446744073709551615 # not ok (signed)
+    18446744073709551616 # too large
+    9223372036854775807 # ok
+    9223372036854775808 # ok
     ret 0
 }
