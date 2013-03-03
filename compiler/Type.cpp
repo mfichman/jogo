@@ -59,7 +59,7 @@ Type* Type::generic(Type const* type) const {
 Type* Type::generic(String* name) const {
     // Returns the generic with type 'name'.  This method works by looking
     // through the generic class definition and returning the type that is
-    // bound to generic 'name' in the current instantiation of the type.
+    // bound to generic 'name' in the current instantiation of the type.  
     Generic::Ptr gen1 = generics();
     Generic::Ptr gen2 = clazz()->type()->generics();
 

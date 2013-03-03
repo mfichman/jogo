@@ -121,7 +121,7 @@ library_src = ' '.join([
     "Hash",
     "Http",
     "Io",
-    #"Json",
+    "Json",
     "Math",
     "Object",
     "Os",

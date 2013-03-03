@@ -1,0 +1,50 @@
+
+
+SetGet[:a] < Interface {
+
+    set(arg :a) {}
+    get() :a {}
+}
+
+Complex < Value {
+    real Int
+    imag Int
+}
+
+TestValue < Object {
+    val = Complex()
+    set(arg Complex) {
+        val = arg
+    }
+    get() Complex {
+        ret val
+    }
+}
+
+TestByte < Object {
+    val Byte
+    set(arg Byte) {
+        val = arg
+    }
+    get() Byte {
+        ret val
+    }
+}
+
+main() Int {
+
+    tb SetGet[Byte] = TestByte()
+    tb.set('a'b)
+    Io::stdout().put(tb.get())
+    Io::println('')
+    
+    complex = Complex()
+    complex.real = 10
+    complex.imag = 20
+    
+    tv SetGet[Complex] = TestValue()
+    tv.set(complex)
+    Io::println("#{tv.get().real}, #{tv.get().imag}")
+
+    ret 0
+}

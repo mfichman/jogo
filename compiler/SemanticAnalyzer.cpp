@@ -1275,9 +1275,9 @@ void SemanticAnalyzer::operator()(Type* type) {
     for (Generic::Ptr g = type->generics(); g; g = g->next()) {
         Type::Ptr gen = g->type();
         gen(this);
-        if (g->type()->is_value()) {
+        if (!type->is_interface() && g->type()->is_value()) {
             err_ << type->location();
-            err_ << "Primitives and value types cannot be used in generics\n";
+            err_ << "Primitives and value types cannot be used in generic classes\n";
             env_->error();
         }
     }

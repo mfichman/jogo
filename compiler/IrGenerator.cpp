@@ -731,11 +731,12 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv) {
     FuncMarshal fm(this);
     Operand receiver;
     Operand valret;
-    if (func->type()->is_compound()) {
-        valret = stack_value_temp(func->type());
+    Type::Ptr rettype = func->type()->canonical(recv ? recv->type() : 0);
+    if (rettype->is_compound()) {
+        valret = stack_value_temp(rettype);
     }
     for (Expression::Ptr a = args; a; a = a->next()) {
-        Type::Ptr ft = formal->type();
+        Type::Ptr rettype = formal->type();
         Operand val = a->type()->is_bool() ? bool_expr(a) : emit(a);
         fm.arg(val);
         if(a == args) {
@@ -743,7 +744,7 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv) {
         }
         formal = formal->next();
     }
-    if (func->type()->is_compound()) {
+    if (rettype->is_compound()) {
         // Push a pointer for the return value at the end of the argument list.
         // The returned value type data will be stored at that location on the
         // stack.
@@ -759,7 +760,7 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv) {
         fm.arg(receiver); // Receiver
         fm.arg(load(new StringLiteral(Location(), name)));
         fm.call(env_->name("Object__dispatch"));
-        fnptr = pop_ret(func->type());
+        fnptr = pop_ret(rettype);
     } 
 
     if (func->is_virtual()) {
@@ -771,16 +772,16 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv) {
         fm.call(func->label());
     }
 
-    if (func->type()->is_void()) {
+    if (rettype->is_void()) {
         return_ = Operand();
-    } else if (func->type()->is_primitive()) {
-        return_ = pop_ret(func->type()); 
-    } else if (func->type()->is_compound()) {
+    } else if (rettype->is_primitive()) {
+        return_ = pop_ret(rettype); 
+    } else if (rettype->is_compound()) {
         // Return value is allocated on the stack already, and no value is
         // returned by register.
         return_ = valret;
-    } else if (func->type()->is_ref()) {
-        return_ = pop_ret(func->type());
+    } else if (rettype->is_ref()) {
+        return_ = pop_ret(rettype);
         object_temp_.push_back(return_);
     } else {
         assert(!"Invalid type");
