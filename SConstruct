@@ -29,9 +29,9 @@ env.Append(JGFLAGS = '-v -m -i runtime --build-dir ' + build_dir)
 env.Append(JGFLAGS = ' --no-default-libs -g Intel64 ')
 
 build_mode = ARGUMENTS.get('mode', 'debug')
-stack_size = '8192'
+stack_size = '32768'
 major_version = '0'
-minor_version = '3'
+minor_version = '4'
 revision = '0'
 version = major_version + '.' + minor_version + '.' + revision
 
