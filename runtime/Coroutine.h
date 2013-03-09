@@ -22,8 +22,11 @@
 
 #ifndef JOGO_COROUTINE_H
 #define JOGO_COROUTINE_H
+
 #ifdef WINDOWS
 #include <windows.h>
+#else
+#include <signal.h>
 #endif
 
 #include "Primitives.h"
@@ -64,6 +67,8 @@ void Coroutine__exit();
 void Coroutine__call(Coroutine self);
 void Coroutine__iowait();
 void Coroutine__ioresume(Coroutine self);
+void Coroutine__commit_page(Coroutine self, U64 addr);
+void Coroutine__set_signals();
 extern void Coroutine__vtable();
 CoroutineStack CoroutineStack__init();
 
@@ -73,8 +78,9 @@ extern Int Exception__current;
 
 #ifdef WINDOWS
 // This function catches segfaults and grows the coroutine stack.
-LONG WINAPI Coroutine__exception(LPEXCEPTION_POINTERS info);
-void Coroutine__commit_page(Coroutine self, U64 addr);
+LONG WINAPI Coroutine__fault(LPEXCEPTION_POINTERS info);
+#else
+void Coroutine__fault(int signo, siginfo_t* info, void* context);
 #endif
 
 #endif

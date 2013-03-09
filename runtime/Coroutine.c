@@ -29,6 +29,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#ifndef WINDOWS
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
 
 struct Coroutine Coroutine__main;
 Coroutine Coroutine__current = &Coroutine__main;
@@ -137,12 +141,10 @@ void Coroutine__destroy(Coroutine self) {
     
     // Free the stack, and the pointer to the closure object so that no memory
     // is leaked.
-#if defined(WINDOWS)
+#ifdef WINDOWS
     VirtualFree(self->stack, sizeof(self->stack), MEM_RELEASE);
-#elif defined(LINUX)
-    assert(false);
-#elif defined(DARWIN)
-    assert(false);
+#else
+    munmap(self->stack, sizeof(self->stack));
 #endif
     Object__refcount_dec(self->function);
     Boot_free(self);
@@ -260,23 +262,47 @@ U64 page_round(U64 addr, U64 multiple) {
 
 U64 page_size() {
     // Returns the system page size.
+#ifdef WINDOWS
     SYSTEM_INFO info;
     GetSystemInfo(&info);
     return info.dwPageSize*8; 
+#else
+    return getpagesize();
+#endif
 }
 
+CoroutineStack CoroutineStack__init() {
+    // Lazily initializes a large stack for the coroutine.  Initially, the
+    // coroutine stack is quite small, to lower memory usage.  As the stack
+    // grows, the Coroutine__fault handler will commit memory pages for
+    // the coroutine.
+    U64 size = sizeof(struct CoroutineStack);
 #ifdef WINDOWS
+    CoroutineStack ret = VirtualAlloc(0, size, MEM_RESERVE, PAGE_READWRITE);
+    if (!ret) {
+        Boot_abort();
+    }
+#else
+    CoroutineStack ret = mmap(0, size, PROT_NONE, MAP_ANON|MAP_PRIVATE, -1, 0);
+    if (ret == MAP_FAILED) {
+        Boot_abort();
+    }
+#endif
+    return ret;
+}
+
 void Coroutine__commit_page(Coroutine self, U64 addr) {
     // Ensures that 'addr' is allocated, and that the next page in the stack is
     // a guard page.
 
     U64 psize = page_size();
     U64 page = page_round(addr, psize);
+    U64 len = self->stack_end-page;
+    // Allocate all pages between stack_min and the current page.
+#ifdef WINDOWS
     U64 glen = psize;
     U64 guard = page-glen;
-    U64 len = self->stack_end-page;
     assert(page < self->stack_end);
-    // Allocate all pages between stack_min and the current page.
     if (!VirtualAlloc((LPVOID)page, len, MEM_COMMIT, PAGE_READWRITE)) {
         abort();     
     }
@@ -284,26 +310,16 @@ void Coroutine__commit_page(Coroutine self, U64 addr) {
     if (!VirtualAlloc((LPVOID)guard, glen, MEM_COMMIT, PAGE_READWRITE|PAGE_GUARD)) {
         abort();     
     }
-}
-#endif
-
-#ifdef WINDOWS
-CoroutineStack CoroutineStack__init() {
-    // Lazily initializes a large stack for the coroutine.  Initially, the
-    // coroutine stack is quite small, to lower memory usage.  As the stack
-    // grows, the Coroutine__exception handler will commit memory pages for the
-    // coroutine.
-    U64 size = sizeof(struct CoroutineStack);
-    CoroutineStack ret = VirtualAlloc(0, size, MEM_RESERVE, PAGE_READWRITE);
-    if (!ret) {
-        Boot_abort();
+#else
+    assert(page < self->stack_end);
+    if (mprotect((void*)page, len, PROT_READ|PROT_WRITE) == -1) {
+        abort();
     }
-    return ret;
-}
 #endif
+}
+
 
 #ifdef WINDOWS
-
 void pexcept(DWORD code) {
     // Print out the error, b/c Windows doesn't normally print an error during
     // an exception/signal like Linux and OS X do.
@@ -327,8 +343,16 @@ void pexcept(DWORD code) {
     case EXCEPTION_STACK_OVERFLOW: fprintf(stderr, "Stack overflow\n"); break;
     }
 }
+#endif
 
-LONG WINAPI Coroutine__exception(LPEXCEPTION_POINTERS info) {
+#ifdef WINDOWS
+void Coroutine__set_signals() {
+    AddVectoredExceptionHandler(1, Coroutine__exception);
+}
+#endif
+
+#ifdef WINDOWS
+LONG WINAPI Coroutine__fault(LPEXCEPTION_POINTERS info) {
     // From MSDN: The first element of the array contains a read-write flag
     // that indicates the type of operation that caused the access violation.
     // If this value is zero, the thread attempted to read the inaccessible
@@ -362,3 +386,50 @@ LONG WINAPI Coroutine__exception(LPEXCEPTION_POINTERS info) {
 }
 #endif
 
+#ifndef WINDOWS
+static struct sigaction sigsegv;
+static struct sigaction sigbus;
+static char sigstack[SIGSTKSZ];
+
+void Coroutine__set_signals() {
+    // Set up the signal handlers for SIGBUS/SIGSEGV to catch stack protection
+    // errors and grow the stack when it runs out of space.
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sigfillset(&sa.sa_mask);
+    sa.sa_sigaction = Coroutine__fault;
+    sa.sa_flags = SA_SIGINFO|SA_ONSTACK;
+    sigaction(SIGSEGV, &sa, &sigsegv);
+    sigaction(SIGBUS, &sa, &sigbus); 
+  
+    stack_t stack;
+    stack.ss_sp = sigstack;
+    stack.ss_flags = 0;
+    stack.ss_size = sizeof(sigstack);
+    sigaltstack(&stack, 0);
+}
+#endif
+
+#ifndef WINDOWS
+void Coroutine__fault(int signo, siginfo_t* info, void* context) {
+    if (signo != SIGBUS && signo != SIGSEGV) {
+        abort();
+    }
+    U64 stack_start = (U64)Coroutine__current->stack;
+    U64 stack_end = Coroutine__current->stack_end;
+    U64 addr = (U64)info->si_addr;
+    if (addr < stack_start || addr >= stack_end) {
+        if (signo == SIGBUS) {
+            struct sigaction self;
+            sigaction(SIGBUS, &sigbus, &self);
+            raise(SIGBUS);
+        } else if (signo == SIGSEGV) {
+            struct sigaction self;
+            sigaction(SIGSEGV, &sigsegv, &self);
+            raise(SIGSEGV);
+        }
+    } else {
+        Coroutine__commit_page(Coroutine__current, addr);
+    }
+}
+#endif

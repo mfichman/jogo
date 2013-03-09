@@ -54,11 +54,11 @@ Io_Manager Io_Manager__init() {
     WSADATA data;
     // Disable error dialog boxes
     SetErrorMode(GetErrorMode()|SEM_NOGPFAULTERRORBOX); 
-    AddVectoredExceptionHandler(1, Coroutine__exception);
     if (WSAStartup(version, &data) != 0) {
         Boot_abort();
     }
 #endif
+    Coroutine__set_signals();
     ret->_vtable = Io_Manager__vtable;
     ret->_refcount = 1;
     ret->scheduled = Queue__init(0);
