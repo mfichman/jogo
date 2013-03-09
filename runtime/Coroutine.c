@@ -29,7 +29,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#ifndef WINDOWS
+#ifdef WINDOWS
+#include <windows.h>
+#else
 #include <sys/mman.h>
 #include <unistd.h>
 #endif
@@ -347,7 +349,7 @@ void pexcept(DWORD code) {
 
 #ifdef WINDOWS
 void Coroutine__set_signals() {
-    AddVectoredExceptionHandler(1, Coroutine__exception);
+    AddVectoredExceptionHandler(1, Coroutine__fault);
 }
 #endif
 
