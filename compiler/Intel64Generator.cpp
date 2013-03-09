@@ -114,7 +114,6 @@ void Intel64Generator::operator()(Function* feature) {
     if (feature->is_native()) { return; }
     function_ = feature;
 
-    // stack_check
     if (feature->label()->string() == env_->entry_point()) {
         format_->sym(env_->name("main_"), OutputFormat::SYM_TEXT);
     } else if (feature->label()->string() == "Boot_main") {
@@ -125,7 +124,6 @@ void Intel64Generator::operator()(Function* feature) {
 
     push(RBP);
     mov(RBP, RSP);
-    stack_check(feature);
 
     if (feature->stack_slots()) {
         // Allocate space on the stack; ensure that the stack is aligned to a
@@ -218,39 +216,6 @@ uint64_t Intel64Generator::literal(IntegerLiteral* lit) {
     // a binary format that is different from the output architecure, then this
     // function will not work!
     return strtoull(lit->value()->string().c_str(), 0, 0);
-}
-
-void Intel64Generator::stack_check(Function* func) {
-    // Emits a stack check, and code to dynamically grow the stack if it is too
-    // small.  Also, saves any registers that are in use and may be used by the
-    // coroutine stack allocator function.
-    String::Ptr start = env_->name(func->label()->string()+"__start");
-    mov(RAX, env_->name("Coroutine__stack"));  
-    add(RAX, MIN_STACK);
-    cmp(RSP, RAX);
-    jge(start);
-
-    // Push any argument register before we call the routine to grow the stack.
-    // It would be nice to have the register allocator handle this, but the
-    // stack pointer register is hidden from the register allocator.
-    int index = 0;
-    for (Formal* f = func->formals(); f; f = f->next()) {
-        if (index < machine_->int_arg_regs()) {
-            push(machine_->int_arg_reg(index)->id());
-            index++;
-        } else {
-            break;
-        }
-    }
-
-    call(env_->name("Coroutine__grow_stack"));
-    mov(RSP, RAX);
-
-    // Pop any argument registers that are used in the function.
-    for (int i = index-1; i >= 0; i--) {
-        pop(machine_->int_arg_reg(i)->id());
-    }
-    format_->sym(start, OutputFormat::SYM_LTEXT);
 }
 
 void Intel64Generator::dispatch_table(Class* feature) {

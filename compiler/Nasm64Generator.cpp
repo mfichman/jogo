@@ -142,7 +142,6 @@ void Nasm64Generator::operator()(Function* feature) {
     out_ << "    push rbp\n"; 
     out_ << "    mov rbp, rsp\n";
 
-    stack_check(feature);
     if (feature->stack_slots()) {
         // Allocate space on the stack; ensure that the stack is aligned to
         // a 16-byte boundary.
@@ -553,38 +552,6 @@ void Nasm64Generator::load_hack(Operand res, Operand a1) {
     } else {
         instr(mov, res, a1); 
     }
-}
-
-void Nasm64Generator::stack_check(Function* feature) {
-    // Emits a stack check, and code to dynamically grow the stack if it is
-    // too small.
-    out_ << "    mov rax, [rel "; label("Coroutine__stack"); out_ << "]\n";
-    out_ << "    add rax, " << INTEL64_MIN_STACK << "\n"; 
-    out_ << "    cmp rsp, rax\n"; 
-    out_ << "    jge .l0\n";
-    
-    // Push any argument register before we call the routine to grow the stack.
-    // It would be nice to have the register allocator handle this, but the
-    // stack pointer register is hidden from the register allocator.
-    int index = 0;
-    for (Formal* f = feature->formals(); f; f = f->next()) {
-        if (index < machine_->int_arg_regs()) {
-            instr("push", machine_->int_arg_reg(index)->id()); 
-            index++;
-        } else {
-            break;
-        }
-    }
-
-    out_ << "    call "; label("Coroutine__grow_stack"); out_ << "\n";
-    out_ << "    mov rsp, rax\n";
-    
-    // Pop any argument registers that are used in the function.
-    for (int i = index-1; i >= 0; i--) {
-        instr("pop", machine_->int_arg_reg(i)->id());
-    }
-
-    label(".l0:"); out_ << "\n";
 }
 
 void Nasm64Generator::string(String* string) {

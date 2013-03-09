@@ -1,0 +1,7 @@
+
+
+main() Int {
+    x String = nil
+    Io::println(x.len.str)
+    ret 0
+}

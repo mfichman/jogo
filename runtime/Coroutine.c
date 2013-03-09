@@ -30,13 +30,9 @@
 #include <stdio.h>
 #include <assert.h>
 
-#define COROUTINE_BUFFER 4
-
 struct Coroutine Coroutine__main;
 Coroutine Coroutine__current = &Coroutine__main;
-Coroutine_Stack Coroutine__stack = 0;
 Int Exception__current = 0;
-
 
 void Coroutine__marshal(Coroutine self, Int ra) {
     // Marshals a function call on the coroutine stack
@@ -64,30 +60,23 @@ Coroutine Coroutine__init(Object func) {
     // the coroutine is resumed, it will begin executing at 'function' with its
     // own stack.
     Coroutine ret = Boot_calloc(sizeof(struct Coroutine)); 
-    ret->stack = Boot_calloc(sizeof(struct Coroutine_Stack));
     ret->_vtable = Coroutine__vtable;
     ret->_refcount = 1; 
+    ret->stack = CoroutineStack__init();
+    ret->stack_end = ((U64)ret->stack)+sizeof(ret->stack->data);
     ret->function = func;
     ret->caller = 0;
     ret->sp = COROUTINE_STACK_SIZE;
-
+    Coroutine__commit_page(ret, ret->stack_end-1);
     Object__refcount_inc(func);
     if (func) {
-        static struct String call_str = String__static("@call");
-        Int exit = (Int)Coroutine__exit;
-        Int call = (Int)Object__dispatch(func, &call_str);
         Int bogus = 0; // Bogus return addr for exit's stack frame
         ret->sp -= 1; // MUST ensure that the SP starts out aligned!!
         Coroutine__marshal(ret, bogus); // Simulate a fn call to exit()
-        ret->stack->data[--ret->sp] = exit;
-        ret->stack->data[--ret->sp] = call;
-        ret->stack->data[--ret->sp] = (Int)ret->stack->data;
-        // This is the top-of-stack pointer, which Coroutine__swap restores.
-        // It is a pointer to the end of the stack space -- when this is
-        // reached, a new stack segment is allocated.
-        ret->stack->data[--ret->sp] = (Int)func; 
-        // ARG0 in the .asm file.  This is the 'self' pointer for the closure
-        // that gets invoked when the coroutine starts for the first time.
+        ret->stack->data[--ret->sp] = (Int)Coroutine__exit;
+        ret->stack->data[--ret->sp] = (Int)Coroutine__start;
+        ret->stack->data[--ret->sp] = (Int)ret; 
+        // ARG0 in the .asm file.  This is the 'self' pointer for coroutine.
         ret->sp -= 15; // For the 15 registers pushed in the .asm file
         ret->sp = (Int)(ret->stack->data + ret->sp); 
         // Make relative to the top-of-stack
@@ -126,8 +115,6 @@ Coroutine Coroutine__init(Object func) {
 }
 
 void Coroutine__destroy(Coroutine self) {
-    Coroutine_Stack stack = 0;
-
     // Set the exception flag, then resume the coroutine and unwind the stack,
     // calling destructors for objects referenced by the coroutine.
     Int save_except = Exception__current;
@@ -150,12 +137,13 @@ void Coroutine__destroy(Coroutine self) {
     
     // Free the stack, and the pointer to the closure object so that no memory
     // is leaked.
-    for (stack = self->stack; stack;) {
-        Coroutine_Stack temp = stack;
-        stack = stack->next;
-        Boot_free(temp);
-    }
-
+#if defined(WINDOWS)
+    VirtualFree(self->stack, sizeof(self->stack), MEM_RELEASE);
+#elif defined(LINUX)
+    assert(false);
+#elif defined(DARWIN)
+    assert(false);
+#endif
     Object__refcount_dec(self->function);
     Boot_free(self);
 
@@ -183,6 +171,14 @@ void Coroutine_resume(Coroutine self) {
     Coroutine__swap(Coroutine__current, self);
     self->caller = 0; 
     Object__refcount_dec((Object)self);
+}
+
+void Coroutine__start(Coroutine self) {
+    // Starts a coroutine
+    static struct String call_str = String__static("@call");
+    typedef void (*CallFunc)(Object);
+    CallFunc call = Object__dispatch(self->function, &call_str);
+    call(self->function);
 }
 
 void Coroutine__exit() {
@@ -214,21 +210,6 @@ void Coroutine__yield() {
     } else {
         Os_cpanic("No coroutine to yield to");
     }
-}
-
-VoidPtr Coroutine__grow_stack() {
-    // Grows the coroutine stack, and keeps track of the next stack pointer.
-    // Returns the pointer to the next stack.  Each function call has a section
-    // that checks the stack to make sure it has enough remaining space.
-    // Basically, if the stack doesn't have at least 512 bytes left, then a new
-    // stack pointer will be allocated.  Note that this doesn't protect against
-    // calls to native functions using more stack then they should. 
-    if (!Coroutine__stack->next) {
-        Coroutine__stack->next = Boot_calloc(sizeof(struct Coroutine_Stack)); 
-        Coroutine__stack->next->next = 0;
-    }
-    Coroutine__stack = Coroutine__stack->next;
-    return Coroutine__stack->data + COROUTINE_STACK_SIZE - 2;
 }
 
 void Coroutine__iowait() {
@@ -271,4 +252,113 @@ void Coroutine__ioresume(Coroutine self) {
     Coroutine__swap(Coroutine__current, self);
     Object__refcount_dec((Object)self);
 }
+
+U64 page_round(U64 addr, U64 multiple) {
+    // Rounds 'base' to the nearest 'multiple'
+    return (addr/multiple)*multiple;
+}
+
+U64 page_size() {
+    // Returns the system page size.
+    SYSTEM_INFO info;
+    GetSystemInfo(&info);
+    return info.dwPageSize*8; 
+}
+
+#ifdef WINDOWS
+void Coroutine__commit_page(Coroutine self, U64 addr) {
+    // Ensures that 'addr' is allocated, and that the next page in the stack is
+    // a guard page.
+
+    U64 psize = page_size();
+    U64 page = page_round(addr, psize);
+    U64 glen = psize;
+    U64 guard = page-glen;
+    U64 len = self->stack_end-page;
+    assert(page < self->stack_end);
+    // Allocate all pages between stack_min and the current page.
+    if (!VirtualAlloc((LPVOID)page, len, MEM_COMMIT, PAGE_READWRITE)) {
+        abort();     
+    }
+    // Create a guard page right after the current page.
+    if (!VirtualAlloc((LPVOID)guard, glen, MEM_COMMIT, PAGE_READWRITE|PAGE_GUARD)) {
+        abort();     
+    }
+}
+#endif
+
+#ifdef WINDOWS
+CoroutineStack CoroutineStack__init() {
+    // Lazily initializes a large stack for the coroutine.  Initially, the
+    // coroutine stack is quite small, to lower memory usage.  As the stack
+    // grows, the Coroutine__exception handler will commit memory pages for the
+    // coroutine.
+    U64 size = sizeof(struct CoroutineStack);
+    CoroutineStack ret = VirtualAlloc(0, size, MEM_RESERVE, PAGE_READWRITE);
+    if (!ret) {
+        Boot_abort();
+    }
+    return ret;
+}
+#endif
+
+#ifdef WINDOWS
+
+void pexcept(DWORD code) {
+    // Print out the error, b/c Windows doesn't normally print an error during
+    // an exception/signal like Linux and OS X do.
+    switch (code) {
+    case EXCEPTION_ACCESS_VIOLATION: fprintf(stderr, "Access violation/segmentation fault\n"); break;
+    case EXCEPTION_DATATYPE_MISALIGNMENT: fprintf(stderr, "Datatype misalignment\n"); break;
+    case EXCEPTION_FLT_DIVIDE_BY_ZERO: fprintf(stderr, "Divide by zero\n"); break;
+    case EXCEPTION_FLT_DENORMAL_OPERAND: fprintf(stderr, "Floating point exception\n"); break;
+    case EXCEPTION_FLT_INEXACT_RESULT: fprintf(stderr, "Floating point exception\n"); break;
+    case EXCEPTION_FLT_OVERFLOW: fprintf(stderr, "Floating point exception\n"); break;
+    case EXCEPTION_FLT_STACK_CHECK: fprintf(stderr, "Floating point exception\n"); break;
+    case EXCEPTION_FLT_UNDERFLOW: fprintf(stderr, "Floating point exception\n"); break;
+    case EXCEPTION_ILLEGAL_INSTRUCTION: fprintf(stderr, "Illegal instruction\n"); break;
+    case EXCEPTION_IN_PAGE_ERROR: fprintf(stderr, "Page error\n"); break;
+    case EXCEPTION_INT_DIVIDE_BY_ZERO: fprintf(stderr, "Divide by zero\n"); break;
+    case EXCEPTION_INT_OVERFLOW: fprintf(stderr, "Integer overflow\n"); break;
+    case EXCEPTION_INVALID_DISPOSITION: fprintf(stderr, "Internal error\n"); break;
+    case EXCEPTION_NONCONTINUABLE_EXCEPTION: fprintf(stderr, "Internal error\n"); break;
+    case EXCEPTION_PRIV_INSTRUCTION: fprintf(stderr, "Illegal instruction\n"); break;
+    case EXCEPTION_SINGLE_STEP: break;
+    case EXCEPTION_STACK_OVERFLOW: fprintf(stderr, "Stack overflow\n"); break;
+    }
+}
+
+LONG WINAPI Coroutine__exception(LPEXCEPTION_POINTERS info) {
+    // From MSDN: The first element of the array contains a read-write flag
+    // that indicates the type of operation that caused the access violation.
+    // If this value is zero, the thread attempted to read the inaccessible
+    // data. If this value is 1, the thread attempted to write to an
+    // inaccessible address. If this value is 8, the thread causes a user-mode
+    // data execution prevention (DEP) violation.  The second array element
+    // specifies the virtual address of the inaccessible data.
+    U64 stack_start = (U64)Coroutine__current->stack;
+    U64 stack_end = Coroutine__current->stack_end;
+    U64 type = (U64)info->ExceptionRecord->ExceptionInformation[0];
+    U64 addr = (U64)info->ExceptionRecord->ExceptionInformation[1];
+	DWORD code = info->ExceptionRecord->ExceptionCode;
+    if (type != 0 && type != 1) {
+        pexcept(code);
+        return EXCEPTION_CONTINUE_SEARCH;
+    } else if (Coroutine__current == &Coroutine__main) {
+        pexcept(code);
+        return EXCEPTION_CONTINUE_SEARCH;
+    } else if (addr < stack_start || addr >= stack_end) {
+        pexcept(code);
+        return EXCEPTION_CONTINUE_SEARCH;
+    } else if (code == EXCEPTION_ACCESS_VIOLATION) {
+        Coroutine__commit_page(Coroutine__current, addr);
+        return EXCEPTION_CONTINUE_EXECUTION;
+    } else if (code == STATUS_GUARD_PAGE_VIOLATION) {
+        Coroutine__commit_page(Coroutine__current, addr);
+        return EXCEPTION_CONTINUE_EXECUTION;
+    }
+    pexcept(code);
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
 

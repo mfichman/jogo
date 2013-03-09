@@ -22,13 +22,15 @@
 
 #ifndef JOGO_COROUTINE_H
 #define JOGO_COROUTINE_H
+#ifdef WINDOWS
+#include <windows.h>
+#endif
 
 #include "Primitives.h"
 
-typedef struct Coroutine_Stack* Coroutine_Stack;
-struct Coroutine_Stack {
+typedef struct CoroutineStack* CoroutineStack;
+struct CoroutineStack {
     Int data[COROUTINE_STACK_SIZE];
-    struct Coroutine_Stack* next; // Pointer to the next stack
 };
 
 extern Int CoroutineStatus_NEW;
@@ -44,28 +46,35 @@ struct Coroutine {
     Object function;  //16
     Int status; // 24
 
-    // NOTE: If the offset of this field changes, the assembly must be modified
-    // accordingly. 
+    // NOTE: If the offset of this field changes, the assembly in
+    // Coroutine*.asm must be modified accordingly. 
     Int sp; // 32 
 
     Coroutine caller; // 40
-    Coroutine_Stack stack; // 48
+    CoroutineStack stack; // 48
+    U64 stack_end;
 };
 
 Coroutine Coroutine__init(Object function);
 void Coroutine_resume(Coroutine self); 
+void Coroutine__start(Coroutine self);
 void Coroutine__swap(Coroutine from, Coroutine to);
 void Coroutine__yield();
 void Coroutine__exit();
 void Coroutine__call(Coroutine self);
 void Coroutine__iowait();
 void Coroutine__ioresume(Coroutine self);
-VoidPtr Coroutine__grow_stack();
+extern void Coroutine__vtable();
+CoroutineStack CoroutineStack__init();
 
-extern Coroutine_Stack Coroutine__stack;
 extern Coroutine Coroutine__current;
 extern struct Coroutine Coroutine__main;
-extern void Coroutine__vtable();
 extern Int Exception__current;
+
+#ifdef WINDOWS
+// This function catches segfaults and grows the coroutine stack.
+LONG WINAPI Coroutine__exception(LPEXCEPTION_POINTERS info);
+void Coroutine__commit_page(Coroutine self, U64 addr);
+#endif
 
 #endif

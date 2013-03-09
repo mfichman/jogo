@@ -32,6 +32,7 @@
 #include "Queue.h"
 #if defined(WINDOWS)
 #include <windows.h>
+#include <winnt.h>
 #elif defined(LINUX)
 #include <unistd.h>
 #include <errno.h>
@@ -53,7 +54,7 @@ Io_Manager Io_Manager__init() {
     WSADATA data;
     // Disable error dialog boxes
     SetErrorMode(GetErrorMode()|SEM_NOGPFAULTERRORBOX); 
-    
+    AddVectoredExceptionHandler(1, Coroutine__exception);
     if (WSAStartup(version, &data) != 0) {
         Boot_abort();
     }

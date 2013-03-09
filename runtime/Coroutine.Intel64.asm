@@ -52,11 +52,6 @@ extern  _%1
 
 cglobal Coroutine__swap
 
-; Pointer to the current top-of-stack.  This is used to determine space
-; remaining on the stack, so that a new stack segment can be allocated if
-; necessary.  See Coroutine__grow_stack().
-cextern Coroutine__stack 
-
 ; Pointer to the current coroutine.  Used by Coroutine__resume() to set the
 ; 'caller' of the coroutine that is being resumed, and by Coroutine__yield() to
 ; switch from the current coroutine to the caller.
@@ -72,7 +67,6 @@ Coroutine__swap: ; (from, to)
     mov [Coroutine__current], ARG1
     ; Set the 'current coroutine' equal to ARG1
 
-    push qword [Coroutine__stack] ; Save the top-of-stack pointer
     push ARG0
     push rbp
     push rax
@@ -107,5 +101,4 @@ Coroutine__swap: ; (from, to)
     pop rax
     pop rbp
     pop ARG0
-    pop qword [Coroutine__stack] ; Restore the top-of-stack pointer
     ret

@@ -113,7 +113,6 @@ private:
     void sub(RegisterId res, RegisterId a1, RegisterId a2);
     void mul(RegisterId res, RegisterId a1, RegisterId a2);
     void div(RegisterId res, RegisterId a1, RegisterId a2);
-    void stack_check(Function* func);
     void neg(RegisterId res, RegisterId a1);
 
     // Functions for actual x86-64 instructions mnemonics

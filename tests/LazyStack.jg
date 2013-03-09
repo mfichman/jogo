@@ -1,0 +1,20 @@
+# jgtest exec on
+
+
+main() Int {
+
+
+    i = 0
+    coro = Array[Coroutine](10000)
+    # Under normal circumstances, 10,000 coroutines would cause the process to
+    # run out of memory.  However, Jogo allocates coroutine stack pages lazily,
+    # so that they don't use any committed pages until necessary.
+    while i < 10000 {
+        coro.push(Coroutine(func() {
+            Io::println('hi')
+        }))
+        ++i
+    }
+    Io::println('done!')
+    ret 0
+}
