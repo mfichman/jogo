@@ -23,8 +23,10 @@
 #ifndef JOGO_COROUTINE_H
 #define JOGO_COROUTINE_H
 
-#ifdef WINDOWS
+#if defined(WINDOWS)
 #include <windows.h>
+#elif defined(LINUX)
+#include <signal.h>
 #else
 #include <signal.h>
 #endif
@@ -80,7 +82,7 @@ extern Int Exception__current;
 // This function catches segfaults and grows the coroutine stack.
 LONG WINAPI Coroutine__fault(LPEXCEPTION_POINTERS info);
 #else
-void Coroutine__fault(int signo, siginfo_t* info, void* context);
+void Coroutine__fault(int sig, siginfo_t* info, void* context);
 #endif
 
 #endif

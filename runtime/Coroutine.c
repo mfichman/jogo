@@ -269,7 +269,7 @@ U64 page_size() {
     GetSystemInfo(&info);
     return info.dwPageSize*8; 
 #else
-    return getpagesize();
+    return sysconf(_SC_PAGESIZE);
 #endif
 }
 
@@ -285,7 +285,11 @@ CoroutineStack CoroutineStack__init() {
         Boot_abort();
     }
 #else
+#ifdef LINUX
+    CoroutineStack ret = mmap(0, size, PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+#else
     CoroutineStack ret = mmap(0, size, PROT_NONE, MAP_ANON|MAP_PRIVATE, -1, 0);
+#endif
     if (ret == MAP_FAILED) {
         Boot_abort();
     }
@@ -391,7 +395,7 @@ LONG WINAPI Coroutine__fault(LPEXCEPTION_POINTERS info) {
 #ifndef WINDOWS
 static struct sigaction sigsegv;
 static struct sigaction sigbus;
-static char sigstack[SIGSTKSZ];
+static char signalstack[SIGSTKSZ];
 
 void Coroutine__set_signals() {
     // Set up the signal handlers for SIGBUS/SIGSEGV to catch stack protection
@@ -405,9 +409,9 @@ void Coroutine__set_signals() {
     sigaction(SIGBUS, &sa, &sigbus); 
   
     stack_t stack;
-    stack.ss_sp = sigstack;
+    stack.ss_sp = signalstack;
     stack.ss_flags = 0;
-    stack.ss_size = sizeof(sigstack);
+    stack.ss_size = sizeof(signalstack);
     sigaltstack(&stack, 0);
 }
 #endif

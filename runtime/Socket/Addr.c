@@ -32,7 +32,6 @@
 #include <winsock2.h>
 #include <windows.h>
 #else
-#define __USE_POSIX
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

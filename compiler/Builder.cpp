@@ -547,6 +547,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
         ss << " -O0 -g";
     }
     ss << " -DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
+    ss << " -D_XOPEN_SOURCE=700";
 #endif
 
 #if defined(WINDOWS)

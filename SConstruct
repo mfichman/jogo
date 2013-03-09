@@ -90,7 +90,7 @@ else:
     env.Append(CXXFLAGS = '-Wno-sign-compare')
     env.Append(CXXFLAGS = '-DVERSION=\\"'+version+'\\"')
     env.Append(CFLAGS = '-DCOROUTINE_STACK_SIZE='+stack_size)
-    env.Append(CFLAGS = '-Wall -Werror -std=c99 -Iruntime')
+    env.Append(CFLAGS = '-Wall -Werror -Iruntime')
     if env['PLATFORM'] == 'darwin':
         dist_path = 'dist/root/usr/local'
     else:

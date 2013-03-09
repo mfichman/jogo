@@ -28,6 +28,7 @@
 #include <iostream>
 #include <cassert>
 #include <cerrno>
+#include <cstdlib>
 
 #ifdef WINDOWS
 #define strtoll _strtoi64

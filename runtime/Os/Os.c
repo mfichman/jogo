@@ -28,7 +28,6 @@
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
-#define __USE_POSIX
 #include <netdb.h>
 #include <errno.h>
 #endif
