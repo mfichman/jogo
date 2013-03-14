@@ -29,5 +29,6 @@ main() Int {
     d Intf = { 'a': 'b', 'c': 'd', } # This is OK
     e Int = { 'e': 'e' }
     f NoInsertFunc = { 'f': 'f' }
+    g = { q: 'b' } # Undef variable
     ret 0
 }

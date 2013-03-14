@@ -631,7 +631,9 @@ void SemanticAnalyzer::operator()(IdentifierRef* expression) {
     Call::Ptr call = dynamic_cast<Call*>(expression->parent());
     Type::Ptr type; // Class of the object stored in 'expression'
 
-    if (Variable::Ptr var = variable(id)) {
+    if (expression->type()) {
+        return;
+    } else if (Variable::Ptr var = variable(id)) {
         type = var->type();
     } else if (class_ && scope->is_empty()) {
         Attribute::Ptr attr = class_->attribute(id);
@@ -1072,10 +1074,10 @@ void SemanticAnalyzer::operator()(Constant* feature) {
             feature->type(clazz->type());
         } else if (!feature->declared_type()->is_top()) {
             feature->type(feature->declared_type());
-       	} else {
+        } else {
             err_ << feature->location();
-       		err_ << "Missing constant type or initializer\n";
-       		env_->error();
+            err_ << "Missing constant type or initializer\n";
+            env_->error();
         }
     } else {
         err_ << feature->location();

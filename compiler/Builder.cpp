@@ -80,6 +80,7 @@ Builder::Builder(Environment* env) :
         }
         exit(1);
     }
+    
     // Find a valid 64-bit MSVC compiler configuration
 
     std::string program_files = getenv("PROGRAMFILES");

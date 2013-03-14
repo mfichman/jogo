@@ -45,3 +45,11 @@ Client::write(req Request) Response {
     res.read(socket.stream)
     ret res
 }
+
+Client::get(path String) Response {
+    # Issues a new GET request using the current connection.
+    req = Request()
+    req.headers['Host'] = host
+    #req.path = Uri::Path(path)
+    ret self.write(req)
+}
