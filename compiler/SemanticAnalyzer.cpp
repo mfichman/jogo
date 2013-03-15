@@ -1102,6 +1102,19 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     // Save the current class and variable scope.
     ContextAnchor context(this);
     class_ = dynamic_cast<Class*>(feature->parent());
+    if (class_->is_enum()) {
+        if (feature->is_embedded()) {
+            err_ << feature->location();
+            err_ << "Cannot embed type '" << feature->name() << "' in ";
+            err_ << "enum '" << class_->qualified_name() << "'\n";
+            env_->error();
+        } else {
+            err_ << feature->location();
+            err_ << "Cannot embed attribute '" << feature->name() << "' in ";
+            err_ << "enum '" << class_->qualified_name() << "'\n";
+            env_->error();
+        }
+    }
 
     // Check for self-embedded types
     if(feature->is_component() && feature->declared_type()->clazz() == class_) {
