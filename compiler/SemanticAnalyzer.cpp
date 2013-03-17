@@ -412,13 +412,8 @@ void SemanticAnalyzer::operator()(Member* expression) {
         expression->type(env_->top_type());
         return;
     }
-
     Class::Ptr clazz = type->clazz();
-    if (!clazz) {
-        expression->type(env_->top_type());
-        return;
-    }
-    
+    assert(clazz && "Class not found");
     if (call) {
         // First lookup: check to see if the member with name 'id' is present
         // in the class corresponding to the type of the LHS of the '.'
@@ -1262,13 +1257,17 @@ void SemanticAnalyzer::operator()(Type* type) {
     if (type->is_top() || type->is_void()) {
         return;
     }
-    if (type->is_generic() && class_) {
-        Type::Ptr ct = class_->type();
-        for (Generic::Ptr gen = ct->generics(); gen; gen = gen->next()) {
-            if (gen->type()->name() == type->name()) {
-                return;
-            } 
+    if (type->is_generic()) {
+        if (class_) {
+           Type::Ptr ct = class_->type();
+           for (Generic::Ptr gen = ct->generics(); gen; gen = gen->next()) {
+               if (gen->type()->name() == type->name()) {
+                   return;
+               } 
+           }
         }
+        
+        // Create a new type to match the generic type.
         err_ << type->location();
         err_ << "Undefined generic type '" << type->name() << "'\n";
         env_->error();
