@@ -36,9 +36,9 @@ struct Io_Stream {
     Io_Buffer read_buf;
     Io_Buffer write_buf;
     Int status;
-    Int mode;
     Int type;
     Int error;
+    Int mode;
 #ifdef WINDOWS
     Io_Overlapped op;
 #elif DARWIN

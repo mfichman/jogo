@@ -22,15 +22,15 @@ Listener < Object {
     # Stream-oriented (TCP) server socket.  This class is used to listen for
     # socket connections from remote hosts.
 
-    handle immutable Int
+    handle Int
     # Handle to the underlying socket descriptor.
 
-    addr Addr = Addr("", 0)
+    addr mutable = Addr("", 0)
     # Address that the socket is bound to.  Note that setting this value will
     # close the current listening socket and reopen the socket using the new
     # address.
 
-    backlog Int = 16
+    backlog mutable Int = 16
     # Hint used to limit the number of outstanding connections in the socket's
     # listening queue.  This corresponds to the traditional 'backlog' parameter
     # to the Berkeley sockets listen() function call.

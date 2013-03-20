@@ -25,10 +25,10 @@ Hash[:k,:v] < Object {
     # good hash function.  Worst case lookup is linear with respect to the
     # number of objects in the hash.
 
-    capacity immutable Int
+    capacity Int
     # Returns the current capacity of the hash.
 
-    count immutable Int
+    count Int
     # Returns the number of items in the hash.
     
     @init() native {

@@ -359,7 +359,7 @@ Class* Parser::alternate(String* name) {
 		return new Class(loc, env_, type, constant_list()); 
     default:
         err_ << location() << "Expected a type or constant, not ";
-        err_ << token() << "'\n";
+        err_ << token() << "\n";
         error();
         return 0;
     }
@@ -792,7 +792,7 @@ Feature::Flags Parser::flags() {
     while (true) {
         switch (token().type()) {
         case Token::NATIVE: next(); flags |= Feature::NATIVE; break;
-        case Token::IMMUTABLE: next(); flags |= Feature::IMMUTABLE; break;
+        case Token::MUTABLE: next(); flags |= Feature::MUTABLE; break;
         case Token::EMBEDDED: next(); flags |= Feature::EMBEDDED; break;
         case Token::PRIVATE: next(); flags |= Feature::PRIVATE; break;
         case Token::WEAK: next(); flags |= Feature::WEAK; break;
@@ -823,7 +823,8 @@ Expression* Parser::expression_list() {
 
 Expression* Parser::expression() {
     if (token() == Token::IDENTIFIER) {
-        if (token(1) == Token::ASSIGN || token(1) == Token::TYPE) {
+        if (token(1) == Token::ASSIGN || token(1) == Token::TYPE 
+            || token(1) == Token::MUTABLE) {
             return assignment();
         }
     } else if (token() == Token::FUNC) {
@@ -860,6 +861,11 @@ Assignment* Parser::assignment() {
     LocationAnchor loc(this);
     String::Ptr id = identifier();
     Type::Ptr type = env_->top_type();
+    Assignment::Flags flags = 0;
+    if (token() == Token::MUTABLE) {
+        flags |= Assignment::MUTABLE; 
+        next();
+    }
     if (token() == Token::TYPE) {
         type = Parser::type(); 
     }
@@ -870,7 +876,7 @@ Assignment* Parser::assignment() {
     } else {
         init = new Empty(loc);
     }
-    return new Assignment(loc, id, type, init);
+    return new Assignment(loc, id, type, init, flags);
 }
 
 Expression* Parser::logical_or() {

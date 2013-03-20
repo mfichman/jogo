@@ -1,8 +1,8 @@
 # jgtest exec on
 
 boolexpr1() {
-    a = true
-    b = false
+    a mutable = true
+    b mutable = false
 
     if a and a {
         Boot::print_str("1\n")
@@ -299,7 +299,7 @@ boolexpr7() {
 }
 
 boolexpr8() {
-    result = 1 < 2
+    result mutable = 1 < 2
     if result {
         Boot::print_str("48\n")
     } else {

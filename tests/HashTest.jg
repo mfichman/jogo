@@ -2,7 +2,7 @@
 
 main() Int {
 
-    hash = Hash[String,String]()
+    hash mutable = Hash[String,String]()
     hash['test'] = 'foo'
     Io::println(hash['test'])    
     hash['test'] = 'bar'
@@ -10,7 +10,7 @@ main() Int {
 
     Io::println(hash.count.str)
 
-    i = 0
+    i mutable = 0
     while i < 1000 {
         str = i.str
         hash[str] = str
@@ -69,7 +69,7 @@ main() Int {
         Io::println("#{pair.first}, #{pair.second}")
     }
 
-    hash = Hash[String,String]()
+    hash mutable = Hash[String,String]()
     
     for value in hash.values {
         Io::println(value)

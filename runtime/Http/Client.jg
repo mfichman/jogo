@@ -23,10 +23,10 @@ Client < Object {
     # A client object outputs request objects to the stream specified by the
     # 'stream' attribute.  Optionally, a client can be created via the Http
     # module factory functions (i.e., Http::open).
-    
-    socket immutable Socket::Stream # Stream to be used for issuing requests. 
-    host immutable String # Host the client is connected to
-    port immutable Int # Port the client is connected to
+
+    socket Socket::Stream # Stream to be used for issuing requests. 
+    host String # Host the client is connected to
+    port Int # Port the client is connected to
 }
 
 Client::@init(phost String, pport Int) {

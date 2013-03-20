@@ -767,6 +767,7 @@ void SemanticAnalyzer::operator()(While* statement) {
     // Check the while statement guard type, and then check all the branches.
     Expression::Ptr guard = statement->guard();
     Statement::Ptr block = statement->block();
+    enter_scope();
     guard(this);
     if (!guard->type()->is_boolifiable()) {
         err_ << statement->location();
@@ -776,6 +777,7 @@ void SemanticAnalyzer::operator()(While* statement) {
         env_->error();
     }
     block(this);
+    exit_scope();
     return_ = 0;
 }
 
@@ -830,7 +832,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         // Check to make sure the declared type is valid; if it isn't, then
         // set the variable to top_type and return.
         if (!declared->clazz()) {
-            variable(new Variable(id, Operand(), env_->top_type()));
+            variable(new Variable(id, Operand(), env_->top_type(), !expr->is_mutable()));
             return;
         }
     }
@@ -840,7 +842,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         err_ << init->location();
         err_ << "Void value assigned to variable '" << id << "'\n";
         env_->error();
-        variable(new Variable(id, Operand(), env_->top_type()));
+        variable(new Variable(id, Operand(), env_->top_type(), !expr->is_mutable()));
         return;
     }
     
@@ -1404,10 +1406,11 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
     Expression::Ptr init = expr->initializer();
     attr(this);
 
+    bool immut = attr ? attr->is_immutable() : !expr->is_mutable(); 
     if (declared->is_top()) {
-        variable(new Variable(id, Operand(), expr->type()));
+        variable(new Variable(id, Operand(), expr->type(), immut));
     } else {
-        variable(new Variable(id, Operand(), declared));
+        variable(new Variable(id, Operand(), declared, immut));
     }
 
     // The variable was declared with an explicit type, but the variable
@@ -1457,7 +1460,7 @@ void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
     // Attempt to assign to an immutable var, usually a param
     if (var && var->is_immutable()) {
         err_ << expr->location();
-        err_ << "Value assigned to formal parameter '" << id << "'\n"; 
+        err_ << "Value assigned to immutable variable '" << id << "'\n"; 
         env_->error();
         return;
     }
@@ -1484,8 +1487,9 @@ void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
 
     // Initializer is of the 'Any' type, but the variable type is not.
     // Insert a cast expression.
+    bool immut = attr ? attr->is_immutable() : !expr->is_mutable();
     if (!var) {
-        variable(new Variable(id, Operand(), expr->type())); 
+        variable(new Variable(id, Operand(), expr->type(), immut));
     }
 }
 

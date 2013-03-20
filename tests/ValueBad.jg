@@ -1,13 +1,13 @@
 
 
 Vector < Value {
-    x Int
-    y Int
-    z Int
+    x mutable Int
+    y mutable Int
+    z mutable Int
 }
 
 Params < Value {
-    x Int
+    x mutable Int
 
     @init(x Int) {
         self.x = x

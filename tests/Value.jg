@@ -29,16 +29,16 @@ Vector < Value {
         Io::println("destroy #{x} #{y} #{z}")
     }
 
-    x Int
-    y Int
-    z Int
-    print Printer
+    x mutable Int
+    y mutable Int
+    z mutable Int
+    print mutable Printer
 
 }
 
 Complex < Value {
-    real Int
-    imag Int
+    real mutable Int
+    imag mutable Int
 
     @init(real Int, imag Int) {
         self.real = real
@@ -47,7 +47,7 @@ Complex < Value {
 }
 
 Ref < Object {
-    complex Vector = Vector(7, 7, 7) 
+    complex mutable Vector = Vector(7, 7, 7) 
     bob String 
 }
 
@@ -69,7 +69,7 @@ main() Int {
     Io::println("#{vec2.x} #{vec2.y} #{vec2.z}") 
 
     # Now check allocating in a loop, to be sure we don't run out of mem
-    i = 0 
+    i mutable = 0 
     while i < 1000000 {
         compl = Complex(i, i) 
         ++i
@@ -80,7 +80,7 @@ main() Int {
     Vector(3, 3, 3).z = 30 # destroy 3 3 30 + obj
 
     # Assignment (copy)
-    vec3 = vec1
+    vec3 mutable = vec1
     vec3.z = 10 
 
     # Assignment (copy, with destructor for prev value)
@@ -106,7 +106,7 @@ main() Int {
     x.y = 9
     x.z = 9
     
-    z = x
+    z mutable = x
     z.x = 10
     z.y = 10
     z.z = 10

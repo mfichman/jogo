@@ -25,7 +25,7 @@ HashLike < Object {
 
 Key < Object {
 
-    val Int
+    val mutable Int
 
     @init(val Int) {
         self.val = val
@@ -33,7 +33,7 @@ Key < Object {
 }
 
 main() Int {
-    hash = { 'a': 'one', 'b': 'two' }
+    hash mutable = { 'a': 'one', 'b': 'two' }
     Io::println("#{'a'} => #{hash['a']}")
     Io::println("#{'b'} => #{hash['b']}")
 

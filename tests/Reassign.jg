@@ -1,16 +1,16 @@
 # jgtest exec on
 
 Val < Value {
-    val Int
+    val mutable Int
     @init(val Int) {
         self.val = val
     }
 }
 
 main() Int {
-    x = 0
-    y = x
-    x = x + 1
+    x mutable = 0
+    y mutable = x
+    x mutable = x + 1
     Io::println(y.str)
     Io::println(x.str)
     y = x
@@ -18,8 +18,8 @@ main() Int {
     Io::println(y.str)
     Io::println(x.str)
 
-    a = Val(0)
-    b = a
+    a mutable = Val(0)
+    b mutable = a
     c = b
     a = Val(1) 
     Io::println(b.val.str)

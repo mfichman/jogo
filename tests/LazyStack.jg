@@ -4,7 +4,7 @@
 main() Int {
 
 
-    i = 0
+    i mutable = 0
     coro = Array[Coroutine](10000)
     # Under normal circumstances, 10,000 coroutines would cause the process to
     # run out of memory.  However, Jogo allocates coroutine stack pages lazily,

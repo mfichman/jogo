@@ -22,17 +22,10 @@ Queue[:a] < Object {
     # Implementation of an array-based FIFO queue (uses a circular buffer that
     # resizes when the queue is full).
     
-    capacity immutable Int
-    # Returns the capacity of this queue.
-
-    front immutable Int
-    # Index pointing to the front of the queue.
-    
-    back immutable Int
-    # Index pointing to the back of the queue.
-
-    count immutable Int
-    # Number of elements in the queue.
+    capacity Int # Returns the capacity of this queue.
+    front Int # Index pointing to the front of the queue.
+    back Int # Index pointing to the back of the queue.
+    count Int # Number of elements in the queue.
     
     @init(capacity Int) native {
         # Creates a new queue with capacity for 'capacity' elements.  The queue

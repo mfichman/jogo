@@ -39,13 +39,13 @@ Manager < Object {
     # current coroutine yields or blocks on I/O.   When a task has finished
     # running, the task is removed from the task queue. 
 
-    scheduled immutable Queue[Coroutine]
+    scheduled Queue[Coroutine]
     # Set of tasks that are active and waiting to be scheduled.
 
-    callback immutable Array[ManagerReactor]
+    callback Array[ManagerReactor]
     # List of reactors to the Manager state
 
-    handle immutable Int
+    handle Int
     # Handle to the file descriptor that is used for OS-level polling.  On
     # BSD-based systems, it is a kqueue fd; for Linux, it is an epoll fd; and
     # for Windows, it is an I/O completion port.
@@ -54,7 +54,7 @@ Manager < Object {
     # Number of coroutines waiting on I/O.  FixMe: Make this a set of waiting
     # coroutines rather than a single int.
 
-    iobytes immutable Int
+    iobytes Int
     # Number of bytes read by the last I/O operation, if available.
 
     @init() native private {
@@ -82,7 +82,7 @@ Manager < Object {
         # and begin executing it.  If there are no more tasks, and no
         # outstanding I/O requests, then return.
         while scheduled.count > 0 or waiting > 0 {
-            count = scheduled.count
+            count mutable = scheduled.count
             while count > 0 {
                 # Dequeue scheduled tasks until the entire queue is empty.  At
                 # that point, all coroutines have either exited, or are waiting

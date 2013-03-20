@@ -2,7 +2,7 @@
 
 
 Test < Object {
-    addr immutable = Socket::Addr('', 0)
+    addr = Socket::Addr('', 0)
     
 }
 

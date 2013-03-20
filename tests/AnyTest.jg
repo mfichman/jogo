@@ -49,8 +49,8 @@ ret_any2() Any {
 
 main() Int {
     
-    any Any = "hello world\n"
-    string String = any
+    any mutable Any = "hello world\n"
+    string mutable String = any
 
     Io::print(string)
 
@@ -83,7 +83,7 @@ main() Int {
     g2.test(any)
 
     any = 9
-    int Int = any
+    int mutable Int = any
 
     Io::print("#{int}\n")
 

@@ -37,7 +37,7 @@ String < Object {
 
     @less(string String) Bool {
         # Returns true if this string is lexically less than 'string'.
-        i = 0
+        i mutable = 0
         while i < self.len or i < string.len {
             if self[i] < string[i] {
                 ++i
@@ -75,7 +75,7 @@ String < Object {
         if string.len > self.len {
             ret false
         }
-        i = 0
+        i mutable = 0
         while i < string.len {
             if string[i] != self[i] {
                 ret false
@@ -91,7 +91,7 @@ String < Object {
         if string.len > self.len {
             ret false
         }
-        i = 1
+        i mutable = 1
         while i <= string.len {
             if string[-i] != self[-i] {
                 ret false

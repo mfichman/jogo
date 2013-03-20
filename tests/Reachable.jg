@@ -2,7 +2,7 @@
 
 main() Int {
     output = Io::stdout()
-    i = 0
+    i mutable = 0
     while i < 10 {
         output.println("#{i}")
         ++i

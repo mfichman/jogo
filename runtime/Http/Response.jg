@@ -22,13 +22,13 @@ Response < Object {
     # Parses and stores an HTTP response.  The headers are read first, and the
     # remaining data is stored in the 'data' attribute.
    
-    status Status 
+    status mutable Status 
     # The status of the request.
 
-    headers immutable = Hash[String,String]()
+    headers = Hash[String,String]()
     # Set of response headers read from the server.    
 
-    body String
+    body mutable String
     # Body of the request (following the headers).
 
 }

@@ -34,11 +34,11 @@ Constr < Object {
     @init(param ArrayLike) {
         ar = ["quack"]
     }
-    ar ArrayLike = ["quatro"]
+    ar mutable ArrayLike = ["quatro"]
 }
 
 main() Int {
-    list = ["1", "2", "3", "4"]
+    list mutable = ["1", "2", "3", "4"]
     for x in list {
         Io::println(x)
     } 

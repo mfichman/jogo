@@ -4,7 +4,7 @@
 # jgtest exec on
  
 StackObj < Object {
-    num Int
+    num mutable Int
 
     @init(num Int) {
         self.num = num

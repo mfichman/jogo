@@ -5,7 +5,7 @@ SemantBad.jg:19:5: Function 'bar' must return a value
 SemantBad.jg:35:5: Duplicate definition of function 'bar'
 SemantBad.jg:57:1: Duplicate definition of class 'Bob'
 SemantBad.jg:62:5: Statement is unreachable
-SemantBad.jg:67:5: Value assigned to formal parameter 'a'
+SemantBad.jg:67:5: Value assigned to immutable variable 'a'
 SemantBad.jg:71:11: Undefined generic type ':b'
 SemantBad.jg:73:13: Undefined generic type ':b'
 SemantBad.jg:73:17: Undefined generic type ':b'
@@ -209,23 +209,6 @@ Module
       type: Void
       block: Block
     feature4: Function
-      name: value=
-      type: Void
-      formal0: Formal
-        name: self
-        type: Container[:a]
-      formal1: Formal
-        name: _arg0
-        type: :b
-      block: Block
-        child0: Statement
-          expression: Assignment
-            name: value
-            type: <<top>>
-            declared: <<top>>
-            initializer: IdentifierRef
-              name: _arg0
-    feature5: Function
       name: value?
       type: :b
       formal0: Formal
@@ -254,23 +237,6 @@ Module
       type: Void
       block: Block
     feature3: Function
-      name: one=
-      type: Void
-      formal0: Formal
-        name: self
-        type: One[:a]
-      formal1: Formal
-        name: _arg0
-        type: One[String,String]
-      block: Block
-        child0: Statement
-          expression: Assignment
-            name: one
-            type: <<top>>
-            declared: <<top>>
-            initializer: IdentifierRef
-              name: _arg0
-    feature4: Function
       name: one?
       type: One[String,String]
       formal0: Formal
@@ -303,23 +269,6 @@ Module
       type: Void
       block: Block
     feature4: Function
-      name: two=
-      type: Void
-      formal0: Formal
-        name: self
-        type: Two[:a,:b]
-      formal1: Formal
-        name: _arg0
-        type: Two[String]
-      block: Block
-        child0: Statement
-          expression: Assignment
-            name: two
-            type: <<top>>
-            declared: <<top>>
-            initializer: IdentifierRef
-              name: _arg0
-    feature5: Function
       name: two?
       type: Two[String]
       formal0: Formal
@@ -329,24 +278,7 @@ Module
         child0: Return
           expression: IdentifierRef
             name: two
-    feature6: Function
-      name: three=
-      type: Void
-      formal0: Formal
-        name: self
-        type: Two[:a,:b]
-      formal1: Formal
-        name: _arg0
-        type: Two
-      block: Block
-        child0: Statement
-          expression: Assignment
-            name: three
-            type: <<top>>
-            declared: <<top>>
-            initializer: IdentifierRef
-              name: _arg0
-    feature7: Function
+    feature5: Function
       name: three?
       type: Two
       formal0: Formal

@@ -38,16 +38,16 @@ Request < Object {
     # be sent to the server.  Request objects may be reused multiple times for
     # efficiency.
 
-    method = Method::GET
+    method mutable = Method::GET
     # The method to use for communication with the server.
 
-    path = Uri::Path('')
+    path mutable = Uri::Path('')
     # Path to the resource requested by the server. 
 
-    version = 'HTTP/1.1'
+    version mutable = 'HTTP/1.1'
     # HTTP version to use.
 
-    headers immutable = Hash[String, String]()
+    headers = Hash[String, String]()
     # Set of headers to use with the request.  A few headers are set by
     # default, but may be overridden:
     # * Connection: close
@@ -55,7 +55,7 @@ Request < Object {
     # * Accept-Charset: utf-8
     # * Accept-Encoding: identity 
 
-    body String
+    body mutable String
     # Body of the request (optional)
 }
 

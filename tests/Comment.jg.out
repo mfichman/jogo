@@ -49,23 +49,6 @@ Module
       type: Void
       block: Block
     feature5: Function
-      name: x=
-      type: Void
-      formal0: Formal
-        name: self
-        type: Comment
-      formal1: Formal
-        name: _arg0
-        type: String
-      block: Block
-        child0: Statement
-          expression: Assignment
-            name: x
-            type: String
-            declared: <<top>>
-            initializer: IdentifierRef
-              name: _arg0
-    feature6: Function
       name: x?
       type: String
       formal0: Formal

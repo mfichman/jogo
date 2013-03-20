@@ -22,9 +22,9 @@ Vec3 < Value {
     # 3-dimensional floating point vector or point.  Provides common vector 
     # operations, e.g., dot product, cross product, length.
 
-    x Float 
-    y Float
-    z Float
+    x mutable Float 
+    y mutable Float
+    z mutable Float
 
     @init(xs Float, ys Float, zs Float) {
         # Initializes a new vector with the given components.

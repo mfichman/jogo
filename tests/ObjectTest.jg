@@ -2,7 +2,7 @@
 
 TestObject < Object {
 
-    initialized = 137
+    initialized mutable = 137
     bar Int
     baz Bool
 

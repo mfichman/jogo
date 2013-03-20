@@ -25,21 +25,21 @@ Addr < Value {
     # also be used in place of an IP address, in which case the IP address is
     # looked up automatically.
 
-    host immutable String
+    host String
     # The hostname corresponding to 'ip'.  If 'ip' is set through the
     # constructor, then the system will look up the hostname when this
     # attribute is first accessed.
 
-    ip immutable Int
+    ip Int
     # The host's IPv4 or IPv6 address.  If 'host' is set through the
     # constructor, then the system will look up the IP address when this
     # attribute is first accessed.
 
-    port immutable Int 
+    port Int 
     # The host's port number; must be 16-bit value.  FIXME: Should be a Port
     # value type.
 
-    error immutable Int
+    error Int
     # Set if the address is not valid.
 
     @init(str String, port Int) native {

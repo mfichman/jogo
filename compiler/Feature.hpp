@@ -63,7 +63,8 @@ public:
     bool is_private() const { return flags_ & PRIVATE; }
     bool is_native() const { return flags_ & NATIVE; }
     bool is_weak() const { return flags_ & WEAK; }
-    bool is_immutable() const { return flags_ & IMMUTABLE; }
+    bool is_mutable() const { return flags_ & MUTABLE; }
+    bool is_immutable() const { return !is_mutable(); }
     bool is_closure() const { return flags_ & CLOSURE; }
     bool is_embedded() const { return flags_ & EMBEDDED; }
     bool is_component() const { return flags_ & COMPONENT; }
@@ -77,7 +78,7 @@ public:
     static const int PRIVATE = 0x1;
     static const int NATIVE = 0x2;
     static const int WEAK = 0x4;
-    static const int IMMUTABLE = 0x8;
+    static const int MUTABLE = 0x8;
     static const int CLOSURE = 0x20;
     static const int EMBEDDED = 0x40; 
     static const int COMPONENT = 0x80;

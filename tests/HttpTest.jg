@@ -2,7 +2,7 @@
 
 
 main() Int {
-    fd = File::open('HttpTestReq.txt', 'r')
+    fd mutable = File::open('HttpTestReq.txt', 'r')
     req = Http::Request()
     req.read(fd)    
     req.write(Io::stdout()) 

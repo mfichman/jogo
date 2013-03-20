@@ -5,9 +5,9 @@ Vector < Value {
         ret "#{x}, #{y}, #{z}"
     }
 
-    x Float
-    y Float
-    z Float
+    x mutable Float
+    y mutable Float
+    z mutable Float
 }
 
 function(a Float, b Float, c Float, d Float, e Float, f Float, g Float) {

@@ -49,7 +49,7 @@ Token < Value {
 Tokenizer < Object {
     # Reads input from a Unicode character iterator and outputs a valid stream
     # of JSON tokens.  Can be used as an Iterator[Json::Token].
-    reader immutable Iter[Char] # Input from the user
+    reader Iter[Char] # Input from the user
     buf private Char # Next character to give to the reader
     expect private TokenType # Next token type to expect
     out private = Token()

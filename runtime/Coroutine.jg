@@ -30,16 +30,16 @@ Coroutine < Object {
     # causes the execution of the coroutine to continue from the last call to
     # yield().
 
-    function immutable CoroutineFunc
+    function CoroutineFunc
     # This is the function that the coroutine will execute when it is run.
 
-    status immutable CoroutineStatus
+    status CoroutineStatus
     # This attribute is set to NEW if the coroutine was just created, DEAD if
     # the coroutine has finished executing, SUSPENDED if the coroutine is not
     # the running coroutine, and RUNNING if the coroutine is the active
     # coroutine.
 
-    stack_size immutable Int
+    stack_size Int
     # Returns the current stack size of the coroutine.  This value can grow
     # over time.
 

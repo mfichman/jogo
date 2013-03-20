@@ -37,9 +37,9 @@ open(uri Uri::Uri) Io::Stream {
 }
 
 Authority < Value {
-    user immutable String 
-    host immutable String
-    port immutable String # * DIGIT
+    user String 
+    host String
+    port String # * DIGIT
     @init(puser String, phost String, pport String) {
         user = puser
         host = phost
@@ -48,14 +48,14 @@ Authority < Value {
 }
 
 Path < Value {
-    value embedded immutable String
+    value embedded String
     @init(pvalue String) {
         value = pvalue
     }
 }
 
 Query < Value {
-    value embedded immutable String 
+    value embedded String 
     @init(pvalue String) {
         value = pvalue
     }
@@ -63,20 +63,19 @@ Query < Value {
 
 Uri < Value {
     # Defines a generic URI as defined by RFC3986.    
-    scheme String # ALPHA * (ALPHA | DIGIT | '+' | '-' | '.' )
-    authority = Authority('', '', '') # user '@' host ':' port
-    path = Path('') # * ANY  
-    query = Query('') # '?' * ANY
-    fragment String # '#' * ANY
+    scheme mutable String # ALPHA * (ALPHA | DIGIT | '+' | '-' | '.' )
+    authority mutable = Authority('', '', '') # user '@' host ':' port
+    path mutable = Path('') # * ANY  
+    query mutable = Query('') # '?' * ANY
+    fragment mutable String # '#' * ANY
 }
-
 
 Uri::@init(value String) {
     # Parses a URI, given a string as input.
     if value.empty { 
         ret
     }
-    i = self.parse_scheme(value, 0)
+    i mutable = self.parse_scheme(value, 0)
     i = self.parse_authority(value, i)
     i = self.parse_path(value, i)
     i = self.parse_query(value, i)
@@ -101,8 +100,8 @@ Uri::is_reserved(char Byte) Bool {
 
 Uri::parse_scheme(value String, start Int) private Int {
     # Parse everything up to the first ':' character
-    i = start
-    while (c = value[i]) and c != ':'b and not self.is_reserved(c) {
+    i mutable = start
+    while (c mutable = value[i]) and c != ':'b and not self.is_reserved(c) {
         ++i
         c = value[i]
     }
@@ -118,13 +117,13 @@ Uri::parse_authority(value String, ind Int) private Int {
     if value[ind] != '/'b or value[ind+1] != '/'b {
         ret ind
     }
-    i = ind + 2
-    start = ind + 2
+    i mutable = ind + 2
+    start mutable = ind + 2
         
     while (c = value[i]) and c != '@'b and not self.is_reserved(c) {
         ++i
     }
-    user = ''
+    user mutable = ''
     if value[i] == '@'b {
         user = value.slice(start, i)
         start = i + 1
@@ -134,7 +133,7 @@ Uri::parse_authority(value String, ind Int) private Int {
     while (c = value[i]) and c != ':'b and not self.is_reserved(c) {
         ++i
     }
-    host = ''
+    host mutable = ''
     if value[i] == ':'b or value[i] == '/'b {
         host = value.slice(start, i)
         start = i + 1
@@ -151,7 +150,8 @@ Uri::parse_authority(value String, ind Int) private Int {
 
 Uri::parse_path(value String, start Int) private Int {
     # Parse to the first ?
-    i = start
+    i mutable = start
+    c mutable Byte
     while (c = value[i]) and (c == '/'b or not self.is_reserved(c)) {
         ++i
     }
@@ -164,7 +164,8 @@ Uri::parse_path(value String, start Int) private Int {
 
 Uri::parse_query(value String, start Int) private Int {
     # parse to the #
-    i = start
+    i mutable = start
+    c mutable Byte
     while (c = value[i]) and c != '#'b {
         ++i
     }
@@ -177,7 +178,7 @@ Uri::parse_query(value String, start Int) private Int {
 
 Uri::parse_fragment(value String, start Int) private Int {
     # Parse to the end
-    i = start
+    i mutable = start
     while (c = value[i]) {
         ++i
     }

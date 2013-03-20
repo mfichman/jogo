@@ -15,6 +15,7 @@ SyntaxBad.jg:30:7: Undefined generic type ':'
 SyntaxBad.jg:11:15: Undefined variable 'im'
 SyntaxBad.jg:11:18: Undefined variable 'h'
 SyntaxBad.jg:15:9: Undefined variable 'foo'
+SyntaxBad.jg:16:9: Value assigned to immutable variable 'a'
 SyntaxBad.jg:22:5: Duplicate definition of function 'func3'
 SyntaxBad.jg:24:12: Undefined variable 'q'
 SyntaxBad.jg:32:5: Function 'func2' must return a value

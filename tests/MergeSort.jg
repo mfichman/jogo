@@ -33,9 +33,9 @@ sort(arr Array[String]) Array[String] {
     }
     middle = len / 2
     
-    left = Array[String](len)
-    right = Array[String](len)
-    i = 0
+    left mutable = Array[String](len)
+    right mutable = Array[String](len)
+    i mutable = 0
     while i < middle {
         left.push(arr[i])     
         ++i
@@ -51,7 +51,7 @@ sort(arr Array[String]) Array[String] {
 
 
 main() Int {
-    arr = Array[String](3)
+    arr mutable = Array[String](3)
     arr.push("two")
     arr.push("zebra")
     arr.push("a")

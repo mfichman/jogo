@@ -25,13 +25,13 @@ Buffer < Object {
     # actual runtime size of this object depends on the capacity value passed
     # to the constructor.
     
-    capacity immutable Int
+    capacity Int
     # Returns the capacity of this buffer.
 
-    begin Int
+    begin mutable Int
     # Returns the index of first valid byte in this buffer.
 
-    end Int
+    end mutable Int
     # Returns the index after the last valid byte in this buffer.
 
     @init(size Int) native {

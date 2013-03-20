@@ -60,15 +60,15 @@ TypeCheckerBad < Object {
         c Foo # Undefined class 
         c.whatever() 
         
-        d = TypeCheckerBad().blarg("Hello, world") # Assign void
+        d mutable = TypeCheckerBad().blarg("Hello, world") # Assign void
         d String # Redefine variable
         d = 1 # OK, because d has no type
 
-        cycle1 Cycle1
+        cycle1 mutable Cycle1
         cycle2 Cycle2
-        type1 Type1
+        type1 mutable Type1
         type2 Type2
-        object1 Object1
+        object1 mutable Object1
 
         cycle1 = cycle2 # Invalid type
         type1 = type2 # Invalid type

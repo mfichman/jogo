@@ -10,7 +10,7 @@ countdown(num Int) {
 
 main() Int {
     coroutine = Coroutine() func() {
-        i = 0
+        i mutable = 0
         nested = Coroutine() func() {
             #countdown(40960) # Check to make sure the stack grows
             countdown(100000)

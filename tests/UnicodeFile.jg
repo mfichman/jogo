@@ -1,8 +1,8 @@
 # jgtest exec on
 
 main() Int {
-    count = 0
-    fd = File::open('UnicodeFile.txt', 'r')
+    count mutable = 0
+    fd mutable = File::open('UnicodeFile.txt', 'r')
     fd.peek()
     while fd.status == Io::StreamStatus::OK {
         ch = Utf8::get(fd)

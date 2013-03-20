@@ -337,12 +337,12 @@ private:
 class Assignment : public Expression {
 public:
     typedef int Flags;
-    Assignment(Location loc, String* ident, Type* type, Expression* expr) :
+    Assignment(Location loc, String* ident, Type* type, Expression* expr, Flags flags = 0) :
         Expression(loc),
         identifier_(ident),
 		declared_type_(type),
         initializer_(expr),
-        is_let_(false) {
+        flags_(flags) {
 
         expr->parent(this);
         assert(declared_type_);
@@ -351,17 +351,23 @@ public:
     String* identifier() const { return identifier_; }
     Type* declared_type() { return declared_type_; }
     Expression* initializer() const { return initializer_; }
-    bool is_let() const { return is_let_; }
+    Flags flags() const { return flags_; }
+    bool is_let() const { return flags_ & LET; }
+    bool is_mutable() const { return flags_ & MUTABLE; }
+    void is_let(bool let) { flags_ = let ? (flags_ | LET) : (flags_ & ~LET); }
+    void is_mutable(bool mut) { flags_ = mut ? (flags_ | MUTABLE) : (flags_ & ~MUTABLE); }
+    void flags(Flags flags) { flags_ = flags; }
     void initializer(Expression* expr) { initializer_ = expr; }
-    void is_let(bool let) { is_let_ = let; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Assignment> Ptr;
 
+    static const int MUTABLE = 0x1;
+    static const int LET = 0x2;
 private:
     String::Ptr identifier_;
 	Type::Ptr declared_type_;
     Expression::Ptr initializer_;
-    bool is_let_;
+    Flags flags_;
 };
 
 /* Closure */
