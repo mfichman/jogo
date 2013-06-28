@@ -1,6 +1,6 @@
 # jgtest exec on 
 
-Func < Object {
+Funct < Object {
 
     
     @call() {
@@ -8,7 +8,7 @@ Func < Object {
 
     test() {
         self()
-        x Func = self
+        x Funct = self
     }
 
 }

@@ -119,6 +119,7 @@ library_src = ' '.join([
     "Collection",
     "Coroutine",
     "File",
+    "Func",
     "Hash",
     "Http",
     "Io",

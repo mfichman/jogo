@@ -116,6 +116,7 @@ public:
     void module(Module* module) { module_[module->name()] = module; }
     void file(File* file) { file_[file->name()] = file; }
     void constant(Constant* cons) { constant_.push_back(cons); }
+    void genclass(Class* gen) { genclass_.push_back(gen); }
     void workspace_load();
     void workspace_search(std::string prefix, std::string name);
     void error(const std::string& error) { errors_++; }
@@ -198,6 +199,7 @@ private:
     bool no_default_libs_;
     std::string generator_;
     std::map<SubtypeKey, SubtypeResult> subtype_;
+    std::vector<Class::Ptr> genclass_;
 
     int errors_;
 };

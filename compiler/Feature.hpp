@@ -171,6 +171,7 @@ public:
     bool is_copier() const { return name()->string() == "@copy"; }
     bool is_virtual() const;
 	bool is_primitive_op() const;
+    bool is_checked() const { return is_checked_; }
     void local_slots_inc() { local_slots_++; }
     void local_slots(int value) { local_slots_ = value; }
     void arg_slots_inc() { arg_slots_++; }
@@ -182,6 +183,7 @@ public:
 	void throw_spec(ThrowSpec spec) { throw_spec_ = spec; }
     void block(Block* block) { block_ = block; }
 	void called_func(Function* func);
+    void is_checked(bool checked) { is_checked_ = checked; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Function> Ptr;
     typedef Iterator<Function> Itr;
@@ -196,6 +198,7 @@ private:
     int arg_slots_;
     int temp_regs_;
 	mutable ThrowSpec throw_spec_;
+    bool is_checked_;
 };
 
 /* Represents a class object */
@@ -205,6 +208,7 @@ public:
        String* comment, Feature* feat);
     Class(Location loc, Environment* env, Type* type, Feature* feat);
     Class(Location loc, Environment* env, Type* type, Type* alt);
+    Class(Location loc, Environment* env, Type* type);
     Function* constructor() const;
     Function* destructor() const;
     Function* copier() const;

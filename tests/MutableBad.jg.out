@@ -1,0 +1,4 @@
+MutableBad.jg:4:5: Value assigned to immutable variable 'y'
+MutableBad.jg:6:5: Value assigned to immutable variable 'x'
+MutableBad.jg:7:5: Value assigned to immutable variable 'x'
+MutableBad.jg:8:5: Value assigned to immutable variable 'x'

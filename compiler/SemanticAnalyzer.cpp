@@ -151,6 +151,8 @@ void SemanticAnalyzer::operator()(Class* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
+
+    genclass_.clear();
 }
 
 void SemanticAnalyzer::operator()(Formal* formal) {
@@ -408,17 +410,12 @@ void SemanticAnalyzer::operator()(Member* expression) {
     expr(this);
 
     Type::Ptr type = expr->type();
-    if (type->is_top()) {
+    Class::Ptr clazz = type->clazz();
+    if (type->is_top() || !clazz) {
         expression->type(env_->top_type());
         return;
     }
 
-    Class::Ptr clazz = type->clazz();
-    if (!clazz) {
-        expression->type(env_->top_type());
-        return;
-    }
-    
     if (call) {
         // First lookup: check to see if the member with name 'id' is present
         // in the class corresponding to the type of the LHS of the '.'
@@ -453,7 +450,6 @@ void SemanticAnalyzer::operator()(Member* expression) {
         attr(this);
     }
     Function::Ptr func = clazz->function(env_->name(id->string()+"?")); 
-
     if (!func) {
         err_ << expression->location();
         err_ << "Attribute '" << id << "' not found in class '";
@@ -462,9 +458,10 @@ void SemanticAnalyzer::operator()(Member* expression) {
         expression->type(env_->top_type());
         return;
     }
+    //func(this);
     
     assert(func->type() && "Attribute has no type");
-    expression->type(func->type()->canonical(expr->type()));
+    expression->type(canonical(func->type(), expr->type()));
     expression->function(func);
     if (function_) {
         function_->called_func(func);
@@ -492,12 +489,10 @@ void SemanticAnalyzer::operator()(Call* call) {
 
     // A function value should have been assigned by the child.
     Function::Ptr func = call->function();
-    if (!func) {
-        call->type(env_->top_type());
-        return;
-    }
-        
-    call->type(func->type());
+    call->type(env_->top_type());
+    if (!func) { return; }
+
+//    func(this);
 
     // Check to make sure the resolved function is not private
     if (func->is_private() && func->parent() != class_) {
@@ -514,22 +509,24 @@ void SemanticAnalyzer::operator()(Call* call) {
         call->receiver()->next(call->arguments());
         call->arguments(call->receiver());
         receiver = call->receiver()->type();
-        call->type(func->type()->canonical(receiver));
-    } else {
-        call->type(func->type());
     }
 
     // Evaluate types of argument expressions
     Formal::Ptr f = func->formals();
     for (Expression::Ptr a = call->arguments(); a; a = a->next()) {
         // Push the type of the formal parameter down to the called argument.
-        type_ = f ? f->type()->canonical(receiver) : 0;
+        // If the canonical type is generic, then the called argument will bind
+        // to whatever the default type is for that literal.  For example, if
+        // an array literal is passed in as an argument to a generic function,
+        // then the type of the array literal will be Array[ElemType].
+        type_ = f ? canonical(f->type(), receiver) : 0;
         a(this);
         f = f ? f->next() : 0;
     }
     type_ = 0;
-
     call->arguments(args(call, call->arguments(), func, receiver));
+    call->type(canonical(func->type(), receiver));
+    assert(call->type() && "Missing call type");
     if (function_) {
         function_->called_func(func);
     }
@@ -562,15 +559,13 @@ void SemanticAnalyzer::operator()(Construct* expr) {
         err_ << "Constructor is private in class '" << type << "'\n";
         env_->error();  
     }
-
-    Formal::Ptr f = constr ? constr->formals() : 0;
+    Formal::Ptr f = constr->formals();
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
-        type_ = f ? f->type()->canonical(type) : 0;
+        type_ = f ? canonical(f->type(), type) : 0;
         a(this); 
         f = f ? f->next() : 0;
     }
     type_ = 0;
-    
     if (clazz->is_enum()) {
         err_ << expr->location();
         err_ << "Enums do not have constructors\n";
@@ -938,8 +933,14 @@ void SemanticAnalyzer::operator()(Function* feature) {
     // an interface, the function should not have a body.
     Block::Ptr block = feature->block();
     Feature::Ptr parent = feature->parent();
+    if (feature->is_checked()) { return; }
+    feature->is_checked(true);
+
+    // Save the current class an scope info
+    ContextAnchor context(this);
+    class_ = dynamic_cast<Class*>(feature->parent());
     function_ = feature;
-    enter_scope();
+    if (class_) { assign_generic_classes(class_->type()); }
 
     bool is_functor_func = feature->name()->string().find("@case") == 0;
 
@@ -958,10 +959,17 @@ void SemanticAnalyzer::operator()(Function* feature) {
 
     // Check all formal parameters, and add them as local variables
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
+        assign_generic_classes(f->type());
+    }
+    if (feature->file()->is_interface_file()) { return; }
+
+    enter_scope();
+    for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
         Type::Ptr type = f->type();
         type(this);
-        variable(new Variable(f->name(), Operand(), f->type(), true));
+        variable(new Variable(f->name(), Operand(), type, true));
     }
+
     if (is_functor_func) {
         Formal::Ptr arg = feature->formals()->next();
         if (!arg) {
@@ -976,13 +984,13 @@ void SemanticAnalyzer::operator()(Function* feature) {
             err_ << arg->type()->location();
             err_ << "Value type in functor case\n";
             env_->error();
-        } else if (arg->type()->is_interface()) {
-            err_ << arg->type()->location();
-            err_ << "Interface type in functor case\n";
-            env_->error();
         } else if (arg->type()->generics() || arg->type()->is_generic()) {
             err_ << arg->type()->location();
             err_ << "Generic type in functor case\n";
+            env_->error();
+        } else if (arg->type()->is_interface()) {
+            err_ << arg->type()->location();
+            err_ << "Interface type in functor case\n";
             env_->error();
         }
         if (!class_->is_functor()) {
@@ -1035,6 +1043,7 @@ void SemanticAnalyzer::operator()(Function* feature) {
         
     exit_scope();
     function_ = 0;
+    genclass_.clear();
 }
 
 void SemanticAnalyzer::operator()(Constant* feature) {
@@ -1096,7 +1105,6 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     Expression::Ptr init = feature->initializer();
     Feature::Ptr parent = feature->parent();
     Type::Ptr declared = feature->declared_type();
-
     if (feature->type()) { return; }
     if (feature->file()->is_interface_file()) {
         feature->type(declared);
@@ -1106,6 +1114,8 @@ void SemanticAnalyzer::operator()(Attribute* feature) {
     // Save the current class and variable scope.
     ContextAnchor context(this);
     class_ = dynamic_cast<Class*>(feature->parent());
+    assert(class_ && "Attribute with no class");
+    assign_generic_classes(class_->type());
 
     // Check for self-embedded types
     if(feature->is_component() && feature->declared_type()->clazz() == class_) {
@@ -1253,17 +1263,16 @@ void SemanticAnalyzer::operator()(Type* type) {
     if (type->is_top() || type->is_void()) {
         return;
     }
-    if (type->is_generic() && class_) {
-        Type::Ptr ct = class_->type();
-        for (Generic::Ptr gen = ct->generics(); gen; gen = gen->next()) {
-            if (gen->type()->name() == type->name()) {
-                return;
-            } 
+    if (type->is_generic() && !type->clazz()) {
+        std::map<String::Ptr,Class::Ptr>::iterator it = genclass_.find(type->name());
+        if (it != genclass_.end()) {
+            type->clazz(it->second);
+        } else {
+            err_ << type->location();
+            err_ << "Unbound generic type '" << type->name() << "'\n";
+            env_->error();
+            type->is_top(true);
         }
-        err_ << type->location();
-        err_ << "Undefined generic type '" << type->name() << "'\n";
-        env_->error();
-        type->is_top(true);
         return;
     }
 
@@ -1319,7 +1328,7 @@ Expression::Ptr SemanticAnalyzer::args(Expression* call, Expression* args, Funct
         // Get the formal type.  If the type is 'self', then the formal
         // parameter is the type of the receiver.  If the type is a generic,
         // then look up the actual type from the class' definition.
-        Type::Ptr ft = formal->type()->canonical(rec);
+        Type::Ptr ft = canonical(formal->type(), rec);
 
         // Get the actual argument type.
         Type::Ptr at = arg->type();
@@ -1365,7 +1374,6 @@ Expression::Ptr SemanticAnalyzer::args(Expression* call, Expression* args, Funct
         err_ << "Not enough arguments to function '" << id << "'\n";
         env_->error();
     }
-
     return out;    
 }
 
@@ -1612,5 +1620,163 @@ void SemanticAnalyzer::assign_enums(Class* feature) {
                 }
             }
         }
+    }
+}
+
+void SemanticAnalyzer::assign_generic_classes(Type* type) {
+    // Recursively generate anonymous generic types for each unbound generic
+    // type variable.
+    if (type->is_generic()) {
+        std::map<String::Ptr,Class::Ptr>::iterator it = genclass_.find(type->name());
+		if (type->clazz() && it != genclass_.end()) {
+			assert(type->clazz() == it->second && "Type reassigned");
+		} else if (type->clazz()) {
+			genclass_.insert(std::make_pair(type->name(), type->clazz()));
+		} else if (it == genclass_.end()) {
+            Class::Ptr clazz = new Class(type->location(), env_, type);
+            env_->genclass(clazz);
+            genclass_.insert(std::make_pair(type->name(), clazz));
+            type->clazz(clazz);
+		} else {
+			type->clazz(it->second);
+		}
+    } else {
+        for (Generic::Ptr g = type->generics(); g; g = g->next()) {
+            assign_generic_classes(g->type()); 
+        }
+    }
+}
+
+Type* SemanticAnalyzer::binding_for(Type* in, Type* map, Type* bound) {
+    // Looks up a type variable.  The 'map' type is used to locate the type
+    // variable within the structure given by 'bound'.  Both 'map' and
+    // 'bound' must have the same structure.  Example:
+    // in => :a
+    // map => Array[List[:a]]
+    // bound => Array[List[String]]
+    // out => String 
+    // If the function fails to find a match, then it returns 'in'
+    assert(in->is_generic() && "Not a generic type variable");
+    if (map->is_generic()) {
+        if (in->name() == map->name()) {
+            return bound;
+        } else {
+            return in;
+        }
+    }
+    Generic* genmap = map->generics();
+    Generic* genbound = bound->generics();
+    while (genmap && genbound) {
+        assert(genmap->type()->is_generic() && "Bad map type");
+        Type* out = binding_for(in, genmap->type(), genbound->type());
+        if (out != in) {
+            return out;
+        }
+        genmap = genmap->next();
+        genbound = genbound->next();
+    }
+    return in;
+}
+
+Type* SemanticAnalyzer::binding_for(Type* in, Function* func, Expression* args) {
+    // Looks up a type variable, given the function 'func' which defines the
+    // type var names, and the arguments 'args', which bind real types to the
+    // type var names.  Example:
+    // in => :a
+    // func => foo(var :a) :a 
+    // args => "hello"
+    // out => String
+    // If the function fails to find a match, then it returns 'in'.
+    assert(in->is_generic() && "Not a generic type variable");
+    Formal* fm = func->formals();
+    Expression* arg = args;
+    while (fm && arg) {
+        Type* out = binding_for(in, fm->type(), arg->type());
+        if (in != out) {
+            return out;
+        }
+        fm = fm->next();
+        arg = arg->next();
+    }
+    return in;
+}
+
+Type* SemanticAnalyzer::binding_for(Type* in, Type* recv, Function* func, Expression* args) {
+    // Looks up a type variable, first using 'receiver', and then using 'func'
+    // and 'args' if the type could not be identified by the receiver alone.
+    assert(in->is_generic() && "Not a generic type variable");
+    if (recv) {
+        Type::Ptr out = binding_for(in, recv, recv->clazz()->type());  
+        if (in != out) {
+            return out;
+        }
+    } 
+    return binding_for(in, func, args);
+}
+
+Type* SemanticAnalyzer::canonical(Type* in, Type* map, Type* bound) {
+    // Replaces all type variables with concrete types, using "generic" to look
+    // up the matching concrete type in "bound"
+    if (in->is_generic()) { 
+        return binding_for(in, map, bound); 
+    } else if (in->generics()) {
+        Generic::Ptr genout;
+        for (Generic* g = in->generics(); g; g = g->next()) {
+            Type* t = canonical(g->type(), map, bound);
+            genout = append(genout, new Generic(t));
+        }
+        return new Type(in->location(), in->qualified_name(), genout, in->env());
+    } else {
+        return in;
+    } 
+}
+
+Type* SemanticAnalyzer::canonical(Type* in, Function* func, Expression* args) {
+    // Given a function and its arguments, find the type that 'type' maps to.
+    // If 'type' is not a generic type var, then it maps to itself.  
+
+    // FIXME: This function may need to be 'memoized' to have good performance
+    // with large numbers of args, because it does a dumb search through all
+    // the arguments looking for the mapped type.  This is linear in the number
+    // of args.
+    if (in->is_generic()) {
+        return binding_for(in, func, args);
+    } else if (in->generics()) { 
+        Generic::Ptr genout;
+        for (Generic* g = in->generics(); g; g = g->next()) {
+            Type* t = canonical(g->type(), func, args);
+            genout = append(genout, new Generic(t));
+        }
+        return new Type(in->location(), in->qualified_name(), genout, in->env());
+    } else {
+        return in;
+    }
+}
+
+Type* SemanticAnalyzer::canonical(Type* in, Type* recv, Function* func, Expression* args) {
+    // Look up the canonical form of the type by using  the receiver type and
+    // function args to get the correct binding for each variable.
+    if (in->is_generic()) {
+        return binding_for(in, recv, func, args);
+    } else if (in->generics()) { 
+        Generic::Ptr genout;
+        for (Generic* g = in->generics(); g; g = g->next()) {
+            Type* t = canonical(g->type(), recv, func, args);
+            genout = append(genout, new Generic(t));
+        }
+        return new Type(in->location(), in->qualified_name(), genout, in->env());
+    } else {
+        return in;
+    }
+}
+
+Type* SemanticAnalyzer::canonical(Type* in, Type* receiver) {
+    // Uses the 'receiver' type to get the canonical type of 'in'.  That is, if
+    // 'in' is :a and receiver is Array[String] for class def Array[:a], then
+    // this function returns :a
+    if (receiver) {
+        return canonical(in, receiver->clazz()->type(), receiver);
+    } else {
+        return in;
     }
 }

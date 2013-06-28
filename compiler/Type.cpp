@@ -50,62 +50,6 @@ Type::Type(Location loc, String* qn, Generic* gen, Environment* env) :
     }
 }
 
-Type* Type::generic(Type const* type) const {
-    // Returns the resolved type of the generic type 'type.'  If 'type' isn't
-    // generic, this function is the identity.
-    return type->is_generic() ? generic(type->name()) : const_cast<Type*>(type);
-}
-
-Type* Type::generic(String* name) const {
-    // Returns the generic with type 'name'.  This method works by looking
-    // through the generic class definition and returning the type that is
-    // bound to generic 'name' in the current instantiation of the type.  
-    Generic::Ptr gen1 = generics();
-    Generic::Ptr gen2 = clazz()->type()->generics();
-
-    while (gen1 && gen2) {
-        if (gen2->type()->name() == name) {
-            return gen1->type();
-        }
-        gen1 = gen1->next();
-        gen2 = gen2->next();
-    }
-    assert(!"not found");
-    return 0;
-}
-
-Type* Type::canonical(Type const* other) const {
-    // Resolves a generic type (e.g., :a) by looking up the actual type in the
-    // container 'other.'  For example, if 'other' is Array[String], and :a is
-    // the first type parameter of array, this function would return 'String'.
-    // This function recursively substitutes generics, so List[:a] would return
-    // List[String] if the 'other' type is List.
-    if (is_generic()) {
-        return other->generic(name());
-    }
-    if (!generics() || !other) {
-        return const_cast<Type*>(this);
-    }
-
-    // Iterate through all the generics in this type, and replace them with     
-    // the resolved generic type.
-    Generic::Ptr first;
-    Generic::Ptr last;
-    for (Generic::Ptr g = generics(); g; g = g->next()) {
-        Type::Ptr t = g->type()->canonical(other);
-        Generic::Ptr gen(new Generic(t));
-        if (!first) {
-            first = gen;
-            last = gen;
-        } else {
-            last->next(gen);
-            last = gen;
-        }
-    } 
-    String* qn = qualified_name();
-    return new Type(location(), qn, first, env_);
-}
-
 bool Type::equals(Type const* other) const {
     // Make sure the classes are equal 
     if (clazz() != other->clazz()) {

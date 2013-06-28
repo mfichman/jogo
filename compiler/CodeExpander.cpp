@@ -87,6 +87,7 @@ CodeExpander::stub(Function* func, Attribute* attr) {
     Expression::Ptr mem(new Member(loc, self, func->name()));
     Call::Ptr call(new Call(loc, mem, args));
     call->function(func); 
+    call->type(func->type());
     
     Statement::Ptr stmt;
     if (func->type()->is_void()) {
@@ -148,6 +149,7 @@ CodeExpander::functor(Class* clazz) {
                 IdentifierRef::Ptr id(new IdentifierRef(loc, env_->name(""), nm));
                 Call::Ptr expr(new Call(loc, id, arg));
                 expr->function(func);
+                expr->type(func->type());
                 Statement::Ptr yes(new Simple(loc, expr));
                 Is::Ptr is(new Is(loc, guard, type));
                 stmt = new Conditional(loc, is, yes, stmt);

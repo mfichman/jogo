@@ -70,7 +70,7 @@ assign(a Int) {
 Container[:a] < Object {
     value :b
 
-    bar(val :b) :b {
+    bar(val :d) :b {
         ret 0
     }
 }

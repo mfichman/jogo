@@ -6,9 +6,8 @@ SemantBad.jg:35:5: Duplicate definition of function 'bar'
 SemantBad.jg:57:1: Duplicate definition of class 'Bob'
 SemantBad.jg:62:5: Statement is unreachable
 SemantBad.jg:67:5: Value assigned to immutable variable 'a'
-SemantBad.jg:71:11: Undefined generic type ':b'
-SemantBad.jg:73:13: Undefined generic type ':b'
-SemantBad.jg:73:17: Undefined generic type ':b'
+SemantBad.jg:71:11: Unbound generic type ':b'
+SemantBad.jg:73:17: Unbound generic type ':b'
 SemantBad.jg:81:9: Too many arguments for type 'One'
 SemantBad.jg:85:9: Not enough arguments for type 'Two'
 SemantBad.jg:86:11: Not enough arguments for type 'Two'
@@ -193,7 +192,7 @@ Module
         type: Container[:a]
       formal1: Formal
         name: val
-        type: :b
+        type: :d
       block: Block
         child0: Return
           expression: IntegerLiteral(0)

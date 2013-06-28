@@ -317,7 +317,7 @@ void IrGenerator::operator()(Member* expr) {
     // A stand-alone member operator, which means that we indirectly call the
     // getter.
     Function::Ptr func = expr->function();
-    call(func, expr->expression(), expr->expression());
+    call(func, expr->expression(), expr->expression(), expr->type());
 }
 
 void IrGenerator::operator()(Call* expr) {
@@ -331,7 +331,7 @@ void IrGenerator::operator()(Call* expr) {
             return; 
         }
     }
-    call(expr->function(), expr->arguments(), expr->receiver());
+    call(expr->function(), expr->arguments(), expr->receiver(), expr->type());
 }
 
 void IrGenerator::operator()(Closure* expr) {
@@ -718,11 +718,14 @@ void IrGenerator::operator()(Type* feature) {
     // Pass
 }
 
-void IrGenerator::call(Function* func, Expression* args, Expression* recv) {
+void IrGenerator::call(Function* func, Expression* args, Expression* recv, Type* ret) {
     // Push objects in anticipation of the call instruction.  Arguments must be
     // pushed in reverse order.
     if (recv) {
-        // Look up the function again, in case it needs to re-resolve
+        // Look up the function again, in case it needs to re-resolve.  This is
+        // necessary for composition, where the first lookup returns the func
+        // from the embedded type, and the second lookup returns the generated stub
+        // in the composite type.
         Class::Ptr clazz = recv->type()->clazz();
         func = clazz->function(func->name());
     }
@@ -731,12 +734,10 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv) {
     FuncMarshal fm(this);
     Operand receiver;
     Operand valret;
-    Type::Ptr rettype = func->type()->canonical(recv ? recv->type() : 0);
-    if (rettype->is_compound()) {
-        valret = stack_value_temp(rettype);
+    if (ret->is_compound()) {
+        valret = stack_value_temp(ret);
     }
     for (Expression::Ptr a = args; a; a = a->next()) {
-        Type::Ptr rettype = formal->type();
         Operand val = a->type()->is_bool() ? bool_expr(a) : emit(a);
         fm.arg(val);
         if(a == args) {
@@ -744,7 +745,7 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv) {
         }
         formal = formal->next();
     }
-    if (rettype->is_compound()) {
+    if (ret->is_compound()) {
         // Push a pointer for the return value at the end of the argument list.
         // The returned value type data will be stored at that location on the
         // stack.
@@ -760,7 +761,7 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv) {
         fm.arg(receiver); // Receiver
         fm.arg(load(new StringLiteral(Location(), name)));
         fm.call(env_->name("Object__dispatch"));
-        fnptr = pop_ret(rettype);
+        fnptr = pop_ret(ret);
     } 
 
     if (func->is_virtual()) {
@@ -772,16 +773,16 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv) {
         fm.call(func->label());
     }
 
-    if (rettype->is_void()) {
+    if (ret->is_void()) {
         return_ = Operand();
-    } else if (rettype->is_primitive()) {
-        return_ = pop_ret(rettype); 
-    } else if (rettype->is_compound()) {
+    } else if (ret->is_primitive()) {
+        return_ = pop_ret(ret); 
+    } else if (ret->is_compound()) {
         // Return value is allocated on the stack already, and no value is
         // returned by register.
         return_ = valret;
-    } else if (rettype->is_ref()) {
-        return_ = pop_ret(rettype);
+    } else if (ret->is_ref()) {
+        return_ = pop_ret(ret);
         object_temp_.push_back(return_);
     } else {
         assert(!"Invalid type");

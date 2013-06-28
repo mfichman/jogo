@@ -88,6 +88,16 @@ Class::Class(Location loc, Environment* env, Type* type, Feature* feat) :
     gen_equal_method();
 }
 
+/* Constructor for anonymous interfaces */
+Class::Class(Location loc, Environment* env, Type* type) :
+    Feature(loc, env, type->name()),
+    type_(type),
+    proto_(env->interface_type()),
+    comment_(0),
+    features_(0),
+    slots_(0) {
+}
+
 void Class::gen_functor_method() {
     // Gen the functor @call method
     String::Ptr name = env()->name("@call");
@@ -215,7 +225,8 @@ Function::Function(Location loc, Environment* env, String* name, Formal* formal,
     local_slots_(0),
     arg_slots_(0),
     temp_regs_(0),
-	throw_spec_(UNKNOWN) {
+	throw_spec_(UNKNOWN),
+    is_checked_(false) {
 
     assert(type_);
 }

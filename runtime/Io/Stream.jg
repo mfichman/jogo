@@ -39,7 +39,9 @@ StreamType = FILE | SOCKET | CONSOLE
 Stream < Object {
     # This object is used to perform buffered character I/O on a file.  It can
     # be used to read from any device or input that the OS supports for the
-    # underlying handle type, including sockets, files, pipes, etc.
+    # underlying handle type, including sockets, files, pipes, etc.  Stream 
+    # also implements the Iter[Byte] interface, so that it can be used with
+    # functions that accept iterators.
 
     handle Int
     # Opaque handle to the underlying file descriptor.

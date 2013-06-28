@@ -39,9 +39,6 @@ public:
     String* scope() const { return scope_; }
     Type* next() const { return next_; }
     Type* last() const { return last_; }
-    Type* generic(String* name) const;
-    Type* generic(Type const* type) const;
-    Type* canonical(Type const* type) const;
     Class* clazz() const;
     Environment* env() const { return env_; }
     bool operator<(Type const& other) const;
@@ -81,6 +78,7 @@ public:
     void is_top(bool flag) { is_top_ = flag; }
     void next(Type* next) { next_ = next; }
     void last(Type* last) { last_ = last; }
+    void clazz(Class* clazz) { assert(is_generic()); class_ = clazz; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Type> Ptr;
 

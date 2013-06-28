@@ -434,7 +434,6 @@ Constant* Parser::constant() {
         type = Parser::type();
         init = new Empty(loc);
     }
-   
     Constant* con = new Constant(loc, env_, id, flags, type, init); 
     file_->constant(con);
     return con;

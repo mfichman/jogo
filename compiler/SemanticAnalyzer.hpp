@@ -36,6 +36,14 @@ public:
     typedef Pointer<SemanticAnalyzer> Ptr;
     void operator()(File* file);
 
+    static Type* binding_for(Type* in, Type* generic, Type* bound);
+    static Type* binding_for(Type* in, Function* func, Expression* args);
+    static Type* binding_for(Type* in, Type* recv, Function* func, Expression* args);
+    static Type* canonical(Type* in, Type* generic, Type* bound);
+    static Type* canonical(Type* in, Function* func, Expression* args);
+    static Type* canonical(Type* in, Type* receiver);
+    static Type* canonical(Type* in, Type* receiver, Function* func, Expression* args);
+
 private:
     void operator()(Class* unit);
     void operator()(Module* unit);
@@ -91,6 +99,7 @@ private:
     void destructor();
     void copier();
     void assign_enums(Class* clazz);
+    void assign_generic_classes(Type* type);
 
     Environment::Ptr env_;
     Stream::Ptr err_;
@@ -99,6 +108,7 @@ private:
     Type::Ptr return_; // Return value of the current block
     Type::Ptr type_; // Suggested type of the child expression
     std::vector<Scope::Ptr> scope_;
+    std::map<String::Ptr,Class::Ptr> genclass_;
 
     friend class ContextAnchor;
 };
@@ -108,6 +118,7 @@ class ContextAnchor {
 public:
     ContextAnchor(SemanticAnalyzer* semant) : semant_(semant){
         scope_.swap(semant->scope_);
+        genclass_.swap(semant->genclass_);
         class_ = semant->class_;
         return_ = semant->return_;
         function_ = semant->function_;
@@ -125,8 +136,10 @@ public:
 private:
     SemanticAnalyzer* semant_;
     std::vector<Scope::Ptr> scope_;
+    std::map<String::Ptr,Class::Ptr> genclass_;
     Class::Ptr class_;
     Type::Ptr return_;
     Function::Ptr function_;
     File::Ptr file_;
 };
+

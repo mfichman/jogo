@@ -20,6 +20,7 @@
  * IN THE SOFTWARE.
  */  
 
+#include "SemanticAnalyzer.hpp"
 #include "SubtypeEval.hpp"
 
 SubtypeEval::SubtypeEval(Type const* self, Type const* sub) :
@@ -92,7 +93,7 @@ bool SubtypeEval::subtype() {
     env_->subtype(self_, sub_, YES);
     for (Feature* f = sub->features(); f; f = f->next()) {
         if (Function* func = dynamic_cast<Function*>(f)) {
-            Function* mine = self->function(func->name());   
+            Function* mine = self->function(func->name());
             if (!mine || !covariant(mine, func)) {
                 // Now we know that the types are not compatible, so mark
                 // 'other' as a disjoint type.
@@ -114,8 +115,8 @@ bool SubtypeEval::covariant(Function const* self, Function const* func) {
         if (f1->is_self() && f2->is_self()) {
             /* pass */
         } else {
-           Type* t1 = self_->generic(f1->type());
-           Type* t2 = sub_->generic(f2->type());
+           Type::Ptr t1 = SemanticAnalyzer::canonical(f1->type(), const_cast<Type*>(self_));
+           Type::Ptr t2 = SemanticAnalyzer::canonical(f2->type(), const_cast<Type*>(sub_));
            if (!t1->equals(t2)) {
                return false;
            }
@@ -126,8 +127,8 @@ bool SubtypeEval::covariant(Function const* self, Function const* func) {
     if (f1 || f2) {
         return false;
     }
-    Type::Ptr ret1 = self->type()->canonical(self_);
-    Type::Ptr ret2 = func->type()->canonical(sub_);
+    Type::Ptr ret1 = SemanticAnalyzer::canonical(self->type(), const_cast<Type*>(self_));
+    Type::Ptr ret2 = SemanticAnalyzer::canonical(func->type(), const_cast<Type*>(sub_));
     if (!ret1->subtype(ret2)) {
         return false;
     } 
