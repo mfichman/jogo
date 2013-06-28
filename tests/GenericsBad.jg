@@ -83,6 +83,18 @@ Generic2[:a,:b] < Object {
     }
 }
 
+GenericInval[:a] < Object {
+    eval(str String) {
+    }
+    test(param :a) String {
+        str String = param
+        param.foo()
+        param.bar
+        self.eval(param)     
+        ret param
+    }
+}
+
 
 main() Int {
     ret 0

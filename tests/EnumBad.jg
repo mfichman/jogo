@@ -5,6 +5,8 @@ Manual < Enum {
     PEAR
     APPLE
     MANGO = 99
+    x Int
+    String
 }
 
 main() Int {

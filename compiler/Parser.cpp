@@ -378,7 +378,7 @@ Feature* Parser::feature_list() {
             }
             next();
             error_ = 0;
-        } else if (token() == Token::SEPARATOR) {
+        } else if (token() == Token::SEPARATOR || token() == Token::COMMA) {
             next();
         }
     }
