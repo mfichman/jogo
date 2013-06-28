@@ -214,9 +214,12 @@ Class* Type::clazz() const {
     if (class_) {
         return class_;
     }
-    Type* self = const_cast<Type*>(this);
-    self->class_ = self->file()->clazz(scope_, name_);
-    return self->class_;
+    if (is_generic()) {
+        class_ = env_->object_type()->clazz();
+    } else {
+        class_ = file()->clazz(scope_, name_);
+    } 
+    return class_;
 }
 
 bool Type::operator<(Type const& other) const {

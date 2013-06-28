@@ -90,7 +90,7 @@ private:
     String::Ptr name_;
     Type::Ptr next_;
     Type::Ptr last_;
-    Class* class_;
+    mutable Class* class_;
     String::Ptr qualified_name_;
     bool is_top_;
 };

@@ -1,5 +1,7 @@
 EnumBad.jg:7:13: Explicit enum constants defined after auto enum constant(s)
-EnumBad.jg:11:9: Enums do not have constructors
-EnumBad.jg:12:9: Undefined constant 'HELLO'
-EnumBad.jg:13:9: Undefined constant 'FRUIT'
-EnumBad.jg:14:9: Undefined constant 'Bob::MANGO'
+EnumBad.jg:8:5: Cannot embed attribute 'x' in enum 'Manual'
+EnumBad.jg:9:5: Cannot embed type 'String' in enum 'Manual'
+EnumBad.jg:13:9: Enums do not have constructors
+EnumBad.jg:14:9: Undefined constant 'HELLO'
+EnumBad.jg:15:9: Undefined constant 'FRUIT'
+EnumBad.jg:16:9: Undefined constant 'Bob::MANGO'

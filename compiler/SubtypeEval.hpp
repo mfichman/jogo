@@ -25,6 +25,7 @@
 #include "Jogo.hpp"
 #include "Environment.hpp"
 
+/* Evaluates whether one type is a subtype of the other */
 class SubtypeEval {
 public:
     SubtypeEval(Type const* self, Type const* sub);

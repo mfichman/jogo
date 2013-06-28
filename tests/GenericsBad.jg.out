@@ -11,3 +11,8 @@ GenericsBad.jg:65:24: Expression does not conform to type 'Intf[Beta]'
 GenericsBad.jg:71:9: Local variable declaration shadows attribute
 GenericsBad.jg:73:9: Local variable declaration shadows attribute
 GenericsBad.jg:79:26: Expression does not conform to type 'IntfCov[Sub]'
+GenericsBad.jg:90:22: Expression does not conform to type 'String'
+GenericsBad.jg:91:9: Function 'foo' not found in class 'Object'
+GenericsBad.jg:92:9: Attribute 'bar' not found in class 'Object'
+GenericsBad.jg:93:19: Argument does not conform to type 'String'
+GenericsBad.jg:94:9: Return must conform to type 'String'
