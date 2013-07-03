@@ -67,7 +67,6 @@ private:
     void operator()(Box* expression);
     void operator()(Is* expression);
     void operator()(Block* statement);
-    void operator()(Simple* statement);
     void operator()(Let* let);
     void operator()(While* statement);
     void operator()(Conditional* statement);

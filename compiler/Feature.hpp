@@ -24,7 +24,6 @@
 
 #include "Jogo.hpp"
 #include "TreeNode.hpp"
-#include "Statement.hpp"
 #include "Expression.hpp"
 #include "Formal.hpp"
 #include "Type.hpp"

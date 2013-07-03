@@ -50,7 +50,6 @@ class Construct;
 class IdentifierRef;
 class ConstantRef;
 class Case;
-class Simple;
 class Block;
 class Match;
 class Assignment;

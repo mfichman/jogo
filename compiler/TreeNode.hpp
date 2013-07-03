@@ -69,7 +69,6 @@ public:
     virtual void operator()(IdentifierRef* expression) {}
     virtual void operator()(Empty* empty) {}
     virtual void operator()(Block* statement) {}
-    virtual void operator()(Simple* statement) {}
     virtual void operator()(While* statement) {}
     virtual void operator()(Let* statement) {}
     virtual void operator()(Conditional* statement) {}

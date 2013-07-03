@@ -89,9 +89,9 @@ CodeExpander::stub(Function* func, Attribute* attr) {
     call->function(func); 
     call->type(func->type());
     
-    Statement::Ptr stmt;
+    Expression::Ptr stmt;
     if (func->type()->is_void()) {
-        stmt = new Simple(loc, call); 
+        stmt = call.pointer();
     } else {    
         stmt = new Return(loc, call);
         call->type(func->type());
@@ -127,7 +127,6 @@ CodeExpander::functor(Class* clazz) {
     // the type of the arugment passed to @call method.
     Function::Ptr func = clazz->function(env_->name("@call"));
     Location loc;
-    Statement::Ptr stmt;
     String::Ptr fn = func->formals()->next()->name();
     IdentifierRef::Ptr guard(new IdentifierRef(loc, env_->name(""), fn));
     Expression::Ptr arg0(new IdentifierRef(loc, env_->name(""), env_->name("self")));
@@ -135,10 +134,11 @@ CodeExpander::functor(Class* clazz) {
     arg0->type(func->formals()->type());
     arg1->type(func->formals()->next()->type());
 
-    Expression::Ptr arg = 0;
+    Expression::Ptr arg;
     arg = append(arg.pointer(), arg0.pointer());
     arg = append(arg.pointer(), arg1.pointer());
 
+    Expression::Ptr stmt;
     for (Feature::Ptr feat = clazz->features(); feat; feat = feat->next()) {
         if (Function* func = dynamic_cast<Function*>(feat.pointer())) {
             String* nm = func->name();
@@ -150,9 +150,8 @@ CodeExpander::functor(Class* clazz) {
                 Call::Ptr expr(new Call(loc, id, arg));
                 expr->function(func);
                 expr->type(func->type());
-                Statement::Ptr yes(new Simple(loc, expr));
                 Is::Ptr is(new Is(loc, guard, type));
-                stmt = new Conditional(loc, is, yes, stmt);
+                stmt = new Conditional(loc, is, expr, stmt);
             }
         }
     }

@@ -54,7 +54,6 @@ public:
     void operator()(ConstantRef* expression);
     void operator()(Let* statement);
     void operator()(Block* statement);
-    void operator()(Simple* statement);
     void operator()(While* statement);
     void operator()(Conditional* statement);
     void operator()(Assignment* statement);

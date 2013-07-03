@@ -66,97 +66,87 @@ Module
         name: self
         type: TypeChecker
       block: Block
-        child0: Statement
-          expression: Assignment
-            name: t
+        child0: Assignment
+          name: t
+          type: TypeChecker
+          declared: <<top>>
+          initializer: Construct
             type: TypeChecker
-            declared: <<top>>
-            initializer: Construct
-              type: TypeChecker
-        child1: Statement
-          expression: Call
+        child1: Call
+          expression: Member
+            identifier: check2
+            expression: IdentifierRef
+              name: t
+          argument0: IdentifierRef
+            name: t
+          argument1: Call
             expression: Member
-              identifier: check2
+              identifier: check1
               expression: IdentifierRef
                 name: t
             argument0: IdentifierRef
               name: t
-            argument1: Call
-              expression: Member
-                identifier: check1
-                expression: IdentifierRef
-                  name: t
-              argument0: IdentifierRef
+        child2: Assignment
+          name: a
+          type: Int
+          declared: <<top>>
+          initializer: Call
+            expression: Member
+              identifier: check1
+              expression: IdentifierRef
                 name: t
-        child2: Statement
-          expression: Assignment
-            name: a
-            type: Int
-            declared: <<top>>
-            initializer: Call
-              expression: Member
-                identifier: check1
-                expression: IdentifierRef
-                  name: t
-              argument0: IdentifierRef
-                name: t
-        child3: Statement
-          expression: Assignment
-            name: b
-            type: Int
-            declared: <<top>>
-            initializer: Call
-              expression: Member
-                identifier: @add
-                expression: IdentifierRef
-                  name: a
-              argument0: IdentifierRef
+            argument0: IdentifierRef
+              name: t
+        child3: Assignment
+          name: b
+          type: Int
+          declared: <<top>>
+          initializer: Call
+            expression: Member
+              identifier: @add
+              expression: IdentifierRef
                 name: a
-              argument1: IntegerLiteral(10)
-        child4: Statement
-          expression: Assignment
-            name: c
-            type: CycleType1
-            declared: CycleType1
-            initializer: Empty
-        child5: Statement
-          expression: Assignment
-            name: d
-            type: CycleType2
-            declared: CycleType2
-            initializer: Empty
-        child6: Statement
-          expression: Assignment
-            name: c
-            type: CycleType2
-            declared: <<top>>
-            initializer: IdentifierRef
-              name: d
-        child7: Statement
-          expression: Assignment
-            name: d
-            type: CycleType1
-            declared: <<top>>
-            initializer: IdentifierRef
-              name: c
-        child8: Statement
-          expression: Call
-            expression: Member
-              identifier: @index
-              expression: IdentifierRef
-                name: t
             argument0: IdentifierRef
+              name: a
+            argument1: IntegerLiteral(10)
+        child4: Assignment
+          name: c
+          type: CycleType1
+          declared: CycleType1
+          initializer: Empty
+        child5: Assignment
+          name: d
+          type: CycleType2
+          declared: CycleType2
+          initializer: Empty
+        child6: Assignment
+          name: c
+          type: CycleType2
+          declared: <<top>>
+          initializer: IdentifierRef
+            name: d
+        child7: Assignment
+          name: d
+          type: CycleType1
+          declared: <<top>>
+          initializer: IdentifierRef
+            name: c
+        child8: Call
+          expression: Member
+            identifier: @index
+            expression: IdentifierRef
               name: t
-            argument1: IdentifierRef
-              name: c
-            argument2: IdentifierRef
-              name: d
-        child9: Statement
-          expression: Assignment
-            name: e
-            type: Bool
-            declared: Bool
-            initializer: Empty
+          argument0: IdentifierRef
+            name: t
+          argument1: IdentifierRef
+            name: c
+          argument2: IdentifierRef
+            name: d
+        child9: Assignment
+          name: e
+          type: Bool
+          declared: Bool
+          initializer: Empty
         child10: Conditional
           guard: Binary
             operation: and

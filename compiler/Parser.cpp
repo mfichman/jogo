@@ -630,7 +630,7 @@ Block* Parser::block() {
     LocationAnchor loc(this);
     expect(Token::LEFT_BRACE);
     String::Ptr comment = Parser::comment();
-    Statement::Ptr statements;
+    Expression::Ptr statements;
     while (token() != Token::RIGHT_BRACE && token() != Token::END) {
         statements = append(statements, statement());
         if (error_) {
@@ -668,21 +668,19 @@ String* Parser::comment() {
     return new String(text);
 }
 
-Statement* Parser::statement() {
+Expression* Parser::statement() {
+    // Returns a 'statement.'  Actually, everything is an expression
+    // internally, but some expressions are only allowed at the top level
+    // within a block, namely 'yield' and 'return'.  This is b/c it doesn't
+    // make sense to have an expression like (return 10).foo()
     LocationAnchor loc(this);
     switch(token().type()) {
-    case Token::IF: return conditional();
-    case Token::WHILE: return while_loop();
-    case Token::FOR: return for_loop();
-    case Token::LET: return let();
-    case Token::MATCH: return match();
     case Token::RETURN: {
         next();
         if (token() == Token::SEPARATOR) {
             return new Return(loc, new Empty(loc));
         } else {
-            Expression::Ptr expr = expression();
-            return new Return(loc, expr);
+            return new Return(loc, expression());
         }
         break;
     }
@@ -691,8 +689,7 @@ Statement* Parser::statement() {
         return new Yield(loc, 0);
     }
     default: {
-        Expression::Ptr expr = expression();
-        return new Simple(loc, expr);
+        return expression();
     }
     }
 }
@@ -723,7 +720,7 @@ Case* Parser::single_case() {
     // Matches a single case block, i.e., guard: statement, statement, etc.
     LocationAnchor loc(this);
     expect(Token::WITH);
-    Statement::Ptr statements;
+    Expression::Ptr statements;
     Expression::Ptr guard = expression();
     expect(Token::COLON);
 
@@ -821,13 +818,21 @@ Expression* Parser::expression_list() {
 }
 
 Expression* Parser::expression() {
-    if (token() == Token::IDENTIFIER) {
+    switch(token().type()) {
+    case Token::IDENTIFIER: {
         if (token(1) == Token::ASSIGN || token(1) == Token::TYPE 
             || token(1) == Token::MUTABLE) {
             return assignment();
         }
-    } else if (token() == Token::FUNC) {
-        return closure();
+        break;
+    }
+    case Token::FUNC: return closure();
+    case Token::IF: return conditional();
+    case Token::WHILE: return while_loop();
+    case Token::FOR: return for_loop();
+    case Token::LET: return let();
+    case Token::MATCH: return match();
+    default: break;
     }
     return logical_or();
 }
@@ -1530,13 +1535,13 @@ Expression* Parser::string() {
     return expr;
 }
 
-Statement* Parser::conditional() {
-    // Conditional statement: if expr block (else if expr block)? (else block)?
+Expression* Parser::conditional() {
+    // Conditional Expression: if expr block (else if expr block)? (else block)?
     LocationAnchor loc(this);
     expect(Token::IF); 
     Expression::Ptr guard = expression();
-    Statement::Ptr true_branch = block();
-    Statement::Ptr false_branch;
+    Expression::Ptr true_branch = block();
+    Expression::Ptr false_branch;
     if (token() == Token::SEPARATOR && token(1) == Token::ELSE) {
         next(); 
     }
@@ -1551,7 +1556,7 @@ Statement* Parser::conditional() {
     return new Conditional(loc, guard, true_branch, false_branch);
 }
 
-Statement* Parser::let() {
+Expression* Parser::let() {
     // Parses a let expression: let (guard)+ { block }
     LocationAnchor loc(this);
     expect(Token::LET);
@@ -1563,7 +1568,7 @@ Statement* Parser::let() {
     return new Let(loc, assign, block()); 
 }
 
-Statement* Parser::while_loop() {
+Expression* Parser::while_loop() {
     // While loop: while expr block
     LocationAnchor loc(this);
     expect(Token::WHILE);
@@ -1571,7 +1576,7 @@ Statement* Parser::while_loop() {
     return new While(loc, expr, block()); 
 }
 
-Statement* Parser::for_loop() {
+Expression* Parser::for_loop() {
     // For loop: for x in expr block.  We have to build up the syntactic sugar
     // for the loop by using an iterator and a while loop.
     LocationAnchor loc(this);
@@ -1579,7 +1584,7 @@ Statement* Parser::for_loop() {
     String* id = identifier();
     expect(Token::IN);
     Expression* guard = expression();
-    Statement* block = Parser::block();
+    Expression* block = Parser::block();
     String* i = name("_i");
 
     // _i = guard.iter()
@@ -1597,7 +1602,7 @@ Statement* Parser::for_loop() {
     Let* t8 = new Let(loc, t7, block);
     
     // Loop body
-    While* t10 = new While(loc, t4, new Block(loc, 0, t8)); 
+    While* t10 = new While(loc, t4, new Block(loc, 0, t8));
     return new Let(loc, t2, t10);
 }
 
