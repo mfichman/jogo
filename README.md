@@ -27,3 +27,11 @@ Testing
 
 1. Install [python](http://www.python.org)
 2. Run "scons check"
+
+Using the Compiler
+------------------
+
+```
+$ jogo MyProgram.jg
+$ out
+```
