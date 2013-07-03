@@ -55,6 +55,7 @@ void SemanticAnalyzer::operator()(Module* feature) {
     // over features in general instead.
     std::set<String::Ptr> features;
     for (Feature::Itr f = feature->features(); f; ++f) {
+
         if (Class::Ptr clazz = dynamic_cast<Class*>(f.pointer())) {
             if (clazz->is_closure()) { continue; }
         }

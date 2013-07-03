@@ -214,11 +214,7 @@ Class* Type::clazz() const {
     if (class_) {
         return class_;
     }
-    if (is_generic()) {
-        class_ = env_->object_type()->clazz();
-    } else {
-        class_ = file()->clazz(scope_, name_);
-    } 
+    class_ = file()->clazz(scope_, name_);
     return class_;
 }
 

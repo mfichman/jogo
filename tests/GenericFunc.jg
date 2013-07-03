@@ -1,0 +1,59 @@
+
+
+
+#MapFunc[:i,:o] < Interface {
+#    @call(input :i) :o {}
+#}
+#
+#map(list Iterable[:a], fn MapFunc[:a,:b]) Array[:b] {
+#    out = Array[:b](0)
+#    for elem in list {
+#        out.append(fn(elem))
+#    }
+#    ret out
+#}
+#
+#FoldFunc[:a,:e] < Interface {
+#    @call(acc :a, elem :e) :a {}
+#}
+#
+#fold(list Iterable[:e], fn FoldFunc[:a,:e], init :a) :a {
+#    acc mutable = init
+#    for elem in list {
+#        acc = fn(acc,elem)
+#    }
+#    ret acc 
+#} 
+
+
+#Foo[:a,:b] < Object {
+#
+#    test2(bob2 :b)  {
+#    }
+#   
+#    test(bob :a) {
+#        x = "hello"
+#        self.test(x)
+#        self.test(bob) # Bad
+#    }
+#}
+#
+#test2(bob2 :b)  {
+#}
+#
+#test(bob :a) {
+#    test2(bob)
+#}
+#
+
+identity(val :a) :a {
+    ret val
+}
+
+main() Int {
+    x String = identity("foo")
+    ret 0
+}
+
+
+

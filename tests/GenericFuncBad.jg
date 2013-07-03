@@ -1,0 +1,13 @@
+
+
+badret(bob :a) :c {
+    ret nil
+}
+
+
+BadRet[:a] < Object {
+
+    badret() :d {
+        ret nil
+    }
+}

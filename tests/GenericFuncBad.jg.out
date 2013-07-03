@@ -1,0 +1,2 @@
+GenericFuncBad.jg:3:16: Unbound generic type ':c'
+GenericFuncBad.jg:10:14: Unbound generic type ':d'
