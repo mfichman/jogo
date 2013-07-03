@@ -32,6 +32,9 @@
 #ifdef WINDOWS
 #include <windows.h>
 #else
+#ifdef DARWIN
+#define _DARWIN_C_SOURCE
+#endif
 #include <sys/mman.h>
 #include <unistd.h>
 #endif

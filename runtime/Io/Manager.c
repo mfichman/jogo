@@ -36,10 +36,12 @@
 #elif defined(LINUX)
 #include <unistd.h>
 #include <errno.h>
+#include <time.h>
 #include <sys/epoll.h>
 #elif defined(DARWIN)
 #include <unistd.h>
 #include <errno.h>
+#include <time.h>
 #include <sys/event.h>
 #endif 
 #include <stdlib.h>

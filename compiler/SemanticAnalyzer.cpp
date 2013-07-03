@@ -526,7 +526,8 @@ void SemanticAnalyzer::operator()(Call* call) {
     }
     type_ = 0;
     call->arguments(args(call, call->arguments(), func, receiver));
-    call->type(canonical(func->type(), receiver));
+    //call->type(canonical(func->type(), receiver));
+    call->type(canonical(func->type(), receiver, func, call->arguments()));
     assert(call->type() && "Missing call type");
     if (function_) {
         function_->called_func(func);
@@ -1342,7 +1343,7 @@ Expression::Ptr SemanticAnalyzer::args(Expression* call, Expression* args, Funct
         // Get the formal type.  If the type is 'self', then the formal
         // parameter is the type of the receiver.  If the type is a generic,
         // then look up the actual type from the class' definition.
-        Type::Ptr ft = canonical(formal->type(), rec);
+        Type::Ptr ft = canonical(formal->type(), rec, fn, args);
 
         // Get the actual argument type.
         Type::Ptr at = arg->type();
@@ -1720,7 +1721,7 @@ Type* SemanticAnalyzer::binding_for(Type* in, Type* recv, Function* func, Expres
     // and 'args' if the type could not be identified by the receiver alone.
     assert(in->is_generic() && "Not a generic type variable");
     if (recv) {
-        Type::Ptr out = binding_for(in, recv, recv->clazz()->type());  
+        Type::Ptr out = binding_for(in, recv->clazz()->type(), recv);  
         if (in != out) {
             return out;
         }
