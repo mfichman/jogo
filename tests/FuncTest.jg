@@ -2,11 +2,82 @@
 
 import Func
 
-main() Int {
+test_take() {
     arr = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"]
     arr2 = take(arr, 3)
     for x in arr2 {
         Io::println(x)
     } 
+}
+
+test_count() {
+    arr = ["one", "two", "three"]
+    Io::println(count(arr).str)
+}
+
+test_array() {
+    arr = ["one", "two", "three"]
+    arr2 = array(arr.iter())
+    arr2.push("four")
+    for x in arr {
+        Io::println(x)
+    }
+    for x in arr2 {
+        Io::println(x)
+    }
+}
+
+test_map() {
+    arr Array[String] = ["banana", "apple", "pear", "mango"]
+    fn MapFunc[String,String] = func(str String) String {
+        if str == "banana" {
+            ret "bar"
+        } else {
+            ret "foo"
+        }
+    }
+    arr2 = map(arr, fn) 
+    for x in arr2 {
+        Io::println(x)
+    }
+}
+
+# This test currently fails b/c the type of the anonymous function is
+# _ClosureXXXXX, which is not generic.  Hence, attempting to match the type
+# parameters :a, :b in FuncMap[:a,:b] fails.  To make this work, the type
+# checker needs to find out what types :a and :b map to.
+#test_map2() {
+#    arr Array[String] = ["banana", "apple", "pear", "mango"]
+#    arr2 = map(arr) func(str String) String {
+#        if str == "banana" {
+#            ret "bar"
+#        } else {
+#            ret "foo"
+#        }
+#    }
+#    for x in arr2 {
+#        Io::println(x)
+#    }
+#}
+
+test_fold() {
+    arr = ["foo", "bar", "baz", "baz"]
+    fn FoldFunc[String,String] = func(acc String, elem String) String {
+        if elem == "bar" {
+            ret acc
+        } else {
+            ret acc + " " + elem
+        }
+    } 
+    str = fold(arr, fn, "init")
+    Io::println(str)
+}
+
+main() Int {
+    test_take()
+    test_count()
+    test_array()
+    #test_map()
+    test_fold()
     ret 0
 }

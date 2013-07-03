@@ -1334,10 +1334,11 @@ Expression::Ptr SemanticAnalyzer::args(Expression* call, Expression* args, Funct
     String::Ptr id = fn->name();
     Formal::Ptr formal = fn ? fn->formals() : 0;
     Expression::Ptr arg = args;
-    Expression::Ptr out;
     if (arg) {
         arg->last(0);
     }
+
+    std::vector<Expression::Ptr> outv;
 
     while (arg && formal) {
         // Get the formal type.  If the type is 'self', then the formal
@@ -1367,11 +1368,23 @@ Expression::Ptr SemanticAnalyzer::args(Expression* call, Expression* args, Funct
         } else {
             actual = arg;
         }
-        out = append(out, actual.pointer());
+        outv.push_back(actual);
+        formal = formal->next();
+        arg = arg->next();
+    }
+
+    // Unlink all the original arguments
+    for (Expression::Ptr arg = args; arg;) {
         Expression::Ptr prev = arg;
         arg = arg->next();
         prev->next(0);
-        formal = formal->next();
+        prev->last(0);
+    }
+
+    // Re-link all the processed arguments
+    Expression::Ptr out;
+    for (size_t i = 0; i < outv.size(); ++i) {
+        out = append(out.pointer(), outv[i].pointer()); 
     }
     if (arg) {
         err_ << args->location();
