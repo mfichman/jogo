@@ -1,0 +1,25 @@
+# jgtest exec on
+# Tests that control structures are usable as expressions
+
+test_cond() {
+    x = if true { "bob" }# else { "false" }
+    Io::println(x)
+}
+
+test_while() {
+}
+
+test_for() {
+}
+
+test_let() {
+}
+
+test_match() {
+}
+
+main() Int {
+    test_cond()
+
+    ret 0
+}

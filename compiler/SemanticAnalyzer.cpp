@@ -285,6 +285,7 @@ void SemanticAnalyzer::operator()(Let* stmt) {
         v(this);
     }
     block(this);
+    stmt->type(block->type());
     exit_scope();
 }
 
@@ -742,6 +743,7 @@ void SemanticAnalyzer::operator()(Block* statement) {
     return_ = 0;
 
     bool return_checked = false;
+    statement->type(env_->nil_type());
     for (Expression::Ptr s = statement->children(); s; s = s->next()) {
         if (return_ && ! return_checked) {
             err_ << s->location();
@@ -750,6 +752,7 @@ void SemanticAnalyzer::operator()(Block* statement) {
             return_checked = true;
         }
         s(this);
+        statement->type(s->type());
     }
     exit_scope();
 }
@@ -768,8 +771,9 @@ void SemanticAnalyzer::operator()(While* statement) {
         env_->error();
     }
     block(this);
+    statement->type(block->type());
     exit_scope();
-    return_ = 0;
+    return_ = 0; // FixMe: ?
 }
 
 void SemanticAnalyzer::operator()(Conditional* statement) {
@@ -789,6 +793,11 @@ void SemanticAnalyzer::operator()(Conditional* statement) {
         false_branch(this);
     } else {
         return_ = 0;
+    }
+    if (!false_branch||true_branch->type()->equals(false_branch->type())) {
+        statement->type(true_branch->type());
+    } else {
+        statement->type(env_->nil_type()); 
     }
 }
 
@@ -862,6 +871,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
 void SemanticAnalyzer::operator()(Return* statement) {
     Expression::Ptr expr = statement->expression();
     if (dynamic_cast<Empty*>(expr.pointer())) {
+        statement->type(env_->void_type());
         return;
     }
     expr(this);
@@ -881,6 +891,7 @@ void SemanticAnalyzer::operator()(Return* statement) {
         // expression is a 'Value.'  Box up the value.
         statement->expression(new Box(expr->location(), type, expr)); 
     }
+    statement->type(expr->type());
 }
 
 void SemanticAnalyzer::operator()(Fork* statement) {
@@ -894,13 +905,16 @@ void SemanticAnalyzer::operator()(Yield* statement) {
     // A yield statement can throw an exception; therefore, the enclosing 
     // function can also throw an exception.
     function_->throw_spec(Function::THROW);
+    statement->type(env_->void_type());
 }
 
 void SemanticAnalyzer::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
     guard(this);
+    statement->type(env_->nil_type());
     for (Expression::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
+        statement->type(s->type());
     }
 }
 
@@ -919,6 +933,11 @@ void SemanticAnalyzer::operator()(Match* statement) {
             err_ << guard->type() << "'";
             err_ << "\n";
             env_->error();
+        }
+        if (!statement->type()||statement->type()->equals(with->type())) {
+            statement->type(with->type());
+        } else {
+            statement->type(env_->nil_type());
         }
     }
 }
