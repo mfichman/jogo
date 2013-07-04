@@ -220,7 +220,7 @@ void TreePrinter::operator()(Binary* expression) {
 
 void TreePrinter::operator()(Let* expression) {
     indent_level_++;
-    Statement::Ptr block = expression->block();
+    Expression::Ptr block = expression->block();
     out_ << "Let\n";
     
     int i = 0;
@@ -335,11 +335,11 @@ void TreePrinter::operator()(Empty* empty) {
 
 void TreePrinter::operator()(Block* statement) {
     indent_level_++;
-    Statement::Ptr children = statement->children();
+    Expression::Ptr children = statement->children();
     out_ << "Block\n";
 
     int i = 0;
-    for (Statement::Ptr c = children; c; c = c->next()) {
+    for (Expression::Ptr c = children; c; c = c->next()) {
         print_tabs(); out_ << "child" << i << ": ";
         c(this);
         i++;
@@ -347,19 +347,10 @@ void TreePrinter::operator()(Block* statement) {
     indent_level_--;
 }
 
-void TreePrinter::operator()(Simple* statement) {
-    indent_level_++;
-    Expression::Ptr expression = statement->expression();
-    out_ << "Statement\n";
-    print_tabs(); out_ << "expression: ";
-    expression(this);
-    indent_level_--;
-}
-
 void TreePrinter::operator()(While* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();
-    Statement::Ptr block = statement->block();
+    Expression::Ptr block = statement->block();
     out_ << "While\n";
     print_tabs(); out_ << "guard: ";
     guard(this);
@@ -371,8 +362,8 @@ void TreePrinter::operator()(While* statement) {
 void TreePrinter::operator()(Conditional* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();
-    Statement::Ptr true_branch = statement->true_branch();
-    Statement::Ptr false_branch = statement->false_branch();
+    Expression::Ptr true_branch = statement->true_branch();
+    Expression::Ptr false_branch = statement->false_branch();
     out_ << "Conditional\n";
     print_tabs(); out_ << "guard: ";
     guard(this);
@@ -417,7 +408,7 @@ void TreePrinter::operator()(Case* statement) {
     guard(this);
 
     int i = 0;
-    for (Statement::Ptr s = statement->children(); s; s = s->next()) {
+    for (Expression::Ptr s = statement->children(); s; s = s->next()) {
         print_tabs(); out_ << "child" << i << ": ";
         s(this);
         i++;
@@ -433,7 +424,7 @@ void TreePrinter::operator()(Match* statement) {
     guard(this);
 
     int i = 0; 
-    for (Statement::Ptr b = statement->cases(); b; b = b->next()) {
+    for (Expression::Ptr b = statement->cases(); b; b = b->next()) {
         print_tabs(); out_ << "case" << i << ": ";
         b(this);
         i++;
@@ -463,7 +454,7 @@ void TreePrinter::operator()(Yield* statement) {
 
 void TreePrinter::operator()(Function* feature) {
     indent_level_++;
-    Statement::Ptr block = feature->block();
+    Expression::Ptr block = feature->block();
     out_ << "Function\n";
     print_tabs(); out_ << "name: ";
     out_ << feature->name() << "\n";

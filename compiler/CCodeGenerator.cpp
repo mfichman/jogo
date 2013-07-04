@@ -180,31 +180,20 @@ void CCodeGenerator::operator()(Box* expression) {
 }
 
 
-void CCodeGenerator::operator()(Block* statement) {
+void CCodeGenerator::operator()(Block* expr) {
 	enter_scope();
-	for (Statement::Ptr s = statement->children(); s; s = s->next()) {
+	for (Expression::Ptr s = expr->children(); s; s = s->next()) {
 		s(this);
 	}
 	exit_scope();
 }
 
-
-void CCodeGenerator::operator()(Simple* statement) {
-	Expression::Ptr expr = statement->expression();
-
-    source_line(statement);
-	emit(expr);
-	//free_temps();
-}
-
-
 void CCodeGenerator::operator()(Let* let) {
 }
 
 
-void CCodeGenerator::operator()(While* statement) {
+void CCodeGenerator::operator()(While* stacement) {
 }
-
 
 void CCodeGenerator::operator()(Conditional* statement) {
     // Emit a conditional expression.  This works more or less like the

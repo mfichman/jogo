@@ -113,12 +113,11 @@ Module
                     argument0: IdentifierRef
                       name: _i
                 block: Block
-                  child0: Statement
-                    expression: Call
-                      expression: IdentifierRef
-                        name: test
-                      argument0: IdentifierRef
-                        name: i
+                  child0: Call
+                    expression: IdentifierRef
+                      name: test
+                    argument0: IdentifierRef
+                      name: i
     feature1: Function
       name: loop2
       type: Void

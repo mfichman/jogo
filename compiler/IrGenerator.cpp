@@ -404,16 +404,11 @@ void IrGenerator::operator()(Empty* expr) {
 
 void IrGenerator::operator()(Block* statement) {
     enter_scope();
-    for (Statement::Ptr s = statement->children(); s; s = s->next()) {
+    for (Expression::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
+        free_temps();
     }
     exit_scope();
-}
-
-void IrGenerator::operator()(Simple* statement) {
-    Expression::Ptr expr = statement->expression();
-    expr(this);
-    free_temps();
 }
 
 void IrGenerator::operator()(Let* statement) {
@@ -593,7 +588,6 @@ void IrGenerator::operator()(Return* statement) {
         }
     }
     scope_.back()->has_return(true);
-    free_temps();
 }
 
 void IrGenerator::operator()(Match* statement) {
@@ -603,7 +597,7 @@ void IrGenerator::operator()(Match* statement) {
     IrBlock::Ptr next_block = ir_block();
     free_temps();
 
-    for (Statement::Ptr t = statement->cases(); t; t = t->next()) {
+    for (Expression::Ptr t = statement->cases(); t; t = t->next()) {
         emit(next_block);
         enter_scope();
 
@@ -623,7 +617,7 @@ void IrGenerator::operator()(Match* statement) {
 
         // Now emit the statements to be run if this branch is true, then jump
         // to the end of the case statement.
-        for (Statement::Ptr s = branch->children(); s; s = s->next()) {
+        for (Expression::Ptr s = branch->children(); s; s = s->next()) {
             s(this);
         } 
         exit_scope();
@@ -633,7 +627,6 @@ void IrGenerator::operator()(Match* statement) {
     }
 
     emit(done_block);
-    free_temps();
 }
 
 void IrGenerator::operator()(Case* statement) {
@@ -642,7 +635,6 @@ void IrGenerator::operator()(Case* statement) {
 
 void IrGenerator::operator()(Fork* statement) {
     assert(!"Not implemented");
-    free_temps();
 }
 
 void IrGenerator::operator()(Yield* statament) {

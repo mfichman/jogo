@@ -116,14 +116,9 @@ void UsageFinder::operator()(Let* statement) {
 }
 
 void UsageFinder::operator()(Block* stmt) {
-    for (Statement::Ptr c = stmt->children(); c; c = c->next()) {
+    for (Expression::Ptr c = stmt->children(); c; c = c->next()) {
         c(this);
     }
-}
-
-void UsageFinder::operator()(Simple* statement) {
-    Expression::Ptr expr = statement->expression();
-    expr(this);
 }
 
 void UsageFinder::operator()(While* statement) {
@@ -150,7 +145,7 @@ void UsageFinder::operator()(Case* statement) {
 }
 
 void UsageFinder::operator()(Function* feature) {
-    Statement::Ptr block = feature->block();
+    Expression::Ptr block = feature->block();
     block(this);
     // FIXME: Check parameter types
     // FIXME: Find range for the function name in the definition

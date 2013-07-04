@@ -51,7 +51,6 @@ private:
     void operator()(Construct* expression);
     void operator()(IdentifierRef* expression);
     void operator()(Block* statement);
-    void operator()(Simple* statement);
     void operator()(Let* let);
 	void operator()(Member* member);
     void operator()(While* statement);

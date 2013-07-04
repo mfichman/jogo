@@ -11,18 +11,16 @@ Module
         name: self
         type: Variables
       block: Block
-        child0: Statement
-          expression: Assignment
-            name: one
-            type: Int
-            declared: Int
-            initializer: Empty
-        child1: Statement
-          expression: Assignment
-            name: two
-            type: Int
-            declared: Int
-            initializer: IntegerLiteral(0)
+        child0: Assignment
+          name: one
+          type: Int
+          declared: Int
+          initializer: Empty
+        child1: Assignment
+          name: two
+          type: Int
+          declared: Int
+          initializer: IntegerLiteral(0)
     feature1: Function
       name: @destroy
       type: Void

@@ -87,11 +87,11 @@ private:
     Feature::Flags flags();
     void import();
 
-    Statement* statement();
-    Statement* conditional();
-    Statement* while_loop();
-    Statement* for_loop();
-    Statement* let();
+    Expression* statement();
+    Expression* conditional();
+    Expression* while_loop();
+    Expression* for_loop();
+    Expression* let();
 
     Assignment* assignment();
     Expression* regex();

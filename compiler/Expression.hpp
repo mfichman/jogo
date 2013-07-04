@@ -455,7 +455,158 @@ public:
 private:
     Expression::Ptr child_;
 };
+
+/* Case statement */
+class Case : public Expression {
+public:
+    Case(Location loc, Expression* guard, Expression* children);
+
+    Expression* guard() const { return guard_; }
+    Expression* children() const { return children_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Case> Ptr;
+
+private:
+    Expression::Ptr guard_;
+    Expression::Ptr children_;
+};
+
  
+/* Match expression */
+class Match : public Expression {
+public:
+    Match(Location loc, Expression* guard, Case* cases) : 
+        Expression(loc),
+        guard_(guard),
+        cases_(cases) {
+    }
+
+    Expression* guard() const { return guard_; }
+    Case* cases() const { return cases_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Match> Ptr;
+
+private:
+    Expression::Ptr guard_;
+    Case::Ptr cases_;
+};
+
+/* While loop */
+class While : public Expression {
+public:
+    While(Location loc, Expression* guard, Expression* block);
+
+    Expression* guard() const { return guard_; }
+    Expression* block() const { return block_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<While> Ptr;
+
+private:
+    Expression::Ptr guard_;
+    Expression::Ptr block_;
+};
+
+/* Conditional */
+class Conditional : public Expression {
+public:
+    Conditional(Location loc, Expression* ex, Expression* yes, Expression* no);
+
+    Expression* guard() const { return guard_; }
+    Expression* true_branch() const { return true_branch_; }
+    Expression* false_branch() const { return false_branch_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Conditional> Ptr;
+
+private:
+    Expression::Ptr guard_;
+    Expression::Ptr true_branch_;
+    Expression::Ptr false_branch_;
+};
+
+/* Let statement */
+class Let : public Expression {
+public:
+    Let(Location loc, Assignment* variables, Expression* block);
+
+    Assignment* variables() const { return variables_; }
+    Expression* block() const { return block_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Let> Ptr;
+
+private:
+    Assignment::Ptr variables_;
+    Expression::Ptr block_;
+};
+
+/* Block statement */
+class Block : public Expression {
+public:
+    Block(Location loc, String* comment, Expression* children) :
+        Expression(loc),
+        comment_(comment),
+        children_(children) {
+    }
+    
+    String* comment() const { return comment_; }
+    Expression* children() const { return children_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Block> Ptr;
+
+private:
+    String::Ptr comment_;
+    Expression::Ptr children_;
+};
+
+/* Return statement */
+class Return : public Expression {
+public:
+    Return(Location loc, Expression* expr) :
+        Expression(loc),
+        expression_(expr) {
+    }
+
+    Expression* expression() const { return expression_; }
+    void expression(Expression* expr) { expression_ = expr; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Return> Ptr;
+
+private:
+    Expression::Ptr expression_;
+};
+
+/* Fork statement */
+class Fork : public Expression {
+public:
+    Fork(Location loc, Expression* expression) : 
+        Expression(loc),
+        expression_(expression) {
+    }
+    
+    Expression* expression() const { return expression_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Fork> Ptr;
+
+private:
+    Expression::Ptr expression_;
+};
+
+#undef Yield
+
+/* Yield statement */
+class Yield : public Expression {
+public:
+    Yield(Location loc, Expression* expression) :
+        Expression(loc),
+        expression_(expression) {
+    }
+    Expression* expression() const { return expression_; }
+    void operator()(Functor* functor) { functor->operator()(this); }
+    typedef Pointer<Yield> Ptr;
+
+private:
+    Expression::Ptr expression_;
+};
+
 
 /* Parse error placeholder expression */
 class ParseError : public Expression {

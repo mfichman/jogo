@@ -95,15 +95,10 @@ void ClosureAnalyzer::operator()(IdentifierRef* expression) {
 
 void ClosureAnalyzer::operator()(Block* statement) {
     enter_scope();
-    for (Statement::Ptr s = statement->children(); s; s = s->next()) {
+    for (Expression::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
     }
     exit_scope();
-}
-
-void ClosureAnalyzer::operator()(Simple* statement) {
-    Expression::Ptr expression = statement->expression();
-    expression(this);
 }
 
 void ClosureAnalyzer::operator()(Member* expression) {
@@ -113,7 +108,7 @@ void ClosureAnalyzer::operator()(Member* expression) {
 
 void ClosureAnalyzer::operator()(Let* expression) {
     enter_scope();
-    Statement::Ptr block = expression->block();
+    Expression::Ptr block = expression->block();
     for (Expression::Ptr v = expression->variables(); v; v = v->next()) {
         v(this);
     }
@@ -123,15 +118,15 @@ void ClosureAnalyzer::operator()(Let* expression) {
 
 void ClosureAnalyzer::operator()(While* statement) {
     Expression::Ptr guard = statement->guard();
-    Statement::Ptr block = statement->block();
+    Expression::Ptr block = statement->block();
     guard(this);
     block(this);
 }
 
 void ClosureAnalyzer::operator()(Conditional* statement) {
     Expression::Ptr guard = statement->guard();
-    Statement::Ptr true_branch = statement->true_branch();
-    Statement::Ptr false_branch = statement->false_branch();
+    Expression::Ptr true_branch = statement->true_branch();
+    Expression::Ptr false_branch = statement->false_branch();
     guard(this);
     true_branch(this);
     if (false_branch) {
@@ -161,7 +156,7 @@ void ClosureAnalyzer::operator()(Return* statement) {
 void ClosureAnalyzer::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
     guard(this);
-    for (Statement::Ptr c = statement->children(); c; c = c->next()) {
+    for (Expression::Ptr c = statement->children(); c; c = c->next()) {
         c(this);
     }
 }
@@ -171,7 +166,7 @@ void ClosureAnalyzer::operator()(Match* statement) {
     Expression::Ptr guard = statement->guard();
     guard(this);
     
-    for (Statement::Ptr b = statement->cases(); b; b = b->next()) {
+    for (Expression::Ptr b = statement->cases(); b; b = b->next()) {
         b(this);
     }
 }

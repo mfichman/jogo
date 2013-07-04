@@ -22,7 +22,6 @@
 
 #include "SemanticAnalyzer.hpp"
 #include "Feature.hpp"
-#include "Statement.hpp"
 #include "Expression.hpp"
 #include "Location.hpp"
 #include "ClosureAnalyzer.hpp"
@@ -281,11 +280,12 @@ void SemanticAnalyzer::operator()(Let* stmt) {
     // For a let stmt, introduce the new variables in a new scope, and 
     // then check the block.
     enter_scope();
-    Statement::Ptr block = stmt->block();
+    Expression::Ptr block = stmt->block();
     for (Expression::Ptr v = stmt->variables(); v; v = v->next()) {
         v(this);
     }
     block(this);
+    stmt->type(block->type());
     exit_scope();
 }
 
@@ -743,7 +743,8 @@ void SemanticAnalyzer::operator()(Block* statement) {
     return_ = 0;
 
     bool return_checked = false;
-    for (Statement::Ptr s = statement->children(); s; s = s->next()) {
+    statement->type(env_->nil_type());
+    for (Expression::Ptr s = statement->children(); s; s = s->next()) {
         if (return_ && ! return_checked) {
             err_ << s->location();
             err_ << "Statement is unreachable\n";
@@ -751,19 +752,15 @@ void SemanticAnalyzer::operator()(Block* statement) {
             return_checked = true;
         }
         s(this);
+        statement->type(s->type());
     }
     exit_scope();
-}
-
-void SemanticAnalyzer::operator()(Simple* statement) {
-    Expression::Ptr expression = statement->expression();
-    expression(this);
 }
 
 void SemanticAnalyzer::operator()(While* statement) {
     // Check the while statement guard type, and then check all the branches.
     Expression::Ptr guard = statement->guard();
-    Statement::Ptr block = statement->block();
+    Expression::Ptr block = statement->block();
     enter_scope();
     guard(this);
     if (!guard->type()->is_boolifiable()) {
@@ -774,16 +771,17 @@ void SemanticAnalyzer::operator()(While* statement) {
         env_->error();
     }
     block(this);
+    statement->type(block->type());
     exit_scope();
-    return_ = 0;
+    return_ = 0; // FixMe: ?
 }
 
 void SemanticAnalyzer::operator()(Conditional* statement) {
     // Ensure that the guard is convertible to type bool.  This is always true
     // unless the guard is a value type.
     Expression::Ptr guard = statement->guard();
-    Statement::Ptr true_branch = statement->true_branch();
-    Statement::Ptr false_branch = statement->false_branch();
+    Expression::Ptr true_branch = statement->true_branch();
+    Expression::Ptr false_branch = statement->false_branch();
     guard(this);
     if (!guard->type()->is_boolifiable()) {
         err_ << guard->location();
@@ -795,6 +793,11 @@ void SemanticAnalyzer::operator()(Conditional* statement) {
         false_branch(this);
     } else {
         return_ = 0;
+    }
+    if (!false_branch||true_branch->type()->equals(false_branch->type())) {
+        statement->type(true_branch->type());
+    } else {
+        statement->type(env_->nil_type()); 
     }
 }
 
@@ -868,6 +871,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
 void SemanticAnalyzer::operator()(Return* statement) {
     Expression::Ptr expr = statement->expression();
     if (dynamic_cast<Empty*>(expr.pointer())) {
+        statement->type(env_->void_type());
         return;
     }
     expr(this);
@@ -887,6 +891,7 @@ void SemanticAnalyzer::operator()(Return* statement) {
         // expression is a 'Value.'  Box up the value.
         statement->expression(new Box(expr->location(), type, expr)); 
     }
+    statement->type(expr->type());
 }
 
 void SemanticAnalyzer::operator()(Fork* statement) {
@@ -900,13 +905,16 @@ void SemanticAnalyzer::operator()(Yield* statement) {
     // A yield statement can throw an exception; therefore, the enclosing 
     // function can also throw an exception.
     function_->throw_spec(Function::THROW);
+    statement->type(env_->void_type());
 }
 
 void SemanticAnalyzer::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
     guard(this);
-    for (Statement::Ptr s = statement->children(); s; s = s->next()) {
+    statement->type(env_->nil_type());
+    for (Expression::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
+        statement->type(s->type());
     }
 }
 
@@ -916,7 +924,7 @@ void SemanticAnalyzer::operator()(Match* statement) {
     Expression::Ptr guard = statement->guard();
     guard(this);
 
-    for (Statement::Ptr b = statement->cases(); b; b = b->next()) {
+    for (Expression::Ptr b = statement->cases(); b; b = b->next()) {
         b(this);
         Case::Ptr with = static_cast<Case*>(b.pointer());
         if (!guard->type()->equals(with->guard()->type())) {
@@ -925,6 +933,11 @@ void SemanticAnalyzer::operator()(Match* statement) {
             err_ << guard->type() << "'";
             err_ << "\n";
             env_->error();
+        }
+        if (!statement->type()||statement->type()->equals(with->type())) {
+            statement->type(with->type());
+        } else {
+            statement->type(env_->nil_type());
         }
     }
 }
@@ -1221,7 +1234,7 @@ void SemanticAnalyzer::operator()(Closure* expression) {
     Location loc = expression->location();
     Expression::Ptr args;
     Formal::Ptr formals;
-    Statement::Ptr stmts;
+    Expression::Ptr stmts;
     Feature::Flags flags = Feature::PRIVATE; 
     Expression::Ptr empty = new Empty(loc);
 
@@ -1236,8 +1249,7 @@ void SemanticAnalyzer::operator()(Closure* expression) {
         String::Ptr fid = env_->name("_"+id->string());
         Formal::Ptr formal = new Formal(loc, fid, var->type()); 
         IdentifierRef::Ptr rhs = new IdentifierRef(loc, env_->name(""), fid);
-        Assignment::Ptr as = new Assignment(loc, id, env_->top_type(), rhs); 
-        Statement::Ptr stmt = new Simple(loc, as);
+        Assignment::Ptr stmt = new Assignment(loc, id, env_->top_type(), rhs); 
         if (args) {
             formal->next(formals);
             arg->next(args);
@@ -1245,7 +1257,7 @@ void SemanticAnalyzer::operator()(Closure* expression) {
         }
         formals = formal;
         args = arg; 
-        stmts = stmt;
+        stmts = stmt.pointer();
         
         // Create a new attribute inside the closure object to store the 
         // variable.
@@ -1607,7 +1619,7 @@ void SemanticAnalyzer::mutator(Attribute* feat) {
         String::Ptr fn = feat->name();
         IdentifierRef::Ptr val(new IdentifierRef(loc, env_->name(""), id)); 
         Assignment::Ptr assign(new Assignment(loc, fn, env_->top_type(), val)); 
-        Block::Ptr block(new Block(loc, 0, new Simple(loc, assign)));
+        Block::Ptr block(new Block(loc, 0, assign));
         Type::Ptr st = class_->type();
         Type::Ptr vt = env_->void_type();
         Type::Ptr ft = feat->type();
