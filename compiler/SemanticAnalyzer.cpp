@@ -1353,7 +1353,11 @@ Expression::Ptr SemanticAnalyzer::args(Expression* call, Expression* args, Funct
         // expressions that were auto-inserted by the compiler).
         if (!at->subtype(ft) && !formal->is_self()) {
             err_ << arg->location();
-            err_ << "Argument does not conform to type '" << ft << "'\n";
+            err_ << "Argument does not conform to type '" << ft << "'";
+            if (ft != formal->type()) {
+                err_ << " (" << formal->type() << ")";
+            }
+            err_ << "\n";
             env_->error();
         }
 

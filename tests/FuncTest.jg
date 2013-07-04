@@ -77,7 +77,7 @@ main() Int {
     test_take()
     test_count()
     test_array()
-    #test_map()
+    test_map()
     test_fold()
     ret 0
 }
