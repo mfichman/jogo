@@ -152,6 +152,7 @@ CodeExpander::functor(Class* clazz) {
                 expr->type(func->type());
                 Is::Ptr is(new Is(loc, guard, type));
                 stmt = new Conditional(loc, is, expr, stmt);
+                stmt->type(env_->void_type());
             }
         }
     }

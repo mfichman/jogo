@@ -8,3 +8,4 @@ SemantBad2.jg:47:14: Illegal circular reference
 SemantBad2.jg:47:5: Non-literal constant
 SemantBad2.jg:46:5: Non-literal constant
 SemantBad2.jg:54:11: Illegal circular reference
+SemantBad2.jg:58:5: Can't access attribute of type 'Void'

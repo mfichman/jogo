@@ -1,0 +1,154 @@
+# jgtest exec on
+
+Val < Value {
+    test String
+    int Int
+    @init(ptest String, pint Int) {
+        test = ptest
+        int = pint
+        Io::println("init #{self.test} #{self.int}") 
+    }
+    @destroy() {
+        Io::println("destroy #{self.test} #{self.int}") 
+    }
+    str?() String { ret self.int.str }
+}
+
+Obj < Object {
+    test String
+    int Int
+    @init(ptest String, pint Int) {
+        test = ptest
+        int = pint
+        Io::println("init #{self.test} #{self.int}") 
+    }
+    @destroy() {
+        Io::println("destroy #{self.test} #{self.int}") 
+    }
+    str?() String { ret self.int.str }
+}
+
+val(test String, int Int) Val {
+    ret Val(test, int)
+}
+
+obj(test String, int Int) Obj {
+    ret Obj(test, int)
+}
+
+val_cond_no_assign() {
+    if true {
+        Val("val_cond_no_assign", 1)            
+    }
+    Io::println("break")
+
+    if true {
+        val("val_cond_no_assign", 2)
+    }
+    Io::println("break")
+}
+
+val_cond_assign() {
+    x = if true {
+        Val("val_cond_assign", 1)            
+    }
+    Io::println("break")
+
+    y = if true {
+        val("val_cond_assign", 2)
+    }
+    Io::println("break")
+}
+
+val_end() {
+    Val("val_end", 1)
+}
+
+val_return() Val {
+    ret Val("val_return", 1)
+}
+
+val_loop_no_assign() { # FIXME: Broken (doesn't free inside loop)
+    i mutable = 0
+    while i < 2 {
+        ++i
+        Val("val_loop_no_assign", i)
+    }
+}
+
+val_loop_assign() { # FIXME: Broken (doesn't free inside loop)
+    i mutable = 0
+    y = while i < 2 {
+        ++i
+        Val("val_loop_assign", i)
+    }
+}
+
+val_nested_no_assign() {
+    i mutable = 0
+    while i < 1 {
+        ++i
+        if true {
+            Val("val_nested_no_assign", i)
+        } 
+    }
+}
+
+val_nested_assign() {
+    i mutable = 0
+    y = while i < 1 {
+        ++i
+        if true {
+            Val("val_nested_assign", 0)
+        } 
+    }
+}
+
+val_nested_double_assign() { # FIXME: 'x' shouldn't be freed
+    y = if true {
+        x = if true {
+            Val("val_nested_double_assign", 1)
+        } 
+    }
+}
+
+val_cond_var_no_assign() {
+    if true {
+        x = Val("val_cond_var_no_assign", 1)
+        x
+    }
+    Io::println("break")
+}
+
+val_cond_var_assign() {
+    y = if true {
+        x = Val("val_cond_var_assign", 1)
+        x
+    }
+}
+
+obj_nested_double_assign() { 
+    y = Obj("bilbo",1)
+#    y = if true {
+#        x = if true {
+#            Obj("obj_nested_double_assign", 1)
+#        } 
+#    }
+}
+
+main() Int {
+#    val_cond_no_assign()
+#    val_cond_assign()
+#    val_loop_no_assign()
+#    val_loop_assign()
+#    val_end()
+#    val_return()
+#    val_nested_no_assign()
+#    val_nested_assign()
+    #val_nested_double_assign()
+    val_cond_var_no_assign()
+    val_cond_var_assign()
+
+    obj_nested_double_assign()
+    ret 0
+}

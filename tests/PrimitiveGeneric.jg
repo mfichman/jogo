@@ -1,7 +1,6 @@
 # jgtest exec on
 
 SetGet[:a] < Interface {
-
     set(arg :a) {}
     get() :a {}
 }
@@ -32,7 +31,6 @@ TestByte < Object {
 }
 
 main() Int {
-
     tb SetGet[Byte] = TestByte()
     tb.set('a'b)
     Io::stdout().put(tb.get())

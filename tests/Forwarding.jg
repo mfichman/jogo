@@ -1,0 +1,30 @@
+# jgtest exec on
+
+Val < Value {
+    @init() {
+        Io::println('init')
+    }
+    @destroy() {
+        Io::println('destroy')
+    }
+
+}
+
+
+foo() Val {
+    ret Val()
+}
+
+bar() Val {
+    ret foo()
+}
+
+baz() Val {
+    ret bar()
+}
+
+
+main() Int {
+    x = baz()
+    ret 0
+}

@@ -37,7 +37,7 @@ native_function2() native Int {
 }
 
 native_function3() native # OK
-  
+
 Obj1 < Object {
     bob Int = bill
     bill Int = bob
@@ -54,3 +54,7 @@ Obj2 < Object {
     bob = test
 }
 
+void_return() {
+    Io::println("hello").foo()
+}
+  

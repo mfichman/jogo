@@ -89,7 +89,7 @@ Coroutine Coroutine__init(Object func) {
         ret->sp -= 15; // For the 15 registers pushed in the .asm file
         ret->sp = (Int)(ret->stack->data + ret->sp); 
         // Make relative to the top-of-stack
-        ret->status = CoroutineStatus_NEW; // New coroutine status code 
+        ret->status = CoroutineStatus_NEW;
         // At the time Coroutine__swap is called for the first time, the call
         // stack looks like this:
         //
@@ -175,6 +175,7 @@ void Coroutine_resume(Coroutine self) {
     self->status = CoroutineStatus_RUNNING;
     Object__refcount_inc((Object)self);
     self->caller = Coroutine__current;
+    //printf("swapping to %x\n", self);
     Coroutine__swap(Coroutine__current, self);
     self->caller = 0; 
     Object__refcount_dec((Object)self);
@@ -192,9 +193,11 @@ void Coroutine__exit() {
     // Yields the the current coroutine to the coroutine's caller.
     if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_DEAD;
+        //printf("swapping to %x\n", Coroutine__current->caller);
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
     } else if (Coroutine__current) {
         Coroutine__current->status = CoroutineStatus_DEAD;
+        //printf("swapping to main\n");
         Coroutine__swap(Coroutine__current, &Coroutine__main);
         // If there is no caller, then yield to the main coroutine.
     } else {
@@ -210,9 +213,11 @@ void Coroutine__yield() {
         Os_cpanic("Coroutine::yield() called by main coroutine");
     } else if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_SUSPENDED;
+        //printf("swapping to %x\n", Coroutine__current->caller);
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
     } else if (Coroutine__current) {
         Coroutine__current->status = CoroutineStatus_SUSPENDED;
+        //printf("swapping to main\n");
         Coroutine__swap(Coroutine__current, &Coroutine__main);
     } else {
         Os_cpanic("No coroutine to yield to");
@@ -229,9 +234,11 @@ void Coroutine__iowait() {
 
     if (Coroutine__current && Coroutine__current->caller) {
         Coroutine__current->status = CoroutineStatus_IO;
+        //printf("swapping to %x\n", Coroutine__current->caller);
         Coroutine__swap(Coroutine__current, Coroutine__current->caller);
     } else if (Coroutine__current) {
         Coroutine__current->status = CoroutineStatus_IO;
+        //printf("swapping to main\n");
         Coroutine__swap(Coroutine__current, &Coroutine__main);
     } else {
         Os_cpanic("Coroutine::iowait() called by main coroutine");
@@ -256,6 +263,7 @@ void Coroutine__ioresume(Coroutine self) {
 
     self->status = CoroutineStatus_RUNNING;
     Object__refcount_inc((Object)self);
+    //printf("swapping to %x\n", self);
     Coroutine__swap(Coroutine__current, self);
     Object__refcount_dec((Object)self);
 }
@@ -333,7 +341,7 @@ void pexcept(DWORD code) {
     // Print out the error, b/c Windows doesn't normally print an error during
     // an exception/signal like Linux and OS X do.
     switch (code) {
-    case EXCEPTION_ACCESS_VIOLATION: fprintf(stderr, "Access violation/segmentation fault\n"); break;
+    case EXCEPTION_ACCESS_VIOLATION: fprintf(stderr, "Access violation\n"); break;
     case EXCEPTION_DATATYPE_MISALIGNMENT: fprintf(stderr, "Datatype misalignment\n"); break;
     case EXCEPTION_FLT_DIVIDE_BY_ZERO: fprintf(stderr, "Divide by zero\n"); break;
     case EXCEPTION_FLT_DENORMAL_OPERAND: fprintf(stderr, "Floating point exception\n"); break;

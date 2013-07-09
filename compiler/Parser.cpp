@@ -826,12 +826,6 @@ Expression* Parser::expression() {
         }
         break;
     }
-    case Token::FUNC: return closure();
-    case Token::IF: return conditional();
-    case Token::WHILE: return while_loop();
-    case Token::FOR: return for_loop();
-    case Token::LET: return let();
-    case Token::MATCH: return match();
     default: break;
     }
     return logical_or();
@@ -1392,22 +1386,25 @@ Expression* Parser::literal() {
     // Parses a literal expression, variable, or parenthesized expression
     Expression* expr = 0;
     switch(token().type()) {
-    case Token::LEFT_BRACKET:
-        return array_literal();
-        break;
-    case Token::LEFT_BRACE:
-        return hash_literal();
-        break;
+    case Token::FUNC: return closure();
+    case Token::IF: return conditional();
+    case Token::WHILE: return while_loop();
+    case Token::FOR: return for_loop();
+    case Token::LET: return let();
+    case Token::MATCH: return match();
+    case Token::LEFT_BRACKET: return array_literal();
+    case Token::LEFT_BRACE: return hash_literal();
+    case Token::STRING_BEGIN: return string();
+    case Token::REGEX: return regex(); 
     case Token::FLOAT:
         expr = new FloatLiteral(location(), env_->integer(value()));
         break;
     case Token::INTEGER:
         expr = integer_literal();
         break;
-    case Token::STRING: {
+    case Token::STRING: 
         expr = string_literal();
         break;
-    }
     case Token::NIL:
         expr = new NilLiteral(location());
         break;
@@ -1415,16 +1412,14 @@ Expression* Parser::literal() {
         expr = new IntegerLiteral(location(), env_->integer("-1"));
         expr->type(env_->char_type());
         break;
-    case Token::CHAR: {
+    case Token::CHAR:
         expr = byte_or_char_literal();
         expr->type(env_->char_type());
         break;
-    }
-    case Token::BYTE: {
+    case Token::BYTE:
         expr = byte_or_char_literal();
         expr->type(env_->byte_type());
         break;
-    }
     case Token::BOOL:
         if (value() == "true") {
             expr = new BooleanLiteral(location(), env_->integer("1"));
@@ -1443,10 +1438,6 @@ Expression* Parser::literal() {
         expr = expression();
         expect(Token::RIGHT_PARENS);
         return expr;  
-    case Token::STRING_BEGIN:
-        return string();
-    case Token::REGEX:
-        return regex(); 
     default:
         if (!error_) {
             err_ << location() << "Unexpected " << token() << "\n";

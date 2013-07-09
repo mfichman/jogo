@@ -1,25 +1,92 @@
 # jgtest exec on
 # Tests that control structures are usable as expressions
 
+Val < Value {
+    str String
+    @init(pstr String) {
+        str = pstr
+    }
+}
+
 test_cond() {
-    x = if true { "bob" }# else { "false" }
+    Io::println("test_cond")
+    x = if true { "hello" } else { "false" }
     Io::println(x)
+    Io::println(if false { "hello" } else { "false" })
+
+    y = if true { Val("hello") } else { Val("goodbye") }
+    Io::println(y.str)
+    Io::println(if false { Val("hello") } else { Val("goodbye") }.str)
+
+    #Io::println(if false { Val("hello") }.str)
+    # Since the branch is (possibly) not taken, return the default value
+
+    Io::println(if not 7 { "fail" })
+    Io::println("")
 }
 
 test_while() {
+    Io::println("test_while")
+    i mutable = 0
+    x = while i < 2 { ++i }
+    Io::println(x.str)
+    Io::println(while i < 4 { ++i }.str)
+
+    Io::println(while i < 5 { 
+        ++i
+        Val("val")
+    }.str)
+
+#    Io::println(while i < 5 {
+#        ++i
+#        Val("fail")
+#    }.str)
+    
+    Io::println(while false { "fail" })
+    Io::println("")
 }
 
 test_for() {
+    Io::println("test_for")
+    arr = ['one', 'two', 'three']
+    x = for val in arr { val }
+    Io::println(x)
+    Io::println(for val in arr { val })
+
+    y = for val in arr { Val("value") }
+#    Io::println(y.str)
+#    Io::println(for val in arr { Val("value") }.str)
+
+    Io::println(for q in [] { "fail" })
+    Io::println("")
 }
 
 test_let() {
+    Io::println("test_let")
+    x = let y = "bob" { y }
+    Io::println(x)
+    Io::println(let y = "bill" { "mike" }.str)
+    Io::println("")
+
+    Io::println(let y = "bill" { Val("mike") }.str)
 }
 
 test_match() {
+    Io::println("test_match")
+    x = match 1 {
+    with 2: "hello"
+    with 3: "bob"
+    with 1: "nothing"
+    }
+    Io::println(x)
+    Io::println(match 7 { with 8: "fail"})
 }
 
 main() Int {
     test_cond()
-
+    test_while()
+    test_for()
+    test_let()
+    test_match()
     ret 0
 }

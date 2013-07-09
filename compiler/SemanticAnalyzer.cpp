@@ -414,7 +414,14 @@ void SemanticAnalyzer::operator()(Member* expression) {
     if (type->is_top()) {
         expression->type(env_->top_type());
         return;
+    } else if(type->is_void()) {
+        err_ << expr->location();
+        err_ << "Can't access attribute of type 'Void'\n";
+        env_->error();
+        expression->type(env_->top_type());
+        return;
     }
+
     Class::Ptr clazz = type->clazz();
     assert(clazz && "Class not found");
     if (call) {
@@ -743,7 +750,7 @@ void SemanticAnalyzer::operator()(Block* statement) {
     return_ = 0;
 
     bool return_checked = false;
-    statement->type(env_->nil_type());
+    statement->type(env_->void_type());
     for (Expression::Ptr s = statement->children(); s; s = s->next()) {
         if (return_ && ! return_checked) {
             err_ << s->location();
@@ -797,7 +804,7 @@ void SemanticAnalyzer::operator()(Conditional* statement) {
     if (!false_branch||true_branch->type()->equals(false_branch->type())) {
         statement->type(true_branch->type());
     } else {
-        statement->type(env_->nil_type()); 
+        statement->type(env_->void_type()); 
     }
 }
 
@@ -889,9 +896,9 @@ void SemanticAnalyzer::operator()(Return* statement) {
     if (type->is_value() && ft->is_alt()) {
         // Return value is an 'Any' or a 'Union', but the type of the
         // expression is a 'Value.'  Box up the value.
-        statement->expression(new Box(expr->location(), type, expr)); 
+        statement->expression(new Box(expr->location(), ft, expr)); 
     }
-    statement->type(expr->type());
+    statement->type(env_->void_type());
 }
 
 void SemanticAnalyzer::operator()(Fork* statement) {
@@ -911,7 +918,7 @@ void SemanticAnalyzer::operator()(Yield* statement) {
 void SemanticAnalyzer::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
     guard(this);
-    statement->type(env_->nil_type());
+    statement->type(env_->void_type());
     for (Expression::Ptr s = statement->children(); s; s = s->next()) {
         s(this);
         statement->type(s->type());
@@ -937,7 +944,7 @@ void SemanticAnalyzer::operator()(Match* statement) {
         if (!statement->type()||statement->type()->equals(with->type())) {
             statement->type(with->type());
         } else {
-            statement->type(env_->nil_type());
+            statement->type(env_->void_type());
         }
     }
 }

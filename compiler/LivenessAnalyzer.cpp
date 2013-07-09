@@ -40,6 +40,26 @@ void LivenessAnalyzer::operator()(Function* feature) {
     }
 }
 
+IrBlock* LivenessAnalyzer::branch(IrBlock* block) {
+    // Get the next non-empty branch block
+    IrBlock* next = block->branch();
+    while (next && !next->instrs()) {
+        assert(!next->branch() && "Descendant block has a branch");
+        next = next->next();
+    }
+    return next;
+}
+
+IrBlock* LivenessAnalyzer::next(IrBlock* block) {
+    // Get the next non-empty block
+    IrBlock* next = block->next();
+    while (next && !next->instrs()) {
+        assert(!next->branch() && "Descendant block has a branch");
+        next = next->next();
+    }
+    return next;
+}
+
 void LivenessAnalyzer::operator()(IrBlock* block) {
     // Compute liveness information for the basic block.  This algorithm is 
     // partly based on the notes found here, with slight optimizations: 
@@ -78,11 +98,11 @@ void LivenessAnalyzer::operator()(IrBlock* block) {
             if (i == block->instrs()-1) { 
                 // Last instruction of the block, so get the next instruction 
                 // the first instruction of the following block.
-                if (block->branch() && block->branch()->instrs()) {
-                    outw |= block->branch()->instr(0).liveness()->in();
+                if (IrBlock* branch = this->branch(block)) {
+                    outw |= branch->instr(0).liveness()->in();
                 } 
-                if (block->next() && block->next()->instrs()) {
-                    outw |= block->next()->instr(0).liveness()->in();
+                if (IrBlock* next = this->next(block)) {
+                    outw |= next->instr(0).liveness()->in();
                 } 
             } else { 
                 // Get the 'in' set from the next instruction in this block.

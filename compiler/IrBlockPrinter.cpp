@@ -139,7 +139,7 @@ void IrBlockPrinter::operator()(IrBlock* block) {
                     if (machine_->reg(id)) {
                         out_ << RegisterId(i, 0);
                     } else {
-                        out_ << "r" << (i-machine_->regs());
+                        out_ << "i" << (i-machine_->regs());
                     }
                     if (i != live.bits()-2) {
                         out_ << " "; 
