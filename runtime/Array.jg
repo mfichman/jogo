@@ -228,4 +228,8 @@ ArrayIter[:a] < Object {
     item?() :a {
         ret array[index]
     }
+
+    iter() ArrayIter[:a] {
+        ret self
+    }
 }

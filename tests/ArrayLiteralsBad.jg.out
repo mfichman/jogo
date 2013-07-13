@@ -1,6 +1,6 @@
 ArrayLiteralsBad.jg:22:21: Too many arguments to function '@init'
 ArrayLiteralsBad.jg:22:21: Too many arguments to function 'push'
-ArrayLiteralsBad.jg:23:24: Argument does not conform to type 'Intf2'
+ArrayLiteralsBad.jg:23:24: Argument does not conform to type 'Intf2' (:a)
 ArrayLiteralsBad.jg:24:20: Too many arguments to function '@init'
 ArrayLiteralsBad.jg:24:21: Function 'push' not found in class 'NoPushFunc'
 ArrayLiteralsBad.jg:24:26: Function 'push' not found in class 'NoPushFunc'
