@@ -105,7 +105,8 @@ void LivenessAnalyzer::operator()(IrBlock* block) {
                     outw |= next->instr(0).liveness()->in();
                 } 
             } else { 
-                // Get the 'in' set from the next instruction in this block.
+                // Get the 'in' set from the next instruction in this block;
+                // that will become the 'out' set for the current instruction
                 outw |= block->instr(i+1).liveness()->in();
             }
         }
@@ -113,15 +114,27 @@ void LivenessAnalyzer::operator()(IrBlock* block) {
         // in[n] := use[n] U (out[n] - def[n]).  Since the in/out sets can 
         // never decrease in size, don't worry about resetting either of the
         // two sets.
+        bool result_in_use = false;
+        // The only instruction in def[n] is the result reg.  If that reg is
+        // not in use[n], then we must subtract it from the 'in' set.
         if (!!instr.first().reg()) {
             inw.set(instr.first().reg());
+            if (instr.first().reg() == instr.result().reg()) {
+                result_in_use = true;
+            }
         }
         if (!!instr.second().reg()) {
             inw.set(instr.second().reg());
+            if (instr.second().reg() == instr.result().reg()) {
+                result_in_use = true;
+            }
         }
 
         // If this is the first instruction of the function, then we need to
-        // add all the registers belonging to the caller to the def[n] set.
+        // add all the registers belonging to the caller to the out[n] set.
+        // Note: Since in[n] := use[n] U (out[n] - def[n]), and def[n] is
+        // guaranteed to not include the caller registers, we simply add the
+        // caller regs directly to the in[n] set
         if (block == function_->ir_block(0) && i == 0) {
             inw |= machine_->caller_set();
         }
@@ -142,11 +155,8 @@ void LivenessAnalyzer::operator()(IrBlock* block) {
         // In/out sets can never decrease in size, don't worry about removing
         // def[n] temporaries from the set
         // out[n] - def[n] added to in[n]
-        bool const has_result = in.has(instr.result().reg());
         inw |= outw; 
-        if (has_result) {
-            inw.set(instr.result().reg());
-        } else {
+        if (!!instr.result().reg() && !result_in_use) {
             inw.del(instr.result().reg());
         }
 

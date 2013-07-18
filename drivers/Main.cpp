@@ -56,6 +56,8 @@ void parse_option(std::string const& flag) {
         env->dump_liveness(true);
     } else if ("dump-regalloc" == flag) {
         env->dump_regalloc(true);
+    } else if ("dump-reggraph" == flag) {
+        env->dump_reggraph(true);
     } else if ("execute" == flag) {
         env->execute(true);
     } else if ("no-default-libs" == flag) {
@@ -114,6 +116,8 @@ void parse_options() {
         "   --dump-ir            Output the intermediate representation.\n"
         "   --dump-ast           Output the abstract syntax tree.\n"
         "   --dump-liveness      Output liveness info when printing the IR.\n"
+        "   --dump-regalloc      Dump register allocations.\n"
+        "   --dump-reggraph      Dump register interference graphs.\n"
         "   --version            Print the compiler version number.\n");
 
     for (ArgToken tok = argp->next(); tok; tok = argp->next()) {

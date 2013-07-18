@@ -38,6 +38,10 @@ String String_alloc(Int length) {
     return ret;
 }
 
+String String__init() {
+    return String_alloc(0);
+}
+
 Char String__index(String self, Int index) {
     // All index operations are checked.  If the index is off the end of the
     // string, then return the NUL character.

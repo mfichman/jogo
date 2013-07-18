@@ -1,1 +1,46 @@
 # Tests bad control expressions
+
+Val < Value {
+    @init(str String) {}
+}
+
+test_cond() {
+    Io::println(if not 7 { "fail" })
+
+    x = if not 7 { "fail" } else { 8 } 
+}
+
+test_while() {
+    Io::println("test_while")
+    i mutable = 0
+    x = while i < 2 { ++i }
+    Io::println(x.str)
+    Io::println(while i < 4 { ++i }.str)
+
+    Io::println(while i < 5 { 
+        ++i
+        Val("val")
+    }.str)
+
+    Io::println(while i < 5 {
+        ++i
+        Val("fail")
+    }.str)
+    
+    Io::println(while false { "fail" })
+}
+
+test_for() {
+    Io::println("test_for")
+    arr = ['one', 'two', 'three']
+    x = for val in arr { val }
+    Io::println(x)
+    Io::println(for val in arr { val })
+
+    y = for val in arr { Val("value") }
+    Io::println(y.str)
+    Io::println(for val in arr { Val("value") }.str)
+
+    Io::println(for q in [] { "fail" })
+}
+

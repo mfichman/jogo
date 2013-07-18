@@ -81,6 +81,7 @@ public:
     bool dump_ir() const { return dump_ir_; }
     bool dump_liveness() const { return dump_liveness_; }
     bool dump_regalloc() const { return dump_regalloc_; }
+    bool dump_reggraph() const { return dump_reggraph_; }
     bool dump_ast() const { return dump_ast_; }
     bool verbose() const { return verbose_; }
     bool gen_library() const;
@@ -100,6 +101,7 @@ public:
     void dump_ir(bool dump) { dump_ir_ = dump; }
     void dump_liveness(bool dump) { dump_liveness_ = dump; }
     void dump_regalloc(bool dump) { dump_regalloc_ = dump; }
+    void dump_reggraph(bool dump) { dump_reggraph_ = dump; }
     void dump_ast(bool dump) { dump_ast_ = dump; }
     void verbose(bool verbose) { verbose_ = verbose; }
     void make(bool make) { make_ = make; }
@@ -189,6 +191,7 @@ private:
     bool dump_ir_;
     bool dump_liveness_;
     bool dump_regalloc_;
+    bool dump_reggraph_;
     bool make_;
     bool optimize_;
     bool link_;

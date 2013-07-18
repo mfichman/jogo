@@ -73,7 +73,6 @@ main() Int {
 
     let obj1 = Counter(1) {
         let obj2 = Counter(2) {
-            
         }
     }
 

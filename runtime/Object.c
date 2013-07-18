@@ -23,6 +23,7 @@
 #include "Object.h"
 #include "String.h"
 #include <stdlib.h>
+#include <assert.h>
 
 // This file provides refcount management and vtable lookup for objects.
 // The vtable layout used by these functions is:
@@ -35,7 +36,7 @@
 static Int const READONLY_MASK = 0xf000000000000000;
 
 void Object__refcount_inc(Object self) {
-     // Increment the object's refcount;
+    // Increment the object's refcount;
     if (self && !(self->_refcount & READONLY_MASK)) {
         self->_refcount++;
     }
@@ -45,14 +46,15 @@ void Object__refcount_dec(Object self) {
     // Decrement the object's refcount if the object is non-null.  Free the 
     // object if the refcount is below 0
     if (self && !(self->_refcount & READONLY_MASK)) {
+        assert(self->_refcount > 0);
         self->_refcount--;
-        if (self->_refcount <= 0) {
+        if (self->_refcount == 0) {
             // The second entry in the vtable is always the destructor. Call
             // the destructor and then release the memory.
             typedef void (*Destructor)(Object);  
             Destructor dtor = ((VoidPtr*)self->_vtable)[0];
             dtor(self);
-        } 
+        }
     }
 }
 

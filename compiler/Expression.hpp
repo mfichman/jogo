@@ -220,6 +220,9 @@ public:
         function_(0) {
 
         expr->parent(this);
+        for (Expression* arg = args; arg; arg = arg->next()) {
+            //arg->parent(this); // WHY DOES THIS CRASH!!? FIXME
+        }
     }
 
     Expression* expression() const { return expression_; }
@@ -337,7 +340,7 @@ private:
 class Assignment : public Expression {
 public:
     typedef int Flags;
-    Assignment(Location loc, String* ident, Type* type, Expression* expr, Flags flags = 0) :
+    Assignment(Location loc, String* ident, Type* type, Expression* expr, Flags flags=0) :
         Expression(loc),
         identifier_(ident),
 		declared_type_(type),

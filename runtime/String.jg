@@ -22,6 +22,10 @@ String < Object {
     # Represents an immutable character string.  New strings can be created
     # via a substring or concatenation operation on an existing string.
 
+    @init() native {
+        # Creates a new empty string
+    }
+
     @index(index Int) native Byte {
         # Returns the character at index index.  If the index refers to a
         # location beyond the length of the string, then

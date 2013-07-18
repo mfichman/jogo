@@ -22,8 +22,9 @@
 
 #include "CodeExpander.hpp"
 
-CodeExpander::CodeExpander(Environment* environment) :
-    env_(environment) {
+CodeExpander::CodeExpander(Environment* env, SemanticAnalyzer* semant) :
+    env_(env),
+    semant_(semant) {
 
     for (Module::Itr m = env_->modules(); m; ++m) {
         m(this);
@@ -65,6 +66,9 @@ CodeExpander::stub(Function* func, Attribute* attr) {
     if ((class_->feature(func->name()) != func) || func->is_private()) {
         return;
     }
+    if (class_->is_interface()) {
+        return;
+    }
     String::Ptr nm = func->name();
     Feature::Flags flags = func->flags() & ~(Feature::NATIVE);
     Formal::Ptr f = func->formals();
@@ -94,11 +98,14 @@ CodeExpander::stub(Function* func, Attribute* attr) {
         stmt = call.pointer();
     } else {    
         stmt = new Return(loc, call);
+        stmt->type(env_->void_type());
         call->type(func->type());
     }
     Block::Ptr block(new Block(loc, 0, stmt));
+    block->type(env_->void_type());
     Function::Ptr stub(new Function(loc, env_, nm, f, flags, type, block));
     class_->feature(stub);
+    semant_->operator()(stub);
 }
 
 void
@@ -126,17 +133,9 @@ CodeExpander::functor(Class* clazz) {
     // Generate the @call method for the functor, which contains a switch on
     // the type of the arugment passed to @call method.
     Function::Ptr func = clazz->function(env_->name("@call"));
-    Location loc;
+    Location loc = clazz->location();
     String::Ptr fn = func->formals()->next()->name();
     IdentifierRef::Ptr guard(new IdentifierRef(loc, env_->name(""), fn));
-    Expression::Ptr arg0(new IdentifierRef(loc, env_->name(""), env_->name("self")));
-    Expression::Ptr arg1(new IdentifierRef(loc, env_->name(""), fn));
-    arg0->type(func->formals()->type());
-    arg1->type(func->formals()->next()->type());
-
-    Expression::Ptr arg;
-    arg = append(arg.pointer(), arg0.pointer());
-    arg = append(arg.pointer(), arg1.pointer());
 
     Expression::Ptr stmt;
     for (Feature::Ptr feat = clazz->features(); feat; feat = feat->next()) {
@@ -146,16 +145,25 @@ CodeExpander::functor(Class* clazz) {
                 // This is a functor case, so generate a branch for it.  Each 
                 // branch looks like this: self.@case_Type(obj)
                 Type::Ptr type = func->formals()->next()->type();
+                Expression::Ptr arg0(new IdentifierRef(loc, env_->name(""), env_->name("self")));
+                Expression::Ptr arg1(new Cast(loc, type, new IdentifierRef(loc, env_->name(""), fn)));
+                arg0->type(func->formals()->type());
+                arg1->type(func->formals()->next()->type());
+                
+                Expression::Ptr arg;
+                arg = append(arg.pointer(), arg0.pointer());
+                arg = append(arg.pointer(), arg1.pointer());
                 IdentifierRef::Ptr id(new IdentifierRef(loc, env_->name(""), nm));
                 Call::Ptr expr(new Call(loc, id, arg));
                 expr->function(func);
-                expr->type(func->type());
                 Is::Ptr is(new Is(loc, guard, type));
                 stmt = new Conditional(loc, is, expr, stmt);
-                stmt->type(env_->void_type());
             }
         }
     }
-    func->block(new Block(loc, env_->string(""), stmt));  
+    Block::Ptr block = new Block(loc, env_->string(""), stmt);
+    func->block(block);  
+    func->is_checked(false);
+    semant_->operator()(func);
 }
 

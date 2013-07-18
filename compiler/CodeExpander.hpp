@@ -26,11 +26,12 @@
 #include "Environment.hpp"
 #include "Object.hpp"
 #include "TreeNode.hpp"
+#include "SemanticAnalyzer.hpp"
 
 /* Expands code prior to generation */
 class CodeExpander : public TreeNode::Functor {
 public:
-    CodeExpander(Environment* environment);
+    CodeExpander(Environment* env, SemanticAnalyzer* semant);
     typedef Pointer<CodeExpander> Ptr;
 
 private:
@@ -47,5 +48,6 @@ private:
     void copier();
 
     Environment::Ptr env_;
+    SemanticAnalyzer::Ptr semant_;
     Class::Ptr class_;
 };

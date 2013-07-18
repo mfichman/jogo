@@ -35,6 +35,8 @@ struct Regex_Span {
 
 typedef struct Regex_Match* Regex_Match;
 struct Regex_Match {
+    VoidPtr _vtable;
+    U64 _refcount;
     struct Regex_Span group[MAXGROUPS];
 };
 

@@ -25,7 +25,8 @@
 
 DeadCodeEliminator::DeadCodeEliminator(Environment* env, Machine* mach) :
     env_(env),
-    liveness_(new LivenessAnalyzer(mach)) {
+    liveness_(new LivenessAnalyzer(mach)),
+    eliminated_(0) {
 
 }
 
@@ -43,13 +44,13 @@ void DeadCodeEliminator::operator()(Class* feature) {
 }
 
 void DeadCodeEliminator::operator()(Function* feature) {
-    liveness_->operator()(feature);
-    for (int i = 0; i < feature->ir_blocks(); i++) {
-        operator()(feature->ir_block(i));
-    } 
-    liveness_->operator()(feature);
-    for (int i = 0; i < feature->ir_blocks(); i++) {
-        operator()(feature->ir_block(i));
+    eliminated_ = 1;
+    while (eliminated_) {
+        eliminated_ = 0;
+        liveness_->operator()(feature);
+        for (int i = 0; i < feature->ir_blocks(); i++) {
+            operator()(feature->ir_block(i));
+        } 
     } 
 }
 
@@ -65,10 +66,11 @@ void DeadCodeEliminator::operator()(IrBlock* block) {
         
         if (instr.opcode() == MOV && instr.result() == instr.first()) {
             block->instr(i, Instruction(NOP, Operand(), Operand(), Operand()));
+            eliminated_++;
         } else if (!result || out.has(result)) {
-            //repl.instr(instr); 
         } else {
             block->instr(i, Instruction(NOP, Operand(), Operand(), Operand()));
+            eliminated_++;
         }
     }
 }

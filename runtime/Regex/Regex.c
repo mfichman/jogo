@@ -440,6 +440,8 @@ void Regex_Regex_dump(Regex_Regex self) {
 Regex_Match Regex_Match__init() {
     // Initializes a match object on the heap.
     Regex_Match ret = Boot_calloc(sizeof(struct Regex_Match));
+    ret->_vtable = Regex_Match__vtable;
+    ret->_refcount = 1;
     return ret;
 }
 

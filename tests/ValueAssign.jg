@@ -43,8 +43,14 @@ anonymous() {
 
 assign_let() {
 
+#    if x = String() {
+#        z = Val(11)
+#    }
+
     let x = Val(9), y = Val(10) {
         z = Val(11)
+        z 
+        # q = z ??
     }
 }
 

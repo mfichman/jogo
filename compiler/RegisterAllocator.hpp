@@ -64,6 +64,7 @@ private:
     void color_graph();
     void rewrite_temporaries(IrBlock* block);
     void spill_register(Function* func);
+    void dump_graph();
 
     std::vector<RegisterVertex> graph_;
     std::vector<RegisterId> stack_;

@@ -23,8 +23,12 @@ baz() Val {
     ret bar()
 }
 
+pass(obj String) String {
+    ret obj
+}
 
 main() Int {
     x = baz()
+    pass(String())
     ret 0
 }

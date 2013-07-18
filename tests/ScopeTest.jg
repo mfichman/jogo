@@ -2,7 +2,7 @@
 
 Val < Value {
     test String
-    int Int
+    int mutable Int
     @init(ptest String, pint Int) {
         test = ptest
         int = pint
@@ -125,15 +125,15 @@ val_cond_var_assign() {
         x = Val("val_cond_var_assign", 1)
         x
     }
+    y.int = 2
 }
 
 obj_nested_double_assign() { 
-    y = Obj("bilbo",1)
-#    y = if true {
-#        x = if true {
-#            Obj("obj_nested_double_assign", 1)
-#        } 
-#    }
+    y = if true {
+        x = if true {
+            Obj("obj_nested_double_assign", 1)
+        } 
+    }
 }
 
 main() Int {
@@ -146,9 +146,9 @@ main() Int {
 #    val_nested_no_assign()
 #    val_nested_assign()
     #val_nested_double_assign()
-    val_cond_var_no_assign()
+    #val_cond_var_no_assign()
     val_cond_var_assign()
 
-    obj_nested_double_assign()
+    #obj_nested_double_assign()
     ret 0
 }

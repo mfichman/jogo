@@ -26,7 +26,6 @@
 #include "RegisterAllocator.hpp"
 #include "Nasm64Generator.hpp"
 #include "Intel64Generator.hpp"
-#include "CCodeGenerator.hpp"
 #include "IrBlockPrinter.hpp"
 #include "DeadCodeEliminator.hpp"
 #include "CopyPropagator.hpp"
@@ -104,7 +103,7 @@ Builder::Builder(Environment* env) :
 
     // Code expansion
     if (!env_->errors()) {
-        CodeExpander::Ptr expander(new CodeExpander(env));
+        CodeExpander::Ptr expander(new CodeExpander(env, checker));
     }
 
     if (env->dump_ast()) {
@@ -289,7 +288,8 @@ void Builder::operator()(File* file) {
             if (!env_->assemble()) { return; }
             nasm(file->asm_file(), file->jgo_file());
         } else if (env_->generator() == "C") {
-            cgen(file);
+            assert(!"Not implemented");
+            //cgen(file);
             if (!env_->assemble()) { return; }
             cc(file->c_file(), file->jgo_file());
         } else if (env_->generator() == "Intel64") {
@@ -463,26 +463,12 @@ void Builder::irgen(File* file) {
     }
     alloc->operator()(file);
 
+    DeadCodeEliminator::Ptr elim(new DeadCodeEliminator(env_, machine));
+    elim->operator()(file);
+
     if (env_->dump_ir()) {
         bprint->operator()(file);
     }
-}
-
-void Builder::cgen(File* file) {
-    // Generates C code for all functions/classes in 'file.'  Outputs to a 
-    // temporary file if this is an intermediate step; otherwise, outputs
-    // to a named file in the build directory.
-    CCodeGenerator::Ptr c(new CCodeGenerator(env_));
-    c->out(new Stream(file->jgo_file()));  
-    if (c->out()->error()) {
-        std::string msg = c->out()->message();
-        Stream::sterr() << file->asm_file() << msg << "\n";
-        Stream::sterr()->flush();
-        Stream::stout()->flush();
-        errors_++;
-        return;
-    }
-    c->operator()(file);
 }
 
 void Builder::nasm64gen(File* file) {

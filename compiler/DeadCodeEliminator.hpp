@@ -41,4 +41,5 @@ private:
 
     Environment::Ptr env_;
     LivenessAnalyzer::Ptr liveness_;
+    int eliminated_;
 };

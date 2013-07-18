@@ -35,6 +35,7 @@ public:
 	SemanticAnalyzer(Environment* environment);
     typedef Pointer<SemanticAnalyzer> Ptr;
     void operator()(File* file);
+    void operator()(Function* feature);
 
     static Type* binding_for(Type* in, Type* generic, Type* bound);
     static Type* binding_for(Type* in, Function* func, Expression* args);
@@ -76,7 +77,6 @@ private:
     void operator()(Case* statement);
     void operator()(Fork* statement);
     void operator()(Yield* statement);
-    void operator()(Function* feature);
     void operator()(Attribute* feature);
     void operator()(Constant* feature);
     void operator()(Import* feature);

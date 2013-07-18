@@ -73,6 +73,7 @@ class Let;
 class LivenessAnalyzer;
 class Machine;
 class Closure;
+class IrGenerator;
 
 #include <Pointer.hpp>
 #include <map>

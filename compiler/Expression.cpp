@@ -22,16 +22,17 @@
 
 #include "Expression.hpp"
 
- Case::Case(Location loc, Expression* guard, Expression* children) :
-     Expression(loc),
-     guard_(guard),
-     children_(children) {
- }
+Case::Case(Location loc, Expression* guard, Expression* children) :
+    Expression(loc),
+    guard_(guard),
+    children_(children) {
 
- While::While(Location loc, Expression* guard, Expression* block) :
-     Expression(loc), 
-     guard_(guard),
-     block_(block) {
+}
+
+While::While(Location loc, Expression* guard, Expression* block) :
+    Expression(loc), 
+    guard_(guard),
+    block_(block) {
 }
 
 Conditional::Conditional(Location loc, Expression* ex, Expression* yes, Expression* no) :

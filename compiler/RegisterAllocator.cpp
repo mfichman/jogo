@@ -64,11 +64,21 @@ void RegisterAllocator::operator()(Function* func) {
         for (int i = 0; i < func->ir_blocks(); ++i) {
             build_graph(func->ir_block(i));
         }
+
+        if (env_->dump_reggraph()) {
+            dump_graph();
+        }
+        Stream::stout()->flush();
         build_stack();
         color_graph();     
 
         if (spill_) {
             spill_register(func);
+            if (env_->dump_regalloc()) {
+                IrBlockPrinter::Ptr bprint(new IrBlockPrinter(env_, machine_));
+                bprint->out(Stream::stout());
+                bprint->operator()(func);
+            }
         } else {
             break;
         }
@@ -77,6 +87,24 @@ void RegisterAllocator::operator()(Function* func) {
 
     for (int i = 0; i < func->ir_blocks(); i++) {
         rewrite_temporaries(func->ir_block(i)); 
+    }
+}
+
+void RegisterAllocator::dump_graph() {
+    // Dumps the whole register interference graph
+    for (int i = 0; i < graph_.size(); ++i) {
+        if (!graph_[i].temp()) { continue; }
+        Stream::stout() << graph_[i].temp() << " => {";
+        RegisterIdSet const& regs = graph_[i].neighbors();
+        for (int i = 0; i < regs.bits(); ++i) {
+            if (regs.bit(i)) {
+                Stream::stout() << RegisterId(i, 0);
+                if (i != regs.bits()-2) {
+                    Stream::stout() << " "; 
+                }
+            }
+        }
+        Stream::stout() << "}\n";
     }
 }
 
@@ -234,10 +262,6 @@ RegisterId RegisterAllocator::color_reg(RegisterVertex const& v) {
         // this should instead iterate over all 'allocatable' registers.
         RegisterId reg = machine_->reg(RegisterId(j, 0))->id();
         if (color_ok(v, reg)) {
-            if (env_->dump_regalloc()) {
-                Stream::stout() << v.temp() << " -> " << reg << "\n"; 
-                Stream::stout()->flush();
-            }
             return reg;
         }
     }
@@ -256,7 +280,16 @@ void RegisterAllocator::color_graph() {
         if (!!choice) {
             assert(machine_->reg(choice) && "Not a machine reg");
             v.reg(choice);
+            if (env_->dump_regalloc()) {
+                Stream::stout() << v.temp() << " -> " << choice << "\n";
+                Stream::stout()->flush();
+            }
         } else {
+            if (env_->dump_regalloc()) {
+                dump_graph();
+                Stream::stout() << "failed to alloc " << v.temp() << "\n";
+                Stream::stout()->flush();
+            }
             spill_ = true; // Fail, need to spill a register here
             spill_float_ = v.temp().is_float();
             return;
@@ -327,8 +360,10 @@ void RegisterAllocator::spill_register(Function* func) {
         }
     }
 
-    //Stream::stout() << "Spilling " << spilled << "\n";
-    //Stream::stout()->flush();
+    if (env_->dump_regalloc()) {
+        Stream::stout() << "spilling " << spilled << "\n";
+        Stream::stout()->flush();
+    }
     spilled_.set(spilled);
     assert(!!spilled);
     func->local_slots_inc();

@@ -32,6 +32,70 @@
 #include <map>
 
 
+/* Keeps track of values emitted by expressions */
+class IrValue : public Object {
+public:
+    typedef int Flags;
+
+    IrValue(IrGenerator* gen, Operand op, Type* type, Flags flags=0);
+    IrValue();
+    ~IrValue();
+    void is_param(bool param) { flags_ = param ? (flags_ | PARAM) : (flags_ & ~PARAM); }
+    void is_var(bool var) { flags_ = var ? (flags_ | VAR) : (flags_ & ~VAR); }
+    void is_dead(bool dead) { flags_ = dead ? ( flags_ | DEAD) : (flags_ & ~DEAD); }
+    bool is_param() const { return flags_ & PARAM; }
+    bool is_var() const { return flags_ & VAR; }
+    bool is_dead() const { return flags_ & DEAD; }
+    Operand const& operand() const { return operand_; }
+    Type* type() const { return type_; }
+    Flags flags() const { return flags_; }
+
+    static const int DEAD = 0x1;
+    static const int VAR = 0x2;
+    static const int PARAM = 0x4;
+    typedef Pointer<IrValue> Ptr;
+private:
+    IrGenerator* generator_;
+    Operand operand_;
+    Type* type_; 
+    Flags flags_;
+};
+
+class IrVariable  {
+public:
+    IrVariable() : name_(0), value_(0) {}
+    IrVariable(String* name, IrValue* val) :
+        name_(name),
+        value_(val) {
+
+        assert("Literal or label in variable" && !val->operand().object());
+        assert("Address in variable" && !val->operand().addr());
+    } 
+    IrValue* value() const { return value_; }
+    String* name() const { return name_; }
+
+private:
+    String::Ptr name_;
+    IrValue::Ptr value_;
+};
+
+/* Keeps track of variables in the current scope */
+class IrScope : public Object {
+public:
+    ~IrScope();
+    void variable(IrVariable const& var) { variable_.push_back(var); }
+    void ret(IrValue* ret) { ret_ = ret; }
+    IrVariable const& variable(int index) const { return variable_[index]; }
+    IrValue* variable(String* name) const;
+    IrValue* ret() const { return ret_; }
+    int variables() const { return variable_.size(); }
+
+    typedef Pointer<IrScope> Ptr;
+private:
+    IrValue::Ptr ret_;
+    std::vector<IrVariable> variable_;  
+};
+
 /* Code generator structure; creates basic block flow graphs */
 class IrGenerator : public TreeNode::Functor {
 public:
@@ -77,8 +141,9 @@ private:
     void operator()(Closure* expression);
     void operator()(Type* type);
 
-    Operand emit(TreeNode* node, IrBlock* yes, IrBlock* no, bool inv); 
-    Operand emit(TreeNode* node);
+    IrValue::Ptr emit(Expression* node, IrBlock* yes, IrBlock* no, bool inv); 
+    IrValue::Ptr emit(Expression* node);
+    IrValue::Ptr copy(IrValue* val);
     Operand emit(Opcode op, Operand t2, Operand t3);
     Operand emit(Opcode op, Operand t2); 
     Operand mov(Operand res, Operand t2); 
@@ -105,24 +170,23 @@ private:
     void bge(Operand t2, Operand t3, IrBlock* branch, IrBlock* next);
     void ble(Operand t2, Operand t3, IrBlock* branch, IrBlock* next);
     void jump(IrBlock* target);
-    void emit(IrBlock* block); 
+    void label(IrBlock* block); 
     void branch(Opcode o, Operand t2, Operand t3, IrBlock* b, IrBlock* n);
 
-    void variable(Variable* var);
+    void variable(IrVariable const& var);
     void enter_scope();
     void exit_scope();
     void call(Function* func, Expression* args, Expression* recv, Type* ret);
     void native_operator(Call* expression);
-    void scope_cleanup(Variable* var);
 	void exception_catch();
     void refcount_inc(Operand var);
     void refcount_dec(Operand var);
     void dispatch_table(Class* clazz);
-    void func_return(Operand val);
+    void func_return(IrValue* val);
     void ctor_preamble(Class* clazz);
     void dtor_epilog(Function* func);
     void copier_preamble(Class* clazz);
-    void free_temps();
+    void drop_value(Operand val, Type* type);
     void calculate_size(Class* clazz);
     void constants();
     void local_slots_inc(int count);
@@ -132,19 +196,17 @@ private:
     void attr_assignment(Assignment* expr);
     void initial_assignment(Assignment* expr);
     void secondary_assignment(Assignment* expr);  
-    void value_assign_reg(Operand src, Operand dst, Type* type);
-    void value_assign_mem(Operand src, Operand dst, Type* type);
+    void assign(IrValue* src, IrValue* dst);
     void value_copy(Operand src, Operand dst, Type* type);
-    void value_move(Operand src, Operand dst, Type* type);
     void value_dtor(Operand op, Type* type);
     int arg_slots() const { return arg_slots_; }
-    Operand bool_expr(Expression* expr);
-    Operand pop_ret(Type* type);
-    Operand id_operand(String* id);
-    Operand stack_value(Type* type);
-    Operand stack_value_temp(Type* type);
+    IrValue::Ptr bool_expr(Expression* expr);
+    IrValue::Ptr pop_ret(Type* type);
+    IrValue::Ptr id_operand(String* id);
+    IrValue::Ptr stack_value(Type* type);
+    IrValue::Ptr stack_value_temp(Type* type);
     RegisterId temp_inc() { return RegisterId(++temp_, 0); }
-    Variable* variable(String* name);
+    IrValue* variable(String* name);
     IrBlock* ir_block();
 
     Environment::Ptr env_;
@@ -154,12 +216,12 @@ private:
     IrBlock::Ptr block_;
     IrBlock::Ptr true_;
     IrBlock::Ptr false_;
-    Operand return_;
+    IrValue::Ptr return_;
     
-    std::vector<Scope::Ptr> scope_;
+    std::vector<IrScope::Ptr> scope_;
     // Mapping from var to temporary
 
-    Operand assign_addr_;
+    Operand assign_loc_;
     int local_slots_;
     int arg_slots_;
     // Mapping from a variable to a stack location
@@ -171,12 +233,9 @@ private:
     int temp_;
     int label_;
 
-    std::vector<Operand> object_temp_; 
-    std::map<RegisterId, Variable::Ptr> value_temp_;
-    // Temporaries to free at end of statement
-
     friend class FuncMarshal;
     friend class FuncUnmarshal;
+    friend class IrValue;
 };
 
 
@@ -207,6 +266,4 @@ private:
     int float_args_;
     int stack_args_;
 };
-
-
 

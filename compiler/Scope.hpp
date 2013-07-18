@@ -34,19 +34,14 @@ class Scope;
 /* Variable structure, used to store info about assigned vars in a scope */
 class Variable : public Object {
 public:
-    Variable(String* name, Operand op, Type* type, bool immut=false) :
+    Variable(String* name, Type* type, bool immut=false) :
         name_(name),
-        operand_(op),
         type_(type),
         scope_(0),
         is_immutable_(immut) {
-        
-        assert("Literal or label in variable" && !op.object());
-        assert("Address in variable" && !op.addr());
     }
 
     String* name() const { return name_; }
-    Operand operand() const { return operand_; }
     Type* type() const { return type_; } // null == no cleanup on stack unwind
     Scope* scope() const { return scope_; }
     bool is_immutable() const { return is_immutable_; }
@@ -55,7 +50,6 @@ public:
 
 private:
     String::Ptr name_;
-    Operand operand_;
     Type::Ptr type_; 
     Scope* scope_;
     bool is_immutable_;
@@ -64,21 +58,12 @@ private:
 /* Scope structure for recording end-of-scope cleanup info */
 class Scope : public Object {
 public:
-    Scope() : has_return_(0) {}
-
-    void return_val(Operand val) { return_val_ = val; }
-    void has_return(bool ret) { has_return_ = ret; }
     void variable(Variable* variable);
-    Operand return_val() const { return return_val_; }
-    bool has_return() const { return has_return_; }
     Variable* variable(String* name) const;
     Variable* variable(int index) const;
     int variables() const { return variable_.size(); }
 
     typedef Pointer<Scope> Ptr;
-
 private:
-    bool has_return_;
-    Operand return_val_;
     std::vector<Variable::Ptr> variable_;
 };

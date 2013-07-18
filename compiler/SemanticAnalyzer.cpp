@@ -778,9 +778,9 @@ void SemanticAnalyzer::operator()(While* statement) {
         env_->error();
     }
     block(this);
-    statement->type(block->type());
+    statement->type(env_->void_type());
     exit_scope();
-    return_ = 0; // FixMe: ?
+    return_ = 0; 
 }
 
 void SemanticAnalyzer::operator()(Conditional* statement) {
@@ -801,11 +801,19 @@ void SemanticAnalyzer::operator()(Conditional* statement) {
     } else {
         return_ = 0;
     }
-    if (!false_branch||true_branch->type()->equals(false_branch->type())) {
+    statement->type(env_->void_type()); 
+    // Uncomment below to enable cond expressions
+/*
+    if (!false_branch) {
+        statement->type(env_->void_type()); 
+    } else if (true_branch->type()->subtype(false_branch->type())) {
+        statement->type(false_branch->type());
+    } else if (false_branch->type()->subtype(true_branch->type())) {
         statement->type(true_branch->type());
     } else {
         statement->type(env_->void_type()); 
     }
+*/
 }
 
 void SemanticAnalyzer::operator()(Assignment* expr) {
@@ -839,7 +847,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         // Check to make sure the declared type is valid; if it isn't, then
         // set the variable to top_type and return.
         if (!declared->clazz()) {
-            variable(new Variable(id, Operand(), env_->top_type(), !expr->is_mutable()));
+            variable(new Variable(id, env_->top_type(), !expr->is_mutable()));
             return;
         }
     }
@@ -849,7 +857,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         err_ << init->location();
         err_ << "Void value assigned to variable '" << id << "'\n";
         env_->error();
-        variable(new Variable(id, Operand(), env_->top_type(), !expr->is_mutable()));
+        variable(new Variable(id, env_->top_type(), !expr->is_mutable()));
         return;
     }
     
@@ -989,7 +997,7 @@ void SemanticAnalyzer::operator()(Function* feature) {
     for (Formal::Ptr f = feature->formals(); f; f = f->next()) {
         Type::Ptr type = f->type();
         type(this);
-        variable(new Variable(f->name(), Operand(), type, true));
+        variable(new Variable(f->name(), type, true));
     }
 
     if (is_functor_func) {
@@ -1023,7 +1031,7 @@ void SemanticAnalyzer::operator()(Function* feature) {
     }
     if (feature->is_constructor()) {
         String::Ptr nm = env_->name("self");
-        variable(new Variable(nm, Operand(), class_->type(), true));
+        variable(new Variable(nm, class_->type(), true));
     }
 
     Type::Ptr type = feature->type();
@@ -1467,9 +1475,9 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
 
     bool immut = attr ? attr->is_immutable() : !expr->is_mutable(); 
     if (declared->is_top()) {
-        variable(new Variable(id, Operand(), expr->type(), immut));
+        variable(new Variable(id, expr->type(), immut));
     } else {
-        variable(new Variable(id, Operand(), declared, immut));
+        variable(new Variable(id, declared, immut));
     }
 
     // The variable was declared with an explicit type, but the variable
@@ -1548,7 +1556,7 @@ void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
     // Insert a cast expression.
     bool immut = attr ? attr->is_immutable() : !expr->is_mutable();
     if (!var) {
-        variable(new Variable(id, Operand(), expr->type(), immut));
+        variable(new Variable(id, expr->type(), immut));
     }
 }
 

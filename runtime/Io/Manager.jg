@@ -95,9 +95,11 @@ Manager < Object {
                     scheduled.enq(next)
                 }
                 --count
+                0
             }
             # All coroutines are sleeping.
             self.poll()
+            0
         }
     }
 
