@@ -185,7 +185,8 @@ void IrGenerator::operator()(Cast* expr) {
     // don't then return the nil pointer.
     IrValue::Ptr arg = emit(expr->child());
     if (expr->type()->is_any()) {
-        return_ = arg;
+        return_ = new IrValue(this, arg->operand(), expr->type(), arg->flags());
+        arg->is_dead(true);
         return;
     }
     Class::Ptr clazz = expr->type()->clazz();
