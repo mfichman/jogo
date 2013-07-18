@@ -1,4 +1,4 @@
-#foobarjgtest exec on
+# jgtest exec on
 
 main() Int {
     stdout = Io::stdout()
