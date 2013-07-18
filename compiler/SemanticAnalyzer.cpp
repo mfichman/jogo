@@ -285,7 +285,7 @@ void SemanticAnalyzer::operator()(Let* stmt) {
         v(this);
     }
     block(this);
-    stmt->type(block->type());
+    stmt->type(env_->void_type());
     exit_scope();
 }
 

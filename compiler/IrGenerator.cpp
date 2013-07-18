@@ -440,7 +440,8 @@ void IrGenerator::operator()(Let* statement) {
         return_ = emit(v);
     } 
     assign_loc_ = assign_loc;
-    return_ = emit(statement->block());
+    emit(statement->block());
+    return_ = new IrValue(this, Operand(), env_->void_type());
     exit_scope();
 }
 
@@ -623,6 +624,7 @@ void IrGenerator::operator()(Assignment* expr) {
     } else {
         return_ = emit(init);
     }
+    return_->is_var(true);
 
     if (is_attr) {
         Operand self = variable(env_->name("self"))->operand();
@@ -876,6 +878,7 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv, Type*
     } else {
         assert(!"Invalid type");
     }
+    vals.clear();
 	if (func->throw_spec() == Function::THROW) {
 		exception_catch();
 	}
@@ -1139,7 +1142,7 @@ void IrGenerator::func_return(IrValue* retval) {
             } else if (type->is_ref()) {
                 // Emit a branch to check the variable's reference count and
                 // free it if necessary.
-                if (var == retval) {
+                if (var != retval) {
                     refcount_dec(var->operand()); 
                 }
             } else if (type->is_compound()) {
