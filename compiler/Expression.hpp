@@ -548,6 +548,10 @@ public:
         Expression(loc),
         comment_(comment),
         children_(children) {
+
+        for(Expression* expr = children; expr; expr = expr->next()) {
+            expr->parent(this);
+        }
     }
     
     String* comment() const { return comment_; }

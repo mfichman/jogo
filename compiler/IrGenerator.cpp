@@ -356,7 +356,9 @@ void IrGenerator::operator()(Construct* expr) {
         // Push the 'self' parameter for the Vector constructor
         valret = stack_value_temp(expr->type());
         fm.arg(valret->operand());
-    } 
+    } else {
+        assign_loc_ = Operand();
+    }
     Formal::Ptr formal = func->formals();
     std::vector<IrValue::Ptr> vals;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
@@ -431,18 +433,20 @@ void IrGenerator::operator()(Block* statement) {
     exit_scope();
 }
 
-void IrGenerator::operator()(Let* statement) {
+void IrGenerator::operator()(Let* stmt) {
     // Enter a new scope, then emit code for initializing all the let
     // variables, and initialize code for the body.
     Operand assign_loc = assign_loc_;
     assign_loc_ = Operand();
     enter_scope();
-    for (Expression::Ptr v = statement->variables(); v; v = v->next()) {
+    for (Expression::Ptr v = stmt->variables(); v; v = v->next()) {
         return_ = emit(v);
     } 
     assign_loc_ = assign_loc;
-    emit(statement->block());
-    return_ = new IrValue(this, Operand(), env_->void_type());
+    emit(stmt->block());
+    if (stmt->type()->is_void()) {
+        return_ = new IrValue(this, Operand(), env_->void_type());
+    }
     exit_scope();
 }
 
@@ -502,8 +506,29 @@ void IrGenerator::operator()(Conditional* statement) {
     // for temporary expressions.  This limitation is here as a punt on
     // introducing phi-functions until optimizations are needed, since without
     // inter-block optimizations, SSA is not needed anyway.
-    Operand assign_loc = assign_loc_;
-    assign_loc_ = Operand();
+    //Operand assign_loc = !!assign_loc_ ? assign_loc_ : temp_inc();
+    Type::Ptr type = statement->type();
+    IrValue::Ptr out;
+    if (!!assign_loc_) {
+        out = new IrValue(this, assign_loc_, statement->type(), IrValue::DEAD);
+    } else if (type->is_primitive()) {
+        RegisterId reg = temp_inc();
+        if (type->is_float()) {
+            reg = RegisterId(reg.id(), RegisterId::FLOAT);
+        }
+        out = new IrValue(this, reg, type);
+    } else if (type->is_ref()) {
+        out = new IrValue(this, temp_inc(), type);
+    } else if (type->is_compound()) {
+        out = stack_value(type);
+    } else if (type->is_void()) {
+        out = new IrValue(this, Operand(), env_->void_type());
+    } else {
+        assert(!"Invalid type");
+    }
+    assign_loc_ = out->operand();
+
+    //mov(out->operand(), load(new NilLiteral(loc)));
 
     // Recursively emit the boolean guard expression.  We need to pass the true
     // and the false block pointers so that the correct code is emitted on each
@@ -523,9 +548,12 @@ void IrGenerator::operator()(Conditional* statement) {
     }
 
     // Now emit the true branch of the conditional
-    assign_loc_ = assign_loc;
+    assign_loc_ = out->operand();
     label(then_block);
-    emit(statement->true_branch()); // FIXME: Save value
+    emit(statement->true_branch());
+    if (!type->is_void()) {
+        assign(return_, out); 
+    } 
 
     // Emit the false branch if it exists; make sure to insert a jump before
     // emitting the false branch
@@ -533,13 +561,15 @@ void IrGenerator::operator()(Conditional* statement) {
         if (!block_->is_terminated()) {
             jump(done_block);
         }
-        assign_loc_ = assign_loc;
+        assign_loc_ = out->operand();
         label(else_block);
-        emit(statement->false_branch()); // FIXME: Save value!
+        emit(statement->false_branch()); 
+        if (!type->is_void()) {
+            assign(return_, out); 
+        }
     }
     label(done_block);
-    //return_ = assign_loc;
-    return_ = new IrValue(this, Operand(), env_->void_type());
+    return_ = out;
 }
 
 void IrGenerator::operator()(Assignment* expr) {
@@ -563,21 +593,25 @@ void IrGenerator::operator()(Assignment* expr) {
         type = attr->type();
         Operand self = variable(env_->name("self"))->operand();
         if (type->is_primitive()) {
-            assign_loc_ = Operand();
+            RegisterId reg = temp_inc();
+            if (type->is_float()) {
+                reg = RegisterId(reg.id(), RegisterId::FLOAT);
+            }
+            var = new IrValue(this, reg, type, IrValue::VAR|IrValue::DEAD);
         } else if (type->is_ref()) {
-            assign_loc_ = Operand();
             if (!attr->is_weak()) {
                 Operand addr = Operand(self.reg(), Address(attr->slot())); 
                 refcount_dec(load(addr));
             }
+            var = new IrValue(this, temp_inc(), type, IrValue::VAR|IrValue::DEAD);
         } else if (type->is_compound()) {
             Address addr(attr->slot(), 0);
             Operand op = load(Operand(self.reg(), addr));
             var = new IrValue(this, op, type, IrValue::DEAD);
             // Load effective address!
             value_dtor(var->operand(), type); // Delete old value
-            assign_loc_ = var->operand();
         }
+        assign_loc_ = var->operand();
     } else if (is_secondary) {
         type = var->type();
         if (type->is_primitive()) {
@@ -828,7 +862,9 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv, Type*
     IrValue::Ptr valret;
     if (ret->is_compound()) {
         valret = stack_value_temp(ret);
-    }
+    } else {
+        assign_loc_ = Operand();
+    } 
     std::vector<IrValue::Ptr> vals;
     for (Expression::Ptr a = args; a; a = a->next()) {
         IrValue::Ptr val = a->type()->is_bool() ? bool_expr(a) : emit(a);

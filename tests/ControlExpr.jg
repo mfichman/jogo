@@ -1,31 +1,33 @@
 # jgtest exec on
 # Tests that control structures are usable as expressions
-
 Val < Value {
     str String
     @init(pstr String) {
         str = pstr
     }
+    @destroy() {
+        Io::println("del #{str}")
+    }
 }
 
 test_cond() {
-#    Io::println("test_cond")
-#    x = if true { "hello" } else { "false" }
-#    Io::println(x)
-#    Io::println(if false { "hello" } else { "false" })
-#
-#    y = if true { Val("hello") } else { Val("goodbye") }
-#    Io::println(y.str)
-    Io::println(if false { Val("hello") } else { Val("goodbye") }.str)
-#
-#    z = if true {
-#        Val("one")
-#    } else if true {
-#        Val("two")
-#    } else {
-#        Val("three")
-#    }
-#    Io::println(x.str)
+    Io::println("test_cond")
+    x = if true { "hello" } else { "false" }
+    Io::println(x)
+    Io::println(if false { "hello" } else { "false" })
+
+    y = if true { Val("1") } else { Val("2") }
+    Io::println(y.str)
+    Io::println(if false { Val("3") } else { Val("4") }.str)
+
+    z = if true {
+        Val("5")
+    } else if true {
+        Val("6")
+    } else {
+        Val("7")
+    }
+    Io::println(z.str)
 }
 
 test_let() {
@@ -51,7 +53,9 @@ test_match() {
 
 main() Int {
     test_cond()
+    Io::println('')
     test_let()
+    Io::println('')
     test_match()
     ret 0
 }

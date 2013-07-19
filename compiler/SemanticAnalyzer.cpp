@@ -285,7 +285,11 @@ void SemanticAnalyzer::operator()(Let* stmt) {
         v(this);
     }
     block(this);
-    stmt->type(env_->void_type());
+    if (dynamic_cast<Block*>(stmt->parent())) {
+        stmt->type(env_->void_type());
+    } else {
+        stmt->type(block->type());
+    }
     exit_scope();
 }
 
@@ -801,10 +805,10 @@ void SemanticAnalyzer::operator()(Conditional* statement) {
     } else {
         return_ = 0;
     }
-    statement->type(env_->void_type()); 
-    // Uncomment below to enable cond expressions
-/*
+
     if (!false_branch) {
+        statement->type(env_->void_type()); 
+    } else if (dynamic_cast<Block*>(statement->parent())) {
         statement->type(env_->void_type()); 
     } else if (true_branch->type()->subtype(false_branch->type())) {
         statement->type(false_branch->type());
@@ -813,7 +817,6 @@ void SemanticAnalyzer::operator()(Conditional* statement) {
     } else {
         statement->type(env_->void_type()); 
     }
-*/
 }
 
 void SemanticAnalyzer::operator()(Assignment* expr) {

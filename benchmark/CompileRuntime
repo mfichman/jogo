@@ -1,7 +1,5 @@
 
-time bin/apollo  -i runtime --build-dir build/runtime 
---no-default-libs -o lib/Apollo Array Boot::Module Coroutine File Hash Http Io Object Os Pair Primit
-ives Queue Regex Socket String
+time bin/apollo  -i runtime --build-dir build/runtime --no-default-libs -o lib/Apollo Array Boot::Module Coroutine File Hash Http Io Object Os Pair Primitives Queue Regex Socket String
 
 real	0m2.251s
 user	0m1.723s
