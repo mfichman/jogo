@@ -206,7 +206,14 @@ else:
 if failed > 0:
     # Finally, check for errors.  If there was an error, exit with code 1 to
     # stop the whole build.
+    if total == 1:
+        print('Test failed.')
+    else:
+        print(str(failed) + ' out of ' + str(total) + ' tests failed.')
     sys.exit(1)
 else:
-    print('All ' + str(total) + ' tests passed.')
+    if total == 1:
+        print('Test passed.')
+    else:
+        print('All ' + str(total) + ' tests passed.')
         

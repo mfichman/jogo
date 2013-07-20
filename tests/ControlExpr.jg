@@ -20,7 +20,7 @@ test_cond() {
     Io::println(y.str)
     Io::println(if false { Val("3") } else { Val("4") }.str)
 
-    z = if true {
+    z = if false {
         Val("5")
     } else if true {
         Val("6")
@@ -28,16 +28,25 @@ test_cond() {
         Val("7")
     }
     Io::println(z.str)
+
+    w = if true { 1 } else { 2 }
+    Io::println(w.str)
+    Io::println(if false { 3 } else { 4 }.str)
 }
 
 test_let() {
-#    Io::println("test_let")
-#    x = let y = "bob" { y }
-#    Io::println(x)
-#    Io::println(let y = "bill" { "mike" }.str)
-#    Io::println("")
-#
-#    Io::println(let y = "bill" { Val("mike") }.str)
+    Io::println("test_let")
+    x = let y = "bob" { y }
+    Io::println(x)
+
+    z mutable = let w = Val("1") { w }
+    Io::println(z.str)
+
+    z = let w = Val("2") { Val("3") }
+    Io::println(z.str)
+
+    Io::println(let y = "bill" { "mike" })
+    Io::println(let y = "bill" { Val("mike") }.str)
 }
 
 test_match() {

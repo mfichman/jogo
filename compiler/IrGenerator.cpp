@@ -489,13 +489,13 @@ void IrGenerator::operator()(While* statement) {
     return_ = new IrValue(this, Operand(), env_->void_type());
 }
 
-void IrGenerator::operator()(Conditional* statement) {
+void IrGenerator::operator()(Conditional* stmt) {
     // Emit a conditional if/then expression with boolean guard expr.
 
     IrBlock::Ptr then_block = ir_block();
     IrBlock::Ptr else_block;
     IrBlock::Ptr done_block = ir_block();
-    if (statement->false_branch()) {
+    if (stmt->false_branch()) {
         else_block = ir_block();
     } else {
         else_block = done_block;
@@ -507,34 +507,19 @@ void IrGenerator::operator()(Conditional* statement) {
     // introducing phi-functions until optimizations are needed, since without
     // inter-block optimizations, SSA is not needed anyway.
     //Operand assign_loc = !!assign_loc_ ? assign_loc_ : temp_inc();
-    Type::Ptr type = statement->type();
     IrValue::Ptr out;
     if (!!assign_loc_) {
-        out = new IrValue(this, assign_loc_, statement->type(), IrValue::DEAD);
-    } else if (type->is_primitive()) {
-        RegisterId reg = temp_inc();
-        if (type->is_float()) {
-            reg = RegisterId(reg.id(), RegisterId::FLOAT);
-        }
-        out = new IrValue(this, reg, type);
-    } else if (type->is_ref()) {
-        out = new IrValue(this, temp_inc(), type);
-    } else if (type->is_compound()) {
-        out = stack_value(type);
-    } else if (type->is_void()) {
-        out = new IrValue(this, Operand(), env_->void_type());
+        out = new IrValue(this, assign_loc_, stmt->type(), IrValue::DEAD);
     } else {
-        assert(!"Invalid type");
+        out = assign_loc_alloc(stmt->type(), 0);
     }
     assign_loc_ = out->operand();
-
-    //mov(out->operand(), load(new NilLiteral(loc)));
 
     // Recursively emit the boolean guard expression.  We need to pass the true
     // and the false block pointers so that the correct code is emitted on each
     // branch.
     invert_guard_ = false;
-    IrValue::Ptr guardv = emit(statement->guard(), then_block, else_block, false);
+    IrValue::Ptr guardv = emit(stmt->guard(), then_block, else_block, false);
     Operand guard = guardv->operand();
     assert(!guardv->type()->is_compound());
     guardv = 0;
@@ -550,21 +535,21 @@ void IrGenerator::operator()(Conditional* statement) {
     // Now emit the true branch of the conditional
     assign_loc_ = out->operand();
     label(then_block);
-    emit(statement->true_branch());
-    if (!type->is_void()) {
+    emit(stmt->true_branch());
+    if (!stmt->type()->is_void()) {
         assign(return_, out); 
     } 
 
     // Emit the false branch if it exists; make sure to insert a jump before
     // emitting the false branch
-    if (statement->false_branch()) {
+    if (stmt->false_branch()) {
         if (!block_->is_terminated()) {
             jump(done_block);
         }
         assign_loc_ = out->operand();
         label(else_block);
-        emit(statement->false_branch()); 
-        if (!type->is_void()) {
+        emit(stmt->false_branch()); 
+        if (!stmt->type()->is_void()) {
             assign(return_, out); 
         }
     }
@@ -624,20 +609,7 @@ void IrGenerator::operator()(Assignment* expr) {
         assign_loc_ = var->operand(); 
     } else {
         type = (decl && !decl->is_top()) ? decl.pointer() : init->type();
-        if (type->is_primitive()) {
-            RegisterId reg = temp_inc();
-            if (type->is_float()) {
-                reg = RegisterId(reg.id(), RegisterId::FLOAT);
-            }
-            var = new IrValue(this, reg, type, IrValue::VAR);
-        } else if (type->is_ref()) {
-            var = new IrValue(this, temp_inc(), type, IrValue::VAR);
-        } else if (type->is_compound()) {
-            var = stack_value(type);
-            var->is_var(true);
-        } else {
-            assert(!"Invalid type");
-        }
+        var = assign_loc_alloc(type, IrValue::VAR); 
         assign_loc_ = var->operand();
     }
 
@@ -1498,6 +1470,28 @@ void IrGenerator::initial_assignment(Assignment* expr) {
 
 void IrGenerator::secondary_assignment(Assignment* expr) {
     // Assignment to an attribute within a class
+}
+
+IrValue::Ptr IrGenerator::assign_loc_alloc(Type* type, IrValue::Flags flags) {
+    // Allocate a variable/location that an expression should return into.
+    if (type->is_primitive()) {
+        RegisterId reg = temp_inc();
+        if (type->is_float()) {
+            reg = RegisterId(reg.id(), RegisterId::FLOAT);
+        }
+        return new IrValue(this, reg, type, flags);
+    } else if (type->is_ref()) {
+        return new IrValue(this, temp_inc(), type, flags);
+    } else if (type->is_compound()) {
+        IrValue::Ptr ret = stack_value(type);
+        ret->is_var(true);
+        return ret;
+    } else if (type->is_void()) {
+        return new IrValue(this, Operand(), env_->void_type(), flags);
+    } else {
+        assert(!"Invalid type");
+        return 0;
+    }
 }
 
 void IrGenerator::assign(IrValue* src, IrValue* dst) {

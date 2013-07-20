@@ -936,27 +936,30 @@ void SemanticAnalyzer::operator()(Case* statement) {
     }
 }
 
-void SemanticAnalyzer::operator()(Match* statement) {
+void SemanticAnalyzer::operator()(Match* stmt) {
     // Check a match statement.  First by check the guard, and then by ensure 
     // that each case expression has the same type as the guard.
-    Expression::Ptr guard = statement->guard();
+    Expression::Ptr guard = stmt->guard();
     guard(this);
 
-    for (Expression::Ptr b = statement->cases(); b; b = b->next()) {
+    for (Expression::Ptr b = stmt->cases(); b; b = b->next()) {
         b(this);
         Case::Ptr with = static_cast<Case*>(b.pointer());
         if (!guard->type()->equals(with->guard()->type())) {
-            err_ << statement->location();
+            err_ << stmt->location();
             err_ << "Match expression does not conform to type '";
             err_ << guard->type() << "'";
             err_ << "\n";
             env_->error();
         }
-        if (!statement->type()||statement->type()->equals(with->type())) {
-            statement->type(with->type());
+        if (!stmt->type()||stmt->type()->equals(with->type())) {
+            stmt->type(with->type());
         } else {
-            statement->type(env_->void_type());
+            stmt->type(env_->void_type());
         }
+    }
+    if (dynamic_cast<Block*>(stmt->parent())) {
+        stmt->type(env_->void_type());
     }
 }
 

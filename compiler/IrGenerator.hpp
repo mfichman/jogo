@@ -196,10 +196,11 @@ private:
     void attr_assignment(Assignment* expr);
     void initial_assignment(Assignment* expr);
     void secondary_assignment(Assignment* expr);  
-    void assign(IrValue* src, IrValue* dst);
     void value_copy(Operand src, Operand dst, Type* type);
     void value_dtor(Operand op, Type* type);
+    void assign(IrValue* src, IrValue* dst);
     int arg_slots() const { return arg_slots_; }
+    IrValue::Ptr assign_loc_alloc(Type* type, IrValue::Flags flags);
     IrValue::Ptr bool_expr(Expression* expr);
     IrValue::Ptr pop_ret(Type* type);
     IrValue::Ptr id_operand(String* id);
