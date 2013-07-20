@@ -568,7 +568,8 @@ void Nasm64Generator::string(String* string) {
     out_ << "    dq ";
     label("String__vtable");
     out_ << "\n"; // vtable
-    out_ << "    dq 1\n"; // reference count
+    out_ << "    dq 0xf000000000000001\n"; 
+    // reference count + readonly mask
     out_ << "    dq " << (int)in.length() << "\n";
     out_ << "    db " << out << "\n";
     align();
