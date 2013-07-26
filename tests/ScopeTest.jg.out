@@ -1,0 +1,47 @@
+init val_cond_no_assign 1
+destroy val_cond_no_assign 1
+break
+init val_cond_no_assign 2
+destroy val_cond_no_assign 2
+
+init val_cond_assign 1
+break
+init val_cond_assign 3
+destroy val_cond_assign 3
+destroy val_cond_assign 1
+
+init val_loop_no_assign 1
+destroy val_loop_no_assign 1
+init val_loop_no_assign 2
+destroy val_loop_no_assign 2
+
+init val_end 1
+destroy val_end 1
+
+init val_return 1
+destroy val_return 1
+
+init val_nested_no_assign 1
+destroy val_nested_no_assign 1
+init val_nested_no_assign 2
+destroy val_nested_no_assign 2
+
+init val_nested_assign 0
+break
+destroy val_nested_assign 0
+
+init val_nested_double_assign 1
+destroy val_nested_double_assign 1
+break
+destroy val_nested_double_assign 1
+
+init val_cond_var_no_assign 1
+destroy val_cond_var_no_assign 1
+
+init val_cond_var_assign 1
+destroy val_cond_var_assign 1
+destroy val_cond_var_assign 2
+
+init obj_nested_double_assign 1
+obj_nested_double_assign
+destroy obj_nested_double_assign 1

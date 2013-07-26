@@ -1,0 +1,31 @@
+test_cond
+hello
+false
+1
+del 4
+4
+6
+1
+4
+del 6
+del 1
+
+test_let
+bob
+del 1
+1
+del 1
+del 2
+3
+mike
+del mike
+mike
+del 3
+
+test_match
+pass
+pass
+1
+del pass
+pass
+del 1

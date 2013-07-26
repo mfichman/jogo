@@ -41,23 +41,23 @@ val_cond_no_assign() {
         Val("val_cond_no_assign", 1)            
     }
     Io::println("break")
-
     if true {
         val("val_cond_no_assign", 2)
     }
-    Io::println("break")
 }
 
 val_cond_assign() {
     x = if true {
         Val("val_cond_assign", 1)            
+    } else {
+        Val("val_cond_assign", 2)
     }
     Io::println("break")
-
     y = if true {
-        val("val_cond_assign", 2)
+        val("val_cond_assign", 3)
+    } else {
+        Val("val_cond_assign", 4)
     }
-    Io::println("break")
 }
 
 val_end() {
@@ -76,17 +76,17 @@ val_loop_no_assign() { # FIXME: Broken (doesn't free inside loop)
     }
 }
 
-val_loop_assign() { # FIXME: Broken (doesn't free inside loop)
-    i mutable = 0
-    y = while i < 2 {
-        ++i
-        Val("val_loop_assign", i)
-    }
-}
+#val_loop_assign() { # FIXME: Broken (doesn't free inside loop)
+#    i mutable = 0
+#    y = while i < 2 {
+#        ++i
+#        Val("val_loop_assign", i)
+#    }
+#}
 
 val_nested_no_assign() {
     i mutable = 0
-    while i < 1 {
+    while i < 2 {
         ++i
         if true {
             Val("val_nested_no_assign", i)
@@ -95,21 +95,29 @@ val_nested_no_assign() {
 }
 
 val_nested_assign() {
-    i mutable = 0
-    y = while i < 1 {
-        ++i
+    y = if true {
         if true {
             Val("val_nested_assign", 0)
+        } else {
+            Val("val_nested_assign", 1)
         } 
+    } else {
+        Val("val_nested_assign", 2)
     }
+    Io::println("break")
 }
 
 val_nested_double_assign() { # FIXME: 'x' shouldn't be freed
     y = if true {
         x = if true {
             Val("val_nested_double_assign", 1)
+        } else {
+            Val("val_nested_double_assign", 2)
         } 
+    } else {
+        Val("val_nested_double_assign", 3)
     }
+    Io::println("break")
 }
 
 val_cond_var_no_assign() {
@@ -117,13 +125,14 @@ val_cond_var_no_assign() {
         x = Val("val_cond_var_no_assign", 1)
         x
     }
-    Io::println("break")
 }
 
 val_cond_var_assign() {
     y = if true {
         x = Val("val_cond_var_assign", 1)
         x
+    } else {
+        Val("val_cond_var_assign", 2)
     }
     y.int = 2
 }
@@ -132,23 +141,37 @@ obj_nested_double_assign() {
     y = if true {
         x = if true {
             Obj("obj_nested_double_assign", 1)
-        } 
+        } else {
+            nil
+        }
+    } else {
+        nil
     }
+    Io::println(y.test.str)
 }
 
 main() Int {
-#    val_cond_no_assign()
-#    val_cond_assign()
-#    val_loop_no_assign()
-#    val_loop_assign()
-#    val_end()
-#    val_return()
-#    val_nested_no_assign()
-#    val_nested_assign()
-    #val_nested_double_assign()
-    #val_cond_var_no_assign()
+    val_cond_no_assign()
+    Io::println('')
+    val_cond_assign()
+    Io::println('')
+    val_loop_no_assign()
+    Io::println('')
+    #val_loop_assign()
+    val_end()
+    Io::println('')
+    val_return()
+    Io::println('')
+    val_nested_no_assign()
+    Io::println('')
+    val_nested_assign()
+    Io::println('')
+    val_nested_double_assign()
+    Io::println('')
+    val_cond_var_no_assign()
+    Io::println('')
     val_cond_var_assign()
-
-    #obj_nested_double_assign()
+    Io::println('')
+    obj_nested_double_assign()
     ret 0
 }

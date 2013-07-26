@@ -50,14 +50,22 @@ test_let() {
 }
 
 test_match() {
-#    Io::println("test_match")
-#    x = match 1 {
-#    with 2: "hello"
-#    with 3: "bob"
-#    with 1: "nothing"
-#    }
-#    Io::println(x)
-#    Io::println(match 7 { with 8: "fail"})
+    Io::println("test_match")
+    x = match 1 {
+    with 2: "hello"
+    with 3: "bob"
+    with 1: "pass"
+    }
+    Io::println(x)
+    Io::println(match 9 { with 8: "fail" with 9: "pass" })
+
+    y = match 1 {
+    with 2: Val("2")
+    with 3: Val("3")
+    with 1: Val("1")
+    }
+    Io::println(y.str)
+    Io::println(match 6 { with 0: Val("fail") with 6: Val("pass") }.str)
 }
 
 main() Int {

@@ -155,10 +155,9 @@ void ClosureAnalyzer::operator()(Return* statement) {
 
 void ClosureAnalyzer::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
+    Expression::Ptr block = statement->block();
     guard(this);
-    for (Expression::Ptr c = statement->children(); c; c = c->next()) {
-        c(this);
-    }
+    block(this);
 }
 
 void ClosureAnalyzer::operator()(Match* statement) {

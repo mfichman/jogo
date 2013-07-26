@@ -131,10 +131,7 @@ private:
 /* Hash literal */
 class HashLiteral : public Expression {
 public:
-    HashLiteral(Location loc, Expression* args) :
-        Expression(loc),
-        arguments_(args) {
-    }
+    HashLiteral(Location loc, Expression* args);
     typedef Pointer<HashLiteral> Ptr;
     typedef Iterator<HashLiteral> Itr;
 
@@ -148,10 +145,7 @@ private:
 /* Array literal */
 class ArrayLiteral : public Expression {
 public:
-    ArrayLiteral(Location loc, Expression* args) :
-        Expression(loc),
-        arguments_(args) {
-    }
+    ArrayLiteral(Location loc, Expression* args);
     typedef Pointer<ArrayLiteral> Ptr;
     typedef Iterator<ArrayLiteral> Itr;
 
@@ -165,15 +159,7 @@ private:
 /* Simple binary expression */
 class Binary : public Expression {
 public:
-    Binary(Location loc, String* op, Expression* left, Expression* right) :
-        Expression(loc),
-        operation_(op),
-        left_(left),
-        right_(right) {
-
-        left->parent(this);
-        right->parent(this);
-    }
+    Binary(Location loc, String* op, Expression* left, Expression* right);
     typedef Pointer<Binary> Ptr;
     typedef Iterator<Binary> Itr;
 
@@ -191,13 +177,7 @@ private:
 /* Simple unary expression */
 class Unary : public Expression {
 public:
-    Unary(Location loc, String* op, Expression* child) :
-        Expression(loc),
-        operation_(op),
-        child_(child) {
-
-        child->parent(this);
-    }
+    Unary(Location loc, String* op, Expression* child);
     typedef Pointer<Unary> Ptr;
     typedef Iterator<Unary> Itr;
 
@@ -213,18 +193,7 @@ private:
 /* Normal function all */
 class Call : public Expression {
 public:
-    Call(Location loc, Expression* expr, Expression* args) :
-        Expression(loc),
-        expression_(expr),
-        arguments_(args),
-        function_(0) {
-
-        expr->parent(this);
-        for (Expression* arg = args; arg; arg = arg->next()) {
-            //arg->parent(this); // WHY DOES THIS CRASH!!? FIXME
-        }
-    }
-
+    Call(Location loc, Expression* expr, Expression* args);
     Expression* expression() const { return expression_; }
     Expression* arguments() const { return arguments_; }
     Expression* receiver() const { return receiver_; }
@@ -246,15 +215,7 @@ private:
 /* Member access (e.g., object.attribute) */
 class Member : public Expression {
 public:
-    Member(Location loc, Expression* expr, String* ident) :
-        Expression(loc), 
-        identifier_(ident),
-        expression_(expr),
-        function_(0) {
-
-        expr->parent(this);
-    }
-
+    Member(Location loc, Expression* expr, String* ident);
     String* identifier() const { return identifier_; }
     Expression* expression() const { return expression_; }
     Function* function() const { return function_; }
@@ -272,16 +233,7 @@ private:
 /* Constructor call */
 class Construct : public Expression {
 public:
-    Construct(Location loc, Type* type, Expression* args) :
-        Expression(loc),
-        arguments_(args) {
-        
-        Expression::type(type);
-        for (Expression* arg = args; arg; arg = arg->next()) {
-            arg->parent(this);
-        }
-    }
-
+    Construct(Location loc, Type* type, Expression* args);
     Expression* arguments() const { return arguments_; }
     void arguments(Expression* args) { arguments_ = args; }
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -296,13 +248,7 @@ private:
 /* IdentifierRef expression (variable access) */
 class IdentifierRef : public Expression {
 public:
-    IdentifierRef(Location loc, String* scope, String* ident) :
-        Expression(loc),
-        scope_(scope),
-        identifier_(ident) {
-
-    }
-
+    IdentifierRef(Location loc, String* scope, String* ident);
     String* scope() const { return scope_; }
     String* identifier() const { return identifier_; }
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -317,12 +263,7 @@ private:
 /* Constant identifier access expression */
 class ConstantRef : public Expression {
 public:
-    ConstantRef(Location loc, String* scope, String* ident) :
-        Expression(loc),
-        scope_(scope),
-        identifier_(ident) {
-    }
-
+    ConstantRef(Location loc, String* scope, String* ident);
     String* scope() const { return scope_; }
     String* identifier() const { return identifier_; }
     Constant* constant() const { return constant_; }
@@ -340,17 +281,7 @@ private:
 class Assignment : public Expression {
 public:
     typedef int Flags;
-    Assignment(Location loc, String* ident, Type* type, Expression* expr, Flags flags=0) :
-        Expression(loc),
-        identifier_(ident),
-		declared_type_(type),
-        initializer_(expr),
-        flags_(flags) {
-
-        expr->parent(this);
-        assert(declared_type_);
-    }
-
+    Assignment(Location loc, String* ident, Type* type, Expression* expr, Flags flags=0);
     String* identifier() const { return identifier_; }
     Type* declared_type() { return declared_type_; }
     Expression* initializer() const { return initializer_; }
@@ -376,12 +307,7 @@ private:
 /* Closure */
 class Closure : public Expression {
 public:
-    Closure(Location loc, Function* function, Class* clazz) :
-        Expression(loc),
-        function_(function),
-        class_(clazz) {
-    }
-
+    Closure(Location loc, Function* function, Class* clazz);
     Function* function() const { return function_; } 
     Class* clazz() const { return class_; }
     Construct* construct() const { return construct_; }
@@ -398,9 +324,7 @@ private:
 /* Empty expression */
 class Empty : public Expression {
 public:
-    Empty(Location loc) :
-        Expression(loc) {
-    }
+    Empty(Location loc);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Empty> Ptr;
 };
@@ -408,13 +332,7 @@ public:
 /* Cast expression */
 class Cast : public Expression {
 public:
-    Cast(Location loc, Type* type, Expression* expr) :
-        Expression(loc),
-        child_(expr) {
-        
-        Expression::type(type);
-    }
-
+    Cast(Location loc, Type* type, Expression* expr);
     Expression* child() const { return child_; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Cast> Ptr;
@@ -426,12 +344,7 @@ private:
 /* An 'is' type check expression */
 class Is : public Expression {
 public:
-    Is(Location loc, Expression* expr, Type* type) :
-        Expression(loc),
-        child_(expr),
-        check_type_(type) {
-    }
-
+    Is(Location loc, Expression* expr, Type* type);
     Expression* child() const { return child_; }
     Type* check_type() const { return check_type_; }
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -445,13 +358,7 @@ private:
 /* Boxes a primitive */
 class Box : public Expression {
 public:
-    Box(Location loc, Type* type, Expression* expr) :
-        Expression(loc),
-        child_(expr) {
-        
-        Expression::type(type);
-    }
-
+    Box(Location loc, Type* type, Expression* expr);
     Expression* child() const { return child_; }
     void operator()(Functor* functor) { functor->operator()(this); }
     
@@ -462,28 +369,22 @@ private:
 /* Case statement */
 class Case : public Expression {
 public:
-    Case(Location loc, Expression* guard, Expression* children);
-
+    Case(Location loc, Expression* guard, Expression* block);
     Expression* guard() const { return guard_; }
-    Expression* children() const { return children_; }
+    Expression* block() const { return block_; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Case> Ptr;
 
 private:
     Expression::Ptr guard_;
-    Expression::Ptr children_;
+    Expression::Ptr block_;
 };
 
  
 /* Match expression */
 class Match : public Expression {
 public:
-    Match(Location loc, Expression* guard, Case* cases) : 
-        Expression(loc),
-        guard_(guard),
-        cases_(cases) {
-    }
-
+    Match(Location loc, Expression* guard, Case* cases);
     Expression* guard() const { return guard_; }
     Case* cases() const { return cases_; }
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -498,7 +399,6 @@ private:
 class While : public Expression {
 public:
     While(Location loc, Expression* guard, Expression* block);
-
     Expression* guard() const { return guard_; }
     Expression* block() const { return block_; }
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -513,7 +413,6 @@ private:
 class Conditional : public Expression {
 public:
     Conditional(Location loc, Expression* ex, Expression* yes, Expression* no);
-
     Expression* guard() const { return guard_; }
     Expression* true_branch() const { return true_branch_; }
     Expression* false_branch() const { return false_branch_; }
@@ -530,7 +429,6 @@ private:
 class Let : public Expression {
 public:
     Let(Location loc, Assignment* variables, Expression* block);
-
     Assignment* variables() const { return variables_; }
     Expression* block() const { return block_; }
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -544,16 +442,7 @@ private:
 /* Block statement */
 class Block : public Expression {
 public:
-    Block(Location loc, String* comment, Expression* children) :
-        Expression(loc),
-        comment_(comment),
-        children_(children) {
-
-        for(Expression* expr = children; expr; expr = expr->next()) {
-            expr->parent(this);
-        }
-    }
-    
+    Block(Location loc, String* comment, Expression* children);
     String* comment() const { return comment_; }
     Expression* children() const { return children_; }
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -567,11 +456,7 @@ private:
 /* Return statement */
 class Return : public Expression {
 public:
-    Return(Location loc, Expression* expr) :
-        Expression(loc),
-        expression_(expr) {
-    }
-
+    Return(Location loc, Expression* expr);
     Expression* expression() const { return expression_; }
     void expression(Expression* expr) { expression_ = expr; }
     void operator()(Functor* functor) { functor->operator()(this); }
@@ -584,11 +469,7 @@ private:
 /* Fork statement */
 class Fork : public Expression {
 public:
-    Fork(Location loc, Expression* expression) : 
-        Expression(loc),
-        expression_(expression) {
-    }
-    
+    Fork(Location loc, Expression* expression);
     Expression* expression() const { return expression_; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Fork> Ptr;
@@ -602,10 +483,7 @@ private:
 /* Yield statement */
 class Yield : public Expression {
 public:
-    Yield(Location loc, Expression* expression) :
-        Expression(loc),
-        expression_(expression) {
-    }
+    Yield(Location loc, Expression* expression);
     Expression* expression() const { return expression_; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Yield> Ptr;
@@ -618,9 +496,7 @@ private:
 /* Parse error placeholder expression */
 class ParseError : public Expression {
 public:
-    ParseError(Location loc) :
-        Expression(loc) {
-    }
+    ParseError(Location loc);
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<ParseError> Ptr;
 };

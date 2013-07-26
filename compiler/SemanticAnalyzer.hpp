@@ -99,6 +99,7 @@ private:
     void copier();
     void assign_enums(Class* clazz);
     void assign_generic_classes(Type* type);
+    bool expr_parent(Expression* expr);
 
     Environment::Ptr env_;
     Stream::Ptr err_;

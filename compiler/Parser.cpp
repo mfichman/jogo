@@ -742,7 +742,7 @@ Case* Parser::single_case() {
             break;
         }
     }
-    return new Case(loc, guard, statements);
+    return new Case(loc, guard, new Block(loc, 0, statements));
 }
 
 void Parser::import() {

@@ -403,16 +403,13 @@ void TreePrinter::operator()(Return* statement) {
 void TreePrinter::operator()(Case* statement) {
     indent_level_++;
     Expression::Ptr guard = statement->guard();
+    Expression::Ptr block = statement->block();
     out_ << "Case\n";
     print_tabs(); out_ << "guard: ";
     guard(this);
 
-    int i = 0;
-    for (Expression::Ptr s = statement->children(); s; s = s->next()) {
-        print_tabs(); out_ << "child" << i << ": ";
-        s(this);
-        i++;
-    }
+    print_tabs(); out_ << "block: ";
+    block(this);
     indent_level_--; 
 }
 

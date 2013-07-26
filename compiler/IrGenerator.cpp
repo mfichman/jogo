@@ -412,23 +412,35 @@ void IrGenerator::operator()(Empty* expr) {
     return_ = new IrValue(this, op, expr->type(), IrValue::DEAD);
 }
 
-void IrGenerator::operator()(Block* statement) {
-    Operand assign_loc = assign_loc_;
+void IrGenerator::operator()(Block* stmt) {
+    Expression::Ptr parent = stmt->parent();
+    bool const is_void = (!parent || parent->type()->is_void());
+
+    IrValue::Ptr out;
+    if (is_void) {
+        // Nothing
+    } else if (!!assign_loc_) {
+        out = new IrValue(this, assign_loc_, stmt->type(), IrValue::DEAD);
+    } else {
+        out = assign_loc_alloc(stmt->type(), 0);
+    }
     assign_loc_ = Operand();
+
     enter_scope();
-    for (Expression::Ptr s = statement->children(); s; s = s->next()) {
-        if (!s->next()) {
-            assign_loc_ = assign_loc;
+    for (Expression::Ptr s = stmt->children(); s; s = s->next()) {
+        if (!is_void && !s->next()) {
+            assign_loc_ = out->operand();
         }
         return_ = emit(s);
-        if (!statement->type()->is_void() && !s->next()) {
-            // Nothing
-        } else {
-            return_ = 0;
+        if (!is_void && !s->next()) {
+            assign(return_, out); 
         }
+        return_ = 0;
     }
-    if (!return_ || statement->type()->is_void()) {
-        return_ = new IrValue(this, Operand(), env_->void_type());
+    if (is_void) {
+        return_ = new IrValue(this, Operand(), stmt->type(), IrValue::DEAD);
+    } else {
+        return_ = out;
     }
     exit_scope();
 }
@@ -444,9 +456,6 @@ void IrGenerator::operator()(Let* stmt) {
     } 
     assign_loc_ = assign_loc;
     emit(stmt->block());
-    if (stmt->type()->is_void()) {
-        return_ = new IrValue(this, Operand(), env_->void_type());
-    }
     exit_scope();
 }
 
@@ -513,7 +522,7 @@ void IrGenerator::operator()(Conditional* stmt) {
     } else {
         out = assign_loc_alloc(stmt->type(), 0);
     }
-    assign_loc_ = out->operand();
+    assign_loc_ = Operand();
 
     // Recursively emit the boolean guard expression.  We need to pass the true
     // and the false block pointers so that the correct code is emitted on each
@@ -536,9 +545,6 @@ void IrGenerator::operator()(Conditional* stmt) {
     assign_loc_ = out->operand();
     label(then_block);
     emit(stmt->true_branch());
-    if (!stmt->type()->is_void()) {
-        assign(return_, out); 
-    } 
 
     // Emit the false branch if it exists; make sure to insert a jump before
     // emitting the false branch
@@ -549,12 +555,12 @@ void IrGenerator::operator()(Conditional* stmt) {
         assign_loc_ = out->operand();
         label(else_block);
         emit(stmt->false_branch()); 
-        if (!stmt->type()->is_void()) {
-            assign(return_, out); 
-        }
     }
     label(done_block);
-    return_ = out;
+
+    if (stmt->type()->is_void()) {
+        return_ = new IrValue(this, Operand(), env_->void_type());
+    }
 }
 
 void IrGenerator::operator()(Assignment* expr) {
@@ -691,9 +697,9 @@ void IrGenerator::operator()(Return* statement) {
     scope_.back()->ret(ret);
 }
 
-void IrGenerator::operator()(Match* statement) {
+void IrGenerator::operator()(Match* stmt) {
     // Emit one conditional for each branch in the match statement.
-    IrValue::Ptr guardv = emit(statement->guard());
+    IrValue::Ptr guardv = emit(stmt->guard());
     Operand guard = guardv->operand();
     assert(!guardv->type()->is_compound());
     guardv = 0;
@@ -702,7 +708,15 @@ void IrGenerator::operator()(Match* statement) {
     IrBlock::Ptr done_block = ir_block();  
     IrBlock::Ptr next_block = ir_block();
 
-    for (Expression::Ptr t = statement->cases(); t; t = t->next()) {
+    IrValue::Ptr out;
+    if (!!assign_loc_) {
+        out = new IrValue(this, assign_loc_, stmt->type(), IrValue::DEAD);
+    } else {
+        out = assign_loc_alloc(stmt->type(), 0);
+    }
+    assign_loc_ = Operand();
+
+    for (Expression::Ptr t = stmt->cases(); t; t = t->next()) {
         label(next_block);
         enter_scope();
 
@@ -721,15 +735,18 @@ void IrGenerator::operator()(Match* statement) {
 
         // Now emit the statements to be run if this branch is true, then jump
         // to the end of the case statement.
-        for (Expression::Ptr s = branch->children(); s; s = s->next()) {
-            return_ = emit(s);
-        } 
+        assign_loc_ = out->operand();
+        emit(branch->block());
         exit_scope();
         if (!block_->is_terminated()) {
             jump(done_block); 
         }
     }
     label(done_block);
+
+    if (stmt->type()->is_void()) {
+        return_ = new IrValue(this, Operand(), env_->void_type());
+    }
 }
 
 void IrGenerator::operator()(Case* statement) {
@@ -1572,7 +1589,6 @@ IrValue::Ptr IrGenerator::emit(Expression* expr, IrBlock* yes, IrBlock* no, bool
 
 IrValue::Ptr IrGenerator::emit(Expression* expr) {
     expr->operator()(this);
-    assert(expr->type()->subtype(return_->type()));
     return return_;
 }
 

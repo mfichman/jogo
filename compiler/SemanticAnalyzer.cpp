@@ -43,7 +43,7 @@ SemanticAnalyzer::SemanticAnalyzer(Environment* environment) :
 
     for (Module::Itr m = env_->modules(); m; ++m) {
         m(this);
-    }    
+    }
     err_->flush();
 }
 
@@ -285,10 +285,10 @@ void SemanticAnalyzer::operator()(Let* stmt) {
         v(this);
     }
     block(this);
-    if (dynamic_cast<Block*>(stmt->parent())) {
-        stmt->type(env_->void_type());
-    } else {
+    if (expr_parent(stmt)) {
         stmt->type(block->type());
+    } else {
+        stmt->type(env_->void_type()); 
     }
     exit_scope();
 }
@@ -409,6 +409,9 @@ void SemanticAnalyzer::operator()(Member* expression) {
     String::Ptr id = expression->identifier();
     Expression::Ptr expr = expression->expression(); 
     Call::Ptr call = dynamic_cast<Call*>(expression->parent());
+    if (call && call->expression() != expression) {
+        call = 0;
+    }
 
     // Recursively check the LHS of the '.' operator
     type_ = 0;
@@ -630,16 +633,19 @@ void SemanticAnalyzer::operator()(ConstantRef* expression) {
     assert(expression->type());
 }
 
-void SemanticAnalyzer::operator()(IdentifierRef* expression) {
+void SemanticAnalyzer::operator()(IdentifierRef* expr) {
     // Determine the type of the identifier from the variable store.  If the
     // variable is undeclared, set the type of the expression to no-type to
     // prevent further error messages.
-    String::Ptr id = expression->identifier();
-    String::Ptr scope = expression->scope(); 
-    Call::Ptr call = dynamic_cast<Call*>(expression->parent());
+    String::Ptr id = expr->identifier();
+    String::Ptr scope = expr->scope(); 
     Type::Ptr type; // Class of the object stored in 'expression'
+    Call::Ptr call = dynamic_cast<Call*>(expr->parent());
+    if (call && call->expression() != expr) {
+        call = 0;
+    }
 
-    if (expression->type()) {
+    if (expr->type()) {
         return;
     } else if (Variable::Ptr var = variable(id)) {
         type = var->type();
@@ -647,10 +653,10 @@ void SemanticAnalyzer::operator()(IdentifierRef* expression) {
         Attribute::Ptr attr = class_->attribute(id);
         if (attr) {
             if (attr->type() && attr->type()->is_bottom()) {
-                err_ << expression->location();
+                err_ << expr->location();
                 err_ << "Illegal circular reference\n";
                 env_->error();      
-                expression->type(env_->top_type());
+                expr->type(env_->top_type());
                 return;
             }
             attr(this);
@@ -662,12 +668,12 @@ void SemanticAnalyzer::operator()(IdentifierRef* expression) {
         // First handle the simple case, which is that this is just a plain
         // local variable or attribute access.
         if (!type) {
-            err_ << expression->location();
+            err_ << expr->location();
             err_ << "Undefined variable '" << id << "'\n";
             env_->error();
-            expression->type(env_->top_type());
+            expr->type(env_->top_type());
         } else {
-            expression->type(type);
+            expr->type(type);
         }
         return;
     }
@@ -679,12 +685,12 @@ void SemanticAnalyzer::operator()(IdentifierRef* expression) {
             call->function(clazz->function(env_->name("@call")));
         }
         if (!call->function()) {
-            err_ << expression->location();
+            err_ << expr->location();
             err_ << "Object is not callable\n";
             env_->error();
         } else {
-            call->receiver(expression);
-            expression->type(type);
+            call->receiver(expr);
+            expr->type(type);
         }
         return;
     }
@@ -696,7 +702,7 @@ void SemanticAnalyzer::operator()(IdentifierRef* expression) {
     if (class_ && scope->is_empty()) {
         call->function(class_->function(id));
         if (call->function()) {
-            Location loc = expression->location();
+            Location loc = expr->location();
             String::Ptr scope = env_->name("");
             String::Ptr name = env_->name("self");
             IdentifierRef::Ptr self = new IdentifierRef(loc, scope, name);
@@ -710,7 +716,7 @@ void SemanticAnalyzer::operator()(IdentifierRef* expression) {
     // Parent is a function call; we need to try to evaluate this identifier as
     // a function.  In the first case, the identifier actually resolves
     // directly to a function, so use it.
-    call->function(expression->file()->function(scope, id));
+    call->function(expr->file()->function(scope, id));
 
     // Special case: resolve using the type of the first argument.  This is a
     // rule unique to Jogo (as far as I know), and allows both of the following
@@ -787,12 +793,12 @@ void SemanticAnalyzer::operator()(While* statement) {
     return_ = 0; 
 }
 
-void SemanticAnalyzer::operator()(Conditional* statement) {
+void SemanticAnalyzer::operator()(Conditional* stmt) {
     // Ensure that the guard is convertible to type bool.  This is always true
     // unless the guard is a value type.
-    Expression::Ptr guard = statement->guard();
-    Expression::Ptr true_branch = statement->true_branch();
-    Expression::Ptr false_branch = statement->false_branch();
+    Expression::Ptr guard = stmt->guard();
+    Expression::Ptr true_branch = stmt->true_branch();
+    Expression::Ptr false_branch = stmt->false_branch();
     guard(this);
     if (!guard->type()->is_boolifiable()) {
         err_ << guard->location();
@@ -807,15 +813,15 @@ void SemanticAnalyzer::operator()(Conditional* statement) {
     }
 
     if (!false_branch) {
-        statement->type(env_->void_type()); 
-    } else if (dynamic_cast<Block*>(statement->parent())) {
-        statement->type(env_->void_type()); 
+        stmt->type(env_->void_type()); 
+    } else if (!expr_parent(stmt)) {
+        stmt->type(env_->void_type()); 
     } else if (true_branch->type()->subtype(false_branch->type())) {
-        statement->type(false_branch->type());
+        stmt->type(false_branch->type());
     } else if (false_branch->type()->subtype(true_branch->type())) {
-        statement->type(true_branch->type());
+        stmt->type(true_branch->type());
     } else {
-        statement->type(env_->void_type()); 
+        stmt->type(env_->void_type()); 
     }
 }
 
@@ -928,12 +934,10 @@ void SemanticAnalyzer::operator()(Yield* statement) {
 
 void SemanticAnalyzer::operator()(Case* statement) {
     Expression::Ptr guard = statement->guard();
+    Expression::Ptr block = statement->block();
     guard(this);
-    statement->type(env_->void_type());
-    for (Expression::Ptr s = statement->children(); s; s = s->next()) {
-        s(this);
-        statement->type(s->type());
-    }
+    block(this);
+    statement->type(block->type());
 }
 
 void SemanticAnalyzer::operator()(Match* stmt) {
@@ -941,6 +945,10 @@ void SemanticAnalyzer::operator()(Match* stmt) {
     // that each case expression has the same type as the guard.
     Expression::Ptr guard = stmt->guard();
     guard(this);
+
+    if (!expr_parent(stmt)) {
+        stmt->type(env_->void_type()); 
+    }
 
     for (Expression::Ptr b = stmt->cases(); b; b = b->next()) {
         b(this);
@@ -952,14 +960,15 @@ void SemanticAnalyzer::operator()(Match* stmt) {
             err_ << "\n";
             env_->error();
         }
-        if (!stmt->type()||stmt->type()->equals(with->type())) {
+        if (!stmt->type()) {
             stmt->type(with->type());
+        } else if (stmt->type()->subtype(with->type())) {
+            stmt->type(with->type());
+        } else if (with->type()->subtype(stmt->type())) {
+            stmt->type(stmt->type());
         } else {
             stmt->type(env_->void_type());
         }
-    }
-    if (dynamic_cast<Block*>(stmt->parent())) {
-        stmt->type(env_->void_type());
     }
 }
 
@@ -1845,3 +1854,30 @@ Type* SemanticAnalyzer::canonical(Type* in, Type* receiver) {
         return in;
     }
 }
+
+bool SemanticAnalyzer::expr_parent(Expression* expr) {
+    // Returns true if an ancestor of this expression is a non-block expression
+    // and any intervening blocks are the last expression in the parent block.
+    if (!expr->parent()) {
+        return false;
+    } else if (Block* block = dynamic_cast<Block*>(expr->parent())) {
+        if (block->children()->last()) {
+            if (block->children()->last() == expr) {
+                return expr_parent(block);
+            } else {
+                return false;
+            }
+        } else {
+            // FIXME: If there is only 1 child in the block, then 'last' is nil.
+            if (block->children() == expr) {
+                return expr_parent(block);
+            } else {
+                return false;
+            }
+        }
+    } else {
+        return true;
+    }
+}
+
+
