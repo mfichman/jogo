@@ -602,9 +602,11 @@ void Intel64Generator::sub(RegisterId res, RegisterId r1, RegisterId r2) {
     typedef void (Intel64Generator::*Func)(RegisterId, RegisterId);
     Func sub = &Intel64Generator::sub;
     Func mov = &Intel64Generator::mov;
+    Func add = &Intel64Generator::add;
     if (res.is_float()) {
         sub = &Intel64Generator::subsd;
         mov = &Intel64Generator::movsd;
+        add = &Intel64Generator::addsd;
     }
 
     if (res == r1) { // res <- res - r2
@@ -612,7 +614,7 @@ void Intel64Generator::sub(RegisterId res, RegisterId r1, RegisterId r2) {
     } else if (res == r2) { // res <- r1 - res
         assert("Not implemented"&&!res.is_float());
         neg(res);
-        (this->*sub)(res, r1);
+        (this->*add)(res, r1);
     } else { // res <- r1 - r2
         (this->*mov)(res, r1);
         (this->*sub)(res, r2); 

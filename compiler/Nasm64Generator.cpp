@@ -312,9 +312,9 @@ void Nasm64Generator::arith(Instruction const& inst) {
         // t1 <- t2 + t1
         instr(name, r2, r1);
     } else if (inst.opcode() == SUB) {
-        // t1 <- t2 - t1 goes to t1 <- -t1 + t2; t1 <- -t1 
-        instr("neg", r1);
-        instr("add", r1, r2);
+        // t2 <- t1 - t2 goes to t2 <- -t2 + t1;
+        instr("neg", r2);
+        instr("add", r2, r1);
     } else {
         // t1 <- t2 / t1 
         instr("push", r2);
