@@ -94,7 +94,7 @@ void RegisterAllocator::dump_graph() {
     // Dumps the whole register interference graph
     for (int i = 0; i < graph_.size(); ++i) {
         if (!graph_[i].temp()) { continue; }
-        Stream::stout() << graph_[i].temp() << " => {";
+        Stream::stout() << graph_[i].temp() << " => interferes {";
         RegisterIdSet const& regs = graph_[i].neighbors();
         for (int i = 0; i < regs.bits(); ++i) {
             if (regs.bit(i)) {
@@ -145,12 +145,8 @@ void RegisterAllocator::build_graph(IrBlock* block) {
         }
 
         // Add an edge between the register being written and all of the
-        // registers in the live set.  FIXME: This may not be necessary.  This
-        // was added to fix the case where a value was assigned, but not read
-        // (i.e., use-def chain without the use).  Eventually, dead code
-        // elimination should take care of this.
+        // registers in the live set. 
         if (!!result && !machine_->reg(result)) {
-            graph_[result.id()].neighbors() |= live;
             graph_[result.id()].temp(result);
         }
         if (!!first && !machine_->reg(first)) {
@@ -281,7 +277,7 @@ void RegisterAllocator::color_graph() {
             assert(machine_->reg(choice) && "Not a machine reg");
             v.reg(choice);
             if (env_->dump_regalloc()) {
-                Stream::stout() << v.temp() << " -> " << choice << "\n";
+                Stream::stout() << v.temp() << " -> alloc " << choice << "\n";
                 Stream::stout()->flush();
             }
         } else {
@@ -338,6 +334,9 @@ void RegisterAllocator::spill_register(Function* func) {
     // the most conflicts, usually.
     for (int i = 0; i < machine_->caller_regs(); i++) {
         RegisterId reg = machine_->caller_reg(i)->id();
+        if (reg.is_special()) {
+            continue;
+        }
         if (reg.is_float() != spill_float_) {
             continue;
         }

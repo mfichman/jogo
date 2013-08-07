@@ -612,9 +612,18 @@ void Intel64Generator::sub(RegisterId res, RegisterId r1, RegisterId r2) {
     if (res == r1) { // res <- res - r2
         (this->*sub)(res, r2);
     } else if (res == r2) { // res <- r1 - res
-        assert("Not implemented"&&!res.is_float());
-        neg(res);
-        (this->*add)(res, r1);
+        if (res.is_float()) {
+            // mov xmm0, r1
+            // sub xmm0, res
+            // mov res, xmm0
+            (this->*mov)(XMM0, r1);
+            (this->*sub)(XMM0, res);
+            (this->*mov)(res, XMM0);
+        } else {
+            assert("Not implemented"&&!res.is_float());
+            neg(res);
+            (this->*add)(res, r1);
+        }
     } else { // res <- r1 - r2
         (this->*mov)(res, r1);
         (this->*sub)(res, r2); 
@@ -671,8 +680,9 @@ void Intel64Generator::neg(RegisterId res, RegisterId a1) {
     // negation.
     if (res.is_float()) {
         mov(RAX, (uint64_t)0);
-        cvtsi2sd(res, RAX);
-        subsd(res, a1);
+        cvtsi2sd(XMM0, RAX);
+        subsd(XMM0, a1);
+        movsd(res, XMM0);
     } else {
         mov(res, a1);
         neg(res);
