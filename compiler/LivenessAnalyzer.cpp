@@ -21,6 +21,7 @@
  */  
 
 #include "LivenessAnalyzer.hpp"
+#include "IrBlockPrinter.hpp"
 
 using namespace std;
 
@@ -30,14 +31,22 @@ void LivenessAnalyzer::operator()(Function* feature) {
     reset_ = true;
     function_ = feature;
 
+    IrBlockPrinter::Ptr bprint(new IrBlockPrinter(env_, machine_));
+    bprint->out(Stream::stout());
+
     // Iterate the liveness computation until the all the liveness rules are
     // fully statisfied.
+    int iterations = 0;
     while (!finished_) {
+        bprint->operator()(feature);
         finished_ = true;
         round_ = feature->ir_block(0)->round();
         operator()(feature->ir_block(0));
         reset_ = false;
+        ++iterations;
+        bprint->operator()(feature);
     }
+    Stream::stout() << iterations << "iterations\n\n";
 }
 
 IrBlock* LivenessAnalyzer::branch(IrBlock* block) {
@@ -87,6 +96,7 @@ void LivenessAnalyzer::operator()(IrBlock* block) {
         // propagate liveness information from the use of a temporary back to
         // its last write.
         Instruction const& instr = block->instr(i);
+        Operand const& first = instr.first();
         RegisterIdSet const& in = instr.liveness()->in();
         RegisterIdSet const& out = instr.liveness()->out();
         RegisterIdSet inw = in;
@@ -127,6 +137,11 @@ void LivenessAnalyzer::operator()(IrBlock* block) {
             inw.set(instr.second().reg());
             if (instr.second().reg() == instr.result().reg()) {
                 result_in_use = true;
+            }
+        }
+        if (PHI == instr.opcode()) {
+            for (PhiArg* arg = first.phi_arg(); arg; arg = arg->next()) {
+                inw.set(arg->operand().reg()); 
             }
         }
 

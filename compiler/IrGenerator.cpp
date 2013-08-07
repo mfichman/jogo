@@ -171,11 +171,11 @@ void IrGenerator::operator()(Box* expr) {
     
     // Make sure that the refcount starts out at 1, otherwise the object may
     // be freed before the end of the constructor.
-    Operand refcount = Operand(return_->operand().reg(), Address(1));
+    Operand refcount(return_->operand().reg(), Address(1));
     store(refcount, new IntegerLiteral(loc, one));
 
     // Slot 2 is the value slot for primitive types
-    Operand addr = Operand(return_->operand().reg(), Address(2));
+    Operand addr(return_->operand().reg(), Address(2));
     store(addr, arg->operand());
     // FixMe: For value types, can't do a simple move
 }
@@ -205,16 +205,19 @@ void IrGenerator::operator()(Cast* expr) {
     label(mismatch_block);
     String::Ptr zero = env_->integer("0");
     Location loc;
-    mov(out, load(new IntegerLiteral(loc, zero)));
+    assert(!"not phi-compat");
+    //mov(out, load(new IntegerLiteral(loc, zero)));
     jump(done_block);
 
     // Otherwise, keep the same value in the result.
     label(ok_block);
     if (clazz->is_primitive()) {
         // Slot 2 is the value slot for primitive types
-        load(out, Operand(arg->operand().reg(), Address(2)));
+        //load(out, Operand(arg->operand().reg(), Address(2)));
+        assert(!"not phi-compat");
     } else if (clazz->is_ref()) {
-        mov(out, arg->operand());
+        //mov(out, arg->operand());
+        assert(!"not phi-compat");
     } else if (clazz->is_compound()) {
         assert(!"Not implemented");
     } else {
@@ -249,13 +252,15 @@ void IrGenerator::operator()(Is* expr) {
     // If the vtable pointers are not equal, set the register to zero
     label(mismatch_block);
     String::Ptr zero = env_->integer("0");
-    mov(out, load(new BooleanLiteral(loc, zero)));
+    assert(!"not phi compat");
+    //mov(out, load(new BooleanLiteral(loc, zero)));
     jump(done_block);
 
     // Otherwise, set the register to 1.
     label(ok_block);
     String::Ptr one = env_->integer("1");
-    mov(out, load(new BooleanLiteral(loc, one)));
+    assert(!"not phi compat");
+    //mov(out, load(new BooleanLiteral(loc, one)));
     label(done_block);
 
     return_ = new IrValue(this, out, expr->type()); 
@@ -354,10 +359,8 @@ void IrGenerator::operator()(Construct* expr) {
     IrValue::Ptr valret;
     if(clazz->is_compound()) {
         // Push the 'self' parameter for the Vector constructor
-        valret = stack_value_temp(expr->type());
+        valret = stack_value(expr->type());
         fm.arg(valret->operand());
-    } else {
-        assign_loc_ = Operand();
     }
     Formal::Ptr formal = func->formals();
     std::vector<IrValue::Ptr> vals;
@@ -416,31 +419,12 @@ void IrGenerator::operator()(Block* stmt) {
     Expression::Ptr parent = stmt->parent();
     bool const is_void = (!parent || parent->type()->is_void());
 
-    IrValue::Ptr out;
-    if (is_void) {
-        // Nothing
-    } else if (!!assign_loc_) {
-        out = new IrValue(this, assign_loc_, stmt->type(), IrValue::DEAD);
-    } else {
-        out = assign_loc_alloc(stmt->type(), 0);
-    }
-    assign_loc_ = Operand();
-
     enter_scope();
     for (Expression::Ptr s = stmt->children(); s; s = s->next()) {
-        if (!is_void && !s->next()) {
-            assign_loc_ = out->operand();
-        }
         return_ = emit(s);
-        if (!is_void && !s->next()) {
-            assign(return_, out); 
-        }
-        return_ = 0;
     }
     if (is_void) {
         return_ = new IrValue(this, Operand(), stmt->type(), IrValue::DEAD);
-    } else {
-        return_ = out;
     }
     exit_scope();
 }
@@ -448,13 +432,10 @@ void IrGenerator::operator()(Block* stmt) {
 void IrGenerator::operator()(Let* stmt) {
     // Enter a new scope, then emit code for initializing all the let
     // variables, and initialize code for the body.
-    Operand assign_loc = assign_loc_;
-    assign_loc_ = Operand();
     enter_scope();
     for (Expression::Ptr v = stmt->variables(); v; v = v->next()) {
         return_ = emit(v);
     } 
-    assign_loc_ = assign_loc;
     emit(stmt->block());
     exit_scope();
 }
@@ -515,14 +496,6 @@ void IrGenerator::operator()(Conditional* stmt) {
     // for temporary expressions.  This limitation is here as a punt on
     // introducing phi-functions until optimizations are needed, since without
     // inter-block optimizations, SSA is not needed anyway.
-    //Operand assign_loc = !!assign_loc_ ? assign_loc_ : temp_inc();
-    IrValue::Ptr out;
-    if (!!assign_loc_) {
-        out = new IrValue(this, assign_loc_, stmt->type(), IrValue::DEAD);
-    } else {
-        out = assign_loc_alloc(stmt->type(), 0);
-    }
-    assign_loc_ = Operand();
 
     // Recursively emit the boolean guard expression.  We need to pass the true
     // and the false block pointers so that the correct code is emitted on each
@@ -542,24 +515,28 @@ void IrGenerator::operator()(Conditional* stmt) {
     }
 
     // Now emit the true branch of the conditional
-    assign_loc_ = out->operand();
     label(then_block);
-    emit(stmt->true_branch());
+    IrValue::Ptr true_val = emit(stmt->true_branch());
 
     // Emit the false branch if it exists; make sure to insert a jump before
     // emitting the false branch
+    IrValue::Ptr false_val;
     if (stmt->false_branch()) {
         if (!block_->is_terminated()) {
             jump(done_block);
         }
-        assign_loc_ = out->operand();
         label(else_block);
-        emit(stmt->false_branch()); 
+        false_val = emit(stmt->false_branch()); 
     }
     label(done_block);
 
-    if (stmt->type()->is_void()) {
-        return_ = new IrValue(this, Operand(), env_->void_type());
+    if (!stmt->type()->is_void()) {
+        PhiArg::Ptr true_phi(new PhiArg(true_val->operand(), then_block));
+        PhiArg::Ptr false_phi(new PhiArg(false_val->operand(), else_block));
+        Operand op = phi(append(true_phi.pointer(), false_phi.pointer()));
+        true_val->is_dead(true);
+        false_val->is_dead(true);
+        return_ = new IrValue(this, op, stmt->type());
     }
 }
 
@@ -582,41 +559,10 @@ void IrGenerator::operator()(Assignment* expr) {
 
     if (is_attr) {
         type = attr->type();
-        Operand self = variable(env_->name("self"))->operand();
-        if (type->is_primitive()) {
-            RegisterId reg = temp_inc();
-            if (type->is_float()) {
-                reg = RegisterId(reg.id(), RegisterId::FLOAT);
-            }
-            var = new IrValue(this, reg, type, IrValue::VAR|IrValue::DEAD);
-        } else if (type->is_ref()) {
-            if (!attr->is_weak()) {
-                Operand addr = Operand(self.reg(), Address(attr->slot())); 
-                refcount_dec(load(addr));
-            }
-            var = new IrValue(this, temp_inc(), type, IrValue::VAR|IrValue::DEAD);
-        } else if (type->is_compound()) {
-            Address addr(attr->slot(), 0);
-            Operand op = load(Operand(self.reg(), addr));
-            var = new IrValue(this, op, type, IrValue::DEAD);
-            // Load effective address!
-            value_dtor(var->operand(), type); // Delete old value
-        }
-        assign_loc_ = var->operand();
     } else if (is_secondary) {
         type = var->type();
-        if (type->is_primitive()) {
-            // Pass
-        } else if (type->is_ref()) {
-            // Pass
-        } else if (type->is_compound()) {
-            value_dtor(var->operand(), type); // Delete old value 
-        }
-        assign_loc_ = var->operand(); 
     } else {
         type = (decl && !decl->is_top()) ? decl.pointer() : init->type();
-        var = assign_loc_alloc(type, IrValue::VAR); 
-        assign_loc_ = var->operand();
     }
 
     if (dynamic_cast<Empty*>(init.pointer())) {
@@ -637,33 +583,48 @@ void IrGenerator::operator()(Assignment* expr) {
     } else {
         return_ = emit(init);
     }
-    return_->is_var(true);
 
     if (is_attr) {
         Operand self = variable(env_->name("self"))->operand();
         if (type->is_primitive()) {
-            Operand addr = Operand(self.reg(), Address(attr->slot()));  
+            Operand addr(self.reg(), Address(attr->slot()));  
             store(addr, return_->operand());
         } else if (type->is_ref()) {
-            Operand addr = Operand(self.reg(), Address(attr->slot()));  
+            Operand addr(self.reg(), Address(attr->slot()));  
+            if (!attr->is_weak()) {
+                refcount_dec(load(addr)); // Free old value
+            }
             store(addr, return_->operand());
             if (!attr->is_weak()) {
                 refcount_inc(return_->operand());
             }
         } else if (type->is_compound()) {
-            assign(return_, var);
+            Operand addr = load(Operand(self.reg(), Address(attr->slot(), 0)));
+            value_dtor(addr, type); // Delete old value
+            value_copy(return_->operand(), addr, type);
         }
     } else if (is_secondary) {
-        if (return_ != var && type->is_ref()) {
+        if (type->is_primitive()) {
+            variable(IrVariable(id, return_));
+            return_->is_dead(true);
+        } else if (type->is_value()) {
             refcount_dec(var->operand()); // Delete old value
+            variable(IrVariable(id, return_));
+            return_->is_dead(true);
+        } else if (type->is_compound()) {
+            value_dtor(var->operand(), type); // Delete old value
+            value_copy(return_->operand(), var->operand(), type);
+            return_ = var;
         }
-        assign(return_, var);
     } else {
-        assign(return_, var);
-        variable(IrVariable(id, var));
+        if (type->is_primitive()) {
+        } else if (type->is_value()) {
+        } else if (type->is_compound()) {
+            assert(!"not implemented");
+        }
+        variable(IrVariable(id, return_));
     }
     assert(type);
-    assign_loc_ = Operand();
 }
 
 void IrGenerator::operator()(Return* statement) {
@@ -676,10 +637,8 @@ void IrGenerator::operator()(Return* statement) {
         if (expr->type()->is_bool()) {
             ret = bool_expr(expr);
         } else if (expr->type()->is_compound()) {
-            IrValue* out = id_operand(env_->name("ret"));
-            assign_loc_ = out->operand();
+            assert(!"not implemented");
             ret = emit(expr);
-            assign(ret, out);
         } else if (expr->type()->is_ref()) {
             ret = emit(expr);
             if (ret->is_param()) {
@@ -708,14 +667,6 @@ void IrGenerator::operator()(Match* stmt) {
     IrBlock::Ptr done_block = ir_block();  
     IrBlock::Ptr next_block = ir_block();
 
-    IrValue::Ptr out;
-    if (!!assign_loc_) {
-        out = new IrValue(this, assign_loc_, stmt->type(), IrValue::DEAD);
-    } else {
-        out = assign_loc_alloc(stmt->type(), 0);
-    }
-    assign_loc_ = Operand();
-
     for (Expression::Ptr t = stmt->cases(); t; t = t->next()) {
         label(next_block);
         enter_scope();
@@ -735,7 +686,6 @@ void IrGenerator::operator()(Match* stmt) {
 
         // Now emit the statements to be run if this branch is true, then jump
         // to the end of the case statement.
-        assign_loc_ = out->operand();
         emit(branch->block());
         exit_scope();
         if (!block_->is_terminated()) {
@@ -773,7 +723,6 @@ void IrGenerator::operator()(Function* feature) {
     temp_ = machine_->regs();
     function_ = feature;
     block_ = 0;
-    assign_loc_ = Operand();
     label(ir_block());
     enter_scope();
 
@@ -850,9 +799,7 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv, Type*
     Operand receiver;
     IrValue::Ptr valret;
     if (ret->is_compound()) {
-        valret = stack_value_temp(ret);
-    } else {
-        assign_loc_ = Operand();
+        valret = stack_value(ret);
     } 
     std::vector<IrValue::Ptr> vals;
     for (Expression::Ptr a = args; a; a = a->next()) {
@@ -1011,7 +958,6 @@ IrValue* IrGenerator::variable(String* name) {
 
 void IrGenerator::variable(IrVariable const& var) {
     assert(scope_.size());
-    assert(var.value()->is_var());
     scope_.back()->variable(var);
 }
 
@@ -1047,18 +993,6 @@ IrValue::Ptr IrGenerator::stack_value(Type* type) {
     local_slots_inc(type->clazz()->slots());
     return new IrValue(this, load(Address(-local_slots_, 0)), type);  
     // Translates to LEA
-}
-
-IrValue::Ptr IrGenerator::stack_value_temp(Type* type) {
-    // Allocates storage for a temporary stack variable.
-    IrValue::Ptr val;
-    if (!!assign_loc_) {
-        val = new IrValue(this, assign_loc_, type, IrValue::DEAD);
-    } else {
-        val = stack_value(type);
-    }
-    assign_loc_ = Operand();
-    return val;
 }
 
 IrValue::Ptr IrGenerator::id_operand(String* id) {
@@ -1138,13 +1072,15 @@ IrValue::Ptr IrGenerator::bool_expr(Expression* expression) {
     // return value.
     label(then_block);
     String::Ptr one = env_->integer("1");
-    mov(return_->operand(), load(new IntegerLiteral(loc, one)));
+    assert(!"not phi compat");
+    //mov(return_->operand(), load(new IntegerLiteral(loc, one)));
     jump(done_block);
     
     // Now emit the code for the 'false' branch.
     label(else_block);
     String::Ptr zero = env_->integer("0");
-    mov(return_->operand(), load(new IntegerLiteral(loc, zero)));
+    assert(!"not phi compat");
+    //mov(return_->operand(), load(new IntegerLiteral(loc, zero)));
     
     label(done_block);
     return return_;
@@ -1299,7 +1235,6 @@ void IrGenerator::ctor_preamble(Class* clazz) {
         // Obtain a pointer to the 'self' object, and store it in the 'self'
         // variable.
         self = pop_ret(class_->type()); 
-        self->is_var(true);
         self->is_dead(true);
         variable(IrVariable(env_->name("self"), self));
        
@@ -1333,21 +1268,18 @@ void IrGenerator::ctor_preamble(Class* clazz) {
             if (attr->is_component() && attr->type()->is_object_proto()) {
                 continue;
             }
-            if (init->type()->is_compound()) {
-                Address addr(attr->slot(), 0);
-                assign_loc_ = load(Operand(self->operand().reg(), addr));
-            }
             IrValue::Ptr value = emit(init);
             if (init->type()->is_primitive()) {
                 // Don't need to do anything special for primitives
-                Operand addr = Operand(self->operand().reg(), Address(attr->slot()));
+                Operand addr(self->operand().reg(), Address(attr->slot()));
                 store(addr, value->operand());
             } else if (init->type()->is_ref()) {
-                Operand addr = Operand(self->operand().reg(), Address(attr->slot()));
+                Operand addr(self->operand().reg(), Address(attr->slot()));
                 store(addr, value->operand());
                 refcount_inc(value->operand());
             } else if (init->type()->is_compound()) {
-                // Pass; alue type will be initialized directly in assign_loc above
+                Operand addr(self->operand().reg(), Address(attr->slot(), 0));
+                value_copy(value->operand(), addr, init->type());
             } else {
                 assert(!"Invalid type");
             }
@@ -1373,7 +1305,7 @@ void IrGenerator::copier_preamble(Class* clazz) {
     for (Feature::Ptr f = clazz->features(); f; f = f->next()) {
         Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer());
         if (attr && attr->type()->is_ref()) {
-            Operand addr = Operand(self->operand().reg(), Address(attr->slot())); 
+            Operand addr(self->operand().reg(), Address(attr->slot())); 
             refcount_inc(load(addr)); 
         }
     }
@@ -1403,10 +1335,10 @@ void IrGenerator::dtor_epilog(Function* feature) {
         Attribute::Ptr attr = attrs[i];
         Operand self = variable(env_->name("self"))->operand();
         if (attr->type()->is_ref()) {
-            Operand addr = Operand(self.reg(), Address(attr->slot()));
+            Operand addr(self.reg(), Address(attr->slot()));
             refcount_dec(load(addr));
         } else if (attr->type()->is_compound()) {
-            Operand addr = Operand(self.reg(), Address(attr->slot(), 0));
+            Operand addr(self.reg(), Address(attr->slot(), 0));
             value_dtor(load(addr), attr->type()); 
         } else {
             assert(!"Invalid type");
@@ -1489,67 +1421,6 @@ void IrGenerator::secondary_assignment(Assignment* expr) {
     // Assignment to an attribute within a class
 }
 
-IrValue::Ptr IrGenerator::assign_loc_alloc(Type* type, IrValue::Flags flags) {
-    // Allocate a variable/location that an expression should return into.
-    if (type->is_primitive()) {
-        RegisterId reg = temp_inc();
-        if (type->is_float()) {
-            reg = RegisterId(reg.id(), RegisterId::FLOAT);
-        }
-        return new IrValue(this, reg, type, flags);
-    } else if (type->is_ref()) {
-        return new IrValue(this, temp_inc(), type, flags);
-    } else if (type->is_compound()) {
-        IrValue::Ptr ret = stack_value(type);
-        ret->is_var(true);
-        return ret;
-    } else if (type->is_void()) {
-        return new IrValue(this, Operand(), env_->void_type(), flags);
-    } else {
-        assert(!"Invalid type");
-        return 0;
-    }
-}
-
-void IrGenerator::assign(IrValue* src, IrValue* dst) {
-    // Assign the value pointed to by 'src' to the temporary at 'dst.' Usually,
-    // 'dst' is a preallocated location on the stack or in the register file
-    // that the result of an expression should be stored in.  If src/dst are
-    // not already equal, then this function must make a copy.
-    Type* type = src->type();
-    if (!dst || src->operand() == dst->operand()) {
-        // No destination register; just set return_ = src so that the result
-        // of the assignment is available to the parent expression
-        return_ = src;
-    } else if (!src->is_var()) {
-        // The source is not a variable.  Mark the source as dead, create a new
-        // value at the given destination, and move the src => dst if necessary
-        src->is_dead(true);
-        mov(dst->operand(), src->operand());
-        return_ = dst;
-    } else if (type->is_primitive()) {
-        // Create a copy of the primitive
-        src->is_dead(true);
-        mov(dst->operand(), src->operand());
-        return_ = dst;
-    } else if (type->is_ref()) {
-        // Increment the refcount, since the value is assigned to new storage,
-        // thus creating a second anchor
-        refcount_inc(src->operand());
-        mov(dst->operand(), src->operand());
-        return_ = dst;
-    } else if (type->is_compound()) {
-        // Copy the value type to the given destination
-        assert(!!dst && "Invalid assign location");
-        value_copy(src->operand(), dst->operand(), type); 
-        return_ = dst;
-    } else if (type->is_void()) {
-        // No return value
-    } else {
-        assert(!"Invalid type");
-    }
-}
-
 void IrGenerator::value_copy(Operand src, Operand dst, Type* type) {
     // Copies a value from 'src' to 'dst', and then increments the refcount
     // for any non-weak object attributes in 'type.'
@@ -1571,6 +1442,43 @@ void IrGenerator::value_dtor(Operand op, Type* type) {
     FuncMarshal fm(this);
     fm.arg(op);
     fm.call(dtor->label());
+}
+
+Operand IrGenerator::last_assignment_of(IrBlock* block, String* name) {
+    // Returns the last assignment of variable 'name' in block 'block'
+    if (block) {
+       for (int i = block->instrs()-1; i >= 0; --i) {
+           Instruction const& instr = block->instr(i);
+           Operand const& res = instr.result();
+           if (res.name() == name) {
+               return res;
+           }
+       }
+    } 
+    return Operand();
+}
+
+void IrGenerator::gen_phi(IrBlock* block) {
+    // Merges locations for variables that are active in the current scope by
+    // inserting phi-functions using the last-assigned value for each variable
+    // in b1 and optionally b2.
+/*
+    std::vector<IrScope::Ptr>::reverse_iterator i;
+    for (i = scope_.rbegin(); i != scope_.rend(); i++) {
+        for (int j = 0; j < (*i)->variables(); j++) {
+            IrVariable const& var = (*i)->variable(j);
+            Operand o1 = last_assignment_of(b1, var.name());
+            Operand o2 = last_assignment_of(b2, var.name());
+            if (!!o1 && !!o2) {
+                phi(o1, o2);
+            } else if (!!o1) {
+                phi(o1, var.value()->operand()); 
+            } else {
+                assert(!o1 && !o2 && "Invalid args");
+            }
+        }
+    }
+*/
 }
 
 IrValue::Ptr IrGenerator::emit(Expression* expr, IrBlock* yes, IrBlock* no, bool inv) {
@@ -1607,7 +1515,8 @@ Operand IrGenerator::emit(Opcode op, Operand t2, Operand t3) {
 }
 
 Operand IrGenerator::emit(Opcode op, Operand t2) {
-    assert("Literal or label in non-mem instr" && !t2.object());
+    assert("Literal or label in non-mem instr" && !t2.literal());
+    assert("Literal or label in non-mem instr" && !t2.label());
     assert("Address in non-mem instr" && !t2.addr());
     Instruction in = block_->instr(op, temp_inc(), t2, Operand());
     return in.result();
@@ -1655,12 +1564,6 @@ void IrGenerator::store(Operand addr, Operand value) {
 
 Operand IrGenerator::load(Operand addr) {
     Instruction in = block_->instr(LOAD, temp_inc(), addr, Operand());
-    return in.result();
-}
-
-Operand IrGenerator::load(Operand res, Operand addr) {
-    // FIXME: This is a problem for true SSA analysis
-    Instruction in = block_->instr(LOAD, res, addr, Operand());
     return in.result();
 }
 

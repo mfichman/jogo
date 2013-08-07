@@ -193,7 +193,7 @@ void Intel64Generator::operator()(IrBlock* block) {
         case ANDB: mov(res.reg(), a1.reg()); band(res.reg(), a2.reg()); break;
         case ORB: mov(res.reg(), a1.reg()); bor(res.reg(), a2.reg()); break; 
         case NOP: break;
-        default: break;
+        default: assert(!"Invalid opcode");
         }
     }
 }

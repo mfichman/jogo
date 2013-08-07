@@ -24,30 +24,45 @@
 
 #include "Jogo.hpp"
 #include "Environment.hpp"
-#include "IrBlock.hpp"
-#include "Machine.hpp"
 #include "Object.hpp"
-#include <set>
+#include "IrBlock.hpp"
+#include <vector>
 #include <map>
 
-/* Computes liveness information for a function */
-class LivenessAnalyzer : public Object {
+/* Represents a variable name/value pair */
+class IrVariable  {
 public:
-    LivenessAnalyzer(Environment* env, Machine* mach) : env_(env), machine_(mach) {}
-    
-    void operator()(Function* feature);
-    typedef Pointer<LivenessAnalyzer> Ptr;
+    IrVariable() : name_(0), value_(0) {}
+    IrVariable(String* name, IrValue* val) :
+        name_(name),
+        value_(val) {
+
+        assert("Literal or label in variable" && !val->operand().object());
+        assert("Address in variable" && !val->operand().addr());
+    } 
+    IrValue* value() const { return value_; }
+    String* name() const { return name_; }
 
 private:
-    void operator()(IrBlock* block); 
-    IrBlock* next(IrBlock* block);
-    IrBlock* branch(IrBlock* branch);
-
-    Environment::Ptr env_;
-    Machine::Ptr machine_;
-    Function::Ptr function_;
-    bool finished_;
-    bool entry_block_;
-    bool reset_;
-    int round_;
+    String::Ptr name_;
+    IrValue::Ptr value_;
 };
+
+
+/* Keeps track of variables in the current scope */
+class IrScope : public Object {
+public:
+    ~IrScope();
+    void variable(IrVariable const& var) { variable_.push_back(var); }
+    void ret(IrValue* ret) { ret_ = ret; }
+    IrVariable const& variable(int index) const { return variable_[index]; }
+    IrValue* variable(String* name) const;
+    IrValue* ret() const { return ret_; }
+    int variables() const { return variable_.size(); }
+
+    typedef Pointer<IrScope> Ptr;
+private:
+    IrValue::Ptr ret_;
+    std::vector<IrVariable> variable_;
+};
+

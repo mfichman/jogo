@@ -74,6 +74,8 @@ class LivenessAnalyzer;
 class Machine;
 class Closure;
 class IrGenerator;
+class IrBlock;
+class PhiArg;
 
 #include <Pointer.hpp>
 #include <map>
@@ -116,3 +118,24 @@ std::string stringify(T t) {
     ss << t;
     return ss.str();
 }
+
+template <typename T>
+T* append(typename T::Ptr list, T* last) {
+    return append(list.pointer(), last);
+}
+
+template <typename T>
+T* append(T* list, T* last) {
+    if (list) {
+        if (list->last()) {
+            list->last()->next(last);
+        } else {
+            list->next(last);
+        }
+        list->last(last);
+        return list;
+    } else {
+        return last;
+    }
+}
+

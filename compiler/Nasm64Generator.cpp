@@ -212,6 +212,7 @@ void Nasm64Generator::operator()(IrBlock* block) {
         case ORB: instr("mov", res, a1); instr("or", res, a2); break; 
         case NOP: instr("nop"); break;
         case RET: instr("leave"); instr("ret"); break;
+        default: assert(!"Bad instruction type");
         }
     }
 }

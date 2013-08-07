@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 Matt Fichman
+ * Copyright (c) 2013 Matt Fichman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -20,34 +20,23 @@
  * IN THE SOFTWARE.
  */  
 
-#pragma once
-
 #include "Jogo.hpp"
 #include "Environment.hpp"
 #include "IrBlock.hpp"
-#include "Machine.hpp"
 #include "Object.hpp"
-#include <set>
-#include <map>
 
-/* Computes liveness information for a function */
-class LivenessAnalyzer : public Object {
+/* Finalizes the IR for the output stage */
+class IrFinalizer : public TreeNode::Functor {
 public:
-    LivenessAnalyzer(Environment* env, Machine* mach) : env_(env), machine_(mach) {}
+    IrFinalizer(Environment* env);
     
-    void operator()(Function* feature);
-    typedef Pointer<LivenessAnalyzer> Ptr;
-
+    typedef Pointer<IrFinalizer> Ptr; 
+    void operator()(File* file);
+    
 private:
-    void operator()(IrBlock* block); 
-    IrBlock* next(IrBlock* block);
-    IrBlock* branch(IrBlock* branch);
+    void operator()(Class* feature);
+    void operator()(Function* feature);
+    void operator()(IrBlock* block);
 
     Environment::Ptr env_;
-    Machine::Ptr machine_;
-    Function::Ptr function_;
-    bool finished_;
-    bool entry_block_;
-    bool reset_;
-    int round_;
 };

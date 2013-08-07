@@ -25,76 +25,12 @@
 #include "Jogo.hpp"
 #include "Environment.hpp"
 #include "IrBlock.hpp"
+#include "IrScope.hpp"
 #include "Object.hpp"
 #include "Machine.hpp"
-#include "Scope.hpp"
 #include <vector>
 #include <map>
 
-
-/* Keeps track of values emitted by expressions */
-class IrValue : public Object {
-public:
-    typedef int Flags;
-
-    IrValue(IrGenerator* gen, Operand op, Type* type, Flags flags=0);
-    IrValue();
-    ~IrValue();
-    void is_param(bool param) { flags_ = param ? (flags_ | PARAM) : (flags_ & ~PARAM); }
-    void is_var(bool var) { flags_ = var ? (flags_ | VAR) : (flags_ & ~VAR); }
-    void is_dead(bool dead) { flags_ = dead ? ( flags_ | DEAD) : (flags_ & ~DEAD); }
-    bool is_param() const { return flags_ & PARAM; }
-    bool is_var() const { return flags_ & VAR; }
-    bool is_dead() const { return flags_ & DEAD; }
-    Operand const& operand() const { return operand_; }
-    Type* type() const { return type_; }
-    Flags flags() const { return flags_; }
-
-    static const int DEAD = 0x1;
-    static const int VAR = 0x2;
-    static const int PARAM = 0x4;
-    typedef Pointer<IrValue> Ptr;
-private:
-    IrGenerator* generator_;
-    Operand operand_;
-    Type* type_; 
-    Flags flags_;
-};
-
-class IrVariable  {
-public:
-    IrVariable() : name_(0), value_(0) {}
-    IrVariable(String* name, IrValue* val) :
-        name_(name),
-        value_(val) {
-
-        assert("Literal or label in variable" && !val->operand().object());
-        assert("Address in variable" && !val->operand().addr());
-    } 
-    IrValue* value() const { return value_; }
-    String* name() const { return name_; }
-
-private:
-    String::Ptr name_;
-    IrValue::Ptr value_;
-};
-
-/* Keeps track of variables in the current scope */
-class IrScope : public Object {
-public:
-    ~IrScope();
-    void variable(IrVariable const& var) { variable_.push_back(var); }
-    void ret(IrValue* ret) { ret_ = ret; }
-    IrVariable const& variable(int index) const { return variable_[index]; }
-    IrValue* variable(String* name) const;
-    IrValue* ret() const { return ret_; }
-    int variables() const { return variable_.size(); }
-
-    typedef Pointer<IrScope> Ptr;
-private:
-    IrValue::Ptr ret_;
-    std::vector<IrVariable> variable_;  
-};
 
 /* Code generator structure; creates basic block flow graphs */
 class IrGenerator : public TreeNode::Functor {
@@ -146,8 +82,8 @@ private:
     IrValue::Ptr copy(IrValue* val);
     Operand emit(Opcode op, Operand t2, Operand t3);
     Operand emit(Opcode op, Operand t2); 
-    Operand mov(Operand res, Operand t2); 
     Operand mov(Operand t2);
+    Operand mov(Operand res, Operand t2);
     Operand neg(Operand t2) { return emit(NEG, t2); }
     Operand add(Operand t2, Operand t3) { return emit(ADD, t2, t3); }
     Operand sub(Operand t2, Operand t3) { return emit(SUB, t2, t3); }
@@ -156,8 +92,9 @@ private:
     Operand notb(Operand t2) { return emit(NOTB, t2); }
     Operand andb(Operand t2, Operand t3) { return emit(ANDB, t2, t3); }
     Operand orb(Operand t2, Operand t3) { return emit(ORB, t2, t3); }
+    Operand phi(PhiArg* args) { return emit(PHI, Operand(args)); }
     Operand load(Operand addr);
-    Operand load(Operand res, Operand addr);
+    //Operand load(Operand res, Operand addr);
     void store(Operand addr, Operand value);
     void call(Operand func);
     void ret();
@@ -198,14 +135,13 @@ private:
     void secondary_assignment(Assignment* expr);  
     void value_copy(Operand src, Operand dst, Type* type);
     void value_dtor(Operand op, Type* type);
-    void assign(IrValue* src, IrValue* dst);
+    void gen_phi(IrBlock* block);
     int arg_slots() const { return arg_slots_; }
-    IrValue::Ptr assign_loc_alloc(Type* type, IrValue::Flags flags);
+    Operand last_assignment_of(IrBlock* block, String* name);
     IrValue::Ptr bool_expr(Expression* expr);
     IrValue::Ptr pop_ret(Type* type);
     IrValue::Ptr id_operand(String* id);
     IrValue::Ptr stack_value(Type* type);
-    IrValue::Ptr stack_value_temp(Type* type);
     RegisterId temp_inc() { return RegisterId(++temp_, 0); }
     IrValue* variable(String* name);
     IrBlock* ir_block();
@@ -222,7 +158,6 @@ private:
     std::vector<IrScope::Ptr> scope_;
     // Mapping from var to temporary
 
-    Operand assign_loc_;
     int local_slots_;
     int arg_slots_;
     // Mapping from a variable to a stack location

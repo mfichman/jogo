@@ -28,7 +28,7 @@ using namespace std;
 IrBlockPrinter::IrBlockPrinter(Environment* env, Machine* mach) :
     env_(env),
     machine_(mach),
-    liveness_(new LivenessAnalyzer(mach)) {
+    liveness_(new LivenessAnalyzer(env, mach)) {
 }
 
 void IrBlockPrinter::operator()(File* file) {
@@ -48,7 +48,7 @@ void IrBlockPrinter::operator()(Class* feature) {
 }
 
 void IrBlockPrinter::operator()(Function* feature) {
-    liveness_->operator()(feature);
+    //liveness_->operator()(feature);
 
     if (feature->ir_blocks()) {
         out_ << feature->label() << ":\n";
@@ -84,6 +84,15 @@ void IrBlockPrinter::operator()(IrBlock* block) {
         case STORE: out_ << "store " << first << ", " << second; break;
         case LOAD: out_ << res << " <- " << "load " << first; break;
         case MOV: out_ << res << " <- " << first; break;
+        case PHI: 
+            out_ << res << " <- phi "; 
+            for (PhiArg* arg = first.phi_arg(); arg; arg = arg->next()) {
+                out_ << arg->operand();
+                if (arg->next()) {
+                    out_ << ", "; 
+                }
+            }
+            break;
         case CALL: 
             out_ << "call ";
             if (first.label()) {

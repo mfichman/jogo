@@ -89,23 +89,3 @@ public:
     virtual void operator()(ParseError* expression) {}
 };
 
-template <typename T>
-T* append(typename T::Ptr list, T* last) {
-    return append(list.pointer(), last);
-}
-
-template <typename T>
-T* append(T* list, T* last) {
-    if (list) {
-        if (list->last()) {
-            list->last()->next(last);
-        } else {
-            list->next(last);
-        }
-        list->last(last);
-        return list;
-    } else {
-        return last;
-    }
-}
-

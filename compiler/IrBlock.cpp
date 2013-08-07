@@ -27,11 +27,25 @@
 #undef small
 #endif
 
-Stream::Ptr operator<<(Stream::Ptr out, const Address& addr) {
+Stream::Ptr operator<<(Stream::Ptr out, RegisterIdSet const& set) {
+    out << " { ";
+    for (int i = 0; i < set.bits(); ++i) {
+        if (set.bit(i)) {
+            out << "r" << i;
+            if (i != set.bits()-2) {
+                out << " "; 
+            }
+        }
+    }
+    out << "}";
+    return out;
+}
+
+Stream::Ptr operator<<(Stream::Ptr out, Address const& addr) {
     return out << addr.value();
 }
 
-Stream::Ptr operator<<(Stream::Ptr out, const RegisterId& id) {
+Stream::Ptr operator<<(Stream::Ptr out, RegisterId const& id) {
     if (out->machine()) {
         Register* reg = out->machine()->reg(id);
         if (reg) {
@@ -393,4 +407,13 @@ Instruction::Instruction(Opcode op, Operand res, Operand first, Operand sec) :
 Liveness* Instruction::liveness() const {
     return liveness_ ? liveness_ : liveness_ = new Liveness; 
 }
+
+
+Operand::Operand(PhiArg* arg) : obj_(arg) {
+}
+
+PhiArg* Operand::phi_arg() const { 
+    return dynamic_cast<PhiArg*>(obj_.pointer()); 
+}
+
 

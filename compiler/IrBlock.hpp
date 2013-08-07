@@ -146,10 +146,15 @@ public:
     // Represents the contents of a memory location, e.g., MEM[ADDR+REG]
     Operand(Address addr) : addr_(addr) {}
     // Represents the contents of a memory address, e.g., MEM[ADDR]
+    Operand(RegisterId reg, String* name) : obj_(name), reg_(reg) {}
+    // Represents the contents of a register, but with the var name attached
+    Operand(PhiArg* args);
 
+    String* name() const { return dynamic_cast<String*>(obj_.pointer()); }
     Object* object() const { return obj_; }
     Expression* literal() const { return dynamic_cast<Expression*>(obj_.pointer()); }
     String* label() const { return dynamic_cast<String*>(obj_.pointer()); }
+    PhiArg* phi_arg() const;
     RegisterId reg() const { return reg_; }
     Address addr() const { return addr_; }
     bool has_addr() const { return addr_.is_valid(); }
@@ -171,7 +176,7 @@ Stream::Ptr operator<<(Stream::Ptr out, Operand const& op);
 /* Enumeration of opcodes available to the TAC code */
 enum Opcode { 
     MOV, ADD, SUB, MUL, DIV, NEG, ANDB, ORB, LOAD, STORE, NOTB, CALL, JUMP,
-    BNE, BE, BNZ, BZ, BG, BL, BGE, BLE, RET, NOP
+    BNE, BE, BNZ, BZ, BG, BL, BGE, BLE, RET, NOP, PHI
     // Note: BNE through BLE must be contiguous
 };
 
@@ -211,22 +216,76 @@ private:
     mutable Liveness::Ptr liveness_;
 };
 
+/* Keeps track of values emitted by expressions */
+class IrValue : public Object {
+public:
+    typedef int Flags;
+
+    IrValue(IrGenerator* gen, Operand op, Type* type, Flags flags=0);
+    IrValue();
+    ~IrValue();
+    void is_param(bool param) { flags_ = param ? (flags_ | PARAM) : (flags_ & ~PARAM); }
+    void is_dead(bool dead) { flags_ = dead ? ( flags_ | DEAD) : (flags_ & ~DEAD); }
+    bool is_param() const { return flags_ & PARAM; }
+    bool is_dead() const { return flags_ & DEAD; }
+    Operand const& operand() const { return operand_; }
+    Type* type() const { return type_; }
+    Flags flags() const { return flags_; }
+
+    static const int DEAD = 0x1;
+    static const int VAR = 0x2;
+    static const int PARAM = 0x4;
+    typedef Pointer<IrValue> Ptr;
+private:
+    IrGenerator* generator_;
+    Operand operand_;
+    Type* type_; 
+    Flags flags_;
+};
+
+/* Phi function argument */
+class PhiArg : public Object {
+public:
+    PhiArg(Operand op, IrBlock* block) : 
+        operand_(op), 
+        block_(block),
+        next_(0),
+        last_(0) {
+    }
+    Operand operand() const { return operand_; }
+    IrBlock* block() const { return block_; }
+    PhiArg* next() const { return next_; }
+    PhiArg* last() const { return last_; }
+    void next(PhiArg* next) { next_ = next; }
+    void last(PhiArg* last) { last_ = last; }
+
+    typedef Pointer<PhiArg> Ptr;
+private:
+    Operand operand_;
+    IrBlock* block_;
+    PhiArg::Ptr next_;
+    PhiArg::Ptr last_;
+};
+
 /* Sequence of intermediate-representation (IR) instructions */
 class IrBlock : public Object {
 public:
     IrBlock() : branch_(0), next_(0), round_(0) {}
     IrBlock* branch() const { return branch_; }
     IrBlock* next() const { return next_; }
+    IrBlock* pred(int index) const { return pred_[index]; }
     String* label() const { return label_; }
     Instruction const& instr(int index) const { return instrs_[index]; }
     Instruction& instr(int index) { return instrs_[index]; }
     int round() const { return round_; }
     int instrs() const { return instrs_.size(); }
+    int preds() const { return pred_.size(); }
     bool is_terminated() const;
     bool is_ret() const;
     void swap(IrBlock* other) { instrs_.swap(other->instrs_); }
-    void branch(IrBlock* branch) { branch_ = branch; }
-    void next(IrBlock* branch) { next_ = branch; }
+    void branch(IrBlock* branch) { branch_ = branch; branch->pred(this); }
+    void next(IrBlock* branch) { next_ = branch; branch->pred(this); }
+    void pred(IrBlock* block) { pred_.push_back(block); }
     void label(String* label) { label_ = label; }
     Instruction const& instr(Instruction const& inst);
     Instruction const& instr(int index, Instruction const& inst);
@@ -238,7 +297,9 @@ private:
     std::vector<Instruction> instrs_;
     IrBlock* branch_;
     IrBlock* next_;
+    std::vector<IrBlock*> pred_;
     String::Ptr label_;
     int round_;
 };
 
+Stream::Ptr operator<<(Stream::Ptr out, RegisterIdSet const& set);

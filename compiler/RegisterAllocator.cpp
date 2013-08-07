@@ -29,7 +29,7 @@ using namespace std;
 
 RegisterAllocator::RegisterAllocator(Environment* env, Machine* machine) :
     env_(env),
-    liveness_(new LivenessAnalyzer(machine)),
+    liveness_(new LivenessAnalyzer(env, machine)),
     machine_(machine) {
 
 }
