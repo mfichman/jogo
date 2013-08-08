@@ -66,6 +66,8 @@ test_match() {
     }
     Io::println(y.str)
     Io::println(match 6 { with 0: Val("fail") with 6: Val("pass") }.str)
+
+    Io::println(match 1 { with *: "foo" })
 }
 
 main() Int {

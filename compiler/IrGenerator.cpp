@@ -722,6 +722,7 @@ void IrGenerator::operator()(Match* stmt) {
 
         Case::Ptr branch = static_cast<Case*>(t.pointer());
         if(dynamic_cast<Empty*>(branch->guard())) {
+            assign_loc_ = out->operand();
             emit(branch->block());
             break; 
             // The wildcard pattern prevents all following patterns from
