@@ -721,7 +721,13 @@ Case* Parser::single_case() {
     LocationAnchor loc(this);
     expect(Token::WITH);
     Expression::Ptr statements;
-    Expression::Ptr guard = expression();
+    Expression::Ptr guard;
+    if (token() == Token::MUL) {
+        next();
+        guard = new Empty(loc);
+    } else {
+        guard = expression();
+    }
     expect(Token::COLON);
 
     while (token() != Token::RIGHT_BRACE && token() != Token::WITH 

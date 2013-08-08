@@ -721,6 +721,13 @@ void IrGenerator::operator()(Match* stmt) {
         enter_scope();
 
         Case::Ptr branch = static_cast<Case*>(t.pointer());
+        if(dynamic_cast<Empty*>(branch->guard())) {
+            emit(branch->block());
+            break; 
+            // The wildcard pattern prevents all following patterns from
+            // executing because it always matches
+        }
+
         IrBlock::Ptr true_block = ir_block();
         if (t->next()) {
             next_block = ir_block();
@@ -738,8 +745,10 @@ void IrGenerator::operator()(Match* stmt) {
         assign_loc_ = out->operand();
         emit(branch->block());
         exit_scope();
-        if (!block_->is_terminated()) {
+        if (!block_->is_terminated() && t->next()) {
             jump(done_block); 
+            // Omit the jump if the block is already terminated (e.g., by a
+            // return) or if this is the last case
         }
     }
     label(done_block);

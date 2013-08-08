@@ -2,7 +2,7 @@
 
 import Io
 
-Fruit = APPLE | ORANGE | PEAR | BANANA | STRAWBERRY
+Fruit = APPLE | ORANGE | PEAR | BANANA | STRAWBERRY | KIWI
 
 switch(fruit Fruit) {
     match fruit {
@@ -11,6 +11,7 @@ switch(fruit Fruit) {
     with Fruit::PEAR: print('pear')
     with Fruit::BANANA: print('banana') 
     with Fruit::STRAWBERRY: print('strawberry')
+    with *: print('unknown')
     }
     println('.')
 }
@@ -29,6 +30,9 @@ switch2(fruit Fruit) {
     with Fruit::BANANA: 
         print('banana') 
         print('4')
+    with *: 
+        print('unknown')
+        print('5')
     }
     println('.')
 }
@@ -40,6 +44,7 @@ main() Int {
     switch(Fruit::PEAR)
     switch(Fruit::BANANA)
     switch(Fruit::STRAWBERRY)
+    switch(Fruit::KIWI)
     
     switch2(Fruit::APPLE)
     switch2(Fruit::ORANGE)

@@ -953,7 +953,9 @@ void SemanticAnalyzer::operator()(Match* stmt) {
     for (Expression::Ptr b = stmt->cases(); b; b = b->next()) {
         b(this);
         Case::Ptr with = static_cast<Case*>(b.pointer());
-        if (!guard->type()->equals(with->guard()->type())) {
+        if (dynamic_cast<Empty*>(with->guard())) {
+            // Default case
+        } else if (!guard->type()->equals(with->guard()->type())) {
             err_ << stmt->location();
             err_ << "Match expression does not conform to type '";
             err_ << guard->type() << "'";
