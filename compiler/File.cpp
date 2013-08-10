@@ -39,6 +39,7 @@
 #endif
 
 std::string const File::JGI = ".jgi";
+std::string const File::JGC = ".jg.c";
 std::string const File::ASM = ".asm";
 std::string const File::C = ".c";
 #ifdef WINDOWS

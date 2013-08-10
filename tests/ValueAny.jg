@@ -1,0 +1,26 @@
+
+Val < Value {
+    x mutable Int
+    y mutable Int
+    z mutable String
+    @destroy() { Io::println('foo') }
+}
+
+main() Int {
+    
+    #v = Val()
+#    v.x = 1
+#    v.y = 42
+#    v.z = 'foo'
+
+    v = Object()
+    #any Any = v
+
+#    z Val = any
+#    Io::println(z.x.str)
+#    Io::println(z.y.str)
+#    Io::println(z.z.str)
+
+    
+    ret 0
+}

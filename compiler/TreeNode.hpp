@@ -41,6 +41,7 @@ public:
     virtual void operator()(Functor *functor)=0;
 
     typedef Pointer<TreeNode> Ptr;
+    typedef Iterator<TreeNode> Itr;
 
 protected:
     Location location_;

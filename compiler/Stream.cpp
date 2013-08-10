@@ -33,7 +33,7 @@
 #include <cerrno>
 #endif
 
-Stream::Stream(const std::string& file) : error_(false) {
+Stream::Stream(const std::string& file) : machine_(0), error_(false) {
     // Create stream that writes output to 'file.' 
     buffer_.reserve(1024);
     if (file == "-") {

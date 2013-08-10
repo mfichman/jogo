@@ -53,6 +53,7 @@ public:
     static std::string const ASM;
     static std::string const C;
     static std::string const JGO;
+    static std::string const JGC;
     static std::string const O; 
     
     Feature* feature(String* scope, String* name) const;
@@ -74,6 +75,7 @@ public:
     std::string c_file() const { return output(C); }
     std::string o_file() const { return output(O); }
     std::string jgo_file() const { return output(JGO); }
+    std::string jgc_file() const { return output(JGC); }
     std::string native_file() const { return input(C); }
     void import(Import* import) { import_[import->scope()] = import; }
     void feature(Feature* feature) { feature_.push_back(feature); }
