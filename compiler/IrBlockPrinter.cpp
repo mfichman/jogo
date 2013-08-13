@@ -48,7 +48,9 @@ void IrBlockPrinter::operator()(Class* feature) {
 }
 
 void IrBlockPrinter::operator()(Function* feature) {
-    liveness_->operator()(feature);
+    if (env_->dump_liveness()) {
+        liveness_->operator()(feature);
+    }
 
     if (feature->ir_blocks()) {
         out_ << feature->label() << ":\n";
@@ -136,8 +138,10 @@ void IrBlockPrinter::operator()(IrBlock* block) {
             for (int i = 0; i < live.bits(); ++i) {
                 if (live.bit(i)) {
                     RegisterId id(i, 0);
-                    if (machine_->reg(id)) {
-                        out_ << RegisterId(i, 0);
+                    if (!machine_) {
+                        out_ << "i" << i;
+                    } else if (machine_->reg(id)) {
+                        out_ << Operand(RegisterId(i, 0));
                     } else {
                         out_ << "i" << (i-machine_->regs());
                     }

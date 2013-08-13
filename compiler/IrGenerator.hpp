@@ -199,9 +199,9 @@ private:
     void value_copy(Operand src, Operand dst, Type* type);
     void value_dtor(Operand op, Type* type);
     void assign(IrValue* src, IrValue* dst);
+    void bool_expr(Expression* expr);
     int arg_slots() const { return arg_slots_; }
     IrValue::Ptr assign_loc_alloc(Type* type, IrValue::Flags flags);
-    IrValue::Ptr bool_expr(Expression* expr);
     IrValue::Ptr pop_ret(Type* type);
     IrValue::Ptr id_operand(String* id);
     IrValue::Ptr stack_value(Type* type);
@@ -217,6 +217,8 @@ private:
     IrBlock::Ptr block_;
     IrBlock::Ptr true_;
     IrBlock::Ptr false_;
+    IrBlock::Ptr top_true_;
+    IrBlock::Ptr top_false_;
     IrValue::Ptr return_;
     
     std::vector<IrScope::Ptr> scope_;

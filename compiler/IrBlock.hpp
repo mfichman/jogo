@@ -131,21 +131,21 @@ private:
 class Operand {
 public:
     Operand() {}
-    Operand(String* label) : obj_(label) {}
+    explicit Operand(String* label) : obj_(label) {}
     // Represents the label's address, e.g., LABEL.  Used for CALL instructions.
-    Operand(String* label, Address addr) : obj_(label), addr_(addr) {}
-    // Represents the contents of label (with offset), i.e., MEM[LABEL+ADDR].
-    Operand(Expression* literal) : obj_(literal) {}
+    explicit Operand(Expression* literal) : obj_(literal) {}
     // Represents the value of a literal, i.e., LITERAL.
-    Operand(FloatLiteral* literal) : obj_(literal), 
+    explicit Operand(FloatLiteral* literal) : obj_(literal), 
         reg_(RegisterId(0, RegisterId::FLOAT)) {}
     // Represents the value of a literal, i.e., LITERAL.
+    Operand(Address addr) : addr_(addr) {}
+    // Represents the contents of a memory address, e.g., MEM[ADDR]
     Operand(RegisterId reg) : reg_(reg) {}
     // Represents the contents of a register, e.g., REG.
     Operand(RegisterId reg, Address addr) : reg_(reg), addr_(addr) {}
     // Represents the contents of a memory location, e.g., MEM[ADDR+REG]
-    Operand(Address addr) : addr_(addr) {}
-    // Represents the contents of a memory address, e.g., MEM[ADDR]
+    Operand(String* label, Address addr) : obj_(label), addr_(addr) {}
+    // Represents the contents of label (with offset), i.e., MEM[LABEL+ADDR].
 
     Object* object() const { return obj_; }
     Expression* literal() const { return dynamic_cast<Expression*>(obj_.pointer()); }
@@ -164,6 +164,7 @@ private:
     Pointer<Object> obj_; // Literal expression or string label
     RegisterId reg_; // Temporary variable ID (negative = machine register)
     Address addr_; // Address offset (in words)
+    int srcloc_;
 };
 
 Stream::Ptr operator<<(Stream::Ptr out, Operand const& op);

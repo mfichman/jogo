@@ -56,7 +56,7 @@ public:
     static RegisterId const R13;
     static RegisterId const R15;
     static RegisterId const XMM0;
-    static RegisterId const XMM15;
+    static RegisterId const XMMLAST;
 
     static uint8_t const MOV_RM_REG = 0x89;
     static uint8_t const MOV_REG_RM = 0x8b;
@@ -77,7 +77,6 @@ public:
     static uint8_t const REX_X = 0x02; // ??
     static uint8_t const REX_B = 0x01; // MODRM.rm extension
     static uint8_t const SD_PREFIX = 0xf2; // SSE double-precision float instr
-    static uint32_t const MIN_STACK = 4096;
 
 private:
     void string(String::Ptr lit);

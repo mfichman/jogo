@@ -38,6 +38,7 @@ public:
     void operator()(File* file);
 
 private:
+    void operator()(Class* feature);
     void operator()(Constant* feature);
     void operator()(Formal* formal);
     void operator()(StringLiteral* expression);

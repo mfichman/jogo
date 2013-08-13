@@ -21,6 +21,7 @@
  */  
 
 #include "CCodeGenerator.hpp"
+#include "DispatchTableGenerator.hpp"
 #include "DepScanner.hpp"
 
 CCodeGenerator::CCodeGenerator(Environment* env) :
@@ -62,24 +63,24 @@ void CCodeGenerator::operator()(StringLiteral* expression) {
 
 
 void CCodeGenerator::operator()(NilLiteral* expression) {
-    return_ = expression;
+    return_ = Operand(expression);
 }
 
 
 void CCodeGenerator::operator()(IntegerLiteral* expression) {
     //return_ = alloc_temp(expression->type());
 	//out_ << expression->value()->string() << ";\n";
-    return_ = expression;
+    return_ = Operand(expression);
 }
 
 
 void CCodeGenerator::operator()(FloatLiteral* expression) {
-    return_ = expression;
+    return_ = Operand(expression);
 }
 
 
 void CCodeGenerator::operator()(BooleanLiteral* expression) {
-    return_ = expression;
+    return_ = Operand(expression);
 }
 
 
@@ -110,7 +111,10 @@ void CCodeGenerator::operator()(Is* expression) {
 }
 
 
-void CCodeGenerator::operator()(Member* expression) {
+void CCodeGenerator::operator()(Member* expr) {
+    // Emit a member access expression
+    Function::Ptr func = expr->function();
+    call(func, expr->expression());
 }
 
 
@@ -155,12 +159,12 @@ void CCodeGenerator::operator()(IdentifierRef* expr) {
     Variable::Ptr var = variable(id);
     Attribute::Ptr attr = class_ ? class_->attribute(id) : 0;
     if (var) {
-        return_ = id.pointer();
+        return_ = Operand(id.pointer());
     } else if (attr) {
         return_ = alloc_temp(expr->type());
         out_ << "self->" << id->string() << ";\n";
     } else {
-        return_ = id.pointer();
+        return_ = Operand(id.pointer());
     }
 }
 
@@ -195,6 +199,8 @@ void CCodeGenerator::operator()(Let* let) {
 
 
 void CCodeGenerator::operator()(While* stacement) {
+    // Emit a while expression
+      
 }
 
 void CCodeGenerator::operator()(Conditional* statement) {
@@ -216,7 +222,7 @@ void CCodeGenerator::operator()(Conditional* statement) {
     // and false block labels so that the correct code is emitted on each
     // branch.
     invert_guard_ = false;
-//    Operand guard = emit(statement->guard(), 
+    Operand guard = emit(statement->guard());
     
 
 }
@@ -226,7 +232,7 @@ void CCodeGenerator::operator()(Assignment* expr) {
     // Handle all types of assignment, including member assignment
     Expression::Ptr init = expr->initializer();
     if (dynamic_cast<Empty*>(init.pointer())) {
-        return_ = env_->integer("0");
+        return_ = Operand(env_->integer("0"));
     } else {
         return_ = emit(init);
     }
@@ -240,12 +246,12 @@ void CCodeGenerator::operator()(Assignment* expr) {
         // the current scope.
         Type::Ptr type = var->type();
         if (!type->is_value()) {
-            refcount_dec(var->name());
+            refcount_dec(Operand(var->name()));
         }
         line();
         out_ << id->string() << " = " << return_ << ";\n";
         if (!type->is_value()) {
-            refcount_inc(var->name());
+            refcount_inc(Operand(var->name()));
         }
     } else if (attr) {
         // Assignment to an attribute within a class
@@ -324,6 +330,8 @@ void CCodeGenerator::operator()(Import* feature) {
 
 
 void CCodeGenerator::operator()(Closure* expression) {
+    Construct::Ptr construct = expression->construct();
+    construct(this);
 }
 
 
@@ -593,7 +601,7 @@ void CCodeGenerator::scope_cleanup(Variable* var) {
         } else {
             // Emit a branch to check the variable's reference count and free
             // it if necessary.
-            refcount_dec(var->name());
+            refcount_dec(Operand(var->name()));
         }
     }
 }
@@ -764,6 +772,7 @@ void CCodeGenerator::dispatch_table(Class* feature) {
 
     String* name = feature->label();
     Function* dtor = feature->function(env_->name("@destroy"));
+    DispatchTableGenerator gen(feature);
 
     // Emit the forward declarations for the vtable
     func_sig(dtor);
@@ -887,11 +896,13 @@ void CCodeGenerator::loc(TreeNode* expr) {
 }
 
 void CCodeGenerator::line() {
+/*
     if (location_.file) {
         out_ << "#line " << location_.first_line;
         out_ << " \"" << location_.file->name()->string();
         out_ << "\"\n";
     }
+*/
 	out_ << std::string(indent_, ' ');
 }
 

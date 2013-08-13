@@ -21,6 +21,7 @@
  */  
 
 #include "IrGenerator.hpp"
+#include "IrBlockPrinter.hpp"
 #include "DispatchTableGenerator.hpp"
 #include <cassert>
 #include <algorithm>
@@ -68,26 +69,26 @@ void IrGenerator::operator()(Formal* formal) {
 void IrGenerator::operator()(StringLiteral* expr) {
     // Load a pointer to the string from the string table.  Strings must
     // always be loaded first, since they are specified by address.
-    return_ = new IrValue(this, load(expr), expr->type(), IrValue::DEAD);
+    return_ = new IrValue(this, load(Operand(expr)), expr->type(), IrValue::DEAD);
 }
 
 void IrGenerator::operator()(NilLiteral* expr) {
-    return_ = new IrValue(this, load(expr), expr->type(), IrValue::DEAD);
+    return_ = new IrValue(this, load(Operand(expr)), expr->type(), IrValue::DEAD);
 }
 
 void IrGenerator::operator()(IntegerLiteral* expr) {
     // Load the literal value with load-immediate
-    return_ = new IrValue(this, load(expr), expr->type(), IrValue::DEAD);
+    return_ = new IrValue(this, load(Operand(expr)), expr->type(), IrValue::DEAD);
 }
 
 void IrGenerator::operator()(FloatLiteral* expr) {
     // Load the literal value with load-immediate
-    return_ = new IrValue(this, load(expr), expr->type(), IrValue::DEAD);
+    return_ = new IrValue(this, load(Operand(expr)), expr->type(), IrValue::DEAD);
 }
 
 void IrGenerator::operator()(BooleanLiteral* expr) {
     // Load the literal value with load-immediate
-    return_ = new IrValue(this, load(expr), expr->type(), IrValue::DEAD);
+    return_ = new IrValue(this, load(Operand(expr)), expr->type(), IrValue::DEAD);
 }
 
 void IrGenerator::operator()(HashLiteral* expr) {
@@ -97,7 +98,7 @@ void IrGenerator::operator()(HashLiteral* expr) {
     Function::Ptr ctor = clazz->constructor();
     Function::Ptr insert = clazz->function(env_->name("@insert"));
     FuncMarshal fm(this);
-    fm.call(ctor->label());
+    fm.call(Operand(ctor->label()));
     IrValue::Ptr array = pop_ret(expr->type());
     for (Expression* arg = expr->arguments(); arg; arg = arg->next()) {
         Construct::Ptr pair = dynamic_cast<Construct*>(arg);
@@ -108,7 +109,7 @@ void IrGenerator::operator()(HashLiteral* expr) {
         fm.arg(array->operand());
         fm.arg(key->operand());
         fm.arg(val->operand());
-        fm.call(insert->label()); 
+        fm.call(Operand(insert->label())); 
     }
     return_ = array; 
 }
@@ -124,15 +125,15 @@ void IrGenerator::operator()(ArrayLiteral* expr) {
     Function::Ptr push = expr->type()->clazz()->function(env_->name("push"));
     String::Ptr size = env_->integer(stringify(elems));
     FuncMarshal fm(this);
-    fm.arg(load(new IntegerLiteral(loc, size)));
-    fm.call(ctor->label());
+    fm.arg(load(Operand(new IntegerLiteral(loc, size))));
+    fm.call(Operand(ctor->label()));
     IrValue::Ptr array = pop_ret(expr->type());
     for (Expression* arg = expr->arguments(); arg; arg = arg->next()) {
         FuncMarshal fm(this);
         IrValue::Ptr item = emit(arg);
         fm.arg(array->operand());
         fm.arg(item->operand());
-        fm.call(push->label());
+        fm.call(Operand(push->label()));
     }
     return_ = array;
 }
@@ -152,14 +153,15 @@ void IrGenerator::operator()(Box* expr) {
     String::Ptr one = env_->integer("1");
     String::Ptr size = env_->integer(stringify(bytes));
     FuncMarshal fm(this);
-    fm.arg(load(new IntegerLiteral(loc, size)));
-    fm.arg(load(new IntegerLiteral(loc, one)));
-    fm.call(env_->name("Boot_calloc"));
+    fm.arg(load(Operand(new IntegerLiteral(loc, size))));
+    fm.arg(load(Operand(new IntegerLiteral(loc, one))));
+    fm.call(Operand(env_->name("Boot_calloc")));
     return_ = pop_ret(expr->type());
 
     // Initialize the vtable pointer
-    Operand vtable = Operand(return_->operand().reg(), Address(0));
-    Operand label = load(env_->name(clazz->label()->string()+"__vtable"));
+    Operand vtable(return_->operand().reg(), Address(0));
+    Operand vtablel(env_->name(clazz->label()->string()+"__vtable"));
+    Operand label = load(vtablel);
     store(vtable, label);
 
     // FixMe: Eventually, it should be possible to call virtual functions
@@ -172,7 +174,7 @@ void IrGenerator::operator()(Box* expr) {
     // Make sure that the refcount starts out at 1, otherwise the object may
     // be freed before the end of the constructor.
     Operand refcount = Operand(return_->operand().reg(), Address(1));
-    store(refcount, new IntegerLiteral(loc, one));
+    store(refcount, Operand(new IntegerLiteral(loc, one)));
 
     // Slot 2 is the value slot for primitive types
     Operand addr = Operand(return_->operand().reg(), Address(2));
@@ -191,7 +193,8 @@ void IrGenerator::operator()(Cast* expr) {
     }
     Class::Ptr clazz = expr->type()->clazz();
     Operand vtable1 = load(Operand(arg->operand().reg(), Address(0)));
-    Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
+    Operand vtablel(env_->name(clazz->label()->string()+"__vtable"));
+    Operand vtable2 = load(vtablel);
     Operand out(RegisterId(temp_++, 0));
 
     IrBlock::Ptr mismatch_block = ir_block();
@@ -205,7 +208,7 @@ void IrGenerator::operator()(Cast* expr) {
     label(mismatch_block);
     String::Ptr zero = env_->integer("0");
     Location loc;
-    mov(out, load(new IntegerLiteral(loc, zero)));
+    mov(out, load(Operand(new IntegerLiteral(loc, zero))));
     jump(done_block);
 
     // Otherwise, keep the same value in the result.
@@ -234,7 +237,8 @@ void IrGenerator::operator()(Is* expr) {
 
     Class::Ptr clazz = expr->check_type()->clazz();
     Operand vtable1 = load(Operand(arg->operand().reg(), Address(0)));
-    Operand vtable2 = load(env_->name(clazz->label()->string()+"__vtable"));
+    Operand vtablel(env_->name(clazz->label()->string()+"__vtable"));
+    Operand vtable2 = load(vtablel);
     Operand out(RegisterId(temp_++, 0));
 
     IrBlock::Ptr mismatch_block = ir_block();
@@ -249,13 +253,13 @@ void IrGenerator::operator()(Is* expr) {
     // If the vtable pointers are not equal, set the register to zero
     label(mismatch_block);
     String::Ptr zero = env_->integer("0");
-    mov(out, load(new BooleanLiteral(loc, zero)));
+    mov(out, load(Operand(new BooleanLiteral(loc, zero))));
     jump(done_block);
 
     // Otherwise, set the register to 1.
     label(ok_block);
     String::Ptr one = env_->integer("1");
-    mov(out, load(new BooleanLiteral(loc, one)));
+    mov(out, load(Operand(new BooleanLiteral(loc, one))));
     label(done_block);
 
     return_ = new IrValue(this, out, expr->type()); 
@@ -267,6 +271,10 @@ void IrGenerator::operator()(Binary* expr) {
 
     if (env_->name("and") == expr->operation()) {
         IrBlock::Ptr left_true = ir_block();
+        if (!true_) {
+            false_ = top_false_ = ir_block();
+            true_ = top_true_ = ir_block();
+        }
         
         // Don't use the 'real' true branch; on true we want to emit the    
         // test for the second side of the and
@@ -283,6 +291,10 @@ void IrGenerator::operator()(Binary* expr) {
         return_ = emit(expr->right(), true_, false_, invert_branch_);
     } else if (env_->name("or") == expr->operation()) {
         IrBlock::Ptr left_false = ir_block();
+        if (!true_) {
+            false_ = top_false_ = ir_block();
+            true_ = top_true_ = ir_block();
+        }
         
         // Don't use the 'real' false branch; on false we want to emit
         // the test for the second side of the or
@@ -309,6 +321,10 @@ void IrGenerator::operator()(Unary* expr) {
     if (env_->name("not")) {
         // Swap the false and true branches while calling the child, since 
         // the 'not' inverts the conditional 
+        if (!true_) {
+            false_ = top_false_ = ir_block();
+            true_ = top_true_ = ir_block();
+        }
         emit(expr->child(), false_, true_, !invert_branch_);
         invert_guard_ = !invert_guard_;
     } else {
@@ -363,20 +379,14 @@ void IrGenerator::operator()(Construct* expr) {
     std::vector<IrValue::Ptr> vals;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
         Type::Ptr ft = formal->type();
-        if (a->type()->is_bool()) {
-            IrValue::Ptr val = bool_expr(a);
-            vals.push_back(val);
-            fm.arg(val->operand());
-        } else {
-            IrValue::Ptr val = emit(a);
-            vals.push_back(val);
-            fm.arg(val->operand());
-        }
+        IrValue::Ptr val = emit(a);
+        vals.push_back(val);
+        fm.arg(val->operand());
         formal = formal->next();
     }
 
     // Insert a call expression, then pop the return value off the stack.
-    fm.call(func->label());
+    fm.call(Operand(func->label()));
     if (expr->type()->is_primitive()) {
         return_ = pop_ret(expr->type());
     } else if (expr->type()->is_ref()) {
@@ -408,7 +418,7 @@ void IrGenerator::operator()(IdentifierRef* expr) {
 
 void IrGenerator::operator()(Empty* expr) {
     // Do nothing
-    Operand op = load(env_->integer("0"));
+    Operand op = load(Operand(env_->integer("0")));
     return_ = new IrValue(this, op, expr->type(), IrValue::DEAD);
 }
 
@@ -626,10 +636,8 @@ void IrGenerator::operator()(Assignment* expr) {
         } else {
             value = env_->integer("0");
         }
-        Operand op = load(new IntegerLiteral(Location(), value));
+        Operand op = load(Operand(new IntegerLiteral(Location(), value)));
         return_ = new IrValue(this, op, type);
-    } else if (type->is_bool()) {
-        return_ = copy(bool_expr(init.pointer()));
     } else if (type->is_compound()) {
         return_ = emit(init);
     } else if (type->is_primitive()) {
@@ -673,9 +681,7 @@ void IrGenerator::operator()(Return* statement) {
     if (!dynamic_cast<Empty*>(expr.pointer())) {
         // Don't actually return right away; store the result in a pseudo-var
         // and return it after cleanup.
-        if (expr->type()->is_bool()) {
-            ret = bool_expr(expr);
-        } else if (expr->type()->is_compound()) {
+        if (expr->type()->is_compound()) {
             IrValue* out = id_operand(env_->name("ret"));
             assign_loc_ = out->operand();
             ret = emit(expr);
@@ -769,7 +775,7 @@ void IrGenerator::operator()(Fork* statement) {
 
 void IrGenerator::operator()(Yield* statament) {
     FuncMarshal fm(this);
-    fm.call(env_->name("Coroutine__yield"));
+    fm.call(Operand(env_->name("Coroutine__yield")));
 	exception_catch();
 }
 
@@ -866,7 +872,7 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv, Type*
     } 
     std::vector<IrValue::Ptr> vals;
     for (Expression::Ptr a = args; a; a = a->next()) {
-        IrValue::Ptr val = a->type()->is_bool() ? bool_expr(a) : emit(a);
+        IrValue::Ptr val = emit(a);
         vals.push_back(val);
         fm.arg(val->operand());
         if(a == args) {
@@ -888,8 +894,8 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv, Type*
         String::Ptr name = env_->string(func->name()->string());
         FuncMarshal fm(this);
         fm.arg(receiver); // Receiver
-        fm.arg(load(new StringLiteral(Location(), name)));
-        fm.call(env_->name("Object__dispatch"));
+        fm.arg(load(Operand(new StringLiteral(Location(), name))));
+        fm.call(Operand(env_->name("Object__dispatch")));
         fnptr = pop_ret(env_->int_type());
     } 
 
@@ -899,7 +905,7 @@ void IrGenerator::call(Function* func, Expression* args, Expression* recv, Type*
     } else {
         // Static dispatch: insert a call expression, then pop the return value
         // off the stack
-        fm.call(func->label());
+        fm.call(Operand(func->label()));
     }
 
     if (ret->is_void()) {
@@ -949,11 +955,7 @@ void IrGenerator::native_operator(Call* expr) {
     std::string id = expr->function()->name()->string();
     std::vector<IrValue::Ptr> args;
     for (Expression::Ptr a = expr->arguments(); a; a = a->next()) {
-        if (a->type()->is_bool()) {
-            args.push_back(bool_expr(a));
-        } else {
-            args.push_back(emit(a));
-        }
+        args.push_back(emit(a));
     }
     Operand op1 = args[0]->operand();
     if (id == "@add") {
@@ -982,6 +984,10 @@ void IrGenerator::native_operator(Call* expr) {
         assert(!"Not implemented");
     } else if (id == "@equal") {
         Operand op2 = args[1]->operand();
+        if (!true_) {
+            false_ = top_false_ = ir_block();
+            true_ = top_true_ = ir_block();
+        }
         if (invert_branch_) {
             be(op1, op2, true_, false_);
         } else {
@@ -989,6 +995,10 @@ void IrGenerator::native_operator(Call* expr) {
         }
     } else if (id == "@less") {
         Operand op2 = args[1]->operand();
+        if (!true_) {
+            false_ = top_false_ = ir_block();
+            true_ = top_true_ = ir_block();
+        }
         if (invert_branch_) {
             bl(op1, op2, true_, false_);
         } else {
@@ -1113,24 +1123,64 @@ IrValue::Ptr IrGenerator::id_operand(String* id) {
     return 0;
 }
 
-IrValue::Ptr IrGenerator::bool_expr(Expression* expression) {
+void IrGenerator::bool_expr(Expression* expr) {
     // Emits a boolean expression with short-circuiting, and stores the result
     // in a fixed operand.  Note:  This breaks SSA form, because a value gets
     // assigned different values on different branches.
-    if (dynamic_cast<BooleanLiteral*>(expression)) {
-        return_ = emit(expression);
-        return return_;
+    if (dynamic_cast<BooleanLiteral*>(expr)) {
+        return_ = new IrValue(this, load(Operand(expr)), expr->type(), IrValue::DEAD);
+        return;
     }
 
-    IrBlock::Ptr then_block = ir_block();
-    IrBlock::Ptr else_block = ir_block();
-    IrBlock::Ptr done_block = ir_block();
-    return_ = new IrValue(this, RegisterId(++temp_, 0), expression->type());
-
     // Recursively emit the boolean guard expression.
+    IrBlock::Ptr top_true_save = top_true_;
+    IrBlock::Ptr top_false_save = top_false_;
+    bool invert_guard_save = invert_guard_;
     invert_guard_ = false;
-    IrValue::Ptr guardv = emit(expression, then_block, else_block, false);
+    top_true_ = 0;
+    top_false_ = 0;
+    IrValue::Ptr guardv = emit(expr, 0, 0, false);
     Operand guard = guardv->operand();
+    if (top_true_) {
+        IrBlock::Ptr done_block = ir_block();
+        if (!block_->is_terminated()) {
+            if (invert_guard_) {
+                bnz(guard, top_false_, top_true_);
+            } else {
+                bz(guard, top_false_, top_true_);
+            }
+        }
+        IrValue::Ptr out = new IrValue(this, RegisterId(++temp_, 0), expr->type());
+        Location loc;
+
+    
+        // Now emit the code for the 'true' branch, i.e., assign 'true' to the
+        // return value.
+        label(top_true_);
+        String::Ptr one = env_->integer("1");
+        mov(out->operand(), load(Operand(new IntegerLiteral(loc, one))));
+        jump(done_block);
+        
+        // Now emit the code for the 'false' branch.
+        label(top_false_);
+        String::Ptr zero = env_->integer("0");
+        mov(out->operand(), load(Operand(new IntegerLiteral(loc, zero))));
+        
+        label(done_block);
+        
+        return_ = out;
+    }
+    top_true_ = top_true_save;
+    top_false_ = top_false_save;
+    invert_guard_ = invert_guard_save;
+
+/*
+    //IrBlock::Ptr then_block = ir_block();
+    //IrBlock::Ptr else_block = ir_block();
+    //IrBlock::Ptr done_block = ir_block();
+
+
+    IrValue::Ptr out = new IrValue(this, RegisterId(++temp_, 0), expr->type());
     assert(!guardv->type()->is_compound());
     guardv = 0;
     return_ = new IrValue(this, guard, env_->bool_type());
@@ -1148,16 +1198,17 @@ IrValue::Ptr IrGenerator::bool_expr(Expression* expression) {
     // return value.
     label(then_block);
     String::Ptr one = env_->integer("1");
-    mov(return_->operand(), load(new IntegerLiteral(loc, one)));
+    mov(out->operand(), load(Operand(new IntegerLiteral(loc, one))));
     jump(done_block);
     
     // Now emit the code for the 'false' branch.
     label(else_block);
     String::Ptr zero = env_->integer("0");
-    mov(return_->operand(), load(new IntegerLiteral(loc, zero)));
+    mov(out->operand(), load(Operand(new IntegerLiteral(loc, zero))));
     
     label(done_block);
-    return return_;
+    return_ = out;
+*/
 }
 
 void IrGenerator::func_return(IrValue* retval) {
@@ -1223,7 +1274,7 @@ void IrGenerator::refcount_inc(Operand var) {
     // from the temp list instead of calling refcount_inc.
     FuncMarshal fm(this);
     fm.arg(var);
-    fm.call(env_->name("Object__refcount_inc"));
+    fm.call(Operand(env_->name("Object__refcount_inc")));
 }
 
 void IrGenerator::refcount_dec(Operand var) {
@@ -1231,7 +1282,7 @@ void IrGenerator::refcount_dec(Operand var) {
     // 'temp'.  Insert a call expression to call the refcount_dec function 
     FuncMarshal fm(this);
     fm.arg(var);
-    fm.call(env_->name("Object__refcount_dec"));
+    fm.call(Operand(env_->name("Object__refcount_dec")));
 }
 
 IrValue::Ptr IrGenerator::pop_ret(Type* type) {
@@ -1302,9 +1353,9 @@ void IrGenerator::ctor_preamble(Class* clazz) {
     String::Ptr one = env_->integer("1");
     if (clazz->is_object()) {
         FuncMarshal fm(this);
-        fm.arg(load(new IntegerLiteral(Location(), size)));
-        fm.arg(load(new IntegerLiteral(Location(), one)));
-        fm.call(env_->name("Boot_calloc"));
+        fm.arg(load(Operand(new IntegerLiteral(Location(), size))));
+        fm.arg(load(Operand(new IntegerLiteral(Location(), one))));
+        fm.call(Operand(env_->name("Boot_calloc")));
  
         // Obtain a pointer to the 'self' object, and store it in the 'self'
         // variable.
@@ -1315,20 +1366,21 @@ void IrGenerator::ctor_preamble(Class* clazz) {
        
         // Initialize the vtable pointer
         Operand vtable = Operand(self->operand().reg(), Address(0));
-        Operand label = load(env_->name(clazz->label()->string()+"__vtable"));
+        Operand vtablel(env_->name(clazz->label()->string()+"__vtable"));
+        Operand label = load(vtablel);
         store(vtable, label);
         
         // Make sure that the refcount starts out at 1, otherwise the object may
         // be freed before the end of the constructor.
         Operand refcount = Operand(self->operand().reg(), Address(1));
-        store(refcount, new IntegerLiteral(Location(), one));
+        store(refcount, Operand(new IntegerLiteral(Location(), one)));
     
     } else if (clazz->is_compound()) {
         self = id_operand(env_->name("self"));
         FuncMarshal fm(this);
         fm.arg(self->operand());
-        fm.arg(load(new IntegerLiteral(Location(), size)));
-        fm.call(env_->name("Boot_mzero"));
+        fm.arg(load(Operand(new IntegerLiteral(Location(), size))));
+        fm.call(Operand(env_->name("Boot_mzero")));
     } else {
         assert(!"Invalid type");
     }
@@ -1377,8 +1429,8 @@ void IrGenerator::copier_preamble(Class* clazz) {
     FuncMarshal fm(this);
     fm.arg(self->operand());
     fm.arg(other->operand());
-    fm.arg(load(new IntegerLiteral(Location(), size)));
-    fm.call(env_->name("Boot_memcpy"));
+    fm.arg(load(Operand(new IntegerLiteral(Location(), size))));
+    fm.call(Operand(env_->name("Boot_memcpy")));
 
     for (Feature::Ptr f = clazz->features(); f; f = f->next()) {
         Attribute::Ptr attr = dynamic_cast<Attribute*>(f.pointer());
@@ -1428,7 +1480,7 @@ void IrGenerator::dtor_epilog(Function* feature) {
     } else if (class_->is_ref()) {
         FuncMarshal fm(this);
         fm.arg(variable(env_->name("self"))->operand());
-        fm.call(env_->name("Boot_free"));
+        fm.call(Operand(env_->name("Boot_free")));
     } else if (class_->is_compound()) {
         // Pass
     } else {
@@ -1570,7 +1622,7 @@ void IrGenerator::value_copy(Operand src, Operand dst, Type* type) {
     FuncMarshal fm(this);
     fm.arg(dst);
     fm.arg(src);
-    fm.call(copy->label());           
+    fm.call(Operand(copy->label())); 
 }
 
 void IrGenerator::value_dtor(Operand op, Type* type) {
@@ -1580,7 +1632,7 @@ void IrGenerator::value_dtor(Operand op, Type* type) {
     assert(dtor && "Missing value type destructor");
     FuncMarshal fm(this);
     fm.arg(op);
-    fm.call(dtor->label());
+    fm.call(Operand(dtor->label()));
 }
 
 IrValue::Ptr IrGenerator::emit(Expression* expr, IrBlock* yes, IrBlock* no, bool inv) {
@@ -1598,7 +1650,11 @@ IrValue::Ptr IrGenerator::emit(Expression* expr, IrBlock* yes, IrBlock* no, bool
 }
 
 IrValue::Ptr IrGenerator::emit(Expression* expr) {
-    expr->operator()(this);
+    if (expr->type()->is_bool()) {
+        bool_expr(expr);
+    } else {
+        expr->operator()(this);
+    }
     return return_;
 }
 
@@ -1684,51 +1740,41 @@ void IrGenerator::ret() {
     block_->instr(RET, Operand(), Operand(), Operand());
 }
 
-void IrGenerator::branch(Opcode op, Operand t2, Operand t3, 
-    IrBlock* branch, IrBlock* next) {
-
+void IrGenerator::branch(Opcode op, Operand t2, Operand t3, IrBlock* branch, IrBlock* next) {
     block_->instr(op, Operand(), t2, t3);
     block_->branch(branch);
     block_->next(next);
 }
 
-void IrGenerator::bne(Operand t2, Operand t3, IrBlock* target, 
-    IrBlock* next) {
+void IrGenerator::bne(Operand t2, Operand t3, IrBlock* target, IrBlock* next) {
     branch(BNE, t2, t3, target, next);
 }
 
-void IrGenerator::be(Operand t2, Operand t3, IrBlock* target, 
-    IrBlock* next) {
+void IrGenerator::be(Operand t2, Operand t3, IrBlock* target, IrBlock* next) {
     branch(BE, t2, t3, target, next);
 }
 
-void IrGenerator::bnz(Operand t2, IrBlock* target, 
-    IrBlock* next) {
+void IrGenerator::bnz(Operand t2, IrBlock* target, IrBlock* next) {
     branch(BNZ, t2, Operand(), target, next);
 }
 
-void IrGenerator::bz(Operand t2, IrBlock* target, 
-    IrBlock* next) {
+void IrGenerator::bz(Operand t2, IrBlock* target, IrBlock* next) {
     branch(BZ, t2, Operand(), target, next);
 }
 
-void IrGenerator::bg(Operand t2, Operand t3, IrBlock* target, 
-    IrBlock* next) {
+void IrGenerator::bg(Operand t2, Operand t3, IrBlock* target, IrBlock* next) {
     branch(BG, t2, t3, target, next);
 }
 
-void IrGenerator::bl(Operand t2, Operand t3, IrBlock* target,
-    IrBlock* next) {
+void IrGenerator::bl(Operand t2, Operand t3, IrBlock* target, IrBlock* next) {
     branch(BL, t2, t3, target, next);
 }
 
-void IrGenerator::bge(Operand t2, Operand t3, IrBlock* target,
-    IrBlock* next) {
+void IrGenerator::bge(Operand t2, Operand t3, IrBlock* target, IrBlock* next) {
     branch(BGE, t2, t3, target, next);
 }
 
-void IrGenerator::ble(Operand t2, Operand t3, IrBlock* target, 
-    IrBlock* next) {
+void IrGenerator::ble(Operand t2, Operand t3, IrBlock* target, IrBlock* next) {
     branch(BLE, t2, t3, target, next);
 }
 
@@ -1885,4 +1931,11 @@ IrScope::~IrScope() {
     while (variable_.size()) {
         variable_.pop_back();
     }
+}
+
+void ir_dump(Function* func) {
+    IrBlockPrinter::Ptr print(new IrBlockPrinter(func->env(), 0));
+    print->out(Stream::stout());
+    print->operator()(func); 
+    Stream::stout()->flush();
 }

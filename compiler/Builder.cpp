@@ -23,6 +23,7 @@
 #include "Builder.hpp"
 #include "CodeExpander.hpp"
 #include "CCodeGenerator.hpp"
+#include "CCodeGenerator2.hpp"
 #include "IrGenerator.hpp"
 #include "RegisterAllocator.hpp"
 #include "Nasm64Generator.hpp"
@@ -439,6 +440,7 @@ void Builder::cgen(File* file) {
     // Generates C code for all functions/classes in 'file.'  Outputs to a 
     // temporary file if this is an intermediate step; otherwise, outputs
     // to a named file in the build directory.
+    //CCodeGenerator::Ptr c(new CCodeGenerator(env_));
     CCodeGenerator::Ptr c(new CCodeGenerator(env_));
     c->out(new Stream(file->jgc_file()));  
     if (c->out()->error()) {

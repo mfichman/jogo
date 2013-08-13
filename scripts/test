@@ -88,6 +88,7 @@ def jogo_test(test):
         ]
     else:
         configs = ["-g Intel64 --optimize"]
+        #configs = ["-g C"]
         #kconfigs = ["-g Nasm64 --optimize"]
 
     message = []

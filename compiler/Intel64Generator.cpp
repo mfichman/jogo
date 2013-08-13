@@ -38,7 +38,9 @@ RegisterId const Intel64Generator::RDX(MACHINE->reg("rdx")->id());
 RegisterId const Intel64Generator::R13(MACHINE->reg("r13")->id());
 RegisterId const Intel64Generator::R15(MACHINE->reg("r15")->id());
 RegisterId const Intel64Generator::XMM0(MACHINE->reg("xmm0")->id());
-RegisterId const Intel64Generator::XMM15(MACHINE->reg("xmm15")->id());
+RegisterId const Intel64Generator::XMMLAST(MACHINE->reg("xmm15")->id());
+//RegisterId const Intel64Generator::XMMLAST(MACHINE->reg("xmm15")->id());
+//FixMe: Enable xmm8-15 when Nasm is not the generator
 
 Intel64Generator::Intel64Generator(Environment* env) :
     env_(env),
@@ -264,7 +266,7 @@ bool Intel64Generator::is_extended_reg(RegisterId reg) const {
 }
 
 bool Intel64Generator::is_sse_reg(RegisterId reg) const {
-    return reg.is_float() && reg.id() >= XMM0.id() && reg.id() <= XMM15.id();
+    return reg.is_float() && reg.id() >= XMM0.id() && reg.id() <= XMMLAST.id();
 }
 
 bool Intel64Generator::is_gp_reg(RegisterId reg) const {
@@ -962,3 +964,4 @@ void Intel64Generator::ret() {
 void Intel64Generator::cqo() {
     text_->uint8(0x99);
 }
+

@@ -31,6 +31,12 @@ void DepScanner::operator()(File* file) {
     }
 }
 
+void DepScanner::operator()(Class* feature) {
+    for (Feature::Ptr f = feature->features(); f; f = f->next()) {
+        f(this);
+    }
+}
+
 void DepScanner::operator()(Constant* feature) {
     dependency_.insert(feature);
 }

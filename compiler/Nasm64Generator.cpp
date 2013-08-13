@@ -29,6 +29,9 @@
 #define strtoull _strtoui64
 #endif
 
+Machine::Ptr const MACHINE = Machine::intel64();
+RegisterId const RAX(MACHINE->reg("rax")->id());
+RegisterId const XMM0(MACHINE->reg("xmm0")->id());
 static const int INTEL64_MAX_IMM = 4096;
 static const int INTEL64_MIN_STACK = 4096;
 
@@ -63,7 +66,7 @@ void Nasm64Generator::operator()(File* file) {
         if (cons->type()->is_value() && !cons->type()->is_primitive()) {
             assert(!"Not supported");
         }
-        out_ << "global "; label(cons->label()); out_ << "\n";
+        out_ << "global "; label(Operand(cons->label())); out_ << "\n";
         Expression* init = cons->initializer();
         if (Construct* constr = dynamic_cast<Construct*>(init)) {
             init = constr->arguments();
@@ -71,7 +74,7 @@ void Nasm64Generator::operator()(File* file) {
             // Should use constant folding instead, to allow all constant
             // expressions.
         } 
-        label(cons->label());
+        label(Operand(cons->label()));
         if(IntegerLiteral::Ptr lit = dynamic_cast<IntegerLiteral*>(init)) {
             out_ << " dq " << lit->value() << "\n";
         } else if(FloatLiteral::Ptr lit = dynamic_cast<FloatLiteral*>(init)) {
@@ -136,8 +139,8 @@ void Nasm64Generator::operator()(Function* feature) {
     if (feature->is_native()) { return; }
 
     out_ << "section .text\n";
-    out_ << "global "; label(feature->label()); out_ << "\n";
-    label(feature->label()); out_ << ":\n";
+    out_ << "global "; label(Operand(feature->label())); out_ << "\n";
+    label(Operand(feature->label())); out_ << ":\n";
     definition_.insert(feature->label()->string());
     out_ << "    push rbp\n"; 
     out_ << "    mov rbp, rsp\n";
@@ -178,16 +181,16 @@ void Nasm64Generator::operator()(IrBlock* block) {
         opcode_ = inst.opcode();
 
         switch (inst.opcode()) {
-        case BNE: instr("cmp", a1, a2); instr("jne", branch->label()); break;
-        case BE: instr("cmp", a1, a2); instr("je", branch->label()); break;
-        case BZ: instr("cmp", a1, "0"); instr("je", branch->label()); break;
-        case BNZ: instr("cmp", a1, "0"); instr("jne", branch->label()); break; 
-        case BG: instr("cmp", a1, a2); instr("jg", branch->label()); break;
-        case BGE: instr("cmp", a1, a2); instr("jge", branch->label()); break;
-        case BL: instr("cmp", a1, a2); instr("jl", branch->label()); break;
-        case BLE: instr("cmp", a1, a2); instr("jle", branch->label()); break;
+        case BNE: instr("cmp", a1, a2); instr("jne", Operand(branch->label())); break;
+        case BE: instr("cmp", a1, a2); instr("je", Operand(branch->label())); break;
+        case BZ: instr("cmp", a1, "0"); instr("je", Operand(branch->label())); break;
+        case BNZ: instr("cmp", a1, "0"); instr("jne", Operand(branch->label())); break; 
+        case BG: instr("cmp", a1, a2); instr("jg", Operand(branch->label())); break;
+        case BGE: instr("cmp", a1, a2); instr("jge", Operand(branch->label())); break;
+        case BL: instr("cmp", a1, a2); instr("jl", Operand(branch->label())); break;
+        case BLE: instr("cmp", a1, a2); instr("jle", Operand(branch->label())); break;
         case CALL: instr("call", a1); break;
-        case JUMP: instr("jmp", branch->label()); break;
+        case JUMP: instr("jmp", Operand(branch->label())); break;
         case MOV: 
             if (res.is_float()) {
                 instr("movsd", res, a1);
@@ -239,7 +242,7 @@ void Nasm64Generator::dispatch_table(Class* feature) {
     definition_.insert(vtable);
 
     // Emit the destructor and vtable length
-    out_ << "    dq "; label(dtor->label()); out_ << "\n"; 
+    out_ << "    dq "; label(Operand(dtor->label())); out_ << "\n"; 
     out_ << "    dq " << feature->jump1s() << "\n";
 
     // Emit the first jump table
@@ -251,7 +254,7 @@ void Nasm64Generator::dispatch_table(Class* feature) {
     for (int i = 0; i < feature->jump2s(); i++) {
         if (feature->jump2(i)) {
             out_ << "    dq ";
-            label(feature->jump2(i)->label());
+            label(Operand(feature->jump2(i)->label()));
             out_ << "\n";
         } else {
             out_ << "    dq 0\n";
@@ -263,8 +266,9 @@ void Nasm64Generator::dispatch_table(Class* feature) {
 void Nasm64Generator::neg(Operand res, Operand a1) {
     if (res.is_float()) {
         out_ << "    mov rax, 0\n";
-        out_ << "    cvtsi2sd "; operand(res); out_ << ", rax\n";
-        instr("subsd", res, a1);
+        instr("cvtsi2sd", XMM0, RAX);
+        instr("subsd", XMM0, a1);
+        instr("movsd", res, XMM0);
     } else {
         instr("mov", res, a1); 
         instr("neg", res); 
@@ -313,14 +317,21 @@ void Nasm64Generator::arith(Instruction const& inst) {
         instr(name, r2, r1);
     } else if (inst.opcode() == SUB) {
         // t2 <- t1 - t2 goes to t2 <- -t2 + t1;
-        instr("neg", r2);
-        instr("add", r2, r1);
+        if (res.is_float()) {
+            instr("movsd", XMM0, r1);
+            instr("subsd", XMM0, res);
+            instr("movsd", res, XMM0);
+        } else {
+            instr("neg", r2);
+            instr("add", r2, r1);
+        }
     } else {
         // t1 <- t2 / t1 
-        instr("push", r2);
-        instr(name, r2, r1);
-        instr((res.is_float() ? "movsd" : "mov"), r1, r2);
-        instr("pop", r2);        
+        assert(res.is_float());
+        instr("movq", RAX, r1);
+        instr(name, r1, res);
+        instr("movsd", res, r1);
+        instr("movq", r1, RAX);
     }
 }
 
