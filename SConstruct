@@ -117,6 +117,7 @@ library_src = ' '.join([
     "Array",
     "Boot::Boot",
     "Collection",
+    "Chan",
     "Coroutine",
     "File",
     "Func",

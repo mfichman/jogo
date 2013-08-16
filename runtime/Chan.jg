@@ -1,0 +1,93 @@
+# Copyright (c) 2013 Matt Fichman
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+ChanState = OPEN | CLOSED
+
+Chan[:a] < Object {
+    # A channel is an object that is used by coroutines to communicate with
+    # other coroutines.  The writer coroutine inserts an object into the
+    # channel using the put() method.  Meanwhile, the reader coroutine attempts
+    # to grab an item using get().  This allows one coroutine to wait for
+    # another coroutine to send it some data.
+    value private :a
+    state private mutable = ChanState::OPEN
+    writer private = Queue[Coroutine](0)
+    reader private = Queue[Coroutine](0)
+
+    await() private {
+        # Wait for a value to be present in the queue
+        if not value and state == ChanState::OPEN {
+            reader.enq(coroutine())
+        }
+        while not value and state == ChanState::OPEN {
+            yield
+        }
+    }
+
+    notify() private {
+        # Wake up a reader coroutine
+        if reader.count > 0 {
+            r = reader.deq()
+            r.resume() 
+        }
+    }
+
+    more?() Bool {
+        # Returns true as long as the channel is open to receive more requests
+        self.await()
+        ret value or state == ChanState::OPEN
+    }
+
+    next() :a {
+        # Waits until a value is available to be consumed
+        self.await()
+        next = value
+        value = nil
+        if writer.count > 0 {
+            w = writer.deq()
+            w.resume()
+        }
+        ret next 
+    }
+
+    close() {
+        # Closes the channel
+        state = ChanState::CLOSED
+        self.notify()
+    }
+
+    put(next :a) {
+        # Waits until the previous value was consumed, and then posts the value
+        # to the channel
+        if value {
+            writer.enq(coroutine())
+        }
+        while value {
+            yield
+        }
+        value = next
+        self.notify()
+    }
+
+    iter() Chan[:a] {
+        # Allows a channel to be used in a for loop as an iterable sequence
+        ret self
+    }
+}

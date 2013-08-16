@@ -73,3 +73,7 @@ CoroutineFunc < Interface {
         # Initializes, then resumes a new coroutine
     } 
 }
+
+coroutine() native Coroutine {
+    # Returns the current coroutine
+}

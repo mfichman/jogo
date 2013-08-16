@@ -268,6 +268,11 @@ void Coroutine__ioresume(Coroutine self) {
     Object__refcount_dec((Object)self);
 }
 
+Coroutine coroutine() {
+    Object__refcount_inc((Object)Coroutine__current);
+    return Coroutine__current;
+}
+
 U64 page_round(U64 addr, U64 multiple) {
     // Rounds 'base' to the nearest 'multiple'
     return (addr/multiple)*multiple;

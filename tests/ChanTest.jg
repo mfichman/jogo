@@ -1,0 +1,40 @@
+# jgtest exec on
+
+EventType = FOO | BAR | BAZ
+Event < Object {
+    type EventType
+    @init(ptype EventType) {
+        type = ptype
+    }
+}
+
+Dagger < Object {
+    chan Chan[Event]
+
+    @init(pchan Chan[Event]) {
+        chan = pchan
+    }
+
+    @call() {
+        for event in chan {
+            match event.type {
+            with EventType::FOO: Io::println('foo')
+            with EventType::BAR: Io::println('bar')
+            with *: Io::println('unknown')
+            } 
+        }
+    }
+}
+
+main() Int {
+    ch = Chan[Event]()
+
+    dag = Coroutine(Dagger(ch))
+    dag()
+
+    ch.put(Event(EventType::FOO))
+    ch.put(Event(EventType::BAR))
+    ch.close()
+
+    ret 0
+}
