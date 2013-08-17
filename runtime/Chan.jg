@@ -26,24 +26,32 @@ Chan[:a] < Object {
     # channel using the put() method.  Meanwhile, the reader coroutine attempts
     # to grab an item using get().  This allows one coroutine to wait for
     # another coroutine to send it some data.
-    value private :a
-    state private mutable = ChanState::OPEN
+    queue private Queue[:a]
+    limit Int
+    state = ChanState::OPEN
     writer private = Queue[Coroutine](0)
     reader private = Queue[Coroutine](0)
 
+    @init(plimit Int) {
+        # Initializes a new channel with the given buffer limit size.  A limit
+        # of 0 indicates that the channel is unbuffered.
+        queue = Queue[:a](plimit)
+        limit = plimit
+    }
+
     await() private {
         # Wait for a value to be present in the queue
-        if not value and state == ChanState::OPEN {
+        if queue.empty and state == ChanState::OPEN {
             reader.enq(coroutine())
         }
-        while not value and state == ChanState::OPEN {
+        while queue.empty and state == ChanState::OPEN {
             yield
         }
     }
 
     notify() private {
         # Wake up a reader coroutine
-        if reader.count > 0 {
+        if not reader.empty {
             r = reader.deq()
             r.resume() 
         }
@@ -52,15 +60,14 @@ Chan[:a] < Object {
     more?() Bool {
         # Returns true as long as the channel is open to receive more requests
         self.await()
-        ret value or state == ChanState::OPEN
+        ret not queue.empty or state == ChanState::OPEN
     }
 
     next() :a {
         # Waits until a value is available to be consumed
         self.await()
-        next = value
-        value = nil
-        if writer.count > 0 {
+        next = queue.deq()
+        if not writer.empty {
             w = writer.deq()
             w.resume()
         }
@@ -76,13 +83,22 @@ Chan[:a] < Object {
     put(next :a) {
         # Waits until the previous value was consumed, and then posts the value
         # to the channel
-        if value {
-            writer.enq(coroutine())
+        if limit == 0 {
+            if reader.empty {
+                writer.enq(coroutine())
+            }
+            while reader.empty {
+                yield
+            }
+        } else {
+            if queue.count >= limit {
+                writer.enq(coroutine())
+            } 
+            while queue.count >= limit {
+                yield
+            }
         }
-        while value {
-            yield
-        }
-        value = next
+        queue.enq(next)
         self.notify()
     }
 

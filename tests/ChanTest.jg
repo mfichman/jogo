@@ -1,40 +1,41 @@
 # jgtest exec on
 
-EventType = FOO | BAR | BAZ
-Event < Object {
-    type EventType
-    @init(ptype EventType) {
-        type = ptype
-    }
-}
+unbuffered() {
+    ch = Chan[String](0)
 
-Dagger < Object {
-    chan Chan[Event]
-
-    @init(pchan Chan[Event]) {
-        chan = pchan
-    }
-
-    @call() {
-        for event in chan {
-            match event.type {
-            with EventType::FOO: Io::println('foo')
-            with EventType::BAR: Io::println('bar')
-            with *: Io::println('unknown')
-            } 
+    reader = Coroutine() func() {
+        for event in ch {
+            Io::println(event)
         }
     }
+    reader()
+
+    Io::println('put')
+    ch.put('foo')
+    Io::println('put')
+    ch.put('bar')
+    ch.close()
+}
+
+buffered() {
+    ch = Chan[String](2)
+
+    reader = Coroutine() func() {
+        for event in ch {
+            Io::println(event)
+        }
+    }
+
+    Io::println('put')
+    ch.put('foo')
+    Io::println('put')
+    ch.put('bar')
+    ch.close()
+    Io::manager().task(reader)
 }
 
 main() Int {
-    ch = Chan[Event]()
-
-    dag = Coroutine(Dagger(ch))
-    dag()
-
-    ch.put(Event(EventType::FOO))
-    ch.put(Event(EventType::BAR))
-    ch.close()
-
+    unbuffered()
+    buffered()
     ret 0
 }
