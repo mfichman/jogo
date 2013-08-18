@@ -37,6 +37,12 @@ void parse_option(std::string const& flag) {
         env->generator(argp->required_arg());
     } else if ("verbose" == flag) {
         env->verbose(true);
+    } else if ("clean" == flag) {
+        unlink(env->build_dir().c_str());
+        exit(0);
+    } else if ("reset" == flag) {
+        unlink(".jgmake");
+        exit(0);
     } else {
         argp->bad_option(flag);
     }
@@ -87,7 +93,7 @@ void parse_options() {
 
     std::string gen = env->generator();
     if (gen != "Intel64" && gen != "C" && gen != "Nasm64") {
-        argp->error("Invalid code generator (options: Intel64, NAsm64, C)"); 
+        argp->error("Invalid code generator (options: Intel64, Nasm64, C)"); 
     }
 }
 

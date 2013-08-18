@@ -1,6 +1,7 @@
 import platform
 import os
 import sys
+import shutil
 
 # Build specification for the Jogo Programming Language ####################
 (system, _, release, version, machine, proc) = platform.uname()
@@ -33,8 +34,10 @@ build_mode = ARGUMENTS.get('mode', 'debug')
 stack_size = '1048576' # x8 = 8 MB
 major_version = '0'
 minor_version = '4'
-revision = '0'
-version = major_version + '.' + minor_version + '.' + revision
+patch = '0'
+version = major_version + '.' + minor_version + '.' + patch
+branch = os.popen('git rev-parse --abbrev-ref HEAD').read().strip()
+revision = os.popen('git rev-parse HEAD').read().strip()
 
 if 'release' == build_mode:
     env.Append(JGFLAGS = '--optimize')
@@ -54,7 +57,9 @@ if env['PLATFORM'] == 'posix':
 # Windows-specific build settings ############################################
 if env['PLATFORM'] == 'win32':
     nsis = '"' + os.environ['PROGRAMFILES'] + '\\NSIS\\makensis.exe"\
-         /DVERSION='+version + '\
+         /DVERSION='+version+'\
+         /DREVISION='+revision+'\
+         /DBRANCH='+branch+'\
          /V2 /NOCD \
          dist\\win\\Jogo.nsi'
 
@@ -71,6 +76,8 @@ if env['PLATFORM'] == 'win32':
     env.Append(CXXFLAGS = '/DWINDOWS')
     env.Append(CXXFLAGS = '/EHsc')
     env.Append(CXXFLAGS = '/DVERSION=\\"'+version+'\\"')
+    env.Append(CXXFLAGS = '/DREVISION=\\"'+revision+'\\"')
+    env.Append(CXXFLAGS = '/DBRANCH=\\"'+branch+'\\"')
     env.Append(CFLAGS = '/DCOROUTINE_STACK_SIZE='+stack_size)
     env.Append(CFLAGS = '/DWINDOWS')
     env.Append(CFLAGS = '/Iruntime')
@@ -89,6 +96,8 @@ else:
     env.Append(CXXFLAGS = '-Wno-unused')
     env.Append(CXXFLAGS = '-Wno-sign-compare')
     env.Append(CXXFLAGS = '-DVERSION=\\"'+version+'\\"')
+    env.Append(CXXFLAGS = '-DREVISION=\\"'+revision+'\\"')
+    env.Append(CXXFLAGS = '-DBRANCH=\\"'+branch+'\\"')
     env.Append(CFLAGS = '-DCOROUTINE_STACK_SIZE='+stack_size)
     env.Append(CFLAGS = '-Wall -Werror -Iruntime')
     if env['PLATFORM'] == 'darwin':
@@ -186,6 +195,7 @@ if 'doc' in COMMAND_LINE_TARGETS:
 
 
 if 'pkg' in COMMAND_LINE_TARGETS:
+    shutil.rmtree(dist_path)
     for f in library_headers:
         path = f.path.split(os.path.sep)
         path = os.path.join(*path[1:])

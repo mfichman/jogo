@@ -53,7 +53,6 @@ Io_Manager Io_Manager__init();
 void Io_Manager__destroy();
 void Io_Manager_poll(Io_Manager self);
 void Io_Manager_shutdown(Io_Manager self);
-void Io_Manager_run_reactors(Io_Manager self);
 Int Io_manager_iobytes__g(Io_Manager self);
 extern void Io_Manager__vtable();
 

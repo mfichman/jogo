@@ -18,15 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-ManagerReactor < Interface {
-    # A ManagerReactor is invoked when poll() is called from the main
-    # coroutine.  Some libraries require certain tasks to be run on the main
-    # stack, rather than a coroutine split stack.  Such tasks can be added to
-    # the IO manager so that they will be run during each poll().  
-    @call() {
-    }
-}
-
 Manager < Object {
     # The Io::Manager coordinates coroutines that have blocked waiting for I/O,
     # and provides the core asynchronous I/O implementation.  The Io::Manager is
@@ -41,9 +32,6 @@ Manager < Object {
 
     scheduled Queue[Coroutine]
     # Set of tasks that are active and waiting to be scheduled.
-
-    callback Array[ManagerReactor]
-    # List of reactors to the Manager state
 
     handle Int
     # Handle to the file descriptor that is used for OS-level polling.  On
@@ -101,11 +89,6 @@ Manager < Object {
         }
     }
 
-    reactor(reactor ManagerReactor) {
-        # Add a new ManagerReactor, which will be invoked during poll() 
-        callback.push(reactor)
-    }
-
     poll() native {
         # Poll for an I/O request.  This function will block until an I/O
         # operation finishes.
@@ -115,14 +98,5 @@ Manager < Object {
         # Shuts down the I/O manager; no additional I/O operations can be done
         # after this method is called.
     }
-
-    run_reactors() private {
-        # Runs any registered reactors    
-        if callback.count {
-           for reactor in callback {
-               reactor()
-           }
-        }
-    } 
 }
 

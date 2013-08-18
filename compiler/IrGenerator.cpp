@@ -686,15 +686,17 @@ void IrGenerator::operator()(Return* statement) {
             assign_loc_ = out->operand();
             ret = emit(expr);
             assign(ret, out);
+            out->is_dead(true);
         } else if (expr->type()->is_ref()) {
             ret = emit(expr);
             if (ret->is_param()) {
                 refcount_inc(ret->operand());
             }
+            ret->is_dead(true);
         } else {
             ret = emit(expr);
+            ret->is_dead(true);
         }
-        ret->is_dead(true);
         return_ = new IrValue(this, Operand(), env_->void_type());
     } else {
         ret = new IrValue(this, Operand(), env_->void_type());

@@ -25,6 +25,7 @@
 #include <cstdlib>
 
 ArgParser::ArgParser(Environment* env, int argc, char** argv) :
+    env_(env),
     argindex_(0),
     argc_(argc),
     argv_(argv) {
@@ -81,6 +82,9 @@ void ArgParser::print_usage() {
 void ArgParser::print_version() {
     std::cerr << env_->program_path() << " version " << VERSION;
     std::cerr << ", compiled on " << __DATE__ << " " << __TIME__ << std::endl;
+    if (env_->verbose()) {
+        std::cerr << BRANCH << ", " << REVISION << std::endl;
+    }
 }
 
 void ArgParser::bad_option(std::string const& flag) {
