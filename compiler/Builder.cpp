@@ -23,7 +23,6 @@
 #include "Builder.hpp"
 #include "CodeExpander.hpp"
 #include "CCodeGenerator.hpp"
-#include "CCodeGenerator2.hpp"
 #include "IrGenerator.hpp"
 #include "RegisterAllocator.hpp"
 #include "Nasm64Generator.hpp"

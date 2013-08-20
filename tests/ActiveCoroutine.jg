@@ -3,14 +3,14 @@
 main() Int {
     ls = Socket::listen('127.0.0.1', 0)
 
-    client = Coroutine() func() {
+    server = Coroutine() func() {
         # Block this coroutine (but other coros should keep running)
-        Io::println('connecting')
+        Io::println('listening')
         sd = ls.accept()
         Io::println(sd.scanln())
         sd.end()
     }
-    client()
+    server()
 
     i mutable = 10
     while i > 0 {
@@ -19,7 +19,8 @@ main() Int {
         yield
     }
 
-    server = Coroutine() func() {
+    client = Coroutine() func() {
+        Io::println("connecting #{ls.addr.port}")
         sd = Socket::connect('localhost', ls.addr.port)
         sd.println('hello')
         sd.get()
@@ -27,9 +28,10 @@ main() Int {
         sd.end()
         Os::exit(0)
     }
-    Io::manager().scheduled.enq(server)
+    Io::manager().scheduled.enq(client)
 
     while true {
+        Io::println('while')
         yield
     }
     ret 0
