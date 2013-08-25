@@ -1880,8 +1880,7 @@ void FuncUnmarshal::arg(String* name, Type* type) {
 #ifdef WINDOWS
         RegisterId id(0, type->is_float() ? RegisterId::FLOAT : 0);
         //Operand op(id, Address(++stack_args_));
-        Operand op2 = gen_->load(Operand(id, Address(++stack_args_)));
-        IrValue::Ptr val = new IrValue(gen_, op2, type, flags);
+        gen_->load(Operand(id, Address(++stack_args_)));
         gen_->variable(IrVariable(name, val));
 #endif
     } else {

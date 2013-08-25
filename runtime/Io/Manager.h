@@ -36,7 +36,6 @@ struct Io_Manager {
     VoidPtr _vtable;
     U64 _refcount;
     Queue scheduled;
-    Array callback;
     Int handle;
     Int waiting;
     Int iobytes;
