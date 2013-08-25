@@ -20,7 +20,6 @@ main() Int {
     }
 
     client = Coroutine() func() {
-        Io::println("connecting #{ls.addr.port}")
         sd = Socket::connect('localhost', ls.addr.port)
         sd.println('hello')
         sd.get()
@@ -31,7 +30,6 @@ main() Int {
     Io::manager().scheduled.enq(client)
 
     while true {
-        Io::println('while')
         yield
     }
     ret 0
