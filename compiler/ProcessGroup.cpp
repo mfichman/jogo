@@ -26,11 +26,10 @@
 
 void ProcessGroup::process(std::string const& args) {
 #ifdef WINDOWS
-/*
     if (system(args.c_str())) {
         errors_++;
     }
-*/
+/*
     PROCESS_INFORMATION procinfo;
     STARTUPINFO sinfo;
     memset(&procinfo, 0, sizeof(procinfo));
@@ -55,6 +54,7 @@ void ProcessGroup::process(std::string const& args) {
         CloseHandle(procinfo.hThread); 
         process_.push_back(procinfo.hProcess);
     }
+*/
 #else
     pid_t pid = fork();
     if (pid < 0) {
@@ -77,6 +77,7 @@ void ProcessGroup::wait() {
     // errors; these errors are stored in the 'errors' attribute.
     for (size_t i = 0; i < process_.size(); ++i) {
 #ifdef WINDOWS
+/*
         DWORD ret = WaitForSingleObject(process_[i], INFINITE); 
         if (ret != WAIT_OBJECT_0) {
             std::cerr << "WaitForSingleObject() error: " << GetLastError() << std::endl;
@@ -91,6 +92,7 @@ void ProcessGroup::wait() {
         if (exit_code != 0) {
             errors_++;
         }
+*/
 #else
         while (true) {
             int status = 0; 
