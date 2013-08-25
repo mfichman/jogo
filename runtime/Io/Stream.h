@@ -53,7 +53,6 @@ extern Int Io_StreamStatus_ERROR;
 extern Int Io_StreamStatus_EOF;
 
 extern Int Io_StreamMode_ASYNC;
-extern Int Io_StreamMode_SYNC;
 extern Int Io_StreamMode_BLOCKING;
 
 extern Int Io_StreamType_FILE;

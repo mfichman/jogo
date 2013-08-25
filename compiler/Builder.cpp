@@ -332,7 +332,7 @@ void Builder::link(const std::string& in, const std::string& out) {
     // Select the correct linker command for the current OS/platform.
     std::stringstream ss;
 #if defined(WINDOWS)
-    ss << vcvarsall_ << " > NUL && ";
+    //ss << vcvarsall_ << " > NUL && ";
     ss << "link.exe /SUBSYSTEM:console /NOLOGO /MACHINE:X64 ";
 #elif defined(LINUX)
     ss << "gcc -m64 ";
@@ -409,7 +409,7 @@ void Builder::archive(const std::string& in, const std::string& out) {
 
     // Select the correct archive program for the current OS/platform.
 #if defined(WINDOWS)
-    ss << vcvarsall_ << " > NUL && ";
+    //ss << vcvarsall_ << " > NUL && ";
     ss << "lib.exe /SUBSYSTEM:console /MACHINE:X64 /NOLOGO /OUT:" << out << " " << in;
     if (env_->no_default_libs()) {
         ss << "build\\runtime\\Coroutine.Intel64.obj";
@@ -534,7 +534,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
     // Compiles a single C source file, and outputs the result to 'out.'
     std::stringstream ss;
 #if defined(WINDOWS)
-    ss << vcvarsall_ << " > NUL && ";
+    //ss << vcvarsall_ << " > NUL && ";
     ss << "cl.exe " << in << " /MT /nologo /Zi /c /Fo\"" << out << "\"";
     if (env_->optimize()) {
         ss << " /O2";

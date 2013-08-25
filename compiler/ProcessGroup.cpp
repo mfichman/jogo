@@ -22,11 +22,38 @@
 
 #include "ProcessGroup.hpp"
 #include <iostream>
+#include <cassert>
 
 void ProcessGroup::process(std::string const& args) {
 #ifdef WINDOWS
+/*
     if (system(args.c_str())) {
         errors_++;
+    }
+*/
+    PROCESS_INFORMATION procinfo;
+    STARTUPINFO sinfo;
+    memset(&procinfo, 0, sizeof(procinfo));
+    memset(&sinfo, 0, sizeof(sinfo));
+    std::string args2 = args;
+    // N.B.: CreateProcess modifies the lpCommandLine parameter
+    BOOL ret = CreateProcess(
+        NULL,
+        (LPSTR)args2.c_str(),
+        NULL,
+        NULL,
+        false,
+        0,
+        NULL,
+        NULL,
+        &sinfo,
+        &procinfo);
+    if (!ret) {
+        std::cerr << "Error: Couldn't start subprocess: " << args << std::endl;
+        errors_++;
+    } else {
+        CloseHandle(procinfo.hThread); 
+        process_.push_back(procinfo.hProcess);
     }
 #else
     pid_t pid = fork();
@@ -48,9 +75,23 @@ void ProcessGroup::process(std::string const& args) {
 void ProcessGroup::wait() {
     // Wait for all child processes to complete.  Records the number of child
     // errors; these errors are stored in the 'errors' attribute.
-#ifdef WINDOWS
-#else
     for (size_t i = 0; i < process_.size(); ++i) {
+#ifdef WINDOWS
+        DWORD ret = WaitForSingleObject(process_[i], INFINITE); 
+        if (ret != WAIT_OBJECT_0) {
+            std::cerr << "WaitForSingleObject() error: " << GetLastError() << std::endl;
+            abort();
+        }
+        DWORD exit_code = 0;
+        if(!GetExitCodeProcess(process_[i], &exit_code)) {
+            std::cerr << "GetExitCodeProcess() error" << std::endl;
+            abort();
+        } 
+        assert(exit_code != STILL_ACTIVE && "Process is still running"); 
+        if (exit_code != 0) {
+            errors_++;
+        }
+#else
         while (true) {
             int status = 0; 
             pid_t pid = waitpid(process_[i], &status, 0);
@@ -65,8 +106,8 @@ void ProcessGroup::wait() {
                 break;
             }
         }
+#endif
     }
     process_.clear();
-#endif
 }
 

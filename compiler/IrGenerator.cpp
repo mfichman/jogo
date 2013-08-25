@@ -1865,27 +1865,21 @@ void FuncUnmarshal::arg(String* name, Type* type) {
     IrValue::Flags flags = IrValue::DEAD|IrValue::VAR|IrValue::PARAM;
     if (reg) {
         // Variable is passed by register; precolor the temporary for this
-        // formal parameter by using a negative number.  Passing NULL for
-		// the type of the variable prevents it from being garbage collected
-		// at the end of the scope (which is what we want for function 
-		// parameters).
+        // formal parameter by using a negative number.  
         Operand op = gen_->mov(reg->id());
         IrValue::Ptr val = new IrValue(gen_, op, type, flags);
-#ifndef WINDOWS
         gen_->variable(IrVariable(name, val));
-#endif
 
         // On Windows, the value is also passed with a backing location on
         // the stack.
 #ifdef WINDOWS
-        RegisterId id(0, type->is_float() ? RegisterId::FLOAT : 0);
+        //RegisterId id(0, type->is_float() ? RegisterId::FLOAT : 0);
         //Operand op(id, Address(++stack_args_));
-        gen_->load(Operand(id, Address(++stack_args_)));
-        gen_->variable(IrVariable(name, val));
+        //gen_->load(Operand(id, Address(++stack_args_)));
+        ++stack_args_;
 #endif
     } else {
         RegisterId id(0, type->is_float() ? RegisterId::FLOAT : 0);
-        //Operand op(id, Address(++stack_args_));
         Operand op = gen_->load(Operand(id, Address(++stack_args_)));
         IrValue::Ptr val = new IrValue(gen_, op, type, flags);
         gen_->variable(IrVariable(name, val));
