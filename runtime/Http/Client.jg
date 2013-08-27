@@ -27,29 +27,30 @@ Client < Object {
     socket Socket::Stream # Stream to be used for issuing requests. 
     host String # Host the client is connected to
     port Int # Port the client is connected to
-}
 
-Client::@init(phost String, pport Int) {
-    # Initializes a new HTTP client object 
-    host = phost
-    port = pport
-    socket = Socket::connect(host, port)
-}
-
-Client::write(req Request) Response {
-    # Issues a new request using the given IO stream.  This method will modify
-    # the request to update the 'Host' header, as required by HTTP/1.1
-    req.headers['Host'] = host
-    req.write(socket.stream)
-    res = Response()
-    res.read(socket.stream)
-    ret res
-}
-
-Client::get(path String) Response {
-    # Issues a new GET request using the current connection.
-    req = Request()
-    req.headers['Host'] = host
-    #req.path = Uri::Path(path)
-    ret self.write(req)
+    @init(phost String, pport Int) {
+        # Initializes a new HTTP client object 
+        host = phost
+        port = pport
+        socket = Socket::connect(host, port)
+    }
+    
+    write(req Request) Response {
+        # Issues a new request using the given IO stream.  This method will
+        # modify the request to update the 'Host' header, as required by
+        # HTTP/1.1
+        req.headers['Host'] = host
+        req.write(socket.stream)
+        res = Response()
+        res.read(socket.stream)
+        ret res
+    }
+    
+    get(path String) Response {
+        # Issues a new GET request using the current connection.
+        req = Request()
+        req.headers['Host'] = host
+        #req.path = Uri::Path(path)
+        ret self.write(req)
+    }
 }

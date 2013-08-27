@@ -46,6 +46,10 @@ Match < Object {
         ret self.group(0).end
     }
 
+    len?() Int {
+        ret self.end-self.start
+    }
+
     group(index Int) native Span {
         # Returns the span of characters matched by subgroup 'index.' The first
         # group (index 0) contains the characters spanned by the entire match. 
@@ -72,6 +76,10 @@ Regex < Object {
     @match(str String) native Match {
         # Returns true if this regular expression matches 'str'
     }
+
+    #find(str String, start Int) native Match {
+        # Finds the first occurence of the pattern in str, starting at 'start'
+    #}
 
     error?() native String {
         # Returns nil if there is no error code; otherwise, returns the error

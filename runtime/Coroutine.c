@@ -39,7 +39,16 @@
 #include <unistd.h>
 #endif
 
-struct Coroutine Coroutine__main;
+struct Coroutine Coroutine__main = {
+    Coroutine__vtable,
+    Object__READONLY_MASK,
+    0,
+    0,
+    0,
+    0,
+    0, 
+    0,
+};
 Coroutine Coroutine__current = &Coroutine__main;
 Int Exception__current = 0;
 

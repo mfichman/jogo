@@ -39,6 +39,7 @@ struct Io_Manager {
     Int handle;
     Int waiting;
     Int iobytes;
+    Int active;
 };
 
 #ifdef WINDOWS

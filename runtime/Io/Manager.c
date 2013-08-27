@@ -109,7 +109,7 @@ void Io_Manager_poll(Io_Manager self) {
     DWORD timeout = 0;
     ULONG_PTR udata = 0;
     Io_Overlapped* op = 0;
-    Int tasks = Queue_count__g(self->scheduled);
+    Int tasks = self->active;
     OVERLAPPED** evt = (OVERLAPPED**)&op;
     if (Coroutine__current != &Coroutine__main) {
         Os_cpanic("Io::Manager::poll() called by user coroutine");
@@ -142,7 +142,7 @@ void Io_Manager_poll(Io_Manager self) {
         return;
     }
 
-    Int tasks = Queue_count__g(self->scheduled);
+    Int tasks = self->active;
     struct epoll_event event;
     int timeout = 0;
     int res = epoll_wait(self->handle, &event, 1, (tasks <= 0 ? -1 : timeout));
@@ -167,7 +167,7 @@ void Io_Manager_poll(Io_Manager self) {
         return;
     }
 
-    Int tasks = Queue_count__g(self->scheduled);
+    Int tasks = self->active;
     struct timespec timeout = { 0, 0 };
     struct kevent event;
     int res = kevent(self->handle, 0, 0, &event, 1, (tasks <= 0 ? 0 : &timeout));

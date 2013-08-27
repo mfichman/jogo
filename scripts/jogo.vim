@@ -5,7 +5,7 @@
 " URL: http://stanford.edu/~mfichman
 " Release Coordinator: Matt Fichman <matt.fichman@gmail.com>
 
-syn keyword apKeyword import public private static native while
+syn keyword apKeyword import public private native while
 syn keyword apKeyword if for let ret xor and or in else until not
 syn keyword apKeyword func break mutable weak is yield match with 
 syn keyword apKeyword macro class interface embedded

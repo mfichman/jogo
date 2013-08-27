@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2010 Matt Fichman
  *
@@ -20,22 +21,9 @@
  * IN THE SOFTWARE.
  */
 
-#ifndef JOGO_OBJECT_H
-#define JOGO_OBJECT_H
 
-#include "Primitives.h"
+#include <Primitives.h>
 
-#define Object__READONLY_MASK 0xf000000000000000
-
-struct Object {
-    VoidPtr _vtable;
-    U64 _refcount; 
-};
-
-void Object__refcount_inc(Object obj);
-void Object__refcount_dec(Object obj);
-VoidPtr Object__dispatch(Object self, String id);
-Int Object_hash__g(Object self);
-
-
-#endif
+Int Http_Status_int__g(Int self) {
+    return self;
+}

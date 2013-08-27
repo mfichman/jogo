@@ -65,6 +65,7 @@ struct Regex_Regex {
 typedef struct Regex_Thread* Regex_Thread;
 struct Regex_Thread {
     Regex_Instr pc;
+    Int start;
 };
 
 typedef struct Regex_ThreadList* Regex_ThreadList;

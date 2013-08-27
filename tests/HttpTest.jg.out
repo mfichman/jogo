@@ -1,4 +1,4 @@
-GET /one/two/three/four HTTP/1.1
+POST /one/two/three/four HTTP/1.1
 Connection: close
 User-Agent: Jogo HTTP Client
 Accept-Encoding: identity
@@ -6,6 +6,7 @@ X-TestHeader: bob
 Accept-Charset: utf-8
 
 hello!
+HTTP/1.1 0 WHATEV
 Cache-Control: private, max-age=0
 Content-Type: text/html; charset=ISO-8859-1
 Date: Sun, 10 Feb 2013 20:56:03 GMT

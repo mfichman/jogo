@@ -1,0 +1,116 @@
+# Copyright (c) 2010 Matt Fichman
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+RequestHandler < Interface {
+    # Request handlers implement this function to receive notification when a
+    # request is received that matches the route asssociated with the handler.
+
+    @call(req Request) Response {
+        # Called when a request is received that matches the handler's route
+    }
+}
+
+Server < Object {
+    # Routes requests to handlers given by the 'route' method.
+    handler private = Hash[Regex::Regex,RequestHandler]()
+    conn mutable = 0
+
+    find(path String) RequestHandler {
+        # Finds the handler with the longest matching prefix for 'path'
+        maxlen mutable Int
+        max mutable RequestHandler
+
+        for pair in handler {
+            m = pair.first =~ path
+            if m and m.len > maxlen {
+                maxlen = m.len
+                max = pair.second 
+            }
+        }
+        ret max
+    }
+
+    handle(sd Socket::Stream) {
+        # Handles an incoming HTTP request and routes it to the correct handler
+        req = Http::Request()
+        req.read(sd.stream)
+        Io::println("#{sd.peer.ip}:#{sd.peer.port} #{req.method} #{req.path}")
+        if not req.path.str.empty {
+            hnd  = self.find(req.path.str)
+            if hnd {
+                res = hnd(req)
+                res.write(sd.stream)
+            } else {
+                res = self.not_found('Not found :(')
+                res.write(sd.stream)
+            }
+        } else {
+            # Connection: close
+        }
+    }
+
+    not_found(msg String) Response {
+        # Emits an HTTP 404 page response
+        res = Http::Response()
+        res.status = Http::Status::NOT_FOUND
+        res.body = "<html><body>#{msg}</body></html>\n\n"
+        ret res
+    }
+
+    listen(pport Int) {
+        # Creates a new HTTP server and begins processing requests via route
+        srv = self # FIXME: Self should not refer to closure
+        ls = Socket::listen('127.0.0.1', pport)
+        while true {
+            sd = ls.accept()
+            hnd = Coroutine() func() {
+                srv.handle(sd) 
+                # FIXME: Self should not refer to the closure
+            }
+            hnd()
+        }
+    }
+
+    route(path String, phandler RequestHandler) {
+        # Sets up a path handler for a given HTTP URI
+        re = Regex::Regex("^#{path}$")
+        handler[re] = phandler 
+    }
+
+    static(path String, dir String) {
+        # Sets up a handler to load the requested data from a file
+        srv = self # FIXME: Self should not refer to closure
+        re = Regex::Regex("^#{path}.*")
+        handler[re] = func(req Request) Response {
+            req_path = req.path.str.suffix(path.len) 
+            file_path = "#{dir}#{req_path}"   
+            fd = File::open(file_path, 'r')
+            if fd.error {
+                ret srv.not_found('Not found :(')
+            } else {
+                res = Response()
+                res.status = Http::Status::OK
+                res.body = fd.readall() 
+                ret res
+            }
+        }
+    }
+}
+

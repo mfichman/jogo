@@ -25,55 +25,57 @@ Response < Object {
     status mutable Status 
     # The status of the request.
 
+    version mutable = 'HTTP/1.1'
+    # HTTP version to use.
+
     headers = Hash[String,String]()
     # Set of response headers read from the server.    
 
     body mutable String
     # Body of the request (following the headers).
 
-}
-
-Response::@init() {
-}
-
-Response::write(stream Io::Stream) {
-    # Write a response to the output stream.
-    #stream.print("#{version} #{status} #{status}\r\n")
-    for header in headers {
-        stream.print("#{header.first}: #{header.second}\r\n")
+    @init() {
     }
-    stream.print("\r\n")
-    if body {
-       stream.print(body)
-       stream.flush()
-    }
-}
-
-Response::read_headers(stream Io::Stream) {
-    # Read only the response headers; do not read the request body.
-    version = stream.scan(' ')
-    stat = stream.scan(' ')
-    message = stream.scan('\n')
-    while stream.status == Io::StreamStatus::OK and 
-        stream.peek() != '\r'b and
-        stream.peek() != '\n'b  {
-
-        key = stream.scan(':')
-        while stream.status == Io::StreamStatus::OK and
-            stream.peek() == ' 'b {
-        
-            stream.get()
+    
+    write(stream Io::Stream) {
+        # Write a response to the output stream.
+        stream.print("#{version} #{status.int} WHATEV\r\n")
+        for header in headers {
+            stream.print("#{header.first}: #{header.second}\r\n")
         }
-        value = stream.scan('\n') 
-        headers[key] = value
+        stream.print("\r\n")
+        if body {
+           stream.print(body)
+           stream.flush()
+        }
     }
-    stream.scan('\n') 
-}
-
-Response::read(stream Io::Stream) {
-    # Reads a response from the stream.
-    self.read_headers(stream)
-    body = stream.readall()
+    
+    read_headers(stream Io::Stream) {
+        # Read only the response headers; do not read the request body.
+        version = stream.scan(' ')
+        stat = stream.scan(' ')
+        message = stream.scan('\n')
+        while stream.status == Io::StreamStatus::OK and 
+            stream.peek() != '\r'b and
+            stream.peek() != '\n'b  {
+    
+            key = stream.scan(':')
+            while stream.status == Io::StreamStatus::OK and
+                stream.peek() == ' 'b {
+            
+                stream.get()
+            }
+            value = stream.scan('\n') 
+            headers[key] = value
+        }
+        stream.scan('\n') 
+    }
+    
+    read(stream Io::Stream) {
+        # Reads a response from the stream.
+        self.read_headers(stream)
+        body = stream.readall()
+    }
 }
 
 Status < Enum {
@@ -119,5 +121,7 @@ Status < Enum {
     SERVICE_UNAVAILABLE = 503
     GATEWAY_TIMEOUT = 504
     VERSION_NOT_SUPPORTED = 505
+
+    int?() native Int { }
 }
 
