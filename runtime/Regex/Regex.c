@@ -36,7 +36,7 @@ Regex_ThreadList Regex_ThreadList__init(Regex_Regex re, Int capacity) {
     return ret;
 }
 
-void Regex_ThreadList_thread(Regex_ThreadList self, Regex_Instr pc) {
+void Regex_ThreadList_thread(Regex_ThreadList self, Regex_Instr pc, Int start) {
     // Adds a thread to the list, but only if the thread isn't on the list
     // already.  This prevents the size of the thread list from becoming 
     // unbounded.
@@ -45,7 +45,9 @@ void Regex_ThreadList_thread(Regex_ThreadList self, Regex_Instr pc) {
     }
     assert(self->length < self->regex->length);
     pc->gen = self->regex->gen;
-    self->thread[self->length++].pc = pc;
+    self->thread[self->length].pc = pc;
+    self->thread[self->length].start = start;
+    self->length++;
 }
 
 
@@ -83,14 +85,24 @@ Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
     // expression.
     Regex_ThreadList cur = Regex_ThreadList__init(self, self->length);
     Regex_ThreadList next = Regex_ThreadList__init(self, self->length);
+    Regex_Match match = 0;
     Int i = 0;
     Byte* c = 0;
     self->gen++; 
 
+    // For each character, iterate over live threads and insert new threads or
+    // mark old threads that should be alive to process the next character.
+    // Any threads that don't match by following DFA edges will be garbaged
+    // collected before the next character is processed.  
     for (c = str->data;; c++) {
         Regex_ThreadList temp = 0;
         self->gen++; 
-        Regex_ThreadList_thread(cur, self->instr);
+        Regex_ThreadList_thread(cur, self->instr, c-str->data);
+        // Follow non-consuming edges in the DFA until there are no more such
+        // edges (e.g., JUMP needs to be processed to update the thread to the
+        // new PC location, but it doesn't consume any characters).  Because
+        // there can be at most one thread per DFA node, this loop will
+        // eventually terminate when all threads are dead or traversed already.
         for (i = 0; i < cur->length; ++i) {
             Regex_Thread th = cur->thread+i;
             Regex_Instr pc = th->pc;
@@ -98,22 +110,25 @@ Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
             case MATCH:
                 Boot_free(cur);
                 Boot_free(next);
-                return Regex_Match__init(); 
+                match = Regex_Match__init(); 
+                match->group[0].start = th->start;
+                match->group[0].end = c-str->data;
+                return match;
             case JUMP: 
-                Regex_ThreadList_thread(cur, self->instr+pc->target);
+                Regex_ThreadList_thread(cur, self->instr+pc->target, th->start);
                 break;
             case SPLIT:
-                Regex_ThreadList_thread(cur, self->instr+pc->target);
-                Regex_ThreadList_thread(cur, pc+1);
+                Regex_ThreadList_thread(cur, self->instr+pc->target, th->start);
+                Regex_ThreadList_thread(cur, pc+1, th->start);
                 break;
             case START:
                 if (c == str->data) {
-                    Regex_ThreadList_thread(cur, pc+1);
+                    Regex_ThreadList_thread(cur, pc+1, th->start);
                 }
                 break;
             case END:
                 if (c >= str->data+str->length) {
-                    Regex_ThreadList_thread(cur, pc+1);
+                    Regex_ThreadList_thread(cur, pc+1, th->start);
                 }
                 break;
             case CHAR:
@@ -124,17 +139,20 @@ Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
             }
         } 
         self->gen++; 
+        // Now process DFA edges that consume a character.  Copy any surviving
+        // threads to the "next" list, then swap the "next" list to prepare to
+        // process the next character.
         for (i = 0; i < cur->length; ++i) {
             Regex_Thread th = cur->thread+i;
             Regex_Instr pc = th->pc;
             switch (pc->type) {
             case CHAR:
                 if (*c == pc->target) {
-                    Regex_ThreadList_thread(next, pc+1);
+                    Regex_ThreadList_thread(next, pc+1, th->start);
                 }
                 break;
             case ANY:
-                Regex_ThreadList_thread(next, pc+1);
+                Regex_ThreadList_thread(next, pc+1, th->start);
                 break;
             default:
                 break;

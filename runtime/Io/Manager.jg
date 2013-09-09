@@ -45,6 +45,9 @@ Manager < Object {
     iobytes Int
     # Number of bytes read by the last I/O operation, if available.
 
+    active mutable Int
+    # Number of active coroutines (i.e., suspended, but not waiting on I/O)
+
     @init() native private {
         # Initializes a new manager.  Most applications need only one I/O
         # manager, which can be accessed via the Event::manager() constant.
@@ -71,6 +74,7 @@ Manager < Object {
         # outstanding I/O requests, then return.
         while scheduled.count > 0 or waiting > 0 {
             count mutable = scheduled.count
+            active = 0
             while count > 0 {
                 # Dequeue scheduled tasks until the entire queue is empty.  At
                 # that point, all coroutines have either exited, or are waiting
@@ -81,6 +85,7 @@ Manager < Object {
                     scheduled.enq(next)
                 } else if next.status == CoroutineStatus::SUSPENDED {
                     scheduled.enq(next)
+                    ++active
                 }
                 --count
             }

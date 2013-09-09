@@ -43,6 +43,10 @@ void InterfaceGenerator::operator()(Module* feature) {
 }
 
 void InterfaceGenerator::operator()(Class* feature) {
+    if (feature->is_closure()) {
+        return;
+    }
+
     out_ << feature->type() << " < ";
 
     if (feature->is_enum()) {

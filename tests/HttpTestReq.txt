@@ -1,4 +1,4 @@
-GET /one/two/three/four HTTP/1.1
+POST /one/two/three/four HTTP/1.1
 Connection: close
 User-Agent: Jogo HTTP Client
 Accept-Encoding: identity

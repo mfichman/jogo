@@ -4,8 +4,11 @@
 main() Int {
     fd mutable = File::open('HttpTestReq.txt', 'r')
     req = Http::Request()
-    req.read(fd)    
+    req.read(fd)
     req.write(Io::stdout()) 
+    if req.method == Http::Method::GET {
+        Io::println('foo')
+    }
 
     fd = File::open('HttpTestRes.txt', 'r')
     res = Http::Response()

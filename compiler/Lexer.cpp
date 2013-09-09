@@ -56,7 +56,6 @@ Lexer::Lexer(Environment* env) :
     keyword_["or"] = Token::OR;
     keyword_["private"] = Token::PRIVATE;
     keyword_["public"] = Token::PUBLIC;
-    keyword_["static"] = Token::STATIC;
     keyword_["ret"] = Token::RETURN;
     keyword_["until"] = Token::UNTIL;
     keyword_["weak"] = Token::WEAK; 

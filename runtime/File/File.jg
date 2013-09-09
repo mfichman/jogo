@@ -27,3 +27,4 @@ open(path String, mode String) native Io::Stream {
     #    "a": Open for appending; creates a new file if 'path' doesn't exist
     #    "rw": Open a file for reading and writing; file must exist
 }
+

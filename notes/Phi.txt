@@ -1,0 +1,42 @@
+
+
+main:
+    t1 <- load 1
+    if foo goto .L2
+.L1:
+    t2 <- load 2
+    jump .L3
+.L2:
+    t3 <- load 2
+.L3:
+    t4 <- phi t2, t3
+    
+
+main: 
+    t1 <- load 1
+    if foo goto .L2
+.L1
+    t2 <- load 2
+    jump .L2
+.L2:
+    t3 <- phi t1, t2
+
+
+
+main:
+    t1 <- load 1
+.L1:
+    if foo goto .L3
+.L2:
+    t2 <- load 2
+    jump .L1    
+.L3:
+    t2 <- phi t1, t2 
+
+
+    
+
+
+
+
+

@@ -1,0 +1,19 @@
+
+
+main() Int {
+    srv = Http::Server()
+    srv.route("/index") func(req Http::Request) Http::Response {
+        res = Http::Response()
+        res.status = Http::Status::OK
+        res.body = File::open('Test.jg', 'r').readall()
+        ret res
+    }
+    srv.route("/exit") func(req Http::Request) Http::Response {
+        Os::exit(0) 
+        ret Http::Response()
+    }
+    srv.static("/static", ".")
+    srv.listen(8080)
+    
+    ret 0
+}

@@ -88,11 +88,16 @@ each(list Iterable[:e], fn EachFunc[:e]) {
     }
 }
 
+SelectFunc[:e] < Interface {
+    @call(elem :e) Bool {}
+}
 
-
-
-
-
-
-
-
+select(list Iterable[:e], fn SelectFunc[:e]) Array[:e] {
+    out = Array[:e](0)
+    for elem in list {
+        if fn(elem) {
+            out.append(elem)
+        }
+    }
+    ret out
+}
