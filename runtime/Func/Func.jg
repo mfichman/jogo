@@ -78,8 +78,15 @@ fold(list Iterable[:e], fn FoldFunc[:a,:e], init :a) :a {
     ret acc 
 } 
 
+EachFunc[:e] < Interface {
+    @call(elem :e) {}
+}
 
-
+each(list Iterable[:e], fn EachFunc[:e]) {
+    for elem in list {
+        fn(elem)
+    }
+}
 
 
 
