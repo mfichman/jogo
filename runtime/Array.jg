@@ -192,6 +192,12 @@ Array[:a] < Object {
         ret ArrayIter[:a](self)
     }
 
+    each(fn Func::EachFunc[:a]) {
+        for elem in self {
+            fn(elem)
+        }
+    }
+
     #str?() native String {
         # Returns a string representation of this array.
     #}

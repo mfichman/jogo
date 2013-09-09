@@ -1212,6 +1212,11 @@ Expression* Parser::member() {
                 Member* mem = new Member(loc, expr, set);
                 Expression* args = expression();
                 return new Call(loc, mem, args);
+            } else if (token() == Token::FUNC) {
+                // FIXME: Extend to any simple expression
+                Expression* args = closure(); 
+                Member* mem = new Member(loc, expr, id);
+                return new Call(loc, mem, args);
             } else {
                 expr = new Member(loc, expr, id);
             }
@@ -1245,11 +1250,17 @@ Expression* Parser::construct() {
         }
         
         // Read in the ctor arguments
-        expect(Token::LEFT_PARENS); 
-        Expression::Ptr args = expression_list();
-        expect(Token::RIGHT_PARENS);
+        Expression* args = 0;
         if (token() == Token::FUNC) {
-            args = append(args, closure());
+            // FIXME: Extend to any simple expression
+            args = closure();
+        } else {
+            expect(Token::LEFT_PARENS); 
+            args = expression_list();
+            expect(Token::RIGHT_PARENS);
+            if (token() == Token::FUNC) {
+                args = append(args, closure());
+            }
         }
         return new Construct(loc, type, args);
     } else {
