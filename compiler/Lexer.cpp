@@ -198,8 +198,14 @@ void Lexer::next() {
         location_.last_offset = offset_;
         token_[front_].location(location_);
     }
-    //Stream::stout() << token(0) << "\n"; // << ", '" << value(-1) << "'\n";
-    //Stream::stout()->flush();
+    if (env_->dump_lex() && location_.file->is_input_file()) {
+        if (token(0) == Token::SEPARATOR) {
+            Stream::stout() << "eol ";
+        } else {
+            Stream::stout() << token(0) << " ";
+        }
+        Stream::stout()->flush();
+    }
     front_ = (front_+1)%LEXER_LOOKAHEAD;
 }
 
@@ -588,7 +594,7 @@ Stream::Ptr operator<<(Stream::Ptr out, const Token& token) {
     case Token::INCREMENT: return out << "'++'";
     case Token::DECREMENT: return out << "'--'";
     case Token::IDENTIFIER: return out << "identifier";
-    case Token::TYPE: return out << "type name";
+    case Token::TYPE: return out << "type";
     case Token::OPERATOR: return out << "'" << token.value() << "'";
     case Token::COMMENT: return out << "comment";
     case Token::TYPEVAR: return out << "typevar";

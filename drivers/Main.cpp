@@ -52,6 +52,8 @@ void parse_option(std::string const& flag) {
         env->dump_ir(true);
     } else if ("dump-ast" == flag) {
         env->dump_ast(true);
+    } else if ("dump-lex" == flag) {
+        env->dump_lex(true);
     } else if ("dump-liveness" == flag) {
         env->dump_liveness(true);
     } else if ("dump-regalloc" == flag) {

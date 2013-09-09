@@ -98,7 +98,7 @@ private:
     Expression* string();
     Expression* expression();
     Expression* expression_list();
-    Expression* member();
+    Expression* member_or_call_or_index();
     Expression* call();
     Expression* construct();
     Expression* increment();

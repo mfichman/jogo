@@ -98,6 +98,9 @@ Builder::Builder(Environment* env) :
     if (env_->errors()) {
         errors_++;
     }
+    if (env_->dump_lex()) {
+        return;
+    }
 
     // Semantic analysis/type checking phase.
     SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));

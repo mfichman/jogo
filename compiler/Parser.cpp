@@ -1144,27 +1144,9 @@ Expression* Parser::increment() {
         Expression::Ptr t3 = op(loc, "@sub", t2, t1);
         return new Assignment(loc, id, env_->top_type(), t3);
     }
-    default: return call();
+    default: return member_or_call_or_index();
     }
-    return call();
-}
-
-Expression* Parser::call() {
-    // Parses a call expression, i.e.: expr ( arg? (, arg)* ) +
-    LocationAnchor loc(this);
-    Expression* expr = member();
-    while (token() == Token::LEFT_PARENS) {
-        next();
-    
-        // Read in the arguments to the function.
-        Expression::Ptr args = expression_list();
-        expect(Token::RIGHT_PARENS);
-        if (token() == Token::FUNC) {
-            args = append(args, closure());
-        }
-        expr = new Call(loc, expr, args);  
-    }
-    return expr;
+    return member_or_call_or_index();
 }
 
 Expression* Parser::member() {

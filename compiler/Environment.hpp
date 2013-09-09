@@ -82,6 +82,7 @@ public:
     bool dump_liveness() const { return dump_liveness_; }
     bool dump_regalloc() const { return dump_regalloc_; }
     bool dump_reggraph() const { return dump_reggraph_; }
+    bool dump_lex() const { return dump_lex_; }
     bool dump_ast() const { return dump_ast_; }
     bool verbose() const { return verbose_; }
     bool gen_library() const;
@@ -103,6 +104,7 @@ public:
     void dump_regalloc(bool dump) { dump_regalloc_ = dump; }
     void dump_reggraph(bool dump) { dump_reggraph_ = dump; }
     void dump_ast(bool dump) { dump_ast_ = dump; }
+    void dump_lex(bool dump) { dump_lex_ = dump; }
     void verbose(bool verbose) { verbose_ = verbose; }
     void make(bool make) { make_ = make; }
     void optimize(bool optimize) { optimize_ = optimize; }
@@ -188,6 +190,7 @@ private:
     std::string entry_point_;
     std::string entry_module_;
     bool dump_ast_;
+    bool dump_lex_;
     bool dump_ir_;
     bool dump_liveness_;
     bool dump_regalloc_;
