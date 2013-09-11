@@ -17,7 +17,7 @@ fragment=frag
 scheme=http
 user=mfichman
 host=github.com
-port=
+port=0
 path=/test.xml
 query=x=y
 fragment=frag
@@ -25,7 +25,7 @@ fragment=frag
 scheme=http
 user=
 host=
-port=
+port=0
 path=/test.xml
 query=x=y
 fragment=frag
@@ -65,7 +65,7 @@ fragment=frag
 scheme=
 user=
 host=
-port=
+port=0
 path=/path/to/something
 query=
 fragment=
