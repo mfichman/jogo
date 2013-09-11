@@ -538,7 +538,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << vcvarsall_ << " > NUL && ";
-    ss << "cl.exe " << in << " /MT /nologo /Zi /c /Fo\"" << out << "\"";
+    ss << "cl.exe " << in << " /MD /nologo /Zi /c /Fo\"" << out << "\"";
     if (env_->optimize()) {
         ss << " /O2";
     } 

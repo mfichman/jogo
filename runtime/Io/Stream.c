@@ -404,20 +404,48 @@ Byte Io_Stream_get(Io_Stream self) {
     // Read a single byte from the stream.  Returns EOF if the end of the
     // stream has been reached.  If an error occurs while reading from the
     // stream, then 'status' will be set to 'ERROR.'
-    Io_Buffer buf = self->read_buf;
-    if (buf->begin == buf->end) {
-        buf->begin = 0;
-        buf->end = 0;
-        Io_Stream_read(self, buf);
-    }
+    return Io_Stream_getbb(self);
+}
 
-    if (buf->begin >= buf->end) {
-        // EOF
-        self->status = Io_StreamStatus_EOF;
+Byte Io_Stream_getbb(Io_Stream self) {
+    Io_Buffer buf = self->read_buf;
+    Io_Stream_fillto(self, sizeof(Byte));
+    if (self->status != Io_StreamStatus_OK) {
         return 0xff;
-    } else {
-        return buf->data[buf->begin++];
     }
+    return buf->data[buf->begin++];
+}
+
+Int Io_Stream_getib(Io_Stream self) {
+    // Write an int to the stream in network-byte order
+    Io_Buffer buf = self->read_buf;
+    Int ret = 0;
+    Io_Stream_fillto(self, sizeof(ret));
+    if (self->status != Io_StreamStatus_OK) {
+        return -1;
+    }
+    ret = ntohll(*(Int*)(buf->data+buf->begin));
+    buf->begin += sizeof(ret);
+    return ret;
+}
+
+String Io_Stream_getsb(Io_Stream self) {
+    // Write a string to the stream 
+    Io_Buffer buf = self->read_buf;
+    Int len = Io_Stream_getib(self);
+    String ret = 0;
+    if (self->status != Io_StreamStatus_OK) {
+        return 0;
+    }
+    Io_Stream_fillto(self, len);
+    if (self->status != Io_StreamStatus_OK) {
+        return 0;
+    }
+    ret = String_alloc(len);
+    ret->length = len;
+    Boot_memcpy(ret->data, buf->data+buf->begin, len);
+    buf->begin += len;
+    return ret;
 }
 
 Byte Io_Stream_peek(Io_Stream self) {
@@ -442,15 +470,43 @@ Byte Io_Stream_peek(Io_Stream self) {
 void Io_Stream_put(Io_Stream self, Byte byte) {
     // Insert a single character into the stream.  If an error occurs while 
     // writing to the stream, then 'status' will be set to 'ERROR.'
+    Io_Stream_putbb(self, byte);
+}
+
+void Io_Stream_putbb(Io_Stream self, Byte byte) {
+    // Write a byte in binary format to the stream
     Io_Buffer buf = self->write_buf;
-    if (buf->end == buf->capacity) {
-        Io_Stream_flush(self);
-    }
-    if (buf->end >= buf->capacity) {
+    Io_Stream_emptyto(self, sizeof(byte));
+    if (self->status != Io_StreamStatus_OK) {
         return;
-    } else {
-        buf->data[buf->end++] = byte;
     }
+    buf->data[buf->end++] = byte;
+}
+
+void Io_Stream_putib(Io_Stream self, Int integer) {
+    // Write an int in binary format to the stream
+    Io_Buffer buf = self->write_buf;
+    Io_Stream_emptyto(self, sizeof(integer));
+    if (self->status != Io_StreamStatus_OK) {
+        return;
+    }
+    *(Int*)(buf->data+buf->end) = htonll(integer);
+    buf->end += sizeof(integer);
+}
+
+void Io_Stream_putsb(Io_Stream self, String str) {
+    // Write a string in binary format to the stream
+    Io_Buffer buf = self->write_buf;
+    Io_Stream_putib(self, str->length);
+    if (self->status != Io_StreamStatus_OK) {
+        return;
+    }
+    Io_Stream_emptyto(self, str->length);
+    if (self->status != Io_StreamStatus_OK) {
+        return;
+    }
+    Boot_memcpy(buf->data+buf->end, str->data, str->length); 
+    buf->end += str->length;
 }
 
 void Io_Stream_emptyto(Io_Stream self, Int num) {
@@ -479,6 +535,9 @@ void Io_Stream_fillto(Io_Stream self, Int num) {
     } else if ((buf->end-buf->begin) < num) {
         // Read in more data if available
         Io_Stream_read(self, buf);
+    }
+    if ((buf->end-buf->begin) < num) {
+        self->status = Io_StreamStatus_EOF;
     }
 }
 

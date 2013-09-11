@@ -99,7 +99,8 @@ private:
     Expression* expression();
     Expression* expression_list();
     Expression* member_or_call_or_index();
-    Expression* call();
+    Expression* call_suffix(Expression* expr, LocationAnchor const& loc);
+    Expression* index_suffix(Expression* expr, LocationAnchor const& loc);
     Expression* construct();
     Expression* increment();
     Expression* unary();
@@ -122,6 +123,7 @@ private:
     Expression* hash_literal();
     Expression* pair();
     Expression* closure();
+    bool is_literal();
 
     Token token(int index=0) const { 
         return lexer_->token(index); 

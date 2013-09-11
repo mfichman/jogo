@@ -1149,7 +1149,43 @@ Expression* Parser::increment() {
     return member_or_call_or_index();
 }
 
-Expression* Parser::member() {
+Expression* Parser::call_suffix(Expression* expr, LocationAnchor const& loc) {
+    // Parse a function call, delimited by '(' and ')'.  Optionally, the parens
+    // can be omitted.  In this case, this function continues parsing function
+    // arguments until it reaches a separator token, or until it reaches one of
+    // the close tokens: '}' or ')'
+    bool has_parens = false;
+    if (token() == Token::LEFT_PARENS) {
+        next();
+        has_parens = true;
+    }
+    Expression::Ptr args = expression_list();
+    if (has_parens) {
+        expect(Token::RIGHT_PARENS);
+        if (token() == Token::FUNC) {
+            args = append(args, closure());
+        }
+    } 
+    return new Call(loc, expr, args);  
+}
+
+Expression* Parser::index_suffix(Expression* expr, LocationAnchor const& loc) {
+    // Parse an index expression, delimited by '[' and ']'.
+    expect(Token::LEFT_BRACKET);
+    Expression* args = expression_list();
+    Member* mem = 0;
+    expect(Token::RIGHT_BRACKET);
+    if (token() == Token::ASSIGN) {
+        next();
+        args = append(args, expression());
+        mem = new Member(loc, expr, name("@insert")); 
+    } else {
+        mem = new Member(loc, expr, name("@index"));    
+    }
+    return new Call(location(), mem, args); 
+}
+
+Expression* Parser::member_or_call_or_index() {
     // Parses the member operator, i.e., '.', such as: expr [. ident]?  Also
     // parses the [] operator, and () operator
     LocationAnchor loc(this);
@@ -1158,30 +1194,13 @@ Expression* Parser::member() {
         switch (token().type()) {
         case Token::LEFT_PARENS: {
             // Parse the () operator; read in the arguments to the function.
-            next();
-            Expression::Ptr args = expression_list();
-            expect(Token::RIGHT_PARENS);
-            if (token() == Token::FUNC) {
-                args = append(args, closure());
-            }
-            expr = new Call(loc, expr, args);  
+            expr = call_suffix(expr, loc);
             break;
         }
         case Token::LEFT_BRACKET: {
             // Parse the [] array access operator, both for assignments and
             // for reads.
-            next();
-            Expression* args = expression_list();
-            Member* mem = 0;
-            expect(Token::RIGHT_BRACKET);
-            if (token() == Token::ASSIGN) {
-                next();
-                args = append(args, expression());
-                mem = new Member(loc, expr, name("@insert")); 
-            } else {
-                mem = new Member(loc, expr, name("@index"));    
-            }
-            expr = new Call(loc, mem, args); 
+            expr = index_suffix(expr, loc);
             break;
         }
         case Token::DOT: {
@@ -1194,11 +1213,9 @@ Expression* Parser::member() {
                 Member* mem = new Member(loc, expr, set);
                 Expression* args = expression();
                 return new Call(loc, mem, args);
-            } else if (token() == Token::FUNC) {
-                // FIXME: Extend to any simple expression
-                Expression* args = closure(); 
+            } else if (token() != Token::LEFT_PARENS && is_literal()) {
                 Member* mem = new Member(loc, expr, id);
-                return new Call(loc, mem, args);
+                return call_suffix(mem, loc);   
             } else {
                 expr = new Member(loc, expr, id);
             }
@@ -1232,18 +1249,18 @@ Expression* Parser::construct() {
         }
         
         // Read in the ctor arguments
-        Expression* args = 0;
-        if (token() == Token::FUNC) {
-            // FIXME: Extend to any simple expression
-            args = closure();
-        } else {
-            expect(Token::LEFT_PARENS); 
-            args = expression_list();
+        bool has_parens = false;
+        if (token() == Token::LEFT_PARENS) {
+            next();
+            has_parens = true;
+        }
+        Expression* args = expression_list();
+        if (has_parens) {
             expect(Token::RIGHT_PARENS);
             if (token() == Token::FUNC) {
                 args = append(args, closure());
             }
-        }
+        } 
         return new Construct(loc, type, args);
     } else {
         return literal();
@@ -1381,8 +1398,38 @@ Expression* Parser::integer_literal() {
     return new IntegerLiteral(location(), env_->integer(value()));
 }
 
+bool Parser::is_literal() {
+    // Returns true if the next token is a literal or simple expression, and not an operator 
+    switch(token()) {
+    case Token::FUNC: return true;
+    case Token::IF: return true;
+    case Token::WHILE: return true;
+    case Token::FOR: return true;
+    case Token::LET: return true;
+    case Token::MATCH: return true;
+    case Token::LEFT_BRACKET: return false; // FIXME: Allow left bracket if array literal
+    case Token::LEFT_BRACE: return false; // FIXME: Allow left bracket if hash literal
+    case Token::STRING_BEGIN: return false;
+    case Token::REGEX: return true; 
+    case Token::FLOAT: return true;
+    case Token::INTEGER: return true;
+    case Token::STRING: return true;
+    case Token::NIL: return true;
+    case Token::EOF_LITERAL: return true;
+    case Token::CHAR: return true;
+    case Token::BYTE: return true;
+    case Token::BOOL: return true;
+    case Token::IDENTIFIER: return true;
+    case Token::CONSTANT: return true;
+    case Token::LEFT_PARENS: return true;
+    default: return false;
+    }
+    return false;
+}
+
 Expression* Parser::literal() {
     // Parses a literal expression, variable, or parenthesized expression
+    LocationAnchor loc(this);
     Expression* expr = 0;
     switch(token().type()) {
     case Token::FUNC: return closure();
@@ -1426,12 +1473,16 @@ Expression* Parser::literal() {
             expr = new BooleanLiteral(location(), env_->integer("0"));
         }
         break;
-    case Token::IDENTIFIER:
-        expr = new IdentifierRef(location(), name(""), name(value()));
-        break;
     case Token::CONSTANT:
         expr = new ConstantRef(location(), name(""), name(value()));
         break;
+    case Token::IDENTIFIER:
+        expr = new IdentifierRef(location(), name(""), name(value()));
+        next();
+        if (is_literal()) {
+            expr = call_suffix(expr, loc);
+        }
+        return expr;
     case Token::LEFT_PARENS:
         next();
         expr = expression();

@@ -1,0 +1,39 @@
+# jgtest exec on
+
+main() Int {
+
+    out = File::open('BinaryFileTest.txt', 'w')
+    out.putbb('c'b)
+    out.putib(99)
+    out.putsb('hello world') 
+    out.putbb('d'b)
+    out.putib(100)
+    out.putsb('monty python') 
+    out.close()
+    
+    fd = File::open('BinaryFileTest.txt', 'r')
+    if (fd.getbb() != 'c'b) {
+        Os::panic('fail: byte 1')
+    }
+    if (fd.getib() != 99) {
+        Os::panic('fail: int 1')
+    }
+    if (fd.getsb() != 'hello world') {
+        Os::panic('fail: string 1')
+    }
+    if (fd.getbb() != 'd'b) {
+        Os::panic('fail: byte 2')
+    }
+    if (fd.getib() != 100) {
+        Os::panic('fail: int 2')
+    }
+    if (fd.getsb() != 'monty python') {
+        Os::panic('fail: string 2')
+    }
+    fd.get()
+    if (fd.status != Io::StreamStatus::EOF) {
+        Os::panic('fail: no eof')
+    }
+    
+    ret 0
+}

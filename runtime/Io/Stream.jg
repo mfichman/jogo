@@ -124,13 +124,36 @@ Stream < Object {
     }
 
     get() native Byte {
-        # Returns the next Unicode character in the input stream. 
+        # Returns the next byte in the input stream. 
+    }
+
+    getbb() native Byte {
+        # Reads a byte from the stream in binary format.
+    }
+    
+    getib() native Int {
+        # Reads an int from the stream in binary format.
+    }
+
+    getsb() native String {
+        # Reads a string from the stream in binary format.
     }
 
     put(char Byte) native {
-        # Writes the Unicode character 'char' to the output buffer.  The
-        # character is not guaranteed to be written to the output stream until
-        # 'flush()' is called.
+        # Writes a byte to the output buffer. The character is not guaranteed
+        # to be written to the output stream until 'flush()' is called.
+    }
+
+    putbb(char Byte) native {
+        # Writes a byte to the stream in binary format.
+    }
+    
+    putib(int Int) native {
+        # Writes an int to the stream in binary format.
+    }
+
+    putsb(string String) native {
+        # Writes a string to the stream in binary format.
     }
 
     peek() native Byte {

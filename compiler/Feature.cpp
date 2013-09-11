@@ -375,6 +375,7 @@ std::string Module::exe_file() const {
     std::string dir = env()->output() + FILE_SEPARATOR + "bin";
     std::string nm = name()->string();
     std::transform(nm.begin(), nm.end(), nm.begin(), ::tolower);
+    std::replace(nm.begin(), nm.end(), ':', '_');
 #ifdef WINDOWS
     return dir + FILE_SEPARATOR + nm + ".exe";
 #else
