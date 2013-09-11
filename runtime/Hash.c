@@ -113,6 +113,19 @@ void Hash__insert(Hash self, Object key, Object value) {
     Hash_rehash(self);
 }
 
+void Hash_clear(Hash self) {
+    // Clear all keys from the hash
+    Int i = 0; 
+    for (i = 0; i < self->capacity; ++i) {
+        HashBucket* entry = self->data + i;
+        Object__refcount_dec(entry->key);
+        Object__refcount_dec(entry->value);
+        entry->key = 0;
+        entry->value = 0;
+    }
+    self->count = 0;
+}
+
 void Hash_rehash(Hash self) {
     // Only re-hash the hash table if it is too small
     HashBucket* old_data = 0;

@@ -39,8 +39,8 @@ open(uri Uri::Uri) Io::Stream {
 Authority < Value {
     user String 
     host String
-    port String # * DIGIT
-    @init(puser String, phost String, pport String) {
+    port Int # * DIGIT
+    @init(puser String, phost String, pport Int) {
         user = puser
         host = phost
         port = pport
@@ -64,7 +64,7 @@ Query < Value {
 Uri < Value {
     # Defines a generic URI as defined by RFC3986.    
     scheme mutable String # ALPHA * (ALPHA | DIGIT | '+' | '-' | '.' )
-    authority mutable = Authority('', '', '') # user '@' host ':' port
+    authority mutable = Authority('', '', 0) # user '@' host ':' port
     path mutable = Path('') # * ANY  
     query mutable = Query('') # '?' * ANY
     fragment mutable String # '#' * ANY
@@ -86,7 +86,7 @@ Uri::host?() String {
     ret authority.host
 }
 
-Uri::port?() String {
+Uri::port?() Int {
     ret authority.port
 }
 
@@ -144,7 +144,7 @@ Uri::parse_authority(value String, ind Int) private Int {
         ++i
     }
     port = value.slice(start, i)
-    authority = Authority(user, host, port)
+    authority = Authority(user, host, port.int)
     ret i
 }
 

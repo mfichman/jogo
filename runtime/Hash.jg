@@ -65,6 +65,10 @@ Hash[:k,:v] < Object {
         ret hash
     }
 
+    clear() native {
+        # Clears all keys from the hash
+    }
+
     iter() HashIter[:k,:v] {
         # Returns an iterator for all the key-value pairs in this hash.
         ret HashIter[:k,:v](self)
@@ -79,7 +83,7 @@ Hash[:k,:v] < Object {
         # Returns an iterator for all the keys in this hash.
         ret HashKeyIter[:k,:v](self)
     }
-
+    
     hash(element :k) native private Int {
         # Returns the hash for 'element'
     }
