@@ -20,13 +20,14 @@ if 'help' in COMMAND_LINE_TARGETS:
     sys.exit(0);
 
 VariantDir('build/compiler', 'compiler', duplicate=0)
+VariantDir('build/debugger', 'debugger', duplicate=0)
 VariantDir('build/drivers', 'drivers', duplicate=0)
 VariantDir('build/runtime', 'runtime', duplicate=0)
 
 build_dir = os.path.join('build', 'runtime')
-env = Environment(CPPPATH = ['build/compiler'])
+env = Environment(CPPPATH = ['build/compiler', 'build/debugger'])
 env.Append(ENV = os.environ)
-env.Append(JGFLAGS = '-v -i runtime --build-dir ' + build_dir)
+env.Append(JGFLAGS = '-v -m -i runtime --build-dir ' + build_dir)
 env.Append(JGFLAGS = ' --no-default-libs -g Intel64 ')
 
 build_mode = ARGUMENTS.get('mode', 'debug')
@@ -118,8 +119,14 @@ jogo = env.Program(jogo_cmd, compiler_src + ['build/drivers/Main.cpp'])
 jgdoc = env.Program(jgdoc_cmd, compiler_src + ['build/drivers/Doc.cpp'])
 jgmake = env.Program(jgmake_cmd, compiler_src + ['build/drivers/Make.cpp'])
 jgfix = env.Program(jgfix_cmd, compiler_src + ['build/drivers/Fix.cpp'])
-jgi = env.Program(jgi_cmd, compiler_src + ['build/drivers/Debugger.cpp'])
 compiler = env.StaticLibrary('lib/jogoc', compiler_src)
+
+# Debugger build #############################################################
+
+debugger_src = env.Glob('build/debugger/*.cpp')
+debugger = env.StaticLibrary('lib/jgdebug', debugger_src)
+jgdebug_cmd = os.path.join('bin', 'jgdebug')
+jgdebug = env.Program(jgdebug_cmd, compiler_src + debugger_src + ['build/drivers/Debugger.cpp'])
 
 # Library/runtime build ######################################################
 library_src = ' '.join([

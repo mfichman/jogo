@@ -20,6 +20,47 @@
 
 ChanState = OPEN | CLOSED
 
+ChanSet[:k,:a] < Object {
+    # Set of channels that are multiplexed together into a single channel.
+    # Clients add channels via the chan() method, and then call next() to
+    # receive a tuple containing the activated channel and the item dequeued
+    # from the channel.
+    out = Chan[Pair[:k,:a]](0)
+
+    read(key :k, chan Chan[:a]) {
+        # Reads from the output channel until empty.
+        for item in chan {
+            out.put(Pair[:k,:a](key, item)) 
+        }
+    }
+
+    chan(key :k, chan Chan[:a]) {
+        # Add a channel to the channel set.  The key :k is a user-defined
+        # object that is used to identify which channel the key was dequeued
+        # from.
+        cs = self
+        reader = Coroutine() func() { cs.read(key, chan) }
+        reader()
+        # FIXME: Broken self, broken private
+    }
+
+    more?() Bool {
+        ret out.more
+    }
+
+    next() Pair[:k,:a] {
+        ret out.next()  
+    }
+
+    iter() Chan[Pair[:k,:a]] { 
+        ret out.iter()
+    }
+
+    close() {
+        out.close()
+    }
+}
+
 Chan[:a] < Object {
     # A channel is an object that is used by coroutines to communicate with
     # other coroutines.  The writer coroutine inserts an object into the
@@ -83,6 +124,9 @@ Chan[:a] < Object {
     put(next :a) {
         # Waits until the previous value was consumed, and then posts the value
         # to the channel
+        if state == ChanState::CLOSED {
+            ret
+        }
         if limit == 0 {
             if reader.empty {
                 writer.enq(coroutine())

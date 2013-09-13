@@ -1,0 +1,25 @@
+# Copyright (c) 2010 Matt Fichman
+# jgtest exec on
+
+main() Int {
+
+    ch1 = Chan[String](0)
+    ch2 = Chan[String](0)
+
+    cs = ChanSet[String,String]()
+    cs.chan('ch1', ch1)
+    cs.chan('ch2', ch2)
+
+    coro = Coroutine() func() {
+        for item in cs {
+            Io::println("#{item.first} => #{item.second}")
+        }
+    }
+    coro()
+
+    ch1.put('hello')
+    ch2.put('world')
+
+    Os::exit(0)
+    ret 0
+}

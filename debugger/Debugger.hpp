@@ -25,44 +25,51 @@
 #include <cerrno>
 #include <iostream>
 
-#ifdef DARWIN
-#include <mach/mach_traps.h>
-#include <mach/mach_vm.h>
-#include <mach/vm_map.h>
-#include <mach/mach_init.h>
-#include <sys/types.h>
-#include <sys/ptrace.h>
-#elif defined(WINDOWS)
-#elif defined(LINUX)
-#include <sys/types.h>
-#include <sys/ptrace.h>
-#endif
-
 typedef uint64_t DebugAddr;
-typedef int BreakpointId;
+typedef uint64_t ProcessId;
 
-/* Runs the debugger */
+
+/* Platform-independent interface for debugging Jogo code */
 class Debugger : public Object {
 public:
-    Debugger();
-    ~Debugger();
+    enum Event {
+        NONE,
+        ACCESS_VIOLATION,
+        BREAKPOINT,
+        STEP,
+        EXIT,
+        INTERRUPT, // CTRL-C  
+    };
 
-    void read(DebugAddr addr, char const* buf, int len);
-    void write(DebugAddr addr, char const* buf, int len);
-    void breakpoint();
-    void del();
-    void cont();
-    void run();
-    void setenv();
-    void getenv();
+    DebugAddr symbol(String* name);
+    // Looks up the address of a symbol by name.
 
-    typedef Pointer<Parser> Ptr;
-private:
-#ifdef DARWIN
-    vm_map_t port_; // Mach kernel port for the traced process
-    pid_t pid_; // Process identifier for the traced process
-    mach_vm_address_t scratch_; // Scratch memory region used for read/write
-    static mach_vm_size_t const slen_ = 2 * PAGE_SIZE;
-#endif
+    virtual void read(DebugAddr addr, char* buf, int len)=0; 
+    // Reads len bytes from addr into buf.
+
+    virtual void write(DebugAddr addr, char const* buf, int len)=0;
+    // Writes len bytes from buf to addr.
+    
+    virtual void breakpoint(DebugAddr addr)=0;
+    // Sets a breakpoint at address addr.
+
+    virtual void exec(const char** argv, int argc)=0;
+    // Executes the process using the given arguments, and begins debugging.
+    
+    virtual void kill()=0;
+    // Kills the debugged process.r();
+
+    virtual void cont()=0;
+    // Continues exectuing the debugged process
+
+    virtual void attach(ProcessId pid)=0;
+    // Attaches to the process with the given id
+
+    virtual Event wait()=0;
+    // Waits for a debug event.
+
+    
+
+    typedef Pointer<Debugger> Ptr;
 };
 

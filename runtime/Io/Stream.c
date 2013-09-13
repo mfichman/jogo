@@ -429,6 +429,19 @@ Int Io_Stream_getib(Io_Stream self) {
     return ret;
 }
 
+Float Io_Stream_getfb(Io_Stream self) {
+    // Write an int to the stream in network-byte order
+    Io_Buffer buf = self->read_buf;
+    Float ret = 0;
+    Io_Stream_fillto(self, sizeof(ret));
+    if (self->status != Io_StreamStatus_OK) {
+        return -1;
+    }
+    ret = ntohll(*(Float*)(buf->data+buf->begin));
+    buf->begin += sizeof(ret);
+    return ret;
+}
+
 String Io_Stream_getsb(Io_Stream self) {
     // Write a string to the stream 
     Io_Buffer buf = self->read_buf;
@@ -492,6 +505,17 @@ void Io_Stream_putib(Io_Stream self, Int integer) {
     }
     *(Int*)(buf->data+buf->end) = htonll(integer);
     buf->end += sizeof(integer);
+}
+
+void Io_Stream_putfb(Io_Stream self, Float flt) {
+    // Write an int in binary format to the stream
+    Io_Buffer buf = self->write_buf;
+    Io_Stream_emptyto(self, sizeof(flt));
+    if (self->status != Io_StreamStatus_OK) {
+        return;
+    }
+    *(Float*)(buf->data+buf->end) = htonll(flt);
+    buf->end += sizeof(flt);
 }
 
 void Io_Stream_putsb(Io_Stream self, String str) {
