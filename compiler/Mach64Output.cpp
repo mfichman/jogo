@@ -80,14 +80,14 @@ void Mach64Output::ref(String* label, RelocType rtype) {
         reloc.r_extern = 1;
         reloc.r_type = X86_64_RELOC_UNSIGNED;
         text_reloc_.push_back(reloc);
-    } else if (REF_DATA == rtype) {
+    } else if (REF_DATA == rtype || REF_VTABLE == rtype) {
         reloc.r_address = data_->bytes();
         reloc.r_pcrel = 0;
         reloc.r_length = 3; // 3=absolute 
         reloc.r_extern = 1;
         reloc.r_type = X86_64_RELOC_UNSIGNED;
         data_reloc_.push_back(reloc);
-    } else if (REF_BRANCH == rtype) {
+    } else if (REF_BRANCH == rtype || REF_CALL == rtype) {
         reloc.r_address = text_->bytes();
         reloc.r_pcrel = 1; 
         reloc.r_length = 2; // Length of address (0=1, 1=2, 2=4)

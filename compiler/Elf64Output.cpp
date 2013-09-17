@@ -66,12 +66,12 @@ void Elf64Output::ref(String* label, RelocType rtype) {
         reloc.r_info = ELF64_R_INFO(symnum, R_X86_64_64);
         reloc.r_addend = 0;
         text_reloc_.push_back(reloc);
-    } else if (REF_DATA == rtype) {
+    } else if (REF_DATA == rtype || REF_VTABLE == rtype) {
         reloc.r_offset = data_->bytes();
         reloc.r_info = ELF64_R_INFO(symnum, R_X86_64_64);
         reloc.r_addend = 0;
         data_reloc_.push_back(reloc);
-    } else if (REF_BRANCH == rtype) {
+    } else if (REF_BRANCH == rtype || REF_CALL == rtype) {
         reloc.r_offset = text_->bytes();
         reloc.r_info = ELF64_R_INFO(symnum, R_X86_64_PC32);
         reloc.r_addend = -sizeof(uint32_t);

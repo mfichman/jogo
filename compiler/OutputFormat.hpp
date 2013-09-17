@@ -55,6 +55,8 @@ public:
     static int const REF_SIGNED = 0x2;
     static int const REF_DATA = 0x3;
     static int const REF_TEXT = 0x4;
+    static int const REF_CALL = 0x5;
+    static int const REF_VTABLE = 0x6;
 
     static int const SYM_LOCAL = 0x1;
     static int const SYM_DATA = 0x2;

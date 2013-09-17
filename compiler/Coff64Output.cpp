@@ -51,9 +51,12 @@ void Coff64Output::ref(String* label, RelocType rtype) {
         // Offset to name in string table (+4 for strtab size header)
         sym->Value = 0; // Address 
         sym->SectionNumber = IMAGE_SYM_UNDEFINED; // Unknown section
-        sym->Type = IMAGE_SYM_DTYPE_NULL; // (Function or not a function?)
-        // FixMe: Should set to IMAGE_SYM_DTYPE_FUNCTION so that incremental
-        // linking works properly, according to the Microsoft documentation.
+        if (REF_CALL == rtype || REF_VTABLE == rtype) {
+            //sym->Type = IMAGE_SYM_DTYPE_FUNCTION << 8;
+            sym->Type = IMAGE_SYM_DTYPE_NULL << 8; 
+        } else {
+            sym->Type = IMAGE_SYM_DTYPE_NULL << 8; 
+        }
         sym->StorageClass = IMAGE_SYM_CLASS_EXTERNAL;
         sym->NumberOfAuxSymbols = 0;
         // FixMe: Do function symbols need an auxiliary symbol entry following
@@ -70,11 +73,11 @@ void Coff64Output::ref(String* label, RelocType rtype) {
         reloc.VirtualAddress = text_->bytes();
         reloc.Type = IMAGE_REL_AMD64_ADDR64;
         text_reloc_.push_back(reloc);
-    } else if (REF_DATA == rtype) {
+    } else if (REF_DATA == rtype || REF_VTABLE == rtype) {
         reloc.VirtualAddress = data_->bytes();
         reloc.Type = IMAGE_REL_AMD64_ADDR64;
         data_reloc_.push_back(reloc);
-    } else if (REF_BRANCH == rtype) {
+    } else if (REF_BRANCH == rtype || REF_CALL == rtype) {
         reloc.VirtualAddress = text_->bytes();
         reloc.Type = IMAGE_REL_AMD64_REL32;
         // FixMe: This may be incorrect; relative to the RIP
@@ -83,6 +86,8 @@ void Coff64Output::ref(String* label, RelocType rtype) {
         reloc.VirtualAddress = text_->bytes();
         reloc.Type = IMAGE_REL_AMD64_REL32;
         text_reloc_.push_back(reloc);
+    } else {
+        assert(!"Unknown ref type");
     }
 }
 
@@ -97,6 +102,7 @@ void Coff64Output::sym(String* label, SymType type) {
         sym = &sym_.back();
         sym->N.Name.Short = 0;
         sym->N.Name.Long = string_->bytes()+sizeof(uint32_t);
+        sym->NumberOfAuxSymbols = 0;
         // Offset to name in string table (+4 for strtab size header)
         string_->buffer(label->string().c_str(), label->string().size()+1);
     } else {
@@ -106,9 +112,16 @@ void Coff64Output::sym(String* label, SymType type) {
     if (type & SYM_TEXT) {
         sym->Value = text_->bytes();
         sym->SectionNumber = OUT_SECT_TEXT;
+        if (type & SYM_LOCAL) {
+            sym->Type = IMAGE_SYM_DTYPE_NULL << 8;
+        } else {
+            //sym->Type = IMAGE_SYM_DTYPE_FUNCTION << 8;
+            sym->Type = IMAGE_SYM_DTYPE_NULL << 8;
+        }
     } else if (type & SYM_DATA) {
         sym->Value = data_->bytes();
         sym->SectionNumber = OUT_SECT_DATA;
+        sym->Type = IMAGE_SYM_DTYPE_NULL << 8;
     } else {
         assert(!"Unknown section type");
     }

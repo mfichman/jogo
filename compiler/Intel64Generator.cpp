@@ -240,7 +240,7 @@ void Intel64Generator::dispatch_table(Class* feature) {
     format_->sym(env_->name(vtable), OutputFormat::SYM_DATA);
 
     // Emit the destructor and vtable length
-    format_->ref(dtor->label(), OutputFormat::REF_DATA);
+    format_->ref(dtor->label(), OutputFormat::REF_VTABLE);
     data_->uint64(0);
     data_->uint64(feature->jump1s());
 
@@ -253,7 +253,7 @@ void Intel64Generator::dispatch_table(Class* feature) {
     for (int i = 0; i < feature->jump2s(); i++) {
         if (feature->jump2(i)) {
             String* label = feature->jump2(i)->label();
-            format_->ref(label, OutputFormat::REF_DATA);
+            format_->ref(label, OutputFormat::REF_VTABLE);
             data_->uint64(0);
         } else {
             data_->uint64(0);
@@ -840,7 +840,7 @@ void Intel64Generator::call(Operand target) {
     String* label = target.label();
     if (label) {
         text_->uint8(0xe8);
-        format_->ref(label, OutputFormat::REF_BRANCH);
+        format_->ref(label, OutputFormat::REF_CALL);
         text_->uint32(0); // Displacement
     } else {
         assert("Missing call target register" && !!target.reg());
