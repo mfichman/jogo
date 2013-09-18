@@ -28,11 +28,17 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <inttypes.h>
 #elif defined(DARWIN)
 #include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/event.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <inttypes.h>
 #endif
 #include <stdlib.h>
 #include <stdio.h>
@@ -424,7 +430,14 @@ Int Io_Stream_getib(Io_Stream self) {
     if (self->status != Io_StreamStatus_OK) {
         return -1;
     }
-    ret = ntohll(*(Int*)(buf->data+buf->begin));
+    ret |= ((Int)buf->data[buf->begin+0]) << 0; // LSB first
+    ret |= ((Int)buf->data[buf->begin+1]) << 8;
+    ret |= ((Int)buf->data[buf->begin+2]) << 16;
+    ret |= ((Int)buf->data[buf->begin+3]) << 24;
+    ret |= ((Int)buf->data[buf->begin+4]) << 32;
+    ret |= ((Int)buf->data[buf->begin+5]) << 40;
+    ret |= ((Int)buf->data[buf->begin+6]) << 48;
+    ret |= ((Int)buf->data[buf->begin+7]) << 56; // MSB last
     buf->begin += sizeof(ret);
     return ret;
 }
@@ -437,7 +450,7 @@ Float Io_Stream_getfb(Io_Stream self) {
     if (self->status != Io_StreamStatus_OK) {
         return -1;
     }
-    ret = ntohll(*(Float*)(buf->data+buf->begin));
+    ret = *(Float*)(buf->data+buf->begin);
     buf->begin += sizeof(ret);
     return ret;
 }
@@ -503,7 +516,14 @@ void Io_Stream_putib(Io_Stream self, Int integer) {
     if (self->status != Io_StreamStatus_OK) {
         return;
     }
-    *(Int*)(buf->data+buf->end) = htonll(integer);
+    buf->data[buf->end+0] = integer >> 0; // LSB first
+    buf->data[buf->end+1] = integer >> 8;
+    buf->data[buf->end+2] = integer >> 16;
+    buf->data[buf->end+3] = integer >> 24;
+    buf->data[buf->end+4] = integer >> 32;
+    buf->data[buf->end+5] = integer >> 40;
+    buf->data[buf->end+6] = integer >> 48;
+    buf->data[buf->end+7] = integer >> 56; // MSB last
     buf->end += sizeof(integer);
 }
 
@@ -514,7 +534,7 @@ void Io_Stream_putfb(Io_Stream self, Float flt) {
     if (self->status != Io_StreamStatus_OK) {
         return;
     }
-    *(Float*)(buf->data+buf->end) = htonll(flt);
+    *(Float*)(buf->data+buf->end) = flt;
     buf->end += sizeof(flt);
 }
 

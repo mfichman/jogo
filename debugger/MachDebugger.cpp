@@ -42,12 +42,13 @@ MachDebugger::MachDebugger() : scratch_(0) {
     VMCHECK(mach_vm_allocate(mach_task_self(), &scratch_, slen_, flags));
 }
 
-MachDebugger~MachDebugger() {
+MachDebugger::~MachDebugger() {
     VMCHECK(mach_vm_deallocate(mach_task_self(), scratch_, slen_))
 }
 
 
 DebugAddr MachDebugger::symbol(String* name) {
+    return 0;
 }
 
 void MachDebugger::read(DebugAddr addr, char const* buf, int len) {

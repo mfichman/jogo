@@ -145,6 +145,31 @@ String < Object {
     empty?() Bool {
         ret self.len == 0
     }
+
+    findb(start Int, byte Byte) Int {
+        # Finds the first occurence of 'byte' starting at position 'start' in
+        # the string.
+        i mutable = start
+        while i < self.len {
+            if byte == self[i] {
+                ret i 
+            }
+            ++i
+        }
+        ret -1
+    }
+
+    contains(byte Byte) Bool {
+        # Returns true if the string contains the given byte
+        ret self.findb(0, byte) >= 0
+    }
+
+    split(byte Byte) StringSplitIter {
+        # Returns an iterator over substrings formed by splitting the string
+        # using the given byte.
+        ret StringSplitIter(self, byte)
+    }
+    
 }
 
 StringIter < Object {
@@ -173,6 +198,43 @@ StringIter < Object {
     }
 
     iter() StringIter {
+        ret self
+    }
+}
+
+StringSplitIter < Object {
+    # Returns a series of tokens as split by the given character
+
+    string private String
+    byte private Byte
+    index private = 0
+    last private = -1
+
+    @init(str String, pbyte Byte) {
+        string = str
+        byte = pbyte
+        index = string.findb(index, byte)
+    }
+
+    more?() Bool {
+        # Returns true if there are more tokens in the string
+        ret not not string
+    }
+
+    next() String {
+        # Returns the next token in the string
+        end = if index == -1 { string.len } else { index }
+        out = string.slice(last+1, end)
+        if index < 0 {
+            string = nil
+        } else {
+            last = index
+            index = string.findb(index+1, byte)
+        }
+        ret out
+    }
+
+    iter() StringSplitIter {
         ret self
     }
 }

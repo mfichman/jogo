@@ -30,7 +30,12 @@
 Environment::Ptr env = new Environment();
 ArgParser::Ptr argp;
 
+
+#ifdef WINDOWS
 Debugger::Ptr debugger = new WinDebugger();
+#else
+Debugger::Ptr debugger;
+#endif
 
 void parse_options() {
     // Parse command line options, and update the environment to match the 
