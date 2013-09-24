@@ -118,8 +118,8 @@ Instruction const& IrBlock::instr(int index, Instruction const& inst) {
 }
 
 
-Instruction const& IrBlock::instr(Opcode op, Operand res, Operand one, Operand two) {
-    instrs_.push_back(Instruction(op, res, one, two));
+Instruction const& IrBlock::instr(int line, Opcode op, Operand res, Operand one, Operand two) {
+    instrs_.push_back(Instruction(line, op, res, one, two));
     return instrs_.back();
 }
 
@@ -376,7 +376,8 @@ int RegisterIdSet::count() const {
     return count;
 }
 
-Instruction::Instruction(Opcode op, Operand res, Operand first, Operand sec) :
+Instruction::Instruction(int line, Opcode op, Operand res, Operand first, Operand sec) :
+    line_(line),
     opcode_(op),
     first_(first),
     second_(sec),

@@ -235,6 +235,7 @@ private:
     // Next temporary to use
     int temp_;
     int label_;
+    int line_;
 
     friend class FuncMarshal;
     friend class FuncUnmarshal;

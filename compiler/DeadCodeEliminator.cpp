@@ -65,11 +65,11 @@ void DeadCodeEliminator::operator()(IrBlock* block) {
         RegisterIdSet const& out = instr.liveness()->out();
         
         if (instr.opcode() == MOV && instr.result() == instr.first()) {
-            block->instr(i, Instruction(NOP, Operand(), Operand(), Operand()));
+            block->instr(i, Instruction(instr.line(), NOP, Operand(), Operand(), Operand()));
             eliminated_++;
         } else if (!result || out.has(result)) {
         } else {
-            block->instr(i, Instruction(NOP, Operand(), Operand(), Operand()));
+            block->instr(i, Instruction(instr.line(), NOP, Operand(), Operand(), Operand()));
             eliminated_++;
         }
     }
