@@ -138,9 +138,8 @@ void Coff64Output::sym(String* label, SymType type) {
 
 void Coff64Output::line(int line) {
     // Output a line number at the current text section offset.
-    if (line == line_) {
-        return;
-    }
+    if (!env_->debug()) { return; } 
+    if (line <= line_ || !line) { return; }
     uint32_t const CV_BREAK_MASK = 0x80000000;
     line_ = line;
     CvLineNumber lineno;
@@ -152,6 +151,7 @@ void Coff64Output::line(int line) {
 
 void Coff64Output::file(File* file) {
     // Write the file into the object file in CV8 format.
+    if (!env_->debug()) { return; } 
     CvSourceFileInfo file_info;
     memset(&file_info, 0, sizeof(file_info));
     file_info.offset = 1; // Offset into file string table (emitted below)
@@ -182,7 +182,8 @@ void Coff64Output::file(File* file) {
 }
 
 void Coff64Output::function(String* name) {
-    // Add a new function
+    // Record the beginning of a new function for the debug section
+    if (!env_->debug()) { return; } 
     memset(&function_, 0, sizeof(function_));
     function_.header.type = CV_FUNCTION;
     function_.header.size += name->string().length()+1;
@@ -202,7 +203,8 @@ void Coff64Output::function(String* name) {
 }
 
 void Coff64Output::ret() {
-    // Finish the function
+    // Output debugging information for the current function
+    if (!env_->debug()) { return; } 
     std::string const& name = function_name_->string();
     function_.size = text_->bytes()-function_.offset;
     function_.offset = 0; // Filled in by relocation
@@ -241,7 +243,8 @@ void Coff64Output::ret() {
 }
 
 void Coff64Output::write_debug_line_numbers() {
-    // Line numbers
+    // Output line numbers for the current function.
+    if (!env_->debug()) { return; } 
     CvLineNumbers lineno;
     memset(&lineno, 0, sizeof(lineno));
     lineno.offset = 0; // Fixed by relocations
@@ -304,16 +307,12 @@ void Coff64Output::out(Stream* out) {
     header.Characteristics = 0;
 
     memcpy(text.Name, ".text", sizeof(text.Name));
-    text.Misc.VirtualSize = 0; // Not valid for object files
-    text.VirtualAddress = 0;
     text.PointerToRawData = offset;
     text.SizeOfRawData = text_->bytes();
     offset += text.SizeOfRawData;
     text.PointerToRelocations = offset;
     text.NumberOfRelocations = text_reloc_.size();
     offset += text.NumberOfRelocations * sizeof(text_reloc_.front());
-    text.PointerToLinenumbers = 0;
-    text.NumberOfLinenumbers = 0;
     text.Characteristics = 0;
     text.Characteristics |= IMAGE_SCN_MEM_EXECUTE;
     text.Characteristics |= IMAGE_SCN_MEM_READ;
@@ -321,16 +320,12 @@ void Coff64Output::out(Stream* out) {
     text.Characteristics |= IMAGE_SCN_ALIGN_16BYTES;
 
     memcpy(data.Name, ".data", sizeof(data.Name));
-    data.Misc.VirtualSize = 0; // Not valid
-    data.VirtualAddress = 0;
     data.PointerToRawData = offset;
     data.SizeOfRawData = data_->bytes();
     offset += data.SizeOfRawData;
     data.PointerToRelocations = offset;
     data.NumberOfRelocations = data_reloc_.size();
     offset += data.NumberOfRelocations * sizeof(data_reloc_.front());
-    data.PointerToLinenumbers = 0;
-    data.NumberOfLinenumbers = 0;
     data.Characteristics = 0;
     data.Characteristics |= IMAGE_SCN_MEM_READ;
     data.Characteristics |= IMAGE_SCN_MEM_WRITE;
@@ -339,16 +334,12 @@ void Coff64Output::out(Stream* out) {
 
     if (env_->debug()) {
         memcpy(debugS.Name, ".debug$S", sizeof(debugS.Name));
-        debugS.Misc.VirtualSize = 0;
-        debugS.VirtualAddress = 0;
         debugS.PointerToRawData = offset;
         debugS.SizeOfRawData = debug_->bytes();
         offset += debugS.SizeOfRawData;
         debugS.PointerToRelocations = offset;
         debugS.NumberOfRelocations = debug_reloc_.size();
         offset += debugS.NumberOfRelocations * sizeof(debug_reloc_.front());
-        debugS.PointerToLinenumbers = 0;
-        debugS.NumberOfLinenumbers = 0;
         debugS.Characteristics = 0;
         debugS.Characteristics |= IMAGE_SCN_MEM_READ;
         debugS.Characteristics |= IMAGE_SCN_MEM_DISCARDABLE;
