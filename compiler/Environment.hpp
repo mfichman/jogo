@@ -74,6 +74,7 @@ public:
     std::string const& entry_module() const { return entry_module_; }
     std::string const& generator() const { return generator_; }
     bool make() const { return make_; }
+    bool debug() const { return debug_; }
     bool optimize() const { return optimize_; }
     bool link() const { return link_; }
     bool assemble() const { return assemble_; }
@@ -107,6 +108,7 @@ public:
     void dump_lex(bool dump) { dump_lex_ = dump; }
     void verbose(bool verbose) { verbose_ = verbose; }
     void make(bool make) { make_ = make; }
+    void debug(bool debug) { debug_ = debug; }
     void optimize(bool optimize) { optimize_ = optimize; }
     void link(bool link) { link_ = link; }
     void assemble(bool assemble) { assemble_ = assemble; }
@@ -196,6 +198,7 @@ private:
     bool dump_regalloc_;
     bool dump_reggraph_;
     bool make_;
+    bool debug_;
     bool optimize_;
     bool link_;
     bool assemble_;

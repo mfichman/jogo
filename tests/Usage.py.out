@@ -5,6 +5,7 @@ Compiles Jogo source files into a library or executable.
    -a, --assembly       Compile, but do not assemble or link.
    -c, --compile        Compile and assemble, but do not link.
    -e, --execute        Execute program as a script.
+   -d, --debug          Emit debug information.
    -l, --library LIB    Compile and link with native library LIB.
    -i, --include DIR    Add the directory DIR to the search path.
    -o, --output FILE    Write compiler output to FILE.
@@ -27,6 +28,7 @@ Compiles Jogo source files into a library or executable.
    -a, --assembly       Compile, but do not assemble or link.
    -c, --compile        Compile and assemble, but do not link.
    -e, --execute        Execute program as a script.
+   -d, --debug          Emit debug information.
    -l, --library LIB    Compile and link with native library LIB.
    -i, --include DIR    Add the directory DIR to the search path.
    -o, --output FILE    Write compiler output to FILE.

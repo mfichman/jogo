@@ -30,6 +30,7 @@
 #define stat _stat
 #define S_ISDIR(x) ((x) & _S_IFDIR)
 #define S_ISREG(x) ((x) & _S_IFREG)
+#include <direct.h>
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -247,6 +248,10 @@ std::string File::dir_name(const std::string& file) {
     }
 }
 
+String* File::full_path() const {
+    return env_->string(cwd()+FILE_SEPARATOR_STR+path_->string());
+}
+
 bool File::mkdir(const std::string& file) {
     // Recursively makes all directories in the path specified by 'file'.
 
@@ -313,3 +318,12 @@ File::Iterator::operator bool() const {
 #endif
 }
 
+std::string File::cwd() {
+    char buf[8192];
+#ifdef WINDOWS
+    _getcwd(buf, sizeof(buf));
+#else
+    getcwd(buf, sizeof(buf));
+#endif
+    return std::string(buf);
+}

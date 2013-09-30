@@ -1,0 +1,128 @@
+  00000000: 04 00 00 00 F1 00 00 00 59 00 00 00 1B 00 01 11  ....ס...Y.......
+  00000010: 00 00 00 00 44 3A 5C 43 6F 64 65 5C 6A 6F 67 6F  ....D:\Code\jogo
+  00000020: 5C 62 6F 62 2E 6F 62 6A 00 3A 00 3C 11 00 60 00  \bob.obj.:.<..`.
+  00000030: 00 D0 00 11 00 00 00 27 C6 01 00 11 00 00 00 27  .׀.....'ֶ......'
+  00000040: C6 01 00 4D 69 63 72 6F 73 6F 66 74 20 28 52 29  ֶ..Microsoft (R)
+  00000050: 20 4F 70 74 69 6D 69 7A 69 6E 67 20 43 6F 6D 70   Optimizing Comp
+  00000060: 69 6C 65 72 00 00 00 00 F1 00 00 00 4E 00 00 00  iler....ס...N...
+  00000070: 2A 00 47 11 00 00 00 00 00 00 00 00 00 00 00 00  *.G.............
+  00000080: 03 00 00 00 00 00 00 00 02 00 00 00 02 10 00 00  ................
+  00000090: 00 00 00 00 00 00 00 6D 61 69 6E 00 1C 00 12 10  .......main.....
+  000000A0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+  000000B0: 00 00 00 00 00 00 00 42 01 00 02 00 4F 11 00 00  .......B....O...
+  000000C0: F2 00 00 00 30 00 00 00 00 00 00 00 00 00 00 00  ע...0...........
+  000000D0: 03 00 00 00 00 00 00 00 03 00 00 00 24 00 00 00  ............$...
+  000000E0: 00 00 00 00 16 00 00 80 00 00 00 00 17 00 00 80  ................
+  000000F0: 02 00 00 00 18 00 00 80 F4 00 00 00 18 00 00 00  ........פ.......
+  00000100: 01 00 00 00 10 01 E3 44 82 F1 FE 99 F7 FA 5B 47  ......דD.ס‏.קת[G
+  00000110: 7B 83 AB D1 84 49 00 00 F3 00 00 00 14 00 00 00  {.«ׁ.I..ף.......
+  00000120: 00 64 3A 5C 63 6F 64 65 5C 6A 6F 67 6F 5C 62 6F  .d:\code\jogo\bo
+  00000130: 62 2E 63 00 F1 00 00 00 08 00 00 00 06 00 4C 11  b.c.ס.........L.
+  00000140: 08 10 00 00                                      ....
+
+version = 04 00 00 00 
+
+type = F1 00 00 00 (symbol information) (NOT MANDATORY)
+size = 59 00 00 00 
+
+    size = 1B 00 (27)
+    type = 01 11 (object file)
+    signature = 00 00 00 00 
+    name = 44 3A 5C 43 6F 64 65 5C 6A 6F 67 6F 5C 62 6F 62 2E 6F 62 6A 00 
+    (size ok)
+
+    size = 3A 00 (58)
+    type = 3C 11 (?) (creator signature? 0x1116, 0x0001)
+    00 60 
+    00 00 
+    D0 00 
+    11 00 00 00 
+    27 C6 
+    01 00 
+    11 00 00 00 
+    27 C6 
+    01 00 
+    string = 4D 69 63 72 6F 73 6F 66 74 20 28 52 29 20 4F 70 74 69 6D 69 7A 69 6E 67 20 43 6F 6D 70 69 6C 65 72 00 
+    (Microsoft Optimizing Compiler...)
+    pad = 00 00 00 
+
+type = F1 00 00 00 (symbol information) 
+size = 4E 00 00 00 (78)
+
+    size = 2A 00 (42)
+    type = 47 11 (?) (global procedure?)
+    parent = 00 00 00 00 
+    pend = 00 00 00 00 
+    pnext = 00 00 00 00
+    size = 03 00 00 00 
+    prolog = 00 00 00 00 
+    epilog = 02 00 00 00 
+    type = 02 10 00 00 
+    offset = 00 00 00 00 => SECREL relocation (symbol=main)
+    section = 00 00 => SECTION relocation (symbol=main)
+    flags = 00 
+    string = 6D 61 69 6E 00 (main)
+    (size ok)
+
+    size = 1C 00 (28)
+    type = 12 10 (?) (function return?) (NOT MANDATORY)
+    00 00 00 00 
+    00 00 00 00 
+    00 00 00 00 
+    00 00 00 00
+    00 00 00 00 
+    00 00 00 42 
+    01 00 
+    (size ok)
+
+    size = 02 00  (NOT MANDATORY?)
+    type = 4F 11 (?) (end of block? _, 0x0006)
+
+    pad = 00 00 
+
+type = F2 00 00 00 (line numbers)
+size = 30 00 00 00 (48)
+offset = 00 00 00 00 => SECREL relocation (symbol=main)
+section = 00 00 => SECTION relocation (symbol=main)
+(?) 00 00
+section_size? = 03 00 
+(?) = 00 00 
+sourcefile = 00 00 00 00 
+linenos = 03 00 00 00 
+linenos_bytes = 24 00 00 00
+  
+    offset = 00 00 00 00 
+    line = 16 00 00 80 
+    
+    offset = 00 00 00 00 
+    line = 17 00 00 80 
+  
+    offset =  02 00 00 00 
+    line = 18 00 00 80 
+    (size ok)
+
+type = F4 00 00 00 (source file info) 
+size = 18 00 00 00 (24)
+offset = 01 00 00 00 
+mode = 10 01 (use checksum) (NOT MANDATORY)
+checksum = E3 44 82 F1 FE 99 F7 FA 5B 47 7B 83 AB D1 84 49 
+pad = 00 00 
+(size ok)
+
+type = F3 00 00 00 (source file strings) * 
+size = 14 00 00 00 (20)
+ 
+    str0 = 00 
+    str1 = 64 3A 5C 63 6F 64 65 5C 6A 6F 67 6F 5C 62 6F 62 2E 63 00 
+    (size ok)
+
+type = F1 00 00 00 (NOT MANDATORY)
+size = 08 00 00 00 (8)
+
+    size = 06 00 
+    type = 4C 11 (?) ()
+    08 
+    10 
+    00 
+    00
+

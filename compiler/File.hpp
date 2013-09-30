@@ -63,6 +63,7 @@ public:
     Import* import(String* name) const { return query(import_, name); }
     String* name() const { return name_; }
     String* path() const { return path_; }
+    String* full_path() const;
     Import::Itr imports() const { return Import::Itr(import_); }
     Feature::Itr features() const { return Feature::Itr(feature_); }
     Constant::Itr constants() const { return Constant::Itr(constant_); }
@@ -96,6 +97,7 @@ public:
     static std::string dir_name(const std::string& file);
     static bool mkdir(const std::string& file);
     static time_t mtime(const std::string& file);
+    static std::string cwd();
 
 private:
     String::Ptr name_;

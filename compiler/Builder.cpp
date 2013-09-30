@@ -336,11 +336,11 @@ void Builder::link(const std::string& in, const std::string& out) {
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << vcvarsall_ << " > NUL && ";
-    ss << "link.exe /SUBSYSTEM:console /NOLOGO /MACHINE:X64 ";
+    ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:X64 /ENTRY:Boot_main ";
 #elif defined(LINUX)
-    ss << "gcc -m64 ";
+    ss << "gcc -m64 -Wl,-eBoot_main";
 #elif defined(DARWIN)
-    ss << "gcc -Wl,-no_pie -framework OpenGL -framework GLUT -framework Cocoa ";
+    ss << "gcc -Wl,-no_pie -Wl,-eBoot_main -framework OpenGL -framework GLUT -framework Cocoa ";
 #endif
     env_->entry_module(out);
 
@@ -525,10 +525,11 @@ void Builder::intel64gen(File* file) {
 #if defined(DARWIN)
     OutputFormat::Ptr format(new Mach64Output);
 #elif defined(WINDOWS)
-    OutputFormat::Ptr format(new Coff64Output);
+    OutputFormat::Ptr format(new Coff64Output(env_));
 #elif defined(LINUX)
     OutputFormat::Ptr format(new Elf64Output);
 #endif
+    format->file(file);
     intel64gen->format(format);
     intel64gen->operator()(file);
 }
@@ -538,7 +539,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << vcvarsall_ << " > NUL && ";
-    ss << "cl.exe " << in << " /MD /nologo /Zi /c /Fo\"" << out << "\"";
+    ss << "cl.exe " << in << " /MD /nologo /Z7 /c /Fo\"" << out << "\"";
     if (env_->optimize()) {
         ss << " /O2";
     } 
