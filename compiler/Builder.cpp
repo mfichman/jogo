@@ -336,7 +336,8 @@ void Builder::link(const std::string& in, const std::string& out) {
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << vcvarsall_ << " > NUL && ";
-    ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:X64 /ENTRY:Boot_main ";
+    ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:X64 /ENTRY:Boot_main /INCREMENTAL:no ";
+    // N.B.: Incremental linking is not supported
 #elif defined(LINUX)
     ss << "gcc -m64 -Wl,-eBoot_main";
 #elif defined(DARWIN)
@@ -539,7 +540,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << vcvarsall_ << " > NUL && ";
-    ss << "cl.exe " << in << " /MD /nologo /Z7 /c /Fo\"" << out << "\"";
+    ss << "cl.exe " << in << " /MD /nologo /c /Fo\"" << out << "\"";
     if (env_->optimize()) {
         ss << " /O2";
     } 

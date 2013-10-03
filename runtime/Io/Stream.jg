@@ -135,9 +135,9 @@ Stream < Object {
         # Reads an int from the stream in binary format.
     }
 
-    getfb() native Float {
+    #getfb() native Float {
         # Reads a float from the stream in binary format.
-    }
+    #}
 
     getsb() native String {
         # Reads a string from the stream in binary format.
@@ -156,9 +156,9 @@ Stream < Object {
         # Writes an int to the stream in binary format.
     }
         
-    putfb(float Float) native {
+    #putfb(float Float) native {
         # Writes a float to the stream in binary format.
-    }
+    #}
 
     putsb(string String) native {
         # Writes a string to the stream in binary format.

@@ -29,16 +29,27 @@
 
 Coff64Output::Coff64Output(Environment* env) :
     env_(env),
-    text_(new Section),
-    data_(new Section),
-    string_(new Section),
-    debug_(new Section),
+    text_(section(".text")),
+    data_(section(".data")),
+    debug_(env->debug() ? section(".debug$S") : 0),
+    //types_(env->debug() ? section(".debug$T") : 0),
+    string_(new Coff64Section("string", 0)),
     line_(-1) {
+
+    text_->flags(IMAGE_SCN_MEM_EXECUTE|IMAGE_SCN_MEM_READ|IMAGE_SCN_CNT_CODE|IMAGE_SCN_ALIGN_16BYTES);
+    data_->flags(IMAGE_SCN_MEM_READ|IMAGE_SCN_MEM_WRITE|IMAGE_SCN_CNT_INITIALIZED_DATA|IMAGE_SCN_ALIGN_1BYTES);
+    if (env->debug()) {
+        debug_->flags(IMAGE_SCN_MEM_READ|IMAGE_SCN_MEM_DISCARDABLE|IMAGE_SCN_CNT_INITIALIZED_DATA|IMAGE_SCN_ALIGN_1BYTES);
+        //types_->flags(IMAGE_SCN_MEM_READ|IMAGE_SCN_MEM_DISCARDABLE|IMAGE_SCN_CNT_INITIALIZED_DATA|IMAGE_SCN_ALIGN_1BYTES);
+
+        uint32_t const cv_version = 4;
+        debug_->uint32(cv_version);
+        //types_->uint32(cv_version);
+    }
     
     string_->uint8(0); // First string is always the empty string
 
-    uint32_t const cv_version = 4;
-    debug_->uint32(cv_version);
+
 }
 
 void Coff64Output::ref(String* label, RelocType rtype) {
@@ -77,20 +88,20 @@ void Coff64Output::ref(String* label, RelocType rtype) {
     if (REF_TEXT == rtype) {
         reloc.VirtualAddress = text_->bytes();
         reloc.Type = IMAGE_REL_AMD64_ADDR64;
-        text_reloc_.push_back(reloc);
+        text_->reloc(reloc);
     } else if (REF_DATA == rtype || REF_VTABLE == rtype) {
         reloc.VirtualAddress = data_->bytes();
         reloc.Type = IMAGE_REL_AMD64_ADDR64;
-        data_reloc_.push_back(reloc);
+        data_->reloc(reloc);
     } else if (REF_BRANCH == rtype || REF_CALL == rtype) {
         reloc.VirtualAddress = text_->bytes();
         reloc.Type = IMAGE_REL_AMD64_REL32;
         // FixMe: This may be incorrect; relative to the RIP
-        text_reloc_.push_back(reloc);
+        text_->reloc(reloc);
     } else if (REF_SIGNED == rtype) {
         reloc.VirtualAddress = text_->bytes();
         reloc.Type = IMAGE_REL_AMD64_REL32;
-        text_reloc_.push_back(reloc);
+        text_->reloc(reloc);
     } else {
         assert(!"Unknown ref type");
     }
@@ -116,7 +127,7 @@ void Coff64Output::sym(String* label, SymType type) {
     }
     if (type & SYM_TEXT) {
         sym->Value = text_->bytes();
-        sym->SectionNumber = OUT_SECT_TEXT;
+        sym->SectionNumber = text_->id();
         if (type & SYM_LOCAL) {
             sym->Type = IMAGE_SYM_DTYPE_NULL << 8;
         } else {
@@ -124,7 +135,7 @@ void Coff64Output::sym(String* label, SymType type) {
         }
     } else if (type & SYM_DATA) {
         sym->Value = data_->bytes();
-        sym->SectionNumber = OUT_SECT_DATA;
+        sym->SectionNumber = data_->id();
         sym->Type = IMAGE_SYM_DTYPE_NULL << 8;
     } else {
         assert(!"Unknown section type");
@@ -176,7 +187,7 @@ void Coff64Output::file(File* file) {
     header.size = align(header.size, sizeof(uint32_t));
     
     debug_->buffer((char*)&header, sizeof(header));
-    debug_->uint8(0);  // NUL string
+    debug_->uint8(0);  // Null string
     debug_->buffer(path.c_str(), path.length()+1); 
     debug_->align(sizeof(uint32_t));
 }
@@ -184,6 +195,7 @@ void Coff64Output::file(File* file) {
 void Coff64Output::function(String* name) {
     // Record the beginning of a new function for the debug section
     if (!env_->debug()) { return; } 
+    line_ = 0;
     memset(&function_, 0, sizeof(function_));
     function_.header.type = CV_FUNCTION;
     function_.header.size += name->string().length()+1;
@@ -194,7 +206,7 @@ void Coff64Output::function(String* name) {
     function_.pnext = 0;
     function_.prolog_offset = 0;
     function_.epilog_offset = 0;
-    function_.type = 0; // FixMe
+    function_.type = 0x1002;//0x0000; // VOID  LABEL(!) FixMe
     function_.offset = text_->bytes(); 
     function_.section = 0; // Filled in by relocation
     function_.flags = 0;
@@ -207,6 +219,7 @@ void Coff64Output::ret() {
     if (!env_->debug()) { return; } 
     std::string const& name = function_name_->string();
     function_.size = text_->bytes()-function_.offset;
+    function_.epilog_offset = text_->bytes()-function_.offset;
     function_.offset = 0; // Filled in by relocation
     // Note: this is a bit of a hack, b/c we use the offset field to
     // temporarily store the pointer to the beginning of the function so that
@@ -231,8 +244,8 @@ void Coff64Output::ret() {
     uint32_t offset_addr = debug_->bytes()+(char*)&function_.offset-(char*)&function_;
     uint32_t section_addr = debug_->bytes()+(char*)&function_.section-(char*)&function_;
 
-    debug_reloc_.push_back(reloc(offset_addr, function_name_, IMAGE_REL_AMD64_SECREL));
-    debug_reloc_.push_back(reloc(section_addr, function_name_, IMAGE_REL_AMD64_SECTION));
+    debug_->reloc(reloc(offset_addr, function_name_, IMAGE_REL_AMD64_SECREL));
+    debug_->reloc(reloc(section_addr, function_name_, IMAGE_REL_AMD64_SECTION));
 
     debug_->buffer((char*)&function_, sizeof(function_));
     debug_->buffer(name.c_str(), name.size()+1);
@@ -267,8 +280,8 @@ void Coff64Output::write_debug_line_numbers() {
     uint32_t offset_addr = debug_->bytes()+(char*)&lineno.offset-(char*)&lineno;
     uint32_t section_addr = debug_->bytes()+(char*)&lineno.section-(char*)&lineno;
 
-    debug_reloc_.push_back(reloc(offset_addr, function_name_, IMAGE_REL_AMD64_SECREL));
-    debug_reloc_.push_back(reloc(section_addr, function_name_, IMAGE_REL_AMD64_SECTION));
+    debug_->reloc(reloc(offset_addr, function_name_, IMAGE_REL_AMD64_SECREL));
+    debug_->reloc(reloc(section_addr, function_name_, IMAGE_REL_AMD64_SECTION));
 
     debug_->buffer((char*)&lineno, sizeof(lineno)); 
     debug_->buffer((char*)&lineno_.front(), lineno_.size()*sizeof(lineno_.front()));
@@ -279,95 +292,52 @@ void Coff64Output::write_debug_line_numbers() {
 
 void Coff64Output::out(Stream* out) {
     // Writes out the full text of the object file format to the given stream.
-    IMAGE_FILE_HEADER header;
-    IMAGE_SECTION_HEADER text;
-    IMAGE_SECTION_HEADER data;
-    IMAGE_SECTION_HEADER debugS;
-    
-    memset(&header, 0, sizeof(header));
-    memset(&text, 0, sizeof(text));
-    memset(&data, 0, sizeof(data));
-    memset(&debugS, 0, sizeof(debugS));
-
-    size_t metadata_bytes = sizeof(header)+sizeof(text)+sizeof(data);
-    if (env_->debug()) {
-        metadata_bytes += sizeof(debugS);
-    }
-    size_t offset = metadata_bytes;
 
     // Header
+    IMAGE_FILE_HEADER header;
+    memset(&header, 0, sizeof(header));
     header.Machine = IMAGE_FILE_MACHINE_AMD64;
-    header.NumberOfSections = 2;
-    if (env_->debug()) {
-        header.NumberOfSections++;
-    }
     header.TimeDateStamp = time(0);
     header.NumberOfSymbols = sym_.size();
     header.SizeOfOptionalHeader = 0;
     header.Characteristics = 0;
 
-    memcpy(text.Name, ".text", sizeof(text.Name));
-    text.PointerToRawData = offset;
-    text.SizeOfRawData = text_->bytes();
-    offset += text.SizeOfRawData;
-    text.PointerToRelocations = offset;
-    text.NumberOfRelocations = text_reloc_.size();
-    offset += text.NumberOfRelocations * sizeof(text_reloc_.front());
-    text.Characteristics = 0;
-    text.Characteristics |= IMAGE_SCN_MEM_EXECUTE;
-    text.Characteristics |= IMAGE_SCN_MEM_READ;
-    text.Characteristics |= IMAGE_SCN_CNT_CODE;
-    text.Characteristics |= IMAGE_SCN_ALIGN_16BYTES;
-
-    memcpy(data.Name, ".data", sizeof(data.Name));
-    data.PointerToRawData = offset;
-    data.SizeOfRawData = data_->bytes();
-    offset += data.SizeOfRawData;
-    data.PointerToRelocations = offset;
-    data.NumberOfRelocations = data_reloc_.size();
-    offset += data.NumberOfRelocations * sizeof(data_reloc_.front());
-    data.Characteristics = 0;
-    data.Characteristics |= IMAGE_SCN_MEM_READ;
-    data.Characteristics |= IMAGE_SCN_MEM_WRITE;
-    data.Characteristics |= IMAGE_SCN_CNT_INITIALIZED_DATA;
-    data.Characteristics |= IMAGE_SCN_ALIGN_1BYTES;
-
-    if (env_->debug()) {
-        memcpy(debugS.Name, ".debug$S", sizeof(debugS.Name));
-        debugS.PointerToRawData = offset;
-        debugS.SizeOfRawData = debug_->bytes();
-        offset += debugS.SizeOfRawData;
-        debugS.PointerToRelocations = offset;
-        debugS.NumberOfRelocations = debug_reloc_.size();
-        offset += debugS.NumberOfRelocations * sizeof(debug_reloc_.front());
-        debugS.Characteristics = 0;
-        debugS.Characteristics |= IMAGE_SCN_MEM_READ;
-        debugS.Characteristics |= IMAGE_SCN_MEM_DISCARDABLE;
-        debugS.Characteristics |= IMAGE_SCN_CNT_INITIALIZED_DATA;
-        debugS.Characteristics |= IMAGE_SCN_ALIGN_1BYTES;
+    size_t offset = sizeof(header);
+    for (size_t i = 0; i < section_.size(); ++i) {
+        Coff64Section::Ptr section = section_[i];
+        offset += sizeof(IMAGE_SECTION_HEADER);
+        header.NumberOfSections++;
     }
 
+    std::vector<IMAGE_SECTION_HEADER> headers;
+    for (size_t i = 0; i < section_.size(); ++i) {
+        Coff64Section::Ptr section = section_[i];
+        IMAGE_SECTION_HEADER sh;
+        memset(&sh, 0, sizeof(sh));
+        strncpy((char*)sh.Name, section->name().c_str(), sizeof(sh.Name));
+        sh.PointerToRawData = offset;
+        sh.SizeOfRawData = section->bytes();
+        offset += sh.SizeOfRawData;
+        sh.PointerToRelocations = offset;
+        sh.NumberOfRelocations = section->relocs();
+        offset += sh.NumberOfRelocations * sizeof(IMAGE_RELOCATION);
+        sh.Characteristics = section->flags();
+        headers.push_back(sh);
+    }
     header.PointerToSymbolTable = offset;
 
     // Write everything out
-    out->write((char*)&header, sizeof(header));
-    out->write((char*)&text, sizeof(text));
-    out->write((char*)&data, sizeof(data));
-    if (env_->debug()) {
-        out->write((char*)&debugS, sizeof(debugS));
+    out->write((char*)&header, sizeof(header)); 
+    for (size_t i = 0; i < headers.size(); ++i) {
+        IMAGE_SECTION_HEADER const& sh = headers[i];
+        out->write((char*)&sh, sizeof(sh));
     }
-    out->write((char*)text_->text(), text_->bytes());
-    if (text_reloc_.size()) {
-        out->write((char*)&text_reloc_.front(), text_reloc_.size()*sizeof(text_reloc_.front()));
-    }
-    out->write((char*)data_->text(), data_->bytes());
-    if (data_reloc_.size()) {
-        out->write((char*)&data_reloc_.front(), data_reloc_.size()*sizeof(data_reloc_.front()));
-    }
-    if (env_->debug()) {
-        out->write((char*)debug_->text(), debug_->bytes());
-        if (debug_reloc_.size()) {
-            out->write((char*)&debug_reloc_.front(), debug_reloc_.size()*sizeof(debug_reloc_.front()));
+    for (size_t i = 0; i < section_.size(); ++i) {
+        Coff64Section::Ptr section = section_[i];
+        out->write((char*)section->text(), section->bytes());
+        if (section->relocs()) {
+            size_t reloc_size = section->relocs() * sizeof(IMAGE_RELOCATION);
+            out->write((char*)section->reloc(), reloc_size);
         }
     }
     if (sym_.size()) {
@@ -385,6 +355,18 @@ IMAGE_RELOCATION Coff64Output::reloc(uint32_t addr, String* name, uint16_t type)
     reloc.SymbolTableIndex = symbol_.find(name)->second;
     reloc.Type = type;
     return reloc;
+}
+
+Coff64Section* Coff64Output::section(std::string const& name) {
+    // Returns the section if it already exists, or creates it otherwise
+    for (size_t i = 0; i < section_.size(); ++i) {
+        if (section_[i]->name() == name) {
+            return section_[i];
+        }
+    }
+    Coff64Section::Ptr section(new Coff64Section(name, section_.size()+1));
+    section_.push_back(section);
+    return section;
 }
 
 #endif

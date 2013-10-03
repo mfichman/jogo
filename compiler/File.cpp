@@ -318,6 +318,14 @@ File::Iterator::operator bool() const {
 #endif
 }
 
+void File::unlink(std::string const& name) {
+#ifdef WINDOWS
+    DeleteFile(name.c_str());
+#else
+    unlink(name.c_str());
+#endif
+}
+
 std::string File::cwd() {
     char buf[8192];
 #ifdef WINDOWS

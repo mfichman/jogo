@@ -30,15 +30,19 @@
 /* A sequence of machine code instructions/data corresponding to a section */
 class Section : public Object {
 public:
+    Section() : flags_(0) {}
     typedef Pointer<Section> Ptr;
     int bytes() const { return buffer_.size(); }
     uint8_t const* text() const { return buffer_.size() ? &buffer_.front() : 0; }
+    uint32_t flags() const { return flags_; }
     void uint64(uint64_t val);
     void uint32(uint32_t val);
     void uint16(uint16_t val);
     void uint8(uint8_t val);
     void buffer(void const* buf, int len);
     void align(int num, uint8_t fill=0);
+    void flags(uint32_t flags) { flags_ = flags; }
 private:
+    uint32_t flags_;
     std::vector<uint8_t> buffer_;
 };

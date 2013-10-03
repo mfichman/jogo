@@ -107,6 +107,22 @@ struct CvEndBlock {
     CvSymbolRecordHeader header;
 };
 
+class Coff64Section : public Section {
+public:
+    Coff64Section(std::string const& name, size_t id) : name_(name), id_(id) {}
+    std::string const& name() const { return name_; }
+    size_t id() const { return id_; }
+    size_t relocs() const { return reloc_.size(); }
+    char* reloc() const { return (char*)&reloc_.front(); }
+    void reloc(IMAGE_RELOCATION const& reloc) { reloc_.push_back(reloc); }
+
+    typedef Pointer<Coff64Section> Ptr;
+private:
+    std::string name_;
+    size_t id_;
+    std::vector<IMAGE_RELOCATION> reloc_; // Relocation table 
+};
+
 /* Helps output basic blocks in the COFF (with CodeView8 debug info) format */
 class Coff64Output : public OutputFormat {
 public:
@@ -124,6 +140,7 @@ public:
     void ret();
 
 public:
+    Coff64Section* section(std::string const& name);
     void write_debug_line_numbers();
     IMAGE_RELOCATION reloc(uint32_t addr, String* name, uint16_t type);
 
@@ -135,21 +152,17 @@ public:
     static int const CV_FUNCTION = 0x1147;
     static int const CV_END_BLOCK = 0x114F;
 
-    static int const OUT_SECT_TEXT = 1;
-    static int const OUT_SECT_DATA = 2;
-    static int const OUT_SECT_DEBUG = 3;
     Environment::Ptr env_;
-    Section::Ptr text_;
-    Section::Ptr data_;
-    Section::Ptr string_;
-    Section::Ptr debug_;
+    std::vector<Coff64Section::Ptr> section_;
+    Coff64Section::Ptr text_;
+    Coff64Section::Ptr data_;
+    Coff64Section::Ptr debug_;
+    Coff64Section::Ptr types_;
+    Coff64Section::Ptr string_;
     int line_;
 
     std::ofstream out_;
     std::vector<IMAGE_SYMBOL> sym_; // Symbol table
-    std::vector<IMAGE_RELOCATION> text_reloc_; // Relocation table 
-    std::vector<IMAGE_RELOCATION> data_reloc_; // Relocation table 
-    std::vector<IMAGE_RELOCATION> debug_reloc_; // Relocation table 
     std::map<String::Ptr,size_t> symbol_;
     std::vector<CvLineNumber> lineno_;
     CvFunction function_;
