@@ -32,6 +32,7 @@ ChanSet[:k,:a] < Object {
         for item in chan {
             out.put(Pair[:k,:a](key, item)) 
         }
+        Io::println("reader done")
     }
 
     chan(key :k, chan Chan[:a]) {

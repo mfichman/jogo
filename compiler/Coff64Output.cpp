@@ -172,7 +172,6 @@ void Coff64Output::file(File* file) {
     memset(&header, 0, sizeof(header));
     header.type = CV_SOURCE_FILE_INFO;
     header.size += sizeof(file_info);
-    header.size = align(header.size, sizeof(uint32_t));
 
     debug_->buffer((char*)&header, sizeof(header));
     debug_->buffer((char*)&file_info, sizeof(file_info));
@@ -184,7 +183,6 @@ void Coff64Output::file(File* file) {
     header.type = CV_SOURCE_FILE_STRINGS;
     header.size += 1; // For the null string
     header.size += path.length()+1;
-    header.size = align(header.size, sizeof(uint32_t));
     
     debug_->buffer((char*)&header, sizeof(header));
     debug_->uint8(0);  // Null string
@@ -237,7 +235,6 @@ void Coff64Output::ret() {
     header.size += sizeof(function_);
     header.size += name.size()+1; // For terminating NUL-byte
     header.size += sizeof(end);
-    header.size = align(header.size, sizeof(uint32_t));
 
     debug_->buffer((char*)&header, sizeof(header));
 
@@ -273,7 +270,6 @@ void Coff64Output::write_debug_line_numbers() {
     header.type = CV_LINE_NUMBERS;
     header.size += sizeof(lineno);
     header.size += lineno_.size()*sizeof(lineno_.front());
-    header.size = align(header.size, sizeof(uint32_t));
 
     debug_->buffer((char*)&header, sizeof(header)); 
 

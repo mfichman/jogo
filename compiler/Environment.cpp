@@ -192,7 +192,6 @@ void Environment::workspace_load() {
     }
     include("lib");
     include("src");
-    include("runtime");
     build_dir("build");
 }
 

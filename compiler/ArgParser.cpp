@@ -80,10 +80,12 @@ void ArgParser::print_usage() {
 }
 
 void ArgParser::print_version() {
-    std::cerr << env_->program_path() << " version " << VERSION;
-    std::cerr << ", compiled on " << __DATE__ << " " << __TIME__ << std::endl;
     if (env_->verbose()) {
+        std::cerr << env_->program_path() << " v" << VERSION;
+        std::cerr << ", compiled on " << __DATE__ << " " << __TIME__ << std::endl;
         std::cerr << BRANCH << ", " << REVISION << std::endl;
+    } else {
+        std::cerr << "v" << VERSION;
     }
 }
 

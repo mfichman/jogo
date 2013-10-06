@@ -334,7 +334,7 @@ bool Module::is_up_to_date() const {
     // source files have a later modification time than the output file.  Also,
     // check dependent packages as well to see if they need to be relinked.
     std::string out = function(env()->name("main")) ? exe_file() : lib_file();
-    File::Ptr libjogo = env()->file(env()->name("Jogo.jgi"));
+    File::Ptr libjogo = env()->file(env()->name(Module::jgi_file("Jogo")));
     for (int i = 0; i < files(); i++) {
         File::Ptr file = Module::file(i);
         std::string const& source = file->path()->string();
@@ -362,30 +362,62 @@ bool Module::is_up_to_date() const {
     return true;
 }
 
-std::string Module::lib_file() const {
+std::string Module::file_base() const { 
+    return file_base(name()->string()); 
+}
+
+std::string Module::lib_file() const { 
     std::string dir = env()->output() + FILE_SEPARATOR + "lib";
+    return dir + FILE_SEPARATOR + lib_file(name()->string()); 
+}
+
+std::string Module::exe_file() const { 
+    std::string dir = env()->output() + FILE_SEPARATOR + "bin";
+    return dir + FILE_SEPARATOR + exe_file(name()->string()); 
+}
+
+std::string Module::jgi_file() const { 
+    std::string dir = env()->output() + FILE_SEPARATOR + "lib";
+    return dir + FILE_SEPARATOR + jgi_file(name()->string()); 
+}
+
+std::string Module::file_base(std::string const& name) {
+    // The file name for a module is the module name, lower-cased, with all
+    // "::" substrings replaced by "-" (":" is not a valid file name character
+    // on Windows platforms)
+    std::string nm;
+    for (size_t i = 0; i < name.size(); ++i) {
+        if (name[i] == ':' && name[i+1] == ':') {
+            nm += '-';
+            ++i;
+        } else {
+            nm += tolower(name[i]);
+        }
+    }
+    return nm;
+}
+
+std::string Module::lib_file(std::string const& name) {
+    std::string nm = file_base(name);
 #ifdef WINDOWS
-    return dir + FILE_SEPARATOR + name()->string() + ".lib";
+    return nm + ".lib";
 #else
-    return dir + FILE_SEPARATOR + "lib" + name()->string() + ".a";
+    return "lib" + nm + ".a";
 #endif
 }
 
-std::string Module::exe_file() const {
-    std::string dir = env()->output() + FILE_SEPARATOR + "bin";
-    std::string nm = name()->string();
-    std::transform(nm.begin(), nm.end(), nm.begin(), ::tolower);
-    std::replace(nm.begin(), nm.end(), ':', '_');
+std::string Module::exe_file(std::string const& name) {
+    std::string nm = file_base(name);
 #ifdef WINDOWS
-    return dir + FILE_SEPARATOR + nm + ".exe";
+    return nm + ".exe";
 #else
-    return dir + FILE_SEPARATOR + nm;
+    return nm;
 #endif
 } 
 
-std::string Module::jgi_file() const {
-    std::string dir = env()->output() + FILE_SEPARATOR + "lib";
-    return dir + FILE_SEPARATOR + name()->string() + ".jgi";
+std::string Module::jgi_file(std::string const& name) {
+    std::string nm = file_base(name);
+    return nm + ".jgi";
 }   
 
 Class* Feature::clazz(String* name) const {

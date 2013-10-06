@@ -185,7 +185,7 @@ void Builder::monolithic_build() {
             }
         }
 #ifdef WINDOWS
-        std::string lib = env_->output()+".lib";
+        std::string lib = env_->output() + ".lib";
 #else
         std::string dir = File::dir_name(env_->output());
         std::string out = File::base_name(env_->output());
@@ -213,7 +213,7 @@ void Builder::modular_build() {
             Stream::sterr()->flush();
             errors_++;
         } else if (!m->is_exe()) {
-            env_->lib(m->name()->string());
+            env_->lib(Module::file_base(m->name()->string()));
             m(this);
         }
     }
@@ -345,11 +345,6 @@ void Builder::link(const std::string& in, const std::string& out) {
 #endif
     env_->entry_module(out);
 
-    // Link the main() routine, which is custom-generated for each linked
-    // executable.
-    std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.jg";
-    File::Ptr mf = env_->file(env_->name(main));
-    operator()(mf);
     procs_.wait();
 
 #ifdef WINDOWS
@@ -369,11 +364,10 @@ void Builder::link(const std::string& in, const std::string& out) {
         ss << "-l" << env_->lib(i) << " ";
     }
 #endif
-    ss << mf->jgo_file() << " ";
 
     // Output link options for libraries and module dependencies.
 #ifdef WINDOWS
-    ss << in << " /DEBUG /OUT:" << out;
+    ss << in << " /OUT:" << out;
 #else
     ss << in << "-o " << out << " ";
     // Dependencies must be linked after the dependent .o files.  Linux gcc is
@@ -540,7 +534,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << vcvarsall_ << " > NUL && ";
-    ss << "cl.exe " << in << " /MD /nologo /c /Fo\"" << out << "\"";
+    ss << "cl.exe " << in << " /Z7 /MD /nologo /c /Fo\"" << out << "\"";
     if (env_->optimize()) {
         ss << " /O2";
     } 
