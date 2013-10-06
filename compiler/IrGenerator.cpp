@@ -775,9 +775,14 @@ void IrGenerator::operator()(Fork* statement) {
     assert(!"Not implemented");
 }
 
-void IrGenerator::operator()(Yield* statament) {
+void IrGenerator::operator()(Yield* statement) {
     FuncMarshal fm(this);
-    fm.call(Operand(env_->name("Coroutine__yield")));
+    Location loc = statement->location();
+    std::string file = loc.file ? loc.file->path()->string() : "?";
+    std::string line = stringify(loc.first_line);
+    String::Ptr str = env_->string(file+":"+line);
+    fm.arg(load(Operand(new StringLiteral(Location(), str))));
+    fm.call(Operand(env_->name("Coroutine__yield_with_msg")));
 	exception_catch();
 }
 

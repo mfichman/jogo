@@ -121,6 +121,7 @@ Array[:a] < Object {
     pop() :a {
         # Removes the element at the end of the array, and reduces the count.
         element = self[count-1]
+        self[count-1] = nil
         count = count-1
         ret element
     }

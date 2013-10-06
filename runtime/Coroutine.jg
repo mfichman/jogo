@@ -1,4 +1,4 @@
-# Copyright (c) 2010 Matt Fichman
+
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,20 @@ Coroutine < Object {
     # Returns the current stack size of the coroutine.  This value can grow
     # over time.
 
+    yield_loc mutable String
+    # A description of the location where the coroutine has yielded.  Usually,
+    # the compiler automatically sets this to the source file location (line
+    # number and source file) where the coroutine yielded.  However, if the
+    # coroutine is blocked on I/O, this string will be set to "I/O" and if the
+    # coroutine yields from C, the yield_loc must be set by the C code that
+    # calls yield.
+
+    sp private Int
+    # Coroutine stack pointer
+
+    index private Int
+    # Used to keep track of the coroutine in the global coroutine list
+
     @init(start CoroutineFunc) native {
         # Initializes a new coroutine, but does not begin executing it.  The
         # coroutine will execute 'start' the first time it is run.
@@ -66,6 +80,10 @@ Coroutine < Object {
         # coroutine is dead, then this function has no effect.  Otherwise, the
         # execution resumes from the last yield.
     }
+
+    dump() native {
+        # Dumps info about the coroutines current state
+    }
 }
 
 CoroutineFunc < Interface {
@@ -76,4 +94,14 @@ CoroutineFunc < Interface {
 
 coroutine() native Coroutine {
     # Returns the current coroutine
+}
+
+coroutines() native Array[Coroutine] {
+    # Returns a list of all coroutines
+}
+
+dump_all_coroutines() {
+    for c in coroutines() {
+        c.dump()
+    }
 }

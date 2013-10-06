@@ -32,6 +32,7 @@
 #endif
 
 #include "Primitives.h"
+#include "Array.h"
 
 typedef struct CoroutineStack* CoroutineStack;
 struct CoroutineStack {
@@ -47,24 +48,31 @@ extern Int CoroutineStatus_IO;
 typedef struct Coroutine* Coroutine;
 struct Coroutine {
     VoidPtr _vtable; // 0
-    U64 _refcount; // 8
+    Int _refcount; // 8
     Object function;  //16
     Int status; // 24
+    Int stack_size; // 32
+    String yield_loc; // 40 
 
     // NOTE: If the offset of this field changes, the assembly in
     // Coroutine*.asm must be modified accordingly. 
-    Int sp; // 32 
+    Int sp; // 48
 
-    Coroutine caller; // 40
-    CoroutineStack stack; // 48
+    Int index;
+
+    Coroutine caller; 
+    CoroutineStack stack; 
     U64 stack_end;
 };
 
 Coroutine Coroutine__init(Object function);
 void Coroutine_resume(Coroutine self); 
+void Coroutine_dump(Coroutine self);
+void Coroutine_yield_loc__s(Coroutine self, String msg);
 void Coroutine__start(Coroutine self);
 void Coroutine__swap(Coroutine from, Coroutine to);
 void Coroutine__yield();
+void Coroutine__yield_with_msg(String msg);
 void Coroutine__exit();
 void Coroutine__call(Coroutine self);
 void Coroutine__iowait();
@@ -73,6 +81,7 @@ void Coroutine__commit_page(Coroutine self, U64 addr);
 void Coroutine__set_signals();
 extern void Coroutine__vtable();
 CoroutineStack CoroutineStack__init();
+Array coroutines();
 
 extern Coroutine Coroutine__current;
 extern struct Coroutine Coroutine__main;

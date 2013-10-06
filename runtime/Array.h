@@ -37,7 +37,11 @@ struct Array {
 Array Array__init(Int capacity);
 void Array__destroy(Array self);
 Object Array__index(Array self, Int index);
+Object Array_pop(Array self);
+Object Array_last__g(Array self);
 void Array__insert(Array self, Int index, Object obj);
+void Array_push(Array self, Object obj);
+Int Array_count__g(Array self);
 extern void Array__vtable();
 
 #endif

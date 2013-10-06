@@ -14,6 +14,7 @@ main() Int {
         stdout.println('connecting')
         sd = Socket::connect('localhost', ls.addr.port)
         sd.print('hello from client\n')
+        sd.flush()
         sd.end()
         stdout.pipe(sd.stream)
         stdout.println('connected')

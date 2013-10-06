@@ -21,7 +21,9 @@
 
 default rel
 
-%define RSP_OFFSET 32; Stack pointer
+%define RSP_OFFSET 48
+; Stack pointer -- this should be the offset from the beginning of struct
+; Coroutine to the "sp" attribute
 
 ; OS X prefixes all symbol names with '_', so to interoperate with C, we need
 ; to add '_' prefixes to all symbol names.  This macro takes care of the

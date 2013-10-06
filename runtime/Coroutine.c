@@ -21,6 +21,7 @@
  */
 
 #include "Coroutine.h"
+#include "Array.h"
 #include "Io/Manager.h"
 #include "Boot/Boot.h"
 #include "Os/Os.h"
@@ -77,6 +78,7 @@ Coroutine Coroutine__init(Object func) {
     // Initializes a function with a new stack and instruction pointer. When
     // the coroutine is resumed, it will begin executing at 'function' with its
     // own stack.
+    Array arr = coroutines();
     Coroutine ret = Boot_calloc(sizeof(struct Coroutine)); 
     ret->_vtable = Coroutine__vtable;
     ret->_refcount = 1; 
@@ -85,6 +87,7 @@ Coroutine Coroutine__init(Object func) {
     ret->function = func;
     ret->caller = 0;
     ret->sp = COROUTINE_STACK_SIZE;
+    ret->index = Array_count__g(arr);
     Coroutine__commit_page(ret, ret->stack_end-1);
     Object__refcount_inc(func);
     if (func) {
@@ -128,6 +131,9 @@ Coroutine Coroutine__init(Object func) {
     } else {
         ret->status = CoroutineStatus_DEAD; 
     }
+    Array_push(arr, (Object)ret); 
+    arr->_refcount--;
+    ret->_refcount--; // Make sure the reference in the Array is weak.
 
     return ret;
 }
@@ -135,7 +141,9 @@ Coroutine Coroutine__init(Object func) {
 void Coroutine__destroy(Coroutine self) {
     // Set the exception flag, then resume the coroutine and unwind the stack,
     // calling destructors for objects referenced by the coroutine.
+    Array arr = coroutines();
     Int save_except = Exception__current;
+    Coroutine last = 0;
     Exception__current = 1;
 
     if (self->status == CoroutineStatus_SUSPENDED) {
@@ -152,6 +160,23 @@ void Coroutine__destroy(Coroutine self) {
     } else if (self->status == CoroutineStatus_DEAD) {
         // Stack references are already freed.
     }
+
+    self->_refcount++;
+    last = (Coroutine)Array_last__g(arr); // +1
+    last = (Coroutine)Array_pop(arr); // +1
+    assert(last);
+    if (last != self) {
+        self->_refcount++;
+        Array__insert(arr, self->index, (Object)last); // +1
+        last->_refcount--;
+        last->index = self->index;
+    }
+    last->_refcount--;
+    self->_refcount--;
+    assert(self->_refcount == 0);
+
+    // Temporarily re-increment the refcount to remove the coroutine from the
+    // coroutine list
     
     // Free the stack, and the pointer to the closure object so that no memory
     // is leaked.
@@ -190,6 +215,25 @@ void Coroutine_resume(Coroutine self) {
     Object__refcount_dec((Object)self);
 }
 
+void Coroutine_dump(Coroutine self) {
+    // Dump information about the coroutine's current status
+    char const* yield_loc = "nil"; 
+    char const* status = 0;
+    if (self->yield_loc) {
+        yield_loc = (char*)self->yield_loc->data; 
+    }
+    switch (self->status) {
+    case 0: status = "NEW"; break;
+    case 1: status = "RUNNING"; break;
+    case 2: status = "SUSPENDED"; break;
+    case 3: status = "DEAD"; break;
+    case 4: status = "IO"; break;
+    default: assert(!"Unknown coroutine state");
+    }
+    fprintf(stderr, "%p CoroutineStatus::%s %s\n", self, status, yield_loc);
+    fflush(stderr);
+}
+
 void Coroutine__start(Coroutine self) {
     // Starts a coroutine
     static struct String call_str = String__static("@call");
@@ -211,6 +255,17 @@ void Coroutine__exit() {
         // If there is no caller, then yield to the main coroutine.
     } else {
         Os_cpanic("No coroutine to yield to");
+    }
+}
+
+void Coroutine__yield_with_msg(String msg) {
+    // Yields the current coroutine, but sets the yield_loc message first.
+    if(Coroutine__current != &Coroutine__main) {
+        Coroutine_yield_loc__s(Coroutine__current, msg);
+    }
+    Coroutine__yield();
+    if(Coroutine__current != &Coroutine__main) {
+        Coroutine_yield_loc__s(Coroutine__current, 0);
     }
 }
 
@@ -280,6 +335,15 @@ void Coroutine__ioresume(Coroutine self) {
 Coroutine coroutine() {
     Object__refcount_inc((Object)Coroutine__current);
     return Coroutine__current;
+}
+
+Array coroutines() {
+    static Array arr = 0;
+    if (!arr) {
+        arr = Array__init(0);
+    }
+    arr->_refcount++;
+    return arr;
 }
 
 U64 page_round(U64 addr, U64 multiple) {
@@ -464,3 +528,4 @@ void Coroutine__fault(int signo, siginfo_t* info, void* context) {
     }
 }
 #endif
+
