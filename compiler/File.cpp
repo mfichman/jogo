@@ -30,6 +30,7 @@
 #define stat _stat
 #define S_ISDIR(x) ((x) & _S_IFDIR)
 #define S_ISREG(x) ((x) & _S_IFREG)
+#include <direct.h>
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -191,8 +192,7 @@ bool File::is_native_lib(const std::string& name) {
 }
 
 bool File::is_output_file() const {
-    std::string main = std::string("Boot") + FILE_SEPARATOR + "Main.jg";
-    return is_output_file_ && !is_interface_file() && name_->string() != main;
+    return is_output_file_ && !is_interface_file();
 }
 
 std::string File::base_name(const std::string& file) {
@@ -245,6 +245,10 @@ std::string File::dir_name(const std::string& file) {
     } else {
         return file.substr(0, slash);
     }
+}
+
+String* File::full_path() const {
+    return env_->string(cwd()+FILE_SEPARATOR_STR+path_->string());
 }
 
 bool File::mkdir(const std::string& file) {
@@ -313,3 +317,20 @@ File::Iterator::operator bool() const {
 #endif
 }
 
+void File::unlink(std::string const& name) {
+#ifdef WINDOWS
+    DeleteFile(name.c_str());
+#else
+    unlink(name.c_str());
+#endif
+}
+
+std::string File::cwd() {
+    char buf[8192];
+#ifdef WINDOWS
+    _getcwd(buf, sizeof(buf));
+#else
+    getcwd(buf, sizeof(buf));
+#endif
+    return std::string(buf);
+}

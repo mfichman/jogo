@@ -28,6 +28,22 @@
 Environment::Ptr env(new Environment);
 ArgParser::Ptr argp;
 
+void clean(std::string const& dir) {
+    for(File::Iterator i(dir);i;++i) {
+        std::string const path = dir + FILE_SEPARATOR + (*i);
+        if((*i) == "." || (*i) == "..") {
+            // Do nothing
+        } else if(File::is_dir(path)) {
+            clean(path);
+        } else {
+            if (env->verbose()) {
+                std::cout << "Removing " << path << std::endl;
+            }
+            File::unlink(path); 
+        }
+    }
+}
+
 void parse_option(std::string const& flag) {
     if ("library" == flag) {
         env->lib(argp->required_arg());
@@ -35,10 +51,14 @@ void parse_option(std::string const& flag) {
         env->include(argp->required_arg()); 
     } else if ("generator" == flag) {
         env->generator(argp->required_arg());
+    } else if ("debug" == flag) {
+        env->debug(true);
     } else if ("verbose" == flag) {
         env->verbose(true);
     } else if ("clean" == flag) {
-        unlink(env->build_dir().c_str());
+        clean(env->build_dir());
+        clean("bin");
+        clean("lib");
         exit(0);
     } else if ("reset" == flag) {
         unlink(".jgmake");
@@ -54,6 +74,7 @@ void parse_short_option(std::string const& flag) {
     case 'l': parse_option("library"); break;
     case 'i': parse_option("include"); break;
     case 'g': parse_option("generator"); break;
+    case 'd': parse_option("debug"); break;
     case 'v': parse_option("verbose"); break;
     case 'c': parse_option("clean"); break;
     case 'r': parse_option("reset"); break;
@@ -72,6 +93,7 @@ void parse_options() {
         "next time jgmake is run.\n\n"
         "   -l, --library LIB    Compile and link with native library LIB.\n"
         "   -i, --include DIR    Add the directory DIR to the search path.\n"
+        "   -d, --debug          Emit debug information.\n"
         "   -g, --generator GEN  Use code generator GEN.\n"
         "   -h, --help           Print this help message.\n"
         "   -v, --verbose        Print extra information during compilation.\n"
@@ -139,17 +161,16 @@ void save_options() {
 int main(int argc, char** argv) {
     // This program recursively finds and builds all files in the source
     // directory, and then generates the output in the lib/bin directory.
-    argp = new ArgParser(env, argc, argv);
-    load_options(); 
-    parse_options();
-    save_options();
-
     env->workspace_load();
     env->output(".");
     env->make(true);
     env->optimize(true);
     env->monolithic_build(false);
 
+    argp = new ArgParser(env, argc, argv);
+    load_options(); 
+    parse_options();
+    save_options();
 
     Builder::Ptr builder(new Builder(env));
     return builder->errors();

@@ -35,6 +35,7 @@ Environment::Environment() :
     dump_regalloc_(false),
     dump_reggraph_(false),
     make_(false),
+    debug_(false),
     optimize_(false),
     link_(true),
     assemble_(true),
@@ -191,7 +192,6 @@ void Environment::workspace_load() {
     }
     include("lib");
     include("src");
-    include("runtime");
     build_dir("build");
 }
 

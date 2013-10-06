@@ -117,12 +117,13 @@ void Intel64Generator::operator()(Function* feature) {
     function_ = feature;
 
     if (feature->label()->string() == env_->entry_point()) {
-        format_->sym(env_->name("main_"), OutputFormat::SYM_TEXT);
-    } else if (feature->label()->string() == "Boot_main") {
         format_->sym(env_->name("main"), OutputFormat::SYM_TEXT);
+        format_->function(env_->name("main"));
     } else {
         format_->sym(feature->label(), OutputFormat::SYM_TEXT); 
+        format_->function(feature->label());
     }
+    format_->line(feature->location().first_line);
 
     push(RBP);
     mov(RBP, RSP);
@@ -139,6 +140,8 @@ void Intel64Generator::operator()(Function* feature) {
     for (int i = 0; i < feature->ir_blocks(); i++) {
         operator()(feature->ir_block(i));
     } 
+    format_->line(feature->location().last_line);
+    format_->ret();
     function_ = 0;
 }
 
@@ -155,6 +158,7 @@ void Intel64Generator::operator()(IrBlock* block) {
         Operand res = inst.result();
         Operand a1 = inst.first();
         Operand a2 = inst.second();
+        format_->line(inst.line());
     
         if (LOAD != inst.opcode() && STORE != inst.opcode()) {
             assert("Memory operand not supported"&&!a1.is_indirect());

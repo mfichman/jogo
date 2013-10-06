@@ -48,6 +48,12 @@ public:
     void ref(String* name, RelocType rtype);
     void sym(String* name, SymType type);
     void out(Stream* out);
+    void line(int line) {}
+    void reg(String* name, RegisterId id) {}
+    void stack(String* name, int offset) {}
+    void file(File* file) {}
+    void function(String* name) {}
+    void ret() {}
 
 public:
     void sort_symtab();

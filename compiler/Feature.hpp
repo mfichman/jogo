@@ -269,6 +269,7 @@ public:
     // FIXME: Convert to a File::Itr
     bool is_up_to_date() const;
     bool is_exe() const;
+    std::string file_base() const;
     std::string lib_file() const;
     std::string exe_file() const;
     std::string jgi_file() const;
@@ -278,6 +279,10 @@ public:
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Module> Ptr; 
     typedef Iterator<Module> Itr;
+    static std::string file_base(std::string const& name);
+    static std::string lib_file(std::string const& name);
+    static std::string exe_file(std::string const& name);
+    static std::string jgi_file(std::string const& name);
 
 private:
     OrderedMap<String::Ptr, Feature> feature_;

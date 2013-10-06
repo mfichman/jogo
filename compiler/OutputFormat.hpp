@@ -27,6 +27,7 @@
 #include "String.hpp"
 #include "Stream.hpp"
 #include "Section.hpp"
+#include "IrBlock.hpp"
 
 /* Interface for output file formats (e.g., COFF, Mach-O) */
 class OutputFormat : public Object {
@@ -47,6 +48,24 @@ public:
     virtual void out(Stream* out)=0;
     // Flushes the output format to the given file.
 
+    virtual void line(int line)=0;
+    // Writes line # debug info to the debug format
+
+    virtual void reg(String* name, RegisterId id)=0;
+    // Outputs a variable location (register)
+
+    virtual void stack(String* name, int offset)=0;
+    // Outputs a stack variable location (offset from BP)
+
+    virtual void file(File* file)=0;
+    // Full path to the file
+
+    virtual void function(String* name)=0;
+    // Start of a function
+
+    virtual void ret()=0;
+    // End of a function
+
     virtual Section* text() const=0;
     virtual Section* data() const=0;
     // Returns the text/data sections (for code emit)
@@ -64,3 +83,12 @@ public:
     static int const SYM_TEXT = 0x4;
     static int const SYM_LTEXT = 0x5;
 };
+
+static inline uint32_t align(uint32_t in, uint32_t alignment) {
+    uint32_t mod = in % alignment;
+    if (mod) {
+        return alignment-mod+in; 
+    } else {
+        return in;
+    }
+}

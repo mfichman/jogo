@@ -49,14 +49,13 @@ Parser::Parser(Environment* env) :
     for (int i = 0; i < env->inputs(); i++) {
         input(env->input(i));
     }
-    input("Boot::Main");
 }
 
 void Parser::library(const std::string& import) {
     // Reads in a library file given by "import" (not including the .jgi
     // extension, which is automatically added)
 
-    std::string file = import + ".jgi";
+    std::string file = Module::jgi_file(import);
     std::vector<std::string> tests;
 
     for (int i = 0; i < env_->includes(); i++) {
@@ -102,8 +101,8 @@ void Parser::input(const std::string& import, bool optional) {
                 Parser::file(prefix, file + ".jg");
                 return;
             }
-            if (!env_->is_input(import) && File::is_reg(base + ".jgi")) {
-                Parser::file(prefix, file + ".jgi");
+            if (!env_->is_input(import) && File::is_reg(Module::jgi_file(base))) {
+                Parser::file(prefix, Module::jgi_file(file));
                 return;
             }
         } else {
@@ -113,8 +112,8 @@ void Parser::input(const std::string& import, bool optional) {
             } 
         }
         tests.push_back(prefix + FILE_SEPARATOR + file);
-        tests.push_back(prefix + FILE_SEPARATOR + file + ".jgi");
-        tests.push_back(prefix + FILE_SEPARATOR + file + ".jg");
+        tests.push_back(prefix + FILE_SEPARATOR + Module::jgi_file(file));
+        tests.push_back(prefix + FILE_SEPARATOR + Module::jgi_file(file));
     }
     // Optional import means a lookup failure doesn't necessarily halt
     // compilation.  This is used to implement constants of the form
@@ -202,7 +201,7 @@ void Parser::file(const std::string& prefix, const std::string& file) {
     // If an interface file is loaded, then be sure to link in the
     // corresponding library as well.
     if (file_->is_interface_file()) {
-        env_->lib(Import::module_name(file_->name()->string()));
+        env_->lib(Module::file_base(Import::module_name(file_->name()->string())));
     }
 
     // Begin parsing

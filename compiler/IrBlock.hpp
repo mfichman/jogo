@@ -193,18 +193,20 @@ private:
 /* Class for three-address code instructions */
 class Instruction {
 public:
-    Instruction(Opcode op, Operand res, Operand one, Operand two);
+    Instruction(int line, Opcode op, Operand res, Operand one, Operand two);
     Opcode opcode() const { return opcode_; }
     Operand const& first() const { return first_; }
     Operand const& second() const { return second_; }
     Operand result() const { return result_; }
     Liveness* liveness() const;
+    int line() const { return line_; }
     void opcode(Opcode opcode) { opcode_ = opcode; }
     void first(Operand first) { first_ = first; }
     void second(Operand second) { second_ = second; }
     void result(Operand result) { result_ = result; }
 
 private:
+    int line_;
     Opcode opcode_;
     Operand first_;
     Operand second_;
@@ -231,7 +233,7 @@ public:
     void label(String* label) { label_ = label; }
     Instruction const& instr(Instruction const& inst);
     Instruction const& instr(int index, Instruction const& inst);
-    Instruction const& instr(Opcode op, Operand res, Operand one, Operand two);
+    Instruction const& instr(int line, Opcode op, Operand res, Operand one, Operand two);
     void round_inc() { round_++; }
     typedef Pointer<IrBlock> Ptr; 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 Matt Fichman
+ * Copyright (c) 2013 Matt Fichman
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -18,31 +18,24 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
- */  
+ */
 
 #pragma once
 
 #include "Jogo.hpp"
+#include "IrBlock.hpp"
+#include "Section.hpp"
 #include "String.hpp"
-#include <vector>
-#include <stdint.h>
 
-/* A sequence of machine code instructions/data corresponding to a section */
-class Section : public Object {
+/* Emits debugger information */
+class DebugFormat : public Object {
 public:
-    Section() : flags_(0) {}
-    typedef Pointer<Section> Ptr;
-    int bytes() const { return buffer_.size(); }
-    uint8_t const* text() const { return buffer_.size() ? &buffer_.front() : 0; }
-    uint32_t flags() const { return flags_; }
-    void uint64(uint64_t val);
-    void uint32(uint32_t val);
-    void uint16(uint16_t val);
-    void uint8(uint8_t val);
-    void buffer(void const* buf, int len);
-    void align(int num, uint8_t fill=0);
-    void flags(uint32_t flags) { flags_ = flags; }
-private:
-    uint32_t flags_;
-    std::vector<uint8_t> buffer_;
+    typedef int RelAddr;
+    DebugFormat();
+    virtual void function(String* name)=0;
+    virtual void line(RelAddr addr, int line);
+    virtual void reg(RelAddr addr, String* name, RegisterId id);
+    virtual void stack(RelAddr addr, String* name, int offset);
+    typedef Pointer<DebugFormat> Ptr;
 };
+

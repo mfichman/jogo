@@ -27,12 +27,29 @@
 #include <ctime>
 #include <cstring>
 
-Coff64Output::Coff64Output() :
-    text_(new Section),
-    data_(new Section),
-    string_(new Section) {
+Coff64Output::Coff64Output(Environment* env) :
+    env_(env),
+    text_(section(".text")),
+    data_(section(".data")),
+    debug_(env->debug() ? section(".debug$S") : 0),
+    //types_(env->debug() ? section(".debug$T") : 0),
+    string_(new Coff64Section("string", 0)),
+    line_(-1) {
+
+    text_->flags(IMAGE_SCN_MEM_EXECUTE|IMAGE_SCN_MEM_READ|IMAGE_SCN_CNT_CODE|IMAGE_SCN_ALIGN_16BYTES);
+    data_->flags(IMAGE_SCN_MEM_READ|IMAGE_SCN_MEM_WRITE|IMAGE_SCN_CNT_INITIALIZED_DATA|IMAGE_SCN_ALIGN_1BYTES);
+    if (env->debug()) {
+        debug_->flags(IMAGE_SCN_MEM_READ|IMAGE_SCN_MEM_DISCARDABLE|IMAGE_SCN_CNT_INITIALIZED_DATA|IMAGE_SCN_ALIGN_1BYTES);
+        //types_->flags(IMAGE_SCN_MEM_READ|IMAGE_SCN_MEM_DISCARDABLE|IMAGE_SCN_CNT_INITIALIZED_DATA|IMAGE_SCN_ALIGN_1BYTES);
+
+        uint32_t const cv_version = 4;
+        debug_->uint32(cv_version);
+        //types_->uint32(cv_version);
+    }
     
-    string_->uint8(0); // ?
+    string_->uint8(0); // First string is always the empty string
+
+
 }
 
 void Coff64Output::ref(String* label, RelocType rtype) {
@@ -52,8 +69,7 @@ void Coff64Output::ref(String* label, RelocType rtype) {
         sym->Value = 0; // Address 
         sym->SectionNumber = IMAGE_SYM_UNDEFINED; // Unknown section
         if (REF_CALL == rtype || REF_VTABLE == rtype) {
-            //sym->Type = IMAGE_SYM_DTYPE_FUNCTION << 8;
-            sym->Type = IMAGE_SYM_DTYPE_NULL << 8; 
+            sym->Type = IMAGE_SYM_DTYPE_FUNCTION << 8;
         } else {
             sym->Type = IMAGE_SYM_DTYPE_NULL << 8; 
         }
@@ -72,20 +88,20 @@ void Coff64Output::ref(String* label, RelocType rtype) {
     if (REF_TEXT == rtype) {
         reloc.VirtualAddress = text_->bytes();
         reloc.Type = IMAGE_REL_AMD64_ADDR64;
-        text_reloc_.push_back(reloc);
+        text_->reloc(reloc);
     } else if (REF_DATA == rtype || REF_VTABLE == rtype) {
         reloc.VirtualAddress = data_->bytes();
         reloc.Type = IMAGE_REL_AMD64_ADDR64;
-        data_reloc_.push_back(reloc);
+        data_->reloc(reloc);
     } else if (REF_BRANCH == rtype || REF_CALL == rtype) {
         reloc.VirtualAddress = text_->bytes();
         reloc.Type = IMAGE_REL_AMD64_REL32;
         // FixMe: This may be incorrect; relative to the RIP
-        text_reloc_.push_back(reloc);
+        text_->reloc(reloc);
     } else if (REF_SIGNED == rtype) {
         reloc.VirtualAddress = text_->bytes();
         reloc.Type = IMAGE_REL_AMD64_REL32;
-        text_reloc_.push_back(reloc);
+        text_->reloc(reloc);
     } else {
         assert(!"Unknown ref type");
     }
@@ -111,16 +127,15 @@ void Coff64Output::sym(String* label, SymType type) {
     }
     if (type & SYM_TEXT) {
         sym->Value = text_->bytes();
-        sym->SectionNumber = OUT_SECT_TEXT;
+        sym->SectionNumber = text_->id();
         if (type & SYM_LOCAL) {
             sym->Type = IMAGE_SYM_DTYPE_NULL << 8;
         } else {
-            //sym->Type = IMAGE_SYM_DTYPE_FUNCTION << 8;
-            sym->Type = IMAGE_SYM_DTYPE_NULL << 8;
+            sym->Type = IMAGE_SYM_DTYPE_FUNCTION << 8;
         }
     } else if (type & SYM_DATA) {
         sym->Value = data_->bytes();
-        sym->SectionNumber = OUT_SECT_DATA;
+        sym->SectionNumber = data_->id();
         sym->Type = IMAGE_SYM_DTYPE_NULL << 8;
     } else {
         assert(!"Unknown section type");
@@ -132,74 +147,194 @@ void Coff64Output::sym(String* label, SymType type) {
     } 
 }
 
+void Coff64Output::line(int line) {
+    // Output a line number at the current text section offset.
+    if (!env_->debug()) { return; } 
+    if (line <= line_ || !line) { return; }
+    uint32_t const CV_BREAK_MASK = 0x80000000;
+    line_ = line;
+    CvLineNumber lineno;
+    memset(&lineno, 0, sizeof(lineno));
+    lineno.offset = text_->bytes()-function_.offset;
+    lineno.line = line | CV_BREAK_MASK;
+    lineno_.push_back(lineno);
+}
+
+void Coff64Output::file(File* file) {
+    // Write the file into the object file in CV8 format.
+    if (!env_->debug()) { return; } 
+    CvSourceFileInfo file_info;
+    memset(&file_info, 0, sizeof(file_info));
+    file_info.offset = 1; // Offset into file string table (emitted below)
+    file_info.checksum_mode = 0; // No checksum
+
+    CvSectionHeader header;
+    memset(&header, 0, sizeof(header));
+    header.type = CV_SOURCE_FILE_INFO;
+    header.size += sizeof(file_info);
+
+    debug_->buffer((char*)&header, sizeof(header));
+    debug_->buffer((char*)&file_info, sizeof(file_info));
+    debug_->align(sizeof(uint32_t));
+
+    // Now write out the file name string table
+    std::string path = file->full_path()->string();
+    memset(&header, 0, sizeof(header)); 
+    header.type = CV_SOURCE_FILE_STRINGS;
+    header.size += 1; // For the null string
+    header.size += path.length()+1;
+    
+    debug_->buffer((char*)&header, sizeof(header));
+    debug_->uint8(0);  // Null string
+    debug_->buffer(path.c_str(), path.length()+1); 
+    debug_->align(sizeof(uint32_t));
+}
+
+void Coff64Output::function(String* name) {
+    // Record the beginning of a new function for the debug section
+    if (!env_->debug()) { return; } 
+    line_ = 0;
+    memset(&function_, 0, sizeof(function_));
+    function_.header.type = CV_FUNCTION;
+    function_.header.size += name->string().length()+1;
+    function_.header.size += sizeof(function_);
+    function_.header.size -= sizeof(function_.header.size);
+    function_.parent = 0;
+    function_.pend = 0;
+    function_.pnext = 0;
+    function_.prolog_offset = 0;
+    function_.epilog_offset = 0;
+    function_.type = 0x1002;//0x0000; // VOID  LABEL(!) FixMe
+    function_.offset = text_->bytes(); 
+    function_.section = 0; // Filled in by relocation
+    function_.flags = 0;
+
+    function_name_ = name;
+}
+
+void Coff64Output::ret() {
+    // Output debugging information for the current function
+    if (!env_->debug()) { return; } 
+    std::string const& name = function_name_->string();
+    function_.size = text_->bytes()-function_.offset;
+    function_.epilog_offset = text_->bytes()-function_.offset;
+    function_.offset = 0; // Filled in by relocation
+    // Note: this is a bit of a hack, b/c we use the offset field to
+    // temporarily store the pointer to the beginning of the function so that
+    // we can compute the size.
+
+    CvEndBlock end;
+    memset(&end, 0, sizeof(end));
+    end.header.type = CV_END_BLOCK;
+    end.header.size = sizeof(end);
+    end.header.size -= sizeof(end.header.size);
+
+    CvSectionHeader header;
+    memset(&header, 0, sizeof(header));
+    header.type = CV_SYMBOL_INFO;
+    header.size += sizeof(function_);
+    header.size += name.size()+1; // For terminating NUL-byte
+    header.size += sizeof(end);
+
+    debug_->buffer((char*)&header, sizeof(header));
+
+    uint32_t offset_addr = debug_->bytes()+(char*)&function_.offset-(char*)&function_;
+    uint32_t section_addr = debug_->bytes()+(char*)&function_.section-(char*)&function_;
+
+    debug_->reloc(reloc(offset_addr, function_name_, IMAGE_REL_AMD64_SECREL));
+    debug_->reloc(reloc(section_addr, function_name_, IMAGE_REL_AMD64_SECTION));
+
+    debug_->buffer((char*)&function_, sizeof(function_));
+    debug_->buffer(name.c_str(), name.size()+1);
+    debug_->buffer((char*)&end, sizeof(end));
+    debug_->align(sizeof(uint32_t));
+
+    write_debug_line_numbers();
+}
+
+void Coff64Output::write_debug_line_numbers() {
+    // Output line numbers for the current function.
+    if (!env_->debug()) { return; } 
+    CvLineNumbers lineno;
+    memset(&lineno, 0, sizeof(lineno));
+    lineno.offset = 0; // Fixed by relocations
+    lineno.section = 0; // Fixed by relocations
+    lineno.section_length = function_.size;//1; //text_->bytes(); // ??
+    lineno.source_file = 0; // Only one entry in table, so use 1
+    lineno.linenos_count = lineno_.size();
+    lineno.linenos_size = lineno_.size()*sizeof(lineno_.front())+12;
+    // N.B.: Not sure why the +12 is necessary here...
+    
+    CvSectionHeader header;
+    memset(&header, 0, sizeof(header));
+    header.type = CV_LINE_NUMBERS;
+    header.size += sizeof(lineno);
+    header.size += lineno_.size()*sizeof(lineno_.front());
+
+    debug_->buffer((char*)&header, sizeof(header)); 
+
+    uint32_t offset_addr = debug_->bytes()+(char*)&lineno.offset-(char*)&lineno;
+    uint32_t section_addr = debug_->bytes()+(char*)&lineno.section-(char*)&lineno;
+
+    debug_->reloc(reloc(offset_addr, function_name_, IMAGE_REL_AMD64_SECREL));
+    debug_->reloc(reloc(section_addr, function_name_, IMAGE_REL_AMD64_SECTION));
+
+    debug_->buffer((char*)&lineno, sizeof(lineno)); 
+    debug_->buffer((char*)&lineno_.front(), lineno_.size()*sizeof(lineno_.front()));
+    debug_->align(sizeof(uint32_t));
+
+    lineno_.clear();
+}
+
 void Coff64Output::out(Stream* out) {
     // Writes out the full text of the object file format to the given stream.
 
-    IMAGE_FILE_HEADER header;
-    IMAGE_SECTION_HEADER text;
-    IMAGE_SECTION_HEADER data;
-    
-    memset(&header, 0, sizeof(header));
-    memset(&text, 0, sizeof(text));
-    memset(&data, 0, sizeof(data));
-
-    size_t const metadata_bytes = sizeof(header)+sizeof(text)+sizeof(data);
-    size_t offset = metadata_bytes;
-
     // Header
+    IMAGE_FILE_HEADER header;
+    memset(&header, 0, sizeof(header));
     header.Machine = IMAGE_FILE_MACHINE_AMD64;
-    header.NumberOfSections = 2;
     header.TimeDateStamp = time(0);
     header.NumberOfSymbols = sym_.size();
     header.SizeOfOptionalHeader = 0;
     header.Characteristics = 0;
 
-    memcpy(text.Name, ".text", sizeof(text.Name));
-    text.Misc.VirtualSize = 0; // Not valid for object files
-    text.VirtualAddress = 0;
-    text.PointerToRawData = offset;
-    text.SizeOfRawData = text_->bytes();
-    offset += text.SizeOfRawData;
-    text.PointerToRelocations = offset;
-    text.NumberOfRelocations = text_reloc_.size();
-    offset += text.NumberOfRelocations * sizeof(text_reloc_.front());
-    text.PointerToLinenumbers = 0;
-    text.NumberOfLinenumbers = 0;
-    text.Characteristics = 0;
-    text.Characteristics |= IMAGE_SCN_MEM_EXECUTE;
-    text.Characteristics |= IMAGE_SCN_MEM_READ;
-    text.Characteristics |= IMAGE_SCN_CNT_CODE;
-    text.Characteristics |= IMAGE_SCN_ALIGN_16BYTES;
+    size_t offset = sizeof(header);
+    for (size_t i = 0; i < section_.size(); ++i) {
+        Coff64Section::Ptr section = section_[i];
+        offset += sizeof(IMAGE_SECTION_HEADER);
+        header.NumberOfSections++;
+    }
 
-    memcpy(data.Name, ".data", sizeof(data.Name));
-    data.Misc.VirtualSize = 0; // Not valid
-    data.VirtualAddress = 0;
-    data.PointerToRawData = offset;
-    data.SizeOfRawData = data_->bytes();
-    offset += data.SizeOfRawData;
-    data.PointerToRelocations = offset;
-    data.NumberOfRelocations = data_reloc_.size();
-    offset += data.NumberOfRelocations * sizeof(data_reloc_.front());
-    data.PointerToLinenumbers = 0;
-    data.NumberOfLinenumbers = 0;
-    data.Characteristics = 0;
-    data.Characteristics |= IMAGE_SCN_MEM_READ;
-    data.Characteristics |= IMAGE_SCN_MEM_WRITE;
-    data.Characteristics |= IMAGE_SCN_CNT_INITIALIZED_DATA;
-
+    std::vector<IMAGE_SECTION_HEADER> headers;
+    for (size_t i = 0; i < section_.size(); ++i) {
+        Coff64Section::Ptr section = section_[i];
+        IMAGE_SECTION_HEADER sh;
+        memset(&sh, 0, sizeof(sh));
+        strncpy((char*)sh.Name, section->name().c_str(), sizeof(sh.Name));
+        sh.PointerToRawData = offset;
+        sh.SizeOfRawData = section->bytes();
+        offset += sh.SizeOfRawData;
+        sh.PointerToRelocations = offset;
+        sh.NumberOfRelocations = section->relocs();
+        offset += sh.NumberOfRelocations * sizeof(IMAGE_RELOCATION);
+        sh.Characteristics = section->flags();
+        headers.push_back(sh);
+    }
     header.PointerToSymbolTable = offset;
 
     // Write everything out
-    out->write((char*)&header, sizeof(header));
-    out->write((char*)&text, sizeof(text));
-    out->write((char*)&data, sizeof(data));
-    out->write((char*)text_->text(), text_->bytes());
-    if (text_reloc_.size()) {
-        out->write((char*)&text_reloc_.front(), text_reloc_.size()*sizeof(text_reloc_.front()));
+    out->write((char*)&header, sizeof(header)); 
+    for (size_t i = 0; i < headers.size(); ++i) {
+        IMAGE_SECTION_HEADER const& sh = headers[i];
+        out->write((char*)&sh, sizeof(sh));
     }
-    out->write((char*)data_->text(), data_->bytes());
-    if (data_reloc_.size()) {
-        out->write((char*)&data_reloc_.front(), data_reloc_.size()*sizeof(data_reloc_.front()));
+    for (size_t i = 0; i < section_.size(); ++i) {
+        Coff64Section::Ptr section = section_[i];
+        out->write((char*)section->text(), section->bytes());
+        if (section->relocs()) {
+            size_t reloc_size = section->relocs() * sizeof(IMAGE_RELOCATION);
+            out->write((char*)section->reloc(), reloc_size);
+        }
     }
     if (sym_.size()) {
         out->write((char*)&sym_.front(), sym_.size()*sizeof(sym_.front()));
@@ -208,6 +343,26 @@ void Coff64Output::out(Stream* out) {
     out->write((char*)&strsize, sizeof(strsize));
     out->write((char*)string_->text(), string_->bytes());
     out->flush();
+}
+
+IMAGE_RELOCATION Coff64Output::reloc(uint32_t addr, String* name, uint16_t type) {
+    IMAGE_RELOCATION reloc; // Relocate the function offset
+    reloc.VirtualAddress = addr;
+    reloc.SymbolTableIndex = symbol_.find(name)->second;
+    reloc.Type = type;
+    return reloc;
+}
+
+Coff64Section* Coff64Output::section(std::string const& name) {
+    // Returns the section if it already exists, or creates it otherwise
+    for (size_t i = 0; i < section_.size(); ++i) {
+        if (section_[i]->name() == name) {
+            return section_[i];
+        }
+    }
+    Coff64Section::Ptr section(new Coff64Section(name, section_.size()+1));
+    section_.push_back(section);
+    return section;
 }
 
 #endif

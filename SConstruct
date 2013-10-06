@@ -27,14 +27,14 @@ VariantDir('build/runtime', 'runtime', duplicate=0)
 build_dir = os.path.join('build', 'runtime')
 env = Environment(CPPPATH = ['build/compiler', 'build/debugger'])
 env.Append(ENV = os.environ)
-env.Append(JGFLAGS = '-v -m -i runtime --build-dir ' + build_dir)
+env.Append(JGFLAGS = '-v -d -m -i runtime --build-dir ' + build_dir)
 env.Append(JGFLAGS = ' --no-default-libs -g Intel64 ')
 
 build_mode = ARGUMENTS.get('mode', 'debug')
 #stack_size = '32768'
 stack_size = '1048576' # x8 = 8 MB
 major_version = '0'
-minor_version = '4'
+minor_version = '5'
 patch = '0'
 version = major_version + '.' + minor_version + '.' + patch
 branch = os.popen('git rev-parse --abbrev-ref HEAD').read().strip()
@@ -67,11 +67,12 @@ if env['PLATFORM'] == 'win32':
     nasm = 'nasm -DWINDOWS -fwin64 -o $TARGET $SOURCE'
     nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
     if 'release' == build_mode:
-        env.Append(CXXFLAGS = '/MT /Zi /O2')
-        env.Append(CFLAGS = '/MT /Zi /O2')
+        env.Append(CXXFLAGS = '/MT /Zi /O2 /Fdcompiler.pdb')
+        env.Append(CFLAGS = '/MT /Zi /O2 /Fdcompiler.pdb')
+        env.Append(LINKFLAGS = '/DEBUG') # Always include debug symbols for now
     else:
-        env.Append(CXXFLAGS = '/MT /Zi')
-        env.Append(CFLAGS = '/MT /Zi') 
+        env.Append(CXXFLAGS = '/MT /Zi /Fdcompiler.pdb')
+        env.Append(CFLAGS = '/MT /Zi /Fdcompiler.pdb') 
         env.Append(LINKFLAGS = '/DEBUG')
     env.Append(CXXFLAGS = '/DCOROUTINE_STACK_SIZE='+stack_size)
     env.Append(CXXFLAGS = '/DWINDOWS')
@@ -86,8 +87,8 @@ if env['PLATFORM'] == 'win32':
 else:
     nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.o')
     if 'release' == build_mode:
-        env.Append(CXXFLAGS = '-O3')
-        env.Append(CFLAGS = '-O3')
+        env.Append(CXXFLAGS = '-O2 -g')
+        env.Append(CFLAGS = '-O2 -g')
     else:
         env.Append(CXXFLAGS = '-g')
         env.Append(CFLAGS = '-g')
@@ -131,7 +132,7 @@ jgdebug = env.Program(jgdebug_cmd, compiler_src + debugger_src + ['build/drivers
 # Library/runtime build ######################################################
 library_src = ' '.join([
     "Array",
-    "Boot::Boot",
+    "Boot",
     "Collection",
     "Chan",
     "Coroutine",
@@ -156,7 +157,7 @@ library_src = ' '.join([
 
 coroutine = env.NASM('build/runtime/Coroutine.Intel64.asm')
 
-jogo_lib = os.path.join('lib', 'Jogo')
+jogo_lib = os.path.join('lib', 'jogo')
 lib = env.Command('jglib', jogo, '%s $JGFLAGS -o %s %s' % (jogo_cmd, jogo_lib, library_src))
 env.Depends(lib, jogo)
 env.Depends(lib, coroutine)

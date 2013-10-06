@@ -48,6 +48,8 @@ void parse_option(std::string const& flag) {
         env->link(false);
     } else if ("make" == flag) {
         env->make(true);
+    } else if ("debug" == flag) {
+        env->debug(true);
     } else if ("dump-ir" == flag) {
         env->dump_ir(true);
     } else if ("dump-ast" == flag) {
@@ -85,6 +87,7 @@ void parse_short_option(std::string const& flag) {
     // Parses a short-form option ('-x')
     switch (flag[0]) {
     case 'i': parse_option("include"); break;
+    case 'd': parse_option("debug"); break;
     case 'v': parse_option("verbose"); break;
     case 'a': parse_option("assembly"); break;
     case 'c': parse_option("compile"); break;
@@ -107,6 +110,7 @@ void parse_options() {
         "   -a, --assembly       Compile, but do not assemble or link.\n"
         "   -c, --compile        Compile and assemble, but do not link.\n"
         "   -e, --execute        Execute program as a script.\n"
+        "   -d, --debug          Emit debug information.\n"
         "   -l, --library LIB    Compile and link with native library LIB.\n"
         "   -i, --include DIR    Add the directory DIR to the search path.\n"
         "   -o, --output FILE    Write compiler output to FILE.\n"

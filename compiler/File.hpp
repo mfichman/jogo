@@ -63,14 +63,15 @@ public:
     Import* import(String* name) const { return query(import_, name); }
     String* name() const { return name_; }
     String* path() const { return path_; }
+    String* full_path() const;
     Import::Itr imports() const { return Import::Itr(import_); }
     Feature::Itr features() const { return Feature::Itr(feature_); }
     Constant::Itr constants() const { return Constant::Itr(constant_); }
     bool is_input_file() const { return is_input_file_; }
     bool is_output_file() const;
     bool is_interface_file() const { return ext(name_->string())==JGI; }
-    std::string input(const std::string& ext) const;
-    std::string output(const std::string& ext = JGO) const;
+    std::string input(std::string const& ext) const;
+    std::string output(std::string const& ext = JGO) const;
     std::string asm_file() const { return output(ASM); }
     std::string c_file() const { return output(C); }
     std::string o_file() const { return output(O); }
@@ -86,16 +87,18 @@ public:
     typedef ::Iterator<File> Itr;
 
     class Iterator;
-    static bool is_dir(const std::string& file);
-    static bool is_reg(const std::string& file);
-    static bool is_native_lib(const std::string& file);
-    static bool is_up_to_date(const std::string& in, const std::string& out);
-    static std::string base_name(const std::string& file);
-    static std::string ext(const std::string& file);
-    static std::string no_ext_name(const std::string& file);
-    static std::string dir_name(const std::string& file);
-    static bool mkdir(const std::string& file);
-    static time_t mtime(const std::string& file);
+    static bool is_dir(std::string const& file);
+    static bool is_reg(std::string const& file);
+    static bool is_native_lib(std::string const& file);
+    static bool is_up_to_date(std::string const& in, std::string const& out);
+    static std::string base_name(std::string const& file);
+    static std::string ext(std::string const& file);
+    static std::string no_ext_name(std::string const& file);
+    static std::string dir_name(std::string const& file);
+    static bool mkdir(std::string const& file);
+    static time_t mtime(std::string const& file);
+    static void unlink(std::string const& file);
+    static std::string cwd();
 
 private:
     String::Ptr name_;
@@ -115,7 +118,7 @@ private:
 /* Directory iterator object */
 class File::Iterator {
 public:
-    Iterator(const std::string& file);
+    Iterator(std::string const& file);
     ~Iterator();
     const Iterator& operator++();
     std::string operator*() const;

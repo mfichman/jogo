@@ -136,9 +136,9 @@ void Boot_abort() {
 }
 
 // The declaration for the user-defined main function
-extern int main_();
+extern Int main();
 
 void Boot_Main__call(Object self) {
-    main_();
+    main();
 }
 

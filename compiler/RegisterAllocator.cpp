@@ -377,7 +377,8 @@ void RegisterAllocator::spill_register(Function* func) {
         // If this is the first block, and we're spilling a caller register,
         // then add a store
         if (i == 0 && is_caller_reg) {
-            repl.instr(STORE, Operand(), Operand(addr), spilled);
+            int line = func->location().first_line;
+            repl.instr(line, STORE, Operand(), Operand(addr), spilled);
         }
 
         for (int j = 0; j < block->instrs(); j++) {
@@ -387,21 +388,21 @@ void RegisterAllocator::spill_register(Function* func) {
             const RegisterId result = instr.result().reg();
             // Insert load if necessary for spilled register
             if (!!first && first == spilled) {
-                repl.instr(LOAD, first, Operand(addr), Operand()); 
+                repl.instr(instr.line(), LOAD, first, Operand(addr), Operand()); 
             }
             if (!!second && second == spilled) {
-                repl.instr(LOAD, second, Operand(addr), Operand());
+                repl.instr(instr.line(), LOAD, second, Operand(addr), Operand());
             } 
             
             // Insert a load before returns for caller regs
             if (instr.opcode() == RET && is_caller_reg) {
-                repl.instr(LOAD, spilled, Operand(addr), Operand());
+                repl.instr(instr.line(), LOAD, spilled, Operand(addr), Operand());
             }
             
             repl.instr(instr);
             // Insert store if necessary for spilled register
             if (!!result && result == spilled) {
-                repl.instr(STORE, Operand(), Operand(addr), result);
+                repl.instr(instr.line(), STORE, Operand(), Operand(addr), result);
             } 
 
         }

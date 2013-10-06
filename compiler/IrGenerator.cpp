@@ -35,7 +35,8 @@ IrGenerator::IrGenerator(Environment* env, Machine* mach) :
     invert_branch_(false),
     invert_guard_(false),
     temp_(0),
-    label_(0) {
+    label_(0),
+    line_(0) {
 }
 
 void IrGenerator::operator()(File* file) {
@@ -1643,6 +1644,7 @@ void IrGenerator::value_dtor(Operand op, Type* type) {
 }
 
 IrValue::Ptr IrGenerator::emit(Expression* expr, IrBlock* yes, IrBlock* no, bool inv) {
+    line_ = expr->location().first_line;
     IrBlock* true_save = true_;
     IrBlock* false_save = false_;
     bool invert_branch_save_ = invert_branch_;
@@ -1657,6 +1659,7 @@ IrValue::Ptr IrGenerator::emit(Expression* expr, IrBlock* yes, IrBlock* no, bool
 }
 
 IrValue::Ptr IrGenerator::emit(Expression* expr) {
+    line_ = expr->location().first_line;
     if (expr->type()->is_bool()) {
         bool_expr(expr);
     } else {
@@ -1675,14 +1678,14 @@ Operand IrGenerator::emit(Opcode op, Operand t2, Operand t3) {
     assert("Literal or label in non-mem instr" && !t3.object());
     assert("Address in non-mem instr" && !t2.addr());
     assert("Address in non-mem instr" && !t3.addr());
-    Instruction in = block_->instr(op, temp_inc(), t2, t3);
+    Instruction in = block_->instr(line_, op, temp_inc(), t2, t3);
     return in.result();
 }
 
 Operand IrGenerator::emit(Opcode op, Operand t2) {
     assert("Literal or label in non-mem instr" && !t2.object());
     assert("Address in non-mem instr" && !t2.addr());
-    Instruction in = block_->instr(op, temp_inc(), t2, Operand());
+    Instruction in = block_->instr(line_, op, temp_inc(), t2, Operand());
     return in.result();
 }
 
@@ -1690,7 +1693,7 @@ Operand IrGenerator::mov(Operand t2) {
     assert("Literal or label in non-mem instr" && !t2.object());
     assert("Address in non-mem instr" && !t2.addr());
     assert("Nil operand" && !!t2);
-    Instruction in = block_->instr(MOV, temp_inc(), t2, Operand());
+    Instruction in = block_->instr(line_, MOV, temp_inc(), t2, Operand());
     return in.result(); 
 }
 
@@ -1705,7 +1708,7 @@ Operand IrGenerator::mov(Operand res, Operand t2) {
     if (res == t2) {
         return res;
     } else {
-        Instruction in = block_->instr(MOV, res, t2, Operand());
+        Instruction in = block_->instr(line_, MOV, res, t2, Operand());
         return in.result();
     }
 }
@@ -1723,32 +1726,32 @@ void IrGenerator::store(Operand addr, Operand value) {
     assert("Stored value must be a reg" && (!!value.reg() || value.literal()));
     assert("Can't use an address offset in a STORE instr" && !value.addr());
     assert("Non-indirect store instruction" && addr.is_indirect());
-    block_->instr(STORE, Operand(), addr, value);    
+    block_->instr(line_, STORE, Operand(), addr, value);    
 }
 
 Operand IrGenerator::load(Operand addr) {
-    Instruction in = block_->instr(LOAD, temp_inc(), addr, Operand());
+    Instruction in = block_->instr(line_, LOAD, temp_inc(), addr, Operand());
     return in.result();
 }
 
 Operand IrGenerator::load(Operand res, Operand addr) {
     // FIXME: This is a problem for true SSA analysis
-    Instruction in = block_->instr(LOAD, res, addr, Operand());
+    Instruction in = block_->instr(line_, LOAD, res, addr, Operand());
     return in.result();
 }
 
 void IrGenerator::call(Operand func) {
     assert("Target must be reg or label" && (!!func.reg() || func.label()));
     assert("Literal in call instruction" && !func.literal());
-    block_->instr(CALL, Operand(), func, Operand());
+    block_->instr(line_, CALL, Operand(), func, Operand());
 }
 
 void IrGenerator::ret() {
-    block_->instr(RET, Operand(), Operand(), Operand());
+    block_->instr(line_, RET, Operand(), Operand(), Operand());
 }
 
 void IrGenerator::branch(Opcode op, Operand t2, Operand t3, IrBlock* branch, IrBlock* next) {
-    block_->instr(op, Operand(), t2, t3);
+    block_->instr(line_, op, Operand(), t2, t3);
     block_->branch(branch);
     block_->next(next);
 }
@@ -1786,7 +1789,7 @@ void IrGenerator::ble(Operand t2, Operand t3, IrBlock* target, IrBlock* next) {
 }
 
 void IrGenerator::jump(IrBlock* target) {
-    block_->instr(JUMP, Operand(), Operand(), Operand());
+    block_->instr(line_, JUMP, Operand(), Operand(), Operand());
     block_->branch(target);
 }
 

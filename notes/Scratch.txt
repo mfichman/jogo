@@ -1,0 +1,25 @@
+void Coff64Output::write_debug_symbol_info() {
+    // Output symbol info.  Currently, this only includes the object file name
+    // and compiler version info.
+    //std::string const obj_path = File::cwd()+FILE_SEPARATOR_STR+file_->jgo_file();
+    
+    CvObjectFileName object_file;
+    memset(&object_file, 0, sizeof(object_file));
+    object_file.header.size += obj_path.length()+1;
+    object_file.header.size += sizeof(object_file);
+    object_file.header.size -= sizeof(object_file.header.size);  // Don't include size 
+    object_file.header.type = CV_OBJECT_FILE_NAME;
+    object_file.signature = 0;
+
+    CvSectionHeader header;
+    memset(&header, 0, sizeof(header));
+    header.type = CV_SYMBOL_INFO;
+    header.size += sizeof(object_file);
+    header.size += obj_path.length()+1;
+    header.size = align(header.size, sizeof(uint32_t));
+
+    debug_->buffer((char*)&header, sizeof(header));
+    debug_->buffer((char*)&object_file, sizeof(object_file));
+    debug_->buffer(obj_path.c_str(), obj_path.length()+1);
+    debug_->align(sizeof(uint32_t));
+}
