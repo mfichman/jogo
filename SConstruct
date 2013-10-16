@@ -69,16 +69,6 @@ if env['PLATFORM'] == 'posix':
 
 # Windows-specific build settings ############################################
 if env['PLATFORM'] == 'win32':
-    nsis = ' '.join([
-        '"%s"' % os.path.join(os.environ['PROGRAMFILES'], 'NSIS', 'makensis.exe'),
-        '/DVERSION=%s' % str(version),
-        '/DREVISION=%s' % str(revision),
-        '/DBRANCH=%s' % str(branch),
-        '/V2',
-        '/NOCD',
-        os.path.join('dist', 'win', 'Jogo.nsi')
-    ])
-
     dist_path = 'dist\\root'
     nasm = 'nasm -DWINDOWS -fwin64 -o $TARGET $SOURCE'
     nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
@@ -175,18 +165,32 @@ library_headers += env.Glob('runtime/*.h')
 binary_files = env.Glob('bin/*')
 library_files = env.Glob('lib/*')
 
-
-pkgmaker = '/Applications/PackageMaker.app/Contents/MacOs/PackageMaker\
-    --doc dist/pkg/Jogo.pmdoc\
-    --title Jogo\
-    --version ' + version + '\
-    --out "jogo-' + version + '.pkg"'
-
-dpkg = 'dpkg -b dist/root jogo-' + version + '.deb'
-
-#rpmbuild = 'rpmbuild\
-#    --define="version ' + version + '"\
-#    --define="_topdir /dist/root
+pkgmaker = ' '.join((
+    '/Applications/PackageMaker.app/Contents/MacOs/PackageMaker',
+    '--doc dist/pkg/Jogo.pmdoc',
+    '--title Jogo',
+    '--version %s' % str(version),
+    '--out "jogo-%s.pkg"' % str(version),
+))
+nsis = ' '.join((
+    '"%s"' % os.path.join(os.environ['PROGRAMFILES'], 'NSIS', 'makensis.exe'),
+    '/DVERSION=%s' % str(version),
+    '/DREVISION=%s' % str(revision),
+    '/DBRANCH=%s' % str(branch),
+    '/V2',
+    '/NOCD',
+    os.path.join('dist', 'win', 'Jogo.nsi'),
+))
+dpkg = ' '.join((
+    'dpkg',
+    '-b dist/root',
+    'jogo-%s.deb' % version,
+))
+rpmbuild = ' '.join((
+    'rpmbuild',
+    '--define="version %s"' % str(version),
+    '--define="_topdir dist/root"',
+))
 
 if 'doc' in COMMAND_LINE_TARGETS:
     doc = env.Command('doc', jgdoc, 'bin/jgdoc $JGFLAGS -o wiki ' + library_src)
