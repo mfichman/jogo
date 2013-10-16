@@ -25,11 +25,6 @@ VariantDir('build/drivers', 'drivers', duplicate=0)
 VariantDir('build/runtime', 'runtime', duplicate=0)
 
 build_dir = os.path.join('build', 'runtime')
-env = Environment(CPPPATH = ['build/compiler', 'build/debugger'])
-env.Append(ENV = os.environ)
-env.Append(JGFLAGS = '-v -d -m -i runtime --build-dir ' + build_dir)
-env.Append(JGFLAGS = ' --no-default-libs -g Intel64 ')
-
 build_mode = ARGUMENTS.get('mode', 'debug')
 #stack_size = '32768'
 stack_size = '1048576' # x8 = 8 MB
@@ -39,73 +34,71 @@ patch = '0'
 version = major_version + '.' + minor_version + '.' + patch
 branch = os.popen('git rev-parse --abbrev-ref HEAD').read().strip()
 revision = os.popen('git rev-parse HEAD').read().strip()
+defines = {
+    'VERSION': '\\"%s\\"' % version,
+    'REVISION': '\\"%s\\"' % revision,
+    'BRANCH': '\\"%s\\"' % branch,
+    'COROUTINE_STACK_SIZE': stack_size,
+}
+
+env = Environment(CPPPATH = ['build/compiler', 'build/debugger'])
+env.Append(ENV = os.environ)
+env.Append(JGFLAGS = '-v -d -m -i runtime --build-dir ' + build_dir)
+env.Append(JGFLAGS = ' --no-default-libs -g Intel64 ')
+env.Append(CPPDEFINES = defines)
+env.Append(CPATH = ['runtime'])
+env.Append(CDEFINES = defines)
 
 if 'release' == build_mode:
     env.Append(JGFLAGS = '--optimize')
 
 # OS X-specific build settings ###############################################
 if env['PLATFORM'] == 'darwin':
-    env.Append(CXXFLAGS = '-DDARWIN')
-    env.Append(CFLAGS = '-DDARWIN')
+    env.Append(CPPDEFINES = ['DARWIN'])
+    env.Append(CDEFINES = ['DARWIN'])
+    dist_path = 'dist/root/usr/local'
     nasm = '/usr/local/bin/nasm -dDARWIN -fmacho64 -o $TARGET $SOURCE'
 
 # Linux-specific build settings ##############################################
 if env['PLATFORM'] == 'posix':
-    env.Append(CXXFLAGS = '-DLINUX')
-    env.Append(CFLAGS = '-DLINUX -m64 -lm')
+    env.Append(CPPDEFINES = ['LINUX'])
+    env.Append(CDEFINES = ['LINUX'])
+    env.Append(CFLAGS = '-m64 -lm')
+    dist_path = 'dist/root/usr'
     nasm = 'nasm -dLINUX -felf64 -o $TARGET $SOURCE'
 
 # Windows-specific build settings ############################################
 if env['PLATFORM'] == 'win32':
-    nsis = '"' + os.environ['PROGRAMFILES'] + '\\NSIS\\makensis.exe"\
-         /DVERSION='+version+'\
-         /DREVISION='+revision+'\
-         /DBRANCH='+branch+'\
-         /V2 /NOCD \
-         dist\\win\\Jogo.nsi'
+    nsis = ' '.join([
+        '"%s"' % os.path.join(os.environ['PROGRAMFILES'], 'NSIS', 'makensis.exe'),
+        '/DVERSION=%s' % str(version),
+        '/DREVISION=%s' % str(revision),
+        '/DBRANCH=%s' % str(branch),
+        '/V2',
+        '/NOCD',
+        os.path.join('dist', 'win', 'Jogo.nsi')
+    ])
 
+    dist_path = 'dist\\root'
     nasm = 'nasm -DWINDOWS -fwin64 -o $TARGET $SOURCE'
     nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
     if 'release' == build_mode:
-        env.Append(CXXFLAGS = '/MT /Zi /O2 /Fdcompiler.pdb')
-        env.Append(CFLAGS = '/MT /Zi /O2 /Fdcompiler.pdb')
-        env.Append(LINKFLAGS = '/DEBUG') # Always include debug symbols for now
-    else:
-        env.Append(CXXFLAGS = '/MT /Zi /Fdcompiler.pdb')
-        env.Append(CFLAGS = '/MT /Zi /Fdcompiler.pdb') 
-        env.Append(LINKFLAGS = '/DEBUG')
-    env.Append(CXXFLAGS = '/DCOROUTINE_STACK_SIZE='+stack_size)
-    env.Append(CXXFLAGS = '/DWINDOWS')
-    env.Append(CXXFLAGS = '/EHsc')
-    env.Append(CXXFLAGS = '/DVERSION=\\"'+version+'\\"')
-    env.Append(CXXFLAGS = '/DREVISION=\\"'+revision+'\\"')
-    env.Append(CXXFLAGS = '/DBRANCH=\\"'+branch+'\\"')
-    env.Append(CFLAGS = '/DCOROUTINE_STACK_SIZE='+stack_size)
-    env.Append(CFLAGS = '/DWINDOWS')
-    env.Append(CFLAGS = '/Iruntime')
-    dist_path = 'dist\\root'
+        env.Append(CPPFLAGS = '/O2')
+        env.Append(CFLAGS = '/O2')
+    env.Append(CPPDEFINES = ['WINDOWS'])
+    env.Append(CDEFINES = ['WINDOWS'])
+    env.Append(CPPFLAGS = '/MT /Zi /EHsc')
+    env.Append(CFLAGS = '/MT /Zi')
+    env.Append(LINKFLAGS = '/DEBUG') # Always include debug symbols for now
 else:
     nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.o')
     if 'release' == build_mode:
-        env.Append(CXXFLAGS = '-O2 -g')
-        env.Append(CFLAGS = '-O2 -g')
-    else:
-        env.Append(CXXFLAGS = '-g')
-        env.Append(CFLAGS = '-g')
+        env.Append(CPPFLAGS = '-O2')
+        env.Append(CFLAGS = '-O2')
     env.Append(LDFLAGS = '-lm')
-    env.Append(CXXFLAGS = '-DCOROUTINE_STACK_SIZE='+stack_size)
-    env.Append(CXXFLAGS = '-Wall -Werror -ansi')
-    env.Append(CXXFLAGS = '-Wno-unused')
-    env.Append(CXXFLAGS = '-Wno-sign-compare')
-    env.Append(CXXFLAGS = '-DVERSION=\\"'+version+'\\"')
-    env.Append(CXXFLAGS = '-DREVISION=\\"'+revision+'\\"')
-    env.Append(CXXFLAGS = '-DBRANCH=\\"'+branch+'\\"')
-    env.Append(CFLAGS = '-DCOROUTINE_STACK_SIZE='+stack_size)
-    env.Append(CFLAGS = '-Wall -Werror -Iruntime')
-    if env['PLATFORM'] == 'darwin':
-        dist_path = 'dist/root/usr/local'
-    else:
-        dist_path = 'dist/root/usr'
+    env.Append(CPPFLAGS = '-Wall -Werror -g')
+    env.Append(CPPFLAGS = '-Wno-unused -Wno-sign-compare -ansi')
+    env.Append(CFLAGS = '-Wall -Werror -g')
 
 env.Append(BUILDERS = { 'NASM': nasm_bld })
 
@@ -223,7 +216,6 @@ if 'pkg' in COMMAND_LINE_TARGETS:
             path = os.path.join(dist_path, f.path)
             copy = env.Command(path, f, Copy('$TARGET', '$SOURCE'))
             env.Depends('pkg', copy)
-
 
     if env['PLATFORM'] == 'darwin':
         pkg = env.Command('pkg', jogo, pkgmaker)

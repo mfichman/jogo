@@ -86,6 +86,14 @@ Manager < Object {
                 } else if next.status == CoroutineStatus::SUSPENDED {
                     scheduled.enq(next)
                     ++active
+                } else if next.status == CoroutineStatus::RUNNING {
+                    Os::panic("Invalid coroutine state")
+                } else if next.status == CoroutineStatus::NEW {
+                    Os::panic("Invalid coroutine state")
+                } else if next.status == CoroutineStatus::DEAD {
+                    # Coroutine is dead; let the last ref to it drop
+                } else {
+                    Os::panic("Invalid coroutine state")
                 }
                 --count
             }

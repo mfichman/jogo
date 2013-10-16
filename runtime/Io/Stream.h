@@ -40,8 +40,9 @@ struct Io_Stream {
     Int error;
     Int mode;
 #ifdef WINDOWS
-    Io_Overlapped op;
-#elif DARWIN
+    Io_Overlapped read_op;
+    Io_Overlapped write_op;
+#elif defined(DARWIN)
     Bool eof;
 #endif
 };

@@ -75,7 +75,8 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
     // operation is complete. 
     if (ret->type != Io_StreamType_CONSOLE) {
         CreateIoCompletionPort((HANDLE)ret->handle, iocp, 0, 0);
-        ret->op.overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        ret->read_op.overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        ret->write_op.overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
         // A manual reset event is used because ReadFile and WriteFile set 
         // the event to the nonsignalled state automatically
     }
@@ -129,7 +130,7 @@ void Io_Stream_register_console(Io_Stream self) {
 #endif
 }   
 
-Int Io_Stream_result(Io_Stream self, Int bytes) {
+Int Io_Stream_result(Io_Stream self, Int bytes, OVERLAPPED* op) {
     // Gets the result of an asycnchronous I/O operation, and returns the
     // number of bytes read/written.  Yields the current coroutine to the event
     // loop while waiting for an event to complete.  The coroutine should
@@ -149,7 +150,7 @@ Int Io_Stream_result(Io_Stream self, Int bytes) {
         if (Io_StreamMode_BLOCKING == self->mode) {	
 			DWORD count = 0;
             SetLastError(ERROR_SUCCESS);
-            GetOverlappedResult(handle, &self->op.overlapped, &count, 1);
+            GetOverlappedResult(handle, op, &count, 1);
 			bytes = count;
         } else {
             Coroutine__iowait();
@@ -200,16 +201,16 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
         // Set the low-order bit of the event if the handle is in blocking
         // mode.  This prevents a completion port notification from being 
         // queued for the I/O operation.
-        (Int)(self->op.overlapped.hEvent) |= 0x1;
+        (Int)(self->read_op.overlapped.hEvent) |= 0x1;
     } else if (!is_console) {
-        (Int)(self->op.overlapped.hEvent) &= ~0x1;
+        (Int)(self->read_op.overlapped.hEvent) &= ~0x1;
     }
 
-    self->op.coroutine = Coroutine__current;
+    self->read_op.coroutine = Coroutine__current;
     SetLastError(ERROR_SUCCESS);
-    ret = ReadFile(handle, buf, len, &read, &self->op.overlapped);
-	read = Io_Stream_result(self, read);
-    self->op.overlapped.Offset += read;
+    ret = ReadFile(handle, buf, len, &read, &self->read_op.overlapped);
+	read = Io_Stream_result(self, read, &self->read_op.overlapped);
+    self->read_op.overlapped.Offset += read;
     buffer->end += read;
 }
 #endif
@@ -325,16 +326,16 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
         // Set the low-order bit of the event if the handle is in blocking
         // mode.  This prevents a completion port notification from being 
         // queued for the I/O operation.
-        (Int)(self->op.overlapped.hEvent) |= 0x1;
+        (Int)(self->write_op.overlapped.hEvent) |= 0x1;
     } else if (!is_console) {
-        (Int)(self->op.overlapped.hEvent) &= ~0x1;
+        (Int)(self->write_op.overlapped.hEvent) &= ~0x1;
     }
 
-    self->op.coroutine = Coroutine__current;
+    self->write_op.coroutine = Coroutine__current;
     SetLastError(ERROR_SUCCESS);
-    ret = WriteFile(handle, buf, len, &written, &self->op.overlapped);
-    written = Io_Stream_result(self, written);
-    self->op.overlapped.Offset += written; 
+    ret = WriteFile(handle, buf, len, &written, &self->write_op.overlapped);
+    written = Io_Stream_result(self, written, &self->write_op.overlapped);
+    self->write_op.overlapped.Offset += written; 
     buffer->begin += written;
 }
 #endif
@@ -558,7 +559,7 @@ void Io_Stream_emptyto(Io_Stream self, Int num) {
     // is an error.
     Io_Buffer buf = self->write_buf;
     assert(num <= buf->capacity && "Buffer is too small");
-    if ((buf->capacity-buf->begin) > num) {
+    if ((buf->capacity-buf->end) < num) {
         Io_Stream_flush(self);
     }
 }
@@ -568,7 +569,7 @@ void Io_Stream_fillto(Io_Stream self, Int num) {
     // reaches end-of-file.
     Io_Buffer buf = self->read_buf;
     assert(num <= buf->capacity && "Buffer is too small");
-    if ((buf->capacity-buf->begin) < num) { 
+    if ((buf->end-buf->begin) < num) { 
         // Unicode char may overflow the buffer.  
         Io_Buffer_compact(buf);
     }
@@ -678,7 +679,8 @@ void Io_Stream_close(Io_Stream self) {
     } else {
         CloseHandle((HANDLE)self->handle);
     }
-    CloseHandle((HANDLE)self->op.overlapped.hEvent);
+    CloseHandle((HANDLE)self->write_op.overlapped.hEvent);
+    CloseHandle((HANDLE)self->read_op.overlapped.hEvent);
 #else
     close(self->handle);
 #endif
