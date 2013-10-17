@@ -21,6 +21,7 @@
  */  
 
 #include "BitSet.hpp"
+#include <algorithm>
 
 bool BitSet::set(int value) {
     // Sets the bit at index 'value' to one; also handles negative values.

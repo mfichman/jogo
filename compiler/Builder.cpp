@@ -61,6 +61,9 @@ Builder::Builder(Environment* env) :
     std::string path = pathstr ? pathstr : "";
     std::string const vshome = "C:\\Program Files (x86)\\Microsoft Visual Studio ";
     std::vector<std::string> vcvarsall;
+    vcvarsall.push_back("12.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
+    vcvarsall.push_back("11.0\\VC\\bin\\amd64\\vcvars64.bat");
+    vcvarsall.push_back("11.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
     vcvarsall.push_back("11.0\\VC\\bin\\amd64\\vcvars64.bat");
     vcvarsall.push_back("11.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
     vcvarsall.push_back("10.0\\VC\\bin\\amd64\\vcvars64.bat");

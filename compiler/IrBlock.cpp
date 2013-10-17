@@ -22,6 +22,7 @@
 
 #include "IrBlock.hpp"
 #include "Machine.hpp"
+#include <algorithm>
 #ifdef WINDOWS
 #undef big
 #undef small
