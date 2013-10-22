@@ -27,6 +27,7 @@
 Environment::Environment() :
     output_("out"),
     build_dir_(".build"),
+    src_dir_("src"),
     entry_point_("main"),
     dump_ast_(false),
     dump_lex_(false),
@@ -185,9 +186,9 @@ void Environment::workspace_search(std::string prefix, std::string name) {
 void Environment::workspace_load() {
     // Sets up the environment for a default workspace.
     if (!inputs()) {
-        for (File::Iterator i("src"); i; ++i) {
-            std::string fn = std::string("src") + FILE_SEPARATOR + *i;
-            workspace_search("src", *i);
+        for (File::Iterator i(src_dir_); i; ++i) {
+            std::string fn = src_dir_ + FILE_SEPARATOR + *i;
+            workspace_search(src_dir_, *i);
         }
     }
     include("lib");

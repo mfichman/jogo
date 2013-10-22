@@ -69,6 +69,7 @@ public:
     std::string const& lib(int index) const { return lib_[index]; }
     std::string const& output() const { return output_; }
     std::string const& build_dir() const { return build_dir_; }
+    std::string const& src_dir() const { return src_dir_; }
     std::string const& program_path() const { return program_path_; }
     std::string const& entry_point() const { return entry_point_; }
     std::string const& entry_module() const { return entry_module_; }
@@ -100,6 +101,7 @@ public:
     void lib(const std::string& path) { lib_.push_back(path); }
     void output(const std::string& path) { output_ = path; }
     void build_dir(const std::string& path) { build_dir_ = path; }
+    void src_dir(const std::string& path) { src_dir_ = path; }
     void dump_ir(bool dump) { dump_ir_ = dump; }
     void dump_liveness(bool dump) { dump_liveness_ = dump; }
     void dump_regalloc(bool dump) { dump_regalloc_ = dump; }
@@ -188,6 +190,7 @@ private:
 
     std::string output_;
     std::string build_dir_;
+    std::string src_dir_;
     std::string program_path_;
     std::string entry_point_;
     std::string entry_module_;
