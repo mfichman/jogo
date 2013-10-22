@@ -77,8 +77,8 @@ if env['PLATFORM'] == 'win32':
         env.Append(CFLAGS = '/O2')
     env.Append(CPPDEFINES = ['WINDOWS'])
     env.Append(CDEFINES = ['WINDOWS'])
-    env.Append(CPPFLAGS = '/MT /Zi /EHsc')
-    env.Append(CFLAGS = '/MT /Zi')
+    env.Append(CPPFLAGS = '/MT /Zi /EHsc /FS')
+    env.Append(CFLAGS = '/MT /Zi /FS')
     env.Append(LINKFLAGS = '/DEBUG') # Always include debug symbols for now
 else:
     nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.o')
