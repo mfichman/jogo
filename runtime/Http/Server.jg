@@ -30,12 +30,12 @@ RequestHandler < Interface {
 Server < Object {
     # Routes requests to handlers given by the 'route' method.
     handler private = Hash[Regex::Regex,RequestHandler]()
-    conn mutable = 0
+    conn var = 0
 
     find(path String) RequestHandler {
         # Finds the handler with the longest matching prefix for 'path'
-        maxlen mutable Int
-        max mutable RequestHandler
+        maxlen var Int
+        max var RequestHandler
 
         for pair in handler {
             m = pair.first =~ path

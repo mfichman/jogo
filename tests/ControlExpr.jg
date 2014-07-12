@@ -39,7 +39,7 @@ test_let() {
     x = let y = "bob" { y }
     Io::println(x)
 
-    z mutable = let w = Val("1") { w }
+    z var = let w = Val("1") { w }
     Io::println(z.str)
 
     z = let w = Val("2") { Val("3") }

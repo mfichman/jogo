@@ -17,7 +17,7 @@ IterableTest < Object {
     }
 }
 
-test(var String) {
+test(v String) {
 }
 
 Loop < Object {

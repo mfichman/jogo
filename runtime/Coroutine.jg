@@ -43,7 +43,7 @@ Coroutine < Object {
     # Returns the current stack size of the coroutine.  This value can grow
     # over time.
 
-    yield_loc mutable String
+    yield_loc var String
     # A description of the location where the coroutine has yielded.  Usually,
     # the compiler automatically sets this to the source file location (line
     # number and source file) where the coroutine yielded.  However, if the

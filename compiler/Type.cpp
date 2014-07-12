@@ -117,7 +117,9 @@ bool Type::is_union_proto() const {
 bool Type::is_object() const {
     Class* cls = clazz();
     return is_object_proto() || is_functor()
-        || (cls && cls->proto()->is_object_proto()); 
+        || (cls && cls->proto()->is_object_proto())
+        || (cls && !cls->proto()->is_proto()); 
+    // Note: If the user specified an invalid proto, then error out
 }
 
 bool Type::is_functor() const {

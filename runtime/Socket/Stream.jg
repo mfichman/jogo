@@ -27,7 +27,7 @@ Stream < Object {
     addr = Addr("", 0)
     # The address that the socket is bound to.
 
-    peer mutable = Addr("", 0)
+    peer var = Addr("", 0)
     # The address of the remote peer.  Note that writing to this value will
     # flush the stream, disconnect the socket from the current peer, and
     # reconnect the socket to the new peer.

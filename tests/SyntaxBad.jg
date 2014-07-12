@@ -1,7 +1,7 @@
 Blarg < Object {
 
     func1() {
-        a mutable = 0
+        a var = 0
 
         2001! bb
         ~` ejd

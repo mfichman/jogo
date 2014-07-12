@@ -19,6 +19,6 @@
 # SOFTWARE.
 
 Vec2i < Value {
-    x mutable Int
-    y mutable Int
+    x var Int
+    y var Int
 }

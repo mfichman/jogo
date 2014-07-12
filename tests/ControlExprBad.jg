@@ -12,7 +12,7 @@ test_cond() {
 
 test_while() {
     Io::println("test_while")
-    i mutable = 0
+    i var = 0
     x = while i < 2 { ++i }
     Io::println(x.str)
     Io::println(while i < 4 { ++i }.str)

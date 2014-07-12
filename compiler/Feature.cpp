@@ -45,9 +45,6 @@ Class::Class(Location loc, Environment* env, Type* type, Type* proto,
             feature_[feat->name()] = feat;
         }        
     }
-    if (!proto_->is_proto()) {
-        proto_ = env->object_type();
-    }
     if (proto->is_enum_proto()) {
         gen_equal_method();
     }

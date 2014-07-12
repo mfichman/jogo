@@ -67,6 +67,12 @@ void SemanticAnalyzer::operator()(Class* feature) {
     ContextAnchor anchor(this);
     class_ = feature;
 
+    // Check that the class has a valid prototype
+    if (!feature->proto()->is_proto()) {
+        err_ << feature->proto()->location() << "Invalid prototype\n";
+        env_->error();
+    }
+
     // Make sure that there isn't a duplicate of this class.
     Feature::Ptr parent = feature->parent();
     if (parent->clazz(feature->name()) != feature) {
@@ -856,7 +862,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         // Check to make sure the declared type is valid; if it isn't, then
         // set the variable to top_type and return.
         if (!declared->clazz()) {
-            variable(new Variable(id, env_->top_type(), !expr->is_mutable()));
+            variable(new Variable(id, env_->top_type(), !expr->is_var()));
             return;
         }
     }
@@ -866,7 +872,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
         err_ << init->location();
         err_ << "Void value assigned to variable '" << id << "'\n";
         env_->error();
-        variable(new Variable(id, env_->top_type(), !expr->is_mutable()));
+        variable(new Variable(id, env_->top_type(), !expr->is_var()));
         return;
     }
     
@@ -1490,7 +1496,7 @@ void SemanticAnalyzer::initial_assignment(Assignment* expr) {
     Expression::Ptr init = expr->initializer();
     attr(this);
 
-    bool immut = attr ? attr->is_immutable() : !expr->is_mutable(); 
+    bool immut = attr ? attr->is_const() : !expr->is_var(); 
     if (declared->is_top()) {
         variable(new Variable(id, expr->type(), immut));
     } else {
@@ -1542,7 +1548,7 @@ void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
     attr(this);
 
     // Attempt to assign to an immutable var, usually a param
-    if (var && var->is_immutable()) {
+    if (var && var->is_const()) {
         err_ << expr->location();
         err_ << "Value assigned to immutable variable '" << id << "'\n"; 
         env_->error();
@@ -1571,7 +1577,7 @@ void SemanticAnalyzer::secondary_assignment(Assignment* expr) {
 
     // Initializer is of the 'Any' type, but the variable type is not.
     // Insert a cast expression.
-    bool immut = attr ? attr->is_immutable() : !expr->is_mutable();
+    bool immut = attr ? attr->is_const() : !expr->is_var();
     if (!var) {
         variable(new Variable(id, expr->type(), immut));
     }
@@ -1643,7 +1649,7 @@ void SemanticAnalyzer::accessor(Attribute* feat) {
 void SemanticAnalyzer::mutator(Attribute* feat) {
     // Insert a getter for the attribute if it doesn't already exist
     String::Ptr set = env_->name(feat->name()->string()+"=");
-    if (!class_->function(set) && !feat->is_immutable() && !feat->is_private()
+    if (!class_->function(set) && !feat->is_const() && !feat->is_private()
         && !feat->is_component()) {
 
         Location loc = class_->location();

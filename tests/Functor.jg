@@ -19,7 +19,7 @@ Quads < Object {
 }
 
 Render < Functor {
-    var = 99
+    val = 99
 
     @case(obj Mesh) {
         Io::println("Mesh #{obj.val}")

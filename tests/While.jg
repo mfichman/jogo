@@ -1,7 +1,7 @@
 # jgtest exec on
 
 main() Int {
-    i mutable = 10
+    i var = 10
 
     while i != 0 {
         Boot::print_int(i)

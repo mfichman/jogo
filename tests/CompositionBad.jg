@@ -15,7 +15,7 @@ TestValue < Value {
 TestMixin1 < Blarg {
 }
 
-TestMixin2 < Blarg, Blarg { # Not allowed
+TestMixin2 < Blarg { # Not allowed
 }
 
 TestMixin3 < Object {

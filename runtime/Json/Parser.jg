@@ -2,7 +2,7 @@
 #    # Parses a JSON file from the given input stream.  For more information on
 #    # the JSON file format, see [json.org](http://www.json.org).
 #
-#    value immutable Value
+#    value imvar Value
 #    errors immutable Array[String]
 #    stream private Io::Stream
 #    pos private = 0

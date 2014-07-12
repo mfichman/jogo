@@ -9,7 +9,7 @@ Stringable < Object {
 }
 
 main() Int {
-    bob mutable = "what #{Stringable()} up"
+    bob var = "what #{Stringable()} up"
     println(bob)
     bob = "what #{ "what #{Stringable()} up"} up"
     println(bob)

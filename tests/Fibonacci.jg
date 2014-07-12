@@ -12,7 +12,7 @@ fib(n Int) Int {
 
 
 main() Int {
-    x mutable = fib(0)
+    x var = fib(0)
     Boot::print_int(x)   
     Boot::print_str("\n")
     x = fib(1)

@@ -10,7 +10,7 @@ Val < Value {
         Io::println("destroy #{a}")
     }
     
-    a mutable Int
+    a var Int
     b private Int
 }
 
@@ -19,13 +19,13 @@ Val < Value {
 reassign() {
     # Should create 2 Vals by ctor, destroy 1, and create a new one via copier.
     first = Val(1)
-    second mutable = Val(2)
+    second var = Val(2)
     second = first
 }
 
 reassign_dtor() {
     # Should destroy the first 'Val' before creating 2nd one
-    val mutable = Val(3)
+    val var = Val(3)
     val = Val(4) 
 }
 

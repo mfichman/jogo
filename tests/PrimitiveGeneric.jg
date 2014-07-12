@@ -6,8 +6,8 @@ SetGet[:a] < Interface {
 }
 
 Complex < Value {
-    real mutable Int
-    imag mutable Int
+    real var Int
+    imag var Int
 }
 
 TestValue < Object {

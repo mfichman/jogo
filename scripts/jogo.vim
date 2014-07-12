@@ -7,7 +7,7 @@
 
 syn keyword apKeyword import public private native while
 syn keyword apKeyword if for let ret xor and or in else until not
-syn keyword apKeyword func break mutable weak is yield match with 
+syn keyword apKeyword func break var const weak is yield match with 
 syn keyword apKeyword macro class interface embedded
 
 syn keyword apTodo contained TODO FIXME XXX

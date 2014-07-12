@@ -45,7 +45,7 @@ Manager < Object {
     iobytes Int
     # Number of bytes read by the last I/O operation, if available.
 
-    active mutable Int
+    active var Int
     # Number of active coroutines (i.e., suspended, but not waiting on I/O)
 
     @init() native private {
@@ -73,7 +73,7 @@ Manager < Object {
         # and begin executing it.  If there are no more tasks, and no
         # outstanding I/O requests, then return.
         while scheduled.count > 0 or waiting > 0 {
-            count mutable = scheduled.count
+            count var = scheduled.count
             active = 0
             while count > 0 {
                 # Dequeue scheduled tasks until the entire queue is empty.  At

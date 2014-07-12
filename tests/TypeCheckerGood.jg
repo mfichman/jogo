@@ -26,8 +26,8 @@ TypeChecker < Object {
         a = t.check1()
         b = a + 10
 
-        c mutable CycleType1
-        d mutable CycleType2
+        c var CycleType1
+        d var CycleType2
         c = d
         d = c
 

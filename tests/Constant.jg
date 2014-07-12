@@ -21,8 +21,8 @@ UNKNOWN Int
 
 main() Int {
 
-    var = CONSTANT1
-    Io::print("#{var}\n")
+    var1 = CONSTANT1
+    Io::print("#{var1}\n")
     Io::print("#{CONSTANT2}\n")
     var2 = Fruit::APPLE
 

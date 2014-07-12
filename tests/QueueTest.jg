@@ -2,7 +2,7 @@
 
 test_enq_deq1() {
     queue = Queue[String](0)
-    i mutable = 0
+    i var = 0
     while i < 10 {
         queue.enq(i.str)
         ++i
@@ -22,7 +22,7 @@ test_enq_deq1() {
 
 test_enq_deq2() {
     queue = Queue[String](0)
-    i mutable = 0
+    i var = 0
     while i < 5000 {
         queue.enq(i.str)
         ++i
@@ -40,7 +40,7 @@ test_enq_deq2() {
 
 test_enq_deq3() {
     queue = Queue[String](0)
-    i mutable = 0
+    i var = 0
     while i < 400 {
         queue.enq(i.str)
         val = queue.deq()
@@ -54,9 +54,9 @@ test_enq_deq3() {
 
 test_enq_deq4() {
     queue = Queue[String](0)
-    i mutable = 0
+    i var = 0
     while i < 200 {
-        j mutable = 0
+        j var = 0
         while j < 18 {
             queue.enq(j.str)
             ++j
@@ -75,7 +75,7 @@ test_enq_deq4() {
 
 test_count() {
     queue = Queue[String](0)
-    i mutable = 0
+    i var = 0
     while i < 120 {
         queue.enq(i.str)
         ++i

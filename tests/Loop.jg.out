@@ -65,7 +65,7 @@ Module
     type: Void
     comment:
     formal0: Formal
-      name: var
+      name: v
       type: String
     block: Block
   feature3: Class

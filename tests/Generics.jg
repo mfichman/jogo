@@ -1,7 +1,7 @@
 # jgtest exec on
 
 Container[:a] < Object {
-    value mutable :a
+    value var :a
 
     @init(param :a) {
         value = param
@@ -9,8 +9,8 @@ Container[:a] < Object {
 }
 
 Container2[:a, :b] < Object {
-    value1 mutable :a
-    value2 mutable :b
+    value1 var :a
+    value2 var :b
 }
 
 main() Int {

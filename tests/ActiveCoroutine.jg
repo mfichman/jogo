@@ -12,7 +12,7 @@ main() Int {
     }
     server()
 
-    i mutable = 10
+    i var = 10
     while i > 0 {
         Io::println(i.str)
         --i

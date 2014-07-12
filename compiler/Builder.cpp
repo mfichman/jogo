@@ -104,14 +104,15 @@ Builder::Builder(Environment* env) :
     if (env_->dump_lex()) {
         return;
     }
-
+	
     // Semantic analysis/type checking phase.
-    SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
-
-    // Code expansion
-    if (!env_->errors()) {
-        CodeExpander::Ptr expander(new CodeExpander(env, checker));
-    }
+	if (!env_->errors()) {
+		SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
+        // Code expansion
+        if (!env_->errors()) {
+            CodeExpander::Ptr expander(new CodeExpander(env, checker));
+        }
+	}
 
     if (env->dump_ast()) {
         TreePrinter::Ptr tprint(new TreePrinter(env, Stream::stout()));

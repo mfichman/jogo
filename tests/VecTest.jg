@@ -18,8 +18,8 @@ dist2() {
 
 cross() {
     Io::println("cross")
-    x mutable = Math::Vec3(1., 0., 0.)
-    y mutable = Math::Vec3(0., 1., 0.)
+    x var = Math::Vec3(1., 0., 0.)
+    y var = Math::Vec3(0., 1., 0.)
     Io::println(x.cross(y).str)
     Io::println(y.cross(x).str)
 
@@ -51,8 +51,8 @@ cross() {
 
 dot() {
     Io::println("dot")
-    x mutable = Math::Vec3(2., 0., 0.)
-    y mutable = Math::Vec3(0., 2., 0.)
+    x var = Math::Vec3(2., 0., 0.)
+    y var = Math::Vec3(0., 2., 0.)
     Io::println(x.cross(y).str)
     Io::println(y.cross(x).str)
 

@@ -38,13 +38,13 @@ public:
         name_(name),
         type_(type),
         scope_(0),
-        is_immutable_(immut) {
+        is_const_(immut) {
     }
 
     String* name() const { return name_; }
     Type* type() const { return type_; } // null == no cleanup on stack unwind
     Scope* scope() const { return scope_; }
-    bool is_immutable() const { return is_immutable_; }
+    bool is_const() const { return is_const_; }
     void scope(Scope* scope) { scope_ = scope; }
     typedef Pointer<Variable> Ptr;
 
@@ -52,7 +52,7 @@ private:
     String::Ptr name_;
     Type::Ptr type_; 
     Scope* scope_;
-    bool is_immutable_;
+    bool is_const_;
 };
 
 /* Scope structure for recording end-of-scope cleanup info */

@@ -4,7 +4,7 @@
 import Array
 
 main() Int {
-    outer mutable = 0
+    outer var = 0
     array = Array[String](10)
     array.push("one")
     array.push("two")

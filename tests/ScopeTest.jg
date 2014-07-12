@@ -2,7 +2,7 @@
 
 Val < Value {
     test String
-    int mutable Int
+    int var Int
     @init(ptest String, pint Int) {
         test = ptest
         int = pint
@@ -69,7 +69,7 @@ val_return() Val {
 }
 
 val_loop_no_assign() { # FIXME: Broken (doesn't free inside loop)
-    i mutable = 0
+    i var = 0
     while i < 2 {
         ++i
         Val("val_loop_no_assign", i)
@@ -77,7 +77,7 @@ val_loop_no_assign() { # FIXME: Broken (doesn't free inside loop)
 }
 
 #val_loop_assign() { # FIXME: Broken (doesn't free inside loop)
-#    i mutable = 0
+#    i var = 0
 #    y = while i < 2 {
 #        ++i
 #        Val("val_loop_assign", i)
@@ -85,7 +85,7 @@ val_loop_no_assign() { # FIXME: Broken (doesn't free inside loop)
 #}
 
 val_nested_no_assign() {
-    i mutable = 0
+    i var = 0
     while i < 2 {
         ++i
         if true {

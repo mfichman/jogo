@@ -28,10 +28,10 @@ Buffer < Object {
     capacity Int
     # Returns the capacity of this buffer.
 
-    begin mutable Int
+    begin var Int
     # Returns the index of first valid byte in this buffer.
 
-    end mutable Int
+    end var Int
     # Returns the index after the last valid byte in this buffer.
 
     @init(size Int) native {

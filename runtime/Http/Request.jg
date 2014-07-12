@@ -38,13 +38,13 @@ Request < Object {
     # be sent to the server.  Request objects may be reused multiple times for
     # efficiency.
 
-    method mutable = Method::GET
+    method var = Method::GET
     # The method to use for communication with the server.
 
-    path mutable = Uri::Path('')
+    path var = Uri::Path('')
     # Path to the resource requested by the server. 
 
-    version mutable = 'HTTP/1.1'
+    version var = 'HTTP/1.1'
     # HTTP version to use.
 
     headers = Hash[String, String]()
@@ -55,7 +55,7 @@ Request < Object {
     # * Accept-Charset: utf-8
     # * Accept-Encoding: identity 
 
-    body mutable String
+    body var String
     # Body of the request (optional)
 
     @init() {

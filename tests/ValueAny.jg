@@ -1,8 +1,8 @@
 
 Val < Value {
-    x mutable Int
-    y mutable Int
-    z mutable String
+    x var Int
+    y var Int
+    z var String
     @destroy() { Io::println('foo') }
 }
 

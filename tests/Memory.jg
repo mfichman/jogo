@@ -39,7 +39,7 @@ StrongReference < Object {
 }
 
 WeakReference < Object {
-    obj mutable weak Empty
+    obj var weak Empty
     num Int
 
     @init(number Int) {
@@ -77,7 +77,7 @@ main() Int {
     }
 
     obj4 = test2(Counter(4))
-    obj5 mutable Empty = Counter(5)
+    obj5 var Empty = Counter(5)
     test3(Counter(6), Counter(7)) 
     test3(Counter(8), Counter(9)) 
     if Counter(10) {

@@ -37,8 +37,8 @@ test(string String) {
 
 main() Int {
 
-    union mutable TestUnion = 'hello world\n'
-    string mutable String = union
+    union var TestUnion = 'hello world\n'
+    string var String = union
 
     Io::print(string)
     
@@ -51,7 +51,7 @@ main() Int {
         Io::print("pass\n")
     }
 
-    union2 mutable TestUnion = 'hello\n'
+    union2 var TestUnion = 'hello\n'
 
     test(union2)
     test(union)
@@ -70,7 +70,7 @@ main() Int {
 
     union2 = union
 
-    any mutable Any = 'hello\n'
+    any var Any = 'hello\n'
     union2 = 'hello\n'
     any = union2
     Io::print(any)

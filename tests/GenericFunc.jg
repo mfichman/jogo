@@ -18,7 +18,7 @@
 #}
 #
 #fold(list Iterable[:e], fn FoldFunc[:a,:e], init :a) :a {
-#    acc mutable = init
+#    acc var = init
 #    for elem in list {
 #        acc = fn(acc,elem)
 #    }

@@ -2,7 +2,7 @@
 
 
 TestValue < Value {
-    attr mutable Int = 42
+    attr var Int = 42
     @init() {
         Io::println("TestValue initialized")   
     }
@@ -16,7 +16,7 @@ TestValue < Value {
 }
 
 TestObject < Object {
-    attr mutable Int = 43
+    attr var Int = 43
     @init() {
         Io::println("TestObject initialized")   
     }

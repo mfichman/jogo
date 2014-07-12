@@ -41,7 +41,7 @@ String < Object {
 
     @less(string String) Bool {
         # Returns true if this string is lexically less than 'string'.
-        i mutable = 0
+        i var = 0
         while i < self.len or i < string.len {
             if self[i] < string[i] {
                 ++i
@@ -79,7 +79,7 @@ String < Object {
         if string.len > self.len {
             ret false
         }
-        i mutable = 0
+        i var = 0
         while i < string.len {
             if string[i] != self[i] {
                 ret false
@@ -95,7 +95,7 @@ String < Object {
         if string.len > self.len {
             ret false
         }
-        i mutable = 1
+        i var = 1
         while i <= string.len {
             if string[-i] != self[-i] {
                 ret false
@@ -149,7 +149,7 @@ String < Object {
     findb(start Int, byte Byte) Int {
         # Finds the first occurence of 'byte' starting at position 'start' in
         # the string.
-        i mutable = start
+        i var = start
         while i < self.len {
             if byte == self[i] {
                 ret i 

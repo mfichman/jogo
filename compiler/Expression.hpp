@@ -287,15 +287,15 @@ public:
     Expression* initializer() const { return initializer_; }
     Flags flags() const { return flags_; }
     bool is_let() const { return flags_ & LET; }
-    bool is_mutable() const { return flags_ & MUTABLE; }
+    bool is_var() const { return flags_ & VAR; }
     void is_let(bool let) { flags_ = let ? (flags_ | LET) : (flags_ & ~LET); }
-    void is_mutable(bool mut) { flags_ = mut ? (flags_ | MUTABLE) : (flags_ & ~MUTABLE); }
+    void is_var(bool var) { flags_ = var ? (flags_ | VAR) : (flags_ & ~VAR); }
     void flags(Flags flags) { flags_ = flags; }
     void initializer(Expression* expr) { initializer_ = expr; }
     void operator()(Functor* functor) { functor->operator()(this); }
     typedef Pointer<Assignment> Ptr;
 
-    static const int MUTABLE = 0x1;
+    static const int VAR = 0x1;
     static const int LET = 0x2;
 private:
     String::Ptr identifier_;

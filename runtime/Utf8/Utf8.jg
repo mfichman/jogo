@@ -47,7 +47,7 @@ get(stream Io::Stream) native Char {
 Iter < Object {
     # Iterates over all the UTF-8 characters in a string.
     string String
-    index Int
+    index var Int
 
     @init(str String) {
         string = str

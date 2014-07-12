@@ -65,7 +65,7 @@ Stream < Object {
     # OS-specific.  To format the error message for this error code, use
     # Os::strerror.
 
-    mode mutable StreamMode
+    mode var StreamMode
     # The current mode of the stream, as described above; either SYNC, ASYNC,
     # or BLOCKING.  Controls the type of I/O that will be executed for the 
     # stream.

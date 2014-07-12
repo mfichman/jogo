@@ -325,10 +325,6 @@ Class* Parser::clazz(String* scope) {
     // Parse the prototype for the class.
     expect(Token::LESS);
     Type::Ptr proto = Parser::type();
-    if (!proto->is_proto()) {
-        err_ << location() << "Invalid prototype\n";
-        env_->error();
-    }
     expect(Token::LEFT_BRACE);
 
     // Parse the comment, if present
@@ -793,7 +789,7 @@ Feature::Flags Parser::flags() {
     while (true) {
         switch (token().type()) {
         case Token::NATIVE: next(); flags |= Feature::NATIVE; break;
-        case Token::MUTABLE: next(); flags |= Feature::MUTABLE; break;
+        case Token::VAR: next(); flags |= Feature::VAR; break;
         case Token::EMBEDDED: next(); flags |= Feature::EMBEDDED; break;
         case Token::PRIVATE: next(); flags |= Feature::PRIVATE; break;
         case Token::WEAK: next(); flags |= Feature::WEAK; break;
@@ -826,7 +822,7 @@ Expression* Parser::expression() {
     switch(token().type()) {
     case Token::IDENTIFIER: {
         if (token(1) == Token::ASSIGN || token(1) == Token::TYPE 
-            || token(1) == Token::MUTABLE) {
+            || token(1) == Token::VAR) {
             return assignment();
         }
         break;
@@ -865,8 +861,8 @@ Assignment* Parser::assignment() {
     String::Ptr id = identifier();
     Type::Ptr type = env_->top_type();
     Assignment::Flags flags = 0;
-    if (token() == Token::MUTABLE) {
-        flags |= Assignment::MUTABLE; 
+    if (token() == Token::VAR) {
+        flags |= Assignment::VAR; 
         next();
     }
     if (token() == Token::TYPE) {

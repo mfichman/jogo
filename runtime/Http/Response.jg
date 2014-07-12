@@ -22,16 +22,16 @@ Response < Object {
     # Parses and stores an HTTP response.  The headers are read first, and the
     # remaining data is stored in the 'data' attribute.
    
-    status mutable Status 
+    status var Status 
     # The status of the request.
 
-    version mutable = 'HTTP/1.1'
+    version var = 'HTTP/1.1'
     # HTTP version to use.
 
     headers = Hash[String,String]()
     # Set of response headers read from the server.    
 
-    body mutable String
+    body var String
     # Body of the request (following the headers).
 
     @init() {
