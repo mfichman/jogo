@@ -77,7 +77,7 @@ void SemanticAnalyzer::operator()(Class* feature) {
     Feature::Ptr parent = feature->parent();
     if (parent->clazz(feature->name()) != feature) {
         err_ << feature->location();
-        err_ << "Duplicate definition of class '";
+        err_ << "Duplicate definition of type '";
         err_ << feature->name() << "'\n";
         env_->error();
     }
@@ -444,7 +444,7 @@ void SemanticAnalyzer::operator()(Member* expression) {
         call->function(clazz->function(id)); 
         if (!call->function()) {
             err_ << call->location();
-            err_ << "Function '" << id << "' not found in class '";
+            err_ << "Function '" << id << "' not found in type '";
             err_ << clazz->name() << "'\n";
             env_->error();
         } else {
@@ -473,7 +473,7 @@ void SemanticAnalyzer::operator()(Member* expression) {
     Function::Ptr func = clazz->function(env_->name(id->string()+"?")); 
     if (!func) {
         err_ << expression->location();
-        err_ << "Attribute '" << id << "' not found in class '";
+        err_ << "Attribute '" << id << "' not found in type '";
         err_ << clazz->name() << "'\n";
         env_->error();
         expression->type(env_->top_type());
@@ -490,7 +490,7 @@ void SemanticAnalyzer::operator()(Member* expression) {
 
     if (func->is_private() && func->parent() != class_) {
         err_ << expression->location();
-        err_ << "Function '" << id << "' is private in class '";
+        err_ << "Function '" << id << "' is private in type '";
         err_ << clazz->name() << "'\n";
         env_->error();
     }
@@ -518,7 +518,7 @@ void SemanticAnalyzer::operator()(Call* call) {
     // Check to make sure the resolved function is not private
     if (func->is_private() && func->parent() != class_) {
         err_ << call->location();
-        err_ << "Function '" << func->name() << "' is private in class '";
+        err_ << "Function '" << func->name() << "' is private in type '";
         err_ << call->receiver()->type() << "'\n";
         env_->error();  
     }
@@ -578,7 +578,7 @@ void SemanticAnalyzer::operator()(Construct* expr) {
     Function::Ptr constr = clazz->function(env_->name("@init"));
     if (constr && constr->is_private()) {
         err_ << expr->location();
-        err_ << "Constructor is private in class '" << type << "'\n";
+        err_ << "Constructor is private in type '" << type << "'\n";
         env_->error();  
     }
     Formal::Ptr f = constr->formals();
@@ -853,7 +853,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
     init(this);
     type_ = 0;
     
-    expr->type(!init->type()->is_top() ? init->type() : declared.pointer());
+    expr->type(declared->is_top() ? init->type() : declared);
     if (!declared->is_top()) {
         // If declared_type == top_type, then the variable declaration has no
         // true declared type, but it defines a new variable regardless of
@@ -894,7 +894,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
     } else if (var && init->type()->is_value() && var->type()->is_alt()) {
         // Initializer is of the 'Value' type, but the storage type is
         // 'Any' or 'Union'.  Insert an expression to box the value.
-        expr->initializer(new Box(init->location(), init->type(), init));
+        expr->initializer(new Box(init->location(), var->type(), init));
     }
 }
 
@@ -1418,7 +1418,7 @@ Expression::Ptr SemanticAnalyzer::args(Expression* call, Expression* args, Funct
         if (at->is_alt() && !ft->equals(at)) {
             actual = new Cast(arg->location(), ft, arg);
         } else if (at->is_value() && ft->is_alt()) {
-            actual = new Box(arg->location(), at, arg); 
+            actual = new Box(arg->location(), ft, arg); 
         } else {
             actual = arg;
         }

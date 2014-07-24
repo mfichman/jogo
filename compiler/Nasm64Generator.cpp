@@ -473,8 +473,6 @@ void Nasm64Generator::label(std::string const& label) {
     std::string actual_label;
     if (label == env_->entry_point()) {
         actual_label = "main_";
-    } else if (label == "Boot_main") {
-        actual_label = "main";
     } else {
         actual_label = label;
     }

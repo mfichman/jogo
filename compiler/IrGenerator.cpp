@@ -143,9 +143,12 @@ void IrGenerator::operator()(Box* expr) {
     // Boxes a value type into an object, by allocating memory on the stack
     // for the value type.  This function allocates and initializes a refcount
     // and vtable pointer for the value type.
+    Operand assign_loc = assign_loc_;
+    assign_loc_ = Operand();
+    
     Location loc = expr->location();
     IrValue::Ptr arg = emit(expr->child()); 
-    assert(!expr->child()->type()->is_compound() && "Not implemented for values");
+    //assert(!expr->child()->type()->is_compound() && "Not implemented for values");
     assert(!expr->child()->type()->is_ref());
 
     Class::Ptr clazz = expr->child()->type()->clazz();
@@ -178,9 +181,23 @@ void IrGenerator::operator()(Box* expr) {
     store(refcount, Operand(new IntegerLiteral(loc, one)));
 
     // Slot 2 is the value slot for primitive types
-    Operand addr = Operand(return_->operand().reg(), Address(2));
-    store(addr, arg->operand());
-    // FixMe: For value types, can't do a simple move
+    Type* type = expr->child()->type();
+    if (type->is_primitive()) {
+        Operand addr = Operand(return_->operand().reg(), Address(2));
+        store(addr, arg->operand());
+    } else if (type->is_ref()) {
+        assert(!"Attempt to box a ref type");
+    } else if (type->is_compound()) {
+        Operand addr = load(Operand(return_->operand().reg(), Address(2, 0)));
+        // This translates into LEA
+        value_copy(arg->operand(), addr, type);
+    } else if (type->is_void()) {
+        assert(!"Attempt to box a void type");
+    } else {
+        assert(!"Invalid type");
+    }
+
+    assign_loc_ = assign_loc;
 }
 
 void IrGenerator::operator()(Cast* expr) {
@@ -202,6 +219,12 @@ void IrGenerator::operator()(Cast* expr) {
     IrBlock::Ptr ok_block = ir_block();
     IrBlock::Ptr done_block = ir_block();
 
+    // Emit stack space for values
+    IrValue::Ptr valret;
+    if (clazz->is_compound()) {
+        valret = stack_value_temp(expr->type());
+    }
+
     // Emit vtable pointer comparison
     be(vtable1, vtable2, ok_block, mismatch_block);
 
@@ -220,14 +243,21 @@ void IrGenerator::operator()(Cast* expr) {
     } else if (clazz->is_ref()) {
         mov(out, arg->operand());
     } else if (clazz->is_compound()) {
-        assert(!"Not implemented");
+        Operand addr = load(Operand(return_->operand().reg(), Address(2, 0)));
+        // This translates into LEA
+        value_copy(addr, valret->operand(), expr->type());
+        mov(out, valret->operand());
     } else {
         assert(!"Invalid type");
     }
     // Transfer ownership from arg => out.  Kill arg so that the value isn't
     // double-freed.
     label(done_block);
-    return_ = new IrValue(this, out, expr->type(), arg->flags());
+    if (clazz->is_compound()) {
+        return_ = valret;
+    } else {
+        return_ = new IrValue(this, out, expr->type(), arg->flags());
+    }
     arg->is_dead(true);
 }
 
@@ -638,7 +668,7 @@ void IrGenerator::operator()(Assignment* expr) {
             value = env_->integer("0");
         }
         Operand op = load(Operand(new IntegerLiteral(Location(), value)));
-        return_ = new IrValue(this, op, type);
+        return_ = new IrValue(this, op, type, IrValue::DEAD);
     } else if (type->is_compound()) {
         return_ = emit(init);
     } else if (type->is_primitive()) {
@@ -832,6 +862,7 @@ void IrGenerator::operator()(Function* feature) {
     // Generate code for the body of the function.
     emit(feature->block());
     if (!block_->is_ret()) {
+        line_ = function_->location().last_line;
         if (function_->is_constructor()) {
             func_return(variable(env_->name("self")));
         } else if (feature->type()->is_void()) {

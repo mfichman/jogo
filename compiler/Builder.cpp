@@ -340,12 +340,12 @@ void Builder::link(const std::string& in, const std::string& out) {
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << vcvarsall_ << " > NUL && ";
-    ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:X64 /ENTRY:Boot_main /INCREMENTAL:no ";
+    ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:X64 /INCREMENTAL:no ";
     // N.B.: Incremental linking is not supported
 #elif defined(LINUX)
-    ss << "gcc -m64 -Wl,-eBoot_main";
+    ss << "gcc -m64";
 #elif defined(DARWIN)
-    ss << "gcc -Wl,-no_pie -Wl,-eBoot_main -framework OpenGL -framework GLUT -framework Cocoa ";
+    ss << "gcc -Wl,-no_pie -framework OpenGL -framework GLUT -framework Cocoa ";
 #endif
     env_->entry_module(out);
 

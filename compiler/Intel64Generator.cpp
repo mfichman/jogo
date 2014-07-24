@@ -117,8 +117,8 @@ void Intel64Generator::operator()(Function* feature) {
     function_ = feature;
 
     if (feature->label()->string() == env_->entry_point()) {
-        format_->sym(env_->name("main"), OutputFormat::SYM_TEXT);
-        format_->function(env_->name("main"));
+        format_->sym(env_->name("main_"), OutputFormat::SYM_TEXT);
+        format_->function(env_->name("main_"));
     } else {
         format_->sym(feature->label(), OutputFormat::SYM_TEXT); 
         format_->function(feature->label());

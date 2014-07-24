@@ -132,6 +132,8 @@ void IrBlockPrinter::operator()(IrBlock* block) {
         default: assert(!"Not supported");
         }
     
+        
+//        out_ << "\t\t" << instr.line();
         if (env_->dump_liveness()) {
             out_ << " { ";
             RegisterIdSet const& live = instr.liveness()->in();

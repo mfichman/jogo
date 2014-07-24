@@ -110,7 +110,7 @@ CodeExpander::stub(Function* func, Attribute* attr) {
 
 void
 CodeExpander::component(Attribute* attr) {
-    // Generates thunk functions for each attr in the emedded type.
+    // Generates thunk functions for each attr in each embedded type.
     Class::Ptr clazz = attr->type()->clazz();
     if (clazz->name()->string() == "Object") {
         return;
