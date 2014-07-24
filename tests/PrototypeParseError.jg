@@ -1,0 +1,4 @@
+
+
+TestMixin2 < Blarg, Blarg { # Not allowed
+}
