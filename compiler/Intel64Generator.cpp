@@ -180,14 +180,14 @@ void Intel64Generator::operator()(IrBlock* block) {
             break;
         case LOAD: load(res.reg(), a1); break;
         case STORE: store(a1, a2); break;
-        case BNE: cmp(a1.reg(), a2.reg()); jne(branch->label()); break;
-        case BE: cmp(a1.reg(), a2.reg()); je(branch->label()); break;
-        case BZ: test(a1.reg(), a1.reg()); jz(branch->label()); break;
-        case BNZ: test(a1.reg(), a1.reg()); jnz(branch->label()); break; 
-        case BG: cmp(a1.reg(), a2.reg()); jg(branch->label()); break;
-        case BGE: cmp(a1.reg(), a2.reg()); jge(branch->label()); break;
-        case BL: cmp(a1.reg(), a2.reg()); jl(branch->label()); break;
-        case BLE: cmp(a1.reg(), a2.reg()); jle(branch->label()); break;
+        case BNE: bne(a1.reg(), a2.reg(), branch->label()); break;
+        case BE: be(a1.reg(), a2.reg(), branch->label()); break;
+        case BZ: bz(a1.reg(), branch->label()); break;
+        case BNZ: bnz(a1.reg(), branch->label()); break;
+        case BG: bg(a1.reg(), a2.reg(), branch->label()); break;
+        case BGE: bge(a1.reg(), a2.reg(), branch->label()); break;
+        case BL: bl(a1.reg(), a2.reg(), branch->label()); break;
+        case BLE: ble(a1.reg(), a2.reg(), branch->label()); break;
         case CALL: call(a1); break;
         case JUMP: jmp(branch->label()); break;
         case ADD: add(res.reg(), a1.reg(), a2.reg()); break;
@@ -585,6 +585,90 @@ void Intel64Generator::store(Operand a1, Operand a2) {
     }
 }
 
+void Intel64Generator::be(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        comisd(a1, a2);
+    } else {
+        cmp(a1, a2);
+    }
+    je(label);
+}
+
+void Intel64Generator::bne(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        comisd(a1, a2);
+    } else {
+        cmp(a1, a2);
+    }
+    jne(label);
+}
+
+void Intel64Generator::bz(RegisterId a1, String* label) {
+    if (a1.is_float()) {
+        // FixMe: This could be made more efficient...
+        mov(RAX, uint64_t(0));
+        movq(XMM0, RAX);
+        comisd(a1, XMM0);
+        je(label);
+    } else {
+        test(a1, a1);
+        jz(label);
+    }
+}
+
+void Intel64Generator::bnz(RegisterId a1, String* label) {
+    if (a1.is_float()) {
+        // FixMe: This could be made more efficient...
+        mov(RAX, uint64_t(0));
+        movq(XMM0, RAX);
+        comisd(a1, XMM0);
+        jne(label);
+    } else {
+        test(a1, a1);
+        jnz(label);
+    }
+}
+
+void Intel64Generator::bg(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        comisd(a1, a2);
+        ja(label);
+    } else {
+        cmp(a1, a2);
+        jg(label);
+    }
+}
+
+void Intel64Generator::bge(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        comisd(a1, a2);
+        jae(label);
+    } else {
+        cmp(a1, a2);
+        jge(label);
+    }
+}
+
+void Intel64Generator::bl(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        comisd(a1, a2);
+        jb(label);
+    } else {
+        cmp(a1, a2);
+        jl(label);
+    }
+}
+
+void Intel64Generator::ble(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        comisd(a1, a2);
+        jbe(label);
+    } else {
+        cmp(a1, a2);
+        jle(label);
+    }
+}
+
 void Intel64Generator::add(RegisterId res, RegisterId r1, RegisterId r2) {
     typedef void (Intel64Generator::*Func)(RegisterId, RegisterId);
     Func add = &Intel64Generator::add;
@@ -739,6 +823,7 @@ void Intel64Generator::movsd(RegisterId dst, RegisterId src) {
 }
 
 void Intel64Generator::addsd(RegisterId dst, RegisterId src) {
+    // 58 0f f2
     ssesd(0x58, dst, src);
 }
 
@@ -752,6 +837,18 @@ void Intel64Generator::mulsd(RegisterId dst, RegisterId src) {
 
 void Intel64Generator::divsd(RegisterId dst, RegisterId src) {
     ssesd(0x5e, dst, src);
+}
+
+void Intel64Generator::comisd(RegisterId dst, RegisterId src) {
+    //ssesd(0x66, dst, src);
+    uint8_t const op = 0x2f;
+    RegisterId const reg = dst;
+    RegisterId const rm = src;
+    text_->uint8(0x66);
+    rex(reg, rm);
+    text_->uint8(0x0f);
+    text_->uint8(op);
+    modrm(MODRM_DIRECT, reg, rm);
 }
 
 void Intel64Generator::imul(RegisterId reg, RegisterId rm) {
@@ -886,6 +983,20 @@ void Intel64Generator::jge(String* label) {
     text_->uint32(0);
 }
 
+void Intel64Generator::ja(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x87);
+    format_->ref(label, OutputFormat::REF_BRANCH);
+    text_->uint32(0);
+}
+
+void Intel64Generator::jae(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x83);
+    format_->ref(label, OutputFormat::REF_BRANCH);
+    text_->uint32(0);
+}
+
 void Intel64Generator::jl(String* label) {
     text_->uint8(0x0f);
     text_->uint8(0x8c);
@@ -896,6 +1007,20 @@ void Intel64Generator::jl(String* label) {
 void Intel64Generator::jle(String* label) {
     text_->uint8(0x0f);
     text_->uint8(0x8e);
+    format_->ref(label, OutputFormat::REF_BRANCH);
+    text_->uint32(0);
+}
+
+void Intel64Generator::jb(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x82);
+    format_->ref(label, OutputFormat::REF_BRANCH);
+    text_->uint32(0);
+}
+
+void Intel64Generator::jbe(String* label) {
+    text_->uint8(0x0f);
+    text_->uint8(0x86);
     format_->ref(label, OutputFormat::REF_BRANCH);
     text_->uint32(0);
 }

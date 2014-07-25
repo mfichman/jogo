@@ -1,5 +1,5 @@
 Test1.jg:7:23: Undefined function 'f'
-Test1.jg:8:24: Function 'foo' not found in class 'Int'
+Test1.jg:8:24: Function 'foo' not found in type 'Int'
 Module
   name: 
   feature0: Class

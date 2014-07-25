@@ -1,3 +1,3 @@
-Private.jg:17:11: Constructor is private in class 'Private'
-Private.jg:18:5: Function 'attr=' not found in class 'Private'
-Private.jg:19:5: Function 'test' is private in class 'Private'
+Private.jg:17:11: Constructor is private in type 'Private'
+Private.jg:18:5: Function 'attr=' not found in type 'Private'
+Private.jg:19:5: Function 'test' is private in type 'Private'

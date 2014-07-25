@@ -1,0 +1,29 @@
+
+
+Complex < Value {
+    imag var Int
+    real var Int
+
+    @destroy() {
+        Io::println('destroyed')
+    }
+}
+
+
+
+
+main() Int {
+
+    c1 = Complex()
+    c1.imag = 10
+    c1.real = 100
+
+
+    any Any = c1
+    c2 Complex = any
+
+    #Io::println("#{c2.real}+#{c2.imag}i")
+    ret 0
+}
+
+

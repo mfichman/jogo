@@ -1,0 +1,138 @@
+# jgtest exec on
+
+l() {
+    if (1 < 2) {
+        Io::println('ok')
+    } else {
+        Io::println('fail')
+    }
+
+    if (2 < 1) {
+        Io::println('fail')
+    } else {
+        Io::println('ok')
+    }
+}
+
+le() {
+    if (1 <= 2) {
+        Io::println('ok')
+    } else {
+        Io::println('fail')
+    }
+
+    if (2 <= 1) {
+        Io::println('fail')
+    } else {
+        Io::println('ok')
+    }
+
+    if (1 <= 1) {
+        Io::println('ok')
+    } else {
+        Io::println('fail')
+    }
+}
+
+g() {
+    if (2 > 1) {
+        Io::println('ok')
+    } else {
+        Io::println('fail')
+    }
+
+    if (1 > 2) {
+        Io::println('fail')
+    } else {
+        Io::println('ok')
+    }
+}
+
+ge() {
+    if (2 >= 1) {
+        Io::println('ok')
+    } else {
+        Io::println('fail')
+    }
+
+    if (1 >= 2) {
+        Io::println('fail')
+    } else {
+        Io::println('ok')
+    }
+
+    if (1 >= 1) {
+        Io::println('ok')
+    } else {
+        Io::println('fail')
+    }
+}
+
+z() {
+    if (1) {
+        Io::println('ok')
+    } else {
+        Io::println('fail')
+    }
+
+    if (0) {
+        Io::println('fail')
+    } else {
+        Io::println('ok')
+    }
+}
+
+nz() {
+    if (not 1) {
+        Io::println('fail')
+    } else {
+        Io::println('ok')
+    }
+
+    if (not 0) {
+        Io::println('ok')
+    } else {
+        Io::println('fail')
+    }
+}
+
+e() {
+    if (1 == 1) {
+        Io::println('ok')
+    } else {
+        Io::println('fail')
+    }
+
+    if (1 == 0) {
+        Io::println('fail')
+    } else {
+        Io::println('ok')
+    }
+}
+
+ne() {
+    if (1 != 0) {
+        Io::println('ok')
+    } else {
+        Io::println('fail')
+    }
+
+    if (1 != 1) {
+        Io::println('fail')
+    } else {
+        Io::println('ok')
+    }
+}
+
+main() Int {
+    l()
+    le()
+    g()
+    ge()
+    z()
+    nz()
+    e()
+    ne()
+    ret 0
+
+}

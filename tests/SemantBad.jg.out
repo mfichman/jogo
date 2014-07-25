@@ -3,7 +3,7 @@ SemantBad.jg:10:1: Duplicate definition of function 'foo'
 SemantBad.jg:54:5: Duplicate definition of attribute 'blarg'
 SemantBad.jg:19:5: Function 'bar' must return a value
 SemantBad.jg:35:5: Duplicate definition of function 'bar'
-SemantBad.jg:57:1: Duplicate definition of class 'Bob'
+SemantBad.jg:57:1: Duplicate definition of type 'Bob'
 SemantBad.jg:62:5: Statement is unreachable
 SemantBad.jg:67:5: Value assigned to immutable variable 'a'
 SemantBad.jg:71:11: Unbound generic type ':b'

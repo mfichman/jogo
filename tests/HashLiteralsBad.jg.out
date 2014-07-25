@@ -3,6 +3,6 @@ HashLiteralsBad.jg:27:31: Argument does not conform to type 'Int'
 HashLiteralsBad.jg:27:24: Not enough arguments to function '@insert'
 HashLiteralsBad.jg:28:29: Argument does not conform to type 'Intf2' (:k)
 HashLiteralsBad.jg:28:38: Argument does not conform to type 'Intf2' (:v)
-HashLiteralsBad.jg:30:15: Function '@insert' not found in class 'Int'
-HashLiteralsBad.jg:31:24: Function '@insert' not found in class 'NoInsertFunc'
+HashLiteralsBad.jg:30:15: Function '@insert' not found in type 'Int'
+HashLiteralsBad.jg:31:24: Function '@insert' not found in type 'NoInsertFunc'
 HashLiteralsBad.jg:32:11: Undefined variable 'q'

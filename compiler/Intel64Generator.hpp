@@ -106,6 +106,14 @@ private:
     void pcrel(RegisterId reg, String* label);
 
     // Helpers for more complex IR opcodes
+    void be(RegisterId a1, RegisterId a2, String* label); 
+    void bne(RegisterId a1, RegisterId a2, String* label); 
+    void bz(RegisterId a1, String* label); 
+    void bnz(RegisterId a1, String* label); 
+    void bg(RegisterId a1, RegisterId a2, String* label); 
+    void bge(RegisterId a1, RegisterId a2, String* label); 
+    void bl(RegisterId a1, RegisterId a2, String* label); 
+    void ble(RegisterId a1, RegisterId a2, String* label); 
     void load(RegisterId res, Operand a1);
     void store(Operand a1, Operand a2);
     void add(RegisterId res, RegisterId a1, RegisterId a2);
@@ -126,12 +134,20 @@ private:
     void pop(RegisterId reg);
     void cmp(RegisterId arg1, RegisterId arg2);
     void test(RegisterId arg1, RegisterId arg2);
+
     void jne(String* label);
     void je(String* label);
+
     void jg(String* label);
     void jge(String* label);
+    void ja(String* label);
+    void jae(String* label);
+
     void jl(String* label);
     void jle(String* label);
+    void jb(String* label);
+    void jbe(String* label);
+
     void jz(String* label);
     void jnz(String* label);
     void jmp(String* label);
@@ -153,6 +169,7 @@ private:
     void subsd(RegisterId dst, RegisterId src);
     void mulsd(RegisterId dst, RegisterId src);
     void divsd(RegisterId dst, RegisterId src);
+    void comisd(RegisterId dst, RegisterId src);
     void add(RegisterId dst, RegisterId src);
     void add(RegisterId dst, uint32_t imm);
     void sub(RegisterId dst, RegisterId src);
