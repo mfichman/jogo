@@ -257,7 +257,7 @@ void CCodeGenerator::operator()(Assignment* expr) {
         // Assignment to an attribute within a class
 /*
         Type::Ptr type = expr->type(); 
-        Variable::Ptr self = variable(env_->name("self"));
+        Variable::Ptr self = variable(env_->name("__self"));
         Operand addr = Operand::addr(, attr->slot());  
         Operand old = load(addr);
         if (!type->is_value() && !attr->is_weak()) {

@@ -623,7 +623,7 @@ void IrGenerator::operator()(Assignment* expr) {
 
     if (is_attr) {
         type = attr->type();
-        Operand self = variable(env_->name("self"))->operand();
+        Operand self = variable(env_->name("__self"))->operand();
         if (type->is_primitive()) {
             RegisterId reg = temp_inc();
             if (type->is_float()) {
@@ -679,7 +679,7 @@ void IrGenerator::operator()(Assignment* expr) {
     return_->is_var(true);
 
     if (is_attr) {
-        Operand self = variable(env_->name("self"))->operand();
+        Operand self = variable(env_->name("__self"))->operand();
         if (type->is_primitive()) {
             Operand addr = Operand(self.reg(), Address(attr->slot()));  
             store(addr, return_->operand());
@@ -835,7 +835,7 @@ void IrGenerator::operator()(Function* feature) {
     // to a temporary.
     FuncUnmarshal um(this);
     if (feature->is_constructor() && class_->is_compound()) {
-        um.arg(env_->name("self"), class_->type());
+        um.arg(env_->name("__self"), class_->type());
     } 
     for (Formal* f = feature->formals(); f; f = f->next()) {
         um.arg(f->name(), f->type());
@@ -864,7 +864,7 @@ void IrGenerator::operator()(Function* feature) {
     if (!block_->is_ret()) {
         line_ = function_->location().last_line;
         if (function_->is_constructor()) {
-            func_return(variable(env_->name("self")));
+            func_return(variable(env_->name("__self")));
         } else if (feature->type()->is_void()) {
             func_return(0);
         } else {
@@ -1065,6 +1065,9 @@ IrValue* IrGenerator::variable(String* name) {
             return var;
         }
     }
+    if (class_ && !class_->is_closure() && name->string() == "self") {
+        return variable(env_->name("__self"));
+    }
     return 0;
 }
 
@@ -1092,7 +1095,7 @@ void IrGenerator::exit_scope() {
         // cleaned up.  Then, emit the 'ret' instruction.
         if (function_->is_constructor()) {
             assert("Bad return val for constructor" && ret->type()->is_void());
-            func_return(variable(env_->name("self")));
+            func_return(variable(env_->name("__self")));
         } else {
             func_return(ret);
         } 
@@ -1140,7 +1143,7 @@ IrValue::Ptr IrGenerator::id_operand(String* id) {
     } else if (var && !!var->operand().reg()) {
         return var;
     } else if (attr) {
-        Operand self = variable(env_->name("self"))->operand();
+        Operand self = variable(env_->name("__self"))->operand();
         if (attr->type()->is_compound()) {
             IrValue::Flags flags = IrValue::DEAD|IrValue::VAR|IrValue::PARAM;
             Operand op = load(Operand(self.reg(), Address(attr->slot(), 0)));
@@ -1401,7 +1404,7 @@ void IrGenerator::ctor_preamble(Class* clazz) {
         self = pop_ret(class_->type()); 
         self->is_var(true);
         self->is_dead(true);
-        variable(IrVariable(env_->name("self"), self));
+        variable(IrVariable(env_->name("__self"), self));
        
         // Initialize the vtable pointer
         Operand vtable = Operand(self->operand().reg(), Address(0));
@@ -1415,7 +1418,7 @@ void IrGenerator::ctor_preamble(Class* clazz) {
         store(refcount, Operand(new IntegerLiteral(Location(), one)));
     
     } else if (clazz->is_compound()) {
-        self = id_operand(env_->name("self"));
+        self = id_operand(env_->name("__self"));
         FuncMarshal fm(this);
         fm.arg(self->operand());
         fm.arg(load(Operand(new IntegerLiteral(Location(), size))));
@@ -1459,7 +1462,7 @@ void IrGenerator::ctor_preamble(Class* clazz) {
 void IrGenerator::copier_preamble(Class* clazz) {
     // Emits the copy constructor preamble, which adjusts refcounts for
     // reference-type attributes of the value type.
-    IrValue::Ptr self = id_operand(env_->name("self"));
+    IrValue::Ptr self = id_operand(env_->name("__self"));
     IrValue::Ptr other = id_operand(env_->name("val"));
     
     calculate_size(clazz);
@@ -1502,7 +1505,7 @@ void IrGenerator::dtor_epilog(Function* feature) {
     // The attributes need to be released in the reverse order
     for (int i = attrs.size()-1; i >= 0; i--) {
         Attribute::Ptr attr = attrs[i];
-        Operand self = variable(env_->name("self"))->operand();
+        Operand self = variable(env_->name("__self"))->operand();
         if (attr->type()->is_ref()) {
             Operand addr = Operand(self.reg(), Address(attr->slot()));
             refcount_dec(load(addr));
@@ -1518,7 +1521,7 @@ void IrGenerator::dtor_epilog(Function* feature) {
         // Pass
     } else if (class_->is_ref()) {
         FuncMarshal fm(this);
-        fm.arg(variable(env_->name("self"))->operand());
+        fm.arg(variable(env_->name("__self"))->operand());
         fm.call(Operand(env_->name("Boot_free")));
     } else if (class_->is_compound()) {
         // Pass

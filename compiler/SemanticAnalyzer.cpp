@@ -708,7 +708,7 @@ void SemanticAnalyzer::operator()(IdentifierRef* expr) {
         if (call->function()) {
             Location loc = expr->location();
             String::Ptr scope = env_->name("");
-            String::Ptr name = env_->name("self");
+            String::Ptr name = env_->name("__self");
             IdentifierRef::Ptr self = new IdentifierRef(loc, scope, name);
             self->type(class_->type());
             call->receiver(self);
@@ -960,7 +960,7 @@ void SemanticAnalyzer::operator()(Match* stmt) {
         if (dynamic_cast<Empty*>(with->guard())) {
             // Default case
         } else if (!guard->type()->equals(with->guard()->type())) {
-            err_ << stmt->location();
+            err_ << b->location();
             err_ << "Match expression does not conform to type '";
             err_ << guard->type() << "'";
             err_ << "\n";
@@ -1051,7 +1051,7 @@ void SemanticAnalyzer::operator()(Function* feature) {
         }
     }
     if (feature->is_constructor()) {
-        String::Ptr nm = env_->name("self");
+        String::Ptr nm = env_->name("__self");
         variable(new Variable(nm, class_->type(), true));
     }
 
@@ -1466,6 +1466,9 @@ Variable* SemanticAnalyzer::variable(String* name) {
             return var;
         }
     }
+    if (class_ && !class_->is_closure() && name->string() == "self") {
+        return variable(env_->name("__self"));
+    }
     return 0;
 }
 
@@ -1590,7 +1593,7 @@ void SemanticAnalyzer::copier() {
         Type::Ptr vt = env_->void_type();
         Location loc = class_->location();
         Block::Ptr block(new Block(loc, 0, 0));
-        Formal::Ptr self(new Formal(loc, env_->name("self"), class_->type()));
+        Formal::Ptr self(new Formal(loc, env_->name("__self"), class_->type()));
         Formal::Ptr other(new Formal(loc, env_->name("val"), class_->type())); 
         self->next(other);
         class_->feature(new Function(loc, env_, nm, self, 0, vt, block));
@@ -1620,7 +1623,7 @@ void SemanticAnalyzer::destructor() {
         Type::Ptr vt = env_->void_type();
         Location loc = class_->location();
         Block::Ptr block(new Block(loc, 0, 0));
-        Formal::Ptr self(new Formal(loc, env_->name("self"), st));
+        Formal::Ptr self(new Formal(loc, env_->name("__self"), st));
         class_->feature(new Function(loc, env_, nm, self, 0, vt, block));
     }
 }
@@ -1638,7 +1641,7 @@ void SemanticAnalyzer::accessor(Attribute* feat) {
         Block::Ptr block(new Block(loc, 0, ret));
         Type::Ptr st = class_->type();
         Type::Ptr ft = feat->type();
-        Formal::Ptr self(new Formal(loc, env_->name("self"), st));
+        Formal::Ptr self(new Formal(loc, env_->name("__self"), st));
         class_->feature(new Function(loc, env_, get, self, 0, ft, block));
     }
 }
@@ -1658,7 +1661,7 @@ void SemanticAnalyzer::mutator(Attribute* feat) {
         Type::Ptr st = class_->type();
         Type::Ptr vt = env_->void_type();
         Type::Ptr ft = feat->type();
-        Formal::Ptr self(new Formal(loc, env_->name("self"), st));
+        Formal::Ptr self(new Formal(loc, env_->name("__self"), st));
         Formal::Ptr arg(new Formal(loc, env_->name("_arg0"), ft));
         self->next(arg);
         class_->feature(new Function(loc, env_, set, self, 0, vt, block));

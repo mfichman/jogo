@@ -79,7 +79,7 @@ CodeExpander::stub(Function* func, Attribute* attr) {
     Expression::Ptr self(new IdentifierRef(loc, env_->name(""), attr->name()));
     for (Formal::Ptr f = func->formals(); f; f = f->next()) {
         Expression::Ptr arg;
-        if (f->name()->string() == "self") {
+        if (f->name()->string() == "__self") {
             arg = self; 
         } else {
             arg = new IdentifierRef(loc, env_->name(""), f->name());
@@ -145,7 +145,7 @@ CodeExpander::functor(Class* clazz) {
                 // This is a functor case, so generate a branch for it.  Each 
                 // branch looks like this: self.@case_Type(obj)
                 Type::Ptr type = func->formals()->next()->type();
-                Expression::Ptr arg0(new IdentifierRef(loc, env_->name(""), env_->name("self")));
+                Expression::Ptr arg0(new IdentifierRef(loc, env_->name(""), env_->name("__self")));
                 Expression::Ptr arg1(new Cast(loc, type, new IdentifierRef(loc, env_->name(""), fn)));
                 arg0->type(func->formals()->type());
                 arg1->type(func->formals()->next()->type());

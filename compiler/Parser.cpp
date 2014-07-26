@@ -843,7 +843,7 @@ Expression* Parser::closure() {
         qn += "::_Closure" + stringify(func);
     }
     Type::Ptr type = new Type(loc, name(qn), 0, env_);
-    Formal::Ptr self = new Formal(loc, name("self"), type);
+    Formal::Ptr self = new Formal(loc, name("__self"), type);
     self->next(func->formals());
     func->formals(self);
 
@@ -1708,7 +1708,7 @@ void Parser::implicit_self(Feature* feature, Type* type) {
     Function* func = dynamic_cast<Function*>(feature);
     if (!func) { return; }
     if (func->name()->string() == "@init") { return; }
-    String* id = name("self");
+    String* id = name("__self");
     Formal* self = new Formal(feature->location(), id, type);
     self->next(func->formals());
     func->formals(self);

@@ -101,7 +101,7 @@ void Class::gen_functor_method() {
     if(!feature(name)) {
         Type::Ptr ret = env()->void_type();
         Type::Ptr at = env()->any_type();
-        Formal::Ptr self(new Formal(location(), env()->name("self"), type()));
+        Formal::Ptr self(new Formal(location(), env()->name("__self"), type()));
         self->next(new Formal(location(), env()->name("obj"), at));
         Block::Ptr block(new Block(location(), env()->string(""), 0));
         feature(new Function(location(), env(), name, self, 0, ret, block));
@@ -114,7 +114,7 @@ void Class::gen_equal_method() {
     Feature::Ptr feat = feature(name);
     if(!feat||feat->parent()!=this) {
         Type::Ptr ret = env()->bool_type();
-        Formal::Ptr self(new Formal(location(), env()->name("self"), type())); 
+        Formal::Ptr self(new Formal(location(), env()->name("__self"), type())); 
         self->next(new Formal(location(), env()->name("other"), type())); 
         Feature::Flags flags = Feature::NATIVE;
         Function::Ptr func = new Function(location(), env(), name, self, flags, ret, 0);
