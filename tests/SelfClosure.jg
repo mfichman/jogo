@@ -1,0 +1,27 @@
+# jgtest exec on
+
+Obj < Object {
+
+    x var Int
+    y var Int
+
+    @init(x Int, y Int) {
+        self.x = x
+        self.y = y
+    }
+
+    foo() {
+        f = func() {
+            self.bar() # self should refer to the 'Obj', not the closure
+        }
+        f()
+    }
+    bar() {
+        Io::println("bar #{x} #{y}")
+    }
+} 
+
+main() Int {
+    Obj(1, 2).foo()
+    ret 0
+}
