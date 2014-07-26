@@ -126,13 +126,7 @@ std::string File::input(const std::string& ext) const {
 }
 
 std::string File::output(const std::string& ext) const {
-    std::string static main = std::string("Boot") + FILE_SEPARATOR + "Main.jg";
-    std::string name;
-    if (main == name_->string()) {
-        name = env_->entry_module();
-    } else {
-        name = File::no_ext_name(name_->string());
-    }
+    std::string const name = File::no_ext_name(name_->string());
     return env_->build_dir() + FILE_SEPARATOR + name + ext;
 }
 

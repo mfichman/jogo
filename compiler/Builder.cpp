@@ -358,6 +358,7 @@ void Builder::link(const std::string& in, const std::string& out) {
     for (int i = 0; i < env_->libs(); i++) {
         ss << env_->lib(i) << ".lib ";
     }
+    ss << "jogomain.lib ";
 #else
     for (int i = 0; i < env_->includes(); i++) {
         if (File::is_dir(env_->include(i))) {
@@ -367,6 +368,7 @@ void Builder::link(const std::string& in, const std::string& out) {
     for (int i = 0; i < env_->libs(); i++) {
         ss << "-l" << env_->lib(i) << " ";
     }
+    ss << "-ljogomain ";
 #endif
 
     // Output link options for libraries and module dependencies.
@@ -380,6 +382,7 @@ void Builder::link(const std::string& in, const std::string& out) {
     for (int i = 0; i < env_->libs(); i++) {
         ss << "-l" << env_->lib(i) << " ";
     }
+    ss << "-ljogomain ";
 #endif
 
     if (env_->verbose()) {

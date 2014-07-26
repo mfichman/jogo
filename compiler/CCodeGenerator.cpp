@@ -475,6 +475,7 @@ void CCodeGenerator::operator()(Function* feature) {
     String::Ptr name = feature->name();
     Feature::Ptr parent = feature->parent();
     if (name->string() == "main" && parent->name()->string() == "Boot") {
+        assert(!"check for entry point instead of this hack");
         constants();
     }
     
@@ -654,8 +655,9 @@ void CCodeGenerator::func_return() {
 }
 
 void CCodeGenerator::func_sig(Function* feature) {
-    // Output a function or constructor signature
-    if (feature->label()->string() == "Boot_main") {
+    // Output a functiono or constructor signature
+    assert(!"fix boot_main stuff");
+    if (feature->label()->string() == env_->entry_point()) {
         out_ << "int";
     } else if (feature->is_constructor()) {
         Class* clazz = static_cast<Class*>(feature->parent());
