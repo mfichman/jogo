@@ -131,12 +131,15 @@ public:
         semant_->return_ = return_;
         semant_->class_ = class_;
         scope_.swap(semant_->scope_);
+        genclass_.swap(semant_->genclass_);
     }
 
 private:
     SemanticAnalyzer* semant_;
     std::vector<Scope::Ptr> scope_;
     std::map<String::Ptr,Class::Ptr> genclass_;
+    // Mapping from generic type name (i.e., :k) to a generated, unique generic
+    // class for each generic type name, or a concrete class.
     Class::Ptr class_;
     Type::Ptr return_;
     Function::Ptr function_;

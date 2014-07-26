@@ -58,13 +58,13 @@ void SemanticAnalyzer::operator()(Module* feature) {
         if (Class::Ptr clazz = dynamic_cast<Class*>(f.pointer())) {
             if (clazz->is_closure()) { continue; }
         }
-        f(this);
+		f(this);
     }
 }
 
 void SemanticAnalyzer::operator()(Class* feature) {
     // Analyze a class, including its child attributes and functions.
-    ContextAnchor anchor(this);
+    ContextAnchor context(this);
     class_ = feature;
 
     // Check that the class has a valid prototype
@@ -157,8 +157,6 @@ void SemanticAnalyzer::operator()(Class* feature) {
     for (Feature::Ptr f = feature->features(); f; f = f->next()) {
         f(this);
     }
-
-    genclass_.clear();
 }
 
 void SemanticAnalyzer::operator()(Formal* formal) {
@@ -1096,7 +1094,6 @@ void SemanticAnalyzer::operator()(Function* feature) {
         
     exit_scope();
     function_ = 0;
-    genclass_.clear();
 }
 
 void SemanticAnalyzer::operator()(Constant* feature) {
