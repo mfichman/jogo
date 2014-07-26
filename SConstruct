@@ -43,11 +43,13 @@ defines = {
 
 env = Environment(CPPPATH = ['build/compiler', 'build/debugger'])
 env.Append(ENV = os.environ)
-env.Append(JGFLAGS = '-v -d -m -i runtime --build-dir ' + build_dir)
-env.Append(JGFLAGS = ' --no-default-libs -g Intel64 ')
+env.Append(JGFLAGS = '-v -d -m -g Intel64 -i runtime --no-default-libs --build-dir ' + build_dir)
 env.Append(CPPDEFINES = defines)
 env.Append(CPATH = ['runtime'])
 env.Append(CDEFINES = defines)
+
+main_env = Environment()
+main_env.Append(ENV = os.environ)
 
 if 'release' == build_mode:
     env.Append(JGFLAGS = '--optimize')
@@ -63,7 +65,7 @@ if env['PLATFORM'] == 'darwin':
 if env['PLATFORM'] == 'posix':
     env.Append(CPPDEFINES = ['LINUX'])
     env.Append(CDEFINES = ['LINUX'])
-    env.Append(CFLAGS = '-m64 -lm')
+    main_env.Append(CFLAGS = '-m64 -lm')
     dist_path = 'dist/root/usr'
     nasm = 'nasm -dLINUX -felf64 -o $TARGET $SOURCE'
 
@@ -74,21 +76,21 @@ if env['PLATFORM'] == 'win32':
     nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.obj')
     if 'release' == build_mode:
         env.Append(CPPFLAGS = '/O2')
-        env.Append(CFLAGS = '/O2')
+        main_env.Append(CFLAGS = '/O2')
     env.Append(CPPDEFINES = ['WINDOWS'])
     env.Append(CDEFINES = ['WINDOWS'])
-    env.Append(CPPFLAGS = '/MT /Zi /EHsc /FS')
-    env.Append(CFLAGS = '/MT /Zi /FS')
+    env.Append(CPPFLAGS = '/nologo /MT /Zi /EHsc /FS')
     env.Append(LINKFLAGS = '/DEBUG') # Always include debug symbols for now
+    main_env.Append(CFLAGS = '/nologo /MD /Z7')
 else:
     nasm_bld = Builder(action = nasm, src_suffix = '.asm', suffix = '.o')
     if 'release' == build_mode:
         env.Append(CPPFLAGS = '-O2')
-        env.Append(CFLAGS = '-O2')
+        main_env.Append(CFLAGS = '-O2')
     env.Append(LDFLAGS = '-lm')
     env.Append(CPPFLAGS = '-Wall -Werror -g')
     env.Append(CPPFLAGS = '-Wno-unused -Wno-sign-compare -ansi')
-    env.Append(CFLAGS = '-Wall -Werror -g')
+    main_env.Append(CFLAGS = '-Wall -Werror -g')
 
 env.Append(BUILDERS = { 'NASM': nasm_bld })
 
@@ -142,8 +144,13 @@ coroutine = env.NASM('build/runtime/Coroutine.Intel64.asm')
 
 jogo_lib = os.path.join('lib', 'jogo')
 lib = env.Command('jglib', jogo, '%s $JGFLAGS -o %s %s' % (jogo_cmd, jogo_lib, library_src))
+
+main_lib = main_env.StaticLibrary('lib/jogomain', 'build/runtime/Main.c')
 env.Depends(lib, jogo)
 env.Depends(lib, coroutine)
+env.Depends(main_lib, lib)
+env.Depends(main_lib, jogo)
+env.Depends(main_lib, coroutine)
 
 # Test commands ##############################################################
 if 'check' in COMMAND_LINE_TARGETS:

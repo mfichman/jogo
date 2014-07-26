@@ -138,11 +138,6 @@ void Boot_abort() {
 // The declaration for the user-defined main function
 extern Int main_();
 
-int main(int argc, char** argv) {
-    // FixMe: Process arg list
-    return (int)Boot_main();
-}
-
 void Boot_Main__call(Object self) {
     main_();
 }

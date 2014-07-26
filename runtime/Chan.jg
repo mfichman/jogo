@@ -30,6 +30,9 @@ ChanSet[:k,:a] < Object {
     read(key :k, chan Chan[:a]) {
         # Reads from the output channel until empty.
         for item in chan {
+            if out.state == ChanState::CLOSED {
+                ret 
+            }
             out.put(Pair[:k,:a](key, item)) 
         }
         Io::println("reader done")

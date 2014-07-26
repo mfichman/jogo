@@ -83,7 +83,7 @@ void Parser::input(const std::string& import, bool optional) {
     // the first will be parsed.
     std::string file = Import::file_name(import); 
     std::vector<std::string> tests;
-    if (env_->file(name(file)) && import != "Boot::Main") { 
+    if (env_->file(name(file))) {
         return; 
     }
 

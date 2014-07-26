@@ -97,7 +97,7 @@ void TreePrinter::print_comment(String* comment) {
 
 void TreePrinter::operator()(Module* feature) {
     std::string name = feature->qualified_name()->string();
-    if (!name.empty() || name == "Boot") {
+    if (!name.empty()) {
         return;
     }
 

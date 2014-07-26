@@ -1811,8 +1811,8 @@ Type* SemanticAnalyzer::canonical(Type* in, Type* map, Type* bound) {
 }
 
 Type* SemanticAnalyzer::canonical(Type* in, Function* func, Expression* args) {
-    // Given a function and its arguments, find the type that 'type' maps to.
-    // If 'type' is not a generic type var, then it maps to itself.  
+    // Given a function and its arguments, find the type that 'in' maps to.
+    // If 'in' is not a generic type var, then it maps to itself.  
 
     // FIXME: This function may need to be 'memoized' to have good performance
     // with large numbers of args, because it does a dumb search through all
