@@ -130,6 +130,7 @@ void Io_Stream_register_console(Io_Stream self) {
 #endif
 }   
 
+#ifdef WINDOWS
 Int Io_Stream_result(Io_Stream self, Int bytes, OVERLAPPED* op) {
     // Gets the result of an asycnchronous I/O operation, and returns the
     // number of bytes read/written.  Yields the current coroutine to the event
@@ -139,7 +140,6 @@ Int Io_Stream_result(Io_Stream self, Int bytes, OVERLAPPED* op) {
     // Calling this method also increments the reference count, to retain the
     // coroutine so that it won't be collected while an I/O event is
     // outstanding. 
-#ifdef WINDOWS
     HANDLE handle = (HANDLE)self->handle;
 	Bool is_console = (Io_StreamType_CONSOLE == self->type);
 	Bool has_io = (Io_StreamMode_ASYNC == self->mode) && !is_console;
@@ -178,10 +178,8 @@ Int Io_Stream_result(Io_Stream self, Int bytes, OVERLAPPED* op) {
     } else {
 	    return bytes;
 	}
-#else
-    return 0;
-#endif
 }
+#endif
 
 #ifdef WINDOWS
 void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {

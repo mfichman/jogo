@@ -851,7 +851,7 @@ void SemanticAnalyzer::operator()(Assignment* expr) {
     init(this);
     type_ = 0;
     
-    expr->type(declared->is_top() ? init->type() : declared);
+    expr->type(declared->is_top() ? init->type() : declared.pointer());
     if (!declared->is_top()) {
         // If declared_type == top_type, then the variable declaration has no
         // true declared type, but it defines a new variable regardless of
@@ -1100,7 +1100,14 @@ void SemanticAnalyzer::operator()(Constant* feature) {
     // Analyze a constant value.
     Expression::Ptr init = feature->initializer();
     Feature::Ptr parent = feature->parent();
-    if (feature->type() && init->type()) { return; }
+
+    if (feature->type()) { return; }
+
+    Class::Ptr clazz = dynamic_cast<Class*>(parent.pointer());
+    if (!init && clazz) {
+        clazz(this);
+        init = feature->initializer();
+    }
 
     if (parent->feature(feature->name()) != feature) {
         err_ << feature->location();
@@ -1109,7 +1116,6 @@ void SemanticAnalyzer::operator()(Constant* feature) {
         env_->error();
     }
 
-    Class::Ptr clazz = dynamic_cast<Class*>(parent.pointer());
     feature->type(env_->bottom_type());
     init(this);
 

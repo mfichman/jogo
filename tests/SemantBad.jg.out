@@ -45,7 +45,7 @@ Module
       type: Int
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: Bob
       block: Block
         child0: Conditional
@@ -80,7 +80,7 @@ Module
       type: Int
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: Bob
       block: Block
         child0: Conditional
@@ -125,7 +125,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: Bob
       block: Block
     feature5: Function
@@ -139,7 +139,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: Bob
       block: Block
     feature1: Function
@@ -186,7 +186,7 @@ Module
       type: :b
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: Container[:a]
       formal1: Formal
         name: val
@@ -198,7 +198,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: Container[:a]
       block: Block
     feature3: Function
@@ -209,7 +209,7 @@ Module
       name: value?
       type: :b
       formal0: Formal
-        name: self
+        name: __self
         type: Container[:a]
       block: Block
         child0: Return
@@ -226,7 +226,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: One[:a]
       block: Block
     feature2: Function
@@ -237,7 +237,7 @@ Module
       name: one?
       type: One[String,String]
       formal0: Formal
-        name: self
+        name: __self
         type: One[:a]
       block: Block
         child0: Return
@@ -258,7 +258,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: Two[:a,:b]
       block: Block
     feature3: Function
@@ -269,7 +269,7 @@ Module
       name: two?
       type: Two[String]
       formal0: Formal
-        name: self
+        name: __self
         type: Two[:a,:b]
       block: Block
         child0: Return
@@ -279,7 +279,7 @@ Module
       name: three?
       type: Two
       formal0: Formal
-        name: self
+        name: __self
         type: Two[:a,:b]
       block: Block
         child0: Return

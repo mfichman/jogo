@@ -38,10 +38,10 @@ public:
     MachDebugger();
     ~MachDebugger();
     DebugAddr symbol(String* name);
-    void read(DebugAddr addr, char const* buf, int len); 
+    void read(DebugAddr addr, char* buf, int len); 
     void write(DebugAddr addr, char const* buf, int len);
     void breakpoint(DebugAddr addr);
-    void exec(char** argv, int argc);
+    void exec(char const** argv, int argc);
     void kill();
     void cont();
     void attach(ProcessId);

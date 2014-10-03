@@ -8,7 +8,7 @@ Module
       type: String
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: IteratorTest
       block: Block
         child0: Return
@@ -19,7 +19,7 @@ Module
       type: Bool
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: IteratorTest
       block: Block
         child0: Return
@@ -28,7 +28,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: IteratorTest
       block: Block
     feature3: Function
@@ -43,7 +43,7 @@ Module
       type: IteratorTest
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: IterableTest
       block: Block
         child0: Return
@@ -53,7 +53,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: IterableTest
       block: Block
     feature2: Function
@@ -76,7 +76,7 @@ Module
       type: Void
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: Loop
       block: Block
         child0: Let
@@ -123,7 +123,7 @@ Module
       type: Void
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: Loop
       block: Block
         child0: While
@@ -133,7 +133,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: Loop
       block: Block
     feature3: Function

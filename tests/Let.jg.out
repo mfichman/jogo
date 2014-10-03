@@ -8,7 +8,7 @@ Module
       type: Void
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: Let
       block: Block
         child0: Let
@@ -22,7 +22,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: Let
       block: Block
     feature2: Function

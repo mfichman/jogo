@@ -51,7 +51,7 @@ DebugAddr MachDebugger::symbol(String* name) {
     return 0;
 }
 
-void MachDebugger::read(DebugAddr addr, char const* buf, int len) {
+void MachDebugger::read(DebugAddr addr, char* buf, int len) {
     // Reads len bytes from addr  in the traced process into buf
 
 }
@@ -63,7 +63,7 @@ void MachDebugger::write(DebugAddr addr, char const* buf, int len) {
 void MachDebugger::breakpoint(DebugAddr addr) {
 }
 
-void MachDebugger::exec(char** argv, int argc) {
+void MachDebugger::exec(char const** argv, int argc) {
 }
 
 void MachDebugger::kill() {

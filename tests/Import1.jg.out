@@ -7,7 +7,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: ImportA
       block: Block
     feature1: Function
@@ -21,7 +21,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: ImportB
       block: Block
     feature1: Function

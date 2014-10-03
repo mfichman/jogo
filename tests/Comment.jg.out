@@ -17,7 +17,7 @@ Module
         All comments until the end of the function or the first non-comment
         symbol are included. 
       formal0: Formal
-        name: self
+        name: __self
         type: Comment
       block: Block
         child0: Conditional
@@ -29,7 +29,7 @@ Module
       comment:
         The quick brown fox jumped over the lazy dog. 
       formal0: Formal
-        name: self
+        name: __self
         type: Comment
       block: Block
     feature2: Attribute
@@ -41,7 +41,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: Comment
       block: Block
     feature4: Function
@@ -52,7 +52,7 @@ Module
       name: x?
       type: String
       formal0: Formal
-        name: self
+        name: __self
         type: Comment
       block: Block
         child0: Return

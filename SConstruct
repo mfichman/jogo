@@ -88,7 +88,7 @@ else:
         env.Append(CPPFLAGS = '-O2')
         main_env.Append(CFLAGS = '-O2')
     env.Append(LDFLAGS = '-lm')
-    env.Append(CPPFLAGS = '-Wall -Werror -g')
+    env.Append(CPPFLAGS = '-Wall -Werror -g ')
     env.Append(CPPFLAGS = '-Wno-unused -Wno-sign-compare -ansi')
     main_env.Append(CFLAGS = '-Wall -Werror -g')
 
@@ -180,7 +180,7 @@ pkgmaker = ' '.join((
     '--out "jogo-%s.pkg"' % str(version),
 ))
 nsis = ' '.join((
-    '"%s"' % os.path.join(os.environ['PROGRAMFILES'], 'NSIS', 'makensis.exe'),
+    '"%s"' % os.path.join(os.environ.get('PROGRAMFILES', ''), 'NSIS', 'makensis.exe'),
     '/DVERSION=%s' % str(version),
     '/DREVISION=%s' % str(revision),
     '/DBRANCH=%s' % str(branch),

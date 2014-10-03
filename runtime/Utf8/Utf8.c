@@ -135,11 +135,14 @@ Int Utf8_len(String str) {
 }
 
 Bool Utf8_valid(String str) {
+    assert(!"not implemented");
     struct Utf8_Iter i = { 0, 0, str, 0 };
     while (Utf8_Iter_more__g(&i)) {
+/*
         if (Utf8_Iter_next(&i) < 0) {
             return 0;
         }
+*/
     }
     return 1;
 }

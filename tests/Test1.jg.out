@@ -81,7 +81,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: Test1
       block: Block
     feature5: Function

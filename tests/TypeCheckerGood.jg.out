@@ -7,7 +7,7 @@ Module
       name: check1
       type: CycleType2
       formal0: Formal
-        name: self
+        name: __self
         type: CycleType1
       block: 
   feature1: Class
@@ -17,7 +17,7 @@ Module
       name: check1
       type: CycleType1
       formal0: Formal
-        name: self
+        name: __self
         type: CycleType2
       block: 
   feature2: Class
@@ -28,7 +28,7 @@ Module
       type: Void
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: TypeChecker
       formal1: Formal
         name: x
@@ -42,7 +42,7 @@ Module
       type: Int
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: TypeChecker
       block: Block
         child0: Return
@@ -52,7 +52,7 @@ Module
       type: Void
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: TypeChecker
       formal1: Formal
         name: bob
@@ -63,7 +63,7 @@ Module
       type: Void
       comment:
       formal0: Formal
-        name: self
+        name: __self
         type: TypeChecker
       block: Block
         child0: Assignment
@@ -178,7 +178,7 @@ Module
       name: @destroy
       type: Void
       formal0: Formal
-        name: self
+        name: __self
         type: TypeChecker
       block: Block
     feature5: Function

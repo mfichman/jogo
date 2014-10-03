@@ -25,13 +25,8 @@
 #include "Jogo.hpp"
 #include "Iterator.hpp"
 #include <map>
-#ifdef WINDOWS
 #include <functional>
 #include <unordered_map>
-#else
-#include <tr1/functional>
-#include <tr1/unordered_map>
-#endif
 
 /* Ordered map that preserves the insertion order of elements (insert-only) */
 template <typename K, typename V>
