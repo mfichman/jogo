@@ -25,7 +25,7 @@
 
 #include "Primitives.h"
 #include "Coroutine.h"
-#include "Io/Buffer.h"
+#include "Buffer.h"
 #include "Io/Manager.h"
 
 typedef struct Io_Stream* Io_Stream;
@@ -33,8 +33,8 @@ struct Io_Stream {
     VoidPtr _vtable;
     U64 _refcount;
     Int handle;
-    Io_Buffer read_buf;
-    Io_Buffer write_buf;
+    Buffer read_buf;
+    Buffer write_buf;
     Int status;
     Int type;
     Int error;
@@ -61,8 +61,8 @@ extern Int Io_StreamType_CONSOLE;
 extern Int Io_StreamType_SOCKET;
 
 Io_Stream Io_Stream__init(Int handle, Int type);
-void Io_Stream_read(Io_Stream self, Io_Buffer buffer);
-void Io_Stream_write(Io_Stream self, Io_Buffer buffer);
+void Io_Stream_read(Io_Stream self, Buffer buffer);
+void Io_Stream_write(Io_Stream self, Buffer buffer);
 Byte Io_Stream_get(Io_Stream self);
 Byte Io_Stream_getbb(Io_Stream self);
 Int Io_Stream_getib(Io_Stream self);
@@ -86,7 +86,6 @@ String Io_Stream_readall(Io_Stream self);
 void Io_Stream__destroy(Io_Stream self);
 void Io_Stream_fillto(Io_Stream self, Int num);
 void Io_Stream_emptyto(Io_Stream self, Int num);
-Bool Io_Buffer_empty__g(Io_Buffer self);
 extern void Io_Stream__vtable();
 
 #endif

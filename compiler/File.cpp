@@ -315,7 +315,7 @@ void File::unlink(std::string const& name) {
 #ifdef WINDOWS
     DeleteFile(name.c_str());
 #else
-    unlink(name.c_str());
+    ::unlink(name.c_str());
 #endif
 }
 

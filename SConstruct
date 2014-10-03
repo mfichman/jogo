@@ -118,6 +118,7 @@ jgdebug = env.Program(jgdebug_cmd, compiler_src + debugger_src + ['build/drivers
 library_src = ' '.join([
     "Array",
     "Boot",
+    "Buffer",
     "Collection",
     "Chan",
     "Coroutine",
@@ -207,7 +208,10 @@ if 'doc' in COMMAND_LINE_TARGETS:
 
 
 if 'pkg' in COMMAND_LINE_TARGETS:
-    shutil.rmtree(dist_path)
+    try:
+        shutil.rmtree(dist_path)
+    except OSError, e:
+        pass
     for f in library_headers:
         path = f.path.split(os.path.sep)
         path = os.path.join(*path[1:])

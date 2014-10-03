@@ -62,8 +62,8 @@ Io_Stream Io_Stream__init(Int desc, Int type) {
     ret->_vtable = Io_Stream__vtable;
     ret->_refcount = 1;
     ret->handle = desc; 
-    ret->read_buf = Io_Buffer__init(1024);
-    ret->write_buf = Io_Buffer__init(1024);
+    ret->read_buf = Buffer__init(1024);
+    ret->write_buf = Buffer__init(1024);
     ret->status = Io_StreamStatus_OK;
     ret->mode = Io_StreamMode_ASYNC;
     ret->type = type;
@@ -160,7 +160,7 @@ Int Io_Stream_result(Io_Stream self, Int bytes, OVERLAPPED* op) {
     }
     if (ERROR_HANDLE_EOF == GetLastError()) {
         // End-of-file has been reached.
-        if (Io_Buffer_empty__g(self->read_buf)) {
+        if (Buffer_empty__g(self->read_buf)) {
             self->status = Io_StreamStatus_EOF;
         }
         return 0;
@@ -170,7 +170,7 @@ Int Io_Stream_result(Io_Stream self, Int bytes, OVERLAPPED* op) {
         self->error = GetLastError();
         return 0;
     } else if (bytes == 0) {
-        if (Io_Buffer_empty__g(self->read_buf)) {
+        if (Buffer_empty__g(self->read_buf)) {
 		    self->status = Io_StreamStatus_EOF;
         }
         return 0;
@@ -182,7 +182,7 @@ Int Io_Stream_result(Io_Stream self, Int bytes, OVERLAPPED* op) {
 #endif
 
 #ifdef WINDOWS
-void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
+void Io_Stream_read(Io_Stream self, Buffer buffer) {
     // Read characters from the stream until 'buffer' is full, an I/O error 
     // is raised, or the end of the input is reached (Windows impl)
     Byte* buf = buffer->data + buffer->end;
@@ -214,7 +214,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 #endif
 
 #ifdef LINUX
-void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
+void Io_Stream_read(Io_Stream self, Buffer buffer) {
     // Read characters from the stream until 'buffer' is full, an I/O error 
     // is raised, or the end of the input is reached (Linux impl)
     Byte* buf = buffer->data + buffer->end;
@@ -242,7 +242,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 
     Int ret = read(self->handle, buf, len);
     if (ret == 0) {
-        if (Io_Buffer_empty__g(self->read_buf)) {
+        if (Buffer_empty__g(self->read_buf)) {
             self->status = Io_StreamStatus_EOF;
         }
     } else if (ret == -1) {
@@ -255,7 +255,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 #endif
 
 #ifdef DARWIN
-void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
+void Io_Stream_read(Io_Stream self, Buffer buffer) {
     // Read characters from the stream until 'buffer' is full, an I/O error 
     // is raised, or the end of the input is reached (Darwin impl)
     Byte* buf = buffer->data + buffer->end;
@@ -288,7 +288,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 
     Int ret = read(self->handle, buf, len);
     if (ret == 0) {
-        if (Io_Buffer_empty__g(self->read_buf)) {
+        if (Buffer_empty__g(self->read_buf)) {
             self->status = Io_StreamStatus_EOF;
         }
     } else if (ret == -1) {
@@ -297,7 +297,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
     } else {
         buffer->end += ret;
         if (is_file && Io_manager()->iobytes <= len) {
-            if (Io_Buffer_empty__g(self->read_buf)) {
+            if (Buffer_empty__g(self->read_buf)) {
                 self->status = Io_StreamStatus_EOF;
             } else {
                 self->eof = 1;
@@ -308,7 +308,7 @@ void Io_Stream_read(Io_Stream self, Io_Buffer buffer) {
 #endif
 
 #ifdef WINDOWS
-void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
+void Io_Stream_write(Io_Stream self, Buffer buffer) {
     // Write characters from the buffer into the stream until 'buffer' is full,
     // an I/O error is raised, or the stream is closed (Windows impl).
     Byte* buf = buffer->data + buffer->begin;
@@ -339,7 +339,7 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
 #endif
 
 #ifdef LINUX
-void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
+void Io_Stream_write(Io_Stream self, Buffer buffer) {
     // Write characters from the buffer into the stream until 'buffer' is full,
     // an I/O error is raised, or the stream is closed (Linux impl).
     Byte* buf = buffer->data + buffer->begin;
@@ -373,7 +373,7 @@ void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
 #endif
 
 #ifdef DARWIN
-void Io_Stream_write(Io_Stream self, Io_Buffer buffer) {
+void Io_Stream_write(Io_Stream self, Buffer buffer) {
     // Write characters from the buffer into the stream until 'buffer' is full,
     // an I/O error is raised, or the stream is closed (Darwin impl).
     Byte* buf = buffer->data + buffer->begin;
@@ -413,7 +413,7 @@ Byte Io_Stream_get(Io_Stream self) {
 }
 
 Byte Io_Stream_getbb(Io_Stream self) {
-    Io_Buffer buf = self->read_buf;
+    Buffer buf = self->read_buf;
     Io_Stream_fillto(self, sizeof(Byte));
     if (self->status != Io_StreamStatus_OK) {
         return 0xff;
@@ -423,7 +423,7 @@ Byte Io_Stream_getbb(Io_Stream self) {
 
 Int Io_Stream_getib(Io_Stream self) {
     // Write an int to the stream in network-byte order
-    Io_Buffer buf = self->read_buf;
+    Buffer buf = self->read_buf;
     Int ret = 0;
     Io_Stream_fillto(self, sizeof(ret));
     if (self->status != Io_StreamStatus_OK) {
@@ -443,7 +443,7 @@ Int Io_Stream_getib(Io_Stream self) {
 
 Float Io_Stream_getfb(Io_Stream self) {
     // Write an int to the stream in network-byte order
-    Io_Buffer buf = self->read_buf;
+    Buffer buf = self->read_buf;
     Float ret = 0;
     Io_Stream_fillto(self, sizeof(ret));
     if (self->status != Io_StreamStatus_OK) {
@@ -456,7 +456,7 @@ Float Io_Stream_getfb(Io_Stream self) {
 
 String Io_Stream_getsb(Io_Stream self) {
     // Write a string to the stream 
-    Io_Buffer buf = self->read_buf;
+    Buffer buf = self->read_buf;
     Int len = Io_Stream_getib(self);
     String ret = 0;
     if (self->status != Io_StreamStatus_OK) {
@@ -477,7 +477,7 @@ Byte Io_Stream_peek(Io_Stream self) {
     // Return the next character that would be read from the stream.  Returns
     // EOF if the end of the file has been reached.  If an error occurs while
     // reading from the stream, then 'status' will be set to 'ERROR.'
-    Io_Buffer buf = self->read_buf;
+    Buffer buf = self->read_buf;
     if (buf->begin == buf->end) {
         buf->begin = 0;
         buf->end = 0;
@@ -500,7 +500,7 @@ void Io_Stream_put(Io_Stream self, Byte byte) {
 
 void Io_Stream_putbb(Io_Stream self, Byte byte) {
     // Write a byte in binary format to the stream
-    Io_Buffer buf = self->write_buf;
+    Buffer buf = self->write_buf;
     Io_Stream_emptyto(self, sizeof(byte));
     if (self->status != Io_StreamStatus_OK) {
         return;
@@ -510,7 +510,7 @@ void Io_Stream_putbb(Io_Stream self, Byte byte) {
 
 void Io_Stream_putib(Io_Stream self, Int integer) {
     // Write an int in binary format to the stream
-    Io_Buffer buf = self->write_buf;
+    Buffer buf = self->write_buf;
     Io_Stream_emptyto(self, sizeof(integer));
     if (self->status != Io_StreamStatus_OK) {
         return;
@@ -528,7 +528,7 @@ void Io_Stream_putib(Io_Stream self, Int integer) {
 
 void Io_Stream_putfb(Io_Stream self, Float flt) {
     // Write an int in binary format to the stream
-    Io_Buffer buf = self->write_buf;
+    Buffer buf = self->write_buf;
     Io_Stream_emptyto(self, sizeof(flt));
     if (self->status != Io_StreamStatus_OK) {
         return;
@@ -539,7 +539,7 @@ void Io_Stream_putfb(Io_Stream self, Float flt) {
 
 void Io_Stream_putsb(Io_Stream self, String str) {
     // Write a string in binary format to the stream
-    Io_Buffer buf = self->write_buf;
+    Buffer buf = self->write_buf;
     Io_Stream_putib(self, str->length);
     if (self->status != Io_StreamStatus_OK) {
         return;
@@ -555,7 +555,7 @@ void Io_Stream_putsb(Io_Stream self, String str) {
 void Io_Stream_emptyto(Io_Stream self, Int num) {
     // Write until there are at least 'num' empty bytes in the buffer, or there
     // is an error.
-    Io_Buffer buf = self->write_buf;
+    Buffer buf = self->write_buf;
     assert(num <= buf->capacity && "Buffer is too small");
     if ((buf->capacity-buf->end) < num) {
         Io_Stream_flush(self);
@@ -565,11 +565,11 @@ void Io_Stream_emptyto(Io_Stream self, Int num) {
 void Io_Stream_fillto(Io_Stream self, Int num) {
     // Read until there are at least 'num' bytes in the buffer, or the stream
     // reaches end-of-file.
-    Io_Buffer buf = self->read_buf;
+    Buffer buf = self->read_buf;
     assert(num <= buf->capacity && "Buffer is too small");
     if ((buf->end-buf->begin) < num) { 
         // Unicode char may overflow the buffer.  
-        Io_Buffer_compact(buf);
+        Buffer_compact(buf);
     }
     if (buf->begin == buf->end) {
         buf->begin = 0;
@@ -699,13 +699,13 @@ void Io_Stream_end(Io_Stream self) {
 }
 
 String Io_Stream_readall(Io_Stream self) {
-    Io_Buffer buf = self->read_buf;
+    Buffer buf = self->read_buf;
     String ret = 0;
     // Read any leftover bytes that are still in the read_buf
     while (self->status == Io_StreamStatus_OK) {
 		Int size = buf->end-buf->begin;
         if (buf->end == buf->capacity) {
-            Io_Buffer tmp = Io_Buffer__init(buf->capacity * 2);
+            Buffer tmp = Buffer__init(buf->capacity * 2);
             Boot_memcpy(tmp->data, buf->data+buf->begin, buf->end-buf->begin);
             tmp->end = buf->end-buf->begin;
             if (buf != self->read_buf) {

@@ -28,3 +28,6 @@ open(path String, mode String) native Io::Stream {
     #    "rw": Open a file for reading and writing; file must exist
 }
 
+size(path String) native Int {
+    # Returns the size of the file at the given path, in bytes.
+}

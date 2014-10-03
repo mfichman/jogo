@@ -115,3 +115,17 @@ Io_Stream File_open(String path, String mode) {
     return ret;
 #endif
 }
+
+Int File_size(String path) {
+    FILE* file = fopen((char const*)path->data, "r");
+    Int size = 0;
+
+    if (!file) {
+        return 0;
+    }
+    fseek(file, 0, SEEK_END); 
+    size = ftell(file);
+    fclose(file);
+
+    return size;
+}

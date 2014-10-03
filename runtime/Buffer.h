@@ -25,8 +25,8 @@
 
 #include "Primitives.h"
 
-typedef struct Io_Buffer* Io_Buffer;
-struct Io_Buffer {
+typedef struct Buffer* Buffer;
+struct Buffer {
     VoidPtr _vtable;
     U64 _refcount;
     Int capacity;
@@ -35,10 +35,11 @@ struct Io_Buffer {
     Byte data[];    
 };
 
-Io_Buffer Io_Buffer__init(Int capacity);
-Byte Io_Buffer__index(Io_Buffer self, Int index);
-void Io_Buffer__insert(Io_Buffer self, Int index, Byte byte);
-void Io_Buffer_compact(Io_Buffer self);
-extern void Io_Buffer__vtable();
+Buffer Buffer__init(Int capacity);
+Byte Buffer__index(Buffer self, Int index);
+Bool Buffer_empty__g(Buffer self);
+void Buffer__insert(Buffer self, Int index, Byte byte);
+void Buffer_compact(Buffer self);
+extern void Buffer__vtable();
 
 #endif

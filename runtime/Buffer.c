@@ -20,16 +20,16 @@
  * IN THE SOFTWARE.
  */
 
-#include "Io/Buffer.h"
+#include "Buffer.h"
 #include "Boot/Boot.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
 
-Io_Buffer Io_Buffer__init(Int capacity) {
-    Io_Buffer ret = Boot_calloc(sizeof(struct Io_Buffer) + capacity);
-    ret->_vtable = Io_Buffer__vtable;
+Buffer Buffer__init(Int capacity) {
+    Buffer ret = Boot_calloc(sizeof(struct Buffer) + capacity);
+    ret->_vtable = Buffer__vtable;
     ret->_refcount = 1;
     ret->capacity = capacity;
     ret->begin = 0;
@@ -37,7 +37,7 @@ Io_Buffer Io_Buffer__init(Int capacity) {
     return ret; 
 }
 
-Byte Io_Buffer__index(Io_Buffer self, Int index) {
+Byte Buffer__index(Buffer self, Int index) {
     if (index < self->begin || index >= self->end) {
         return 0;
     } else {
@@ -45,7 +45,7 @@ Byte Io_Buffer__index(Io_Buffer self, Int index) {
     }
 }
 
-void Io_Buffer__insert(Io_Buffer self, Int index, Byte byte) {
+void Buffer__insert(Buffer self, Int index, Byte byte) {
     if (index < self->begin || index >= self->end) {
         return;
     } else {
@@ -53,7 +53,7 @@ void Io_Buffer__insert(Io_Buffer self, Int index, Byte byte) {
     }
 }
 
-void Io_Buffer_compact(Io_Buffer self) {
+void Buffer_compact(Buffer self) {
     // Compact the valid bytes of the buffer to the begining of the buffer.
     memmove(self->data+self->begin, self->data, self->end-self->begin);
     self->end -= self->begin;

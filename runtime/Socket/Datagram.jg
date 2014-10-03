@@ -48,26 +48,26 @@
 #        self.close()
 #    }
 #
-#    send(buffer Io::Buffer) {
+#    send(buffer Buffer) {
 #        # Sends the packet stored in 'buffer' to the address specified by
 #        # 'peer'.  This function will block the current coroutine until the
 #        # packet has been sent.
 #        sendto(peer, buffer)
 #    }
 #
-#    sendto(peer Addr, buffer Io::Buffer) native {
+#    sendto(peer Addr, buffer Buffer) native {
 #        # Sends the packet stored in 'buffer' to the address specified by
 #        # 'peer'.  This function will block the current coroutine until the
 #        # packet has been sent.
 #    }
 #    
-#    recv(buffer Io::Buffer) {
+#    recv(buffer Buffer) {
 #        # Receives data into 'buffer'.  If there is not enough space remaining
 #        # in the buffer, then the extra message data will be dropped.
 #        recvfrom(nil, buffer)
 #    }
 #
-#    recvfrom(peer Addr, buffer Io::Buffer) native {
+#    recvfrom(peer Addr, buffer Buffer) native {
 #        # Receives data into 'buffer'.  If there is not enough space remaining
 #        # in the buffer, then the extra message data will be dropped.  Returns
 #        # the address of the peer that sent the data.

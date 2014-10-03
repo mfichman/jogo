@@ -27,5 +27,6 @@
 #include "../Io/Stream.h"
 
 Io_Stream File_open(String path, String mode);
+Int File_size(String path);
 
 #endif
