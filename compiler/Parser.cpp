@@ -428,6 +428,8 @@ Constant* Parser::constant() {
     } else if (token() == Token::TYPE) {
         type = Parser::type();
         init = new Empty(loc);
+    } else {
+        init = 0;//new Empty(loc);
     }
     Constant* con = new Constant(loc, env_, id, flags, type, init); 
     file_->constant(con);

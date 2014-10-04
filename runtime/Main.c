@@ -20,7 +20,7 @@
  * IN THE SOFTWARE.
  */
 
-int Boot_main();
+extern int Boot_main();
 
 int main(int argc, char** argv) {
     // FixMe: Process arg list

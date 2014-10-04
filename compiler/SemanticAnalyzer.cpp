@@ -1105,6 +1105,9 @@ void SemanticAnalyzer::operator()(Constant* feature) {
 
     Class::Ptr clazz = dynamic_cast<Class*>(parent.pointer());
     if (!init && clazz) {
+        // FIXME: If 'init' is null, then 'feature' is an enum value in an enum
+        // type. Make sure the enum type is processed to ensure that an
+        // initializer is set.
         clazz(this);
         init = feature->initializer();
     }

@@ -23,6 +23,7 @@
 
 #include "Socket/Socket.h"
 #include "Boot/Boot.h"
+#include "Os/Os.h"
 #include "String.h"
 
 #include <stdio.h>
@@ -60,11 +61,7 @@ Socket_Addr Socket_Addr__init(Socket_Addr ret, String str, Int port) {
         struct sockaddr_in* sin = 0;
         int error = getaddrinfo((char*)str->data, 0, 0, &res);
         if (error) {
-#ifdef WINDOWS
-            ret->error = GetLastError();
-#else
-            ret->error = error;
-#endif
+            ret->error = Os_error();
             return ret;
         }
         for(; res; res = res->ai_next) {
