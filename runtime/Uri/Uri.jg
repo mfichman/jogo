@@ -68,121 +68,121 @@ Uri < Value {
     path var = Path('') # * ANY  
     query var = Query('') # '?' * ANY
     fragment var String # '#' * ANY
-}
 
-Uri::@init(value String) {
-    # Parses a URI, given a string as input.
-    if value.empty { 
-        ret
+    @init(value String) {
+        # Parses a URI, given a string as input.
+        if value.empty { 
+            ret
+        }
+        i var = self.parse_scheme(value, 0)
+        i = self.parse_authority(value, i)
+        i = self.parse_path(value, i)
+        i = self.parse_query(value, i)
+        i = self.parse_fragment(value, i)
     }
-    i var = self.parse_scheme(value, 0)
-    i = self.parse_authority(value, i)
-    i = self.parse_path(value, i)
-    i = self.parse_query(value, i)
-    i = self.parse_fragment(value, i)
-}
-
-Uri::host?() String {
-    ret authority.host
-}
-
-Uri::port?() Int {
-    ret authority.port
-}
-
-Uri::user?() String {
-    ret authority.user
-}
-
-Uri::is_reserved(char Byte) Bool {
-    ret char == '/'b or char == '#'b or char == '?'b
-}
-
-Uri::parse_scheme(value String, start Int) private Int {
-    # Parse everything up to the first ':' character
-    i var = start
-    while (c var = value[i]) and c != ':'b and not self.is_reserved(c) {
-        ++i
-        c = value[i]
+    
+    host?() String {
+        ret authority.host
     }
-    scheme = value.slice(start, i)
-    if value[i] == ':'b {
-        ++i
+    
+    port?() Int {
+        ret authority.port
     }
-    ret i
-}
-
-Uri::parse_authority(value String, ind Int) private Int {
-    # Parse up to the first /
-    if value[ind] != '/'b or value[ind+1] != '/'b {
-        ret ind
+    
+    user?() String {
+        ret authority.user
     }
-    i var = ind + 2
-    start var = ind + 2
-        
-    while (c = value[i]) and c != '@'b and not self.is_reserved(c) {
-        ++i
+    
+    is_reserved(char Byte) Bool {
+        ret char == '/'b or char == '#'b or char == '?'b
     }
-    user var = ''
-    if value[i] == '@'b {
-        user = value.slice(start, i)
-        start = i + 1
-    } else {
-        i = start
+    
+    parse_scheme(value String, start Int) private Int {
+        # Parse everything up to the first ':' character
+        i var = start
+        while (c var = value[i]) and c != ':'b and not self.is_reserved(c) {
+            ++i
+            c = value[i]
+        }
+        scheme = value.slice(start, i)
+        if value[i] == ':'b {
+            ++i
+        }
+        ret i
     }
-    while (c = value[i]) and c != ':'b and not self.is_reserved(c) {
-        ++i
+    
+    parse_authority(value String, ind Int) private Int {
+        # Parse up to the first /
+        if value[ind] != '/'b or value[ind+1] != '/'b {
+            ret ind
+        }
+        i var = ind + 2
+        start var = ind + 2
+            
+        while (c = value[i]) and c != '@'b and not self.is_reserved(c) {
+            ++i
+        }
+        user var = ''
+        if value[i] == '@'b {
+            user = value.slice(start, i)
+            start = i + 1
+        } else {
+            i = start
+        }
+        while (c = value[i]) and c != ':'b and not self.is_reserved(c) {
+            ++i
+        }
+        host var = ''
+        if value[i] == ':'b or value[i] == '/'b {
+            host = value.slice(start, i)
+            start = i + 1
+        } else {
+            i = start
+        }
+        while (c = value[i]) and not self.is_reserved(c)  {
+            ++i
+        }
+        port = value.slice(start, i)
+        authority = Authority(user, host, port.int)
+        ret i
     }
-    host var = ''
-    if value[i] == ':'b or value[i] == '/'b {
-        host = value.slice(start, i)
-        start = i + 1
-    } else {
-        i = start
+    
+    parse_path(value String, start Int) private Int {
+        # Parse to the first ?
+        i var = start
+        c var Byte
+        while (c = value[i]) and (c == '/'b or not self.is_reserved(c)) {
+            ++i
+        }
+        path = Path(value.slice(start, i))
+        if c == '?'b {
+            ++i
+        }
+        ret i
     }
-    while (c = value[i]) and not self.is_reserved(c)  {
-        ++i
+    
+    parse_query(value String, start Int) private Int {
+        # parse to the #
+        i var = start
+        c var Byte
+        while (c = value[i]) and c != '#'b {
+            ++i
+        }
+        query = Query(value.slice(start, i))
+        if c == '#'b {
+            ++i
+        }
+        ret i
     }
-    port = value.slice(start, i)
-    authority = Authority(user, host, port.int)
-    ret i
-}
-
-Uri::parse_path(value String, start Int) private Int {
-    # Parse to the first ?
-    i var = start
-    c var Byte
-    while (c = value[i]) and (c == '/'b or not self.is_reserved(c)) {
-        ++i
+    
+    parse_fragment(value String, start Int) private Int {
+        # Parse to the end
+        i var = start
+        while (c = value[i]) {
+            ++i
+        }
+        fragment = value.slice(start, i)
+        ret i
     }
-    path = Path(value.slice(start, i))
-    if c == '?'b {
-        ++i
-    }
-    ret i
-}
-
-Uri::parse_query(value String, start Int) private Int {
-    # parse to the #
-    i var = start
-    c var Byte
-    while (c = value[i]) and c != '#'b {
-        ++i
-    }
-    query = Query(value.slice(start, i))
-    if c == '#'b {
-        ++i
-    }
-    ret i
-}
-
-Uri::parse_fragment(value String, start Int) private Int {
-    # Parse to the end
-    i var = start
-    while (c = value[i]) {
-        ++i
-    }
-    fragment = value.slice(start, i)
-    ret i
 }
 

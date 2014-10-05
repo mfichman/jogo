@@ -188,14 +188,7 @@ void Builder::monolithic_build() {
                 iface(file.pointer());
             }
         }
-#ifdef WINDOWS
-        std::string lib = env_->output() + ".lib";
-#else
-        std::string dir = File::dir_name(env_->output());
-        std::string out = File::base_name(env_->output());
-        std::string lib = dir + FILE_SEPARATOR + "lib" + out + ".a";
-        //ss << "build/runtime/Coroutine.Intel64.o";
-#endif
+        std::string lib = env_->output() + File::LIB;
         archive(ss.str(), lib);
     }
 
@@ -217,7 +210,7 @@ void Builder::modular_build() {
             Stream::sterr()->flush();
             errors_++;
         } else if (!m->is_exe()) {
-            env_->lib(Module::file_base(m->name()->string()));
+            env_->lib(m->lib_file());
             m(this);
         }
     }
@@ -347,29 +340,44 @@ void Builder::link(const std::string& in, const std::string& out) {
 #elif defined(DARWIN)
     ss << "gcc -Wl,-no_pie -framework OpenGL -framework GLUT -framework Cocoa ";
 #endif
+    if (env_->debug()) {
+        ss << "-g ";
+    }
     env_->entry_module(out);
 
     procs_.wait();
 
 #ifdef WINDOWS
-    for (int i = 0; i < env_->includes(); i++) {
+    for (int i = 0; i < env_->includes(); ++i) {
         ss << "/LIBPATH:\"" << env_->include(i) << "\" ";
     }
-    for (int i = 0; i < env_->libs(); i++) {
+    for (int i = 0; i < env_->libs(); ++i) {
         ss << env_->lib(i) << ".lib ";
     }
     ss << "jogomain.lib ";
 #else
-    for (int i = 0; i < env_->includes(); i++) {
+    for (int i = 0; i < env_->includes(); ++i) {
         if (File::is_dir(env_->include(i))) {
             ss << "-L\"" << env_->include(i) << "\" ";
         }
     }
-    for (int i = 0; i < env_->libs(); i++) {
-        ss << "-l" << env_->lib(i) << " ";
+    for (int i = 0; i < env_->libs(); ++i) {
+        if (env_->lib(i).find('/') == 0 || env_->lib(i).find('.') == 0) {
+            ss << env_->lib(i) << " ";
+        } else {
+            ss << "-l" << env_->lib(i) << " ";
+        }
     }
     ss << "-ljogomain ";
 #endif
+
+    // If an interface file is loaded, then be sure to link in the
+    // corresponding library as well.
+    for (File::Itr i = env_->files(); i; ++i) {
+        if (i->is_interface_file()) {
+            ss << i->input(File::LIB) << " ";
+        }
+    }
 
     // Output link options for libraries and module dependencies.
 #ifdef WINDOWS
@@ -377,10 +385,14 @@ void Builder::link(const std::string& in, const std::string& out) {
 #else
     ss << in << "-o " << out << " ";
     // Dependencies must be linked after the dependent .o files.  Linux gcc is
-    // stupid about this, so we linke all the libraries both before and after
+    // stupid about this, so we link all the libraries both before and after
     // all the .o files in case there are circular dependencies.
     for (int i = 0; i < env_->libs(); i++) {
-        ss << "-l" << env_->lib(i) << " ";
+        if (env_->lib(i).find('/') == 0 || env_->lib(i).find('.') == 0) {
+            ss << env_->lib(i) << " ";
+        } else {
+            ss << "-l" << env_->lib(i) << " ";
+        }
     }
     ss << "-ljogomain ";
 #endif
@@ -555,8 +567,11 @@ void Builder::cc(const std::string& in, const std::string& out) {
     if (env_->optimize()) {;
         ss << " -O2";
     } else {
-        ss << " -O0 -g";
+        ss << " -O0";
     }
+    if (env_->debug()) {
+        ss << " -g";
+    } 
     ss << " -DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
 #ifdef DARWIN
     ss << " -D_XOPEN_SOURCE=700";

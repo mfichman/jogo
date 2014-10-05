@@ -53,6 +53,8 @@ void parse_option(std::string const& flag) {
         env->generator(argp->required_arg());
     } else if ("debug" == flag) {
         env->debug(true);
+    } else if ("optimize" == flag) {
+        env->optimize(true);
     } else if ("verbose" == flag) {
         env->verbose(true);
     } else if ("clean" == flag) {
@@ -75,6 +77,7 @@ void parse_short_option(std::string const& flag) {
     case 'i': parse_option("include"); break;
     case 'g': parse_option("generator"); break;
     case 'd': parse_option("debug"); break;
+    case 'o': parse_option("optimize"); break;
     case 'v': parse_option("verbose"); break;
     case 'c': parse_option("clean"); break;
     case 'r': parse_option("reset"); break;
@@ -94,6 +97,7 @@ void parse_options() {
         "   -l, --library LIB    Compile and link with native library LIB.\n"
         "   -i, --include DIR    Add the directory DIR to the search path.\n"
         "   -d, --debug          Emit debug information.\n"
+        "   -o, --optimize       Enable compiler optimizations.\n"
         "   -g, --generator GEN  Use code generator GEN.\n"
         "   -h, --help           Print this help message.\n"
         "   -v, --verbose        Print extra information during compilation.\n"
@@ -164,7 +168,6 @@ int main(int argc, char** argv) {
     env->workspace_load();
     env->output(".");
     env->make(true);
-    env->optimize(true);
     env->monolithic_build(false);
 
     argp = new ArgParser(env, argc, argv);

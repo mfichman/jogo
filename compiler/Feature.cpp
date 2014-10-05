@@ -331,7 +331,7 @@ bool Module::is_up_to_date() const {
     // source files have a later modification time than the output file.  Also,
     // check dependent packages as well to see if they need to be relinked.
     std::string out = function(env()->name("main")) ? exe_file() : lib_file();
-    File::Ptr libjogo = env()->file(env()->name(Module::jgi_file("Jogo")));
+    File::Ptr libjogo = env()->file(env()->name(Module::jgi_file("jogo")));
     for (int i = 0; i < files(); i++) {
         File::Ptr file = Module::file(i);
         std::string const& source = file->path()->string();
@@ -399,7 +399,7 @@ std::string Module::lib_file(std::string const& name) {
 #ifdef WINDOWS
     return nm + ".lib";
 #else
-    return "lib" + nm + ".a";
+    return nm + ".a";
 #endif
 }
 

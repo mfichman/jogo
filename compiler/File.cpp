@@ -44,10 +44,12 @@ std::string const File::JGC = ".jg.c";
 std::string const File::ASM = ".asm";
 std::string const File::C = ".c";
 #ifdef WINDOWS
+std::string const File::LIB = ".lib";
 std::string const File::JGO = ".jg.obj";
 std::string const File::O = ".obj"; 
 // Windows object files _must_ end in .obj, otherwise they don't get linked
 #else
+std::string const File::LIB = ".a";
 std::string const File::JGO = ".jgo";
 std::string const File::O = ".o"; 
 #endif

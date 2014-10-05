@@ -56,4 +56,3 @@ Addr < Value {
         # calls gethostbyname() to determine the hostname.
     }
 }
-# FIXME: Addr should be a value type

@@ -198,12 +198,6 @@ void Parser::file(const std::string& prefix, const std::string& file) {
         std::cout << std::endl;
     }
 
-    // If an interface file is loaded, then be sure to link in the
-    // corresponding library as well.
-    if (file_->is_interface_file()) {
-        env_->lib(Module::file_base(Import::module_name(file_->name()->string())));
-    }
-
     // Begin parsing
     lexer_->input(file_);
     error_ = 0;

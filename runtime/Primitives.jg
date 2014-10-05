@@ -22,16 +22,16 @@ Int < Value {
     # Signed, 64-bit integer.  This class will always have 64 bits of
     # precision, regardless of the platform.
 
-    @init() native
-    @add(other Int) native Int
-    @sub(other Int) native Int
-    @mul(other Int) native Int
-    @div(other Int) native Int
-    @mod(other Int) native Int
-    @equal(other Int) native Bool
-    @less(other Int) native Bool
-    @neg() native Int
-    @compl() native Int
+    @init() native {}
+    @add(other Int) native Int {}
+    @sub(other Int) native Int {}
+    @mul(other Int) native Int {}
+    @div(other Int) native Int {}
+    @mod(other Int) native Int {}
+    @equal(other Int) native Bool {}
+    @less(other Int) native Bool {}
+    @neg() native Int {}
+    @compl() native Int {}
 
     str() String { ret self.str }
     str?() native String {

@@ -55,6 +55,7 @@ public:
     static std::string const JGO;
     static std::string const JGC;
     static std::string const O; 
+    static std::string const LIB; 
     
     Feature* feature(String* scope, String* name) const;
     Function* function(String* scope, String* name) const;
