@@ -33,3 +33,4 @@ benchmark/build
 *.pdb
 *.suo
 *.ilk
+*id_rsa*
