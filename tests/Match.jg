@@ -37,6 +37,39 @@ switch2(fruit Fruit) {
     println('.')
 }
 
+switch_str(str String) {
+    match str {
+    with 'apple':
+        print('apple')
+        print('1')
+    with 'orange':
+        print('orange')
+        print('2')
+    with 'pear':
+        print('pear')
+        print('3')
+    with 'banana':
+        print('banana')
+        print('4')
+    with *: 
+        print('unknown')
+        print('5')
+    }
+    println('.')
+}
+
+switch_any(any Any) {
+    #match any {
+    #with 'foo':
+    #with *:
+    #}
+    match any {
+    with x String:
+    with y String:
+    with *:
+    }
+}
+
 main() Int {
 
     switch(Fruit::APPLE)
@@ -51,6 +84,12 @@ main() Int {
     switch2(Fruit::PEAR)
     switch2(Fruit::BANANA)
     switch2(Fruit::STRAWBERRY)
+
+    switch_str('apple')
+    switch_str('orange')
+    switch_str('pear')
+    switch_str('banana')
+    switch_str('strawberry')
 
     ret 0
 }
