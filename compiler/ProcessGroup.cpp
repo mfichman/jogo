@@ -23,6 +23,9 @@
 #include "ProcessGroup.hpp"
 #include <iostream>
 #include <cassert>
+#ifndef WINDOWS
+#include <unistd.h>
+#endif
 
 void ProcessGroup::process(std::string const& args) {
 #ifdef WINDOWS
