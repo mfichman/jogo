@@ -1811,9 +1811,9 @@ void FuncUnmarshal::arg(String* name, Type* type) {
 		// the type of the variable prevents it from being garbage collected
 		// at the end of the scope (which is what we want for function 
 		// parameters).
+#ifndef WINDOWS
         Operand op = gen_->mov(reg->id());
         IrValue::Ptr val = new IrValue(gen_, op, type, flags);
-#ifndef WINDOWS
         gen_->variable(IrVariable(name, val));
 #endif
 
