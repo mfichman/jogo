@@ -1,12 +1,17 @@
 language: c++
 compiler:
-#  - gcc
+  - gcc
   - clang
 addons:
+  sources:
+    - ubuntu-toolchain-r-test
   apt:
     packages:
       - nasm
       - gcc-multilib
+      - gcc-4.8
+      - g++-4.8
+      - clang
 script: scons check
 notifications:
   email:
