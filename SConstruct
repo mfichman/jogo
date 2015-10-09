@@ -65,6 +65,7 @@ if env['PLATFORM'] == 'darwin':
 if env['PLATFORM'] == 'posix':
     env.Append(CPPDEFINES = ['LINUX'])
     env.Append(CDEFINES = ['LINUX'])
+    env['CXX'] = 'clang++'
     main_env.Append(CFLAGS = '-m64 -lm')
     dist_path = 'dist/root/usr'
     nasm = 'nasm -dLINUX -felf64 -o $TARGET $SOURCE'
