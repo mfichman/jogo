@@ -12,6 +12,7 @@ lib/*
 build/*
 dist/*
 *.orig
+*.jgmake
 *.output
 *.o
 *.swp
