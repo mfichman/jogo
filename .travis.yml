@@ -2,10 +2,11 @@ language: c++
 compiler:
   - gcc
   - clang
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq nasm gcc-multilib
-  - git submodule update --init --recursive
+addons:
+  apt:
+    packages:
+      - nasm
+      - gcc-multilib
 script: scons check
 notifications:
   email:
@@ -14,3 +15,4 @@ notifications:
     on_success: always # never change
     on_failure: always # never change
  
+sudo: false
