@@ -90,7 +90,7 @@ else:
         main_env.Append(CFLAGS = '-O2')
     env.Append(LDFLAGS = '-lm')
     env.Append(CPPFLAGS = '-Wall -Werror -g ')
-    env.Append(CPPFLAGS = '-Wno-unused -Wno-sign-compare -ansi ')
+    env.Append(CPPFLAGS = '-Wno-unused -Wno-sign-compare -std=c++11 ')
     main_env.Append(CFLAGS = '-Wall -Werror -g')
 
 env.Append(BUILDERS = { 'NASM': nasm_bld })
