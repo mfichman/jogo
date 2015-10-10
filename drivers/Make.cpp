@@ -63,7 +63,7 @@ void parse_option(std::string const& flag) {
         clean("lib");
         exit(0);
     } else if ("reset" == flag) {
-        unlink(".jgmake");
+        File::unlink(".jgmake");
         exit(0);
     } else {
         argp->bad_option(flag);
