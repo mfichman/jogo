@@ -336,15 +336,20 @@ void Builder::link(const std::string& in, const std::string& out) {
     ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:X64 /INCREMENTAL:no ";
     // N.B.: Incremental linking is not supported
 #elif defined(LINUX)
-    ss << "gcc ";
+    char const* compiler = getenv("CC")?getenv("CC"):"cc";
+    ss << compiler << ' ';
     if (env_->debug()) {
         ss << "-g ";
     }
 #elif defined(DARWIN)
-    ss << "clang -Wl,-no_pie -framework OpenGL -framework GLUT -framework Cocoa ";
+    char const* compiler = getenv("CC")?getenv("CC"):"cc";
+    ss << compiler << ' ';
     if (env_->debug()) {
         ss << "-g ";
     }
+    ss << "-Wl,-no_pie -framework OpenGL -framework GLUT -framework Cocoa ";
+#else
+    #error "Unknown platform"
 #endif
     env_->entry_module(out);
 
@@ -571,10 +576,11 @@ void Builder::cc(const std::string& in, const std::string& out) {
         ss << " > NUL";
     }
 #else
+    char const* compiler = getenv("CC")?getenv("CC"):"cc";
 #if defined(LINUX)
-    ss << "gcc " << in << " -c -o " << out;
+    ss << compiler << ' ' << in << " -c -o " << out;
 #elif defined(DARWIN)
-    ss << "clang " << in << " -c -o " << out;
+    ss << compiler << ' ' << in << " -c -o " << out;
 #else
     #error "Unknown platform"
 #endif

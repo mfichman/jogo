@@ -58,8 +58,8 @@ if 'release' == build_mode:
 if env['PLATFORM'] == 'darwin':
     env.Append(CPPDEFINES = ['DARWIN'])
     env.Append(CDEFINES = ['DARWIN'])
-    env['CXX'] = 'clang++'
-    env['CC'] = 'clang'
+    env['CXX'] = 'c++'
+    env['CC'] = 'cc'
     dist_path = 'dist/root/usr/local'
     nasm = '/usr/local/bin/nasm -dDARWIN -fmacho64 -o $TARGET $SOURCE'
 
@@ -67,8 +67,8 @@ if env['PLATFORM'] == 'darwin':
 if env['PLATFORM'] == 'posix':
     env.Append(CPPDEFINES = ['LINUX'])
     env.Append(CDEFINES = ['LINUX'])
-    env['CXX'] = 'g++-4.8'
-    env['CC'] = 'gcc-4.8'
+    env['CXX'] = os.environ.get('CXX') or 'c++'
+    env['CC'] = os.environ.get('CC') or 'cc'
     dist_path = 'dist/root/usr'
     nasm = 'nasm -dLINUX -felf64 -o $TARGET $SOURCE'
 

@@ -224,7 +224,7 @@ Float Float_floor__g(Float self) {
 }
 
 Float Float_abs__g(Float self) {
-    return abs(self);
+    return fabs(self);
 }
 
 Float Float_sin__g(Float self) {
