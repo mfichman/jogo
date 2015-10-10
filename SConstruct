@@ -58,6 +58,8 @@ if 'release' == build_mode:
 if env['PLATFORM'] == 'darwin':
     env.Append(CPPDEFINES = ['DARWIN'])
     env.Append(CDEFINES = ['DARWIN'])
+    env['CXX'] = 'clang++'
+    env['CC'] = 'clang'
     dist_path = 'dist/root/usr/local'
     nasm = '/usr/local/bin/nasm -dDARWIN -fmacho64 -o $TARGET $SOURCE'
 
@@ -65,8 +67,8 @@ if env['PLATFORM'] == 'darwin':
 if env['PLATFORM'] == 'posix':
     env.Append(CPPDEFINES = ['LINUX'])
     env.Append(CDEFINES = ['LINUX'])
-    env['CXX'] = 'clang++'
-    main_env.Append(CFLAGS = '-m64 -lm')
+    env['CXX'] = 'g++'
+    env['CC'] = 'gcc'
     dist_path = 'dist/root/usr'
     nasm = 'nasm -dLINUX -felf64 -o $TARGET $SOURCE'
 
@@ -88,7 +90,6 @@ else:
     if 'release' == build_mode:
         env.Append(CPPFLAGS = '-O2')
         main_env.Append(CFLAGS = '-O2')
-    env.Append(LDFLAGS = '-lm')
     env.Append(CPPFLAGS = '-Wall -Werror -g ')
     env.Append(CPPFLAGS = '-Wno-unused -Wno-sign-compare -std=c++11 ')
     main_env.Append(CFLAGS = '-Wall -Werror -g')

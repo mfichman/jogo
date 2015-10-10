@@ -336,13 +336,16 @@ void Builder::link(const std::string& in, const std::string& out) {
     ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:X64 /INCREMENTAL:no ";
     // N.B.: Incremental linking is not supported
 #elif defined(LINUX)
-    ss << "gcc -m64";
-#elif defined(DARWIN)
-    ss << "clang -Wl,-no_pie -framework OpenGL -framework GLUT -framework Cocoa ";
-#endif
+    ss << "gcc ";
     if (env_->debug()) {
         ss << "-g ";
     }
+#elif defined(DARWIN)
+    ss << "clang -Wl,-no_pie -framework OpenGL -framework GLUT -framework Cocoa ";
+    if (env_->debug()) {
+        ss << "-g ";
+    }
+#endif
     env_->entry_module(out);
 
     procs_.wait();
@@ -395,6 +398,12 @@ void Builder::link(const std::string& in, const std::string& out) {
         }
     }
     ss << "-ljogomain ";
+
+    for (File::Itr i = env_->files(); i; ++i) {
+        if (i->is_interface_file()) {
+            ss << i->input(File::LIB) << " ";
+        }
+    }
 #endif
 
     if (env_->verbose()) {
@@ -562,10 +571,10 @@ void Builder::cc(const std::string& in, const std::string& out) {
         ss << " > NUL";
     }
 #else
-#if defined(DARWIN)
-    ss << "clang " << in << " -c -o " << out;
-#elif defined(LINUX)
+#if defined(LINUX)
     ss << "gcc " << in << " -c -o " << out;
+#elif defined(DARWIN)
+    ss << "clang " << in << " -c -o " << out;
 #else
     #error "Unknown platform"
 #endif
@@ -591,7 +600,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
 #elif defined(DARWIN)
     ss << " -DDARWIN";
 #elif defined(LINUX)
-    ss << " -DLINUX -m64 -lm";
+    ss << " -DLINUX";
 #else
     #error "Unknown platform"
 #endif

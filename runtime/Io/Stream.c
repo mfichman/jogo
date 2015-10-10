@@ -346,7 +346,7 @@ void Io_Stream_write(Io_Stream self, Buffer buffer) {
     Int len = buffer->end - buffer->begin;
     Bool is_blocking = (Io_StreamMode_BLOCKING == self->mode);
     Bool is_console = (Io_StreamType_CONSOLE == self->type);
-    Bool is_file = (Io_StreamType_CONSOLE == self->type);
+    Bool is_file = (Io_StreamType_FILE == self->type);
     if(!is_blocking && !is_console && !is_file) {
         struct epoll_event ev;
         Int epfd = Io_manager()->handle;
