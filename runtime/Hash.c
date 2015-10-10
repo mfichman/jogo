@@ -31,6 +31,10 @@
 #define HASH_GROWTH_FACTOR 2
 #define HASH_DEFAULT_CAPACITY 17
 
+static Int abs2(Int val) {
+    return (val>0)?val:-val;
+}
+
 Hash Hash__init() {
     Hash ret = Boot_calloc(sizeof(struct Hash));
     ret->_vtable = Hash__vtable;
@@ -155,7 +159,7 @@ Int Hash_hash(Hash self, Object key) {
     typedef Int (*HashFunc)(Object);  
 
     HashFunc func = Object__dispatch(key, &hash_str);
-    return abs(func(key)); 
+    return abs2(func(key)); 
 }
 
 Bool Hash_equal(Hash self, Object first, Object second) {

@@ -48,6 +48,7 @@ Int String_int__g(String self);
 Float String_float_g(String self);
 Int String_hash__g(String self);
 Int String_int__g(String self);
+Int String_len__g(String self);
 extern void String__vtable();
 
 // These functions are from the C standard library, duplicated here because

@@ -60,8 +60,11 @@ Socket_Addr Socket_Addr__init(Socket_Addr ret, String str, Int port) {
         struct addrinfo* res = 0;
         struct sockaddr_in* sin = 0;
         int error = getaddrinfo((char*)str->data, 0, 0, &res);
-        if (error) {
+        if (EAI_SYSTEM == error) {
             ret->error = Os_error();
+            return ret;
+        } else if(error) {
+            ret->error = error; 
             return ret;
         }
         for(; res; res = res->ai_next) {

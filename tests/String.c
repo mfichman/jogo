@@ -29,7 +29,7 @@ int main() {
     // Concatenation
     str3 = String__add(str1, str2);
     assert(String_len__g(str3) == 12);
-    assert(strncmp(str3->data, "hello world!", 12) == 0);
+    assert(strncmp((char const*)str3->data, "hello world!", 12) == 0);
     
     // Equality check
     str4 = String__literal("hello world!");
@@ -45,7 +45,7 @@ int main() {
     assert(String_len__g(str7) == 0);
     str8 = String_slice(str3, 2, 6);    
     assert(String_len__g(str8) == 4);
-    assert(strncmp(str8->data, "llo ", 4) == 0);
+    assert(strncmp((char const*)str8->data, "llo ", 4) == 0);
 
     // Index
     assert('!' == String__index(str3, -1));
@@ -57,9 +57,9 @@ int main() {
 
     // Int -> String
     str9 = Int_str__g(1234);
-    assert(strncmp(str9->data, "1234", 4) == 0);
+    assert(strncmp((char const*)str9->data, "1234", 4) == 0);
     str9 = Int_str__g(-1234567890);
-    assert(strncmp(str9->data, "-1234567890", 11) == 0);
+    assert(strncmp((char const*)str9->data, "-1234567890", 11) == 0);
 
     return 0;
 }

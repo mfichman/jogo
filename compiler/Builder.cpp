@@ -338,7 +338,7 @@ void Builder::link(const std::string& in, const std::string& out) {
 #elif defined(LINUX)
     ss << "gcc -m64";
 #elif defined(DARWIN)
-    ss << "gcc -Wl,-no_pie -framework OpenGL -framework GLUT -framework Cocoa ";
+    ss << "clang -Wl,-no_pie -framework OpenGL -framework GLUT -framework Cocoa ";
 #endif
     if (env_->debug()) {
         ss << "-g ";
@@ -562,7 +562,13 @@ void Builder::cc(const std::string& in, const std::string& out) {
         ss << " > NUL";
     }
 #else
+#if defined(DARWIN)
+    ss << "clang " << in << " -c -o " << out;
+#elif defined(LINUX)
     ss << "gcc " << in << " -c -o " << out;
+#else
+    #error "Unknown platform"
+#endif
     ss << " -std=c99 -Wall -Werror ";
     if (env_->optimize()) {;
         ss << " -O2";

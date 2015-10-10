@@ -63,11 +63,11 @@ switch_any(any Any) {
     #with 'foo':
     #with *:
     #}
-    match any {
-    with x String:
-    with y String:
-    with *:
-    }
+    #match any {
+    #with x String:
+    #with y String:
+    #with *:
+    #}
 }
 
 main() Int {

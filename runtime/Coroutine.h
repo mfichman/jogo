@@ -77,8 +77,6 @@ void Coroutine__exit();
 void Coroutine__call(Coroutine self);
 void Coroutine__iowait();
 void Coroutine__ioresume(Coroutine self);
-void Coroutine__commit_page(Coroutine self, U64 addr);
-void Coroutine__set_signals();
 extern void Coroutine__vtable();
 CoroutineStack CoroutineStack__init();
 Array coroutines();

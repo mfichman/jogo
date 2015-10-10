@@ -60,7 +60,6 @@ Io_Manager Io_Manager__init() {
         Boot_abort();
     }
 #endif
-    Coroutine__set_signals();
     ret->_vtable = Io_Manager__vtable;
     ret->_refcount = 1;
     ret->scheduled = Queue__init(0);

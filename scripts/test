@@ -124,7 +124,7 @@ def native_test(test):
         output = shell('..\\build\\' + exe + ' 2>&1')
     else:
         command = 'gcc -g ' + test + ' -o ../build/' + exe + ' -L../lib '
-        command += '-lJogo -lm -I .. 2>&1'
+        command += '../lib/jogo.a -lm -I .. 2>&1'
         err = os.popen(command).read()
         output += shell('../build/' + exe + ' 2>&1')
     (res, msg) = check(test, expected, output)
