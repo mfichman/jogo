@@ -1,6 +1,6 @@
 language: c++
 compiler:
-  - gcc
+#  - gcc
   - clang
 addons:
   apt:
@@ -8,10 +8,11 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - nasm
-      - gcc-multilib
       - gcc-4.8
       - g++-4.8
       - clang
+install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 script: scons check
 notifications:
   email:

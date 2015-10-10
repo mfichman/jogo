@@ -67,8 +67,8 @@ if env['PLATFORM'] == 'darwin':
 if env['PLATFORM'] == 'posix':
     env.Append(CPPDEFINES = ['LINUX'])
     env.Append(CDEFINES = ['LINUX'])
-    env['CXX'] = 'g++'
-    env['CC'] = 'gcc'
+    env['CXX'] = 'g++-4.8'
+    env['CC'] = 'gcc-4.8'
     dist_path = 'dist/root/usr'
     nasm = 'nasm -dLINUX -felf64 -o $TARGET $SOURCE'
 
