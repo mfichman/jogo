@@ -1,6 +1,8 @@
 Jogo Compiler
 ===============
 
+![Build Status](https://travis-ci.org/mfichman/jogo.svg?branch=master)
+
 Jogo is a compiler for an experimental programming language.
 
 * Quick Tour: https://github.com/mfichman/jogo/wiki/Quick-Tour-of-the-Jogo-Programming-Language
