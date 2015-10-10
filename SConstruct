@@ -146,7 +146,6 @@ coroutine = env.NASM('build/runtime/Coroutine.Intel64.asm')
 
 jogo_lib = os.path.join('lib', 'jogo')
 lib = env.Command('jglib', jogo, '%s $JGFLAGS -o %s %s' % (jogo_cmd, jogo_lib, library_src))
-
 main_lib = main_env.StaticLibrary('lib/jogomain', 'build/runtime/Main.c')
 env.Depends(lib, jogo)
 env.Depends(lib, coroutine)
@@ -158,11 +157,13 @@ env.Depends(main_lib, coroutine)
 if 'check' in COMMAND_LINE_TARGETS:
     check = env.Command('check', jogo, 'python scripts/test --verbose')
     env.Depends(check, lib)
+    env.Depends(check, main_lib)
     env.Depends(check, compiler)
 
 if 'test' in COMMAND_LINE_TARGETS:
     test = env.Command('test', jogo, 'python scripts/test --full --verbose')
     env.Depends(test, lib)
+    env.Depends(test, main_lib)
     env.Depends(test, compiler)
 
 # Distribution ###############################################################
