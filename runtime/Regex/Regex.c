@@ -108,11 +108,11 @@ Regex_Match Regex_Regex__match(Regex_Regex self, String str) {
             Regex_Instr pc = th->pc;
             switch (pc->type) {
             case MATCH:
-                Boot_free(cur);
-                Boot_free(next);
                 match = Regex_Match__init(); 
                 match->group[0].start = th->start;
                 match->group[0].end = c-str->data;
+				Boot_free(cur);
+				Boot_free(next);
                 return match;
             case JUMP: 
                 Regex_ThreadList_thread(cur, self->instr+pc->target, th->start);
