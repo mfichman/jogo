@@ -584,7 +584,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
 #else
     #error "Unknown platform"
 #endif
-    ss << " -std=c99 -Wall -Werror ";
+    ss << " -std=c99 -Wall -Wno-missing-braces -Werror ";
     if (env_->optimize()) {;
         ss << " -O2";
     } else {
