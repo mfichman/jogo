@@ -20,6 +20,23 @@
  * IN THE SOFTWARE.
  */
 
+#if defined(WINDOWS)
+#include <windows.h>
+#elif defined(DARWIN)
+#define _DARWIN_C_SOURCE
+#define MAP_ANONYMOUS MAP_ANON
+#include <sys/mman.h>
+#include <unistd.h>
+#elif defined(LINUX)
+#define _GNU_SOURCE
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+
 #include "Coroutine.h"
 #include "Array.h"
 #include "Io/Manager.h"
@@ -27,18 +44,6 @@
 #include "Os/Os.h"
 #include "Object.h"
 #include "String.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#ifdef WINDOWS
-#include <windows.h>
-#else
-#ifdef DARWIN
-#define _DARWIN_C_SOURCE
-#endif
-#include <sys/mman.h>
-#include <unistd.h>
-#endif
 
 struct Coroutine Coroutine__main = {
     Coroutine__vtable,
@@ -88,6 +93,7 @@ Coroutine Coroutine__init(Object func) {
     ret->caller = 0;
     ret->sp = COROUTINE_STACK_SIZE;
     ret->index = Array_count__g(arr);
+    Coroutine__commit_page(ret, ret->stack_end-1);
     Object__refcount_inc(func);
     if (func) {
         Int bogus = 0; // Bogus return addr for exit's stack frame
@@ -326,6 +332,7 @@ void Coroutine__ioresume(Coroutine self) {
 
     self->status = CoroutineStatus_RUNNING;
     Object__refcount_inc((Object)self);
+    //printf("swapping to %x\n", self);
     Coroutine__swap(Coroutine__current, self);
     Object__refcount_dec((Object)self);
 }
@@ -344,13 +351,182 @@ Array coroutines() {
     return arr;
 }
 
+U64 page_round(U64 addr, U64 multiple) {
+    // Rounds 'base' to the nearest 'multiple'
+    return (addr/multiple)*multiple;
+}
+
+U64 page_size() {
+    // Returns the system page size.
+#ifdef WINDOWS
+    SYSTEM_INFO info;
+    GetSystemInfo(&info);
+    return info.dwPageSize*8; 
+#else
+    return sysconf(_SC_PAGESIZE);
+#endif
+}
+
 CoroutineStack CoroutineStack__init() {
     // Lazily initializes a large stack for the coroutine.  Initially, the
     // coroutine stack is quite small, to lower memory usage.  As the stack
     // grows, the Coroutine__fault handler will commit memory pages for
     // the coroutine.
     U64 size = sizeof(struct CoroutineStack);
-    CoroutineStack ret = malloc(size);
+#ifdef WINDOWS
+    CoroutineStack ret = VirtualAlloc(0, size, MEM_RESERVE, PAGE_READWRITE);
+    if (!ret) {
+        Boot_abort();
+    }
+#else
+    CoroutineStack ret = mmap(0, size, PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+    if (ret == MAP_FAILED) {
+        Boot_abort();
+    }
+#endif
     return ret;
 }
+
+void Coroutine__commit_page(Coroutine self, U64 addr) {
+    // Ensures that 'addr' is allocated, and that the next page in the stack is
+    // a guard page.
+
+    U64 psize = page_size();
+    U64 page = page_round(addr, psize);
+    U64 len = self->stack_end-page;
+    // Allocate all pages between stack_min and the current page.
+#ifdef WINDOWS
+    U64 glen = psize;
+    U64 guard = page-glen;
+    assert(page < self->stack_end);
+    if (!VirtualAlloc((LPVOID)page, len, MEM_COMMIT, PAGE_READWRITE)) {
+        abort();     
+    }
+    // Create a guard page right after the current page.
+    if (!VirtualAlloc((LPVOID)guard, glen, MEM_COMMIT, PAGE_READWRITE|PAGE_GUARD)) {
+        abort();     
+    }
+#else
+    assert(page < self->stack_end);
+    if (mprotect((void*)page, len, PROT_READ|PROT_WRITE) == -1) {
+        abort();
+    }
+#endif
+}
+
+
+#ifdef WINDOWS
+void pexcept(DWORD code) {
+    // Print out the error, b/c Windows doesn't normally print an error during
+    // an exception/signal like Linux and OS X do.
+    switch (code) {
+    case EXCEPTION_ACCESS_VIOLATION: fprintf(stderr, "Access violation\n"); break;
+    case EXCEPTION_DATATYPE_MISALIGNMENT: fprintf(stderr, "Datatype misalignment\n"); break;
+    case EXCEPTION_FLT_DIVIDE_BY_ZERO: fprintf(stderr, "Divide by zero\n"); break;
+    case EXCEPTION_FLT_DENORMAL_OPERAND: fprintf(stderr, "Floating point exception\n"); break;
+    case EXCEPTION_FLT_INEXACT_RESULT: fprintf(stderr, "Floating point exception\n"); break;
+    case EXCEPTION_FLT_OVERFLOW: fprintf(stderr, "Floating point exception\n"); break;
+    case EXCEPTION_FLT_STACK_CHECK: fprintf(stderr, "Floating point exception\n"); break;
+    case EXCEPTION_FLT_UNDERFLOW: fprintf(stderr, "Floating point exception\n"); break;
+    case EXCEPTION_ILLEGAL_INSTRUCTION: fprintf(stderr, "Illegal instruction\n"); break;
+    case EXCEPTION_IN_PAGE_ERROR: fprintf(stderr, "Page error\n"); break;
+    case EXCEPTION_INT_DIVIDE_BY_ZERO: fprintf(stderr, "Divide by zero\n"); break;
+    case EXCEPTION_INT_OVERFLOW: fprintf(stderr, "Integer overflow\n"); break;
+    case EXCEPTION_INVALID_DISPOSITION: fprintf(stderr, "Internal error\n"); break;
+    case EXCEPTION_NONCONTINUABLE_EXCEPTION: fprintf(stderr, "Internal error\n"); break;
+    case EXCEPTION_PRIV_INSTRUCTION: fprintf(stderr, "Illegal instruction\n"); break;
+    case EXCEPTION_SINGLE_STEP: break;
+    case EXCEPTION_STACK_OVERFLOW: fprintf(stderr, "Stack overflow\n"); break;
+    }
+}
+#endif
+
+#ifdef WINDOWS
+void Coroutine__set_signals() {
+    AddVectoredExceptionHandler(1, Coroutine__fault);
+}
+#endif
+
+#ifdef WINDOWS
+LONG WINAPI Coroutine__fault(LPEXCEPTION_POINTERS info) {
+    // From MSDN: The first element of the array contains a read-write flag
+    // that indicates the type of operation that caused the access violation.
+    // If this value is zero, the thread attempted to read the inaccessible
+    // data. If this value is 1, the thread attempted to write to an
+    // inaccessible address. If this value is 8, the thread causes a user-mode
+    // data execution prevention (DEP) violation.  The second array element
+    // specifies the virtual address of the inaccessible data.
+    U64 stack_start = (U64)Coroutine__current->stack;
+    U64 stack_end = Coroutine__current->stack_end;
+    U64 type = (U64)info->ExceptionRecord->ExceptionInformation[0];
+    U64 addr = (U64)info->ExceptionRecord->ExceptionInformation[1];
+	DWORD code = info->ExceptionRecord->ExceptionCode;
+    if (type != 0 && type != 1) {
+        pexcept(code);
+        return EXCEPTION_CONTINUE_SEARCH;
+    } else if (Coroutine__current == &Coroutine__main) {
+        pexcept(code);
+        return EXCEPTION_CONTINUE_SEARCH;
+    } else if (addr < stack_start || addr >= stack_end) {
+        pexcept(code);
+        return EXCEPTION_CONTINUE_SEARCH;
+    } else if (code == EXCEPTION_ACCESS_VIOLATION) {
+        Coroutine__commit_page(Coroutine__current, addr);
+        return EXCEPTION_CONTINUE_EXECUTION;
+    } else if (code == STATUS_GUARD_PAGE_VIOLATION) {
+        Coroutine__commit_page(Coroutine__current, addr);
+        return EXCEPTION_CONTINUE_EXECUTION;
+    }
+    pexcept(code);
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
+
+#ifndef WINDOWS
+static struct sigaction sigsegv;
+static struct sigaction sigbus;
+static char signalstack[SIGSTKSZ];
+
+void Coroutine__set_signals() {
+    // Set up the signal handlers for SIGBUS/SIGSEGV to catch stack protection
+    // errors and grow the stack when it runs out of space.
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sigfillset(&sa.sa_mask);
+    sa.sa_sigaction = Coroutine__fault;
+    sa.sa_flags = SA_SIGINFO|SA_ONSTACK;
+    sigaction(SIGSEGV, &sa, &sigsegv);
+    sigaction(SIGBUS, &sa, &sigbus); 
+  
+    stack_t stack;
+    stack.ss_sp = signalstack;
+    stack.ss_flags = 0;
+    stack.ss_size = sizeof(signalstack);
+    sigaltstack(&stack, 0);
+}
+#endif
+
+#ifndef WINDOWS
+void Coroutine__fault(int signo, siginfo_t* info, void* context) {
+    if (signo != SIGBUS && signo != SIGSEGV) {
+        abort();
+    }
+    U64 stack_start = (U64)Coroutine__current->stack;
+    U64 stack_end = Coroutine__current->stack_end;
+    U64 addr = (U64)info->si_addr;
+    if (addr < stack_start || addr >= stack_end) {
+        if (signo == SIGBUS) {
+            struct sigaction self;
+            sigaction(SIGBUS, &sigbus, &self);
+            raise(SIGBUS);
+        } else if (signo == SIGSEGV) {
+            struct sigaction self;
+            sigaction(SIGSEGV, &sigsegv, &self);
+            raise(SIGSEGV);
+        }
+    } else {
+        Coroutine__commit_page(Coroutine__current, addr);
+    }
+}
+#endif
 
