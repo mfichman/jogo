@@ -2,9 +2,7 @@
 
 
 yes(re Regex::Regex, str String) {
-    Io::println('yes')
     if not (re =~ str) {
-        Io::println("fail #{str}")
         re.dump()           
     } else {
     }
@@ -303,17 +301,16 @@ escape() {
 }
 
 main() Int {
-    #concat()
+    concat()
     alt()
-    Io::println('done')
-#    plus()
-#    star()
-#    opt()
-#    parens()
-#    any()
-#    groups()
-#    anchors()
-#    escape()
+    plus()
+    star()
+    opt()
+    parens()
+    any()
+    groups()
+    anchors()
+    escape()
     
     ret 0
 }
