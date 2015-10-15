@@ -50,6 +50,8 @@
 
 Io_Manager Io_Manager__init() {
     // Initialize an event manager, and allocate an I/O completion port.
+    Coroutine__set_signals(); 
+    
     Io_Manager ret = Boot_calloc(sizeof(struct Io_Manager));
 #ifdef WINDOWS
     WORD version = MAKEWORD(2, 2);

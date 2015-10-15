@@ -374,7 +374,7 @@ CoroutineStack CoroutineStack__init() {
     // the coroutine.
     U64 size = sizeof(struct CoroutineStack);
 #ifdef WINDOWS
-    CoroutineStack ret = VirtualAlloc(0, size, MEM_RESERVE, PAGE_READWRITE);
+    CoroutineStack ret = VirtualAlloc(0, size, MEM_RESERVE, PAGE_NOACCESS);
     if (!ret) {
         Boot_abort();
     }
@@ -389,12 +389,17 @@ CoroutineStack CoroutineStack__init() {
 
 void Coroutine__commit_page(Coroutine self, U64 addr) {
     // Ensures that 'addr' is allocated, and that the next page in the stack is
-    // a guard page.
+    // a guard page on Windows. On Windows, the guard page triggers a one-time
+    // STATUS_GUARD_PAGE exception, which triggers the vectored exception
+    // handler.  Since the exception handler uses the same stack as the code
+    // that triggered the exception, it then uses the guard page as a stack
+    // area, to prevent a double stack fault upon entering the vectored
+    // exception handler.
 
     U64 psize = page_size();
     U64 page = page_round(addr, psize);
     U64 len = self->stack_end-page;
-    // Allocate all pages between stack_min and the current page.
+    // Commit all pages between stack_min and the current page.
 #ifdef WINDOWS
     U64 glen = psize;
     U64 guard = page-glen;
@@ -402,9 +407,8 @@ void Coroutine__commit_page(Coroutine self, U64 addr) {
     if (!VirtualAlloc((LPVOID)page, len, MEM_COMMIT, PAGE_READWRITE)) {
         abort();     
     }
-    // Create a guard page right after the current page.
     if (!VirtualAlloc((LPVOID)guard, glen, MEM_COMMIT, PAGE_READWRITE|PAGE_GUARD)) {
-        abort();     
+        abort();
     }
 #else
     assert(page < self->stack_end);
@@ -438,6 +442,7 @@ void pexcept(DWORD code) {
     case EXCEPTION_SINGLE_STEP: break;
     case EXCEPTION_STACK_OVERFLOW: fprintf(stderr, "Stack overflow\n"); break;
     }
+	fflush(stderr);
 }
 #endif
 
@@ -461,7 +466,10 @@ LONG WINAPI Coroutine__fault(LPEXCEPTION_POINTERS info) {
     U64 type = (U64)info->ExceptionRecord->ExceptionInformation[0];
     U64 addr = (U64)info->ExceptionRecord->ExceptionInformation[1];
 	DWORD code = info->ExceptionRecord->ExceptionCode;
-    if (type != 0 && type != 1) {
+    U64 const access_read = 0;
+    U64 const access_write = 1;
+
+    if (type != access_read && type != access_write) {
         pexcept(code);
         return EXCEPTION_CONTINUE_SEARCH;
     } else if (Coroutine__current == &Coroutine__main) {
