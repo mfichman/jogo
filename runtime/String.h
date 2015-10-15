@@ -62,7 +62,7 @@ void* memcpy(void*, const void*, size_t);
 void* memmove(void*, const void*, size_t);
 #endif
 
-#define String__static(x) { String__vtable, 1, sizeof((x))-1, {x} }
+#define String__static(x) { String__vtable, 1, sizeof((x))-1, (Byte*)(x) }
     
 
 #endif

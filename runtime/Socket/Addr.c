@@ -60,6 +60,12 @@ Socket_Addr Socket_Addr__init(Socket_Addr ret, String str, Int port) {
         struct addrinfo* res = 0;
         struct sockaddr_in* sin = 0;
         int error = getaddrinfo((char*)str->data, 0, 0, &res);
+#ifdef WINDOWS
+        if(error) {
+            ret->error = Os_error();
+            return ret;
+        }
+#else
         if (EAI_SYSTEM == error) {
             ret->error = Os_error();
             return ret;
@@ -67,6 +73,7 @@ Socket_Addr Socket_Addr__init(Socket_Addr ret, String str, Int port) {
             ret->error = error; 
             return ret;
         }
+#endif
         for(; res; res = res->ai_next) {
             sin = (struct sockaddr_in*)res->ai_addr;
             if (sin->sin_addr.s_addr) {

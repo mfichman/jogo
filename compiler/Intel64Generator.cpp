@@ -56,7 +56,8 @@ void Intel64Generator::format(OutputFormat::Ptr format) {
 void Intel64Generator::operator()(File* file) {
     // Output machine code for a single translation unit.
     if (env_->errors()) { return; }
-    format_->sym(env_->name("__file"), OutputFormat::SYM_LDATA);
+    format_->sym(env_->name("__file"), OutputFormat::SYM_LTEXT);
+    format_->sym(env_->name(file->path()->string()), OutputFormat::SYM_TEXT);
 
     for (Feature::Itr f = file->features(); f; ++f) {
         f(this);
