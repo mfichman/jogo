@@ -3,6 +3,7 @@
 
 yes(re Regex::Regex, str String) {
     if not (re =~ str) {
+        Io::println("fail #{str}")
         re.dump()           
     } else {
     }
@@ -32,7 +33,7 @@ concat() {
     
     i var = 0
     str var = ''
-    while i < 1 {
+    while i < 1000 {
         str = str + 'x'
         ++i
     }
@@ -61,19 +62,46 @@ concat() {
 }
 
 alt() {
+    yes(/a|b|c/, 'xax')
+    yes(/a|b|c/, 'xbx')
+    yes(/a|b|c/, 'xcx')
+    yes(/a|b|c/, 'xabcx')
+    yes(/a|b|c/, 'a')
+    yes(/a|b|c/, 'b')
+    yes(/a|b|c/, 'c')
+    no(/a|b|c/, '')
+    no(/a|b|c/, 'xxxyyy')
+    yes(/a|a|a/, 'xaxaxax')
 
     i var = 0
-    str var = 'x|x'
-    while i < 170 {
+    str var = ''
+    while i < 1000 {
         str = str + 'x|'
         ++i
     }
     str = str + 'x'
         
     re = Regex::Regex(str)
-    Io::println('yes')
     yes(re, 'x') 
-    Io::println('yes')
+    no(re, '') 
+    no(re, 'abc') 
+    
+    yes(/(a|b)+/, 'aabbaba')
+    no(/(a|b)+/, '')
+    yes(/x(a|b)*/, 'xaabbaba')
+    yes(/x(a|b)*/, 'x')
+    no(/x(a|b)*/, '')
+    yes(/x(a|b)?/, 'xa')
+    yes(/x(a|b)?/, 'xb')
+    yes(/x(a|b)?/, 'x')
+    no(/x(a|b)?/, '')
+    yes(/x(a|b)c/, 'xac')
+    yes(/x(a|b)c/, 'xbc')
+    yes(/x|(a|b)|c/, 'x')
+    yes(/x|(a|b)|c/, 'a')
+    yes(/x|(a|b)|c/, 'b')
+    yes(/x|(a|b)|c/, 'c')
+    no(/x|(a|b)|c/, '')
 }
 
 plus() {
