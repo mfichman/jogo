@@ -7,10 +7,10 @@
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  * sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +18,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
- */  
+ */
 
 #include "Builder.hpp"
 #include "CodeExpander.hpp"
@@ -59,15 +59,19 @@ Builder::Builder(Environment* env) :
     env->lib("wsock32");
     char const* pathstr = getenv("PATH");
     std::string path = pathstr ? pathstr : "";
-    std::string const vshome = "C:\\Program Files (x86)\\Microsoft Visual Studio ";
+    std::string const vshome = "C:\\Program Files (x86)\\Microsoft Visual Studio";
     std::vector<std::string> vcvarsall;
-    vcvarsall.push_back("12.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
-    vcvarsall.push_back("11.0\\VC\\bin\\amd64\\vcvars64.bat");
-    vcvarsall.push_back("11.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
-    vcvarsall.push_back("11.0\\VC\\bin\\amd64\\vcvars64.bat");
-    vcvarsall.push_back("11.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
-    vcvarsall.push_back("10.0\\VC\\bin\\amd64\\vcvars64.bat");
-    vcvarsall.push_back("10.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
+    vcvarsall.push_back("\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat");
+    vcvarsall.push_back("\\2017\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat");
+    vcvarsall.push_back(" 14.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
+    vcvarsall.push_back(" 14.0\\VC\\bin\\amd64\\vcvars64.bat");
+    vcvarsall.push_back(" 12.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
+    vcvarsall.push_back(" 12.0\\VC\\bin\\amd64\\vcvars64.bat");
+    vcvarsall.push_back(" 11.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
+    vcvarsall.push_back(" 11.0\\VC\\bin\\amd64\\vcvars64.bat");
+    vcvarsall.push_back(" 11.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
+    vcvarsall.push_back(" 10.0\\VC\\bin\\amd64\\vcvars64.bat");
+    vcvarsall.push_back(" 10.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
     for (size_t i = 0; i < vcvarsall.size(); ++i) {
         if(File::is_reg(vshome+vcvarsall[i])) {
             vcvarsall_ = File::base_name(vshome+vcvarsall[i]);
@@ -83,7 +87,7 @@ Builder::Builder(Environment* env) :
         }
         exit(1);
     }
-    
+
     // Find a valid 64-bit MSVC compiler configuration
 
     std::string program_files = getenv("PROGRAMFILES");
@@ -104,7 +108,7 @@ Builder::Builder(Environment* env) :
     if (env_->dump_lex()) {
         return;
     }
-	
+
     // Semantic analysis/type checking phase.
 	if (!env_->errors()) {
 		SemanticAnalyzer::Ptr checker(new SemanticAnalyzer(env));
@@ -132,7 +136,7 @@ Builder::Builder(Environment* env) :
 }
 
 void Builder::process_path() {
-    // Read in additional include directories from JOGO_PATH 
+    // Read in additional include directories from JOGO_PATH
     char const* jogo_path = getenv("JOGO_PATH");
     if (!jogo_path) {
         return;
@@ -160,7 +164,7 @@ void Builder::monolithic_build() {
 
     for (File::Itr file = env_->files(); file; ++file) {
         if (file->is_output_file()) {
-            operator()(file); 
+            operator()(file);
             ss << file->jgo_file() << " ";
             if (File::is_reg(file->native_file())) {
                 ss << file->o_file() << " ";
@@ -176,7 +180,7 @@ void Builder::monolithic_build() {
 #ifdef WINDOWS
         std::string exe = env_->output()+".exe";
 #else
-        std::string exe = env_->output();        
+        std::string exe = env_->output();
 #endif
         link(ss.str(), exe);
     } else {
@@ -197,13 +201,13 @@ void Builder::monolithic_build() {
 }
 
 void Builder::modular_build() {
-    // Build one static library per module, and build one executable per 
+    // Build one static library per module, and build one executable per
     // executable module with a "main" function specified, using the "main"
     // function for the module as the entry point.
-     
+
     // Create any out-of-date static libraries first.
     for (int i = 0; i < env_->inputs(); i++) {
-        std::string name = Import::module_name(env_->input(i)); 
+        std::string name = Import::module_name(env_->input(i));
         Module::Ptr m = env_->module(env_->name(name));
         if (!m) {
             Stream::sterr() << "Module '" << env_->input(i) << "' not found\n";
@@ -217,7 +221,7 @@ void Builder::modular_build() {
 
     // Now, create or possibly relink exectubles.
     for (int i = 0; i < env_->inputs(); i++) {
-        std::string name = Import::module_name(env_->input(i)); 
+        std::string name = Import::module_name(env_->input(i));
         Module::Ptr m = env_->module(env_->name(name));
         if (m && m->is_exe()) {
             m(this);
@@ -231,12 +235,12 @@ void Builder::operator()(Module* module) {
     // archives the results into a single static library, or performs the link
     // step if the output is an executable.
     if (env_->errors()) { return; }
-    if (env_->make() && module->is_up_to_date()) {  
+    if (env_->make() && module->is_up_to_date()) {
         if (env_->verbose()) {
             Stream::stout() << "Skipping " << module->name() << "\n";
             Stream::stout()->flush();
         }
-        return; 
+        return;
     }
     if (env_->verbose()) {
         Stream::stout() << "Building " << module->name() << "\n";
@@ -248,13 +252,13 @@ void Builder::operator()(Module* module) {
 
     for (int i = 0; i < module->files(); i++) {
         operator()(module->file(i));
-    }     
+    }
     procs_.wait();
     errors_ += procs_.errors();
     if (!env_->link() || errors_ || env_->errors()) { return; }
 
     if (module->function(env_->name("main"))) {
-        link(module); 
+        link(module);
     } else  {
         File::mkdir(File::dir_name(module->jgi_file()));
         Stream::Ptr fout(new Stream(module->jgi_file()));
@@ -295,7 +299,7 @@ void Builder::operator()(File* file) {
         } else if (env_->generator() == "Intel64") {
             irgen(file);
             if (env_->dump_ir()) { return; }
-            if (!env_->assemble()) { return; } 
+            if (!env_->assemble()) { return; }
             intel64gen(file);
         }
     }
@@ -327,9 +331,12 @@ void Builder::link(Module* module) {
 }
 
 void Builder::link(const std::string& in, const std::string& out) {
-    // Links all the files specified in 'in' (space-delimited) and generates 
+    // Links all the files specified in 'in' (space-delimited) and generates
     // the output file 'out'.
     // Select the correct linker command for the current OS/platform.
+    system(("where " + vcvarsall_).c_str());
+    system((vcvarsall_ + " && where lib.exe").c_str());
+    system((vcvarsall_ + " && where cl.exe").c_str());
     std::stringstream ss;
 #if defined(WINDOWS)
     ss << vcvarsall_ << " > NUL && ";
@@ -360,7 +367,7 @@ void Builder::link(const std::string& in, const std::string& out) {
         ss << "/LIBPATH:\"" << env_->include(i) << "\" ";
     }
     for (int i = 0; i < env_->libs(); ++i) {
-        ss << env_->lib(i) << ".lib ";
+        ss << '"' << env_->lib(i) << ".lib\" ";
     }
     ss << "jogomain.lib ";
 #else
@@ -383,7 +390,7 @@ void Builder::link(const std::string& in, const std::string& out) {
     // corresponding library as well.
     for (File::Itr i = env_->files(); i; ++i) {
         if (i->is_interface_file()) {
-            ss << i->input(File::LIB) << " ";
+            ss << '"' << i->input(File::LIB) << "\" ";
         }
     }
 
@@ -414,11 +421,11 @@ void Builder::link(const std::string& in, const std::string& out) {
     if (env_->verbose()) {
         Stream::stout() << ss.str() << "\n";
         Stream::stout()->flush();
-    } 
+    }
     File::mkdir(File::dir_name(out).c_str());
-    if (system(ss.str().c_str())) { 
+    if (system(ss.str().c_str())) {
         errors_++;
-    } 
+    }
 }
 
 void Builder::archive(Module* module) {
@@ -459,20 +466,20 @@ void Builder::archive(const std::string& in, const std::string& out) {
     if (env_->verbose()) {
         Stream::stout() << ss.str() << "\n";
         Stream::stout()->flush();
-    } 
+    }
     File::mkdir(File::dir_name(out).c_str());
-    if (system(ss.str().c_str())) { 
+    if (system(ss.str().c_str())) {
         errors_++;
-    } 
+    }
 }
 
 void Builder::cgen(File* file) {
-    // Generates C code for all functions/classes in 'file.'  Outputs to a 
+    // Generates C code for all functions/classes in 'file.'  Outputs to a
     // temporary file if this is an intermediate step; otherwise, outputs
     // to a named file in the build directory.
     //CCodeGenerator::Ptr c(new CCodeGenerator(env_));
     CCodeGenerator::Ptr c(new CCodeGenerator(env_));
-    c->out(new Stream(file->jgc_file()));  
+    c->out(new Stream(file->jgc_file()));
     if (c->out()->error()) {
         std::string msg = c->out()->message();
         Stream::sterr() << file->asm_file() << msg << "\n";
@@ -525,7 +532,7 @@ void Builder::nasm64gen(File* file) {
     // Outputs to a temporary file if this is an intermediate step; otherwise,
     // outputs to a named file in the build directory.
     Nasm64Generator::Ptr nasm64gen(new Nasm64Generator(env_));
-    nasm64gen->out(new Stream(file->asm_file()));  
+    nasm64gen->out(new Stream(file->asm_file()));
     if (nasm64gen->out()->error()) {
         std::string msg = nasm64gen->out()->message();
         Stream::sterr() << file->asm_file() << msg << "\n";
@@ -570,7 +577,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
     ss << "cl.exe " << in << " /Z7 /MD /nologo /c /Fo\"" << out << "\"";
     if (env_->optimize()) {
         ss << " /O2";
-    } 
+    }
     ss << " /DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
     if (!env_->verbose()) {
         ss << " > NUL";
@@ -592,13 +599,13 @@ void Builder::cc(const std::string& in, const std::string& out) {
     }
     if (env_->debug()) {
         ss << " -g";
-    } 
+    }
     ss << " -DCOROUTINE_STACK_SIZE=" << COROUTINE_STACK_SIZE;
 #ifdef DARWIN
     ss << " -D_XOPEN_SOURCE=700";
 #else
     ss << " -D_GNU_SOURCE";
-#endif 
+#endif
 #endif
 
 #if defined(WINDOWS)
@@ -614,7 +621,7 @@ void Builder::cc(const std::string& in, const std::string& out) {
     for (int i = 0; i < env_->includes(); i++) {
         if (File::is_dir(env_->include(i))) {
 #if defined(WINDOWS)
-            ss << " /I \"" << env_->include(i) << "\""; 
+            ss << " /I \"" << env_->include(i) << "\"";
 #else
             ss << " -I " << env_->include(i);
 #endif
@@ -636,7 +643,7 @@ void Builder::nasm(const std::string& in, const std::string& out) {
     ss << "nasm -felf64 ";
 #elif defined(DARWIN)
     ss << "/usr/local/bin/nasm -fmacho64 ";
-#endif 
+#endif
     ss << in << " -o " << out;
     if (env_->verbose()) {
         Stream::stout() << ss.str() << "\n";
@@ -658,5 +665,5 @@ void Builder::execute(const std::string& exe) {
 #endif
     if (system(ss.str().c_str())) {
         errors_++;
-    } 
+    }
 }

@@ -213,7 +213,7 @@ if 'doc' in COMMAND_LINE_TARGETS:
 if 'pkg' in COMMAND_LINE_TARGETS:
     try:
         shutil.rmtree(dist_path)
-    except OSError, e:
+    except OSError as e:
         pass
     for f in library_headers:
         path = f.path.split(os.path.sep)

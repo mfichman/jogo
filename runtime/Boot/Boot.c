@@ -7,10 +7,10 @@
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  * sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,6 +19,13 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+
+#if _MSC_FULL_VER != 1900
+#define value_2_string(x) #x
+#define value(x) value_2_string(x)
+#pragma message(value(_MSC_VER))
+#error "bad compiler version"
+#endif
 
 #include "Primitives.h"
 #include "String.h"
@@ -40,7 +47,7 @@ void Boot_print_ptr(Object object) {
 }
 
 void Boot_print_str(String string) {
-    // Write string to stdout.  This is function is here for convenience's 
+    // Write string to stdout.  This is function is here for convenience's
     // sake.  Once a full-fledged IO framework has been written, this function
     // will really only be useful for simple output.
 
@@ -54,7 +61,7 @@ void Boot_print_int(Int integer) {
 #ifdef DARWIN
     fprintf(stdout, "%lld", integer);
 #else
-    fprintf(stdout, "%ld", integer);    
+    fprintf(stdout, "%lld", integer);
 #endif
     fflush(stdout);
 }
@@ -68,7 +75,7 @@ void Boot_print_float(Float fl) {
 }
 
 void Boot_print_char(Char character) {
-    // Print a character to stdout.  This function is not part of the public 
+    // Print a character to stdout.  This function is not part of the public
     // API for the Jogo library.
 
     fputc(character, stdout);
@@ -111,7 +118,7 @@ void Boot_mzero(VoidPtr val, Int size) {
 }
 
 void Boot_memcpy(VoidPtr dst, VoidPtr src, Int size) {
-    memcpy(dst, src, size); 
+    memcpy(dst, src, size);
 }
 
 void Boot_free(VoidPtr memory) {
@@ -123,9 +130,9 @@ void Boot_abort() {
     // Aborts the process after printing the last system error message.
 #ifdef WINDOWS
     DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM;
-    DWORD id = GetLastError(); 
+    DWORD id = GetLastError();
     LPTSTR buffer = 0;
-    
+
     FormatMessage(flags, 0, id, 0, (LPTSTR)&buffer, 1, 0);
     fprintf(stderr, "%d: %s\n", id, buffer);
 #else
