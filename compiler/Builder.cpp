@@ -57,36 +57,6 @@ Builder::Builder(Environment* env) :
     env->lib("ws2_32");
     env->lib("mswsock");
     env->lib("wsock32");
-    char const* pathstr = getenv("PATH");
-    std::string path = pathstr ? pathstr : "";
-    std::string const vshome = "C:\\Program Files (x86)\\Microsoft Visual Studio";
-    std::vector<std::string> vcvarsall;
-    vcvarsall.push_back("\\2017\\Community\\VC\\Auxiliary\\Build\\vcvarsx86_amd64.bat");
-    vcvarsall.push_back("\\2017\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat");
-    vcvarsall.push_back(" 14.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
-    vcvarsall.push_back(" 14.0\\VC\\bin\\amd64\\vcvars64.bat");
-    vcvarsall.push_back(" 12.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
-    vcvarsall.push_back(" 12.0\\VC\\bin\\amd64\\vcvars64.bat");
-    vcvarsall.push_back(" 11.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
-    vcvarsall.push_back(" 11.0\\VC\\bin\\amd64\\vcvars64.bat");
-    vcvarsall.push_back(" 11.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
-    vcvarsall.push_back(" 10.0\\VC\\bin\\amd64\\vcvars64.bat");
-    vcvarsall.push_back(" 10.0\\VC\\bin\\x86_amd64\\vcvarsx86_amd64.bat");
-    for (size_t i = 0; i < vcvarsall.size(); ++i) {
-        if(File::is_reg(vshome+vcvarsall[i])) {
-            vcvarsall_ = File::base_name(vshome+vcvarsall[i]);
-            path += ";"+File::dir_name(vshome+vcvarsall[i]);
-            break;
-        }
-    }
-    SetEnvironmentVariable("PATH", path.c_str());
-    if(vcvarsall_.empty()) {
-        std::cerr << "Valid compiler configuration not found:" << std::endl;
-        for (size_t i = 0; i < vcvarsall.size(); ++i) {
-            std::cerr << "    no file '" << vshome+vcvarsall[i] << "'" << std::endl;
-        }
-        exit(1);
-    }
 
     // Find a valid 64-bit MSVC compiler configuration
 
@@ -334,12 +304,8 @@ void Builder::link(const std::string& in, const std::string& out) {
     // Links all the files specified in 'in' (space-delimited) and generates
     // the output file 'out'.
     // Select the correct linker command for the current OS/platform.
-    system(("where " + vcvarsall_).c_str());
-    system((vcvarsall_ + " && where lib.exe").c_str());
-    system((vcvarsall_ + " && where cl.exe").c_str());
     std::stringstream ss;
 #if defined(WINDOWS)
-    ss << vcvarsall_ << " > NUL && ";
     ss << "link.exe /DEBUG /SUBSYSTEM:console /NOLOGO /MACHINE:X64 /INCREMENTAL:no ";
     // N.B.: Incremental linking is not supported
 #elif defined(LINUX)
@@ -447,7 +413,6 @@ void Builder::archive(const std::string& in, const std::string& out) {
 
     // Select the correct archive program for the current OS/platform.
 #if defined(WINDOWS)
-    ss << vcvarsall_ << " > NUL && ";
     ss << "lib.exe /SUBSYSTEM:console /MACHINE:X64 /NOLOGO /OUT:" << out << " " << in;
     if (env_->no_default_libs()) {
         ss << "build\\runtime\\Coroutine.Intel64.obj";
@@ -573,7 +538,6 @@ void Builder::cc(const std::string& in, const std::string& out) {
     // Compiles a single C source file, and outputs the result to 'out.'
     std::stringstream ss;
 #if defined(WINDOWS)
-    ss << vcvarsall_ << " > NUL && ";
     ss << "cl.exe " << in << " /Z7 /MD /nologo /c /Fo\"" << out << "\"";
     if (env_->optimize()) {
         ss << " /O2";

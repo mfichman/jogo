@@ -4,11 +4,11 @@ l() {
     if (1.0 < 2.0) {
         Io::println('ok')
     } else {
-        Io::println('fail')
+        Io::println('l 0 fail')
     }
 
     if (2.0 < 1.0) {
-        Io::println('fail')
+        Io::println('l 1 fail')
     } else {
         Io::println('ok')
     }
@@ -18,11 +18,11 @@ le() {
     if (1.0 <= 2.0) {
         Io::println('ok')
     } else {
-        Io::println('fail')
+        Io::println('le 0 fail')
     }
 
     if (2.0 <= 1.0) {
-        Io::println('fail')
+        Io::println('le 1 fail')
     } else {
         Io::println('ok')
     }
@@ -30,7 +30,7 @@ le() {
     if (1.0 <= 1.0) {
         Io::println('ok')
     } else {
-        Io::println('fail')
+        Io::println('le 2 fail')
     }
 }
 
@@ -38,11 +38,11 @@ g() {
     if (2.0 > 1.0) {
         Io::println('ok')
     } else {
-        Io::println('fail')
+        Io::println('g 0 fail')
     }
 
     if (1.0 > 2.0) {
-        Io::println('fail')
+        Io::println('g 1 fail')
     } else {
         Io::println('ok')
     }
@@ -52,11 +52,11 @@ ge() {
     if (2.0 >= 1.0) {
         Io::println('ok')
     } else {
-        Io::println('fail')
+        Io::println('ge 0 fail')
     }
 
     if (1.0 >= 2.0) {
-        Io::println('fail')
+        Io::println('ge 1 fail')
     } else {
         Io::println('ok')
     }
@@ -64,7 +64,7 @@ ge() {
     if (1.0 >= 1.0) {
         Io::println('ok')
     } else {
-        Io::println('fail')
+        Io::println('ge 2 fail')
     }
 }
 
@@ -72,11 +72,11 @@ z() {
     if (1.0) {
         Io::println('ok')
     } else {
-        Io::println('fail')
+        Io::println('z 0 fail')
     }
 
     if (0.0) {
-        Io::println('fail')
+        Io::println('z 1 fail')
     } else {
         Io::println('ok')
     }
@@ -84,7 +84,7 @@ z() {
 
 nz() {
     if (not 1.0) {
-        Io::println('fail')
+        Io::println('z 0 fail')
     } else {
         Io::println('ok')
     }
@@ -92,7 +92,7 @@ nz() {
     if (not 0.0) {
         Io::println('ok')
     } else {
-        Io::println('fail')
+        Io::println('z 1 fail')
     }
 }
 
@@ -100,11 +100,11 @@ e() {
     if (1.0 == 1.0) {
         Io::println('ok')
     } else {
-        Io::println('fail')
+        Io::println('e 0 fail')
     }
 
     if (1.0 == 0.0) {
-        Io::println('fail')
+        Io::println('e 1 fail')
     } else {
         Io::println('ok')
     }
@@ -114,11 +114,11 @@ ne() {
     if (1.0 != 0.0) {
         Io::println('ok')
     } else {
-        Io::println('fail')
+        Io::println('ne 0 fail')
     }
 
     if (1.0 != 1.0) {
-        Io::println('fail')
+        Io::println('ne 1 fail')
     } else {
         Io::println('ok')
     }

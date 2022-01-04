@@ -52,7 +52,8 @@ def check(test, expected, output):
 def shell(command, check=False):
     # Runs 'command' and returns the result.  Sets the 'fail' flag if the 
     # command failed.
-    proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    print(command)
+    proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
     ret = proc.stdout.read()
     code = proc.wait()
     if code != 0 and check:
@@ -66,7 +67,7 @@ def jogo_test(test):
     test = re.sub(r'.jg$', '', test)
     flags = ""
     run = False
-    for line in open(test + '.jg'):
+    for line in open(test + '.jg', encoding='utf-8'):
         if re.search(r'^#.jgtest print_ast on', line):
             flags += ' --dump-ast'
         elif re.search(r'^#.jgtest print_ir on', line):
@@ -77,7 +78,7 @@ def jogo_test(test):
         
     flags += ' --build-dir ../build/test -o ../bin/test/%s' % (test.lower())
     command = '../bin/jogo %s -i ../runtime -i ../lib %s' % (test, flags)
-    expected = open(test + '.jg.out', 'rb').read() 
+    expected = open(test + '.jg.out', 'r', encoding='utf-8').read() 
     if sys.platform == 'win32':
         command = command.replace('/', '\\')
 
@@ -107,14 +108,14 @@ def jogo_test(test):
 def python_test(test):
     # Run a Python test.  Useful for various miscellaneous tests that are not
     # easily expressed in C++.
-    expected = open(test + '.out', 'r').read()
+    expected = open(test + '.out', 'r', encoding='utf-8').read()
     output = shell('python ' + test + ' 2>&1')
     return check(test, expected, output)
 
 def native_test(test):
     # C/C++ tests.  Used primarily for unit tests and to test the runtime
     # library.
-    expected = open(test + '.out', 'rb').read()
+    expected = open(test + '.out', 'r', encoding='utf-8').read()
     exe = re.sub(r'.c$', '', test)
     output = ""
     if sys.platform == 'win32':
@@ -133,7 +134,7 @@ def native_test(test):
 
 def cpp_test(test):
     # C++ tests; used for compiler unit tests.
-    expected = open(test + '.out', 'rb').read()
+    expected = open(test + '.out', 'r', encoding='utf-8').read()
     exe = re.sub(r'.cpp$', '', test) 
     output = ""
     if sys.platform == 'win32':

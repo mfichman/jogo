@@ -20,13 +20,6 @@
  * IN THE SOFTWARE.
  */
 
-#if _MSC_FULL_VER != 1900
-#define value_2_string(x) #x
-#define value(x) value_2_string(x)
-#pragma message(value(_MSC_VER))
-#error "bad compiler version"
-#endif
-
 #include "Primitives.h"
 #include "String.h"
 #include "Object.h"
