@@ -6,10 +6,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,7 +30,7 @@ Method::str?() String {
     with Method::DELETE: ret "DELETE"
     with Method::TRACE: ret "TRACE"
     with Method::CONNECT: ret "CONNECT"
-    } 
+    }
 }
 
 Request < Object {
@@ -42,7 +42,7 @@ Request < Object {
     # The method to use for communication with the server.
 
     path var = Uri::Path('')
-    # Path to the resource requested by the server. 
+    # Path to the resource requested by the server.
 
     version var = 'HTTP/1.1'
     # HTTP version to use.
@@ -53,7 +53,7 @@ Request < Object {
     # * Connection: close
     # * User-Agent: Jogo HTTP Client
     # * Accept-Charset: utf-8
-    # * Accept-Encoding: identity 
+    # * Accept-Encoding: identity
 
     body var String
     # Body of the request (optional)
@@ -64,24 +64,24 @@ Request < Object {
         headers["Accept-Charset"] = "utf-8"
         headers["Accept-Encoding"] = "identity"
     }
-    
+
     write(stream Io::Stream) {
         # Outputs the request headers and optionally the body.  If the body is
         # non-nil, write will output this string as the request body.
         # Otherwise, the caller should write the body to the stream after
         # calling write().  Status of the stream should be queried after
         # completing this function.
-        stream.print("#{method} #{path} #{version}\r\n")
+        stream.print("#{method} #{path} #{version}\r\x0A")
         for header in headers {
-            stream.print("#{header.first}: #{header.second}\r\n")
+            stream.print("#{header.first}: #{header.second}\r\x0A")
         }
-        stream.print("\r\n")
+        stream.print("\r\x0A")
         if body {
            stream.print(body)
            stream.flush()
         }
     }
-    
+
     read_headers(stream Io::Stream) {
         # Read only the response headers; do not read the request body.
         m = stream.scan(' ')
@@ -102,22 +102,22 @@ Request < Object {
         }
         path = Uri::Path(stream.scan(' '))
         version = stream.scan('\n')
-        while stream.status == Io::StreamStatus::OK and 
-            stream.peek() != '\r'b and 
+        while stream.status == Io::StreamStatus::OK and
+            stream.peek() != '\r'b and
             stream.peek() != '\n'b {
-    
+
             key = stream.scan(':')
-            while stream.status == Io::StreamStatus::OK and 
+            while stream.status == Io::StreamStatus::OK and
                 stream.peek() == ' 'b  {
-            
+
                 stream.get()
             }
-            value = stream.scan('\n') 
+            value = stream.scan('\n')
             headers[key] = value
         }
-        stream.scan('\n') 
+        stream.scan('\n')
     }
-    
+
     read(stream Io::Stream) {
         # Reads the whole request, including the body.
         self.read_headers(stream)
