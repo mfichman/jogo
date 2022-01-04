@@ -7,10 +7,10 @@
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  * sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +18,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
- */  
+ */
 
 #include "Nasm64Generator.hpp"
 #include <sstream>
@@ -73,7 +73,7 @@ void Nasm64Generator::operator()(File* file) {
             // Support for primitive constructors, e.g., Char(0xf).  FIXME:
             // Should use constant folding instead, to allow all constant
             // expressions.
-        } 
+        }
         label(Operand(cons->label()));
         if(IntegerLiteral::Ptr lit = dynamic_cast<IntegerLiteral*>(init)) {
             out_ << " dq " << lit->value() << "\n";
@@ -81,7 +81,7 @@ void Nasm64Generator::operator()(File* file) {
             out_ << " dq ";
             if (lit->value()->string()[0] == '.') {
                 out_ << '0';
-            } 
+            }
             out_ << lit->value() << "\n";
         } else if (StringLiteral::Ptr lit = dynamic_cast<StringLiteral*>(init)) {
             out_ << " dq 0\n"; // Output the value of the literal label?
@@ -100,7 +100,7 @@ void Nasm64Generator::operator()(File* file) {
 
     // Generate extern defs for each symbol that is referenced in this file,
     // but not defined in this file.
-    for (std::set<std::string>::iterator i = symbol_.begin(); 
+    for (std::set<std::string>::iterator i = symbol_.begin();
         i != symbol_.end(); i++) {
 
         std::set<std::string>::iterator q = definition_.find(*i);
@@ -110,7 +110,7 @@ void Nasm64Generator::operator()(File* file) {
 #else
             out_ << "extern " << *i << "\n";
 #endif
-        } 
+        }
     }
 
     out_->flush();
@@ -142,7 +142,7 @@ void Nasm64Generator::operator()(Function* feature) {
     out_ << "global "; label(Operand(feature->label())); out_ << "\n";
     label(Operand(feature->label())); out_ << ":\n";
     definition_.insert(feature->label()->string());
-    out_ << "    push rbp\n"; 
+    out_ << "    push rbp\n";
     out_ << "    mov rbp, rsp\n";
 
     if (feature->stack_slots()) {
@@ -154,7 +154,7 @@ void Nasm64Generator::operator()(Function* feature) {
         }
         out_ << "    sub rsp, " << stack << "\n";
     }
-    
+
     for (int i = 0; i < feature->ir_blocks(); i++) {
         operator()(feature->ir_block(i));
     }
@@ -166,8 +166,8 @@ void Nasm64Generator::operator()(Function* feature) {
 
 void Nasm64Generator::operator()(IrBlock* block) {
     // Translate a basic block in three-address code into x86.  For most
-    // operations, this requires a "mov, op" sequence.  
-    
+    // operations, this requires a "mov, op" sequence.
+
     IrBlock::Ptr branch = block->branch();
     IrBlock::Ptr next = block->next();
     if (block->label()) {
@@ -181,21 +181,21 @@ void Nasm64Generator::operator()(IrBlock* block) {
         opcode_ = inst.opcode();
 
         switch (inst.opcode()) {
-        case BNE: instr("cmp", a1, a2); instr("jne", Operand(branch->label())); break;
-        case BE: instr("cmp", a1, a2); instr("je", Operand(branch->label())); break;
-        case BZ: instr("cmp", a1, "0"); instr("je", Operand(branch->label())); break;
-        case BNZ: instr("cmp", a1, "0"); instr("jne", Operand(branch->label())); break; 
-        case BG: instr("cmp", a1, a2); instr("jg", Operand(branch->label())); break;
-        case BGE: instr("cmp", a1, a2); instr("jge", Operand(branch->label())); break;
-        case BL: instr("cmp", a1, a2); instr("jl", Operand(branch->label())); break;
-        case BLE: instr("cmp", a1, a2); instr("jle", Operand(branch->label())); break;
+        case BNE: bne(a1.reg(), a2.reg(), branch->label()); break;
+        case BE: be(a1.reg(), a2.reg(), branch->label()); break;
+        case BZ: bz(a1.reg(), branch->label()); break;
+        case BNZ: bnz(a1.reg(), branch->label()); break;
+        case BG: bg(a1.reg(), a2.reg(), branch->label()); break;
+        case BGE: bge(a1.reg(), a2.reg(), branch->label()); break;
+        case BL: bl(a1.reg(), a2.reg(), branch->label()); break;
+        case BLE: ble(a1.reg(), a2.reg(), branch->label()); break;
         case CALL: instr("call", a1); break;
         case JUMP: instr("jmp", Operand(branch->label())); break;
-        case MOV: 
+        case MOV:
             if (res.is_float()) {
                 instr("movsd", res, a1);
             } else {
-                instr("mov", res, a1); 
+                instr("mov", res, a1);
             }
             break;
         case ADD: arith(inst); break;
@@ -212,7 +212,7 @@ void Nasm64Generator::operator()(IrBlock* block) {
         case LOAD: load_hack(res, a1); break;
         case NOTB: instr("mov", res, a1); instr("not", res); break;
         case ANDB: instr("mov", res, a1); instr("and", res, a2); break;
-        case ORB: instr("mov", res, a1); instr("or", res, a2); break; 
+        case ORB: instr("mov", res, a1); instr("or", res, a2); break;
         case NOP: instr("nop"); break;
         case RET: instr("leave"); instr("ret"); break;
         }
@@ -221,7 +221,7 @@ void Nasm64Generator::operator()(IrBlock* block) {
 
 void Nasm64Generator::dispatch_table(Class* feature) {
     // Output the class dispatch table for calling methods with dynamic
-    // dispatch.  The format is as follows: 
+    // dispatch.  The format is as follows:
     //
     //     vtable[0] is the destructor
     //     vtable[1] is the hash function
@@ -242,14 +242,14 @@ void Nasm64Generator::dispatch_table(Class* feature) {
     definition_.insert(vtable);
 
     // Emit the destructor and vtable length
-    out_ << "    dq "; label(Operand(dtor->label())); out_ << "\n"; 
+    out_ << "    dq "; label(Operand(dtor->label())); out_ << "\n";
     out_ << "    dq " << feature->jump1s() << "\n";
 
     // Emit the first jump table
     for (int i = 0; i < feature->jump1s(); i++) {
         out_ << "    dq " << feature->jump1(i) << "\n";
-    } 
-    
+    }
+
     // Emit the second jump table
     for (int i = 0; i < feature->jump2s(); i++) {
         if (feature->jump2(i)) {
@@ -270,8 +270,89 @@ void Nasm64Generator::neg(Operand res, Operand a1) {
         instr("subsd", XMM0, a1);
         instr("movsd", res, XMM0);
     } else {
-        instr("mov", res, a1); 
-        instr("neg", res); 
+        instr("mov", res, a1);
+        instr("neg", res);
+    }
+}
+
+void Nasm64Generator::be(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        instr("comisd", a1, a2);
+    } else {
+        instr("cmp", a1, a2);
+    }
+    instr("je", Operand(label));
+}
+
+void Nasm64Generator::bne(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        instr("comisd", a1, a2);
+    } else {
+        instr("cmp", a1, a2);
+    }
+    instr("jne", Operand(label));
+}
+
+void Nasm64Generator::bz(RegisterId a1, String* label) {
+    if (a1.is_float()) {
+        instr("pxor", XMM0, XMM0);
+        instr("comisd", a1, XMM0);
+        // ptest
+        instr("je", Operand(label));
+    } else {
+        instr("test", a1, a1);
+        instr("jz", Operand(label));
+    }
+}
+
+void Nasm64Generator::bnz(RegisterId a1, String* label) {
+    if (a1.is_float()) {
+        instr("pxor", XMM0, XMM0);
+        instr("comisd", a1, XMM0);
+        instr("jne", Operand(label));
+    } else {
+        instr("test", a1, a1);
+        instr("jnz", Operand(label));
+    }
+}
+
+void Nasm64Generator::bg(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        instr("comisd", a1, a2);
+        instr("ja", Operand(label));
+    } else {
+        instr("cmp", a1, a2);
+        instr("jg", Operand(label));
+    }
+}
+
+void Nasm64Generator::bge(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        instr("comisd", a1, a2);
+        instr("jae", Operand(label));
+    } else {
+        instr("cmp", a1, a2);
+        instr("jge", Operand(label));
+    }
+}
+
+void Nasm64Generator::bl(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        instr("comisd", a1, a2);
+        instr("jb", Operand(label));
+    } else {
+        instr("cmp", a1, a2);
+        instr("jl", Operand(label));
+    }
+}
+
+void Nasm64Generator::ble(RegisterId a1, RegisterId a2, String* label) {
+    if (a1.is_float()) {
+        instr("comisd", a1, a2);
+        instr("jbe", Operand(label));
+    } else {
+        instr("cmp", a1, a2);
+        instr("jle", Operand(label));
     }
 }
 
@@ -282,11 +363,11 @@ void Nasm64Generator::arith(Instruction const& inst) {
     Operand res = inst.result();
     Operand r1 = inst.first();
     Operand r2 = inst.second();
-    
+
     if (inst.opcode() == DIV && !res.is_float()) {
         out_ << "    push rdx\n";
         out_ << "    push rbx\n";
-        out_ << "    mov rax, "; operand(r1); out_ << "\n"; 
+        out_ << "    mov rax, "; operand(r1); out_ << "\n";
         out_ << "    mov rbx, "; operand(r2); out_ << "\n";
         out_ << "    cqo\n";
         out_ << "    idiv rbx\n";
@@ -310,7 +391,7 @@ void Nasm64Generator::arith(Instruction const& inst) {
         instr(name, r1, r2);
     } else if (res.reg() != r2.reg()) {
         // t1 <- t2 - t3
-        instr((res.is_float() ? "movsd" : "mov"), res, r1); 
+        instr((res.is_float() ? "movsd" : "mov"), res, r1);
         instr(name, res, r2);
     } else if (inst.opcode() == ADD || inst.opcode() == MUL) {
         // t1 <- t2 + t1
@@ -326,7 +407,7 @@ void Nasm64Generator::arith(Instruction const& inst) {
             instr("add", r2, r1);
         }
     } else {
-        // t1 <- t2 / t1 
+        // t1 <- t2 / t1
         assert(res.is_float());
         instr("movq", RAX, r1);
         instr(name, r1, res);
@@ -352,7 +433,7 @@ void Nasm64Generator::instr(const char* instr, Operand r1) {
 }
 
 void Nasm64Generator::instr(const char* instr, Operand r1, const char* imm) {
-    // Instruction that operates on a register r1 and an immediate value. 
+    // Instruction that operates on a register r1 and an immediate value.
     out_ << "    " << instr << " ";
     reg(r1);
     out_ << ", " << imm << "\n";
@@ -376,7 +457,7 @@ void Nasm64Generator::operand(Operand op) {
         reg(op);
     } else {
         assert(!"Nil operand");
-    } 
+    }
 }
 
 void Nasm64Generator::addr(Operand op) {
@@ -389,7 +470,7 @@ void Nasm64Generator::addr(Operand op) {
     assert(!!op.addr());
 
     if (op.is_indirect()) {
-        out_ << "[";    
+        out_ << "[";
     }
     if (!!op.reg()) {
         out_ << machine_->reg(op.reg());
@@ -397,10 +478,10 @@ void Nasm64Generator::addr(Operand op) {
         out_ << "rbp";
     }
     if (op.addr().value() > 0) {
-        // Add +1 if loading from the base pointer, because the SP is stored 
+        // Add +1 if loading from the base pointer, because the SP is stored
         // at location 0
         int addr = !!op.reg() ? op.addr().value() : op.addr().value()+1;
-        out_ << "+" << addr * machine_->word_size(); 
+        out_ << "+" << addr * machine_->word_size();
     } else if (op.addr().value() < 0) {
         out_ << "-" << -op.addr().value() * machine_->word_size();
     }
@@ -455,7 +536,7 @@ void Nasm64Generator::label(Operand op) {
     // set on the operand.
     assert(!op.reg());
     assert(!op.literal());
-    assert(!op.addr()); 
+    assert(!op.addr());
     assert(op.label());
 
     if (op.is_indirect()) {
@@ -484,7 +565,7 @@ void Nasm64Generator::label(std::string const& label) {
         out_ << "_" << actual_label;
 #else
         out_ << actual_label;
-#endif   
+#endif
     }
     symbol_.insert(label);
 }
@@ -541,10 +622,10 @@ void Nasm64Generator::load_hack(Operand res, Operand a1) {
         }
     } else if (FloatLiteral* le = dynamic_cast<FloatLiteral*>(a1.literal())) {
         out_ << "    push rax\n";
-        out_ << "    mov rax, lit" << (void*)le->value() << "\n"; 
-        out_ << "    movsd ";   
+        out_ << "    mov rax, lit" << (void*)le->value() << "\n";
+        out_ << "    movsd ";
         operand(res);
-        out_ << ", [rax]\n"; 
+        out_ << ", [rax]\n";
         out_ << "    pop rax\n";
     } else if (a1.label() && a1.is_indirect()) {
         out_ << "    mov rax, ";
@@ -556,10 +637,10 @@ void Nasm64Generator::load_hack(Operand res, Operand a1) {
     } else if (!!a1.addr() && !a1.is_indirect()) {
         // Load effective address.  An IR instruction like rax <- load rbx+3
         // gets translated to an LEAQ instruction
-        out_ << "    lea "; operand(res); out_ << ", ["; 
+        out_ << "    lea "; operand(res); out_ << ", [";
         operand(a1); out_ << "]\n";
     } else {
-        instr(mov, res, a1); 
+        instr(mov, res, a1);
     }
 }
 
@@ -573,11 +654,11 @@ void Nasm64Generator::string(String* string) {
         out += buf;
     }
     out += "\\x00`";
-    out_ << "lit" << (void*)string << ": \n";  
+    out_ << "lit" << (void*)string << ": \n";
     out_ << "    dq ";
     label("String__vtable");
     out_ << "\n"; // vtable
-    out_ << "    dq 0xf000000000000001\n"; 
+    out_ << "    dq 0xf000000000000001\n";
     // reference count + readonly mask
     out_ << "    dq " << (int)in.length() << "\n";
     out_ << "    db " << out << "\n";

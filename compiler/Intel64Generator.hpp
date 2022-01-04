@@ -7,10 +7,10 @@
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  * sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +18,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
- */  
+ */
 
 #pragma once
 
@@ -72,7 +72,7 @@ public:
     static uint8_t const XNOP = 0x90;
     static uint8_t const LEA = 0x8d; // Load effective address
     static uint8_t const REX_PREFIX = 0x40;
-    static uint8_t const REX_W = 0x08; // 64-bit operand 
+    static uint8_t const REX_W = 0x08; // 64-bit operand
     static uint8_t const REX_R = 0x04; // MODRM.reg extension
     static uint8_t const REX_X = 0x02; // ??
     static uint8_t const REX_B = 0x01; // MODRM.rm extension
@@ -92,7 +92,7 @@ private:
     void gp(uint8_t op, RegisterId reg, Operand mem);
     void gp(uint8_t op, RegisterId reg, String* label);
     void gp2op(uint8_t op, RegisterId reg, RegisterId rm);
-    
+
     // Instruction formats for SSE registers
     void ssesd(uint8_t op, RegisterId reg, RegisterId rm);
     void ssesd(uint8_t op, RegisterId reg, Operand mem);
@@ -106,14 +106,14 @@ private:
     void pcrel(RegisterId reg, String* label);
 
     // Helpers for more complex IR opcodes
-    void be(RegisterId a1, RegisterId a2, String* label); 
-    void bne(RegisterId a1, RegisterId a2, String* label); 
-    void bz(RegisterId a1, String* label); 
-    void bnz(RegisterId a1, String* label); 
-    void bg(RegisterId a1, RegisterId a2, String* label); 
-    void bge(RegisterId a1, RegisterId a2, String* label); 
-    void bl(RegisterId a1, RegisterId a2, String* label); 
-    void ble(RegisterId a1, RegisterId a2, String* label); 
+    void be(RegisterId a1, RegisterId a2, String* label);
+    void bne(RegisterId a1, RegisterId a2, String* label);
+    void bz(RegisterId a1, String* label);
+    void bnz(RegisterId a1, String* label);
+    void bg(RegisterId a1, RegisterId a2, String* label);
+    void bge(RegisterId a1, RegisterId a2, String* label);
+    void bl(RegisterId a1, RegisterId a2, String* label);
+    void ble(RegisterId a1, RegisterId a2, String* label);
     void load(RegisterId res, Operand a1);
     void store(Operand a1, Operand a2);
     void add(RegisterId res, RegisterId a1, RegisterId a2);
@@ -170,6 +170,7 @@ private:
     void mulsd(RegisterId dst, RegisterId src);
     void divsd(RegisterId dst, RegisterId src);
     void comisd(RegisterId dst, RegisterId src);
+    void pxor(RegisterId dst, RegisterId src);
     void add(RegisterId dst, RegisterId src);
     void add(RegisterId dst, uint32_t imm);
     void sub(RegisterId dst, RegisterId src);

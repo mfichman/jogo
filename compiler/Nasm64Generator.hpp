@@ -7,10 +7,10 @@
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  * sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +18,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
- */  
+ */
 
 #pragma once
 
@@ -41,7 +41,7 @@ public:
     Stream* out() const { return out_; }
     void out(Stream* out) { out_ = out; }
     void operator()(File* file);
-    
+
 private:
     void operator()(Class* feature);
     void operator()(Function* function);
@@ -58,6 +58,15 @@ private:
     void load(Operand r1, Operand r2);
     void store(Operand r1, Operand r2);
 
+    void be(RegisterId a1, RegisterId a2, String* label);
+    void bne(RegisterId a1, RegisterId a2, String* label);
+    void bz(RegisterId a1, String* label);
+    void bnz(RegisterId a1, String* label);
+    void bg(RegisterId a1, RegisterId a2, String* label);
+    void bge(RegisterId a1, RegisterId a2, String* label);
+    void bl(RegisterId a1, RegisterId a2, String* label);
+    void ble(RegisterId a1, RegisterId a2, String* label);
+
     void operand(Operand op);
     void reg(Operand op);
     void addr(Operand addr);
@@ -68,7 +77,7 @@ private:
 
     void store_hack(Operand a1, Operand a2);
     void load_hack(Operand res, Operand a1);
-    
+
 
     Environment::Ptr env_;
     Machine::Ptr machine_;

@@ -7,10 +7,10 @@
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  * sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +18,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
- */  
+ */
 
 #define __STDC_LIMIT_MACROS
 #include "Intel64Generator.hpp"
@@ -47,8 +47,8 @@ Intel64Generator::Intel64Generator(Environment* env) :
     machine_(Machine::intel64()) {
 }
 
-void Intel64Generator::format(OutputFormat::Ptr format) { 
-    format_ = format; 
+void Intel64Generator::format(OutputFormat::Ptr format) {
+    format_ = format;
     text_ = format->text();
     data_ = format->data();
 }
@@ -77,9 +77,9 @@ void Intel64Generator::operator()(File* file) {
             // Support for primitive constructors, e.g., Char(0xf).  FIXME:
             // Should use constant folding instead, to allow all constant
             // expressions.
-        } 
+        }
         if (IntegerLiteral::Ptr lit = dynamic_cast<IntegerLiteral*>(init)) {
-            data_->uint64(literal(lit)); 
+            data_->uint64(literal(lit));
         } else if (FloatLiteral::Ptr lit = dynamic_cast<FloatLiteral*>(init)) {
             data_->uint64(literal(lit));
         } else if (StringLiteral::Ptr lit = dynamic_cast<StringLiteral*>(init)) {
@@ -90,9 +90,9 @@ void Intel64Generator::operator()(File* file) {
         }
     }
 
-    for (std::set<String*>::iterator i = string_.begin(); 
+    for (std::set<String*>::iterator i = string_.begin();
         i != string_.end(); ++i) {
-        string(*i);  
+        string(*i);
     }
     string_.clear();
 
@@ -124,7 +124,7 @@ void Intel64Generator::operator()(Function* feature) {
         format_->sym(env_->name("main_"), OutputFormat::SYM_TEXT);
         format_->function(env_->name("main_"));
     } else {
-        format_->sym(feature->label(), OutputFormat::SYM_TEXT); 
+        format_->sym(feature->label(), OutputFormat::SYM_TEXT);
         format_->function(feature->label());
     }
     format_->line(feature->location().first_line);
@@ -143,7 +143,7 @@ void Intel64Generator::operator()(Function* feature) {
     }
     for (int i = 0; i < feature->ir_blocks(); i++) {
         operator()(feature->ir_block(i));
-    } 
+    }
     format_->line(feature->location().last_line);
     format_->ret();
     function_ = 0;
@@ -151,7 +151,7 @@ void Intel64Generator::operator()(Function* feature) {
 
 void Intel64Generator::operator()(IrBlock* block) {
     // Translate a basic block in three-address code into x86.  For most
-    // operations, this requires a "mov, op" sequence.  
+    // operations, this requires a "mov, op" sequence.
     IrBlock::Ptr branch = block->branch();
     IrBlock::Ptr next = block->next();
     if (block->label()) {
@@ -163,7 +163,7 @@ void Intel64Generator::operator()(IrBlock* block) {
         Operand a1 = inst.first();
         Operand a2 = inst.second();
         format_->line(inst.line());
-    
+
         if (LOAD != inst.opcode() && STORE != inst.opcode()) {
             assert("Memory operand not supported"&&!a1.is_indirect());
             assert("Memory operand not supported"&&!a2.is_indirect());
@@ -171,15 +171,15 @@ void Intel64Generator::operator()(IrBlock* block) {
             assert("Literal operand not supported"&&!a1.literal());
             assert("Literal operand not supported"&&!a2.literal());
             assert("Literal operand not supported"&&!res.literal());
-        } 
+        }
 
         switch (inst.opcode()) {
         case RET: leave(); ret(); break;
-        case MOV: 
-            if (res.is_float()) { 
-                movsd(res.reg(), a1.reg()); 
+        case MOV:
+            if (res.is_float()) {
+                movsd(res.reg(), a1.reg());
             } else {
-                mov(res.reg(), a1.reg()); 
+                mov(res.reg(), a1.reg());
             }
             break;
         case LOAD: load(res.reg(), a1); break;
@@ -201,7 +201,7 @@ void Intel64Generator::operator()(IrBlock* block) {
         case NEG: neg(res.reg(), a1.reg()); break;
         case NOTB: mov(res.reg(), a1.reg()); bnot(res.reg()); break;
         case ANDB: mov(res.reg(), a1.reg()); band(res.reg(), a2.reg()); break;
-        case ORB: mov(res.reg(), a1.reg()); bor(res.reg(), a2.reg()); break; 
+        case ORB: mov(res.reg(), a1.reg()); bor(res.reg(), a2.reg()); break;
         case NOP: break;
         default: break;
         }
@@ -230,7 +230,7 @@ uint64_t Intel64Generator::literal(IntegerLiteral* lit) {
 
 void Intel64Generator::dispatch_table(Class* feature) {
     // Output the class dispatch table for calling methods with dynamic
-    // dispatch.  The format is as follows: 
+    // dispatch.  The format is as follows:
     //
     //     vtable[0] is the destructor
     //     vtable[1] is the hash function
@@ -243,7 +243,7 @@ void Intel64Generator::dispatch_table(Class* feature) {
     Function* dtor = feature->destructor();
     std::string vtable = name->string()+"__vtable";
 
-    // Output the vtable label 
+    // Output the vtable label
     data_->align(machine_->word_size());
     format_->sym(env_->name(vtable), OutputFormat::SYM_DATA);
 
@@ -255,8 +255,8 @@ void Intel64Generator::dispatch_table(Class* feature) {
     // Emit the first jump table
     for (int i = 0; i < feature->jump1s(); i++) {
         data_->uint64(feature->jump1(i));
-    } 
-    
+    }
+
     // Emit the second jump table
     for (int i = 0; i < feature->jump2s(); i++) {
         if (feature->jump2(i)) {
@@ -329,7 +329,7 @@ void Intel64Generator::gp(uint8_t op, uint8_t ext, RegisterId rm, uint32_t imm) 
 }
 
 void Intel64Generator::gp(uint8_t op, RegisterId reg, RegisterId rm) {
-    // Emits a simple register-register instruction 
+    // Emits a simple register-register instruction
     // dst = reg, src = rm
     assert(!!rm&&"Invalid register ID");
     assert(!!reg&&"Invalid register ID");
@@ -353,7 +353,7 @@ void Intel64Generator::gp(uint8_t op, RegisterId reg, String* label) {
 
 void Intel64Generator::gp(uint8_t op, RegisterId reg, Operand mem) {
     // Emit an instruction that uses a memory operand specified by register,
-    // with a possible offset. 
+    // with a possible offset.
     assert("Not an indirect operand" && (mem.is_indirect() || op == LEA));
     if (!mem.reg().id()) {
         mem.reg(RBP);
@@ -415,10 +415,10 @@ void Intel64Generator::rex(RegisterId reg, RegisterId rm) {
     // Outputs the REX byte for the given registers, if necessary
     uint8_t rex = REX_PREFIX|REX_W;
     if (!!reg && is_extended_reg(reg)) {
-        rex |= REX_R; 
+        rex |= REX_R;
     }
     if (!!rm && is_extended_reg(rm)) {
-        rex |= REX_B; 
+        rex |= REX_B;
     }
     text_->uint8(rex);
 }
@@ -449,7 +449,7 @@ void Intel64Generator::operands(RegisterId reg, Operand mem) {
         // the SP is stored at offset 0 from the base pointer.  The IR assumes
         // that arguments start at 0, not 1*word_size.  Offsets below the BP
         // are treated normally.
-    } 
+    }
 
     // Select the mod field.   Note that R13/RBP is a special case: if mod is
     // 00, then the address loaded is [RIP+disp32] rather than [R13] or [RBP]
@@ -609,10 +609,9 @@ void Intel64Generator::bne(RegisterId a1, RegisterId a2, String* label) {
 
 void Intel64Generator::bz(RegisterId a1, String* label) {
     if (a1.is_float()) {
-        // FixMe: This could be made more efficient...
-        mov(RAX, uint64_t(0));
-        movq(XMM0, RAX);
+        pxor(XMM0, XMM0);
         comisd(a1, XMM0);
+        // ptest
         je(label);
     } else {
         test(a1, a1);
@@ -622,9 +621,7 @@ void Intel64Generator::bz(RegisterId a1, String* label) {
 
 void Intel64Generator::bnz(RegisterId a1, String* label) {
     if (a1.is_float()) {
-        // FixMe: This could be made more efficient...
-        mov(RAX, uint64_t(0));
-        movq(XMM0, RAX);
+        pxor(XMM0, XMM0);
         comisd(a1, XMM0);
         jne(label);
     } else {
@@ -687,7 +684,7 @@ void Intel64Generator::add(RegisterId res, RegisterId r1, RegisterId r2) {
     } else if (res == r2) { // res <- r1 + res
         (this->*add)(res, r1);
     } else { // res <- r1 + r2
-        (this->*mov)(res, r1); 
+        (this->*mov)(res, r1);
         (this->*add)(res, r2);
     }
 }
@@ -720,7 +717,7 @@ void Intel64Generator::sub(RegisterId res, RegisterId r1, RegisterId r2) {
         }
     } else { // res <- r1 - r2
         (this->*mov)(res, r1);
-        (this->*sub)(res, r2); 
+        (this->*sub)(res, r2);
     }
 }
 
@@ -738,7 +735,7 @@ void Intel64Generator::mul(RegisterId res, RegisterId r1, RegisterId r2) {
     } else if (res == r2) { // res <- r1 * res
         (this->*mul)(res, r1);
     } else { // res <- r1 + r2
-        (this->*mov)(res, r1); 
+        (this->*mov)(res, r1);
         (this->*mul)(res, r2);
     }
 }
@@ -749,7 +746,7 @@ void Intel64Generator::div(RegisterId res, RegisterId r1, RegisterId r2) {
         push(RBX);
         mov(RAX, r1);
         mov(RBX, r2);
-        cqo();  
+        cqo();
         idiv(RBX);
         pop(RBX);
         pop(RDX);
@@ -761,7 +758,7 @@ void Intel64Generator::div(RegisterId res, RegisterId r1, RegisterId r2) {
     } else if (res == r2) { // res <- r1 / res
         movq(RAX, r1); // save r1
         divsd(r1, res);
-        movsd(res, r1); // move r1 => res 
+        movsd(res, r1); // move r1 => res
         movq(r1, RAX); // restore r1
     } else { // res <- r1 / r2
         movsd(res, r1);
@@ -773,8 +770,7 @@ void Intel64Generator::neg(RegisterId res, RegisterId a1) {
     // If reg is floating point, then we need to subtract from zero to do a
     // negation.
     if (res.is_float()) {
-        mov(RAX, (uint64_t)0);
-        cvtsi2sd(XMM0, RAX);
+        pxor(XMM0, XMM0);
         subsd(XMM0, a1);
         movsd(res, XMM0);
     } else {
@@ -788,10 +784,10 @@ void Intel64Generator::cvtsi2sd(RegisterId dst, RegisterId src) {
     // floating point.
     assert("Invalid cvtsi2sd" && dst.is_float() && !src.is_float());
     text_->uint8(SD_PREFIX); // CVTSI prefix
-    rex(dst, src);  
+    rex(dst, src);
     text_->uint8(0x0f);
     text_->uint8(0x2a);
-    modrm(MODRM_DIRECT, dst, src); 
+    modrm(MODRM_DIRECT, dst, src);
 }
 
 void Intel64Generator::movq(RegisterId dst, RegisterId src) {
@@ -810,7 +806,7 @@ void Intel64Generator::movq(RegisterId dst, RegisterId src) {
         modrm(MODRM_DIRECT, dst, src);
     } else { // movq r/m64 xmm = 0x66 0f 7e
         text_->uint8(0x7e);
-        modrm(MODRM_DIRECT, src, dst);     
+        modrm(MODRM_DIRECT, src, dst);
     }
 }
 
@@ -843,8 +839,18 @@ void Intel64Generator::divsd(RegisterId dst, RegisterId src) {
     ssesd(0x5e, dst, src);
 }
 
+void Intel64Generator::pxor(RegisterId dst, RegisterId src) {
+    uint8_t const op = 0xef;
+    RegisterId const reg = dst;
+    RegisterId const rm = src;
+    text_->uint8(0x66);
+    rex(reg, rm);
+    text_->uint8(0x0f);
+    text_->uint8(op);
+    modrm(MODRM_DIRECT, reg, rm);
+}
+
 void Intel64Generator::comisd(RegisterId dst, RegisterId src) {
-    //ssesd(0x66, dst, src);
     uint8_t const op = 0x2f;
     RegisterId const reg = dst;
     RegisterId const rm = src;
@@ -922,7 +928,7 @@ void Intel64Generator::mov(RegisterId reg, uint64_t imm) {
     if (imm > UINT32_MAX) {
         rex |= REX_W;
     }
-    if (is_extended_reg(reg)) { 
+    if (is_extended_reg(reg)) {
         rex |= REX_B;
     }
     if (rex) {
@@ -938,7 +944,7 @@ void Intel64Generator::mov(RegisterId reg, uint64_t imm) {
 
 void Intel64Generator::lea(RegisterId reg, Operand rm) {
     gp(LEA, reg, rm);
-} 
+}
 
 void Intel64Generator::call(Operand target) {
     // Emits a call-label or call-register instruction with target 'target'
@@ -950,7 +956,7 @@ void Intel64Generator::call(Operand target) {
     } else {
         assert("Missing call target register" && !!target.reg());
         gp(0xff, 0x02, target.reg());
-    }    
+    }
 }
 
 void Intel64Generator::jmp(String* label) {
@@ -1062,11 +1068,11 @@ void Intel64Generator::pop(RegisterId reg) {
 }
 
 void Intel64Generator::cmp(RegisterId dst, RegisterId src) {
-    gp(0x3b, dst, src);  
+    gp(0x3b, dst, src);
 }
 
 void Intel64Generator::test(RegisterId dst, RegisterId src) {
-    gp(0x85, dst, src);  
+    gp(0x85, dst, src);
 }
 
 void Intel64Generator::add(RegisterId dst, RegisterId src) {
@@ -1091,7 +1097,7 @@ void Intel64Generator::leave() {
 }
 
 void Intel64Generator::ret() {
-    text_->uint8(0xc3); 
+    text_->uint8(0xc3);
 }
 
 void Intel64Generator::cqo() {
