@@ -25,6 +25,7 @@
 #include "Object.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #ifdef WINDOWS
 #include <windows.h>
 #else
@@ -51,11 +52,7 @@ void Boot_print_str(String string) {
 void Boot_print_int(Int integer) {
     // Print an integer to stdout.  This function is here only to run initial
     // tests on the compiler, and isn't part of the public API.
-#ifdef DARWIN
-    fprintf(stdout, "%lld", integer);
-#else
-    fprintf(stdout, "%lld", integer);
-#endif
+    fprintf(stdout, "%" PRId64, integer);
     fflush(stdout);
 }
 
