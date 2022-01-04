@@ -6,10 +6,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,56 +21,56 @@
 Response < Object {
     # Parses and stores an HTTP response.  The headers are read first, and the
     # remaining data is stored in the 'data' attribute.
-   
-    status var Status 
+
+    status var Status
     # The status of the request.
 
     version var = 'HTTP/1.1'
     # HTTP version to use.
 
     headers = Hash[String,String]()
-    # Set of response headers read from the server.    
+    # Set of response headers read from the server.
 
     body var String
     # Body of the request (following the headers).
 
     @init() {
     }
-    
+
     write(stream Io::Stream) {
         # Write a response to the output stream.
-        stream.print("#{version} #{status.int} WHATEV\r\n")
+        stream.print("#{version} #{status.int} WHATEV\r\x0A")
         for header in headers {
-            stream.print("#{header.first}: #{header.second}\r\n")
+            stream.print("#{header.first}: #{header.second}\r\x0A")
         }
-        stream.print("\r\n")
+        stream.print("\r\x0A")
         if body {
            stream.print(body)
            stream.flush()
         }
     }
-    
+
     read_headers(stream Io::Stream) {
         # Read only the response headers; do not read the request body.
         version = stream.scan(' ')
         stat = stream.scan(' ')
         message = stream.scan('\n')
-        while stream.status == Io::StreamStatus::OK and 
+        while stream.status == Io::StreamStatus::OK and
             stream.peek() != '\r'b and
             stream.peek() != '\n'b  {
-    
+
             key = stream.scan(':')
             while stream.status == Io::StreamStatus::OK and
                 stream.peek() == ' 'b {
-            
+
                 stream.get()
             }
-            value = stream.scan('\n') 
+            value = stream.scan('\n')
             headers[key] = value
         }
-        stream.scan('\n') 
+        stream.scan('\n')
     }
-    
+
     read(stream Io::Stream) {
         # Reads a response from the stream.
         self.read_headers(stream)
@@ -89,7 +89,7 @@ Status < Enum {
     ACCEPTED = 202
     NON_AUTHORITATIVE_INFO = 203
     NO_CONTENT = 204
-    RESET_CONTENT = 205 
+    RESET_CONTENT = 205
     PARTIAL_CONTENT = 206
     MULTIPLE_CHOICES = 300
     MOVED_PERMANENTLY = 301
@@ -100,7 +100,7 @@ Status < Enum {
     TEMPORARY_REDIRECT = 307
     BAD_REQUEST = 400
     UNAUTHORIZED = 401
-    PAYMENT_REQUIRED = 402 
+    PAYMENT_REQUIRED = 402
     FORBIDDEN = 403
     NOT_FOUND = 404
     METHOD_NOT_ALLOWED = 405
