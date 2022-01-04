@@ -7,10 +7,10 @@
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  * sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, APEXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +18,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
- */  
+ */
 
 #ifdef LINUX
 
@@ -62,6 +62,7 @@ void Elf64Output::ref(String* label, RelocType rtype) {
 
     Elf64_Rela reloc;
     if (REF_TEXT == rtype) {
+        //std::cerr << "text relocation: " << label->string() << std::endl;
         reloc.r_offset = text_->bytes();
         reloc.r_info = ELF64_R_INFO(symnum, R_X86_64_64);
         reloc.r_addend = 0;
@@ -72,16 +73,20 @@ void Elf64Output::ref(String* label, RelocType rtype) {
         reloc.r_addend = 0;
         data_reloc_.push_back(reloc);
     } else if (REF_BRANCH == rtype || REF_CALL == rtype) {
+        //std::cerr << "text relocation: " << label->string() << std::endl;
         reloc.r_offset = text_->bytes();
         reloc.r_info = ELF64_R_INFO(symnum, R_X86_64_PC32);
         reloc.r_addend = -sizeof(uint32_t);
         text_reloc_.push_back(reloc);
     } else if (REF_SIGNED == rtype) {
+        //std::cerr << "text relocation: " << label->string() << std::endl;
         reloc.r_offset = text_->bytes();
         reloc.r_info = ELF64_R_INFO(symnum, R_X86_64_PC32);
         reloc.r_addend = -sizeof(uint32_t);
         text_reloc_.push_back(reloc);
-    } 
+    } else {
+        assert(false);
+    }
 }
 
 void Elf64Output::sym(String* label, SymType type) {
@@ -100,7 +105,7 @@ void Elf64Output::sym(String* label, SymType type) {
         string_->buffer(label->string().c_str(), label->string().size()+1);
     } else {
         sym = &sym_[i->second];
-        assert("Duplicate label"&&(sym->st_shndx==0)); 
+        assert("Duplicate label"&&(sym->st_shndx==0));
     }
     if (type & SYM_TEXT) {
         sym->st_value = text_->bytes();
@@ -115,12 +120,12 @@ void Elf64Output::sym(String* label, SymType type) {
         sym->st_info = ELF64_ST_INFO(STB_LOCAL, STT_NOTYPE);
     } else {
         sym->st_info = ELF64_ST_INFO(STB_GLOBAL, STT_NOTYPE);
-    } 
+    }
 }
 
 void Elf64Output::sort_symtab() {
     // With ELF, the local symbols must come first in the symbol table.
-    // Annoying, but true.  As a result, this function is necessary to 
+    // Annoying, but true.  As a result, this function is necessary to
     // reorder the symbols with the local ones first.
 
     std::vector<Elf64_Sym> symtmp;
@@ -128,10 +133,10 @@ void Elf64Output::sort_symtab() {
     // Mapping from old => new position of the symbol in the symbol table.
     for (int i = 0; i < sym_.size(); ++i) {
         if (ELF64_ST_BIND(sym_[i].st_info) == STB_LOCAL) {
-            redirect[i] = symtmp.size(); 
+            redirect[i] = symtmp.size();
             symtmp.push_back(sym_[i]);
         }
-    } 
+    }
     local_syms_ = symtmp.size();
     for (int i = 0; i < sym_.size(); ++i) {
         if (ELF64_ST_BIND(sym_[i].st_info) == STB_GLOBAL) {
@@ -223,8 +228,8 @@ void Elf64Output::out(Stream* out) {
     text.sh_info = 0;
     text.sh_addralign = 16;
     text.sh_entsize = 0;
-    
-    // Data section 
+
+    // Data section
     data.sh_name = string_->bytes();;
     char const data_name[] = ".data";
     string_->buffer(data_name, sizeof(data_name));
@@ -238,7 +243,7 @@ void Elf64Output::out(Stream* out) {
     data.sh_info = 0;
     data.sh_addralign = 16;
     data.sh_entsize = 0;
-    
+
     // Text relocation
     reltext.sh_name = string_->bytes();
     char const reltext_name[] = ".rela.text";
@@ -253,7 +258,7 @@ void Elf64Output::out(Stream* out) {
     reltext.sh_info = OUT_SECT_TEXT; // relocs apply to text section
     reltext.sh_addralign = 4;
     reltext.sh_entsize = sizeof(text_reloc_.front());
-    
+
     // Data relocation
     reldata.sh_name = string_->bytes();
     char const reldata_name[] = ".rela.data";
@@ -298,11 +303,11 @@ void Elf64Output::out(Stream* out) {
     strtab.sh_info = 0;
     strtab.sh_addralign = 1;
     strtab.sh_entsize = 0;
-      
+
     out->write((char*)&header, sizeof(header));
     out->write((char*)&null, sizeof(null));
     out->write((char*)&text, sizeof(text));
-    out->write((char*)&data, sizeof(data));    
+    out->write((char*)&data, sizeof(data));
     out->write((char*)&reltext, sizeof(reltext));
     out->write((char*)&reldata, sizeof(reldata));
     out->write((char*)&symtab, sizeof(symtab));
@@ -314,7 +319,7 @@ void Elf64Output::out(Stream* out) {
     out->write((char*)&sym_.front(), sym_.size()*sizeof(sym_.front()));
     out->write((char*)string_->text(), string_->bytes());
     out->flush();
- 
+
 }
 
 #endif

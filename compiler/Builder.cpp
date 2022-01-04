@@ -314,6 +314,7 @@ void Builder::link(const std::string& in, const std::string& out) {
     if (env_->debug()) {
         ss << "-g ";
     }
+    ss << "-Wl,--no-pie ";
 #elif defined(DARWIN)
     char const* compiler = getenv("CC")?getenv("CC"):"cc";
     ss << compiler << ' ';
